@@ -126,6 +126,7 @@ private:
 
 
 		auto block = std::make_unique<NodeBlock>(node.tok, true);
+		auto return_block = std::make_unique<NodeBlock>(node.tok, false);
 
 		// add global declaration if available
 		auto it = m_global_declarations.find(&node);
@@ -146,6 +147,21 @@ private:
 			for (int i = 0; i < func_data.promoted_params.size(); i++) {
 				const auto &formal_param = func_data.promoted_params[i]->variable;
 				auto actual_param = std::move(node.function->get_arg(func_data.promoted_param_indices[i]));
+
+				// return parameters have to passed back and do not need to be assigned
+				if (formal_param->data_type == DataType::Return) {
+					if (const auto ref = cast_node<NodeReference>(actual_param.get())) {
+						auto return_assign = std::make_unique<NodeSingleAssignment>(
+							unique_ptr_cast<NodeReference>(std::move(actual_param)),
+							formal_param->to_reference(),
+							node.tok
+						);
+						return_assign->kind = NodeInstruction::ReturnVar;
+						return_assign->collect_references();
+						return_block->add_as_stmt(std::move(return_assign));
+						continue;
+					}
+				}
 
 				// check if formal and actual param are the same
 				if (formal_param->name != actual_param->get_string()) {
@@ -170,8 +186,11 @@ private:
 			node.function->collect_references();
 		}
 
-		if (!block->statements.empty()) {
+		if (!block->statements.empty() || !return_block->statements.empty()) {
 			swap_call(node, block);
+			if (!return_block->statements.empty()) {
+				block->append_body(std::move(return_block));
+			}
 			return node.replace_with(std::move(block));
 		}
 

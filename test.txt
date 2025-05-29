@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.4 on Mon May 26 17:55:44 2025 }
+{ Compiled with cksp version 0.0.7-alpha.4 on Thu May 29 13:37:33 2025 }
 on init
   declare $_iter0
   declare $ksv_cb_id := 0
@@ -6,6 +6,7 @@ on init
   declare $dr_cb_id := 0
   declare $cc_cb_id := 0
   declare $selected_circle_end := -1
+  declare %wait_time0[100]
   declare $subarticulation_event1
   declare $idx25
   declare $i14
@@ -21,10 +22,8 @@ on init
   declare $octave_layer0
   declare $previous_note0
   declare $subarticulation_event_id18
-  declare $idx220
-  declare $result140
-  declare $idx230
   declare ~transition_speed0
+  declare $_ret400
   declare $result150
   declare $i120
   declare $i1100
@@ -84,15 +83,16 @@ on init
   declare $_ret6600
   declare $group_count000
   declare $group_count001
-  declare @legato_name0
-  declare ~y3
-  declare ~dx0
+  declare !legato_name0[100]
   declare ~dy0
   declare ~cos_theta0
   declare ~angle1
+  declare @legato_name1
   declare ?angle2[100]
   declare ?distance0[100]
   declare %controller_value0[100]
+  declare $next_free_idx0000
+  declare $i4000
   declare $end_note200
   declare $offset100
   declare $i110000
@@ -481,11 +481,11 @@ on init
   set_control_par(get_ui_id($btn_main_page), $CONTROL_PAR_POS_Y, 539)
   set_control_par(get_ui_id($btn_main_page), $CONTROL_PAR_WIDTH, 120)
   set_control_par(get_ui_id($btn_main_page), $CONTROL_PAR_HEIGHT, 20)
-  $transition_note_event00 := get_ui_id($btn_main_page)
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_large_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := get_ui_id($btn_main_page)
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_large_white[$idx25])
+    inc($idx25)
   end while
   declare ui_button $btn_editor_page 
   set_control_par_str(get_ui_id($btn_editor_page), $CONTROL_PAR_TEXT, "Editor")
@@ -495,11 +495,11 @@ on init
   set_control_par(get_ui_id($btn_editor_page), $CONTROL_PAR_POS_Y, 539)
   set_control_par(get_ui_id($btn_editor_page), $CONTROL_PAR_WIDTH, 120)
   set_control_par(get_ui_id($btn_editor_page), $CONTROL_PAR_HEIGHT, 20)
-  $transition_note_event00 := get_ui_id($btn_editor_page)
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_large_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := get_ui_id($btn_editor_page)
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_large_white[$idx25])
+    inc($idx25)
   end while
   declare ui_button $btn_mixer_page 
   set_control_par_str(get_ui_id($btn_mixer_page), $CONTROL_PAR_TEXT, "Mixer")
@@ -509,11 +509,11 @@ on init
   set_control_par(get_ui_id($btn_mixer_page), $CONTROL_PAR_POS_Y, 539)
   set_control_par(get_ui_id($btn_mixer_page), $CONTROL_PAR_WIDTH, 120)
   set_control_par(get_ui_id($btn_mixer_page), $CONTROL_PAR_HEIGHT, 20)
-  $transition_note_event00 := get_ui_id($btn_mixer_page)
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_large_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := get_ui_id($btn_mixer_page)
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_large_white[$idx25])
+    inc($idx25)
   end while
   declare ui_panel $pnl_main_page 
   declare ui_button $btn_octave_layer 
@@ -533,11 +533,11 @@ on init
   set_control_par(get_ui_id($mnu_note_selection), $CONTROL_PAR_POS_Y, 400)
   set_control_par(get_ui_id($mnu_note_selection), $CONTROL_PAR_WIDTH, 250)
   set_control_par(get_ui_id($mnu_note_selection), $CONTROL_PAR_HEIGHT, 20)
-  $transition_note_event00 := get_ui_id($mnu_note_selection)
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := get_ui_id($mnu_note_selection)
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_white[$idx25])
+    inc($idx25)
   end while
   set_control_par(get_ui_id($mnu_note_selection), $CONTROL_PAR_PARENT_PANEL, get_ui_id($pnl_main_page))
   $i := 0
@@ -554,11 +554,11 @@ on init
   set_control_par(get_ui_id($btn_con_sordino), $CONTROL_PAR_POS_Y, 380)
   set_control_par(get_ui_id($btn_con_sordino), $CONTROL_PAR_WIDTH, 100)
   set_control_par(get_ui_id($btn_con_sordino), $CONTROL_PAR_HEIGHT, 20)
-  $transition_note_event00 := get_ui_id($btn_con_sordino)
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := get_ui_id($btn_con_sordino)
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_white[$idx25])
+    inc($idx25)
   end while
   set_control_par(get_ui_id($btn_con_sordino), $CONTROL_PAR_PARENT_PANEL, get_ui_id($pnl_main_page))
   declare ui_button $btn_show_authoring_tools 
@@ -571,11 +571,11 @@ on init
   set_control_par(get_ui_id($btn_show_authoring_tools), $CONTROL_PAR_POS_Y, 80)
   set_control_par(get_ui_id($btn_show_authoring_tools), $CONTROL_PAR_WIDTH, 145)
   set_control_par(get_ui_id($btn_show_authoring_tools), $CONTROL_PAR_HEIGHT, 20)
-  $transition_note_event00 := get_ui_id($btn_show_authoring_tools)
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := get_ui_id($btn_show_authoring_tools)
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_white[$idx25])
+    inc($idx25)
   end while
   set_control_par(get_ui_id($btn_show_authoring_tools), $CONTROL_PAR_PARENT_PANEL, get_ui_id($pnl_main_page))
   declare ui_button $btn_polyphonic_aftertouch 
@@ -588,11 +588,11 @@ on init
   set_control_par(get_ui_id($btn_polyphonic_aftertouch), $CONTROL_PAR_POS_Y, 0)
   set_control_par(get_ui_id($btn_polyphonic_aftertouch), $CONTROL_PAR_WIDTH, 145)
   set_control_par(get_ui_id($btn_polyphonic_aftertouch), $CONTROL_PAR_HEIGHT, 20)
-  $transition_note_event00 := get_ui_id($btn_polyphonic_aftertouch)
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := get_ui_id($btn_polyphonic_aftertouch)
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_white[$idx25])
+    inc($idx25)
   end while
   set_control_par(get_ui_id($btn_polyphonic_aftertouch), $CONTROL_PAR_PARENT_PANEL, get_ui_id($pnl_main_page))
   declare ui_button $btn_mode_live 
@@ -605,11 +605,11 @@ on init
   set_control_par(get_ui_id($btn_mode_live), $CONTROL_PAR_POS_Y, 25)
   set_control_par(get_ui_id($btn_mode_live), $CONTROL_PAR_WIDTH, 60)
   set_control_par(get_ui_id($btn_mode_live), $CONTROL_PAR_HEIGHT, 20)
-  $transition_note_event00 := get_ui_id($btn_mode_live)
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := get_ui_id($btn_mode_live)
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_white[$idx25])
+    inc($idx25)
   end while
   set_control_par(get_ui_id($btn_mode_live), $CONTROL_PAR_VALUE, abs(sh_right(abs($use_constant_delay) - 1, 31)))
   declare ui_button $btn_mode_playback 
@@ -622,11 +622,11 @@ on init
   set_control_par(get_ui_id($btn_mode_playback), $CONTROL_PAR_POS_Y, 25)
   set_control_par(get_ui_id($btn_mode_playback), $CONTROL_PAR_WIDTH, 60)
   set_control_par(get_ui_id($btn_mode_playback), $CONTROL_PAR_HEIGHT, 20)
-  $transition_note_event00 := get_ui_id($btn_mode_playback)
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := get_ui_id($btn_mode_playback)
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_white[$idx25])
+    inc($idx25)
   end while
   set_control_par(get_ui_id($btn_mode_playback), $CONTROL_PAR_VALUE, $use_constant_delay)
   declare ui_panel $pnl_editor_page 
@@ -1052,11 +1052,11 @@ on init
     set_control_par(%btn_edit_subarticulation_selection[$i], $CONTROL_PAR_TEXT_ALIGNMENT, 1)
     set_control_par(%btn_edit_subarticulation_selection[$i], $CONTROL_PAR_FONT_TYPE, 0)
     set_control_par(%btn_edit_subarticulation_selection[$i], $CONTROL_PAR_TEXTPOS_Y, 12)
-    $transition_note_event00 := %btn_edit_subarticulation_selection[$i]
-    $fade_out_range01 := 0
-    while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-      set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_large_white[$fade_out_range01])
-      inc($fade_out_range01)
+    $fade_out_range01 := %btn_edit_subarticulation_selection[$i]
+    $idx25 := 0
+    while($idx25 <= (num_elements(%font_types) - 1)) 
+      set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_large_white[$idx25])
+      inc($idx25)
     end while
     set_control_par(%btn_edit_subarticulation_selection[$i], $CONTROL_PAR_POS_X, get_control_par(get_ui_id($lbl_editor_parameter_background), $CONTROL_PAR_POS_X) + get_control_par(get_ui_id($lbl_editor_parameter_background), $CONTROL_PAR_WIDTH))
     set_control_par(%btn_edit_subarticulation_selection[$i], $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($lbl_editor_parameter_background), $CONTROL_PAR_POS_Y) + ($i * 45))
@@ -1349,11 +1349,11 @@ on init
   set_control_par(get_ui_id($btn_articulation_release), $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($sli_articulation_release), $CONTROL_PAR_POS_Y) + 60)
   set_control_par(get_ui_id($btn_articulation_release), $CONTROL_PAR_WIDTH, 40)
   set_control_par(get_ui_id($btn_articulation_release), $CONTROL_PAR_HEIGHT, 20)
-  $transition_note_event00 := $btn_articulation_release
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := $btn_articulation_release
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_white[$idx25])
+    inc($idx25)
   end while
   set_control_par(get_ui_id($btn_articulation_release), $CONTROL_PAR_PARENT_PANEL, get_ui_id($pnl_editor_page))
   set_control_par(get_ui_id($btn_articulation_release), $CONTROL_PAR_Z_LAYER, 1)
@@ -1457,11 +1457,11 @@ on init
   set_control_par_str(get_ui_id($mnu_subarticulation_repetition_speed), $CONTROL_PAR_PICTURE, "alpha")
   set_control_par(get_ui_id($mnu_subarticulation_repetition_speed), $CONTROL_PAR_FONT_TYPE, 0)
   set_control_par(get_ui_id($mnu_subarticulation_repetition_speed), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
-  $transition_note_event00 := $mnu_subarticulation_repetition_speed
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := $mnu_subarticulation_repetition_speed
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_white[$idx25])
+    inc($idx25)
   end while
   set_control_par(get_ui_id($mnu_subarticulation_repetition_speed), $CONTROL_PAR_POS_X, 613)
   set_control_par(get_ui_id($mnu_subarticulation_repetition_speed), $CONTROL_PAR_POS_Y, 370)
@@ -1492,11 +1492,11 @@ on init
   set_control_par_str(get_ui_id($mnu_subarticulation_rr_mode), $CONTROL_PAR_PICTURE, "alpha")
   set_control_par(get_ui_id($mnu_subarticulation_rr_mode), $CONTROL_PAR_FONT_TYPE, 0)
   set_control_par(get_ui_id($mnu_subarticulation_rr_mode), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
-  $transition_note_event00 := $mnu_subarticulation_rr_mode
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := $mnu_subarticulation_rr_mode
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_white[$idx25])
+    inc($idx25)
   end while
   set_control_par(get_ui_id($mnu_subarticulation_rr_mode), $CONTROL_PAR_POS_X, 738)
   set_control_par(get_ui_id($mnu_subarticulation_rr_mode), $CONTROL_PAR_POS_Y, 370)
@@ -1599,11 +1599,11 @@ on init
   set_control_par(get_ui_id($btn_subarticulation_trans_speed), $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($sli_subarticulation_trans_speed), $CONTROL_PAR_POS_Y) + 11)
   set_control_par(get_ui_id($btn_subarticulation_trans_speed), $CONTROL_PAR_WIDTH, 40)
   set_control_par(get_ui_id($btn_subarticulation_trans_speed), $CONTROL_PAR_HEIGHT, 20)
-  $transition_note_event00 := $btn_subarticulation_trans_speed
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := $btn_subarticulation_trans_speed
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_white[$idx25])
+    inc($idx25)
   end while
   set_control_par(get_ui_id($btn_subarticulation_trans_speed), $CONTROL_PAR_PARENT_PANEL, get_ui_id($pnl_editor_page))
   set_control_par(get_ui_id($btn_subarticulation_trans_speed), $CONTROL_PAR_Z_LAYER, 1)
@@ -1638,11 +1638,11 @@ on init
   set_control_par(get_ui_id($mnu_finger_position), $CONTROL_PAR_POS_Y, 410)
   set_control_par(get_ui_id($mnu_finger_position), $CONTROL_PAR_WIDTH, 80)
   set_control_par(get_ui_id($mnu_finger_position), $CONTROL_PAR_HEIGHT, 20)
-  $transition_note_event00 := $mnu_finger_position
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := $mnu_finger_position
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_white[$idx25])
+    inc($idx25)
   end while
   set_control_par(get_ui_id($mnu_finger_position), $CONTROL_PAR_PARENT_PANEL, get_ui_id($pnl_editor_page))
   add_menu_item($mnu_finger_position, "1st Position", 0)
@@ -1790,11 +1790,11 @@ on init
   set_control_par(get_ui_id($btn_unpurge_all), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
   set_control_par(get_ui_id($btn_unpurge_all), $CONTROL_PAR_FONT_TYPE, 0)
   set_control_par(get_ui_id($btn_unpurge_all), $CONTROL_PAR_TEXTPOS_Y, 3)
-  $transition_note_event00 := $btn_unpurge_all
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := $btn_unpurge_all
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_white[$idx25])
+    inc($idx25)
   end while
   set_control_par(get_ui_id($btn_unpurge_all), $CONTROL_PAR_POS_X, 0)
   set_control_par(get_ui_id($btn_unpurge_all), $CONTROL_PAR_POS_Y, 50)
@@ -1884,11 +1884,11 @@ on init
     set_control_par(%btn_subarticulation_browser_selection[$i], $CONTROL_PAR_TEXT_ALIGNMENT, 0)
     set_control_par(%btn_subarticulation_browser_selection[$i], $CONTROL_PAR_FONT_TYPE, 0)
     set_control_par(%btn_subarticulation_browser_selection[$i], $CONTROL_PAR_TEXTPOS_Y, 2)
-    $transition_note_event00 := %btn_subarticulation_browser_selection[$i]
-    $fade_out_range01 := 0
-    while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-      set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_white[$fade_out_range01])
-      inc($fade_out_range01)
+    $fade_out_range01 := %btn_subarticulation_browser_selection[$i]
+    $idx25 := 0
+    while($idx25 <= (num_elements(%font_types) - 1)) 
+      set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_white[$idx25])
+      inc($idx25)
     end while
     set_control_par(%btn_subarticulation_browser_selection[$i], $CONTROL_PAR_POS_X, get_control_par(get_ui_id($lbl_subarticulation_browser_background), $CONTROL_PAR_POS_X) + 160)
     set_control_par(%btn_subarticulation_browser_selection[$i], $CONTROL_PAR_POS_Y, (get_control_par(get_ui_id($lbl_subarticulation_browser_background), $CONTROL_PAR_POS_Y) + 40) + ($i * 18))
@@ -1913,27 +1913,28 @@ on init
     inc($idx25)
   end while
   $idx25 := 0
-  while($idx25 <= (num_elements(%btn_subarticulation_browser_selection) - 1)) 
-    set_control_par(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
-    if(%_subarticulation_browser_entries[($idx25 * 14) + $idx25] # -1)
-      set_control_par_str(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_TEXT, !subarticulations_full_name[%subarticulations_ids_positions[%_subarticulation_browser_entries[($idx25 * 14) + $idx25]]])
-      if(%_subarticulation_browser_entries[($idx25 * 14) + $idx25] = %_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)])
-        set_control_par(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_VALUE, 1)
+  $subarticulation_event1 := 0
+  while($subarticulation_event1 <= (num_elements(%btn_subarticulation_browser_selection) - 1)) 
+    set_control_par(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
+    if(%_subarticulation_browser_entries[($idx25 * 14) + $subarticulation_event1] # -1)
+      set_control_par_str(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_TEXT, !subarticulations_full_name[%subarticulations_ids_positions[%_subarticulation_browser_entries[($idx25 * 14) + $subarticulation_event1]]])
+      if(%_subarticulation_browser_entries[($idx25 * 14) + $subarticulation_event1] = %_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)])
+        set_control_par(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_VALUE, 1)
       else
-        set_control_par(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_VALUE, 0)
+        set_control_par(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_VALUE, 0)
       end if
-      set_control_par(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
+      set_control_par(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
     end if
-    inc($idx25)
+    inc($subarticulation_event1)
   end while
-  $idx25 := 0
-  while($idx25 <= (num_elements(%btn_subarticulation_browser_category) - 1)) 
-    if($idx25 = $idx25)
-      set_control_par(%btn_subarticulation_browser_category[$idx25], $CONTROL_PAR_VALUE, 1)
+  $subarticulation_event1 := 0
+  while($subarticulation_event1 <= (num_elements(%btn_subarticulation_browser_category) - 1)) 
+    if($subarticulation_event1 = $idx25)
+      set_control_par(%btn_subarticulation_browser_category[$subarticulation_event1], $CONTROL_PAR_VALUE, 1)
     else
-      set_control_par(%btn_subarticulation_browser_category[$idx25], $CONTROL_PAR_VALUE, 0)
+      set_control_par(%btn_subarticulation_browser_category[$subarticulation_event1], $CONTROL_PAR_VALUE, 0)
     end if
-    inc($idx25)
+    inc($subarticulation_event1)
   end while
   $subarticulation_browser_active_category := $idx25
   declare $keyswitch_octave := 3
@@ -2068,7 +2069,7 @@ on init
   end while
   $selected_subarticulation := 0
   if(get_control_par(get_ui_id($pnl_editor_page), $CONTROL_PAR_HIDE) = $HIDE_PART_NOTHING)
-    $idx25 := $transition_note_event00
+    $idx25 := $idx25
     set_control_par(get_ui_id($pnl_editor_page), $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
     set_control_par(get_ui_id($sli_articulation_humanize), $CONTROL_PAR_VALUE, %_articulation_humanization[($selected_instrument * 8) + $selected_keyswitch])
     set_control_par_str(get_ui_id($lbl_articulation_humanize), $CONTROL_PAR_TEXT, $sli_articulation_humanize & " ms")
@@ -2093,7 +2094,7 @@ on init
     end while
     $subarticulation_event1 := $idx25
     $group_count001 := $selected_subarticulation
-    $group_count000 := $subarticulation_event1
+    $group_count000 := $idx25
     $idx25 := 0
     while($idx25 <= (num_elements(%btn_edit_subarticulation_selection) - 1)) 
       if($idx25 # $group_count001)
@@ -2268,29 +2269,29 @@ on init
       $idx25 := $idx25
       set_control_par(get_ui_id($pnl_subarticulation_browser), $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
       if(%_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)] # -1)
-        $subarticulation_event1 := $idx25
-        $idx25 := 0
-        while($idx25 <= (num_elements(%btn_subarticulation_browser_selection) - 1)) 
-          set_control_par(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
-          if(%_subarticulation_browser_entries[($idx25 * 14) + $idx25] # -1)
-            set_control_par_str(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_TEXT, !subarticulations_full_name[%subarticulations_ids_positions[%_subarticulation_browser_entries[($idx25 * 14) + $idx25]]])
-            if(%_subarticulation_browser_entries[($idx25 * 14) + $idx25] = %_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)])
-              set_control_par(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_VALUE, 1)
+        $idx25 := %type_to_category[%subarticulations_type[%subarticulations_ids_positions[%_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)]]]]
+        $subarticulation_event1 := 0
+        while($subarticulation_event1 <= (num_elements(%btn_subarticulation_browser_selection) - 1)) 
+          set_control_par(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
+          if(%_subarticulation_browser_entries[($idx25 * 14) + $subarticulation_event1] # -1)
+            set_control_par_str(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_TEXT, !subarticulations_full_name[%subarticulations_ids_positions[%_subarticulation_browser_entries[($idx25 * 14) + $subarticulation_event1]]])
+            if(%_subarticulation_browser_entries[($idx25 * 14) + $subarticulation_event1] = %_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)])
+              set_control_par(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_VALUE, 1)
             else
-              set_control_par(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_VALUE, 0)
+              set_control_par(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_VALUE, 0)
             end if
-            set_control_par(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
+            set_control_par(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
           end if
-          inc($idx25)
+          inc($subarticulation_event1)
         end while
-        $idx25 := 0
-        while($idx25 <= (num_elements(%btn_subarticulation_browser_category) - 1)) 
-          if($idx25 = $idx25)
-            set_control_par(%btn_subarticulation_browser_category[$idx25], $CONTROL_PAR_VALUE, 1)
+        $subarticulation_event1 := 0
+        while($subarticulation_event1 <= (num_elements(%btn_subarticulation_browser_category) - 1)) 
+          if($subarticulation_event1 = $idx25)
+            set_control_par(%btn_subarticulation_browser_category[$subarticulation_event1], $CONTROL_PAR_VALUE, 1)
           else
-            set_control_par(%btn_subarticulation_browser_category[$idx25], $CONTROL_PAR_VALUE, 0)
+            set_control_par(%btn_subarticulation_browser_category[$subarticulation_event1], $CONTROL_PAR_VALUE, 0)
           end if
-          inc($idx25)
+          inc($subarticulation_event1)
         end while
         $subarticulation_browser_active_category := $idx25
       end if
@@ -2330,11 +2331,11 @@ on init
   set_control_par(get_ui_id($mnu_settings_keyswitch_position), $CONTROL_PAR_POS_Y, 120)
   set_control_par(get_ui_id($mnu_settings_keyswitch_position), $CONTROL_PAR_WIDTH, 100)
   set_control_par(get_ui_id($mnu_settings_keyswitch_position), $CONTROL_PAR_HEIGHT, 20)
-  $transition_note_event00 := get_ui_id($mnu_settings_keyswitch_position)
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := get_ui_id($mnu_settings_keyswitch_position)
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_white[$idx25])
+    inc($idx25)
   end while
   set_control_par(get_ui_id($mnu_settings_keyswitch_position), $CONTROL_PAR_PARENT_PANEL, get_ui_id($pnl_settings))
   add_menu_item($mnu_settings_keyswitch_position, "C-2", 0)
@@ -2358,11 +2359,11 @@ on init
   set_control_par(get_ui_id($mnu_lookahead), $CONTROL_PAR_POS_Y, 150)
   set_control_par(get_ui_id($mnu_lookahead), $CONTROL_PAR_WIDTH, 100)
   set_control_par(get_ui_id($mnu_lookahead), $CONTROL_PAR_HEIGHT, 20)
-  $transition_note_event00 := get_ui_id($mnu_lookahead)
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := get_ui_id($mnu_lookahead)
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_white[$idx25])
+    inc($idx25)
   end while
   set_control_par(get_ui_id($mnu_lookahead), $CONTROL_PAR_PARENT_PANEL, get_ui_id($pnl_settings))
   add_menu_item($mnu_lookahead, "200 ms", 200)
@@ -2377,11 +2378,11 @@ on init
   set_control_par(get_ui_id($btn_factory_reset), $CONTROL_PAR_POS_Y, 200)
   set_control_par(get_ui_id($btn_factory_reset), $CONTROL_PAR_WIDTH, 220)
   set_control_par(get_ui_id($btn_factory_reset), $CONTROL_PAR_HEIGHT, 40)
-  $transition_note_event00 := get_ui_id($btn_factory_reset)
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := get_ui_id($btn_factory_reset)
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_white[$idx25])
+    inc($idx25)
   end while
   set_control_par(get_ui_id($btn_factory_reset), $CONTROL_PAR_PARENT_PANEL, get_ui_id($pnl_settings))
   declare ui_panel $pnl_authoring 
@@ -2450,11 +2451,11 @@ on init
   set_control_par(get_ui_id($btn_authoring_edit_all), $CONTROL_PAR_WIDTH, 60)
   set_control_par(get_ui_id($btn_authoring_edit_all), $CONTROL_PAR_HEIGHT, 20)
   set_control_par(get_ui_id($btn_authoring_edit_all), $CONTROL_PAR_PARENT_PANEL, get_ui_id($pnl_authoring))
-  $transition_note_event00 := get_ui_id($btn_authoring_edit_all)
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := get_ui_id($btn_authoring_edit_all)
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_white[$idx25])
+    inc($idx25)
   end while
   declare ui_button $btn_authoring_follow 
   set_control_par_str(get_ui_id($btn_authoring_follow), $CONTROL_PAR_TEXT, "Follow")
@@ -2467,11 +2468,11 @@ on init
   set_control_par(get_ui_id($btn_authoring_follow), $CONTROL_PAR_WIDTH, 60)
   set_control_par(get_ui_id($btn_authoring_follow), $CONTROL_PAR_HEIGHT, 20)
   set_control_par(get_ui_id($btn_authoring_follow), $CONTROL_PAR_PARENT_PANEL, get_ui_id($pnl_authoring))
-  $transition_note_event00 := get_ui_id($btn_authoring_follow)
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := get_ui_id($btn_authoring_follow)
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_white[$idx25])
+    inc($idx25)
   end while
   $btn_authoring_follow := 1
   declare ui_button $btn_play_transitions 
@@ -2485,11 +2486,11 @@ on init
   set_control_par(get_ui_id($btn_play_transitions), $CONTROL_PAR_WIDTH, 120)
   set_control_par(get_ui_id($btn_play_transitions), $CONTROL_PAR_HEIGHT, 20)
   set_control_par(get_ui_id($btn_play_transitions), $CONTROL_PAR_PARENT_PANEL, get_ui_id($pnl_authoring))
-  $transition_note_event00 := get_ui_id($btn_play_transitions)
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := get_ui_id($btn_play_transitions)
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_white[$idx25])
+    inc($idx25)
   end while
   $btn_play_transitions := 1
   declare ui_button $btn_play_sustain 
@@ -2503,11 +2504,11 @@ on init
   set_control_par(get_ui_id($btn_play_sustain), $CONTROL_PAR_WIDTH, 120)
   set_control_par(get_ui_id($btn_play_sustain), $CONTROL_PAR_HEIGHT, 20)
   set_control_par(get_ui_id($btn_play_sustain), $CONTROL_PAR_PARENT_PANEL, get_ui_id($pnl_authoring))
-  $transition_note_event00 := get_ui_id($btn_play_sustain)
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := get_ui_id($btn_play_sustain)
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_white[$idx25])
+    inc($idx25)
   end while
   $btn_play_sustain := 1
   declare ui_button $btn_save_authoring 
@@ -2519,11 +2520,11 @@ on init
   set_control_par(get_ui_id($btn_save_authoring), $CONTROL_PAR_WIDTH, 100)
   set_control_par(get_ui_id($btn_save_authoring), $CONTROL_PAR_HEIGHT, 20)
   set_control_par(get_ui_id($btn_save_authoring), $CONTROL_PAR_PARENT_PANEL, get_ui_id($pnl_authoring))
-  $transition_note_event00 := get_ui_id($btn_save_authoring)
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := get_ui_id($btn_save_authoring)
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_white[$idx25])
+    inc($idx25)
   end while
   declare ui_button $btn_load_authoring 
   set_control_par_str(get_ui_id($btn_load_authoring), $CONTROL_PAR_TEXT, "Load from nkas")
@@ -2534,11 +2535,11 @@ on init
   set_control_par(get_ui_id($btn_load_authoring), $CONTROL_PAR_WIDTH, 100)
   set_control_par(get_ui_id($btn_load_authoring), $CONTROL_PAR_HEIGHT, 20)
   set_control_par(get_ui_id($btn_load_authoring), $CONTROL_PAR_PARENT_PANEL, get_ui_id($pnl_authoring))
-  $transition_note_event00 := get_ui_id($btn_load_authoring)
-  $fade_out_range01 := 0
-  while($fade_out_range01 <= (num_elements(%font_types) - 1)) 
-    set_control_par($transition_note_event00, %font_types[$fade_out_range01], %fonts_regular_white[$fade_out_range01])
-    inc($fade_out_range01)
+  $fade_out_range01 := get_ui_id($btn_load_authoring)
+  $idx25 := 0
+  while($idx25 <= (num_elements(%font_types) - 1)) 
+    set_control_par($fade_out_range01, %font_types[$idx25], %fonts_regular_white[$idx25])
+    inc($idx25)
   end while
   declare ui_slider $sli_sustain_release (0, 1000)
   set_control_par(get_ui_id($sli_sustain_release), $CONTROL_PAR_DEFAULT_VALUE, 100)
@@ -2888,7 +2889,7 @@ on init
     inc($i)
   end while
   declare ui_label $lbl_version (0, 0)
-  set_control_par_str(get_ui_id($lbl_version), $CONTROL_PAR_TEXT, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "17:55:43" & " " & "05/26/25")
+  set_control_par_str(get_ui_id($lbl_version), $CONTROL_PAR_TEXT, "'" & "Lux - Orchestral Strings" & "'" & " Version " & 0.1 & " --- Compile " & "13:37:32" & " " & "05/29/25")
   set_control_par_str(get_ui_id($lbl_version), $CONTROL_PAR_PICTURE, "alpha")
   set_control_par(get_ui_id($lbl_version), $CONTROL_PAR_TEXT_ALIGNMENT, 0)
   set_control_par(get_ui_id($lbl_version), $CONTROL_PAR_FONT_TYPE, %fonts_regular_white[0])
@@ -2967,7 +2968,7 @@ function update_keyswitch_selection
   end while
   $selected_subarticulation := 0
   if(get_control_par(get_ui_id($pnl_editor_page), $CONTROL_PAR_HIDE) = $HIDE_PART_NOTHING)
-    $idx25 := $transition_note_event00
+    $idx25 := $idx25
     set_control_par(get_ui_id($pnl_editor_page), $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
     set_control_par(get_ui_id($sli_articulation_humanize), $CONTROL_PAR_VALUE, %_articulation_humanization[($selected_instrument * 8) + $selected_keyswitch])
     set_control_par_str(get_ui_id($lbl_articulation_humanize), $CONTROL_PAR_TEXT, $sli_articulation_humanize & " ms")
@@ -2992,7 +2993,7 @@ function update_keyswitch_selection
     end while
     $subarticulation_event1 := $idx25
     $group_count001 := $selected_subarticulation
-    $group_count000 := $subarticulation_event1
+    $group_count000 := $idx25
     $idx25 := 0
     while($idx25 <= (num_elements(%btn_edit_subarticulation_selection) - 1)) 
       if($idx25 # $group_count001)
@@ -3167,29 +3168,29 @@ function update_keyswitch_selection
       $idx25 := $idx25
       set_control_par(get_ui_id($pnl_subarticulation_browser), $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
       if(%_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)] # -1)
-        $subarticulation_event1 := $idx25
-        $idx25 := 0
-        while($idx25 <= (num_elements(%btn_subarticulation_browser_selection) - 1)) 
-          set_control_par(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
-          if(%_subarticulation_browser_entries[($idx25 * 14) + $idx25] # -1)
-            set_control_par_str(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_TEXT, !subarticulations_full_name[%subarticulations_ids_positions[%_subarticulation_browser_entries[($idx25 * 14) + $idx25]]])
-            if(%_subarticulation_browser_entries[($idx25 * 14) + $idx25] = %_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)])
-              set_control_par(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_VALUE, 1)
+        $idx25 := %type_to_category[%subarticulations_type[%subarticulations_ids_positions[%_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)]]]]
+        $subarticulation_event1 := 0
+        while($subarticulation_event1 <= (num_elements(%btn_subarticulation_browser_selection) - 1)) 
+          set_control_par(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
+          if(%_subarticulation_browser_entries[($idx25 * 14) + $subarticulation_event1] # -1)
+            set_control_par_str(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_TEXT, !subarticulations_full_name[%subarticulations_ids_positions[%_subarticulation_browser_entries[($idx25 * 14) + $subarticulation_event1]]])
+            if(%_subarticulation_browser_entries[($idx25 * 14) + $subarticulation_event1] = %_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)])
+              set_control_par(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_VALUE, 1)
             else
-              set_control_par(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_VALUE, 0)
+              set_control_par(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_VALUE, 0)
             end if
-            set_control_par(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
+            set_control_par(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
           end if
-          inc($idx25)
+          inc($subarticulation_event1)
         end while
-        $idx25 := 0
-        while($idx25 <= (num_elements(%btn_subarticulation_browser_category) - 1)) 
-          if($idx25 = $idx25)
-            set_control_par(%btn_subarticulation_browser_category[$idx25], $CONTROL_PAR_VALUE, 1)
+        $subarticulation_event1 := 0
+        while($subarticulation_event1 <= (num_elements(%btn_subarticulation_browser_category) - 1)) 
+          if($subarticulation_event1 = $idx25)
+            set_control_par(%btn_subarticulation_browser_category[$subarticulation_event1], $CONTROL_PAR_VALUE, 1)
           else
-            set_control_par(%btn_subarticulation_browser_category[$idx25], $CONTROL_PAR_VALUE, 0)
+            set_control_par(%btn_subarticulation_browser_category[$subarticulation_event1], $CONTROL_PAR_VALUE, 0)
           end if
-          inc($idx25)
+          inc($subarticulation_event1)
         end while
         $subarticulation_browser_active_category := $idx25
       end if
@@ -3217,8 +3218,8 @@ function keyswitches_on_note
   end if
 end function
 function wait_or_zero
-  if($group_count001 > 0)
-    wait($group_count001)
+  if(%wait_time0[$NI_CALLBACK_ID mod 100] > 0)
+    wait(%wait_time0[$NI_CALLBACK_ID mod 100])
   end if
 end function
 function is_in_note_selection
@@ -3276,10 +3277,10 @@ function articulation_event_get_free_index
       end if
       inc($reduced_note0100)
     end while
-    $string01 := $string0100
     $i1100 := $_ret57000
-    $i120 := $ii4
+    $i120 := $transition_dyn_layer00
     call event_list_contains
+    $string0100 := $string01
     if(($string0200 = 1) and ($string0100 = 0))
       $ii100 := $_ret57000
     end if
@@ -3367,7 +3368,7 @@ function articulation_event_is_event_active
           else
             if(%_articulation_event_list[($ii1 * 4) + $group_count00] >= 0)
               $ii4 := $ii1
-              $string02 := $_ret6600
+              $string02 := $transition_type20
               call articulation_event_clear
             end if
           end if
@@ -3392,10 +3393,10 @@ function articulation_event_get_free_index_except
       end if
       inc($iii1)
     end while
-    $string01 := $ii20
     $i1100 := $ii1
-    $i120 := $string01
+    $i120 := $i150
     call event_list_contains
+    $ii20 := $string01
     if((($idx2300 = 1) and ($ii20 = 0)) and ($ii1 # $string02))
       $group_count000 := $ii1
     end if
@@ -3420,24 +3421,24 @@ function articulations_on_note
   $ret14 := 0
   while($ret14 <= 7) 
     if((%_keyswitch_states[($reduced_note01 * 8) + $ret14] = 1) and (%_keyswitch_purge_states[($reduced_note01 * 8) + $ret14] = 1))
-      $_ret6600 := $octave_event000
-      $group_count001 := $purge_state0
-      $iii1 := $_ret660
-      $ii1 := $group_count00
-      $group_count000 := $string020
-      $string02 := $string010
-      $ii4 := $reduced_note010
+      $group_count001 := $ii100
+      $iii1 := $_ret57000
+      $ii1 := $reduced_note0100
+      $group_count000 := $string0200
+      $ii4 := $transition_dyn_layer00
       call articulation_event_get_free_index
+      $octave_event000 := $_ret6600
+      $string0100 := $string02
       $event100 := 0
       while($event100 <= 3) 
         if(((%_loaded_subarticulations[($reduced_note01 * 32) + (($ret14 * 4) + $event100)] # -1) and ($_ret570 >= %subarticulations_range_lower[%subarticulations_ids_positions[%_loaded_subarticulations[($reduced_note01 * 32) + (($ret14 * 4) + $event100)]]])) and ($_ret570 <= %subarticulations_range_upper[%subarticulations_ids_positions[%_loaded_subarticulations[($reduced_note01 * 32) + (($ret14 * 4) + $event100)]]]))
           if(((%subarticulations_type[%subarticulations_ids_positions[%_loaded_subarticulations[($reduced_note01 * 32) + (($ret14 * 4) + $event100)]]] = 1) or (%subarticulations_type[%subarticulations_ids_positions[%_loaded_subarticulations[($reduced_note01 * 32) + (($ret14 * 4) + $event100)]]] = 0)) or (%subarticulations_type[%subarticulations_ids_positions[%_loaded_subarticulations[($reduced_note01 * 32) + (($ret14 * 4) + $event100)]]] = 6))
-            $string01 := $ii100
             $_ret6600 := $reduced_note01
             $group_count001 := $ret14
             $iii1 := $_ret570
             $ii1 := $transition_dyn_layer00
             call event_list_get_articulation_event
+            $ii100 := $string01
             if($ii100 = -1)
               $i120 := $octave_event000
               $i1100 := $reduced_note01
@@ -3451,11 +3452,11 @@ function articulations_on_note
               $ii4 := %_last_articulation_event[($reduced_note01 * 1024) + (($ret14 * 128) + $_ret570)]
               $result150 := $transition_dyn_layer00
               call delay_buffer_add
-              $ii1 := $transition_dyn_layer00
               $ii4 := $octave_event000
               $string02 := $event100
               $group_count000 := $_ret57000
               call articulation_event_get_subarticulation_event_id
+              $transition_dyn_layer00 := $ii1
               if($transition_dyn_layer00 = -1)
                 $group_count000 := $octave_event000
                 $string02 := $event100
@@ -3480,11 +3481,11 @@ function articulations_on_note
                 $ii4 := %_last_articulation_event[($reduced_note01 * 1024) + (($ret14 * 128) + $_ret570)]
                 $result150 := $ii100
                 call delay_buffer_add
-                $ii1 := $ii100
                 $ii4 := $octave_event000
                 $string02 := $event100
                 $group_count000 := $transition_dyn_layer00
                 call articulation_event_get_subarticulation_event_id
+                $ii100 := $ii1
                 if($ii100 = -1)
                   $group_count000 := $octave_event000
                   $string02 := $event100
@@ -3495,32 +3496,32 @@ function articulations_on_note
               end if
             else
               if(%subarticulations_type[%subarticulations_ids_positions[%_loaded_subarticulations[($reduced_note01 * 32) + (($ret14 * 4) + $event100)]]] = 2)
-                $string01 := $ii100
                 $_ret6600 := $reduced_note01
                 $group_count001 := $ret14
                 $iii1 := $_ret570
                 $ii1 := $transition_dyn_layer00
                 call event_list_get_articulation_event
+                $ii100 := $string01
                 if($ii100 = -1)
-                  $group_count000 := $transition_dyn_layer00
                   $group_count001 := 0
                   $_ret6600 := $_ret570
                   $iii1 := $_ret57000
                   $ii4 := $reduced_note0100
                   call note_to_string
-                  $group_count000 := $reduced_note0100
+                  $transition_dyn_layer00 := $group_count000
                   $ii1 := %_last_articulation_event[($reduced_note01 * 1024) + (($ret14 * 128) + ($transition_dyn_layer00 * $allow_double_stops))]
                   $iii1 := $_ret57000
                   $group_count001 := $string0200
-                  $_ret6600 := $_ret5700
+                  $_ret6600 := $transition_type20
                   call articulation_event_is_event_active
+                  $reduced_note0100 := $group_count000
                   if($reduced_note0100 = 0)
-                    $group_count000 := $string0200
                     $group_count001 := 0
                     $_ret6600 := $_ret570
                     $iii1 := $_ret57000
                     $ii4 := $transition_type20
                     call note_to_string
+                    $string0200 := $group_count000
                     $i120 := $octave_event000
                     $i1100 := $reduced_note01
                     $string01 := $ret14
@@ -3534,13 +3535,12 @@ function articulations_on_note
                     $result150 := $transition_type20
                     call delay_buffer_add
                   else
-                    $group_count000 := $string0200
                     $group_count001 := 0
                     $_ret6600 := $_ret570
                     $iii1 := $transition_type20
                     $ii4 := $_ret57000
                     call note_to_string
-                    $iii1 := $_ret57000
+                    $string0200 := $group_count000
                     $group_count001 := $reduced_note01
                     $group_count000 := $ret14
                     $string02 := $event100
@@ -3559,12 +3559,13 @@ function articulations_on_note
                       end if
                     end if
                     $iii1 := $result1500
-                    $group_count000 := $transition_type20
+                    $_ret57000 := $iii1
                     $group_count001 := 0
                     $_ret6600 := $_ret570
-                    $iii1 := $ii10
-                    $ii4 := $i140
+                    $iii1 := $transition_note00
+                    $ii4 := $end_note20
                     call note_to_string
+                    $transition_type20 := $group_count000
                     $i120 := $octave_event000
                     $i1100 := $reduced_note01
                     $string01 := $ret14
@@ -3578,11 +3579,11 @@ function articulations_on_note
                     $result150 := $transition_note00
                     call delay_buffer_add
                   end if
-                  $ii1 := $transition_dyn_layer00
                   $ii4 := $octave_event000
                   $string02 := $event100
                   $group_count000 := $reduced_note0100
                   call articulation_event_get_subarticulation_event_id
+                  $transition_dyn_layer00 := $ii1
                   if($transition_dyn_layer00 = -1)
                     $group_count000 := $octave_event000
                     $string02 := $event100
@@ -3594,12 +3595,12 @@ function articulations_on_note
                   set_control_par(%lbl_string_visualization[1], $CONTROL_PAR_PICTURE_STATE, 0)
                   set_control_par(%lbl_string_visualization[2], $CONTROL_PAR_PICTURE_STATE, 0)
                   set_control_par(%lbl_string_visualization[3], $CONTROL_PAR_PICTURE_STATE, 0)
-                  $group_count000 := $transition_dyn_layer00
                   $group_count001 := 0
                   $_ret6600 := $_ret570
                   $iii1 := $reduced_note0100
                   $ii4 := $string0200
                   call note_to_string
+                  $transition_dyn_layer00 := $group_count000
                   set_control_par(%lbl_string_visualization[$transition_dyn_layer00], $CONTROL_PAR_PICTURE_STATE, 1)
                 else
                   message($_ret570 & " note not cleared")
@@ -3615,12 +3616,12 @@ function articulations_on_note
                         while($string0200 <= $transition_dyn_layer00) 
                           if(($ii100 + $string0200) <= 127)
                             if(%_pressed_notes_per_instrument[($reduced_note01 * 128) + ($ii100 + $string0200)] = 1)
-                              $string01 := $reduced_note0100
                               $_ret6600 := $reduced_note01
                               $group_count001 := $ret14
                               $iii1 := $ii100
                               $ii1 := $_ret57000
                               call event_list_get_articulation_event
+                              $reduced_note0100 := $string01
                               if($reduced_note0100 = -1)
                                 if($ii100 = $_ret570)
                                   $i120 := $octave_event000
@@ -3635,11 +3636,11 @@ function articulations_on_note
                                   $ii4 := %_last_articulation_event[($reduced_note01 * 1024) + (($ret14 * 128) + $_ret570)]
                                   $result150 := $_ret57000
                                   call delay_buffer_add
-                                  $ii1 := $_ret57000
                                   $ii4 := $octave_event000
                                   $string02 := $event100
                                   $group_count000 := $transition_type20
                                   call articulation_event_get_subarticulation_event_id
+                                  $_ret57000 := $ii1
                                   if($_ret57000 = -1)
                                     $group_count000 := $octave_event000
                                     $string02 := $event100
@@ -3648,15 +3649,15 @@ function articulations_on_note
                                   end if
                                   $i1400 := 1
                                 else
-                                  $ii4 := $_ret57000
                                   $string02 := $octave_event000
                                   $group_count000 := $transition_type20
                                   $ii1 := $transition_note00
                                   $iii1 := $end_note20
-                                  $group_count001 := $octave_event00
-                                  $_ret6600 := $event10
-                                  $string01 := $i130
+                                  $group_count001 := $idx2300
+                                  $string01 := $i150
                                   call articulation_event_get_free_index_except
+                                  $_ret57000 := $ii4
+                                  $ii20 := $_ret6600
                                   $i120 := $_ret57000
                                   $i1100 := $reduced_note01
                                   $string01 := $ret14
@@ -3669,11 +3670,11 @@ function articulations_on_note
                                   $ii4 := %_last_articulation_event[($reduced_note01 * 1024) + (($ret14 * 128) + $_ret570)]
                                   $result150 := $end_note20
                                   call delay_buffer_add
-                                  $ii1 := $end_note20
                                   $ii4 := $_ret57000
                                   $string02 := $event100
                                   $group_count000 := $transition_note00
                                   call articulation_event_get_subarticulation_event_id
+                                  $end_note20 := $ii1
                                   if($end_note20 = -1)
                                     $group_count000 := $_ret57000
                                     $string02 := $event100
@@ -3687,12 +3688,12 @@ function articulations_on_note
                                   call event_list_add_articulation_event
                                 end if
                               else
-                                $string01 := $_ret57000
                                 $_ret6600 := $reduced_note01
                                 $group_count001 := $ret14
                                 $iii1 := $ii100
                                 $ii1 := $end_note20
                                 call event_list_get_articulation_event
+                                $_ret57000 := $string01
                                 $i120 := $_ret57000
                                 $i1100 := $reduced_note01
                                 $string01 := $ret14
@@ -3705,24 +3706,24 @@ function articulations_on_note
                                 $ii4 := %_last_articulation_event[($reduced_note01 * 1024) + (($ret14 * 128) + $_ret570)]
                                 $result150 := $end_note20
                                 call delay_buffer_add
-                                $string01 := $_ret57000
                                 $_ret6600 := $reduced_note01
                                 $group_count001 := $ret14
                                 $iii1 := $ii100
                                 $ii1 := $end_note20
                                 call event_list_get_articulation_event
-                                $ii1 := $end_note20
+                                $_ret57000 := $string01
                                 $ii4 := $_ret57000
                                 $string02 := $event100
                                 $group_count000 := $transition_note00
                                 call articulation_event_get_subarticulation_event_id
+                                $end_note20 := $ii1
                                 if($end_note20 = -1)
-                                  $string01 := $transition_note00
                                   $_ret6600 := $reduced_note01
                                   $group_count001 := $ret14
                                   $iii1 := $ii100
                                   $ii1 := $transition_type20
                                   call event_list_get_articulation_event
+                                  $transition_note00 := $string01
                                   $group_count000 := $transition_note00
                                   $string02 := $event100
                                   $ii4 := -999
@@ -3750,12 +3751,12 @@ function articulations_on_note
         $ii1 := $_ret570
         $_ret6600 := $octave_event000
         call event_list_add_articulation_event
-        $group_count000 := $transition_dyn_layer00
         $group_count001 := 0
         $_ret6600 := $_ret570
         $iii1 := $ii100
         $ii4 := $string0200
         call note_to_string
+        $transition_dyn_layer00 := $group_count000
         %_last_articulation_event[($reduced_note01 * 1024) + (($ret14 * 128) + ($transition_dyn_layer00 * $allow_double_stops))] := $octave_event000
         %_last_articulation_event[($reduced_note01 * 1024) + (($ret14 * 128) + $_ret570)] := $octave_event000
       end if
@@ -3775,12 +3776,12 @@ function articulations_note_off
   $ii10 := 0
   $octave_event00 := 0
   while($octave_event00 <= 7) 
-    $string01 := $_ret5700
     $_ret6600 := $i130
     $group_count001 := $octave_event00
     $iii1 := $event10
     $ii1 := $reduced_note010
     call event_list_get_articulation_event
+    $_ret5700 := $string01
     $i140 := 0
     while($i140 <= 3) 
       if(%_loaded_subarticulations[($i130 * 32) + (($octave_event00 * 4) + $i140)] # -1)
@@ -3790,18 +3791,18 @@ function articulations_note_off
             $ii10 := 500
           end if
         end if
-        $string01 := $reduced_note010
         $_ret6600 := $i130
         $group_count001 := $octave_event00
         $iii1 := $event10
         $ii1 := $string010
         call event_list_get_articulation_event
-        $group_count000 := $string010
+        $reduced_note010 := $string01
         $ii1 := $reduced_note010
         $iii1 := $string020
         $group_count001 := $group_count00
         $_ret6600 := $_ret660
         call articulation_event_is_event_active
+        $string010 := $group_count000
         if(($string010 = 1) or (%subarticulations_type[%subarticulations_ids_positions[%_loaded_subarticulations[($i130 * 32) + (($octave_event00 * 4) + $i140)]]] = 4))
           if(%subarticulations_type[%subarticulations_ids_positions[%_loaded_subarticulations[($i130 * 32) + (($octave_event00 * 4) + $i140)]]] = 4)
             $_ret660 := %subarticulations_interval_num[%subarticulations_ids_positions[%_loaded_subarticulations[($i130 * 32) + (($octave_event00 * 4) + $i140)]]]
@@ -3809,31 +3810,31 @@ function articulations_note_off
             $string020 := $event10 - $_ret660
             while($string020 <= ($event10 + $_ret660)) 
               if(($string020 >= 0) and ($string020 <= 127))
-                $string01 := $group_count00
                 $_ret6600 := $i130
                 $group_count001 := $octave_event00
                 $iii1 := $string020
                 $ii1 := $purge_state0
                 call event_list_get_articulation_event
+                $group_count00 := $string01
                 if($group_count00 # -1)
-                  $string01 := $purge_state0
                   $_ret6600 := $i130
                   $group_count001 := $octave_event00
                   $iii1 := $string020
                   $ii1 := $subarticulation_id1
                   call event_list_get_articulation_event
-                  $ii1 := $subarticulation_id1
+                  $purge_state0 := $string01
                   $ii4 := $purge_state0
                   $string02 := $i140
                   $group_count000 := $group_count0
                   call articulation_event_get_subarticulation_event_id
+                  $subarticulation_id1 := $ii1
                   if((%_pressed_notes_per_instrument[($i130 * 128) + $string020] = 0) or (%_pressed_notes_per_instrument[($i130 * 128) + (($string020 + %subarticulation_event_interval[$subarticulation_id1]) + 1)] = 0))
-                    $string01 := $group_count0
                     $_ret6600 := $i130
                     $group_count001 := $octave_event00
                     $iii1 := $string020
                     $ii1 := $subarticulation_id0
                     call event_list_get_articulation_event
+                    $group_count0 := $string01
                     $i120 := $group_count0
                     $i1100 := $i130
                     $string01 := $octave_event00
@@ -3852,12 +3853,12 @@ function articulations_note_off
               inc($string020)
             end while
           else
-            $string01 := $_ret660
             $_ret6600 := $i130
             $group_count001 := $octave_event00
             $iii1 := $event10
             $ii1 := $string020
             call event_list_get_articulation_event
+            $_ret660 := $string01
             $i120 := $_ret660
             $i1100 := $i130
             $string01 := $octave_event00
@@ -3909,15 +3910,15 @@ function update_selected_notes
           $_ret660 := $_ret57000
           $group_count00 := $reduced_note0100
           $string020 := $string0200
-          $string010 := $string0100
           $reduced_note010 := $transition_dyn_layer00
           $_ret5700 := $transition_type20
           $ii10 := $transition_note00
           $i140 := $end_note20
           $octave_event00 := $idx2300
-          $event10 := $ii20
           $i130 := $i150
           call articulations_on_note
+          $string0100 := $string010
+          $ii20 := $event10
         else
           %_pressed_notes_per_instrument[($inst * 128) + $i] := 0
           $i130 := $inst
@@ -3925,7 +3926,6 @@ function update_selected_notes
           $octave_event00 := $i1300
           $i140 := $octave_event000
           $ii10 := $i1400
-          $_ret5700 := $reduced_note0100
           $reduced_note010 := $ii100
           $string010 := $_ret57000
           $string020 := $idx2300
@@ -3936,6 +3936,7 @@ function update_selected_notes
           $group_count0 := $transition_note00
           $subarticulation_id0 := $end_note20
           call articulations_note_off
+          $reduced_note0100 := $_ret5700
         end if
         inc($inst)
       end while
@@ -3954,7 +3955,6 @@ function update_selected_notes
             $octave_event00 := $end_note20
             $i140 := $transition_note00
             $ii10 := $transition_type20
-            $_ret5700 := $event100
             $reduced_note010 := $string0200
             $string010 := $transition_dyn_layer00
             $string020 := $idx2300
@@ -3965,6 +3965,7 @@ function update_selected_notes
             $group_count0 := $octave_event000
             $subarticulation_id0 := $i1300
             call articulations_note_off
+            $event100 := $_ret5700
             %_pressed_notes_per_instrument[($inst * 128) + $i] := 0
           end if
           inc($inst)
@@ -4070,36 +4071,35 @@ function cc_on_controller
         if(%_event_list[($ii100 * 1024) + (($_ret57000 * 128) + $reduced_note0100)] >= 0)
           $string0100 := 0
           while($string0100 <= 3) 
-            $ii1 := $i1400
             $ii4 := %_event_list[($ii100 * 1024) + (($_ret57000 * 128) + $reduced_note0100)]
             $string02 := $string0100
             $group_count000 := $octave_event000
             call articulation_event_get_subarticulation_event_id
+            $i1400 := $ii1
             if($i1400 >= 0)
-              $ii1 := $octave_event000
               $ii4 := %_event_list[($ii100 * 1024) + (($_ret57000 * 128) + $reduced_note0100)]
               $string02 := $string0100
               $group_count000 := $event100
               call articulation_event_get_subarticulation_event_id
-              $group_count000 := $event100
+              $octave_event000 := $ii1
               $string02 := %subarticulation_event_subarticulation[$octave_event000]
               $ii4 := $i1300
               call subarticulation_reacts_to_modwheel
+              $event100 := $group_count000
               if($event100 = 1)
-                $ii1 := $i1300
                 $ii4 := %_event_list[($ii100 * 1024) + (($_ret57000 * 128) + $reduced_note0100)]
                 $string02 := $string0100
                 $group_count000 := $i11000
                 call articulation_event_get_subarticulation_event_id
+                $i1300 := $ii1
                 $group_count000 := $i1300
                 $string02 := int((1000000. * (real(%_loaded_subarticulations_dynamic_range_lower[(%articulation_event_instrument[%_event_list[($ii100 * 1024) + (($_ret57000 * 128) + $reduced_note0100)]] * 32) + ((%articulation_event_keyswitch[%_event_list[($ii100 * 1024) + (($_ret57000 * 128) + $reduced_note0100)]] * 4) + $string0100)]) + ((real(%modulation_positions[%articulation_event_note[%_event_list[($ii100 * 1024) + (($_ret57000 * 128) + $reduced_note0100)]] * $use_polyphonic_modulation]) / 127.) * real(%_loaded_subarticulations_dynamic_range_upper[(%articulation_event_instrument[%_event_list[($ii100 * 1024) + (($_ret57000 * 128) + $reduced_note0100)]] * 32) + ((%articulation_event_keyswitch[%_event_list[($ii100 * 1024) + (($_ret57000 * 128) + $reduced_note0100)]] * 4) + $string0100)] - %_loaded_subarticulations_dynamic_range_lower[(%articulation_event_instrument[%_event_list[($ii100 * 1024) + (($_ret57000 * 128) + $reduced_note0100)]] * 32) + ((%articulation_event_keyswitch[%_event_list[($ii100 * 1024) + (($_ret57000 * 128) + $reduced_note0100)]] * 4) + $string0100)])))) / 127.)
                 call subarticulation_set_modulation
-                $ii1 := $i1300
                 $ii4 := %_event_list[($ii100 * 1024) + (($_ret57000 * 128) + $reduced_note0100)]
                 $string02 := $string0100
                 $group_count000 := $i11000
                 call articulation_event_get_subarticulation_event_id
-                $subarticulation_id0 := $i11000
+                $i1300 := $ii1
                 $group_count0 := %articulation_event_instrument[%_event_list[($ii100 * 1024) + (($_ret57000 * 128) + $reduced_note0100)]]
                 $subarticulation_id1 := %articulation_event_keyswitch[%_event_list[($ii100 * 1024) + (($_ret57000 * 128) + $reduced_note0100)]]
                 $purge_state0 := %articulation_event_note[%_event_list[($ii100 * 1024) + (($_ret57000 * 128) + $reduced_note0100)]]
@@ -4110,6 +4110,7 @@ function cc_on_controller
                 $string010 := $_ret4000
                 $reduced_note010 := $offset10
                 call articulations_compute_level
+                $i11000 := $subarticulation_id0
                 $string02 := $i1300
                 $group_count000 := $i11000
                 call subarticulation_set_level
@@ -4299,7 +4300,7 @@ function last_transitions_update
 end function
 function last_transitions_contains
   $event100 := 0
-  $ii1 := $ii4
+  $ii1 := $i11000
   call last_transitions_update
   $i1300 := 0
   while($i1300 <= 7) 
@@ -4409,19 +4410,19 @@ function subarticulation_note_off
         $group_count000 := %subarticulation_event_level[$_ret6600]
         call subarticulation_set_level
         if(%subarticulations_type[%subarticulations_ids_positions[$group_count000]] = 2)
-          $group_count000 := $fade_out_end01
           $group_count001 := 0
           $_ret6600 := %subarticulation_event_note[$_ret6600]
-          $iii1 := $reduced_note01
-          $ii4 := $string01
+          $iii1 := $fade_in_range01
+          $ii4 := $fade_in_start01
           call note_to_string
+          $fade_out_end01 := $group_count000
           %_release_per_string[(%articulation_event_instrument[%subarticulation_event_articulation_event[$_ret6600]] * 8) + ($fade_out_end01 * 2)] := $offset10
-          $group_count000 := $fade_in_range01
           $group_count001 := 0
           $_ret6600 := %subarticulation_event_note[$_ret6600]
           $iii1 := $fade_in_start01
-          $ii4 := $string02
+          $ii4 := $rr10
           call note_to_string
+          $fade_in_range01 := $group_count000
           %_release_per_string[(%articulation_event_instrument[%subarticulation_event_articulation_event[$_ret6600]] * 8) + (($fade_in_range01 * 2) + 1)] := $transition_octave_event00
         end if
       end if
@@ -4444,10 +4445,10 @@ function subarticulation_note_off
   %subarticulation_event_subarticulation_idx[$_ret6600] := -1
 end function
 function subarticulation_play_note
-  $ii4 := $subarticulation_event_id18
-  $iii1 := $idx220
-  $_ret6600 := $result140
+  $iii1 := $ii20
+  $_ret6600 := $idx2300
   call subarticulation_event_get_free_index
+  $subarticulation_event_id18 := $ii4
   $ii20 := 0
   $idx2300 := -1
   $end_note20 := -1
@@ -4504,7 +4505,7 @@ function subarticulation_play_note
         end if
         if(%subarticulations_type[%subarticulations_ids_positions[$group_count0]] = 6)
           $iii1 := $subarticulation_event_id18
-          $group_count001 := $idx230
+          $group_count001 := $string0100
           call repetition_engine_add
           if(((($ENGINE_UPTIME + %_repetition_interval_time_humanization[($_ret660 * 4096) + (($purge_state0 * 512) + $subarticulation_id1)]) - $repetition_engine_start_time) mod %_repetition_interval_time[($_ret660 * 4096) + (($purge_state0 * 512) + $subarticulation_id1)]) > 5)
             $group_count001 := $subarticulation_event_id18
@@ -4548,16 +4549,16 @@ function subarticulation_play_note
             $_ret57000 := -5
           end if
           if($_ret57000 >= 0)
-            $_ret570 := $octave_event000
             $reduced_note01 := $_ret660
             $string01 := $purge_state0
             $_ret6600 := $subarticulation_id1
             $group_count001 := $reduced_note0100
             $iii1 := $_ret57000
-            $group_count000 := $result150
-            $string02 := $i120
-            $ii4 := $i1100
+            $group_count000 := $event100
+            $string02 := $i1300
+            $ii4 := $i11000
             call last_transitions_contains
+            $octave_event000 := $_ret570
             if($octave_event000 = 1)
               $i1400 := 3
             else
@@ -4569,10 +4570,9 @@ function subarticulation_play_note
               $_ret6600 := $event100
               $string01 := $i1300
               $reduced_note01 := $i11000
-              $_ret570 := $i130
+              $_ret570 := $_ret4000
               call last_transitions_add_event
             end if
-            $iii1 := $i11000
             $group_count001 := $_ret660
             $group_count000 := $purge_state0
             $string02 := $subarticulation_id1
@@ -4591,12 +4591,12 @@ function subarticulation_play_note
               end if
             end if
             $iii1 := $result1500
+            $i11000 := $iii1
             $end_note20 := play_note($reduced_note0100 + $i1400, $_ret57000, $i11000 * 1000, 0)
             %subarticulation_event_transition_event_id[$subarticulation_event_id18] := $end_note20
             set_event_mark($end_note20, $MARK_1)
             change_tune($end_note20, - $i1400 * 100000, 1)
             if($octave_layer0 # 0)
-              $iii1 := $i11000
               $group_count001 := $_ret660
               $group_count000 := $purge_state0
               $string02 := $subarticulation_id1
@@ -4615,6 +4615,7 @@ function subarticulation_play_note
                 end if
               end if
               $iii1 := $result1500
+              $i11000 := $iii1
               $transition_note00 := play_note(($reduced_note0100 + (12 * $octave_layer0)) + $i1400, $_ret57000, $i11000, 0)
               %subarticulation_event_transition_octave_event_id[$subarticulation_event_id18] := $transition_note00
               set_event_mark($transition_note00, $MARK_1)
@@ -4636,7 +4637,6 @@ function subarticulation_play_note
               end while
               inc($transition_type20)
             end while
-            $iii1 := $i11000
             $group_count001 := $_ret660
             $group_count000 := $purge_state0
             $string02 := $subarticulation_id1
@@ -4655,8 +4655,8 @@ function subarticulation_play_note
               end if
             end if
             $iii1 := $result1500
+            $i11000 := $iii1
             set_event_par_arr($end_note20, $EVENT_PAR_MOD_VALUE_ID, $i11000, 3)
-            $iii1 := $i11000
             $group_count001 := $_ret660
             $group_count000 := $purge_state0
             $string02 := $subarticulation_id1
@@ -4675,8 +4675,8 @@ function subarticulation_play_note
               end if
             end if
             $iii1 := $result1500
+            $i11000 := $iii1
             set_event_par_arr($end_note20, $EVENT_PAR_MOD_VALUE_ID, $i11000, 5)
-            $iii1 := $i11000
             $group_count001 := $_ret660
             $group_count000 := $purge_state0
             $string02 := $subarticulation_id1
@@ -4695,9 +4695,9 @@ function subarticulation_play_note
               end if
             end if
             $iii1 := $result1500
+            $i11000 := $iii1
             change_vol($end_note20, $i11000 + (%_loaded_subarticulations_trans_volume[($_ret660 * 32) + (($purge_state0 * 4) + $subarticulation_id1)] * 1000), 1)
             if($transition_note00 # -1)
-              $iii1 := $i11000
               $group_count001 := $_ret660
               $group_count000 := $purge_state0
               $string02 := $subarticulation_id1
@@ -4716,8 +4716,8 @@ function subarticulation_play_note
                 end if
               end if
               $iii1 := $result1500
+              $i11000 := $iii1
               set_event_par_arr($transition_note00, $EVENT_PAR_MOD_VALUE_ID, $i11000, 3)
-              $iii1 := $i11000
               $group_count001 := $_ret660
               $group_count000 := $purge_state0
               $string02 := $subarticulation_id1
@@ -4736,8 +4736,8 @@ function subarticulation_play_note
                 end if
               end if
               $iii1 := $result1500
+              $i11000 := $iii1
               set_event_par_arr($transition_note00, $EVENT_PAR_MOD_VALUE_ID, $i11000, 5)
-              $iii1 := $i11000
               $group_count001 := $_ret660
               $group_count000 := $purge_state0
               $string02 := $subarticulation_id1
@@ -4756,6 +4756,7 @@ function subarticulation_play_note
                 end if
               end if
               $iii1 := $result1500
+              $i11000 := $iii1
               change_vol($transition_note00, $i11000 + (%_loaded_subarticulations_trans_volume[($_ret660 * 32) + (($purge_state0 * 4) + $subarticulation_id1)] * 1000), 1)
             end if
             if(($authoring_page_active = 1) and ($btn_play_transitions = 0))
@@ -4766,7 +4767,6 @@ function subarticulation_play_note
             end if
           end if
           if(%subarticulation_event_transition_event_id[$previous_note0] # -1)
-            $iii1 := $i11000
             $group_count001 := $_ret660
             $group_count000 := $purge_state0
             $string02 := $subarticulation_id1
@@ -4785,58 +4785,58 @@ function subarticulation_play_note
               end if
             end if
             $iii1 := $result1500
+            $i11000 := $iii1
             fade_out(%subarticulation_event_transition_event_id[$previous_note0], $i11000 * 1000, 1)
           end if
           if(%subarticulations_type[%subarticulations_ids_positions[$group_count0]] = 2)
-            $group_count000 := $i1300
             $group_count001 := 0
             $_ret6600 := $subarticulation_id0
             $iii1 := $event100
             $ii4 := $_ret4000
             call note_to_string
+            $i1300 := $group_count000
             $i11000 := %_release_per_string[($_ret660 * 8) + ($i1300 * 2)]
             if($i11000 # -1)
               fade_out($i11000, 2000000, 1)
             end if
-            $group_count000 := $i1300
             $group_count001 := 0
             $_ret6600 := $subarticulation_id0
             $iii1 := $_ret4000
             $ii4 := $event100
             call note_to_string
+            $i1300 := $group_count000
             $i11000 := %_release_per_string[($_ret660 * 8) + (($i1300 * 2) + 1)]
             if($i11000 # -1)
               fade_out($i11000, 2000000, 1)
             end if
-            $group_count000 := $i1300
             $group_count001 := 0
             $_ret6600 := $subarticulation_id0
             $iii1 := $event100
             $ii4 := $_ret4000
             call note_to_string
+            $i1300 := $group_count000
             %_release_per_string[($_ret660 * 8) + ($i1300 * 2)] := -1
-            $group_count000 := $i1300
             $group_count001 := 0
             $_ret6600 := $subarticulation_id0
             $iii1 := $_ret4000
             $ii4 := $event100
             call note_to_string
+            $i1300 := $group_count000
             %_release_per_string[($_ret660 * 8) + (($i1300 * 2) + 1)] := -1
           end if
-          $group_count000 := $i11000
           $group_count001 := 0
           $_ret6600 := %subarticulation_event_actual_note[$previous_note0]
           $iii1 := $i1300
           $ii4 := $event100
           call note_to_string
-          $group_count000 := $event100
+          $i11000 := $group_count000
           $group_count001 := 0
           $_ret6600 := $string0200
           $iii1 := $i1300
           $ii4 := $_ret4000
           call note_to_string
+          $event100 := $group_count000
           if((%pressed_keys[%subarticulation_event_note[$previous_note0]] = -1) or ($i11000 = $event100))
-            $iii1 := $_ret4000
             $group_count001 := $_ret660
             $group_count000 := $purge_state0
             $string02 := $subarticulation_id1
@@ -4855,6 +4855,7 @@ function subarticulation_play_note
               end if
             end if
             $iii1 := $result1500
+            $_ret4000 := $iii1
             $group_count001 := $previous_note0
             $_ret6600 := $_ret4000
             $group_count000 := 1
@@ -4863,15 +4864,15 @@ function subarticulation_play_note
             $_ret6600 := $previous_note0
             $group_count000 := $_ret4000
             $group_count001 := $i1300
-            $iii1 := $event10
-            $ii4 := $octave_event00
-            $i14 := $i140
-            $ii1 := $ii10
-            $_ret570 := $_ret5700
-            $reduced_note01 := $reduced_note010
-            $string01 := $string010
-            $string02 := $string020
+            $iii1 := $offset10
+            $ii4 := $transition_octave_event00
+            $i14 := $transition_note_event00
+            $ii1 := $fade_out_range01
+            $reduced_note01 := $fade_in_range01
+            $string01 := $fade_in_start01
+            $string02 := $rr10
             call subarticulation_note_off
+            $fade_out_end01 := $_ret570
           end if
           $ii20 := play_note($subarticulation_id0, $ret14, 800000, 0)
           if($octave_layer0 # 0)
@@ -4886,7 +4887,6 @@ function subarticulation_play_note
           $ii4 := $subarticulation_event_id18
           $group_count001 := $MARK_1
           call subarticulation_event_set_event_mark
-          $iii1 := $i11000
           $group_count001 := $_ret660
           $group_count000 := $purge_state0
           $string02 := $subarticulation_id1
@@ -4905,12 +4905,12 @@ function subarticulation_play_note
             end if
           end if
           $iii1 := $result1500
+          $i11000 := $iii1
           $_ret6600 := $subarticulation_event_id18
           $iii1 := $EVENT_PAR_MOD_VALUE_ID
           $ii4 := $i11000
           $group_count001 := 0
           call subarticulation_event_set_event_par_arr
-          $iii1 := $i11000
           $group_count001 := $_ret660
           $group_count000 := $purge_state0
           $string02 := $subarticulation_id1
@@ -4929,6 +4929,7 @@ function subarticulation_play_note
             end if
           end if
           $iii1 := $result1500
+          $i11000 := $iii1
           $_ret6600 := $subarticulation_event_id18
           $iii1 := $EVENT_PAR_MOD_VALUE_ID
           $ii4 := $i11000
@@ -5033,20 +5034,19 @@ function delay_buffer_execute
         %delay_buffer_countdown[$i16] := %delay_buffer_countdown[$i16] - 5
         if(%delay_buffer_countdown[$i16] <= 0)
           if(%delay_buffer_velo[$i16] >= 0)
-            $ii1 := $_ret360
             $ii4 := %delay_buffer[$i16]
             $string02 := %delay_buffer_subarticulation[$i16]
             $group_count000 := $result114
             call articulation_event_get_subarticulation_event_id
+            $_ret360 := $ii1
             if($_ret360 < 0)
-              $result150 := $_ret370
               $ii4 := %delay_buffer_instrument[$i16]
               $string02 := %delay_buffer_keyswitch[$i16]
               $group_count000 := %delay_buffer_subarticulation[$i16]
               $group_count001 := %delay_buffer_note[$i16]
               $iii1 := $rr10
               call get_next_rr
-              $subarticulation_id0 := $rr10
+              $_ret370 := $result150
               $group_count0 := %delay_buffer_instrument[$i16]
               $subarticulation_id1 := %delay_buffer_keyswitch[$i16]
               $purge_state0 := %delay_buffer_note[$i16]
@@ -5057,12 +5057,12 @@ function delay_buffer_execute
               $string010 := $fade_out_end01
               $reduced_note010 := $fade_out_range01
               call articulations_compute_level
-              $ii1 := $fade_out_range01
+              $rr10 := $subarticulation_id0
               $ii4 := %delay_buffer_prev_note[$i16]
               $string02 := %delay_buffer_subarticulation[$i16]
               $group_count000 := $fade_in_start01
               call articulation_event_get_subarticulation_event_id
-              $group_count00 := $result114
+              $fade_out_range01 := $ii1
               $_ret660 := %delay_buffer_instrument[$i16]
               $purge_state0 := %delay_buffer_keyswitch[$i16]
               $subarticulation_id1 := %delay_buffer_subarticulation[$i16]
@@ -5076,10 +5076,6 @@ function delay_buffer_execute
               $transpose0 := %octave_shift[%delay_buffer_instrument[$i16]] * 12
               $octave_layer0 := %octave_layer[%delay_buffer_instrument[$i16]]
               $previous_note0 := $fade_out_range01
-              $subarticulation_event_id18 := $fade_in_start01
-              $idx220 := $fade_in_range01
-              $result140 := $fade_out_end01
-              $idx230 := $idx2300
               ~transition_speed0 := ~subarticulation_modulation_strength01
               $result150 := $result1500
               $i120 := $i1200
@@ -5089,11 +5085,14 @@ function delay_buffer_execute
               $octave_event00 := $octave_event000
               $i140 := $i1400
               $ii10 := $ii100
-              $_ret5700 := $_ret57000
               $reduced_note010 := $reduced_note0100
               $string010 := $string0100
               $string020 := $string0200
               call subarticulation_play_note
+              $result114 := $group_count00
+              $fade_in_start01 := $subarticulation_event_id18
+              $_ret4000 := $_ret400
+              $_ret57000 := $_ret5700
               $group_count000 := %delay_buffer[$i16]
               $string02 := %delay_buffer_subarticulation[$i16]
               $ii4 := $result114
@@ -5103,23 +5102,23 @@ function delay_buffer_execute
               message("articulation id " & %delay_buffer[$i16] & " already active")
             end if
           else
-            $ii1 := $result114
             $ii4 := %delay_buffer[$i16]
             $string02 := %delay_buffer_subarticulation[$i16]
             $group_count000 := $rr10
             call articulation_event_get_subarticulation_event_id
+            $result114 := $ii1
             if($result114 >= 0)
-              $ii1 := $rr10
               $ii4 := %delay_buffer[$i16]
               $string02 := %delay_buffer_subarticulation[$i16]
               $group_count000 := $fade_out_range01
               call articulation_event_get_subarticulation_event_id
+              $rr10 := $ii1
               if(%subarticulation_event_articulation_event[$rr10] = %delay_buffer[$i16])
-                $ii1 := $fade_out_range01
                 $ii4 := %delay_buffer[$i16]
                 $string02 := %delay_buffer_subarticulation[$i16]
                 $group_count000 := $fade_out_end01
                 call articulation_event_get_subarticulation_event_id
+                $fade_out_range01 := $ii1
                 $_ret6600 := $fade_out_range01
                 $group_count000 := $fade_out_end01
                 $group_count001 := $fade_in_range01
@@ -5127,22 +5126,22 @@ function delay_buffer_execute
                 $ii4 := $transition_octave_event00
                 $i14 := $ii100
                 $ii1 := $reduced_note0100
-                $_ret570 := $i150
                 $reduced_note01 := $ii20
                 $string01 := $transition_note_event00
                 $string02 := $i1400
                 call subarticulation_note_off
+                $i150 := $_ret570
               end if
               $group_count000 := %delay_buffer[$i16]
               $string02 := %delay_buffer_subarticulation[$i16]
               $ii4 := -1
               call articulation_event_set_subarticulation_event_id
-              $group_count000 := $rr10
               $ii1 := %delay_buffer[$i16]
               $iii1 := $fade_out_range01
               $group_count001 := $i1400
               $_ret6600 := $transition_note_event00
               call articulation_event_is_event_active
+              $rr10 := $group_count000
               if($rr10 = 0)
                 if(%delay_buffer[$i16] = %_last_articulation_event[(%delay_buffer_instrument[$i16] * 1024) + ((%delay_buffer_keyswitch[$i16] * 128) + %delay_buffer_note[$i16])])
                   %_last_articulation_event[(%delay_buffer_instrument[$i16] * 1024) + ((%delay_buffer_keyswitch[$i16] * 128) + %delay_buffer_note[$i16])] := -1
@@ -5204,14 +5203,13 @@ function repetition_engine_listener
           if(((((($ENGINE_UPTIME + %_repetition_interval_time_humanization[($ii4 * 4096) + (($string02 * 512) + %subarticulation_event_subarticulation_idx[%repetition_engine_subarticulation_events[$result150]])]) - $repetition_engine_start_time) mod $group_count000) < 5) and ((($ENGINE_UPTIME - %subarticulation_event_last_used[%repetition_engine_subarticulation_events[$result150]]) > ((($group_count000 - %_articulation_humanization[($ii4 * 8) + $string02]) - 5) - ($lookahead * $use_constant_delay))) or in_range($ENGINE_UPTIME - %pressed_keys[%subarticulation_event_note[%repetition_engine_subarticulation_events[$result150]]], 5 + ($lookahead * $use_constant_delay), (5 + $group_count000) + ($lookahead * $use_constant_delay)))) and ((%pressed_keys[%subarticulation_event_note[%repetition_engine_subarticulation_events[$result150]]] >= 0) or ($sustain_pedal = 1)))
             $result1500 := 1
             %repetition_played_subarticulation_events[search(%repetition_played_subarticulation_events, -1)] := %repetition_engine_subarticulation_events[$result150]
-            $result150 := $iii1
             $ii4 := $ii4
             $string02 := $string02
             $group_count000 := %subarticulation_event_subarticulation_idx[%repetition_engine_subarticulation_events[$result150]]
             $group_count001 := %subarticulation_event_note[%repetition_engine_subarticulation_events[$result150]]
             $iii1 := $i150
             call get_next_rr
-            $group_count00 := $group_count001
+            $iii1 := $result150
             $_ret660 := $ii4
             $purge_state0 := $string02
             $subarticulation_id1 := %subarticulation_event_subarticulation_idx[%repetition_engine_subarticulation_events[$result150]]
@@ -5225,10 +5223,6 @@ function repetition_engine_listener
             $transpose0 := %octave_shift[$ii4] * 12
             $octave_layer0 := %octave_layer[$ii4]
             $previous_note0 := %repetition_engine_subarticulation_events[$result150]
-            $subarticulation_event_id18 := $i150
-            $idx220 := $ii20
-            $result140 := $idx2300
-            $idx230 := $string0100
             ~transition_speed0 := ~subarticulation_modulation_strength01
             $result150 := $event100
             $i120 := $i1300
@@ -5238,11 +5232,13 @@ function repetition_engine_listener
             $octave_event00 := $transition_octave_event00
             $i140 := $transition_note_event00
             $ii10 := $fade_out_range01
-            $_ret5700 := $fade_out_end01
             $reduced_note010 := $fade_in_range01
             $string010 := $fade_in_start01
             $string020 := $rr10
             call subarticulation_play_note
+            $group_count001 := $group_count00
+            $octave_event000 := $_ret400
+            $fade_out_end01 := $_ret5700
             $group_count000 := %subarticulation_event_articulation_event[%repetition_engine_subarticulation_events[$result150]]
             $string02 := %subarticulation_event_subarticulation_idx[%repetition_engine_subarticulation_events[$result150]]
             $ii4 := $group_count001
@@ -5312,57 +5308,57 @@ function subarticulation_group_count
   $ret14 := $transition_note_event00
 end function
 function subarticulation_browser_load_category
-  $idx25 := 0
-  while($idx25 <= (num_elements(%btn_subarticulation_browser_selection) - 1)) 
-    set_control_par(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
-    if(%_subarticulation_browser_entries[($idx25 * 14) + $idx25] # -1)
-      set_control_par_str(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_TEXT, !subarticulations_full_name[%subarticulations_ids_positions[%_subarticulation_browser_entries[($idx25 * 14) + $idx25]]])
-      if(%_subarticulation_browser_entries[($idx25 * 14) + $idx25] = %_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)])
-        set_control_par(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_VALUE, 1)
+  $subarticulation_event1 := 0
+  while($subarticulation_event1 <= (num_elements(%btn_subarticulation_browser_selection) - 1)) 
+    set_control_par(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
+    if(%_subarticulation_browser_entries[($idx25 * 14) + $subarticulation_event1] # -1)
+      set_control_par_str(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_TEXT, !subarticulations_full_name[%subarticulations_ids_positions[%_subarticulation_browser_entries[($idx25 * 14) + $subarticulation_event1]]])
+      if(%_subarticulation_browser_entries[($idx25 * 14) + $subarticulation_event1] = %_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)])
+        set_control_par(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_VALUE, 1)
       else
-        set_control_par(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_VALUE, 0)
+        set_control_par(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_VALUE, 0)
       end if
-      set_control_par(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
+      set_control_par(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
     end if
-    inc($idx25)
+    inc($subarticulation_event1)
   end while
-  $idx25 := 0
-  while($idx25 <= (num_elements(%btn_subarticulation_browser_category) - 1)) 
-    if($idx25 = $idx25)
-      set_control_par(%btn_subarticulation_browser_category[$idx25], $CONTROL_PAR_VALUE, 1)
+  $subarticulation_event1 := 0
+  while($subarticulation_event1 <= (num_elements(%btn_subarticulation_browser_category) - 1)) 
+    if($subarticulation_event1 = $idx25)
+      set_control_par(%btn_subarticulation_browser_category[$subarticulation_event1], $CONTROL_PAR_VALUE, 1)
     else
-      set_control_par(%btn_subarticulation_browser_category[$idx25], $CONTROL_PAR_VALUE, 0)
+      set_control_par(%btn_subarticulation_browser_category[$subarticulation_event1], $CONTROL_PAR_VALUE, 0)
     end if
-    inc($idx25)
+    inc($subarticulation_event1)
   end while
   $subarticulation_browser_active_category := $idx25
 end function
 function move_legato_buffer_to_instrument
+  $idx25 := 0
   $fade_out_range01 := 0
-  $transition_note_event00 := 0
   $ii4 := 0
   while($ii4 <= 1) 
-    $fade_out_range01 := 0
-    while($fade_out_range01 <= 127) 
-      $transition_note_event00 := 0
-      while($transition_note_event00 <= 24) 
-        %_legato_data_sus_fade_in_time[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00))))] := %_legato_data_buffer_sus_fade_in_time[($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00)]
-        %_legato_data_sus_release_time[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00))))] := %_legato_data_buffer_sus_release_time[($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00)]
-        %_legato_data_sus_wait_time[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00))))] := %_legato_data_buffer_sus_wait_time[($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00)]
-        %_legato_data_trans_fade_in_time[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00))))] := %_legato_data_buffer_trans_fade_in_time[($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00)]
-        %_legato_data_trans_fade_out_time[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00))))] := %_legato_data_buffer_trans_fade_out_time[($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00)]
-        %_legato_data_trans_zone_start[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00))))] := %_legato_data_buffer_trans_zone_start[($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00)]
-        %_legato_data_trans_zone_volume[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00))))] := %_legato_data_buffer_trans_zone_volume[($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00)]
-        %_legato_data_sus_fade_in_time_offset[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00))))] := %_legato_data_buffer_sus_fade_in_time_offset[($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00)]
-        %_legato_data_sus_release_time_offset[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00))))] := %_legato_data_buffer_sus_release_time_offset[($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00)]
-        %_legato_data_sus_wait_time_offset[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00))))] := %_legato_data_buffer_sus_wait_time_offset[($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00)]
-        %_legato_data_trans_fade_in_time_offset[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00))))] := %_legato_data_buffer_trans_fade_in_time_offset[($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00)]
-        %_legato_data_trans_fade_out_time_offset[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00))))] := %_legato_data_buffer_trans_fade_out_time_offset[($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00)]
-        %_legato_data_trans_zone_start_offset[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00))))] := %_legato_data_buffer_trans_zone_start_offset[($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00)]
-        %_legato_data_trans_zone_volume_offset[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00))))] := %_legato_data_buffer_trans_zone_volume_offset[($ii4 * 3200) + (($fade_out_range01 * 25) + $transition_note_event00)]
-        inc($transition_note_event00)
+    $idx25 := 0
+    while($idx25 <= 127) 
+      $fade_out_range01 := 0
+      while($fade_out_range01 <= 24) 
+        %_legato_data_sus_fade_in_time[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01))))] := %_legato_data_buffer_sus_fade_in_time[($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01)]
+        %_legato_data_sus_release_time[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01))))] := %_legato_data_buffer_sus_release_time[($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01)]
+        %_legato_data_sus_wait_time[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01))))] := %_legato_data_buffer_sus_wait_time[($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01)]
+        %_legato_data_trans_fade_in_time[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01))))] := %_legato_data_buffer_trans_fade_in_time[($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01)]
+        %_legato_data_trans_fade_out_time[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01))))] := %_legato_data_buffer_trans_fade_out_time[($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01)]
+        %_legato_data_trans_zone_start[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01))))] := %_legato_data_buffer_trans_zone_start[($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01)]
+        %_legato_data_trans_zone_volume[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01))))] := %_legato_data_buffer_trans_zone_volume[($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01)]
+        %_legato_data_sus_fade_in_time_offset[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01))))] := %_legato_data_buffer_sus_fade_in_time_offset[($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01)]
+        %_legato_data_sus_release_time_offset[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01))))] := %_legato_data_buffer_sus_release_time_offset[($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01)]
+        %_legato_data_sus_wait_time_offset[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01))))] := %_legato_data_buffer_sus_wait_time_offset[($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01)]
+        %_legato_data_trans_fade_in_time_offset[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01))))] := %_legato_data_buffer_trans_fade_in_time_offset[($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01)]
+        %_legato_data_trans_fade_out_time_offset[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01))))] := %_legato_data_buffer_trans_fade_out_time_offset[($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01)]
+        %_legato_data_trans_zone_start_offset[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01))))] := %_legato_data_buffer_trans_zone_start_offset[($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01)]
+        %_legato_data_trans_zone_volume_offset[($result1500 * 204800) + (($i1200 * 25600) + (($result150 * 6400) + (($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01))))] := %_legato_data_buffer_trans_zone_volume_offset[($ii4 * 3200) + (($idx25 * 25) + $fade_out_range01)]
+        inc($fade_out_range01)
       end while
-      inc($fade_out_range01)
+      inc($idx25)
     end while
     inc($ii4)
   end while
@@ -5392,7 +5388,7 @@ function editor_page_open
   end while
   $subarticulation_event1 := $idx25
   $group_count001 := $selected_subarticulation
-  $group_count000 := $subarticulation_event1
+  $group_count000 := $idx25
   $idx25 := 0
   while($idx25 <= (num_elements(%btn_edit_subarticulation_selection) - 1)) 
     if($idx25 # $group_count001)
@@ -5625,7 +5621,7 @@ function authoring_open
 end function
 function update_subarticulation_selection
   $group_count001 := $selected_subarticulation
-  $group_count000 := $subarticulation_event1
+  $group_count000 := $idx25
   $idx25 := 0
   while($idx25 <= (num_elements(%btn_edit_subarticulation_selection) - 1)) 
     if($idx25 # $group_count001)
@@ -5747,29 +5743,29 @@ end function
 function subarticulation_browser_open
   set_control_par(get_ui_id($pnl_subarticulation_browser), $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
   if(%_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)] # -1)
-    $subarticulation_event1 := $idx25
-    $idx25 := 0
-    while($idx25 <= (num_elements(%btn_subarticulation_browser_selection) - 1)) 
-      set_control_par(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
-      if(%_subarticulation_browser_entries[($idx25 * 14) + $idx25] # -1)
-        set_control_par_str(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_TEXT, !subarticulations_full_name[%subarticulations_ids_positions[%_subarticulation_browser_entries[($idx25 * 14) + $idx25]]])
-        if(%_subarticulation_browser_entries[($idx25 * 14) + $idx25] = %_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)])
-          set_control_par(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_VALUE, 1)
+    $idx25 := %type_to_category[%subarticulations_type[%subarticulations_ids_positions[%_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)]]]]
+    $subarticulation_event1 := 0
+    while($subarticulation_event1 <= (num_elements(%btn_subarticulation_browser_selection) - 1)) 
+      set_control_par(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
+      if(%_subarticulation_browser_entries[($idx25 * 14) + $subarticulation_event1] # -1)
+        set_control_par_str(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_TEXT, !subarticulations_full_name[%subarticulations_ids_positions[%_subarticulation_browser_entries[($idx25 * 14) + $subarticulation_event1]]])
+        if(%_subarticulation_browser_entries[($idx25 * 14) + $subarticulation_event1] = %_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)])
+          set_control_par(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_VALUE, 1)
         else
-          set_control_par(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_VALUE, 0)
+          set_control_par(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_VALUE, 0)
         end if
-        set_control_par(%btn_subarticulation_browser_selection[$idx25], $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
+        set_control_par(%btn_subarticulation_browser_selection[$subarticulation_event1], $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
       end if
-      inc($idx25)
+      inc($subarticulation_event1)
     end while
-    $idx25 := 0
-    while($idx25 <= (num_elements(%btn_subarticulation_browser_category) - 1)) 
-      if($idx25 = $idx25)
-        set_control_par(%btn_subarticulation_browser_category[$idx25], $CONTROL_PAR_VALUE, 1)
+    $subarticulation_event1 := 0
+    while($subarticulation_event1 <= (num_elements(%btn_subarticulation_browser_category) - 1)) 
+      if($subarticulation_event1 = $idx25)
+        set_control_par(%btn_subarticulation_browser_category[$subarticulation_event1], $CONTROL_PAR_VALUE, 1)
       else
-        set_control_par(%btn_subarticulation_browser_category[$idx25], $CONTROL_PAR_VALUE, 0)
+        set_control_par(%btn_subarticulation_browser_category[$subarticulation_event1], $CONTROL_PAR_VALUE, 0)
       end if
-      inc($idx25)
+      inc($subarticulation_event1)
     end while
     $subarticulation_browser_active_category := $idx25
   end if
@@ -5838,28 +5834,13 @@ function update_dynamic_range_control
   $group_count001 := %modulation_positions[0]
   set_control_par(get_ui_id($lbl_dynamic_range_cursor), $CONTROL_PAR_POS_X, (get_control_par(get_ui_id($lbl_dynamic_range_bound_left), $CONTROL_PAR_POS_X) - 5) + int((real((($group_count001 * (1 + (sh_right(127 - $group_count001, 31) .or. sh_right($group_count001 - 1, 31)))) - sh_right($group_count001 - 1, 31)) - (127 * sh_right(127 - $group_count001, 31))) / 127.) * real(get_control_par(get_ui_id($lbl_dynamic_range_bound_right), $CONTROL_PAR_POS_X) - get_control_par(get_ui_id($lbl_dynamic_range_bound_left), $CONTROL_PAR_POS_X))))
 end function
-function center_circle_distance
-  ~dx0 := ~transition_speed0 - 0.5
-  ~dy0 := ~y3 - 0.5
-  ~subarticulation_modulation_strength01 := sqrt((~dx0 * ~dx0) + (~dy0 * ~dy0))
-end function
-function center_circle_angle
-  ~dx0 := ~subarticulation_modulation_strength01 - 0.5
-  ~y3 := ~dy0 - 0.5
-  ~cos_theta0 := ~dx0 / sqrt((~dx0 * ~dx0) + (~y3 * ~y3))
-  ~angle1 := acos(~cos_theta0)
-  if(~y3 < 0.)
-    ~angle1 := (2. * ~NI_MATH_PI) - ~angle1
-  end if
-  ~transition_speed0 := ~angle1
-end function
 function angle_to_value
-  ~subarticulation_modulation_strength01 := ~y3 + (~NI_MATH_PI / 2.)
-  if(~subarticulation_modulation_strength01 > (~NI_MATH_PI * 2.))
-    ~subarticulation_modulation_strength01 := ~subarticulation_modulation_strength01 - (2. * ~NI_MATH_PI)
+  ~angle1 := ~dy0 + (~NI_MATH_PI / 2.)
+  if(~angle1 > (~NI_MATH_PI * 2.))
+    ~angle1 := ~angle1 - (2. * ~NI_MATH_PI)
   end if
-  ~subarticulation_modulation_strength01 := abs(~subarticulation_modulation_strength01 - (2. * ~NI_MATH_PI))
-  $group_count001 := int((127. * (~subarticulation_modulation_strength01 - ~dx0)) / (~dy0 - ~dx0))
+  ~angle1 := abs(~angle1 - (2. * ~NI_MATH_PI))
+  $group_count001 := int((127. * (~angle1 - ~subarticulation_modulation_strength01)) / (~transition_speed0 - ~subarticulation_modulation_strength01))
 end function
 function move_to_legato_buffer
   $i1200 := 0
@@ -5909,7 +5890,7 @@ on note
     inc($num_pressed_keys)
   end if
   $last_on_note_callback := $NI_CALLBACK_ID
-  $group_count001 := $note_selection_time * 1000
+  %wait_time0[$NI_CALLBACK_ID mod 100] := $note_selection_time * 1000
   call wait_or_zero
   if($last_on_note_callback = $NI_CALLBACK_ID)
     call update_selected_notes
@@ -5926,7 +5907,7 @@ on release
       $i130 := 0
       $event10 := $EVENT_NOTE
       call articulations_note_off
-      $group_count001 := $note_selection_time * 1000
+      %wait_time0[$NI_CALLBACK_ID mod 100] := $note_selection_time * 1000
       call wait_or_zero
       $i := 0
       while($i <= 0) 
@@ -5968,7 +5949,7 @@ on controller
       end while
     end if
   end if
-  $group_count001 := ($lookahead * 1000) * $use_constant_delay
+  %wait_time0[$NI_CALLBACK_ID mod 100] := ($lookahead * 1000) * $use_constant_delay
   call wait_or_zero
   $sustain_pedal := $sustain_pedal_actual
   if($CC_NUM = 1)
@@ -5986,6 +5967,8 @@ on poly_at
 end on
 on listener
   call delay_buffer_execute
+  $next_free_idx0000 := $next_free_idx0000
+  $i4000 := $i4000
   call repetition_engine_listener
   if(($animation_frame_counter = 0) and ($next_modwheel_animation_frame # -1))
     $idx25 := $next_modwheel_animation_frame
@@ -6020,7 +6003,6 @@ on ui_controls
     $i17 := $fade_in_start01
     $ii4 := $fade_in_range01
     $iii1 := $idx25
-    $_ret6600 := $subarticulation_event1
     $group_count000 := $fade_out_range01
     $group_count001 := $transition_note_event00
     $fade_in_range01 := 0
@@ -6051,21 +6033,21 @@ on ui_controls
         if(%subarticulation_is_loaded0[$idx25] = 0)
           $subarticulation_id1 := $idx25
           $purge_state0 := 0
-          $_ret660 := $_ret6600
-          $group_count00 := $group_count000
-          $idx25 := 0
-          $ret14 := $subarticulation_event1
+          $group_count00 := $fade_out_range01
+          $i := 0
           $subarticulation_id0 := $subarticulation_id1
-          $group_count0 := $group_count00
+          $group_count0 := $transition_note_event00
           call subarticulation_group_count
-          while($idx25 <= ($subarticulation_event1 - 1)) 
-            purge_group((%subarticulations_group_idx[%subarticulations_ids_positions[$subarticulation_id1]] + $idx25) + 1, $purge_state0 * %microphone_position_states[$idx25 mod 6])
-            inc($idx25)
-            $ret14 := $subarticulation_event1
+          $subarticulation_event1 := $ret14
+          while($i <= ($subarticulation_event1 - 1)) 
+            purge_group((%subarticulations_group_idx[%subarticulations_ids_positions[$subarticulation_id1]] + $i) + 1, $purge_state0 * %microphone_position_states[$i mod 6])
+            inc($i)
             $subarticulation_id0 := $subarticulation_id1
             $group_count0 := $transition_note_event00
             call subarticulation_group_count
+            $subarticulation_event1 := $ret14
           end while
+          $subarticulation_event1 := $_ret660
         end if
       end if
       inc($idx25)
@@ -6076,25 +6058,26 @@ on ui_controls
         if(%subarticulation_is_loaded0[$idx25] > 0)
           $subarticulation_id1 := $idx25
           $purge_state0 := 1
-          $_ret660 := $fade_out_range01
-          $group_count00 := $group_count001
-          $idx25 := 0
-          $ret14 := $subarticulation_event1
+          $group_count00 := $transition_note_event00
+          $i := 0
           $subarticulation_id0 := $subarticulation_id1
-          $group_count0 := $group_count00
+          $group_count0 := $transition_note_event00
           call subarticulation_group_count
-          while($idx25 <= ($subarticulation_event1 - 1)) 
-            purge_group((%subarticulations_group_idx[%subarticulations_ids_positions[$subarticulation_id1]] + $idx25) + 1, $purge_state0 * %microphone_position_states[$idx25 mod 6])
-            inc($idx25)
-            $ret14 := $subarticulation_event1
+          $subarticulation_event1 := $ret14
+          while($i <= ($subarticulation_event1 - 1)) 
+            purge_group((%subarticulations_group_idx[%subarticulations_ids_positions[$subarticulation_id1]] + $i) + 1, $purge_state0 * %microphone_position_states[$i mod 6])
+            inc($i)
             $subarticulation_id0 := $subarticulation_id1
             $group_count0 := $transition_note_event00
             call subarticulation_group_count
+            $subarticulation_event1 := $ret14
           end while
+          $fade_out_range01 := $_ret660
         end if
       end if
       inc($idx25)
     end while
+    $subarticulation_event1 := $_ret6600
   end if
   $group_count001 := $NI_UI_ID
   $subarticulation_event1 := search(%sli_mixer_channel_volume, $NI_UI_ID)
@@ -6115,7 +6098,6 @@ on ui_controls
     $i17 := $idx25
     $ii4 := $iii1
     $iii1 := $fade_in_range01
-    $_ret6600 := $fade_in_start01
     $group_count000 := $rr10
     $group_count001 := $fade_out_end01
     $fade_in_range01 := 0
@@ -6146,21 +6128,21 @@ on ui_controls
         if(%subarticulation_is_loaded0[$idx25] = 0)
           $subarticulation_id1 := $idx25
           $purge_state0 := 0
-          $_ret660 := $_ret6600
-          $group_count00 := $group_count000
-          $idx25 := 0
-          $ret14 := $subarticulation_event1
+          $group_count00 := $fade_out_range01
+          $i := 0
           $subarticulation_id0 := $subarticulation_id1
-          $group_count0 := $group_count00
+          $group_count0 := $transition_note_event00
           call subarticulation_group_count
-          while($idx25 <= ($subarticulation_event1 - 1)) 
-            purge_group((%subarticulations_group_idx[%subarticulations_ids_positions[$subarticulation_id1]] + $idx25) + 1, $purge_state0 * %microphone_position_states[$idx25 mod 6])
-            inc($idx25)
-            $ret14 := $subarticulation_event1
+          $subarticulation_event1 := $ret14
+          while($i <= ($subarticulation_event1 - 1)) 
+            purge_group((%subarticulations_group_idx[%subarticulations_ids_positions[$subarticulation_id1]] + $i) + 1, $purge_state0 * %microphone_position_states[$i mod 6])
+            inc($i)
             $subarticulation_id0 := $subarticulation_id1
             $group_count0 := $transition_note_event00
             call subarticulation_group_count
+            $subarticulation_event1 := $ret14
           end while
+          $subarticulation_event1 := $_ret660
         end if
       end if
       inc($idx25)
@@ -6171,34 +6153,35 @@ on ui_controls
         if(%subarticulation_is_loaded0[$idx25] > 0)
           $subarticulation_id1 := $idx25
           $purge_state0 := 1
-          $_ret660 := $fade_out_range01
-          $group_count00 := $group_count001
-          $idx25 := 0
-          $ret14 := $subarticulation_event1
+          $group_count00 := $transition_note_event00
+          $i := 0
           $subarticulation_id0 := $subarticulation_id1
-          $group_count0 := $group_count00
+          $group_count0 := $transition_note_event00
           call subarticulation_group_count
-          while($idx25 <= ($subarticulation_event1 - 1)) 
-            purge_group((%subarticulations_group_idx[%subarticulations_ids_positions[$subarticulation_id1]] + $idx25) + 1, $purge_state0 * %microphone_position_states[$idx25 mod 6])
-            inc($idx25)
-            $ret14 := $subarticulation_event1
+          $subarticulation_event1 := $ret14
+          while($i <= ($subarticulation_event1 - 1)) 
+            purge_group((%subarticulations_group_idx[%subarticulations_ids_positions[$subarticulation_id1]] + $i) + 1, $purge_state0 * %microphone_position_states[$i mod 6])
+            inc($i)
             $subarticulation_id0 := $subarticulation_id1
             $group_count0 := $transition_note_event00
             call subarticulation_group_count
+            $subarticulation_event1 := $ret14
           end while
+          $fade_out_range01 := $_ret660
         end if
       end if
       inc($idx25)
     end while
+    $fade_in_start01 := $_ret6600
   end if
-  $subarticulation_event1 := $NI_UI_ID
+  %wait_time0[$NI_CALLBACK_ID mod 100] := $NI_UI_ID
   %idx28[$NI_CALLBACK_ID mod 100] := search(%btn_subarticulation_browser_category, $NI_UI_ID)
   if(%idx28[$NI_CALLBACK_ID mod 100] # -1)
     $idx25 := %idx28[$NI_CALLBACK_ID mod 100]
-    $subarticulation_event1 := $idx25
+    $subarticulation_event1 := $subarticulation_event1
     call subarticulation_browser_load_category
   end if
-  %idx28[$NI_CALLBACK_ID mod 100] := search(%btn_subarticulation_browser_selection, $subarticulation_event1)
+  %idx28[$NI_CALLBACK_ID mod 100] := search(%btn_subarticulation_browser_selection, %wait_time0[$NI_CALLBACK_ID mod 100])
   if(%idx28[$NI_CALLBACK_ID mod 100] # -1)
     if(get_control_par(%btn_subarticulation_browser_selection[%idx28[$NI_CALLBACK_ID mod 100]], $CONTROL_PAR_VALUE) = 0)
       %_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)] := -1
@@ -6207,33 +6190,33 @@ on ui_controls
       %_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)] := %_subarticulation_browser_entries[($subarticulation_browser_active_category * 14) + %idx28[$NI_CALLBACK_ID mod 100]]
       set_control_par_str(get_ui_id($btn_subarticulation_title), $CONTROL_PAR_TEXT, "    " & !subarticulations_full_name[%subarticulations_ids_positions[%_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)]]])
       if(%subarticulations_type[%subarticulations_ids_positions[%_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)]]] = 2)
-        @legato_name0 := "leg" & %_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)]
-        wait_async(load_array_str(%_legato_data_buffer_sus_fade_in_time, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_fade_in_time.nka"))
-        wait_async(load_array_str(%_legato_data_buffer_sus_release_time, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_release_time.nka"))
-        wait_async(load_array_str(%_legato_data_buffer_sus_wait_time, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_wait_time.nka"))
-        wait_async(load_array_str(%_legato_data_buffer_trans_fade_in_time, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_fade_in_time.nka"))
-        wait_async(load_array_str(%_legato_data_buffer_trans_fade_out_time, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_fade_out_time.nka"))
-        wait_async(load_array_str(%_legato_data_buffer_trans_zone_start, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_zone_start.nka"))
-        wait_async(load_array_str(%_legato_data_buffer_trans_zone_volume, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_zone_volume.nka"))
-        wait_async(load_array_str(%_legato_data_buffer_sus_fade_in_time_offset, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_fade_in_time_offset.nka"))
-        wait_async(load_array_str(%_legato_data_buffer_sus_release_time_offset, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_release_time_offset.nka"))
-        wait_async(load_array_str(%_legato_data_buffer_sus_wait_time_offset, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_wait_time.nka_offset"))
-        wait_async(load_array_str(%_legato_data_buffer_trans_fade_in_time_offset, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_fade_in_time_offset.nka"))
-        wait_async(load_array_str(%_legato_data_buffer_trans_fade_out_time_offset, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_fade_out_time_offset.nka"))
-        wait_async(load_array_str(%_legato_data_buffer_trans_zone_start_offset, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_zone_start_offset.nka"))
-        wait_async(load_array_str(%_legato_data_buffer_trans_zone_volume_offset, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_zone_volume_offset.nka"))
+        !legato_name0[$NI_CALLBACK_ID mod 100] := "leg" & %_loaded_subarticulations[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)]
+        wait_async(load_array_str(%_legato_data_buffer_sus_fade_in_time, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_fade_in_time.nka"))
+        wait_async(load_array_str(%_legato_data_buffer_sus_release_time, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_release_time.nka"))
+        wait_async(load_array_str(%_legato_data_buffer_sus_wait_time, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_wait_time.nka"))
+        wait_async(load_array_str(%_legato_data_buffer_trans_fade_in_time, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_trans_fade_in_time.nka"))
+        wait_async(load_array_str(%_legato_data_buffer_trans_fade_out_time, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_trans_fade_out_time.nka"))
+        wait_async(load_array_str(%_legato_data_buffer_trans_zone_start, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_trans_zone_start.nka"))
+        wait_async(load_array_str(%_legato_data_buffer_trans_zone_volume, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_trans_zone_volume.nka"))
+        wait_async(load_array_str(%_legato_data_buffer_sus_fade_in_time_offset, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_fade_in_time_offset.nka"))
+        wait_async(load_array_str(%_legato_data_buffer_sus_release_time_offset, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_release_time_offset.nka"))
+        wait_async(load_array_str(%_legato_data_buffer_sus_wait_time_offset, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_wait_time.nka_offset"))
+        wait_async(load_array_str(%_legato_data_buffer_trans_fade_in_time_offset, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_trans_fade_in_time_offset.nka"))
+        wait_async(load_array_str(%_legato_data_buffer_trans_fade_out_time_offset, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_trans_fade_out_time_offset.nka"))
+        wait_async(load_array_str(%_legato_data_buffer_trans_zone_start_offset, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_trans_zone_start_offset.nka"))
+        wait_async(load_array_str(%_legato_data_buffer_trans_zone_volume_offset, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_trans_zone_volume_offset.nka"))
         $result1500 := $selected_instrument
         $i1200 := $selected_keyswitch
         $result150 := $selected_subarticulation
-        $ii4 := $idx25
-        $string02 := $fade_out_range01
-        $group_count000 := $transition_note_event00
+        $ii4 := $subarticulation_event1
+        $string02 := $idx25
+        $group_count000 := $fade_out_range01
         call move_legato_buffer_to_instrument
       end if
       $idx25 := $subarticulation_browser_active_category
-      $subarticulation_event1 := $idx25
+      $subarticulation_event1 := $subarticulation_event1
       call subarticulation_browser_load_category
-      $idx25 := $idx25
+      $idx25 := $subarticulation_event1
       call editor_page_open
     end if
   end if
@@ -6498,19 +6481,23 @@ end on
 on ui_control(?xy_center_circles)
   $cc_cb_id := $NI_CALLBACK_ID
   if($NI_MOUSE_EVENT_TYPE = $NI_MOUSE_EVENT_TYPE_LEFT_BUTTON_DOWN)
-    ~subarticulation_modulation_strength01 := ?distance0[$NI_CALLBACK_ID mod 100]
-    ~transition_speed0 := ?xy_center_circles[0]
-    ~y3 := ?xy_center_circles[1]
-    call center_circle_distance
-    ~transition_speed0 := ?angle2[$NI_CALLBACK_ID mod 100]
-    ~subarticulation_modulation_strength01 := ?xy_center_circles[0]
-    ~dy0 := ?xy_center_circles[1]
-    call center_circle_angle
-    $group_count001 := %controller_value0[$NI_CALLBACK_ID mod 100]
-    ~y3 := ?angle2[$NI_CALLBACK_ID mod 100]
-    ~dx0 := 0.7
-    ~dy0 := (~NI_MATH_PI * 2.) - 0.7
+    ~transition_speed0 := ?xy_center_circles[0] - 0.5
+    ~subarticulation_modulation_strength01 := sqrt((~transition_speed0 * ~transition_speed0) + (~dy0 * ~dy0))
+    ?distance0[$NI_CALLBACK_ID mod 100] := ~subarticulation_modulation_strength01
+    ~subarticulation_modulation_strength01 := ?xy_center_circles[0] - 0.5
+    ~dy0 := ?xy_center_circles[1] - 0.5
+    ~cos_theta0 := ~subarticulation_modulation_strength01 / sqrt((~subarticulation_modulation_strength01 * ~subarticulation_modulation_strength01) + (~dy0 * ~dy0))
+    ~angle1 := acos(~cos_theta0)
+    if(~dy0 < 0.)
+      ~angle1 := (2. * ~NI_MATH_PI) - ~angle1
+    end if
+    ~transition_speed0 := ~angle1
+    ?angle2[$NI_CALLBACK_ID mod 100] := ~transition_speed0
+    ~dy0 := ?angle2[$NI_CALLBACK_ID mod 100]
+    ~subarticulation_modulation_strength01 := 0.7
+    ~transition_speed0 := (~NI_MATH_PI * 2.) - 0.7
     call angle_to_value
+    %controller_value0[$NI_CALLBACK_ID mod 100] := $group_count001
     if((?distance0[$NI_CALLBACK_ID mod 100] >= 0.32) and (?distance0[$NI_CALLBACK_ID mod 100] < 0.36))
       $selected_subarticulation := 0
     else
@@ -6540,15 +6527,20 @@ on ui_control(?xy_center_circles)
   if($NI_MOUSE_EVENT_TYPE = $NI_MOUSE_EVENT_TYPE_DRAG)
     wait(10000)
     if(($cc_cb_id = $NI_CALLBACK_ID) and ($selected_circle_end # -1))
-      ~transition_speed0 := ?angle2[$NI_CALLBACK_ID mod 100]
-      ~subarticulation_modulation_strength01 := ?xy_center_circles[0]
-      ~dy0 := ?xy_center_circles[1]
-      call center_circle_angle
-      $group_count001 := %controller_value0[$NI_CALLBACK_ID mod 100]
-      ~y3 := ?angle2[$NI_CALLBACK_ID mod 100]
-      ~dx0 := 0.7
-      ~dy0 := (~NI_MATH_PI * 2.) - 0.7
+      ~subarticulation_modulation_strength01 := ?xy_center_circles[0] - 0.5
+      ~dy0 := ?xy_center_circles[1] - 0.5
+      ~cos_theta0 := ~subarticulation_modulation_strength01 / sqrt((~subarticulation_modulation_strength01 * ~subarticulation_modulation_strength01) + (~dy0 * ~dy0))
+      ~angle1 := acos(~cos_theta0)
+      if(~dy0 < 0.)
+        ~angle1 := (2. * ~NI_MATH_PI) - ~angle1
+      end if
+      ~transition_speed0 := ~angle1
+      ?angle2[$NI_CALLBACK_ID mod 100] := ~transition_speed0
+      ~dy0 := ?angle2[$NI_CALLBACK_ID mod 100]
+      ~subarticulation_modulation_strength01 := 0.7
+      ~transition_speed0 := (~NI_MATH_PI * 2.) - 0.7
       call angle_to_value
+      %controller_value0[$NI_CALLBACK_ID mod 100] := $group_count001
       if($selected_circle_end = 0)
         if(%controller_value0[$NI_CALLBACK_ID mod 100] < ((%_loaded_subarticulations_end[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)] - %_loaded_subarticulations_fade_out[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)]) - %_loaded_subarticulations_fade_in[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)]))
           %_loaded_subarticulations_start[($selected_instrument * 32) + (($selected_keyswitch * 4) + $selected_subarticulation)] := %controller_value0[$NI_CALLBACK_ID mod 100]
@@ -6585,7 +6577,6 @@ on ui_control($mnu_mixer_bleed_channel)
     $i17 := $idx25
     $ii4 := $iii1
     $iii1 := $fade_in_range01
-    $_ret6600 := $fade_in_start01
     $group_count000 := $rr10
     $group_count001 := $fade_out_end01
     $fade_in_range01 := 0
@@ -6616,21 +6607,21 @@ on ui_control($mnu_mixer_bleed_channel)
         if(%subarticulation_is_loaded0[$idx25] = 0)
           $subarticulation_id1 := $idx25
           $purge_state0 := 0
-          $_ret660 := $_ret6600
-          $group_count00 := $group_count000
-          $idx25 := 0
-          $ret14 := $subarticulation_event1
+          $group_count00 := $fade_out_range01
+          $i := 0
           $subarticulation_id0 := $subarticulation_id1
-          $group_count0 := $group_count00
+          $group_count0 := $transition_note_event00
           call subarticulation_group_count
-          while($idx25 <= ($subarticulation_event1 - 1)) 
-            purge_group((%subarticulations_group_idx[%subarticulations_ids_positions[$subarticulation_id1]] + $idx25) + 1, $purge_state0 * %microphone_position_states[$idx25 mod 6])
-            inc($idx25)
-            $ret14 := $subarticulation_event1
+          $subarticulation_event1 := $ret14
+          while($i <= ($subarticulation_event1 - 1)) 
+            purge_group((%subarticulations_group_idx[%subarticulations_ids_positions[$subarticulation_id1]] + $i) + 1, $purge_state0 * %microphone_position_states[$i mod 6])
+            inc($i)
             $subarticulation_id0 := $subarticulation_id1
             $group_count0 := $transition_note_event00
             call subarticulation_group_count
+            $subarticulation_event1 := $ret14
           end while
+          $subarticulation_event1 := $_ret660
         end if
       end if
       inc($idx25)
@@ -6641,25 +6632,26 @@ on ui_control($mnu_mixer_bleed_channel)
         if(%subarticulation_is_loaded0[$idx25] > 0)
           $subarticulation_id1 := $idx25
           $purge_state0 := 1
-          $_ret660 := $fade_out_range01
-          $group_count00 := $group_count001
-          $idx25 := 0
-          $ret14 := $subarticulation_event1
+          $group_count00 := $transition_note_event00
+          $i := 0
           $subarticulation_id0 := $subarticulation_id1
-          $group_count0 := $group_count00
+          $group_count0 := $transition_note_event00
           call subarticulation_group_count
-          while($idx25 <= ($subarticulation_event1 - 1)) 
-            purge_group((%subarticulations_group_idx[%subarticulations_ids_positions[$subarticulation_id1]] + $idx25) + 1, $purge_state0 * %microphone_position_states[$idx25 mod 6])
-            inc($idx25)
-            $ret14 := $subarticulation_event1
+          $subarticulation_event1 := $ret14
+          while($i <= ($subarticulation_event1 - 1)) 
+            purge_group((%subarticulations_group_idx[%subarticulations_ids_positions[$subarticulation_id1]] + $i) + 1, $purge_state0 * %microphone_position_states[$i mod 6])
+            inc($i)
             $subarticulation_id0 := $subarticulation_id1
             $group_count0 := $transition_note_event00
             call subarticulation_group_count
+            $subarticulation_event1 := $ret14
           end while
+          $fade_out_range01 := $_ret660
         end if
       end if
       inc($idx25)
     end while
+    $fade_in_start01 := $_ret6600
   end if
   attach_level_meter(%lvl_mixer_channel_volume[8], -1, -1, 0, 4 + $mnu_mixer_bleed_channel)
   attach_level_meter(%lvl_mixer_channel_volume[9], -1, -1, 1, 4 + $mnu_mixer_bleed_channel)
@@ -6698,21 +6690,21 @@ on ui_control($btn_unpurge_all)
       if(%subarticulation_is_loaded0[$idx25] = 0)
         $subarticulation_id1 := $idx25
         $purge_state0 := 0
-        $_ret660 := $_ret6600
-        $group_count00 := $group_count000
-        $idx25 := 0
-        $ret14 := $subarticulation_event1
+        $group_count00 := $fade_out_range01
+        $i := 0
         $subarticulation_id0 := $subarticulation_id1
-        $group_count0 := $group_count00
+        $group_count0 := $transition_note_event00
         call subarticulation_group_count
-        while($idx25 <= ($subarticulation_event1 - 1)) 
-          purge_group((%subarticulations_group_idx[%subarticulations_ids_positions[$subarticulation_id1]] + $idx25) + 1, $purge_state0 * %microphone_position_states[$idx25 mod 6])
-          inc($idx25)
-          $ret14 := $subarticulation_event1
+        $subarticulation_event1 := $ret14
+        while($i <= ($subarticulation_event1 - 1)) 
+          purge_group((%subarticulations_group_idx[%subarticulations_ids_positions[$subarticulation_id1]] + $i) + 1, $purge_state0 * %microphone_position_states[$i mod 6])
+          inc($i)
           $subarticulation_id0 := $subarticulation_id1
           $group_count0 := $transition_note_event00
           call subarticulation_group_count
+          $subarticulation_event1 := $ret14
         end while
+        $subarticulation_event1 := $_ret660
       end if
     end if
     inc($idx25)
@@ -6723,25 +6715,26 @@ on ui_control($btn_unpurge_all)
       if(%subarticulation_is_loaded0[$idx25] > 0)
         $subarticulation_id1 := $idx25
         $purge_state0 := 1
-        $_ret660 := $fade_out_range01
-        $group_count00 := $group_count001
-        $idx25 := 0
-        $ret14 := $subarticulation_event1
+        $group_count00 := $transition_note_event00
+        $i := 0
         $subarticulation_id0 := $subarticulation_id1
-        $group_count0 := $group_count00
+        $group_count0 := $transition_note_event00
         call subarticulation_group_count
-        while($idx25 <= ($subarticulation_event1 - 1)) 
-          purge_group((%subarticulations_group_idx[%subarticulations_ids_positions[$subarticulation_id1]] + $idx25) + 1, $purge_state0 * %microphone_position_states[$idx25 mod 6])
-          inc($idx25)
-          $ret14 := $subarticulation_event1
+        $subarticulation_event1 := $ret14
+        while($i <= ($subarticulation_event1 - 1)) 
+          purge_group((%subarticulations_group_idx[%subarticulations_ids_positions[$subarticulation_id1]] + $i) + 1, $purge_state0 * %microphone_position_states[$i mod 6])
+          inc($i)
           $subarticulation_id0 := $subarticulation_id1
           $group_count0 := $transition_note_event00
           call subarticulation_group_count
+          $subarticulation_event1 := $ret14
         end while
+        $fade_out_range01 := $_ret660
       end if
     end if
     inc($idx25)
   end while
+  $end_note200 := $end_note200
 end on
 on ui_control($btn_subarticulation_browser_close)
   call subarticulation_browser_close
@@ -6981,21 +6974,21 @@ on ui_control($btn_save_authoring)
     $string02 := 0
     $ii4 := 0
     call move_to_legato_buffer
-    @legato_name0 := "leg" & %_loaded_subarticulations[0]
-    save_array_str(%_legato_data_buffer_sus_fade_in_time, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_fade_in_time.nka")
-    save_array_str(%_legato_data_buffer_sus_release_time, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_release_time.nka")
-    save_array_str(%_legato_data_buffer_sus_wait_time, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_wait_time.nka")
-    save_array_str(%_legato_data_buffer_trans_fade_in_time, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_fade_in_time.nka")
-    save_array_str(%_legato_data_buffer_trans_fade_out_time, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_fade_out_time.nka")
-    save_array_str(%_legato_data_buffer_trans_zone_start, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_zone_start.nka")
-    save_array_str(%_legato_data_buffer_trans_zone_volume, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_zone_wait.nka")
-    save_array_str(%_legato_data_buffer_sus_fade_in_time_offset, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_fade_in_time_offset.nka")
-    save_array_str(%_legato_data_buffer_sus_release_time_offset, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_release_time_offset.nka")
-    save_array_str(%_legato_data_buffer_sus_wait_time_offset, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_wait_time_offset.nka")
-    save_array_str(%_legato_data_buffer_trans_fade_in_time_offset, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_fade_in_time_offset.nka")
-    save_array_str(%_legato_data_buffer_trans_fade_out_time_offset, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_fade_out_time_offset.nka")
-    save_array_str(%_legato_data_buffer_trans_zone_start_offset, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_zone_start_offset.nka")
-    save_array_str(%_legato_data_buffer_trans_zone_volume_offset, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_zone_wait_offset.nka")
+    @legato_name1 := "leg" & %_loaded_subarticulations[0]
+    save_array_str(%_legato_data_buffer_sus_fade_in_time, @LEGATO_ARRAY_PATH & @legato_name1 & "_sus_fade_in_time.nka")
+    save_array_str(%_legato_data_buffer_sus_release_time, @LEGATO_ARRAY_PATH & @legato_name1 & "_sus_release_time.nka")
+    save_array_str(%_legato_data_buffer_sus_wait_time, @LEGATO_ARRAY_PATH & @legato_name1 & "_sus_wait_time.nka")
+    save_array_str(%_legato_data_buffer_trans_fade_in_time, @LEGATO_ARRAY_PATH & @legato_name1 & "_sus_trans_fade_in_time.nka")
+    save_array_str(%_legato_data_buffer_trans_fade_out_time, @LEGATO_ARRAY_PATH & @legato_name1 & "_sus_trans_fade_out_time.nka")
+    save_array_str(%_legato_data_buffer_trans_zone_start, @LEGATO_ARRAY_PATH & @legato_name1 & "_sus_trans_zone_start.nka")
+    save_array_str(%_legato_data_buffer_trans_zone_volume, @LEGATO_ARRAY_PATH & @legato_name1 & "_sus_trans_zone_wait.nka")
+    save_array_str(%_legato_data_buffer_sus_fade_in_time_offset, @LEGATO_ARRAY_PATH & @legato_name1 & "_sus_fade_in_time_offset.nka")
+    save_array_str(%_legato_data_buffer_sus_release_time_offset, @LEGATO_ARRAY_PATH & @legato_name1 & "_sus_release_time_offset.nka")
+    save_array_str(%_legato_data_buffer_sus_wait_time_offset, @LEGATO_ARRAY_PATH & @legato_name1 & "_sus_wait_time_offset.nka")
+    save_array_str(%_legato_data_buffer_trans_fade_in_time_offset, @LEGATO_ARRAY_PATH & @legato_name1 & "_sus_trans_fade_in_time_offset.nka")
+    save_array_str(%_legato_data_buffer_trans_fade_out_time_offset, @LEGATO_ARRAY_PATH & @legato_name1 & "_sus_trans_fade_out_time_offset.nka")
+    save_array_str(%_legato_data_buffer_trans_zone_start_offset, @LEGATO_ARRAY_PATH & @legato_name1 & "_sus_trans_zone_start_offset.nka")
+    save_array_str(%_legato_data_buffer_trans_zone_volume_offset, @LEGATO_ARRAY_PATH & @legato_name1 & "_sus_trans_zone_wait_offset.nka")
   else
     message("No Legato Loaded")
   end if
@@ -7003,21 +6996,21 @@ on ui_control($btn_save_authoring)
 end on
 on ui_control($btn_load_authoring)
   if($authoring_page_active = 1)
-    @legato_name0 := "leg" & %_loaded_subarticulations[0]
-    wait_async(load_array_str(%_legato_data_buffer_sus_fade_in_time, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_fade_in_time.nka"))
-    wait_async(load_array_str(%_legato_data_buffer_sus_release_time, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_release_time.nka"))
-    wait_async(load_array_str(%_legato_data_buffer_sus_wait_time, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_wait_time.nka"))
-    wait_async(load_array_str(%_legato_data_buffer_trans_fade_in_time, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_fade_in_time.nka"))
-    wait_async(load_array_str(%_legato_data_buffer_trans_fade_out_time, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_fade_out_time.nka"))
-    wait_async(load_array_str(%_legato_data_buffer_trans_zone_start, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_zone_start.nka"))
-    wait_async(load_array_str(%_legato_data_buffer_trans_zone_volume, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_zone_volume.nka"))
-    wait_async(load_array_str(%_legato_data_buffer_sus_fade_in_time_offset, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_fade_in_time_offset.nka"))
-    wait_async(load_array_str(%_legato_data_buffer_sus_release_time_offset, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_release_time_offset.nka"))
-    wait_async(load_array_str(%_legato_data_buffer_sus_wait_time_offset, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_wait_time.nka_offset"))
-    wait_async(load_array_str(%_legato_data_buffer_trans_fade_in_time_offset, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_fade_in_time_offset.nka"))
-    wait_async(load_array_str(%_legato_data_buffer_trans_fade_out_time_offset, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_fade_out_time_offset.nka"))
-    wait_async(load_array_str(%_legato_data_buffer_trans_zone_start_offset, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_zone_start_offset.nka"))
-    wait_async(load_array_str(%_legato_data_buffer_trans_zone_volume_offset, @LEGATO_ARRAY_PATH & @legato_name0 & "_sus_trans_zone_volume_offset.nka"))
+    !legato_name0[$NI_CALLBACK_ID mod 100] := "leg" & %_loaded_subarticulations[0]
+    wait_async(load_array_str(%_legato_data_buffer_sus_fade_in_time, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_fade_in_time.nka"))
+    wait_async(load_array_str(%_legato_data_buffer_sus_release_time, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_release_time.nka"))
+    wait_async(load_array_str(%_legato_data_buffer_sus_wait_time, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_wait_time.nka"))
+    wait_async(load_array_str(%_legato_data_buffer_trans_fade_in_time, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_trans_fade_in_time.nka"))
+    wait_async(load_array_str(%_legato_data_buffer_trans_fade_out_time, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_trans_fade_out_time.nka"))
+    wait_async(load_array_str(%_legato_data_buffer_trans_zone_start, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_trans_zone_start.nka"))
+    wait_async(load_array_str(%_legato_data_buffer_trans_zone_volume, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_trans_zone_volume.nka"))
+    wait_async(load_array_str(%_legato_data_buffer_sus_fade_in_time_offset, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_fade_in_time_offset.nka"))
+    wait_async(load_array_str(%_legato_data_buffer_sus_release_time_offset, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_release_time_offset.nka"))
+    wait_async(load_array_str(%_legato_data_buffer_sus_wait_time_offset, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_wait_time.nka_offset"))
+    wait_async(load_array_str(%_legato_data_buffer_trans_fade_in_time_offset, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_trans_fade_in_time_offset.nka"))
+    wait_async(load_array_str(%_legato_data_buffer_trans_fade_out_time_offset, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_trans_fade_out_time_offset.nka"))
+    wait_async(load_array_str(%_legato_data_buffer_trans_zone_start_offset, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_trans_zone_start_offset.nka"))
+    wait_async(load_array_str(%_legato_data_buffer_trans_zone_volume_offset, @LEGATO_ARRAY_PATH & !legato_name0[$NI_CALLBACK_ID mod 100] & "_sus_trans_zone_volume_offset.nka"))
     $result1500 := 0
     $i1200 := 0
     $result150 := 0

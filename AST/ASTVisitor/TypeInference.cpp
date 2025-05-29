@@ -703,7 +703,6 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 		if (!definition->visited || node.is_builtin_kind()) {
 			definition->accept(*this);
 			definition->visited = true;
-			definition->is_used = true;
 			// apply references to function params
 			for (auto &param : definition->header->params) {
 				for(auto & ref : param->variable->references) {
