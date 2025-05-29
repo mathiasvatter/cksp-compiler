@@ -28,6 +28,9 @@ public:
 		{ "fs_get_filename", {"ui_control", "ui_controls"}},
 		{ "set_snapshot_type", {"init"}},
 		{ "set_map_editor_event_color", {"init"}},
+		{ "watch_var", {"init"}},
+		{ "watch_array_idx", {"init"}},
+		{ "disable_logging", {"init"}},
 		{ "set_note_controller", ([]() -> std::unordered_set<std::string> {
 		 std::unordered_set<std::string> allowed(CALLBACKS.begin(), CALLBACKS.end());
 		 allowed.erase("init");

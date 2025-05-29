@@ -63,8 +63,11 @@ public:
 				m_current_formal_param = nullptr;
 			}
 
-			if (!definition->visited) definition->accept(*this);
-			definition->visited = true;
+			if (!definition->visited) {
+				definition->accept(*this);
+				definition->visited = true;
+				definition->is_used = true;
+			}
 		}
 		return &node;
 	}

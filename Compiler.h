@@ -72,7 +72,7 @@ public:
 		// input_filename = "/Users/Mathias/Scripting/the-score-essentials/the-score-essentials.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
 		input_filename = "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp";
-		input_filename = "/Users/mathias/Scripting/the-orchestra-complete-4/the_orchestra_ens_V1.2.ksp";
+		// input_filename = "/Users/mathias/Scripting/the-orchestra-complete-4/the_orchestra_ens_V1.2.ksp";
 		// input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 		// input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 		// input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
@@ -120,8 +120,8 @@ public:
 	//    output_filename = "/Users/mathias/Scripting/preset-system/samples/resources/scripts/preset-system.txt";
 	//    output_filename = "/Users/mathias/Scripting/action-woodwinds/Samples/Resources/scripts/action_woodwinds_cksp.txt";
 	//	output_filename = "/Users/Mathias/Scripting/time-textures/Samples/resources/scripts/time-textures-2.txt";
-		// output_filename = "/Users/mathias/Scripting/lux-strings/Samples/Resources/scripts/lux-orchestral-strings.txt";
-		output_filename = "/Users/mathias/Scripting/the-orchestra-complete-4/Samples/Resources/scripts/sonu_orchestra_ensemble.txt";
+		output_filename = "/Users/mathias/Scripting/lux-strings/Samples/Resources/scripts/lux-orchestral-strings.txt";
+		// output_filename = "/Users/mathias/Scripting/the-orchestra-complete-4/Samples/Resources/scripts/sonu_orchestra_ensemble.txt";
 	#endif
 		if(output_filename.empty() && !m_config->output_filename.empty())
 			output_filename = m_config->output_filename;
@@ -160,10 +160,10 @@ public:
 
 		ASTTypeAnnotations type_annotations(m_program);
 		ast->accept(type_annotations);
+
 		ASTVariableChecking variable_checking(m_program);
 		variable_checking.do_complete_traversal(*ast, false);
 		ast->collect_references();
-
 
 		compile_time.stop("Lexical Scope");
 		std::cout << compile_time.print_timer("Lexical Scope") << "\n";
