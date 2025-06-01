@@ -84,7 +84,7 @@ public:
 		}
 		// check if called in restricted callback
 		if (definition->is_restricted || !definition->is_thread_safe) {
-			const auto callback_name = remove_substring(callback->begin_callback, "on ");
+			const auto callback_name = StringUtils::remove(callback->begin_callback, "on ");
 			const auto allowed_callbacks = get_allowed_callbacks(node.function->name);
 			if (!allowed_callbacks.contains(callback_name)) {
 				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);

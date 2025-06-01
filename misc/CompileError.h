@@ -81,8 +81,8 @@ public:
     std::string get_line_from_file() const;
     static std::string get_os_version();
     static std::string get_os_architecture();
-    static std::string url_encode(const std::string &value);
-    std::string generate_github_issue_url(const std::string &username, const std::string &repo);
+    // static std::string url_encode(const std::string &value);
+    std::string generate_github_issue_url(const std::string &username, const std::string &repo) const;
 
     [[nodiscard]] static inline std::string error_type_to_string(ErrorType type) {
         switch(type) {

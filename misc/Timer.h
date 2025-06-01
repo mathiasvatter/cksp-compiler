@@ -20,7 +20,6 @@
  * @var m_completed_timers A map from timer names to their durations. Each timer can be started and stopped multiple times, so each name maps to a vector of durations.
  */
 class Timer {
-private:
 	std::unordered_map<std::string, std::chrono::high_resolution_clock::time_point> m_active_timers;
 	std::unordered_map<std::string, std::vector<std::chrono::milliseconds>> m_completed_timers;
 	std::vector<std::string> m_order_of_completion;
@@ -54,22 +53,16 @@ public:
 	[[nodiscard]] std::string report() const {
 		std::string result;
 		for (const auto& name : m_order_of_completion) {
-			result += name + ": ";
-			for (const auto& duration : m_completed_timers.at(name)) {
-				result += std::to_string(duration.count()) + " ms, ";
-			}
-			result.pop_back(); // Letztes Komma entfernen
-			result.pop_back(); // Leerzeichen entfernen
-			result += "\n";
+			result += print_timer(name) + "\n";
 		}
 		return result;
 	}
 
-	std::string print_timer(const std::string& name) const {
+	[[nodiscard]] std::string print_timer(const std::string& name) const {
 		std::string result;
 		result += name + ": ";
 		for (const auto& duration : m_completed_timers.at(name)) {
-			result += std::to_string(duration.count()) + " ms, ";
+			result += StringUtils::get_duration_description(duration) + ", ";
 		}
 		result.pop_back(); // Letztes Komma entfernen
 		result.pop_back(); // Leerzeichen entfernen

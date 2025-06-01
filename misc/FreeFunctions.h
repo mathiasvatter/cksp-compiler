@@ -99,93 +99,6 @@ inline std::string desanitize_dots(const std::string& str) {
 	return result;
 }
 
-
-// #include <string_view>
-//
-// inline std::string sanitize_dots(const std::string_view str) {
-// 	std::string result;
-// 	result.reserve(str.length() * 2); // Vorab reservieren
-//
-// 	size_t current_pos = 0;
-// 	size_t last_pos = 0;
-//
-// 	while (current_pos < str.length()) {
-// 		if (current_pos + 1 < str.length() && str[current_pos] == ':' && str[current_pos + 1] == ':') {
-// 			// Füge den Teil vor "::" hinzu
-// 			if (current_pos > last_pos) {
-// 				result.append(str.substr(last_pos, current_pos - last_pos));
-// 			}
-// 			result.append("__");
-// 			current_pos += 2;
-// 			last_pos = current_pos; // Update last_pos nach der Ersetzung
-// 		} else if (str[current_pos] == '.') {
-// 			// Füge den Teil vor "." hinzu
-// 			if (current_pos > last_pos) {
-// 				result.append(str.substr(last_pos, current_pos - last_pos));
-// 			}
-// 			result.append("__");
-// 			current_pos += 1;
-// 			last_pos = current_pos; // Update last_pos nach der Ersetzung
-// 		} else {
-// 			// Kein Treffer, einfach weitergehen
-// 			current_pos += 1;
-// 		}
-// 	}
-//
-// 	// Füge den restlichen Teil des Strings hinzu, falls vorhanden
-// 	if (last_pos < str.length()) {
-// 		result.append(str.substr(last_pos));
-// 	}
-//
-// 	return result;
-// }
-
-
-/*
- * helper function to search vectors for chars, std::String and Keyword obj
- */
-static bool contains(const std::vector<char>& vec, char c) {
-	return std::any_of(vec.begin(), vec.end(), [c](char ch) { return ch == c; });
-}
-
-static bool contains(const std::unordered_set<char>& set, char c) {
-	return set.find(c) != set.end();
-}
-
-static bool contains(const std::vector<std::string>& vec, const std::string& value) {
-	return std::find(vec.begin(), vec.end(), value) != vec.end();
-}
-
-static bool contains(const std::unordered_set<std::string>& vec, const std::string& value) {
-	return vec.contains(value);
-}
-
-static bool contains(const std::vector<Keyword>& vec, const std::string& value) {
-	return std::find_if(vec.begin(), vec.end(), [&value](const Keyword& kw) {
-	  return kw.value == value;
-	}) != vec.end();
-}
-
-static bool contains(const std::string& string, const std::string& substring) {
-	return string.find(substring) != std::string::npos;
-}
-static bool contains(const std::unordered_set<token>& token_set, const token& tok) {
-	return token_set.contains(tok);
-}
-
-
-inline std::string remove_substring(const std::string& str, const std::string& substring) {
-	// Suche nach dem Substring im Hauptstring
-	// Wenn der Substring gefunden wurde, entferne ihn
-	if (const size_t pos = str.find(substring); pos != std::string::npos) {
-		auto new_str = str;
-		new_str.erase(pos, substring.length());
-		return new_str;
-	}
-	return str;
-}
-
-
 /// takes string and returns vector of namespaces ('.')
 inline std::vector<std::string> get_namespaces(const std::string& str) {
 	std::vector<std::string> namespaces;
@@ -196,19 +109,4 @@ inline std::vector<std::string> get_namespaces(const std::string& str) {
 		namespaces.push_back(ns);
 	}
 	return namespaces;
-}
-
-
-static std::string to_lower(const std::string& input) {
-	std::string output = input;
-	std::transform(output.begin(), output.end(), output.begin(),
-				   [](unsigned char c) { return std::tolower(c); });
-	return output;
-}
-
-static std::string to_upper(const std::string& input) {
-	std::string output = input;
-	std::transform(output.begin(), output.end(), output.begin(),
-				   [](unsigned char c) { return std::toupper(c); });
-	return output;
 }

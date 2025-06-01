@@ -7,6 +7,8 @@
 
 #include <utility>
 #include <array>
+
+#include "../utils/StringUtils.h"
 #if defined(_WIN32)
     #include <windows.h>
     #include <VersionHelpers.h>
@@ -168,7 +170,7 @@ std::string CompileError::get_os_architecture() {
     return os_architecture;
 }
 
-std::string CompileError::generate_github_issue_url(const std::string &username, const std::string &repo) {
+std::string CompileError::generate_github_issue_url(const std::string &username, const std::string &repo) const {
     // Fehlermeldung und Code-Snippet für das Issue vorbereiten
     std::stringstream ss; // Added this line
     ss << error_type_to_string(m_type) << ": " << m_message; // Added this line
@@ -181,32 +183,12 @@ std::string CompileError::generate_github_issue_url(const std::string &username,
                << "**CKSP Version**\n\nv" << COMPILER_VERSION << "\n\n"
                << "**Environment**\n\n- OS Version: " << get_os_version() << "\n- Architecture: " << get_os_architecture() << "\n\n";
 
-    std::string encoded_title = url_encode(issue_title);
-    std::string encoded_body = url_encode(issue_body.str()); // Changed this line
-    std::string encoded_labels = url_encode("bug");
+    std::string encoded_title = StringUtils::percent_encode_uri(issue_title);
+    std::string encoded_body = StringUtils::percent_encode_uri(issue_body.str()); // Changed this line
+    std::string encoded_labels = StringUtils::percent_encode_uri("bug");
 
     std::string issueUrl = "https://github.com/" + username + "/" + repo + "/issues/new?labels=" + encoded_labels + "&title=" + encoded_title + "&body=" + encoded_body; // Changed this line
     return issueUrl;
-}
-
-std::string CompileError::url_encode(const std::string &value) {
-    std::ostringstream encoded;
-    encoded.fill('0');
-    encoded << std::hex;
-
-    for (char c : value) {
-        // Behalte alphanumerische Zeichen und einige andere intakt
-        if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
-            encoded << c;
-        } else {
-            // Prozent-encode andere Zeichen
-            encoded << std::uppercase;
-            encoded << '%' << std::setw(2) << int((unsigned char) c);
-            encoded << std::nouppercase;
-        }
-    }
-
-    return encoded.str();
 }
 
 void CompileError::set_message(const std::string &message) {

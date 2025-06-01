@@ -401,7 +401,7 @@ bool NodeReference::needs_get_ui_id() const {
 	const auto node = parent->parent->parent;
 	if (const auto func_call = node->cast<NodeFunctionCall>()) {
 		if (func_call->kind == NodeFunctionCall::Kind::Builtin) {
-			if (!contains(func_call->function->name, "control_par"))
+			if (!StringUtils::contains(func_call->function->name, "control_par"))
 				return false;
 		} else if (func_call->kind != NodeFunctionCall::Kind::Property) {
 				return false;

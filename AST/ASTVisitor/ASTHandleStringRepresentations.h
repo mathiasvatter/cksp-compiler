@@ -116,7 +116,7 @@ private:
 	}
 
 	static Type* is_repr_header(NodeFunctionHeader& header) {
-		if(contains(header.name, OBJ_DELIMITER+"__repr__")) {
+		if(StringUtils::contains(header.name, OBJ_DELIMITER+"__repr__")) {
 			if(header.params.size() == 1) {
 				return header.get_param(0)->ty;
 			}

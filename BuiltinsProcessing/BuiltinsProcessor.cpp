@@ -56,7 +56,7 @@ Result<SuccessTag> BuiltinsProcessor::parse_builtin_variables(const std::string 
 	m_pos = 0;
 	while(peek(m_tokens).type != token::END_TOKEN) {
 		if(peek(m_tokens).type == token::KEYWORD) {
-			if(contains(VAR_IDENT, peek(m_tokens).val[0])) {
+			if(VAR_IDENT.contains(peek(m_tokens).val[0])) {
 				auto node_variable_res = parse_builtin_variable(DataType::Const);
 				if(node_variable_res.is_error()) {
 					return Result<SuccessTag>(node_variable_res.get_error());
@@ -81,14 +81,14 @@ Result<SuccessTag> BuiltinsProcessor::parse_builtin_constants(const std::string 
     m_pos = 0;
     while(peek(m_tokens).type != token::END_TOKEN) {
         if(peek(m_tokens).type == token::KEYWORD) {
-            if(contains(VAR_IDENT, peek(m_tokens).val[0])) {
+            if(VAR_IDENT.contains(peek(m_tokens).val[0])) {
 				auto node_variable_res = parse_builtin_variable(DataType::Mutable);
 				if(node_variable_res.is_error()) {
 					return Result<SuccessTag>(node_variable_res.get_error());
 				}
                 auto node_variable = std::move(node_variable_res.unwrap());
                 m_builtin_variables.insert({node_variable->name, std::move(node_variable)});
-            } else if(contains(ARRAY_IDENT, peek(m_tokens).val[0])) {
+            } else if(ARRAY_IDENT.contains(peek(m_tokens).val[0])) {
 				auto node_array_res = parse_builtin_array();
 				if(node_array_res.is_error()) {
 					return Result<SuccessTag>(node_array_res.get_error());
@@ -373,7 +373,7 @@ Result<std::vector<std::unique_ptr<NodeFunctionParam>>> BuiltinsProcessor::parse
 }
 
 bool BuiltinsProcessor::is_property_function(const std::string &fun_name) {
-    return contains(fun_name, "_properties") || contains(fun_name, "set_bounds");
+    return StringUtils::contains(fun_name, "_properties") || StringUtils::contains(fun_name, "set_bounds");
 }
 
 
