@@ -206,7 +206,7 @@ public:
 			error.m_message = "Variable name 'SIZE' is reserved for array size constants. Please choose another name.";
 			error.exit();
 		}
-		if(contains(node.name, "SIZE_D")) {
+		if(StringUtils::contains(node.name, "SIZE_D")) {
 			auto error = CompileError(ErrorType::VariableError, "", "", node.tok);
 			error.m_message = "Variable names containing 'SIZE_D' are reserved for multidimensional array size constants. Please choose another name.";
 			error.exit();

@@ -10,6 +10,7 @@
 #include "ASTHelper.h"
 #include "../Types.h"
 #include "../../misc/HashFunctions.h"
+#include "../../utils/StringUtils.h"
 
 class ASTDesugaring;
 class ASTLowering;

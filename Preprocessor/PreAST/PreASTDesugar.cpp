@@ -23,7 +23,7 @@ void PreASTDesugar::do_substitution(PreNodeLiteral& node) {
 			node.replace_with(std::move(substitute));
 		} else if(node.cast<PreNodeKeyword>()) {
 			// in case there are more # substitutions in one word
-			if (count_char(node.value.val, '#') >= 2) {
+			if (StringUtils::count_char(node.value.val, '#') >= 2) {
 				node.value.val = get_text_replacement(node.value);
 			}
 		}
@@ -303,7 +303,7 @@ std::unique_ptr<PreNodeAST> PreASTDesugar::get_substitute(const std::string& nam
 
 std::string PreASTDesugar::get_text_replacement(const Token& name) {
 	// Zähle einmalig die Anzahl der '#' im Token
-	if (count_char(name.val, '#') % 2 != 0) {
+	if (StringUtils::count_char(name.val, '#') % 2 != 0) {
 		auto error = CompileError(ErrorType::PreprocessorError,
 					 "", "", name);
 		error.set_message("Found wrong number of # in macro replacement.");

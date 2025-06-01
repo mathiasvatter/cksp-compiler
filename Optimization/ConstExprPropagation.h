@@ -112,10 +112,10 @@ public:
 				if(func_call->get_definition()) {
 					auto param_list = node->parent->cast<NodeParamList>();
 					auto &param = func_call->get_definition()->header->get_param(param_list->get_idx(node));
-					if(contains(param->name, "variable")) {
+					if(StringUtils::contains(param->name, "variable")) {
 						return node;
 					}
-					if(contains(param->name, "array")) {
+					if(StringUtils::contains(param->name, "array")) {
 						return node;
 					}
 				} else {

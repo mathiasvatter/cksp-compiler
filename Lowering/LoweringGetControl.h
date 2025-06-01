@@ -51,11 +51,11 @@ public:
 
 private:
 	std::unique_ptr<NodeReference> get_full_control_param(const std::string& control_param) {
-		std::string control_par = to_lower(control_param);
+		std::string control_par = StringUtils::to_lower(control_param);
 		if(control_par == "x") control_par = "pos_x";
 		if(control_par == "y") control_par = "pos_y";
 		if(control_par == "default") control_par += "_value";
-		if(const auto builtin_var = m_def_provider->get_builtin_variable(to_upper("control_par_"+control_par))) {
+		if(const auto builtin_var = m_def_provider->get_builtin_variable(StringUtils::to_upper("control_par_"+control_par))) {
 			return builtin_var->to_reference();
 		}
 		return nullptr;
@@ -91,18 +91,18 @@ private:
 	}
 
 	static Type* get_control_type(const std::string& control_param) {
-		std::string control_par = to_lower(control_param);
+		std::string control_par = StringUtils::to_lower(control_param);
 		static const std::unordered_set<std::string> str_substrings{"name", "path", "picture", "help", "identifier", "label", "text"};
 		static const std::unordered_set<std::string> int_substrings{"state", "alignment", "pos", "shifting"};
 		Type* type = TypeRegistry::Integer;
 		for (auto const &substring : str_substrings) {
-			if(contains(control_par, substring)) {
+			if(StringUtils::contains(control_par, substring)) {
 				type = TypeRegistry::String;
 				break;
 			}
 		}
 		for (auto const &substring : int_substrings) {
-			if(contains(control_par, substring)) {
+			if(StringUtils::contains(control_par, substring)) {
 				type = TypeRegistry::Integer;
 				break;
 			}
