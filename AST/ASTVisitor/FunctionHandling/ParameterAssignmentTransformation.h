@@ -15,7 +15,7 @@
  */
 class ParameterAssignmentTransformation final : public ASTVisitor {
 	DefinitionProvider* m_def_provider = nullptr;
-	std::vector<NodeFunctionCall*> m_function_call_stack;
+	std::vector<NodeFunctionCall*> m_function_call_stack{};
 	struct FunctionTransformData {
 		std::vector<std::unique_ptr<NodeFunctionParam>> promoted_params;
 		std::vector<int> promoted_param_indices;
@@ -40,12 +40,17 @@ public:
 		auto n = node.accept(*this);
 		m_function_call_stack.clear();
 		m_global_declarations.clear();
+		node.debug_print();
 
+		node.reset_function_visited_flag();
+		node.remove_references();
+		node.collect_references();
 		static ParameterReuse reuse(&node);
 		reuse.do_parameter_reuse(
 			m_subcalls_per_function,
 			m_param_decl_per_function
 		);
+		node.debug_print();
 
 		node.reset_function_visited_flag();
 		return n;
@@ -209,7 +214,6 @@ private:
 	// }
 
 	NodeAST* visit(NodeFunctionDefinition& node) override {
-		// if(node.visited) return &node;
 		node.header ->accept(*this);
 		if (node.return_variable.has_value())
 			node.return_variable.value()->accept(*this);
@@ -220,11 +224,21 @@ private:
 		for (const auto& call : m_function_call_stack) {
 			auto existing_def = call->get_definition().get();
 			auto current_def = &node;
-			if (existing_def && existing_def != current_def) {
+			if (existing_def) {
 				m_subcalls_per_function[current_def].insert(existing_def);
 				m_subcalls_per_function[existing_def].insert(current_def);
 			}
 		}
+
+		// for (const auto& def : m_function_definition_stack) {
+		// 	auto existing_def = def;
+		// 	auto current_def = &node;
+		// 	if (existing_def) {
+		// 		m_subcalls_per_function[current_def].insert(existing_def);
+		// 		m_subcalls_per_function[existing_def].insert(current_def);
+		// 	}
+		// }
+		m_subcalls_per_function[&node].insert(&node);
 
 		{
 			if (node.is_expression_function()) return &node;
