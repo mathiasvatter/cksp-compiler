@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <ranges>
 #include <utility>
 
 #include "../AST/ASTVisitor/ASTVisitor.h"
@@ -179,6 +180,22 @@ public:
 		compile_error.m_expected = "Valid declaration";
 		return compile_error;
 	};
+
+	[[nodiscard]] std::vector<std::string> misspelled_suggestions(const std::string& name) const {
+		std::vector<std::string> suggestions;
+		size_t max_levenshtein_distance = 1; // maximum distance for suggestions
+		std::pair<int, int> word_length = {name.length()-1, name.length()+1}; // range of word length for suggestions
+		for (const auto & m_declared_data_structure : std::ranges::reverse_view(m_declared_data_structures)) {
+			for (const auto &key : m_declared_data_structure | std::views::keys) {
+				if (key.length() < word_length.first || key.length() > word_length.second) continue;
+				int distance = StringUtils::get_levenshtein_distance(name, key);
+				if (distance > 0 && distance <= max_levenshtein_distance) {
+					suggestions.push_back(key);
+				}
+			}
+		}
+		return suggestions;
+	}
 
 	// static CompileError throw_declaration_type_error(NodeReference* node) {
 	// 	auto compile_error = CompileError(ErrorType::VariableError, "", "", node->tok);

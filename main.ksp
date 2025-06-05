@@ -1,205 +1,29 @@
 
 #pragma output_path("test.txt")
 
-on init
-    declare array[3]: int[] := (1, 2, 3)
-    ar(array)
-    declare array_big[100]: int[] := (1)
-    ar(array_big)
 
-    declare preset.array[100]
-    declare ndarray[10,10] := [1,2,3,3,4]
-    declare preset.n: int := 0
-    for el in ndarray
-        el := preset.array[preset.n]
-        // message(el)
-        inc(preset.n)
-    end for
+on init
+    
+    message(func_a(3, 4))
+
 end on
 
 on persistence_changed
-    ar(array)
-    ar(array_big)
-    // ar([1,2,3,4])
-
-    test_func(1, 2)
-    test_func2(3, 4, 2)
-    test_func(1, 2)
-    test_func2(3, 4, 3)
-    test_func3(3, 4, 3)
-    test_func3(3, 4, 3)
+    message(func_a(5, 9))
+    func_c(3,4)
 end on
 
-function ar(array1: int[])
-    declare idx: int := 0
-    while idx < num_elements(array1)
-        array1[idx] := array1[idx] * 2
-        message(array1[idx])
-        inc(idx)
-    end while
+
+function func_a(param1, param2)
+    declare res := param1 + param2
+    return func_b(res)
+end function 
+
+function func_b(param)
+    declare res := param * 2
+    return res
 end function
 
-
-function test_func(a: int, b: int)
-    message(a + b)
+function func_c(param, param2)
+    message(param + param2)
 end function
-
-function test_func2(c: int, d: int, e: int)
-    message(c * d / e)
-end function
-
-function test_func3(c: int, d: int, e: int)
-    message(c * d / e)
-end function
-
-
-
-
-
-// function higher_order(func: (int, int): string, a: int, b: int): string
-// 	return func(a, b)
-// end function
-
-// on note
-// 	declare a
-// 	if a = 1
-// 		declare strings[4] := ("a", "b", "c", "d")
-// 		message(strings[0])
-// 		declare b
-// 		if b = 1
-// 			message(a)
-// 		end if
-
-// 		declare c
-// 		message(c, b)	
-
-// 		strings := ("a", "b", "c", "d")
-// 	end if
-// 	declare strings2[] := ("d", "e", "f", "g")
-// 	// strings := strings2
-// 	if a = 2
-// 		declare d
-// 		if d = 2
-// 			message(a)
-// 		end if
-
-// 		declare e
-// 		message(e, d)	
-
-// 	end if
-// 	declare global mee[2,2] := ((2,2),(2,2))
-// 	stack_transform_me(1,2,mee)
-// update_chord_info_label()
-// end on
-
-// function infere_me(param1, param2, param3: any)
-// 	message(param1, param2, param3)
-// end function
-
-// function infere_me(param1: int, param2: real, param3: string)
-// 	message(param1, param2, param3)
-// end function
-
-
-
-// function update_chord_info_label()
-// 	declare _acc
-// 	_acc := get_chord_accidental(0,3)
-// end function
-
-// function get_chord_accidental(key, mode) -> result
-// 	declare _pos
-// 	_pos := Co5.get_pos(key, mode)
-// end function
-
-// function Co5.get_pos(key, mode) -> result
-// 	declare _mover := 0
-// 	declare _counter := 0
-// 	while _mover # key
-// 		inc(_counter)
-// 		_mover := (_mover + 7) mod 12
-// 	end while
-// 	result := _counter
-// end function
-
-// function update_user_preset_to_1_1(float_mask)
-// 	floatmask.set_range(float_mask, 14, 33, 0)
-// end function
-
-// function floatmask.set_range(float_mask, start_idx, end_idx, val)
-//     bitlist.set_range(float_mask[0], min(32, start_idx), min(32, end_idx), val)
-// 	bitlist.set_range(float_mask[1], max(32, start_idx)-32, max(32, end_idx)-32, val)
-// end function
-
-
-// function stack_transform_me(param1: int, param2: int, param3: int[][])
-// 	if param1 = param2
-// 		declare i
-// 		for i := 0 to num_elements(param3 ,2)
-// 			message(param3[1, i])
-// 		end for
-// 		stack_transform_me2(1)
-// 	end if
-// end function	
-
-// function stack_transform_me2(h: int)
-// 	declare i
-// 	for i := 0 to num_elements(mee ,2)
-// 		message(mee[h, i], h)
-// 	end for
-// end function	
-
-
-
-
-// function search_matrix(matrix: number[][], target: number): number
-//     declare row, col: int
-//     for row := 0 to num_elements(matrix, 1)- 1
-//         for col := 0 to num_elements(matrix, 2)- 1
-//             if matrix[row,col] = target
-//                 return (row * num_elements(matrix,1)) + col
-//             end if
-//         end for
-//     end for
-
-//     return -1  // If the target is not found
-// end function
-
-// function return_me_preemptively(arr: int[])
-// 	for i, el in pairs(arr)
-// 		if(el = 1)
-// 			return 1
-// 		end if
-// 		message(el)
-// 	end for	
-
-// end function	
-
-
-
-
-{*******************************************************************************************************************
-												* MACROS *
-*******************************************************************************************************************}
-
-
-
-// function bitlist.set_range(bit_list, start_idx, end_idx, val)
-// 	bit_list := eq(val, 1) * (eq(end_idx-start_idx, 32) * sh_right(-1, 32) + (bit_list .or. sh_left(.not. sh_left(-1, end_idx-start_idx), 32-end_idx))) + eq(val, 0) * (lt(end_idx-start_idx, 32) * (bit_list .and. .not. sh_left(.not. sh_left(-1, end_idx-start_idx), 32-end_idx)))
-// end function
-
-// function max(a,b) -> result
-// 	result := a - ((a - b) .and. sh_right((a - b), 31))
-// end function
-
-// function min(a,b) -> result
-// 	result :=  a - ((a - b) .and. sh_right((b - a), 31))
-// end function
-
-// function eq(a,b) -> result
-//   result := -sh_right(abs(a-b)-1,31)
-// end function
-
-// function lt(a,b) -> result  { predicate for a < b }
-//   result := -sh_right(a-b,31)
-// end function

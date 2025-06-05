@@ -71,14 +71,19 @@ private:
 		return nullptr;
 	}
 
-	void add_free_param(NodeDataStructure& param, NodeFunctionDefinition& def) {
-		auto hash = ASTVariableReuse::get_passive_var_hash(param);
+	/// adds a new free parameter to the reuse map, including all its dependencies
+	void add_new_free_param(NodeDataStructure& param, NodeFunctionDefinition& def) {
+		const auto hash = ASTVariableReuse::get_passive_var_hash(param);
 		std::unordered_set<NodeFunctionDefinition*> init_dependencies;
+		if (const auto it = m_subcalls_per_function.find(&def); it != m_subcalls_per_function.end()) {
+			init_dependencies.insert(it->second.begin(), it->second.end());
+		}
 		init_dependencies.insert(&def);
 		params_to_reuse[hash].push_back(std::make_unique<ParamFromFunction>(&param, init_dependencies));
 	}
 
-	void add_free_param(std::unique_ptr<ParamFromFunction> param) {
+	/// re-adds a (now) free parameter to the reuse map, implying that its dependencies have already been added
+	void readd_free_param(std::unique_ptr<ParamFromFunction> param) {
 		auto hash = ASTVariableReuse::get_passive_var_hash(*param->param);
 		params_to_reuse[hash].push_back(std::move(param));
 	}
@@ -107,8 +112,13 @@ private:
 				auto & param = params[i];
 				if (auto reused_param = get_free_param(*param, *def)) {
 					auto reused = reused_param->param->get_shared();
-					// add current function to param function dependencies
+					// add current function and its dependencies to param function dependencies
+					auto it2 = m_subcalls_per_function.find(def.get());
+					if (it2 != m_subcalls_per_function.end()) {
+						reused_param->function.insert(it2->second.begin(), it2->second.end());
+					}
 					reused_param->function.insert(def.get());
+
 					params_reused_in_function.push_back(std::move(reused_param));
 					// set new declaration pointer to reused param in param references
 					parallel_for_each(param->references.begin(), param->references.end(),
@@ -127,13 +137,13 @@ private:
 					decl->remove_node();
 
 				} else {
-					add_free_param(*param, *def);
+					add_new_free_param(*param, *def);
 				}
 
 			}
 
 			for (auto & i : params_reused_in_function) {
-				add_free_param(std::move(i));
+				readd_free_param(std::move(i));
 			}
 			params_reused_in_function.clear();
 
