@@ -42,9 +42,12 @@ public:
 		m_global_declarations.clear();
 		node.debug_print();
 
-		node.reset_function_visited_flag();
-		node.remove_references();
-		node.collect_references();
+		// node.reset_function_visited_flag();
+		// node.remove_references();
+		// node.collect_references();
+		// node.debug_print();
+
+
 		static ParameterReuse reuse(&node);
 		reuse.do_parameter_reuse(
 			m_subcalls_per_function,
@@ -127,6 +130,13 @@ private:
 			definition->accept(*this);
 
 			m_function_call_stack.pop_back();
+		} else if (!m_function_call_stack.empty()) {
+			// add all subcalls per function to this definition (since it will not be visited)
+			auto current_func =  m_function_call_stack.back()->get_definition().get();
+			auto it = m_subcalls_per_function.find(definition.get());
+			if (it != m_subcalls_per_function.end()) {
+				m_subcalls_per_function[current_func].insert(it->second.begin(), it->second.end());
+			}
 		}
 
 
@@ -169,7 +179,7 @@ private:
 				}
 
 				// check if formal and actual param are the same
-				if (formal_param->name != actual_param->get_string()) {
+				if (func_data.promoted_params[i]->kind != NodeInstruction::Kind::Promoted) {
 					auto assign = std::make_unique<NodeSingleAssignment>(
 						formal_param->to_reference(),
 						std::move(actual_param),

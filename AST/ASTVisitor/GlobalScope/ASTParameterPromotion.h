@@ -125,6 +125,7 @@ private:
 			auto node_body = std::make_unique<NodeBlock>(Token(), true);
 			for (const auto &decl : m_local_var_declarations[definition.get()]) {
 				auto var = clone_as<NodeDataStructure>(decl);
+				// var->name = m_def_provider->get_fresh_name(var->name);
 				var->references.clear();
 				auto promoted_decl = std::make_unique<NodeSingleDeclaration>(std::move(var), decl->tok);
 				promoted_decl->kind = NodeSingleDeclaration::Kind::Promoted;

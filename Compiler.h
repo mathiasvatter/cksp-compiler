@@ -233,6 +233,7 @@ public:
 			ASTFunctionStrategy function_strategy1(m_program);
 			function_strategy1.determine_function_strategies(*m_program);
 
+			// ast->reset_function_visited_flag();
 			// ast->remove_references();
 			// ast->collect_references();
 			static ParameterAssignmentTransformation assignment_transformation(m_program);
