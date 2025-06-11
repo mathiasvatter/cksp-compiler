@@ -9,7 +9,7 @@
 /**
  * This class returns true if node is nil
  */
-class NilValidator : public ASTVisitor {
+class NilValidator final : public ASTVisitor {
 private:
 	bool m_is_nil = false;
 

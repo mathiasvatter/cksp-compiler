@@ -161,7 +161,7 @@ public:
 		// get_ui_id($_lbl_lbl0)+_iterator
 		auto r_value = std::make_unique<NodeBinaryExpr>(
 			token::ADD,
-			node_ui_control_var_ref->wrap_in_get_ui_id(),
+			DefinitionProvider::get_ui_id(std::move(node_ui_control_var_ref)),
 			node_iterator_var_ref->clone(), ui_control.tok
 		);
 		r_value->ty = TypeRegistry::Integer;

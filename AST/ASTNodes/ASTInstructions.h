@@ -604,6 +604,8 @@ struct NodeFunctionParam final : NodeInstruction {
 		variable -> update_token_data(token);
 		if(value) value -> update_token_data(token);
 	}
+	/// returns index of the parameter in the function header (-1 if not found)
+	size_t get_index();
 	ASTLowering* get_lowering(NodeProgram *program) const override;
 };
 
