@@ -63,6 +63,7 @@ private:
 				definition->accept(*this);
 				m_program->function_call_stack.pop();
 				definition->visited = true;
+				definition->is_used = true;
 			}
 		}
 

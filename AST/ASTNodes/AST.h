@@ -16,6 +16,7 @@ class ASTDesugaring;
 class ASTLowering;
 struct NodeProgram;
 struct NodeFunctionHeaderRef;
+struct NodeReference;
 
 struct NodeAST {
     Token tok;
@@ -94,7 +95,8 @@ struct NodeAST {
 	NodeAST* collect_call_sites(NodeProgram* program);
 	/// Determines if current Node is function argument
 	[[nodiscard]] NodeFunctionHeaderRef* is_func_arg() const;
-	[[nodiscard]] bool is_literal();
+	NodeReference* is_reference();
+    [[nodiscard]] bool is_literal();
 };
 
 template<typename T>
@@ -150,8 +152,8 @@ struct NodeReference : NodeAST {
 	[[nodiscard]] std::shared_ptr<NodeDataStructure> get_declaration() const;
 	/// Completes the data structure of reference by copying missing parameters of declaration
 	void match_data_structure(const std::shared_ptr<NodeDataStructure>& data_structure);
-	std::unique_ptr<struct NodeFunctionCall> wrap_in_get_ui_id();
-	[[nodiscard]] bool needs_get_ui_id() const;
+	// std::unique_ptr<struct NodeFunctionCall> wrap_in_get_ui_id();
+	// [[nodiscard]] bool needs_get_ui_id() const;
 	/// determines if reference is reference to struct member
 	[[nodiscard]] bool is_member_ref() const;
 	/// checks if reference is raw version of multidimensional array
@@ -694,7 +696,7 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	int num_return_params = 0;
 	int num_return_stmts = 0;
 	std::vector<NodeReturn*> return_stmts;
-    std::unordered_set<NodeFunctionCall*> call_sites = {};
+    std::unordered_set<struct NodeFunctionCall*> call_sites = {};
     std::shared_ptr<NodeFunctionHeader> header;
     std::optional<std::shared_ptr<NodeDataStructure>> return_variable;
     bool override = false;

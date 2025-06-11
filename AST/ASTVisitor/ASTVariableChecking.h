@@ -26,8 +26,8 @@ public:
 		}
 		node.reset_function_visited_flag();
 		m_def_provider->refresh_scopes();
-		FunctionParamDataTypeGetter data_type_getter(m_program);
-		node.accept(data_type_getter);
+		// FunctionParamDataTypeGetter data_type_getter(m_program);
+		// node.accept(data_type_getter);
 		return &node;
     }
 
@@ -41,7 +41,9 @@ public:
 		m_def_provider->refresh_data_vectors();
 		node.accept(*this);
 		for(const auto & func_def : node.function_definitions) {
-			if(!func_def->visited and func_def->is_used) func_def->accept(*this);
+			if(!func_def->visited and func_def->is_used) {
+				func_def->accept(*this);
+			}
 		}
 		node.reset_function_visited_flag();
 		m_def_provider->refresh_scopes();

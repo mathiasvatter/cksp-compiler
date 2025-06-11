@@ -95,9 +95,9 @@ private:
 			if (formal_param->variable->ty->cast<CompositeType>()) {
 				formal_param->is_pass_by_ref = true;
 			}
-			if (formal_param->variable->data_type == DataType::UIControl) {
-				formal_param->is_pass_by_ref = true;
-			}
+			// if (formal_param->variable->data_type == DataType::UIControl) {
+			// 	formal_param->is_pass_by_ref = true;
+			// }
 
 			// if (actual_param->cast<NodeInitializerList>()) {
 			// 	formal_param->is_pass_by_ref = false;
@@ -109,7 +109,7 @@ private:
 
 	static bool is_parameterstack_candidate(const NodeFunctionDefinition& def) {
 		for(const auto &param : def.header->params) {
-			if (param->variable->ty->is_union_type() || param->variable->data_type == DataType::UIControl ||
+			if (param->variable->ty->is_union_type() ||
 				param->is_pass_by_ref) {
 				return false;
 			}

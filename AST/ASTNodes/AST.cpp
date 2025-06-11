@@ -24,6 +24,7 @@
 #include "../ASTVisitor/ReturnFunctionRewriting/ReturnParamPromotion.h"
 #include "../../Optimization/ConstantFolding.h"
 #include "../../Lowering/LoweringInitializerList.h"
+#include "../../Optimization/ReferenceValidator.h"
 #include "../ASTVisitor/ASTVariableChecking.h"
 #include "../ASTVisitor/TypeInference.h"
 #include "../ASTVisitor/FunctionHandling/BuiltinRestrictionValidator.h"
@@ -198,6 +199,11 @@ NodeFunctionHeaderRef* NodeAST::is_func_arg() const {
 	return this->parent->parent->cast<NodeFunctionHeaderRef>();
 }
 
+NodeReference * NodeAST::is_reference() {
+	static ReferenceValidator ref_validator;
+	return ref_validator.cast_reference(*this);
+}
+
 bool NodeAST::is_literal() {
 	return cast<NodeInt>() or cast<NodeReal>() or cast<NodeString>() or cast<NodeInitializerList>();
 }
@@ -366,10 +372,6 @@ NodeReference* NodeReference::lower_type() {
 	return this;
 }
 
-std::unique_ptr<NodeFunctionCall> NodeReference::wrap_in_get_ui_id() {
-	return DefinitionProvider::get_ui_id(clone_as<NodeReference>(this));
-}
-
 NodeSingleAssignment* NodeReference::is_l_value() const {
 	if(const auto assignment = parent->cast<NodeSingleAssignment>()) {
 		if(assignment->l_value.get() == this) {
@@ -393,24 +395,7 @@ NodeSingleAssignment* NodeReference::is_l_value() const {
 // 	return wrap_it;
 // }
 
-bool NodeReference::needs_get_ui_id() const {
-	if (data_type != DataType::UIControl || !is_func_arg())
-		return false;
 
-	// In NodeFunctionCall casten und weitere Bedingungen prüfen.
-	const auto node = parent->parent->parent;
-	if (const auto func_call = node->cast<NodeFunctionCall>()) {
-		if (func_call->kind == NodeFunctionCall::Kind::Builtin) {
-			if (!StringUtils::contains(func_call->function->name, "control_par"))
-				return false;
-		} else if (func_call->kind != NodeFunctionCall::Kind::Property) {
-				return false;
-		}
-		// Prüfen, ob diese Referenz das erste Argument ist.
-		return func_call->function->get_arg(0).get() == this;
-	}
-	return false;
-}
 
 NodeSingleAssignment *NodeReference::is_r_value() const {
 	if(const auto assignment = parent->cast<NodeSingleAssignment>()) {

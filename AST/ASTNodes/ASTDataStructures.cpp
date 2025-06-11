@@ -6,7 +6,6 @@
 
 #include <utility>
 #include "../ASTVisitor/ASTVisitor.h"
-#include "../../Lowering/LoweringUIControlArray.h"
 #include "../../Lowering/DataLowering/DataLoweringNDArray.h"
 #include "../../Lowering/LoweringList.h"
 #include "../../Desugaring/DesugarConst.h"

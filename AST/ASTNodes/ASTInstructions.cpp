@@ -652,6 +652,17 @@ NodeAST *NodeFunctionParam::replace_child(NodeAST* oldChild, std::unique_ptr<Nod
 	return nullptr;
 }
 
+size_t NodeFunctionParam::get_index() {
+	if (const auto func_header = parent->cast<NodeFunctionHeader>()) {
+		for (size_t i = 0; i< func_header->params.size(); i++) {
+			if (func_header->params[i].get() == this) {
+				return i;
+			}
+		}
+	}
+	return -1;
+}
+
 ASTLowering* NodeFunctionParam::get_lowering(NodeProgram *program) const {
 	return nullptr;
 }

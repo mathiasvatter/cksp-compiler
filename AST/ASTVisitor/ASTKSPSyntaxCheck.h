@@ -82,20 +82,20 @@ public:
 		return &node;
 	}
 
-	NodeAST* visit(NodeArrayRef& node) override {
-		if(node.index) node.index->accept(*this);
-		if(node.needs_get_ui_id()) {
-			return node.replace_with(std::move(node.wrap_in_get_ui_id()));
-		}
-		return &node;
-	}
-
-	NodeAST* visit(NodeVariableRef& node) override {
-		if(node.needs_get_ui_id()) {
-			return node.replace_with(std::move(node.wrap_in_get_ui_id()));
-		}
-		return &node;
-	}
+	// NodeAST* visit(NodeArrayRef& node) override {
+	// 	if(node.index) node.index->accept(*this);
+	// 	if(node.needs_get_ui_id()) {
+	// 		return node.replace_with(std::move(node.wrap_in_get_ui_id()));
+	// 	}
+	// 	return &node;
+	// }
+	//
+	// NodeAST* visit(NodeVariableRef& node) override {
+	// 	if(node.needs_get_ui_id()) {
+	// 		return node.replace_with(std::move(node.wrap_in_get_ui_id()));
+	// 	}
+	// 	return &node;
+	// }
 
 	NodeAST* visit(NodeUIControl& node) override {
 		m_ui_control_count[node.ui_control_type]++;
