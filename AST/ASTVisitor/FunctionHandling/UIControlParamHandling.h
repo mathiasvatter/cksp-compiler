@@ -69,6 +69,14 @@ private:
 								 " semantics this will not work as expected since <get_ui_id> can only be used directly with <ui controls>.\n "
 								"Try passing <ui control> variables by reference instead (using <ref> keyword before the parameter) or using <get_ui_id> when passing the parameter to the function.";
 						error.print();
+						// // get all actual parameters to this formal param -> if none is get_ui_id -> make pass-by-reference
+						// auto actual_params = get_actual_params(*param);
+						// for (auto& arg : actual_params) {
+						// 	if (auto r = arg->is_reference()) {
+						//
+						// 	}
+						// }
+						param->is_pass_by_ref = true;
 					}
 				}
 			}
@@ -142,6 +150,22 @@ private:
 				find_declaration(*ref, references);
 			}
 		}
+	}
+
+	static std::vector<NodeAST*> get_actual_params(NodeFunctionParam& param) {
+		auto index = param.get_index();
+		if (index < 0) return {};
+		auto func_def = param.parent->parent->cast<NodeFunctionDefinition>();
+		if (!func_def) return {};
+		std::vector<NodeAST*> actual_params;
+		for (auto& call : func_def->call_sites) {
+			if (call->function->get_num_args() <= index) {
+				auto error = CompileError(ErrorType::InternalError, "Function call does not have enough arguments.", "", call->tok);
+				error.exit();
+			}
+			actual_params.push_back(call->function->get_arg(index).get());
+		}
+		return actual_params;
 	}
 
 
