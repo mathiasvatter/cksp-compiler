@@ -254,9 +254,14 @@ bool NodeDataStructure::determine_locality(const NodeProgram* program, const Nod
 	return is_local;
 }
 
-bool NodeDataStructure::is_function_param() const {
-	if(!parent) return false;
-	return parent->cast<NodeFunctionParam>() and parent->parent->cast<NodeFunctionHeader>();
+NodeFunctionParam* NodeDataStructure::is_function_param() const {
+	if(!parent) return nullptr;
+	if (auto param = parent->cast<NodeFunctionParam>()) {
+		if (param->parent->cast<NodeFunctionHeader>()) {
+			return param;
+		}
+	}
+	return nullptr;
 }
 
 Type* NodeDataStructure::cast_type() {

@@ -6,6 +6,11 @@ on init
     
     message(func_a(3, 4))
 
+    declare ui_button btn2
+
+    declare ui_button btn
+    funzl(btn, btn2)
+
 end on
 
 on persistence_changed
@@ -13,6 +18,12 @@ on persistence_changed
     func_c(3,4)
 end on
 
+function funzl(ref btn_name, other_control)
+    set_bounds(btn_name, other_control->x, other_control->y)
+    if(get_ui_id(btn_name) > 0) 
+        message("henlo")
+    end if
+end function
 
 function func_a(param1, param2)
     declare res := param1 + param2

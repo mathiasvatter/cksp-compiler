@@ -22,19 +22,7 @@ public:
 
 private:
 	NodeAST* visit(NodeFunctionCall& node) override {
-		if (is_get_ui_id_call(node)) {
-			if (auto ref = node.function->get_arg(0)->is_reference()) {
-				if (auto decl = ref->get_declaration()) {
-					if (decl->is_function_param() and !decl->parent->cast<NodeFunctionParam>()->is_pass_by_ref) {
-						auto error = CompileError(ErrorType::CompileWarning, "", "", node.tok);
-						error.m_message = "Found <get_ui_id> call in function body with a parameter as argument. Due to pass-by-value"
-								 " semantics this will not work as expected since <get_ui_id> can only be used with ui controls. Try passing"
-						" ui controls by reference instead or using <get_ui_id> when passing the parameter to the function.";
-						error.print();
-					}
-				}
-			}
-		}
+		check_get_ui_id_usage_and_throw_error(node);
 		node.function->accept(*this);
 		if (node.is_builtin_kind()) {
 			if (node.kind == NodeFunctionCall::Kind::Property || StringUtils::contains(node.function->name, "control_par")) {
@@ -49,6 +37,44 @@ private:
 		return &node;
 	}
 
+	NodeAST* visit(NodeGetControl& node) override {
+		node.ui_id->accept(*this);
+		if (auto ref = node.ui_id->is_reference()) {
+			std::vector<NodeReference*> references;
+			find_declaration(*ref, references);
+			wrap_in_get_ui_id(references);
+		}
+		return &node;
+	}
+
+	NodeAST* visit(NodeSetControl& node) override {
+		node.ui_id->accept(*this);
+		if (auto ref = node.ui_id->is_reference()) {
+			std::vector<NodeReference*> references;
+			find_declaration(*ref, references);
+			wrap_in_get_ui_id(references);
+		}
+		return &node;
+	}
+
+
+/// helper functions
+	static void check_get_ui_id_usage_and_throw_error(NodeAST& node) {
+		if (const auto func_call = is_get_ui_id_call(node)) {
+			if (const auto ref = func_call->function->get_arg(0)->is_reference()) {
+				if (const auto decl = ref->get_declaration()) {
+					if (const auto param = decl->is_function_param(); param and !param->is_pass_by_ref) {
+						auto error = CompileError(ErrorType::CompileWarning, "", "", node.tok);
+						error.m_message = "Found <get_ui_id> call in function body with a parameter as argument. Due to pass-by-value"
+								 " semantics this will not work as expected since <get_ui_id> can only be used directly with <ui controls>.\n "
+								"Try passing <ui control> variables by reference instead (using <ref> keyword before the parameter) or using <get_ui_id> when passing the parameter to the function.";
+						error.print();
+					}
+				}
+			}
+		}
+	}
+
 	static bool is_in_get_ui_id(const NodeReference& ref) {
 		if (auto header = ref.is_func_arg()) {
 			if (auto func_call = header->parent->cast<NodeFunctionCall>()) {
@@ -58,13 +84,13 @@ private:
 		return false;
 	}
 
-	static bool is_get_ui_id_call(NodeAST& node) {
+	static NodeFunctionCall* is_get_ui_id_call(NodeAST& node) {
 		if (auto func_call = node.cast<NodeFunctionCall>()) {
 			if (func_call->kind == NodeFunctionCall::Kind::Builtin && func_call->function->name == "get_ui_id") {
-				return true;
+				return func_call;
 			}
 		}
-		return false;
+		return nullptr;
 	}
 
 
@@ -94,8 +120,7 @@ private:
 
 	void find_declaration(NodeReference& ref, std::vector<NodeReference*> &references) {
 		if (auto decl = ref.get_declaration()) {
-			if (decl->is_function_param()) {
-				auto param = decl->parent->cast<NodeFunctionParam>();
+			if (auto param = decl->is_function_param()) {
 				if (!param->is_pass_by_ref) {
 					find_original_references(*param, references);
 				}
@@ -118,13 +143,6 @@ private:
 			}
 		}
 	}
-
-
-};
-
-class FunctionHasControlFunctions final : public ASTVisitor {
-	bool has_control_functions = false;
-
 
 
 };
