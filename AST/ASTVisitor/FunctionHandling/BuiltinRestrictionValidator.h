@@ -10,7 +10,7 @@
  * Stores restrictive and thread unsafe ksp commands
  * Provides functions to check if a function is allowed in the current context
  */
-class FunctionRestrictionValidator final : public ASTVisitor {
+class BuiltinRestrictionValidator final : public ASTVisitor {
 public:
 	/// stores for every restricted builtin function the callbacks where they are allowed
 	/// purge_group can only be used in on ui_control, on ui_controls and on persistence_changed
@@ -26,7 +26,11 @@ public:
 		{ "load_array",     { "init", "persistence_changed", "ui_control", "pgs_changed", "ui_controls" } },
 		{ "load_array_str", { "init", "persistence_changed", "ui_control", "pgs_changed", "ui_controls" } },
 		{ "fs_get_filename", {"ui_control", "ui_controls"}},
-		{"set_snapshot_type", {"init"}},
+		{ "set_snapshot_type", {"init"}},
+		{ "set_map_editor_event_color", {"init"}},
+		{ "watch_var", {"init"}},
+		{ "watch_array_idx", {"init"}},
+		{ "disable_logging", {"init"}},
 		{ "set_note_controller", ([]() -> std::unordered_set<std::string> {
 		 std::unordered_set<std::string> allowed(CALLBACKS.begin(), CALLBACKS.end());
 		 allowed.erase("init");
@@ -37,6 +41,12 @@ public:
 		 allowed.erase("init");
 		 return allowed;
 		})() },
+	};
+
+	inline static const std::unordered_map<std::string, std::unordered_set<std::string>> m_restricted_variables = {
+	// EVENT_NOTE only allowed in on note, on release and on midi_in
+		{ "EVENT_NOTE", { "note", "release", "midi_in" } },
+		{ "EVENT_ID",     {"note", "release", "midi_in"} },
 	};
 
 	inline static const std::unordered_map<std::string, std::unordered_set<std::string>> m_thread_unsafe_functions = {
@@ -74,7 +84,7 @@ public:
 		}
 		// check if called in restricted callback
 		if (definition->is_restricted || !definition->is_thread_safe) {
-			const auto callback_name = remove_substring(callback->begin_callback, "on ");
+			const auto callback_name = StringUtils::remove(callback->begin_callback, "on ");
 			const auto allowed_callbacks = get_allowed_callbacks(node.function->name);
 			if (!allowed_callbacks.contains(callback_name)) {
 				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
@@ -102,6 +112,12 @@ public:
 		// check if thread unsafe
 		if (m_thread_unsafe_functions.contains(node.header->name)) {
 			node.is_thread_safe = false;
+		}
+	}
+
+	static void write_builtin_variable_restrictions(NodeDataStructure& node) {
+		if (m_restricted_variables.contains(node.name)) {
+			node.is_restricted = true;
 		}
 	}
 

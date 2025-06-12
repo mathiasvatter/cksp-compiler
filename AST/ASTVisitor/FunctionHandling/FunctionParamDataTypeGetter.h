@@ -31,10 +31,13 @@ public:
 
 	void write_data_type_per_param() {
 		for (const auto& [param, types] : m_data_type_per_param) {
-			if (types.size() != 1) continue;
+			if (types.size() != 1) {
+				continue;
+			}
 			auto data_type = *types.begin();
-			if (data_type == DataType::UIControl)
+			if (data_type == DataType::UIControl) {
 				param->variable->data_type = data_type;
+			}
 		}
 	}
 
@@ -54,6 +57,7 @@ public:
 	}
 
 	NodeAST* visit(NodeFunctionCall& node) override {
+		if (node.is_builtin_kind()) return &node;
 		const auto definition = node.get_definition();
 		if (definition) {
 			for (int i = 0; i< node.function->get_num_args(); i++) {
@@ -63,8 +67,11 @@ public:
 				m_current_formal_param = nullptr;
 			}
 
-			if (!definition->visited) definition->accept(*this);
-			definition->visited = true;
+			if (!definition->visited) {
+				definition->accept(*this);
+				definition->visited = true;
+				definition->is_used = true;
+			}
 		}
 		return &node;
 	}

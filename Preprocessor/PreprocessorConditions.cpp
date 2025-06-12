@@ -157,7 +157,7 @@ bool PreprocessorConditions::is_beginning_of_line_keyword(const std::vector<Toke
 }
 
 bool PreprocessorConditions::is_builtin_condition(const Token& token) {
-    return contains(BUILTIN_CONDITIONS, token.val);
+    return BUILTIN_CONDITIONS.contains(token.val);
 }
 
 bool PreprocessorConditions::is_condition_definition(const std::vector<Token> &tok, const Token &pk, token token_type) {

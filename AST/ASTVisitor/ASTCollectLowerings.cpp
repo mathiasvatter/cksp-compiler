@@ -4,7 +4,7 @@
 
 #include "ASTCollectLowerings.h"
 #include "ASTHandleStringRepresentations.h"
-
+#include "FunctionHandling/UIControlParamHandling.h"
 
 NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	m_program = &node;
@@ -124,7 +124,11 @@ NodeAST * ASTCollectLowerings::visit(NodeFunctionCall& node) {
 	node.function->accept(*this);
 	node.bind_definition(m_program);
 	if (const auto& definition = node.get_definition()) {
-		if(!definition->visited) definition->accept(*this);
+		if(!definition->visited) {
+			static UIControlParamHandling ui_control_param_handling;
+			ui_control_param_handling.handle_ui_params(*definition);
+			definition->accept(*this);
+		}
 		definition->visited = true;
 	}
 	return node.lower(m_program);

@@ -162,7 +162,7 @@ std::unordered_map<V, K> invert_map(const std::unordered_map<K, V>& map) {
 }
 
 inline std::unordered_set<char> BINARY_OPERATORS = {'-', '+', '/', '*', '&'};
-inline std::unordered_set<char> PARENTH = {'(',')', '[', ']'};
+inline std::unordered_map<char, token> PARENTH = {{'(', token::OPEN_PARENTH},{')', token::CLOSED_PARENTH}, {'[', token::OPEN_BRACKET}, {']', token::CLOSED_BRACKET}};
 inline std::unordered_set<char> VAR_IDENT = {'$', '~', '@'};
 inline std::unordered_set<char> ARRAY_IDENT = {'%', '?', '!'}; //int, real, string
 inline std::unordered_map<std::string, token> TYPES = {{"$", token::INT}, {"~", token::FLOAT}, {"@", token::STRING}, {"%", token::INT}, {"?", token::FLOAT}, {"!", token::STRING}};

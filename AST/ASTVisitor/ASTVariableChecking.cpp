@@ -107,7 +107,6 @@ NodeAST * ASTVariableChecking::visit(NodeFunctionHeader& node) {
 NodeAST* ASTVariableChecking::visit(NodeFunctionDefinition &node) {
 	node.visited = true;
 
-	m_functions_in_use.insert(&node);
 	m_program->function_call_stack.push(node.weak_from_this());
 	m_def_provider->add_scope();
 
@@ -118,7 +117,6 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionDefinition &node) {
 
 	m_def_provider->remove_scope();
 	m_program->function_call_stack.pop();
-	m_functions_in_use.erase(&node);
 	return &node;
 }
 
@@ -137,18 +135,11 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 		}
 	}
 
-	const auto definition = node.get_definition();
-	if(node.kind == NodeFunctionCall::UserDefined and definition) {
-		check_recursion(definition.get());
-		if(!definition->visited) definition->accept(*this);
-	}
-	node.function->accept(*this);
-
-
-	// // add call sites at second stage when fail is true
-	// if(fail and definition and node.kind != NodeFunctionCall::Kind::Builtin) {
-	// 	definition->call_sites.insert(&node);
+	// const auto definition = node.get_definition();
+	// if(node.kind == NodeFunctionCall::UserDefined and definition) {
+	// 	if(!definition->visited) definition->accept(*this);
 	// }
+	node.function->accept(*this);
 
 	return &node;
 }

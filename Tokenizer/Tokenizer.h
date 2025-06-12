@@ -34,51 +34,8 @@ struct Token {
 	}
 };
 
-
-
-inline static long count_char(const std::string& str, char c) {
-	return std::count(str.begin(), str.end(), c);
-}
-
-inline std::string remove_quotes(const std::string &input) {
-	// Überprüfen Sie, ob der String die Mindestlänge hat und ob er mit Anführungszeichen beginnt und endet
-	if (input.size() >= 2 &&
-		((input.front() == '"' && input.back() == '"') ||
-			(input.front() == '\'' && input.back() == '\''))) {
-		// Entfernen Sie die Anführungszeichen am Anfang und am Ende
-		return input.substr(1, input.size() - 2);
-	} else {
-		// Wenn keine Anführungszeichen vorhanden sind, geben Sie den ursprünglichen String zurück
-		return input;
-	}
-}
-
-
-inline static token get_token_type(const std::vector<Keyword>& vec, const std::string& value) {
-    auto it = std::find_if(vec.begin(), vec.end(), [&value](const Keyword& kw) {
-        return kw.value == value;
-    });
-    if (it != vec.end()) {
-        return it->type;
-    }
-    return token::INVALID;
-}
-
-inline static std::string get_token_value(const std::vector<Keyword>& vec, const token& tok) {
-	auto it = std::find_if(vec.begin(), vec.end(),
-						   [&tok](const Keyword& kw) {
-		return kw.type == tok;
-	});
-
-	if (it != vec.end()) {
-		return it->value;
-	}
-	return "";
-}
-
-inline static std::optional<token> get_token_type(const std::unordered_map<std::string, token>& keywordMap, const std::string& value) {
-    auto it = keywordMap.find(value);
-    if (it != keywordMap.end()) {
+static std::optional<token> get_token_type(const std::unordered_map<std::string, token>& keywordMap, const std::string& value) {
+	if (const auto it = keywordMap.find(value); it != keywordMap.end()) {
         return it->second;
     }
     return std::nullopt;
@@ -110,20 +67,21 @@ protected:
     [[nodiscard]] char peek(int ahead = 0) const;
     char consume();
     void flush_buffer();
+	void add_token(token type, const std::string& val);
 	void skip_whitespace();
 
 	static bool is_space(const char& ch);
 	[[nodiscard]] bool is_string() const;
     bool is_keyword_or_num() const;
 
-    bool is_pragma();
+    bool is_pragma() const;
 //	void get_pragma();
     void get_line_continuation();
     /// removes linebrk if there was a line_continuation before. Needs to be inserted right after linbrk isnert
     void fix_line_continuation();
     void get_bitwise_operator();
-    bool is_callback_end();
-    bool is_callback_start();
+    bool is_callback_end() const;
+    bool is_callback_start() const;
     static bool is_hexadecimal(const std::string& str);
     static bool is_binary(const std::string& str);
     void get_comma();

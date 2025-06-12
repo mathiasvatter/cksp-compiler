@@ -9,6 +9,7 @@
 #include "../../Tokenizer/Tokenizer.h"
 #include "../../AST/ASTNodes/ASTHelper.h"
 #include "../../misc/HashFunctions.h"
+#include "../../utils/StringUtils.h"
 
 
 enum class PreNodeType {

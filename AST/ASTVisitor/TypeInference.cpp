@@ -703,7 +703,6 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 		if (!definition->visited || node.is_builtin_kind()) {
 			definition->accept(*this);
 			definition->visited = true;
-
 			// apply references to function params
 			for (auto &param : definition->header->params) {
 				for(auto & ref : param->variable->references) {
@@ -862,7 +861,7 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	}
 
 	// do not infer type if together in string
-	if(contains(STRING_TOKENS, node.op)) {
+	if(STRING_TOKENS.contains(node.op)) {
 		node.ty = TypeRegistry::String;
 		return &node;
 	}
@@ -877,7 +876,7 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	node.right->ty = specialize_type(node.right->ty, node.left->ty);
 
 	// check type of this node by looking at operator and node.left and node.right
-	if (contains(MATH_TOKENS, node.op)) {
+	if (MATH_TOKENS.contains(node.op)) {
 		// can only be int op int || float op float
 		is_compatible = node.left->ty->is_compatible(TypeRegistry::Integer) and node.right->ty->is_compatible(TypeRegistry::Integer);
 		if(node.left->ty->get_element_type() == TypeRegistry::String || node.right->ty->get_element_type() == TypeRegistry::String) {
@@ -895,16 +894,16 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 			is_compatible = false;
 		error.m_message += "Please use real() and int() to use <Real> and <Integer> numbers in a single expression.";
 
-	} else if (contains(BITWISE_TOKENS, node.op)) {
+	} else if (BITWISE_TOKENS.contains(node.op)) {
 		node.ty = TypeRegistry::Integer;
 		is_compatible = node.left->ty->is_compatible(node.ty) and node.right->ty->is_compatible(node.ty);
 		error.m_message += "<Bitwise Operators> can only be used in between <Integer> values.";
-	} else if (contains(BOOL_TOKENS, node.op)) {
+	} else if (BOOL_TOKENS.contains(node.op)) {
 		node.ty = TypeRegistry::Boolean;
 		is_compatible = node.left->ty->is_compatible(node.ty) and node.right->ty->is_compatible(node.ty);
 		error.m_message += "<Bool Operators> can only be used in between <Boolean> or <Comparison> values.";
 
-	} else if (contains(COMPARISON_TOKENS, node.op)) {
+	} else if (COMPARISON_TOKENS.contains(node.op)) {
 		node.ty = TypeRegistry::Comparison;
 		is_compatible = node.left->ty->is_compatible(node.ty) and node.right->ty->is_compatible(node.ty);
 		error.m_message += "<Comparison Operators> can only be used in between <Integer> or <Real> values.";

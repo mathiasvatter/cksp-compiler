@@ -120,7 +120,6 @@ add_executable(cksp main.cpp
         Lowering/ASTLowering.h
         Lowering/LoweringList.h
         Lowering/DataLowering/DataLoweringNDArray.h
-        Lowering/LoweringUIControlArray.h
         Desugaring/DesugarFamily.h
         Desugaring/ASTDesugaring.h
         Desugaring/DesugarDeclareAssign.h
@@ -205,7 +204,7 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h
         AST/ASTVisitor/ReferenceManagement/ASTCollectCallSites.h
         AST/ASTVisitor/GlobalScope/DeflateParameters.h
-        AST/ASTVisitor/FunctionHandling/FunctionRestrictionValidator.h
+        AST/ASTVisitor/FunctionHandling/BuiltinRestrictionValidator.h
         AST/ASTVisitor/FunctionHandling/FunctionParamDataTypeGetter.h
         AST/ASTVisitor/GlobalScope/DimensionDeflator.h
         Optimization/ArrayInitializationRaising.h
@@ -215,6 +214,9 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ASTParameterQualifier.h
         AST/ASTVisitor/FunctionHandling/ParameterAssignmentTransformation.h
         AST/ASTVisitor/FunctionHandling/ParameterReuse.h
+        Optimization/ReferenceValidator.h
+        AST/ASTVisitor/ASTNoVisitor.h
+        AST/ASTVisitor/FunctionHandling/UIControlParamHandling.h
 )
 add_dependencies(cksp generate_headers)
 

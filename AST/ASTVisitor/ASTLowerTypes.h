@@ -6,7 +6,6 @@
 
 #include "ASTVisitor.h"
 #include "../ASTNodes/AST.h"
-#include "../../BuiltinsProcessing/DefinitionProvider.h"
 
 class ASTLowerTypes: public ASTVisitor {
 public:
@@ -14,7 +13,7 @@ public:
 		m_program = main;
 	};
 
-	inline NodeAST* visit(NodeProgram& node) override {
+	NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
 		// most func defs will be visited when called, keeping local scopes in mind
 		m_program->global_declarations->accept(*this);
@@ -29,42 +28,42 @@ public:
 		return &node;
 	};
 
-	inline NodeAST * visit(NodeVariable& node) override {
+	NodeAST * visit(NodeVariable& node) override {
 		return node.lower_type();
 	}
-	inline NodeAST * visit(NodeVariableRef& node) override {
+	NodeAST * visit(NodeVariableRef& node) override {
 		return node.lower_type();
 	}
-	inline NodeAST * visit(NodePointer& node) override {
+	NodeAST * visit(NodePointer& node) override {
 		return node.lower_type();
 	}
-	inline NodeAST * visit(NodePointerRef& node) override {
+	NodeAST * visit(NodePointerRef& node) override {
 		return node.lower_type();
 	}
-	inline NodeAST * visit(NodeArray& node) override {
+	NodeAST * visit(NodeArray& node) override {
 		if(node.size) node.size->accept(*this);
 		return node.lower_type();
 	}
-	inline NodeAST * visit(NodeArrayRef& node) override {
+	NodeAST * visit(NodeArrayRef& node) override {
 		if(node.index) node.index->accept(*this);
 		return node.lower_type();
 	}
-	inline NodeAST * visit(NodeNDArray& node) override {
+	NodeAST * visit(NodeNDArray& node) override {
 		if(node.sizes) node.sizes->accept(*this);
 		return node.lower_type();
 	}
-	inline NodeAST * visit(NodeNDArrayRef& node) override {
+	NodeAST * visit(NodeNDArrayRef& node) override {
 		if(node.indexes) node.indexes->accept(*this);
 		return node.lower_type();
 	}
-	inline NodeAST * visit(NodeList& node) override {
+	NodeAST * visit(NodeList& node) override {
 		return node.lower_type();
 	}
-	inline NodeAST * visit(NodeListRef& node) override {
+	NodeAST * visit(NodeListRef& node) override {
 		if(node.indexes) node.indexes->accept(*this);
 		return node.lower_type();
 	}
-	inline NodeAST * visit(NodeFunctionDefinition& node) override {
+	NodeAST * visit(NodeFunctionDefinition& node) override {
 		if(node.ty->get_element_type()->cast<ObjectType>()) {
 			node.set_element_type(TypeRegistry::Integer);
 		}
@@ -75,7 +74,7 @@ public:
 
 		return &node;
 	}
-	inline NodeAST * visit(NodeFunctionCall& node) override {
+	NodeAST * visit(NodeFunctionCall& node) override {
 		// go first into definition to lower the header type first und give that to the header ref
 		if(node.bind_definition(m_program)) {
 			if(!node.get_definition()->visited) node.get_definition()->accept(*this);
@@ -87,7 +86,7 @@ public:
 		}
 		return &node;
 	}
-	inline NodeAST * visit(NodeFunctionHeader& node) override {
+	NodeAST * visit(NodeFunctionHeader& node) override {
 		for(auto &param : node.params) param->accept(*this);
 		if(auto func_type = node.ty->cast<FunctionType>()) {
 			auto return_type = func_type->get_return_type();
@@ -98,7 +97,7 @@ public:
 		}
 		return &node;
 	}
-	inline NodeAST * visit(NodeFunctionHeaderRef& node) override {
+	NodeAST * visit(NodeFunctionHeaderRef& node) override {
 		if(node.args) node.args->accept(*this);
 		if(auto decl = node.get_declaration()) {
 			node.ty = decl->ty;

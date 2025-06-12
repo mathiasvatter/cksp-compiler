@@ -165,7 +165,7 @@ public:
 		auto left_real = node.left->cast<NodeReal>();
 
 		if(right_int || left_int) {
-			if (contains(MATH_TOKENS, node.op) or contains(BITWISE_TOKENS, node.op)) {
+			if (MATH_TOKENS.contains(node.op) or BITWISE_TOKENS.contains(node.op)) {
 				// constant folding
 				if (left_int and right_int) {
 					// Beide Operanden sind Integers. Führe die Operation aus und ersetze den Knoten.
@@ -235,7 +235,7 @@ public:
 						default: break;
 					}
 				}
-			} else if (contains(BOOL_TOKENS, node.op)) {
+			} else if (BOOL_TOKENS.contains(node.op)) {
 				if (left_int and right_int) {
 					auto static bool_operations = std::unordered_map<token, std::function<int32_t(int32_t, int32_t)>>{
 						{token::BOOL_AND, [](const int32_t a, const int32_t b) { return (a && b) ? 1 : 0; }},
@@ -278,7 +278,7 @@ public:
 					}
 					return node.replace_with(std::move(result));
 				}
-			} else if (contains(COMPARISON_TOKENS, node.op)) {
+			} else if (COMPARISON_TOKENS.contains(node.op)) {
 				if (left_int and right_int) {
 					auto static bool_operations = std::unordered_map<token, std::function<int32_t(int32_t, int32_t)>>{
 						{token::LESS_THAN, [](const int32_t a, const int32_t b) { return (a < b) ? 1 : 0; }},
@@ -297,7 +297,7 @@ public:
 				}
 			}
 		} else if (right_real or left_real) {
-			if (contains(MATH_TOKENS, node.op)) {
+			if (MATH_TOKENS.contains(node.op)) {
 				// check division by zero
 				if (node.op == token::DIV && is_zero(right_real)) {
 					auto error = CompileError(ErrorType::MathError,"","", node.tok);
@@ -319,7 +319,7 @@ public:
 						return node.replace_with(std::move(new_node));
 					}
 				}
-			} else if (contains(COMPARISON_TOKENS, node.op)) {
+			} else if (COMPARISON_TOKENS.contains(node.op)) {
 				if (left_real and right_real) {
 					auto static bool_operations = std::unordered_map<token, std::function<int32_t(double, double)>>{
 						{token::LESS_THAN, [](const double a, const double b) { return (a < b) ? 1 : 0; }},

@@ -10,11 +10,13 @@
 #include "ASTHelper.h"
 #include "../Types.h"
 #include "../../misc/HashFunctions.h"
+#include "../../utils/StringUtils.h"
 
 class ASTDesugaring;
 class ASTLowering;
 struct NodeProgram;
 struct NodeFunctionHeaderRef;
+struct NodeReference;
 
 struct NodeAST {
     Token tok;
@@ -93,7 +95,8 @@ struct NodeAST {
 	NodeAST* collect_call_sites(NodeProgram* program);
 	/// Determines if current Node is function argument
 	[[nodiscard]] NodeFunctionHeaderRef* is_func_arg() const;
-	[[nodiscard]] bool is_literal();
+	NodeReference* is_reference();
+    [[nodiscard]] bool is_literal();
 };
 
 template<typename T>
@@ -149,8 +152,8 @@ struct NodeReference : NodeAST {
 	[[nodiscard]] std::shared_ptr<NodeDataStructure> get_declaration() const;
 	/// Completes the data structure of reference by copying missing parameters of declaration
 	void match_data_structure(const std::shared_ptr<NodeDataStructure>& data_structure);
-	std::unique_ptr<struct NodeFunctionCall> wrap_in_get_ui_id();
-	[[nodiscard]] bool needs_get_ui_id() const;
+	// std::unique_ptr<struct NodeFunctionCall> wrap_in_get_ui_id();
+	// [[nodiscard]] bool needs_get_ui_id() const;
 	/// determines if reference is reference to struct member
 	[[nodiscard]] bool is_member_ref() const;
 	/// checks if reference is raw version of multidimensional array
@@ -219,6 +222,7 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 	Kind kind = None;
 	bool has_obj_assigned = false;
 	bool is_thread_safe = true; // gets set to false, if dimension inflation needs to be used because of unsafe declaration environment
+	bool is_restricted = false;
 	int num_reuses = 0;
 	DataType data_type = DataType::Mutable;
 	std::string name;
@@ -237,7 +241,7 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 	/// determines if current data structure is local variable and sets is_local flag
 	bool determine_locality(const NodeProgram* program, const NodeBlock* current_block);
 	/// determines if current data structure is a parameter in a function definition
-	bool is_function_param() const;
+	struct NodeFunctionParam* is_function_param() const;
 	/// determines if current data structure is member of a struct, if yes returns pointer to struct
 	NodeStruct* is_member() const;
 	/// tries to infer the type by specializing given type from Number to Integer
@@ -253,7 +257,7 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 	virtual std::unique_ptr<NodeList> to_list() {return nullptr;}
 	/// lower type from object to int if applicable
 	NodeDataStructure* lower_type();
-	virtual std::unique_ptr<NodeDataStructure> inflate_dimension(std::unique_ptr<NodeAST> new_index) {
+	virtual std::unique_ptr<NodeDataStructure> expand_dimension(std::unique_ptr<NodeAST> new_index) {
 		return nullptr;
 	}
 	/// to be used on datastructures
@@ -692,7 +696,7 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	int num_return_params = 0;
 	int num_return_stmts = 0;
 	std::vector<NodeReturn*> return_stmts;
-    std::unordered_set<NodeFunctionCall*> call_sites = {};
+    std::unordered_set<struct NodeFunctionCall*> call_sites = {};
     std::shared_ptr<NodeFunctionHeader> header;
     std::optional<std::shared_ptr<NodeDataStructure>> return_variable;
     bool override = false;
@@ -724,7 +728,6 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	std::vector<std::shared_ptr<NodeDataStructure>> do_variable_reuse(NodeProgram *program);
 	void do_return_param_promotion(NodeProgram* program);
 	bool do_return_path_validation();
-	void write_builtin_function_restrictions();
 	void mark_threadsafety(NodeProgram *program);
 };
 

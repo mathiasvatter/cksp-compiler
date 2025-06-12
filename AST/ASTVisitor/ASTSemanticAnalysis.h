@@ -69,6 +69,23 @@ public:
 	/// updated incorrectly detected references of function params
 	static NodeReference* replace_incorrectly_detected_reference(NodeReference* reference);
 
+	/// track functions in use to search for recursive calls
+	std::unordered_set<NodeFunctionDefinition*> m_functions_in_use{};
+	bool check_recursion(NodeFunctionDefinition* func) const {
+		if(m_functions_in_use.contains(func)) {
+			// recursive function call detected
+			auto error = CompileError(ErrorType::SyntaxError, "", "", func->tok);
+			error.m_message = "Found recursive function call <"+func->header->name+">. Calling functions inside their definition is not allowed.";
+			error.m_got = "Function cycle with: ";
+			for (const auto fun : m_functions_in_use) {
+				error.m_got += "<"+fun->header->name+">, ";
+			}
+			error.m_got.erase(error.m_got.size() - 2);
+			error.exit();
+			return true;
+		}
+		return false;
+	}
 
 };
 

@@ -79,7 +79,7 @@ public:
 	}
 
 	NodeAST * visit(NodeFunctionCall& node) override {
-		const std::vector<std::string> constant_functions = {
+		const std::unordered_set<std::string> constant_functions = {
 			"num_elements",
 			"get_ui_id",
 			"real",
@@ -90,7 +90,7 @@ public:
 		node.function->accept(*this);
 		// check if func is 'num_elements' which returns constant and can be used as array size
 		if(node.kind == NodeFunctionCall::Kind::Builtin and node.function->get_num_args() == 1) {
-			if(contains(constant_functions, node.function->name)) {
+			if(constant_functions.contains(node.function->name)) {
 				m_is_constant &= true;
 				return &node;
 			}

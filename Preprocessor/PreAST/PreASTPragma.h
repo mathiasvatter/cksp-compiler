@@ -42,7 +42,7 @@ private:
 
 	void register_pragma_handlers() {
 		pragma_handlers["output_path"] = [this](const std::string& arg, const Token& token) {
-			auto path = strip_surrounding_quotes(arg);
+			auto path = StringUtils::remove_quotes(arg);
 
 			std::string error_message = "Found unknown <output_path> option in <#pragma>. ";
 			static PathHandler path_handler(token, token.file);
@@ -62,7 +62,7 @@ private:
 		};
 
 		pragma_handlers["optimize"] = [this](const std::string& arg, const Token& token) {
-			std::string level = strip_surrounding_quotes(arg);
+			std::string level = StringUtils::remove_quotes(arg);
 
 			const auto it = optimization_level_map.find(level);
 			if (it == optimization_level_map.end()) {
@@ -70,17 +70,6 @@ private:
 			}
 			m_config->optimization_level = it->second;
 		};
-	}
-
-	static std::string strip_surrounding_quotes(const std::string& str) {
-		if (str.size() >= 2) {
-			char first = str.front();
-			char last = str.back();
-			if ((first == '\"' && last == '\"') || (first == '\'' && last == '\'')) {
-				return str.substr(1, str.size() - 2);
-			}
-		}
-		return str;
 	}
 
 	static CompileError get_pragma_error(const Token& tok, const std::string& got, const std::string& expected) {

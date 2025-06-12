@@ -6,7 +6,6 @@
 
 #include "../AST/ASTNodes/AST.h"
 #include "../AST/ASTVisitor/ASTVisitor.h"
-#include "../BuiltinsProcessing/DefinitionProvider.h"
 
 /// Lowering of data structures to simpler data structures
 /// e.g. Lists to arrays, multidimensional arrays to arrays

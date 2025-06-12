@@ -11,7 +11,7 @@
 #include "../misc/PathHandler.h"
 
 ImportProcessor::ImportProcessor(std::vector<Token> tokens, std::string current_file, DefinitionProvider* definition_provider)
-        : Processor(std::move(tokens)), m_def_provider(definition_provider), m_current_file(std::move(current_file)) {
+        : Processor(std::move(tokens)), m_current_file(std::move(current_file)), m_def_provider(definition_provider) {
     m_pos = 0;
 	m_curr_token_type = m_tokens.at(0).type;
 }
@@ -115,10 +115,7 @@ Result<std::unique_ptr<NodeImport>> ImportProcessor::parse_import_nckp(std::vect
         "Not a filepath",peek(tokens).line,"path",peek(tokens).val, peek(tokens).file));
     }
     Token path = consume(tokens);
-    std::string filepath = path.val;
-    // erase ""
-    filepath.erase(0,1);
-    filepath.pop_back();
+    std::string filepath = StringUtils::remove_quotes(path.val);
     if(peek(tokens).type != token::CLOSED_PARENTH) {
         return Result<std::unique_ptr<NodeImport>>(CompileError(ErrorType::ParseError,
         "Incorrect import_nckp Syntax.",peek(tokens).line,")",peek(tokens).val, peek(tokens).file));
@@ -139,10 +136,7 @@ Result<std::unique_ptr<NodeImport>> ImportProcessor::parse_import(std::vector<To
     consume(tokens);
     if(peek(tokens).type ==token::STRING) {
         Token path = consume(tokens);
-        std::string filepath = path.val;
-        // erase ""
-        filepath.erase(0,1);
-        filepath.pop_back();
+        std::string filepath = StringUtils::remove_quotes(path.val);
         std::string alias;
         if(peek(tokens).type == token::AS) {
             // consume as token
