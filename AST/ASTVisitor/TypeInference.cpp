@@ -699,6 +699,10 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 	}
 
 	if(definition) {
+		// if it is not builtin kind and it is a function that is actually used in the program
+		if (node.kind == NodeFunctionCall::UserDefined and m_program->current_callback != nullptr) {
+			m_func_calls.push_back(&node);
+		}
 		// explicitly visit builtin functions regardless of visited flag since its not reset for those anyways
 		if (!definition->visited || node.is_builtin_kind()) {
 			definition->accept(*this);
@@ -712,10 +716,6 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 
 		}
 
-		// if it is not builtin kind and it is a function that is actually used in the program
-		if (node.kind == NodeFunctionCall::UserDefined and m_program->current_callback != nullptr) {
-			m_func_calls.push_back(&node);
-		}
 
 		for (int i = 0; i < node.function->get_num_args(); i++) {
 			auto &func_arg = node.function->get_arg(i);

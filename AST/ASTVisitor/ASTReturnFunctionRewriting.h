@@ -28,6 +28,7 @@ public:
 		temp_scope.visit(node);
 
 		node.update_function_lookup();
+		node.reset_function_visited_flag();
 	}
 
 private:
