@@ -122,6 +122,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeSingleDeclaration &node) {
 }
 
 NodeAST * ASTSemanticAnalysis::visit(NodeFunctionDefinition &node) {
+	m_functions_in_use.insert(&node);
 	m_program->function_call_stack.push(node.weak_from_this());
 	// check all return paths
 	node.do_return_path_validation();
@@ -131,6 +132,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionDefinition &node) {
         node.return_variable.value()->accept(*this);
     node.body->accept(*this);
 	m_program->function_call_stack.pop();
+	m_functions_in_use.erase(&node);
 	return &node;
 }
 
@@ -149,6 +151,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 
 	node.bind_definition(m_program);
 	if(const auto definition = node.get_definition(); node.kind == NodeFunctionCall::UserDefined and definition) {
+		check_recursion(definition.get());
 		if(!definition->visited) definition->accept(*this);
 	}
 

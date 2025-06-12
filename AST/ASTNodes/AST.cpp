@@ -24,9 +24,10 @@
 #include "../ASTVisitor/ReturnFunctionRewriting/ReturnParamPromotion.h"
 #include "../../Optimization/ConstantFolding.h"
 #include "../../Lowering/LoweringInitializerList.h"
+#include "../../Optimization/ReferenceValidator.h"
 #include "../ASTVisitor/ASTVariableChecking.h"
 #include "../ASTVisitor/TypeInference.h"
-#include "../ASTVisitor/FunctionHandling/FunctionRestrictionValidator.h"
+#include "../ASTVisitor/FunctionHandling/BuiltinRestrictionValidator.h"
 #include "../ASTVisitor/FunctionHandling/ReturnPathValidator.h"
 #include "../ASTVisitor/GlobalScope/MarkThreadSafe.h"
 #include "../ASTVisitor/ReferenceManagement/ASTCollectCallSites.h"
@@ -198,6 +199,11 @@ NodeFunctionHeaderRef* NodeAST::is_func_arg() const {
 	return this->parent->parent->cast<NodeFunctionHeaderRef>();
 }
 
+NodeReference * NodeAST::is_reference() {
+	static ReferenceValidator ref_validator;
+	return ref_validator.cast_reference(*this);
+}
+
 bool NodeAST::is_literal() {
 	return cast<NodeInt>() or cast<NodeReal>() or cast<NodeString>() or cast<NodeInitializerList>();
 }
@@ -222,9 +228,10 @@ NodeAST * NodeAST::collect_call_sites(NodeProgram *program) {
 NodeDataStructure::NodeDataStructure(const NodeDataStructure& other)
 	: NodeAST(other),
 	  is_used(other.is_used), is_engine(other.is_engine), persistence(other.persistence),
-	  is_local(other.is_local), is_global(other.is_global), has_obj_assigned(other.has_obj_assigned),
-	  is_thread_safe(other.is_thread_safe), data_type(other.data_type), name(other.name), kind(other.kind),
-	  references(other.references), num_reuses(other.num_reuses) {
+	  is_local(other.is_local), is_global(other.is_global), kind(other.kind),
+	  has_obj_assigned(other.has_obj_assigned), is_thread_safe(other.is_thread_safe),
+	  is_restricted(other.is_restricted), num_reuses(other.num_reuses), data_type(other.data_type),
+	  name(other.name), references(other.references) {
 	NodeDataStructure::set_child_parents();
 }
 
@@ -247,9 +254,14 @@ bool NodeDataStructure::determine_locality(const NodeProgram* program, const Nod
 	return is_local;
 }
 
-bool NodeDataStructure::is_function_param() const {
-	if(!parent) return false;
-	return parent->cast<NodeFunctionParam>() and parent->parent->cast<NodeFunctionHeader>();
+NodeFunctionParam* NodeDataStructure::is_function_param() const {
+	if(!parent) return nullptr;
+	if (auto param = parent->cast<NodeFunctionParam>()) {
+		if (param->parent->cast<NodeFunctionHeader>()) {
+			return param;
+		}
+	}
+	return nullptr;
 }
 
 Type* NodeDataStructure::cast_type() {
@@ -365,10 +377,6 @@ NodeReference* NodeReference::lower_type() {
 	return this;
 }
 
-std::unique_ptr<NodeFunctionCall> NodeReference::wrap_in_get_ui_id() {
-	return DefinitionProvider::get_ui_id(clone_as<NodeReference>(this));
-}
-
 NodeSingleAssignment* NodeReference::is_l_value() const {
 	if(const auto assignment = parent->cast<NodeSingleAssignment>()) {
 		if(assignment->l_value.get() == this) {
@@ -392,24 +400,7 @@ NodeSingleAssignment* NodeReference::is_l_value() const {
 // 	return wrap_it;
 // }
 
-bool NodeReference::needs_get_ui_id() const {
-	if (data_type != DataType::UIControl || !is_func_arg())
-		return false;
 
-	// In NodeFunctionCall casten und weitere Bedingungen prüfen.
-	const auto node = parent->parent->parent;
-	if (const auto func_call = node->cast<NodeFunctionCall>()) {
-		if (func_call->kind == NodeFunctionCall::Kind::Builtin) {
-			if (!contains(func_call->function->name, "control_par"))
-				return false;
-		} else if (func_call->kind != NodeFunctionCall::Kind::Property) {
-				return false;
-		}
-		// Prüfen, ob diese Referenz das erste Argument ist.
-		return func_call->function->get_arg(0).get() == this;
-	}
-	return false;
-}
 
 NodeSingleAssignment *NodeReference::is_r_value() const {
 	if(const auto assignment = parent->cast<NodeSingleAssignment>()) {
@@ -1075,10 +1066,6 @@ void NodeFunctionDefinition::do_return_param_promotion(NodeProgram* program) {
 bool NodeFunctionDefinition::do_return_path_validation() {
 	static ReturnPathValidator return_validator;
 	return return_validator.do_return_path_validation(*this);
-}
-
-void NodeFunctionDefinition::write_builtin_function_restrictions() {
-	FunctionRestrictionValidator::write_builtin_function_restrictions(*this);
 }
 
 void NodeFunctionDefinition::mark_threadsafety(NodeProgram *program) {

@@ -33,10 +33,10 @@ class ASTDimensionExpansion final : public ASTVisitor {
 	DefinitionProvider* m_def_provider;
 
 
-	[[nodiscard]] bool is_thread_safe_env() const {
-		return (m_program->current_callback and m_program->current_callback->is_thread_safe) or
-			(m_program->get_curr_function() and m_program->get_curr_function()->is_thread_safe);
-	}
+	// [[nodiscard]] bool is_thread_safe_env() const {
+	// 	return (m_program->current_callback and m_program->current_callback->is_thread_safe) or
+	// 		(m_program->get_curr_function() and m_program->get_curr_function()->is_thread_safe);
+	// }
 
 public:
 	explicit ASTDimensionExpansion(NodeProgram *main) : m_def_provider(main->def_provider) {
@@ -73,8 +73,10 @@ public:
 		);
 		node.global_declarations->prepend_as_stmt(std::move(decl));
 
-		static MarkThreadSafe marker(&node);
-		marker.mark_environments(node);
+		// static MarkThreadSafe marker(&node);
+		// marker.mark_environments(node);
+		// static MarkThreadSafeVars mark_vars(&node);
+		// mark_vars.mark_variables(node);
 
 		m_program->global_declarations->accept(*this);
 		for(const auto & struct_def : node.struct_definitions) {
@@ -89,10 +91,8 @@ public:
 
 	NodeAST* visit(NodeCallback& node) override {
 		m_program->current_callback = &node;
-		if(!is_thread_safe_env()) {
-			if(node.callback_id) node.callback_id->accept(*this);
-			node.statements->accept(*this);
-		}
+		if(node.callback_id) node.callback_id->accept(*this);
+		node.statements->accept(*this);
 		m_program->current_callback = nullptr;
 		return &node;
 	}
@@ -115,9 +115,9 @@ public:
 	NodeAST* visit(NodeSingleDeclaration& node) override {
 		if(node.value) node.value->accept(*this);
 
-		const bool is_thread_safe = is_thread_safe_env();
-		node.variable->is_thread_safe = is_thread_safe;
-		if(!is_thread_safe and node.variable->is_local) {
+		// const bool is_thread_safe = is_thread_safe_env();
+		// node.variable->is_thread_safe = is_thread_safe;
+		if(!node.variable->is_thread_safe) {
 			// if value -> change to assignment
 			std::unique_ptr<NodeBlock> block = nullptr;
 			std::unique_ptr<NodeSingleAssignment> assignment = nullptr;
@@ -128,7 +128,7 @@ public:
 				node.variable->references.emplace(assignment->l_value.get());
 			}
 
-			auto inflated = node.variable->inflate_dimension(m_program->max_cb_stack->to_reference());
+			auto inflated = node.variable->expand_dimension(m_program->max_cb_stack->to_reference());
 			// inflated->is_thread_safe = false;
 			node.variable->replace_datastruct(std::move(inflated));
 
@@ -147,15 +147,15 @@ public:
 	}
 
 	bool determine_expansion_need(const NodeReference& ref) const {
-		if(is_thread_safe_env()) return false;
-		if(ref.kind != NodeReference::User) return false;
+		// if(is_thread_safe_env()) return false;
+		// if(ref.kind != NodeReference::User) return false;
 		const auto declaration = ref.get_declaration();
 		if(!declaration) {
 			auto error = CompileError(ErrorType::InternalError, "DimensionExpansion : Reference has no declaration", "", ref.tok);
 //			error.exit();
 			return false;
 		}
-		if(declaration->is_local and !declaration->is_function_param()) {
+		if(!declaration->is_thread_safe and !declaration->is_function_param()) {
 			return true;
 		}
 		return false;

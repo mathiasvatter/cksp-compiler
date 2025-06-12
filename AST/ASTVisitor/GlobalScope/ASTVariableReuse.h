@@ -88,6 +88,7 @@ public:
 
 	bool clear_passive_vars() {
 		m_passive_vars_map.clear();
+		m_used_passive_vars.clear();
 		return true;
 	}
 
@@ -95,6 +96,7 @@ public:
 		m_all_callback_decl.clear();
 		m_all_local_vars.clear();
 		m_passive_vars_map.clear();
+		m_used_passive_vars.clear();
 		m_all_local_references.clear();
 		m_def_provider->refresh_scopes();
 		return true;
@@ -154,9 +156,9 @@ private:
 		for(auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
-		for (auto & func_def : node.function_definitions) {
-			func_def->accept(*this);
-		}
+		// for (auto & func_def : node.function_definitions) {
+		// 	func_def->accept(*this);
+		// }
 
 		node.reset_function_visited_flag();
 		return &node;
@@ -189,7 +191,7 @@ private:
 				add_passive_vars(new_passive_vars);
 			// }
 			// add used vars to passive_vars map
-			const auto passive_used_vars = m_used_passive_vars[get_current_block()];
+			const auto passive_used_vars = std::move(m_used_passive_vars[get_current_block()]);
 			for(auto & passive_var : passive_used_vars) {
 				m_passive_vars_map[get_passive_var_hash(*passive_var)].push_back(passive_var);
 			}

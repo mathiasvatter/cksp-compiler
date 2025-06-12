@@ -384,7 +384,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr(NodeAST* parent) {
     } else if (peek().type == token::INT || peek().type == token::FLOAT || peek().type == token::HEXADECIMAL || peek().type == token::BINARY) {
         return parse_number(parent);
     // unary operators bool_not, bit_not, sub
-    } else if (contains(UNARY_TOKENS, peek().type)) {
+    } else if (UNARY_TOKENS.contains(peek().type)) {
 	    return parse_unary_expr(parent);
     } else if (peek().type == token::OPEN_BRACKET) {
     	return parse_init_list(parent);
@@ -438,7 +438,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_binary_expr_rhs(const int preced
             }
         }
         Type* type = TypeRegistry::Unknown;
-		if (contains(COMPARISON_TOKENS, bin_op.type)) {
+		if (COMPARISON_TOKENS.contains(bin_op.type)) {
             // Check if rhs is NodeComparisonExpr because comparisons in comparisons are not allowed
             if (lhs->ty == TypeRegistry::Comparison) {
                 return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,

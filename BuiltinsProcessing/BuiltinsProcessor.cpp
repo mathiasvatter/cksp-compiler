@@ -11,6 +11,7 @@
 #include "engine_constants.h"
 #include "engine_functions.h"
 #include "engine_bool.h"
+#include "../AST/ASTVisitor/FunctionHandling/BuiltinRestrictionValidator.h"
 
 BuiltinsProcessor::BuiltinsProcessor(DefinitionProvider* definition_provider)
 : Processor(), m_def_provider(definition_provider), m_builtin_variables_file("engine_variables.h"),
@@ -55,7 +56,7 @@ Result<SuccessTag> BuiltinsProcessor::parse_builtin_variables(const std::string 
 	m_pos = 0;
 	while(peek(m_tokens).type != token::END_TOKEN) {
 		if(peek(m_tokens).type == token::KEYWORD) {
-			if(contains(VAR_IDENT, peek(m_tokens).val[0])) {
+			if(VAR_IDENT.contains(peek(m_tokens).val[0])) {
 				auto node_variable_res = parse_builtin_variable(DataType::Const);
 				if(node_variable_res.is_error()) {
 					return Result<SuccessTag>(node_variable_res.get_error());
@@ -80,14 +81,14 @@ Result<SuccessTag> BuiltinsProcessor::parse_builtin_constants(const std::string 
     m_pos = 0;
     while(peek(m_tokens).type != token::END_TOKEN) {
         if(peek(m_tokens).type == token::KEYWORD) {
-            if(contains(VAR_IDENT, peek(m_tokens).val[0])) {
+            if(VAR_IDENT.contains(peek(m_tokens).val[0])) {
 				auto node_variable_res = parse_builtin_variable(DataType::Mutable);
 				if(node_variable_res.is_error()) {
 					return Result<SuccessTag>(node_variable_res.get_error());
 				}
                 auto node_variable = std::move(node_variable_res.unwrap());
                 m_builtin_variables.insert({node_variable->name, std::move(node_variable)});
-            } else if(contains(ARRAY_IDENT, peek(m_tokens).val[0])) {
+            } else if(ARRAY_IDENT.contains(peek(m_tokens).val[0])) {
 				auto node_array_res = parse_builtin_array();
 				if(node_array_res.is_error()) {
 					return Result<SuccessTag>(node_array_res.get_error());
@@ -133,12 +134,13 @@ Result<SuccessTag> BuiltinsProcessor::parse_builtin_functions(const std::string 
 }
 
 void BuiltinsProcessor::apply_annotation_information(NodeDataStructure* node) {
-	if(node->ty->get_type_kind() == TypeKind::Composite and node->get_node_type() == NodeType::Variable) {
-		auto node_var = static_cast<NodeVariable*>(node);
-		auto comp_type = static_cast<CompositeType*>(node->ty);
-		if(comp_type->get_compound_type() == CompoundKind::Array) {
-			auto node_array = static_cast<NodeVariable*>(node)->to_array(nullptr);
-			node_var->replace_with(std::move(node_array));
+	if (auto node_var = node->cast<NodeVariable>()) {
+		if (auto comp_type = node_var->ty->cast<CompositeType>()) {
+			if (comp_type->get_compound_type() == CompoundKind::Array) {
+				// if the variable is an array, we need to replace it with a NodeArray
+				auto node_array = node_var->to_array(nullptr);
+				node_var->replace_with(std::move(node_array));
+			}
 		}
 	}
 }
@@ -192,6 +194,7 @@ Result<std::shared_ptr<NodeVariable>> BuiltinsProcessor::parse_builtin_variable(
     auto node_variable = std::make_shared<NodeVariable>(std::optional<Token>(), var_name, type_annotation.unwrap(), name, data_type);
     node_variable->is_local = false;
     node_variable->is_engine = true;
+	BuiltinRestrictionValidator::write_builtin_variable_restrictions(*node_variable);
     return Result<std::shared_ptr<NodeVariable>>(std::move(node_variable));
 }
 
@@ -214,6 +217,7 @@ Result<std::shared_ptr<NodeArray>> BuiltinsProcessor::parse_builtin_array() {
 	node_array->data_type = DataType::Const;
     node_array->is_local = false;
     node_array->is_engine = true;
+	BuiltinRestrictionValidator::write_builtin_variable_restrictions(*node_array);
     return Result<std::shared_ptr<NodeArray>>(std::move(node_array));
 }
 
@@ -268,7 +272,7 @@ Result<std::shared_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin
             );
 	node_function->visited = true;
     node_function->ty = ret_type;
-	node_function->write_builtin_function_restrictions();
+	BuiltinRestrictionValidator::write_builtin_function_restrictions(*node_function);
 	node_function->num_return_params = num_return_vars;
 	node_function->num_return_stmts = num_return_vars;
     return Result<std::shared_ptr<NodeFunctionDefinition>>(std::move(node_function));
@@ -299,10 +303,10 @@ Result<std::shared_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_contr
 		node_var = std::move(node_var_res.unwrap());
 	}
 	std::unique_ptr<NodeParamList> params = std::make_unique<NodeParamList>(tok);
-	std::vector<Type*> types;
 	if (peek(m_tokens).type == token::OPEN_PARENTH) {
 		consume(m_tokens); // consume (
 		if(peek(m_tokens).type != token::CLOSED_PARENTH) {
+			std::vector<Type*> types;
 			auto param_list = parse_builtin_args_list();
 			if (param_list.is_error()) {
 				Result<std::shared_ptr<NodeFunctionHeader>>(param_list.get_error());
@@ -369,7 +373,7 @@ Result<std::vector<std::unique_ptr<NodeFunctionParam>>> BuiltinsProcessor::parse
 }
 
 bool BuiltinsProcessor::is_property_function(const std::string &fun_name) {
-    return contains(fun_name, "_properties") || contains(fun_name, "set_bounds");
+    return StringUtils::contains(fun_name, "_properties") || StringUtils::contains(fun_name, "set_bounds");
 }
 
 

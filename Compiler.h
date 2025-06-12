@@ -71,7 +71,7 @@ public:
 		// input_filename = "/Users/mathias/Scripting/legato-dev/one-shot.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score-essentials/the-score-essentials.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
-		input_filename = "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp";
+		input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/the-orchestra-complete-4/the_orchestra_ens_V1.2.ksp";
 		// input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 		// input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
@@ -114,13 +114,13 @@ public:
    		std::string standard_output_path = m_config->standard_output_file;
 
 	#ifndef NDEBUG
-		// output_filename = "/Users/Mathias/Scripting/lux-strings/Samples/Resources/scripts/lux-orchestral-strings.txt";
 	//    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
 	    // output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
 	//    output_filename = "/Users/mathias/Scripting/preset-system/samples/resources/scripts/preset-system.txt";
 	//    output_filename = "/Users/mathias/Scripting/action-woodwinds/Samples/Resources/scripts/action_woodwinds_cksp.txt";
 	//	output_filename = "/Users/Mathias/Scripting/time-textures/Samples/resources/scripts/time-textures-2.txt";
-		// output_filename = "/Users/mathias/Scripting/lux-strings/Samples/Resources/scripts/lux-orchestral-strings.txt";
+		output_filename = "/Users/mathias/Scripting/lux-strings/Samples/Resources/scripts/lux-orchestral-strings-ks.txt";
+		// output_filename = "/Users/mathias/Scripting/the-orchestra-complete-4/Samples/Resources/scripts/sonu_orchestra_ensemble.txt";
 	#endif
 		if(output_filename.empty() && !m_config->output_filename.empty())
 			output_filename = m_config->output_filename;
@@ -159,10 +159,10 @@ public:
 
 		ASTTypeAnnotations type_annotations(m_program);
 		ast->accept(type_annotations);
+
 		ASTVariableChecking variable_checking(m_program);
 		variable_checking.do_complete_traversal(*ast, false);
 		ast->collect_references();
-
 
 		compile_time.stop("Lexical Scope");
 		std::cout << compile_time.print_timer("Lexical Scope") << "\n";
@@ -170,14 +170,15 @@ public:
 
 		ASTSemanticAnalysis data_structures(ast.get());
 		ast->accept(data_structures);
+		ast->debug_print();
 
 		compile_time.stop("Semantic Analysis");
 		std::cout << compile_time.print_timer("Semantic Analysis") << "\n";
 		compile_time.start("Type Checking");
 
-		// ast->debug_print();
 		TypeInference infer_types(ast.get());
 		infer_types.do_complete_traversal(*ast);
+		ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
 		ast->debug_print();
 
 		UniqueParameterNamesProvider unique_names_provider(m_program);
@@ -200,21 +201,26 @@ public:
 		// inline here so inlined struct vars get their declaration for register reuse later on
 		ast->inline_structs();
 
-		ASTDimensionExpansion dimension_inflation(m_program);
-		ast->accept(dimension_inflation);
-
 		compile_time.stop("Lowering");
 		std::cout << compile_time.print_timer("Lowering") << "\n";
 		compile_time.start("Return Function Rewriting");
 
 		ASTReturnFunctionRewriting return_function_rewriting(m_program);
 		return_function_rewriting.do_rewriting(*ast);
+		ast->debug_print();
+
+		static MarkThreadSafe marker(m_program);
+		marker.mark_environments(*ast);
+		static MarkThreadSafeVars mark_vars(m_program);
+		mark_vars.mark_variables(*ast);
+		ast->debug_print();
 
 		{
 			variable_checking.do_reachable_traversal(*ast, true);
 			ast->remove_references();
 			ast->collect_references();
 			infer_types.do_reachable_traversal(*ast);
+			ast->debug_print();
 
 			// then do parameter promotion directly to global or successively
 			// eliminate function-local variables
@@ -225,14 +231,22 @@ public:
 			// static ASTParameterQualifier parameter_qualifier(m_program);
 			// ast->accept(parameter_qualifier);
 			ast->debug_print();
-
 			ASTFunctionStrategy function_strategy1(m_program);
 			function_strategy1.determine_function_strategies(*m_program);
 
+			// ast->reset_function_visited_flag();
+			// ast->remove_references();
+			// ast->collect_references();
 			static ParameterAssignmentTransformation assignment_transformation(m_program);
 			assignment_transformation.do_parameter_assignment(*m_program);
 			ast->debug_print();
+
+
 		}
+
+		ASTDimensionExpansion dimension_inflation(m_program);
+		ast->accept(dimension_inflation);
+		ast->debug_print();
 
 		ASTPreemptiveFunctionInlining pre_inlining(m_program);
 		ast->accept(pre_inlining);
@@ -299,12 +313,12 @@ public:
 		std::cout << compile_time.print_timer("Post Lowering") << "\n";
 		compile_time.start("Optimization");
 
-		// ast->debug_print();
 		ast->inline_global_variables();
-
 		ast->debug_print();
+
 		ASTOptimizations optimizations;
 		ASTOptimizations::optimize(*ast, m_config->optimization_level);
+		ast->debug_print();
 
 		compile_time.stop("Optimization");
 		std::cout << compile_time.print_timer("Optimization") << "\n";

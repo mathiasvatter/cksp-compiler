@@ -603,18 +603,18 @@ ASTLowering* NodeGetControl::get_lowering(NodeProgram *program) const {
 //}
 
 Type *NodeGetControl::get_control_type() const {
-	const std::string control_par = to_lower(control_param);
+	const std::string control_par = StringUtils::to_lower(control_param);
 	static const std::unordered_set<std::string> str_substrings{"name", "path", "picture", "help", "identifier", "label", "text"};
 	static const std::unordered_set<std::string> int_substrings{"state", "alignment", "pos", "shifting"};
 	Type* type = TypeRegistry::Integer;
 	for (auto const &substring : str_substrings) {
-		if(contains(control_par, substring)) {
+		if(StringUtils::contains(control_par, substring)) {
 			type = TypeRegistry::String;
 			break;
 		}
 	}
 	for (auto const &substring : int_substrings) {
-		if(contains(control_par, substring)) {
+		if(StringUtils::contains(control_par, substring)) {
 			type = TypeRegistry::Integer;
 			break;
 		}

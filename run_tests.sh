@@ -12,7 +12,7 @@ RESET='\033[0m'
 FILES=(
   "/Users/mathias/Scripting/the-score/the-score.ksp"
   "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp"
-  "/Users/Mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings.ksp"
+  "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp"
   "/Users/mathias/Scripting/time-textures/time-textures.ksp"
   "/Users/mathias/Scripting/legato-dev/legato.ksp"
   "/Users/mathias/Scripting/legato-dev/keyswitch.ksp"

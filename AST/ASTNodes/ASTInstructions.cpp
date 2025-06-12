@@ -26,7 +26,7 @@
 #include "../../Lowering/LoweringSortSearch.h"
 #include "../../Lowering/PostLowering/PostLoweringSortSearch.h"
 #include "../ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
-#include "../ASTVisitor/FunctionHandling/FunctionRestrictionValidator.h"
+#include "../ASTVisitor/FunctionHandling/BuiltinRestrictionValidator.h"
 #include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 
 // ************* NodeStatement ***************
@@ -264,7 +264,7 @@ bool NodeFunctionCall::is_destructive_builtin_func() const {
 }
 
 bool NodeFunctionCall::check_restricted_environment(NodeCallback *current_callback) const {
-	return FunctionRestrictionValidator::check_function_callability(*this, current_callback);
+	return BuiltinRestrictionValidator::check_function_callability(*this, current_callback);
 }
 
 void NodeFunctionCall::determine_function_strategy(NodeProgram *program, NodeCallback *current_callback) {
@@ -650,6 +650,17 @@ NodeAST *NodeFunctionParam::replace_child(NodeAST* oldChild, std::unique_ptr<Nod
 		return value.get();
 	}
 	return nullptr;
+}
+
+size_t NodeFunctionParam::get_index() {
+	if (const auto func_header = parent->cast<NodeFunctionHeader>()) {
+		for (size_t i = 0; i< func_header->params.size(); i++) {
+			if (func_header->params[i].get() == this) {
+				return i;
+			}
+		}
+	}
+	return -1;
 }
 
 ASTLowering* NodeFunctionParam::get_lowering(NodeProgram *program) const {

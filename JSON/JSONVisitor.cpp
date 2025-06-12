@@ -14,7 +14,7 @@ void NCKPTranslator::visit(JSONBool &boolean) {
 void NCKPTranslator::visit(JSONString &str) {
 
     if(m_current_property == "\"id\"") {
-		std::string var_name = remove_quotes(str.value);
+		std::string var_name = StringUtils::remove_quotes(str.value);
 		if(!m_panel_prefixes.empty()) {
 			var_name = m_panel_prefixes.top().first + "_" + var_name;
 		}

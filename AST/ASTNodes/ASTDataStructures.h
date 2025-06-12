@@ -26,7 +26,7 @@ struct NodeVariable final : NodeDataStructure {
 	std::unique_ptr<NodePointer> to_pointer() override;
 	std::unique_ptr<NodeNDArray> to_ndarray() override ;
 	std::unique_ptr<NodeList> to_list() override ;
-	std::unique_ptr<NodeDataStructure> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
+	std::unique_ptr<NodeDataStructure> expand_dimension(std::unique_ptr<NodeAST> new_index) override;
 
 };
 
@@ -46,7 +46,7 @@ struct NodePointer final : NodeDataStructure {
 	ASTLowering* get_lowering(NodeProgram *program) const override;
 	std::unique_ptr<NodeArray> to_array(std::unique_ptr<NodeAST> size) override;
 	std::unique_ptr<NodeVariable> to_variable() override;
-	std::unique_ptr<NodeDataStructure> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
+	std::unique_ptr<NodeDataStructure> expand_dimension(std::unique_ptr<NodeAST> new_index) override;
 };
 
 struct NodeComposite : NodeDataStructure {
@@ -121,7 +121,7 @@ struct NodeArray final : NodeComposite {
 	}
 	std::unique_ptr<NodeNDArray> to_ndarray() override;
 	std::unique_ptr<NodeList> to_list() override;
-	std::unique_ptr<NodeDataStructure> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
+	std::unique_ptr<NodeDataStructure> expand_dimension(std::unique_ptr<NodeAST> new_index) override;
 	std::shared_ptr<NodeArray> get_raw() override {
 		return shared_ptr_cast<NodeArray>(get_shared());
 	}
@@ -169,7 +169,7 @@ struct NodeNDArray final : NodeComposite {
 	}
 	std::unique_ptr<NodeArray> to_array(std::unique_ptr<NodeAST> size) override;
 	std::unique_ptr<NodeList> to_list() override;
-	std::unique_ptr<NodeDataStructure> inflate_dimension(std::unique_ptr<NodeAST> new_index) override;
+	std::unique_ptr<NodeDataStructure> expand_dimension(std::unique_ptr<NodeAST> new_index) override;
 	std::shared_ptr<NodeArray> get_raw() override;
 	/// returns size of the raw underlying one-dim array via num_elements(0, <name>)
 	std::unique_ptr<NodeAST> get_size() override;

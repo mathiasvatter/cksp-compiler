@@ -14,7 +14,6 @@ public:
 
 	NodeAST* do_complete_traversal(NodeProgram& node, const bool fail) {
 		this->fail = fail;
-		m_functions_in_use.clear();
 		// update function lookup map because of altered param counts after lambda lifting
 		m_program->merge_function_definitions();
 		m_program->update_function_lookup();
@@ -27,13 +26,12 @@ public:
 		}
 		node.reset_function_visited_flag();
 		m_def_provider->refresh_scopes();
-		FunctionParamDataTypeGetter data_type_getter(m_program);
-		node.accept(data_type_getter);
+		// FunctionParamDataTypeGetter data_type_getter(m_program);
+		// node.accept(data_type_getter);
 		return &node;
     }
 
 	NodeAST* do_reachable_traversal(NodeProgram& node, const bool fail) {
-		m_functions_in_use.clear();
 		this->fail = fail;
 		// update function lookup map because of altered param counts after lambda lifting
 		m_program->merge_function_definitions();
@@ -42,6 +40,11 @@ public:
 		m_def_provider->refresh_scopes();
 		m_def_provider->refresh_data_vectors();
 		node.accept(*this);
+		for(const auto & func_def : node.function_definitions) {
+			if(!func_def->visited and func_def->is_used) {
+				func_def->accept(*this);
+			}
+		}
 		node.reset_function_visited_flag();
 		m_def_provider->refresh_scopes();
 		return &node;
@@ -96,23 +99,7 @@ private:
 		return m_current_block.top();
 	}
 
-	/// track functions in use to search for recursive calls
-	std::unordered_set<NodeFunctionDefinition*> m_functions_in_use;
-	bool check_recursion(NodeFunctionDefinition* func) const {
-		if(m_functions_in_use.contains(func)) {
-			// recursive function call detected
-			auto error = CompileError(ErrorType::SyntaxError, "", "", func->tok);
-			error.m_message = "Found recursive function call <"+func->header->name+">. Calling functions inside their definition is not allowed.";
-			error.m_got = "Function cycle with: ";
-			for (const auto fun : m_functions_in_use) {
-				error.m_got += "<"+fun->header->name+">, ";
-			}
-			error.m_got.erase(error.m_got.size() - 2);
-			error.exit();
-			return true;
-		}
-		return false;
-	}
+
 
 	/// node can be NodeFunctionCall or NodeReference
 	/// transformation when first object is clearly a reference this_list.next.next()

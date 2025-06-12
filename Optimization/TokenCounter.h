@@ -61,7 +61,7 @@ protected:
 		int func_tokens = node.function->get_num_args();
 		func_tokens += 1; // because of function name
 		m_tokens += func_tokens;
-		if(contains(node.function->name, "nks")) {
+		if(StringUtils::contains(node.function->name, "nks")) {
 			m_tokens += func_tokens;
 		}
 		return &node;
