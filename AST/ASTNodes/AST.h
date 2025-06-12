@@ -241,7 +241,7 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 	/// determines if current data structure is local variable and sets is_local flag
 	bool determine_locality(const NodeProgram* program, const NodeBlock* current_block);
 	/// determines if current data structure is a parameter in a function definition
-	bool is_function_param() const;
+	struct NodeFunctionParam* is_function_param() const;
 	/// determines if current data structure is member of a struct, if yes returns pointer to struct
 	NodeStruct* is_member() const;
 	/// tries to infer the type by specializing given type from Number to Integer

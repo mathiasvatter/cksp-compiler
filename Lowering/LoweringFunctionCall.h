@@ -122,11 +122,17 @@ private:
 	/// returns true if reference is a ui_control, is a function argument and is the first argument
 	/// of a builtin "control_par" function call, a property function call or any argument of a user-defined function call
 	static bool needs_get_ui_id(const NodeReference& ref) {
-		if (ref.data_type != DataType::UIControl || !ref.is_func_arg())
+		if (!ref.is_func_arg()) {
 			return false;
+		}
 
 		if (auto decl = ref.get_declaration()) {
-			if (decl->is_function_param() and !decl->parent->cast<NodeFunctionParam>()->is_pass_by_ref) {
+			if (auto param = decl->is_function_param()) {
+				if (!param->is_pass_by_ref) {
+					return false;
+				}
+			// if we are in a function, decl might not be markes as an ui_control data_type
+			} else if (ref.data_type != DataType::UIControl) {
 				return false;
 			}
 		}
