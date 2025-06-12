@@ -27,6 +27,9 @@ class TypeInference final : public ASTVisitor {
 				// "Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
 				// 	+ func_arg->ty->to_string() + " as argument type.";
 				match_parameters(*param, func_arg->ty, "");
+				for (auto& ref : param->references) {
+					match_reference_declaration(*ref, param);
+				}
 			}
 		}
 
@@ -58,6 +61,7 @@ class TypeInference final : public ASTVisitor {
 				if (func) {
 					call->definition = func;
 					call->function->declaration = func->header;
+					call->function->name = func->header->name;
 					continue;
 				}
 				if (def->header->references.size() == 1) {
@@ -67,6 +71,7 @@ class TypeInference final : public ASTVisitor {
 						param->ty = new_header->get_param(i)->ty;
 					}
 					def->header->ty = new_header->ty;
+					call->function->name = def->header->name;
 					continue;
 				}
 
