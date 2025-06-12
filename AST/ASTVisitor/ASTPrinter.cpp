@@ -530,7 +530,11 @@ NodeAST * ASTPrinter::visit(NodeFunctionCall &node) {
         os << "call ";
     }
     node.function->accept(*this);
-	os << "{" << node.get_kind_as_string() << ", " << node.get_strategy_string() << "}";
+	os << "{" << node.get_kind_as_string() << ", " << node.get_strategy_string();
+	if (auto definition = node.get_definition()) {
+		os << ", " << definition->header->name;
+	}
+	os << "}";
 	return &node;
 }
 

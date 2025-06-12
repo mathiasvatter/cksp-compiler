@@ -272,12 +272,13 @@ private:
 					decl->kind = NodeInstruction::ParameterStack;
 					promoted_params.push_back(std::move(param));
 					promoted_param_indices.push_back(i);
+					// WHY?????
 					// if the call is currently in the on init callback, do not move to global_declarations but directly
-					if (m_program->current_callback == m_program->init_callback) {
-						m_global_declarations[m_function_call_stack[0]].push_back(std::move(decl));
-					} else {
+					// if (m_program->current_callback == m_program->init_callback) {
+					// 	m_global_declarations[m_function_call_stack[0]].push_back(std::move(decl));
+					// } else {
 						m_program->global_declarations->add_as_stmt(std::move(decl));
-					}
+					// }
 
 				}
 			}
