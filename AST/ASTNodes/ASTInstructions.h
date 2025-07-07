@@ -78,6 +78,7 @@ struct NodeFunctionCall final : NodeInstruction {
     ASTLowering* get_lowering(NodeProgram *program) const override;
     /// attempts to get and set the definition pointer of the function call and updates the call sites of the definition
     std::shared_ptr<NodeFunctionDefinition> find_definition(NodeProgram *program);
+	std::shared_ptr<NodeFunctionDefinition> find_definition(NodeProgram *program, const std::string& name, int num_args, const Type *ty);
     /// attempts to get and match metadata from builtin function to this
     std::shared_ptr<NodeFunctionDefinition> find_builtin_definition(NodeProgram *program);
     /// attempts to get property function that and set definition pointer + error handling
@@ -214,7 +215,7 @@ struct NodeUseCount final : NodeInstruction {
 	std::unique_ptr<NodeReference> ref;
 	explicit NodeUseCount(std::unique_ptr<NodeReference> ref)
 		: NodeInstruction(NodeType::UseCount, ref->tok), ref(std::move(ref)) {
-		NodeInstruction::set_child_parents();
+		NodeUseCount::set_child_parents();
 	}
 	NodeAST * accept(ASTVisitor &visitor) override;
 	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;

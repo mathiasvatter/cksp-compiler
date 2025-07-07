@@ -4,6 +4,7 @@
 
 #pragma once
 #include <string>
+#include <utility>
 #include <vector>
 #include <filesystem>
 #include <unordered_map>
@@ -30,6 +31,15 @@ inline const std::unordered_map<std::string, OptimizationLevel> optimization_lev
 	{ "aggressive", OptimizationLevel::Aggressive}
 };
 
+enum class ParameterPassing {
+	ByValue,    // Pass by value
+	ByReference // Pass by reference
+};
+inline const std::unordered_map<std::string, ParameterPassing> parameter_passing_map = {
+	{ "value",    ParameterPassing::ByValue     },
+	{ "reference", ParameterPassing::ByReference }
+};
+
 
 // Enum für Debugging-Modi
 enum class DebugMode {
@@ -44,9 +54,10 @@ struct CompilerConfig {
 	std::string standard_output_file;
 	OptimizationLevel optimization_level = OptimizationLevel::None;
 	DebugMode debug_mode = DebugMode::Off;
+	ParameterPassing parameter_passing = ParameterPassing::ByValue;
 
-	CompilerConfig(const std::string& input, const std::string& output, OptimizationLevel optLevel, DebugMode debug)
-		: input_filename(input), output_filename(output), optimization_level(optLevel), debug_mode(debug) {
+	CompilerConfig(std::string  input, std::string  output, const OptimizationLevel optLevel, const DebugMode debug)
+		: input_filename(std::move(input)), output_filename(std::move(output)), optimization_level(optLevel), debug_mode(debug) {
 		if(!input_filename.empty())
 			standard_output_file = std::filesystem::path(
 				std::filesystem::path(input_filename).parent_path() / "out.txt").string();
