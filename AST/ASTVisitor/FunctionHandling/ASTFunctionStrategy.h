@@ -9,9 +9,10 @@
 class ASTFunctionStrategy final : public ASTVisitor {
 	DefinitionProvider *m_def_provider;
 	NodeCallback* m_current_callback = nullptr;
+	ParameterPassing pass_by;
 
 public:
-	explicit ASTFunctionStrategy(NodeProgram* main) : m_def_provider(main->def_provider) {
+	explicit ASTFunctionStrategy(NodeProgram* main, const ParameterPassing pass_by) : m_def_provider(main->def_provider), pass_by(pass_by) {
 		m_program = main;
 	}
 
@@ -62,7 +63,7 @@ private:
 			definition->visited = true;
 			node.is_call = false;
 
-			decide_by_ref_or_value(*definition->header, *node.function);
+			decide_by_ref_or_value(*definition->header);
 
 			const bool is_callable_env = m_current_callback != m_program->init_callback and !definition->is_restricted;
 
@@ -87,22 +88,14 @@ private:
 		return &node;
 	}
 
-	static void decide_by_ref_or_value(const NodeFunctionHeader& header, const NodeFunctionHeaderRef& header_ref) {
+	void decide_by_ref_or_value(const NodeFunctionHeader& header) const {
 		for (size_t i = 0; i < header.get_num_params(); i++) {
 			auto& formal_param = header.params[i];
-			auto& actual_param = header_ref.get_arg(i);
-
 			if (formal_param->variable->ty->cast<CompositeType>()) {
 				formal_param->is_pass_by_ref = true;
+			} else if (pass_by == ParameterPassing::ByReference) {
+				formal_param->is_pass_by_ref = true;
 			}
-			// if (formal_param->variable->data_type == DataType::UIControl) {
-			// 	formal_param->is_pass_by_ref = true;
-			// }
-
-			// if (actual_param->cast<NodeInitializerList>()) {
-			// 	formal_param->is_pass_by_ref = false;
-			// }
-
 		}
 	}
 

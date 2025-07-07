@@ -57,7 +57,7 @@ private:
 
 		node.bind_definition(m_program);
 		auto const definition = node.get_definition();
-		if(node.kind == NodeFunctionCall::UserDefined and definition) {
+		if(!node.is_builtin_kind() and definition) {
 			if(!definition->visited) {
 				m_program->function_call_stack.push(definition);
 				definition->accept(*this);

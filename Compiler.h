@@ -71,9 +71,9 @@ public:
 		// input_filename = "/Users/mathias/Scripting/legato-dev/one-shot.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score-essentials/the-score-essentials.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
-		input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
+		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/toc-single-instruments/legato.ksp";
-		input_filename = "/Users/mathias/Scripting/toc-single-instruments/keyswitch.ksp";
+		// input_filename = "/Users/mathias/Scripting/toc-single-instruments/keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/the-orchestra-complete-4/the_orchestra_ens_V1.2.ksp";
 		// input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 		// input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
@@ -85,6 +85,7 @@ public:
 		// input_filename = "/Users/Mathias/Scripting/action-strings-2/action_strings2_V0.1.ksp";
 		// input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp";
+		// input_filename = "/Users/mathias/Scripting/sonu-libraries/try.ksp";
 	#endif
 
 		Timer compile_time;
@@ -122,9 +123,10 @@ public:
 	//    output_filename = "/Users/mathias/Scripting/action-woodwinds/Samples/Resources/scripts/action_woodwinds_cksp.txt";
 	//	output_filename = "/Users/Mathias/Scripting/time-textures/Samples/resources/scripts/time-textures-2.txt";
 		// output_filename = "/Users/mathias/Scripting/lux-strings/Samples/Resources/scripts/lux-orchestral-strings-ks.txt";
-		output_filename = "/Users/mathias/Scripting/toc-single-instruments/samples/resources/scripts/legato.txt";
-		output_filename = "/Users/mathias/Scripting/toc-single-instruments/samples/resources/scripts/keyswitch.txt";
+		// output_filename = "/Users/mathias/Scripting/toc-single-instruments/samples/resources/scripts/legato.txt";
+		// output_filename = "/Users/mathias/Scripting/toc-single-instruments/samples/resources/scripts/keyswitch.txt";
 		// output_filename = "/Users/mathias/Scripting/the-orchestra-complete-4/Samples/Resources/scripts/sonu_orchestra_ensemble.txt";
+		// output_filename = "/Users/mathias/Scripting/sonu-libraries/resources/scripts/main.txt";
 	#endif
 		if(output_filename.empty() && !m_config->output_filename.empty())
 			output_filename = m_config->output_filename;
@@ -148,6 +150,7 @@ public:
 		}
 		auto ast = std::move(ast_result.unwrap());
 		ast->def_provider = &m_definition_provider;
+		ast->compiler_config = m_config;
 		m_program = ast.get();
 
 		compile_time.stop("Parsing");
@@ -156,6 +159,7 @@ public:
 
 		ASTDesugar desugar;
 		ast->accept(desugar);
+		ast->debug_print();
 
 		compile_time.stop("Desugaring");
 		std::cout << compile_time.print_timer("Desugaring") << "\n";
@@ -167,6 +171,8 @@ public:
 		ASTVariableChecking variable_checking(m_program);
 		variable_checking.do_complete_traversal(*ast, false);
 		ast->collect_references();
+		ast->debug_print();
+
 
 		compile_time.stop("Lexical Scope");
 		std::cout << compile_time.print_timer("Lexical Scope") << "\n";
@@ -235,16 +241,12 @@ public:
 			// static ASTParameterQualifier parameter_qualifier(m_program);
 			// ast->accept(parameter_qualifier);
 			ast->debug_print();
-			ASTFunctionStrategy function_strategy1(m_program);
-			function_strategy1.determine_function_strategies(*m_program);
+			ASTFunctionStrategy function_strategy(m_program, m_config->parameter_passing);
+			function_strategy.determine_function_strategies(*m_program);
 
-			// ast->reset_function_visited_flag();
-			// ast->remove_references();
-			// ast->collect_references();
 			static ParameterAssignmentTransformation assignment_transformation(m_program);
 			assignment_transformation.do_parameter_assignment(*m_program);
 			ast->debug_print();
-
 
 		}
 
@@ -292,12 +294,6 @@ public:
 		compile_time.stop("Variable Reuse");
 		std::cout << compile_time.print_timer("Variable Reuse") << "\n";
 	    compile_time.start("Function Inlining");
-
-		// ASTFunctionStrategy function_strategy2(m_program);
-		// function_strategy2.determine_function_strategies(*m_program);
-
-		// ast->order_function_definitions();
-		// ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
 
 		ASTFunctionInlining func_inlining(m_program);
 		ast->accept(func_inlining);

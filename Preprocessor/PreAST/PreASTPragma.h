@@ -12,7 +12,6 @@
 
 class PreASTPragma final : public PreASTVisitor {
 	CompilerConfig* m_config = nullptr;
-	std::set<std::string> m_pragma_directives = {"output_path"};
 	std::unordered_map<std::string, std::function<void(const std::string&, const Token&)>> pragma_handlers{};
 
 public:
@@ -66,9 +65,19 @@ private:
 
 			const auto it = optimization_level_map.find(level);
 			if (it == optimization_level_map.end()) {
-				get_pragma_error(token, level, "none, simple, standard, or aggressive").exit();
+				get_pragma_error(token, level, "'none', 'simple', 'standard', or 'aggressive'").exit();
 			}
 			m_config->optimization_level = it->second;
+		};
+
+		pragma_handlers["pass_by"] = [this](const std::string& arg, const Token& token) {
+			std::string pass_by = StringUtils::remove_quotes(arg);
+
+			const auto it = parameter_passing_map.find(pass_by);
+			if (it == parameter_passing_map.end()) {
+				get_pragma_error(token, pass_by, "'value' or 'reference'").exit();
+			}
+			m_config->parameter_passing = it->second;
 		};
 	}
 

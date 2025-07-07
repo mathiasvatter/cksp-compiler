@@ -732,6 +732,7 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 };
 
 struct NodeProgram final : NodeAST {
+	struct CompilerConfig* compiler_config = nullptr;
 	class DefinitionProvider* def_provider = nullptr;
 	NodeCallback* init_callback = nullptr;
 	NodeCallback* current_callback = nullptr;

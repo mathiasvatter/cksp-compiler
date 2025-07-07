@@ -67,7 +67,7 @@ protected:
     [[nodiscard]] char peek(int ahead = 0) const;
     char consume();
     void flush_buffer();
-	void add_token(token type, const std::string& val);
+	void add_token(token type, std::string val);
 	void skip_whitespace();
 
 	static bool is_space(const char& ch);
