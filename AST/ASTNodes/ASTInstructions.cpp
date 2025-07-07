@@ -25,6 +25,7 @@
 #include "../../Lowering/PostLowering/PostLoweringSingleDeclaration.h"
 #include "../../Lowering/LoweringSortSearch.h"
 #include "../../Lowering/PostLowering/PostLoweringSortSearch.h"
+#include "../../misc/CommandLineOptions.h"
 #include "../ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
 #include "../ASTVisitor/FunctionHandling/BuiltinRestrictionValidator.h"
 #include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
@@ -81,21 +82,24 @@ ASTLowering* NodeFunctionCall::get_lowering(struct NodeProgram *program) const {
 }
 
 std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_definition(NodeProgram *program) {
-//     auto it = program->function_lookup.find({function->name, static_cast<int>(function->args->size())});
-//     if(it != program->function_lookup.end()) {
-// 		auto func_def = it->second.lock();
-//         definition = it->second;
-//         kind = Kind::UserDefined;
-// //		func_def->call_sites.emplace(this);
-//         return func_def;
-//     }
 	if (auto func_def = program->look_up_function(*this->function)) {
 		definition = func_def;
 		kind = Kind::UserDefined;
-		//		func_def->call_sites.emplace(this);
 		return func_def;
 	}
     return nullptr;
+}
+
+std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_definition(NodeProgram *program,
+	const std::string &name,
+	int num_args,
+	const Type *ty) {
+	if (auto func_def = program->look_up_compatible({name, num_args}, ty)) {
+		definition = func_def;
+		kind = Kind::UserDefined;
+		return func_def;
+	}
+	return nullptr;
 }
 
 std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_builtin_definition(NodeProgram *program) {
@@ -268,7 +272,7 @@ bool NodeFunctionCall::check_restricted_environment(NodeCallback *current_callba
 }
 
 void NodeFunctionCall::determine_function_strategy(NodeProgram *program, NodeCallback *current_callback) {
-	static ASTFunctionStrategy function_strategy(program);
+	static ASTFunctionStrategy function_strategy(program, program->compiler_config->parameter_passing);
 	function_strategy.determine_function_strategy(*this, current_callback);
 }
 

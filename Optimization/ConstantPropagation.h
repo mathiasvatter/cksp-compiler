@@ -61,8 +61,8 @@ public:
 	// to constant propagation (with declared constants) everywhere except left hand of assignments
 	NodeAST* do_constant_propagation(NodeReference* node) {
 		if (node->data_type != DataType::Const) return node;
-		// if builtin return
-		if (node->is_engine) return node;
+		// if builtin return ????????? TODO: what does this mean?
+		// if (node->is_engine) return node;
 		// do not substitute if the variable is on the left side of an assignment
 		if(node->is_l_value()) return node;
 

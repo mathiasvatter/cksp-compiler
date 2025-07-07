@@ -22,7 +22,7 @@ public:
 		// check if all member node types are allowed
 		for(auto & m: node.member_table) {
 			auto member = m.second.lock();
-			if(NodeStruct::allowed_member_node_types.find(member->get_node_type()) == NodeStruct::allowed_member_node_types.end()) {
+			if(!NodeStruct::allowed_member_node_types.contains(member->get_node_type())) {
 				auto error = CompileError(ErrorType::SyntaxError, "", "", member->tok);
 				error.m_message = "Member type not allowed in struct. Only <Variables>, <Arrays>, <NDArrays>, <Pointers> and <Structs> are allowed.";
 				error.m_got = member->ty->to_string();
@@ -49,9 +49,9 @@ public:
 			DataType::Const
 		);
 		max_structs_var->is_engine = true;
-		strct->max_individual_structs_var = max_structs_var;
+		strct->max_individual_structs_var = std::move(max_structs_var);
 		auto max_structs_decl = std::make_unique<NodeSingleDeclaration>(
-			max_structs_var,
+			strct->max_individual_structs_var,
 			get_max_individual_structs_size(strct),
 			Token()
 		);
@@ -78,9 +78,9 @@ public:
 			Token()
 		);
 		allocation_var->is_engine = true;
-		strct->allocation_var = allocation_var;
+		strct->allocation_var = std::move(allocation_var);
 		auto allocation_decl = std::make_unique<NodeSingleDeclaration>(
-			std::move(allocation_var),
+			strct->allocation_var,
 			nullptr,
 			Token()
 		);

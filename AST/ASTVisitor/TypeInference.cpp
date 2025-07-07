@@ -395,7 +395,10 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				error.exit();
 			}
 			auto prev_obj = prev_type->to_string();
-			if(ptr->cast<NodeFunctionCall>()) {
+			if(auto func_call = ptr->cast<NodeFunctionCall>()) {
+				// since the name is not yet right (struct name infront)
+				// auto correct_name = prev_obj + OBJ_DELIMITER + func_call->function->name;
+				// func_call->find_definition(m_program, correct_name, func_call->function->get_num_args()+1, func_call->function->ty);
 				ptr->accept(*this);
 			} else {
 				auto reference = cast_node<NodeReference>(ptr.get());
