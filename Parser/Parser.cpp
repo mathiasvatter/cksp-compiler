@@ -653,6 +653,10 @@ Result<std::unique_ptr<NodeAssignment>> Parser::parse_assign_statement(NodeAST* 
 	} while(peek().type == token::COMMA);
 
     if(peek().type != token::ASSIGN) {
+    	// in case of a access chain with method call at the end
+    	if (peek().type == token::LINEBRK) {
+    		// if (vars.size() == 1)
+    	}
         return Result<std::unique_ptr<NodeAssignment>>(CompileError(ErrorType::SyntaxError,
                                                                     "Found invalid Assign Statement Syntax.", ":=", peek()));
     }

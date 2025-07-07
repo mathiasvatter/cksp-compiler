@@ -1,40 +1,30 @@
 
 #pragma output_path("test.txt")
 
+import "/Users/mathias/Scripting/sonu-libraries/ksp/3.0/floatmask-object.cksp"
+
+
+struct MyStruct
+    declare my_int: int
+    declare my_real: real
+
+    function __init__(self, my_int: int, my_real: real)
+        self.my_int := my_int
+        self.my_real := my_real
+    end function
+
+    function multiply(self, factor: number, factor2: number)
+        return factor * factor2
+    end function
+end struct
 
 on init
-    
-    message(func_a(3, 4))
+	declare b := Bitlist()
+	b.set(3, 1)
+	message(b.get(3), use_count(b))
+    message(b.search())
 
-    declare ui_button btn2
-
-    declare ui_button btn
-    funzl(btn, btn2)
-
+    // declare strct := MyStruct(10, 2.5)
+    // message(strct.multiply(4, 4.3))
+    // message(strct.multiply(4.4, 4.3))
 end on
-
-on persistence_changed
-    message(func_a(5, 9))
-    func_c(3,4)
-end on
-
-function funzl(ref btn_name, other_control)
-    set_bounds(btn_name, other_control->x, other_control->y)
-    if(get_ui_id(btn_name) > 0) 
-        message("henlo")
-    end if
-end function
-
-function func_a(param1, param2)
-    declare res := param1 + param2
-    return func_b(res)
-end function 
-
-function func_b(param)
-    declare res := param * 2
-    return res
-end function
-
-function func_c(param, param2)
-    message(param + param2)
-end function
