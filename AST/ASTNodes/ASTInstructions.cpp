@@ -4,6 +4,7 @@
 
 #include "ASTInstructions.h"
 #include "ASTReferences.h"
+#include "../../Desugaring/DesugarCompoundAssignment.h"
 #include "../ASTVisitor/ASTVisitor.h"
 #include "../../Lowering/ASTLowering.h"
 #include "../../Desugaring/DesugarDeclareAssign.h"
@@ -528,21 +529,31 @@ ASTDesugaring * NodeSingleAssignment::get_desugaring(NodeProgram *program) const
 	return &desugaring;
 }
 
-//ASTLowering* NodeSingleAssignment::get_lowering(struct NodeProgram *program) const {
-//	return this->l_value->get_lowering(program);
-//}
-
-//ASTLowering* NodeSingleAssignment::get_data_lowering(struct NodeProgram *program) const {
-//    return this->l_value->get_data_lowering(program);
-//}
-
 NodeAST *NodeSingleAssignment::do_array_normalization(NodeProgram *program) {
 	static NormalizeArrayAssign array_assign(program);
 	return accept(array_assign);
 }
 
+// ************* NodeCompoundAssignment ***************
+NodeAST *NodeCompoundAssignment::accept(ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeCompoundAssignment::NodeCompoundAssignment(const NodeCompoundAssignment& other)
+		: NodeInstruction(other), l_value(clone_unique(other.l_value)),
+		  r_value(clone_unique(other.r_value)), op(other.op) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeCompoundAssignment::clone() const {
+	return std::make_unique<NodeCompoundAssignment>(*this);
+}
+
+ASTDesugaring * NodeCompoundAssignment::get_desugaring(NodeProgram *program) const {
+	static DesugarCompoundAssignment desugaring(program);
+	return &desugaring;
+}
+
 // ************* NodeDeclaration ***************
-NodeAST *NodeDeclaration::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeDeclaration::accept(ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeDeclaration::NodeDeclaration(const NodeDeclaration& other)

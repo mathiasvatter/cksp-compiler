@@ -1,7 +1,7 @@
 
 #pragma output_path("test.txt")
 
-import "/Users/mathias/Scripting/sonu-libraries/ksp/3.0/floatmask-object.cksp"
+import "/Users/mathias/Scripting/preset-system/dev/ksp/Preset.cksp"
 
 
 struct MyStruct
@@ -24,6 +24,7 @@ on init
 	message(b.get(3), use_count(b))
     message(b.search())
 
+    message(Browser::pupu)
     // declare strct := MyStruct(10, 2.5)
     // message(strct.multiply(4, 4.3))
     // message(strct.multiply(4.4, 4.3))

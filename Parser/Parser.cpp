@@ -603,7 +603,12 @@ Result<std::unique_ptr<NodeSingleDeclaration>> Parser::parse_single_declare_stat
 }
 
 Result<std::unique_ptr<NodeSingleAssignment>> Parser::parse_single_assign_statement(NodeAST* parent) {
-    auto node_assign_statement_res = parse_assign_statement(parent);
+	auto l_values = parse_l_values(parent);
+	if(l_values.is_error()) {
+		return Result<std::unique_ptr<NodeSingleAssignment>>(l_values.get_error());
+	}
+	auto values = std::move(l_values.unwrap());
+    auto node_assign_statement_res = parse_assign_statement(std::move(values), parent);
     if(node_assign_statement_res.is_error())
         Result<std::unique_ptr<NodeSingleAssignment>>(node_assign_statement_res.get_error());
     const auto node_assign_statement = std::move(node_assign_statement_res.unwrap());
@@ -622,41 +627,49 @@ Result<std::unique_ptr<NodeSingleAssignment>> Parser::parse_single_assign_statem
     return Result<std::unique_ptr<NodeSingleAssignment>>(std::move(node_single_assign_statement));
 }
 
-Result<std::unique_ptr<NodeAssignment>> Parser::parse_assign_statement(NodeAST* parent) {
-    auto node_assign_statement = std::make_unique<NodeAssignment>(get_tok());
+Result<std::vector<std::unique_ptr<NodeReference>>> Parser::parse_l_values(NodeAST* parent) {
 	// make it possible to have more than one variable before assign
 	std::vector<std::unique_ptr<NodeReference>> vars;
 	if(peek().type == token::COMMA) {
-		auto error = CompileError(ErrorType::SyntaxError, "Found invalid Assign Statement Syntax.", "", peek());
-		error.m_message += " Assignments must not start with a <comma>.";
+		auto error = CompileError(ErrorType::SyntaxError, "Found invalid <l_value> Syntax.", "", peek());
+		error.m_message += " Lists of <l_values> must not start with a <comma>.";
 		error.exit();
 	}
 	do {
 		if(peek().type == token::COMMA) consume();
 		// ui_control
 		if (peek().type == token::KEYWORD) {
-			auto ref = parse_reference_chain(node_assign_statement.get());
+			auto ref = parse_reference_chain(parent);
 			if (ref.is_error()) {
-				return Result<std::unique_ptr<NodeAssignment>>(ref.get_error());
+				return Result<std::vector<std::unique_ptr<NodeReference>>>(ref.get_error());
 			}
 			auto reference = std::move(ref.unwrap());
-			if(reference->get_node_type() == NodeType::FunctionCall) {
-				auto error = CompileError(ErrorType::SyntaxError, "Found invalid Assign Statement Syntax.", "", peek());
-				error.m_message += " <Function Calls> cannot be l_values in Assign Statements.";
-				error.exit();
-			}
 			vars.push_back(std::unique_ptr<NodeReference>(static_cast<NodeReference*>(reference.release())));
 		} else {
-			return Result<std::unique_ptr<NodeAssignment>>(CompileError(ErrorType::ParseError,
-																		 "Incorrect syntax in declare statement.", "<ui_control>, <variable>, <array>", peek()));
+			return Result<std::vector<std::unique_ptr<NodeReference>>>(CompileError(ErrorType::ParseError,
+																		 "Found invalid <l_value> Syntax.", "<keyword>", peek()));
 		}
 	} while(peek().type == token::COMMA);
+	if(vars.empty()) {
+		auto error = CompileError(ErrorType::ParseError, "Found invalid <l_value> Syntax.", "", peek());
+		error.m_message += " At least one <l_value> is required.";
+		error.exit();
+	}
+	return Result<std::vector<std::unique_ptr<NodeReference>>>(std::move(vars));
+}
+
+bool Parser::is_func_call_reference_chain(NodeReference& ref) {
+	auto chain = ref.cast<NodeAccessChain>();
+	if (chain && chain->chain.back()->cast<NodeFunctionCall>()) {
+		return true;
+	}
+	return false;
+}
+
+Result<std::unique_ptr<NodeAssignment>> Parser::parse_assign_statement(std::vector<std::unique_ptr<NodeReference>> l_values, NodeAST* parent) {
+    auto node_assign_statement = std::make_unique<NodeAssignment>(get_tok());
 
     if(peek().type != token::ASSIGN) {
-    	// in case of a access chain with method call at the end
-    	if (peek().type == token::LINEBRK) {
-    		// if (vars.size() == 1)
-    	}
         return Result<std::unique_ptr<NodeAssignment>>(CompileError(ErrorType::SyntaxError,
                                                                     "Found invalid Assign Statement Syntax.", ":=", peek()));
     }
@@ -668,11 +681,46 @@ Result<std::unique_ptr<NodeAssignment>> Parser::parse_assign_statement(NodeAST* 
         return Result<std::unique_ptr<NodeAssignment>>(assignee.get_error());
     }
 	assignees = std::move(assignee.unwrap());
-    node_assign_statement->l_values = std::move(vars);
+    node_assign_statement->l_values = std::move(l_values);
     node_assign_statement->r_values = std::move(assignees);
     node_assign_statement->set_child_parents();
     node_assign_statement->parent = parent;
     return Result<std::unique_ptr<NodeAssignment>>(std::move(node_assign_statement));
+}
+
+Result<std::unique_ptr<NodeCompoundAssignment>> Parser::parse_compound_assign_statement(
+	std::unique_ptr<NodeReference> l_value,
+	NodeAST *parent) {
+	auto error = CompileError(ErrorType::SyntaxError, "", "", peek());
+
+	auto node_compound_assign_statement = std::make_unique<NodeCompoundAssignment>(get_tok());
+	auto valid_operator_tokens = extract_tokens_from_map(ALL_OPERATORS);
+	if (!valid_operator_tokens.contains(peek().type)) {
+		error.m_message = "Invalid Operator Syntax for <Compound Assignment>.";
+		std::vector<std::string> valid_tokens{};
+		for (auto& tok : valid_operator_tokens) {
+			valid_tokens.push_back(std::string("<") + tokenStrings[static_cast<int>(tok)] + ">");
+		}
+		error.m_expected = StringUtils::join(valid_tokens, ',');
+		return Result<std::unique_ptr<NodeCompoundAssignment>>(error);
+	}
+	auto op = consume(); // consume operator token
+	if (peek().type != token::EQUAL) {
+		error.m_message = "Invalid Operator Syntax for <Compound Assignment>. Expected <equal> after operator.";
+		error.m_expected = "=";
+		return Result<std::unique_ptr<NodeCompoundAssignment>>(error);
+	}
+	consume(); // consume equal token
+	auto r_value = parse_binary_expr(node_compound_assign_statement.get());
+	if (r_value.is_error()) {
+		return Result<std::unique_ptr<NodeCompoundAssignment>>(r_value.get_error());
+	}
+	node_compound_assign_statement->l_value = std::move(l_value);
+	node_compound_assign_statement->r_value = std::move(r_value.unwrap());
+	node_compound_assign_statement->op = op.type;
+	node_compound_assign_statement->set_child_parents();
+	node_compound_assign_statement->parent = parent;
+	return Result<std::unique_ptr<NodeCompoundAssignment>>(std::move(node_compound_assign_statement));
 }
 
 Result<std::unique_ptr<NodeReturn>> Parser::parse_return_statement(NodeAST* parent) {
@@ -681,7 +729,7 @@ Result<std::unique_ptr<NodeReturn>> Parser::parse_return_statement(NodeAST* pare
 	auto node_return_statement = std::make_unique<NodeReturn>(get_tok());
 	if(peek().type == token::ASSIGN) {
 		error.m_message = "The <return> keyword is reserved for <Return> Statement within function definitions. Consider using a different name.";
-		error.exit();
+		return Result<std::unique_ptr<NodeReturn>>(error);
 	}
 	auto return_params = parse_multiple_values(node_return_statement.get());
 	if(return_params.is_error()) {
@@ -690,7 +738,7 @@ Result<std::unique_ptr<NodeReturn>> Parser::parse_return_statement(NodeAST* pare
 	node_return_statement->return_variables = std::move(return_params.unwrap()->params);
 	if(!m_current_function_def) {
 		error.m_message = "Found <Return> Statement outside of function definition.";
-		error.exit();
+		return Result<std::unique_ptr<NodeReturn>>(error);
 	}
 	m_current_function_def->num_return_params = node_return_statement->return_variables.size();
 	node_return_statement->definition = m_current_function_def;
@@ -706,7 +754,7 @@ Result<std::unique_ptr<NodeDelete>> Parser::parse_delete_statement(NodeAST* pare
 		if(peek().type != token::KEYWORD) {
 			auto error = CompileError(ErrorType::SyntaxError,"Found invalid <Delete> Syntax.", "", peek());
 			error.m_message += " Only References to Pointers can be deleted.";
-			error.exit();
+			return Result<std::unique_ptr<NodeDelete>>(error);
 		}
 		auto result = parse_reference_chain(node_delete_stmt.get());
 		if(result.is_error()) {
@@ -716,7 +764,7 @@ Result<std::unique_ptr<NodeDelete>> Parser::parse_delete_statement(NodeAST* pare
 		if(ptr_result->get_node_type() == NodeType::FunctionCall) {
 			auto error = CompileError(ErrorType::SyntaxError,"Found invalid <Delete> Syntax.", "", peek());
 			error.m_message += " <Function Calls> cannot be l_values in Delete Statements.";
-			error.exit();
+			return Result<std::unique_ptr<NodeDelete>>(error);
 		}
 		node_delete_stmt->add_pointer(unique_ptr_cast<NodeReference>(std::move(ptr_result)));
 		if(peek().type == token::COMMA) consume();
@@ -755,11 +803,25 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
 			}
 			stmt = std::move(function_call.unwrap());
         } else {
-            auto assign_stmt = parse_assign_statement(node_statement.get());
-            if (assign_stmt.is_error()) {
-                return Result<std::unique_ptr<NodeStatement>>(assign_stmt.get_error());
-            }
-            stmt = std::move(assign_stmt.unwrap());
+        	auto l_values = parse_l_values(node_statement.get());
+        	if (l_values.is_error()) return Result<std::unique_ptr<NodeStatement>>(l_values.get_error());
+        	// check if l_value is reference chain with function call at the end -> can stand isolated
+        	auto values = std::move(l_values.unwrap());
+        	if (values.size() == 1 and is_func_call_reference_chain(*values[0])) {
+        		stmt = std::move(values[0]);
+        	} else if (values.size() == 1 and peek().type != token::ASSIGN and peek().type != token::LINEBRK) {
+        		auto compound_assign = parse_compound_assign_statement(std::move(values[0]), node_statement.get());
+        		if (compound_assign.is_error()) {
+        			return Result<std::unique_ptr<NodeStatement>>(compound_assign.get_error());
+        		}
+        		stmt = std::move(compound_assign.unwrap());
+        	} else {
+	            auto assign_stmt = parse_assign_statement(std::move(values), node_statement.get());
+	            if (assign_stmt.is_error()) {
+	                return Result<std::unique_ptr<NodeStatement>>(assign_stmt.get_error());
+	            }
+	            stmt = std::move(assign_stmt.unwrap());
+        	}
         }
     } else if (peek().type == token::CONST) {
 		auto construct_stmt = parse_const_statement(node_statement.get());
@@ -943,6 +1005,12 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 			if(struct_def.is_error())
 				return Result<std::unique_ptr<NodeProgram>>(struct_def.get_error());
 			node_program->struct_definitions.push_back(std::move(struct_def.unwrap()));
+		} else if (peek().type == token::CONST) {
+			auto const_def = parse_const_statement(node_program.get());
+			if (const_def.is_error()) {
+				return Result<std::unique_ptr<NodeProgram>>(const_def.get_error());
+			}
+			node_program->global_declarations->add_as_stmt(std::move(const_def.unwrap()));
         } else {
             return Result<std::unique_ptr<NodeProgram>>(CompileError(ErrorType::ParseError,
              "Found unknown construct.", "<callback>, <function_definition>", peek()));

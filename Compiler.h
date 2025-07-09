@@ -208,6 +208,8 @@ public:
 
 		ASTLowerTypes lowering_types(m_program);
 		ast->accept(lowering_types);
+		ast->debug_print();
+
 		// inline here so inlined struct vars get their declaration for register reuse later on
 		ast->inline_structs();
 

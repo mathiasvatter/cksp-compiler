@@ -117,7 +117,10 @@ public:
 		/// parse identifierexpr, numberexpr, parenthexpr, functionheader
 		Result<std::unique_ptr<NodeAST>> _parse_primary_expr(NodeAST* parent);
     Result<std::unique_ptr<NodeDeclaration>> parse_declare_statement(NodeAST* parent);
-    Result<std::unique_ptr<NodeAssignment>> parse_assign_statement(NodeAST* parent);
+    Result<std::unique_ptr<NodeAssignment>> parse_assign_statement(std::vector<std::unique_ptr<NodeReference>> l_values, NodeAST* parent);
+	Result<std::unique_ptr<NodeCompoundAssignment>> parse_compound_assign_statement(std::unique_ptr<NodeReference> l_value, NodeAST* parent);
+	Result<std::vector<std::unique_ptr<NodeReference>>> parse_l_values(NodeAST* parent);
+    static bool is_func_call_reference_chain(NodeReference& ref);
 	Result<std::unique_ptr<NodeReturn>> parse_return_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeDelete>> parse_delete_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeBreak>> parse_break_statement(NodeAST* parent);

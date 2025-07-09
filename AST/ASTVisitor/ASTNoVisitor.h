@@ -89,6 +89,9 @@ public:
     NodeAST* visit(NodeSingleAssignment& node) override {
 		return &node;
     }
+	NodeAST* visit(NodeCompoundAssignment& node) override {
+	    return &node;
+    }
 	NodeAST* visit(NodeBreak& node) override {
 	    return &node;
     }
