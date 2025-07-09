@@ -58,6 +58,7 @@ enum class NodeType {
 	BinaryExpr,
 	Assignment,
 	SingleAssignment,
+	CompoundAssignment,
 	Declaration,
 	SingleDeclaration,
 	FunctionParam,

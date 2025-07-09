@@ -155,7 +155,7 @@ struct NodeReference : NodeAST {
 	// std::unique_ptr<struct NodeFunctionCall> wrap_in_get_ui_id();
 	// [[nodiscard]] bool needs_get_ui_id() const;
 	/// determines if reference is reference to struct member
-	[[nodiscard]] bool is_member_ref() const;
+	[[nodiscard]] struct NodeStruct* is_member_ref() const;
 	/// checks if reference is raw version of multidimensional array
 	[[nodiscard]] bool is_raw_array() const {
 		return (name[0] == '_' && name[1] != '_') or name.ends_with(".raw()");

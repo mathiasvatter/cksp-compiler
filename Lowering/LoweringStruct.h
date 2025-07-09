@@ -6,40 +6,23 @@
 
 #include "ASTLowering.h"
 
-class LoweringStruct final : public ASTLowering {
+class LoweringStructMembers : public ASTLowering {
 	NodeFunctionDefinition* m_current_func = nullptr;
 	NodeStruct* m_current_struct = nullptr;
-	std::unique_ptr<NodeVariableRef> m_max_structs_ref = std::make_unique<NodeVariableRef>("MAX::STRUCTS", Token());
-	bool in_constructor() const {
-		return m_current_func and m_current_struct and m_current_func == m_current_struct->constructor.get();
-	}
-	/// returns free_idx as reference if in constructor, self as reference if not
-	std::unique_ptr<NodeReference> get_index_ref() const {
-		if(in_constructor()) {
-			return m_current_struct->free_idx_var->to_reference();
-		}
-		return m_current_struct->node_self->to_reference();
+
+	static bool determine_inflation_need(const NodeDataStructure& data) {
+		return data.is_member() and !data.is_engine and data.data_type != DataType::Const;
 	}
 public:
-	explicit LoweringStruct(NodeProgram *program) : ASTLowering(program) {}
-
+	explicit LoweringStructMembers(NodeProgram *program) : ASTLowering(program) {}
 
 	NodeAST * visit(NodeStruct& node) override {
 		m_current_struct = &node;
-
 		node.members->accept(*this);
 		m_current_struct = &node;
-		for(const auto & m: node.methods) {
-			m->accept(*this);
-		}
-
 		m_current_struct = nullptr;
 		m_current_func = nullptr;
 		return &node;
-	}
-
-	NodeAST * visit(NodeAccessChain& node) override {
-		return node.lower(m_program);
 	}
 
 	NodeAST * visit(NodeSingleDeclaration& node) override {
@@ -103,6 +86,56 @@ public:
 		}
 		return &node;
 	}
+};
+
+class LoweringStruct final : public ASTLowering {
+	NodeFunctionDefinition* m_current_func = nullptr;
+	NodeStruct* m_current_struct = nullptr;
+	std::unique_ptr<NodeVariableRef> m_max_structs_ref = std::make_unique<NodeVariableRef>("MAX::STRUCTS", Token());
+	bool in_constructor() const {
+		return m_current_func and m_current_struct and m_current_func == m_current_struct->constructor.get();
+	}
+	/// returns free_idx as reference if in constructor, self as reference if not
+	std::unique_ptr<NodeReference> get_index_ref() const {
+		if(in_constructor()) {
+			return m_current_struct->free_idx_var->to_reference();
+		}
+		return m_current_struct->node_self->to_reference();
+	}
+public:
+	explicit LoweringStruct(NodeProgram *program) : ASTLowering(program) {}
+
+
+	NodeAST * visit(NodeStruct& node) override {
+		m_current_struct = &node;
+
+		node.members->accept(*this);
+		m_current_struct = &node;
+		for(const auto & m: node.methods) {
+			m->accept(*this);
+		}
+
+		m_current_struct = nullptr;
+		m_current_func = nullptr;
+		return &node;
+	}
+
+	NodeAST * visit(NodeAccessChain& node) override {
+		// All access chains get lowered in collect lowering phase
+		return &node;
+		// return node.lower(m_program);
+	}
+
+	NodeAST * visit(NodeSingleDeclaration& node) override {
+		// "self" gets deleted in the struct method -> ignore here
+		if(node.variable == m_current_struct->node_self) {
+			return &node;
+		}
+		node.variable->accept(*this);
+		if(node.value) node.value->accept(*this);
+
+		return &node;
+	}
 
 	NodeAST * visit(NodeVariableRef& node) override {
 		// if member reference, turn into array reference with (struct.free_idx as index if in constructor, self as index if not)
@@ -159,12 +192,12 @@ public:
 	}
 
 private:
-	static bool determine_inflation_need(const NodeReference& ref) {
-		return ref.is_member_ref() and !ref.is_engine and ref.get_declaration()->data_type != DataType::Const;
-	}
-
-	static bool determine_inflation_need(const NodeDataStructure& data) {
-		return data.is_member() and !data.is_engine and data.data_type != DataType::Const;
+	bool determine_inflation_need(const NodeReference& ref) const {
+		auto strct = ref.is_member_ref();
+		if (strct and strct->name == m_current_struct->name) {
+			return !ref.is_engine and ref.get_declaration()->data_type != DataType::Const;
+		}
+		return false;
 	}
 
 	/**

@@ -470,10 +470,40 @@ struct NodeSingleAssignment final : NodeInstruction {
         r_value -> update_token_data(token);
     }
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
-//    ASTLowering* get_lowering(NodeProgram *program) const override;
-//	ASTLowering *get_data_lowering(NodeProgram *program) const override;
 	NodeAST* do_array_normalization(NodeProgram *program);
 
+};
+
+struct NodeCompoundAssignment final : NodeInstruction {
+	std::unique_ptr<NodeReference> l_value;
+	std::unique_ptr<NodeAST> r_value;
+	token op;
+	explicit NodeCompoundAssignment(Token tok) : NodeInstruction(NodeType::CompoundAssignment, std::move(tok)) {}
+	NodeCompoundAssignment(std::unique_ptr<NodeReference> arrayVariable, std::unique_ptr<NodeAST> assignee, token op, Token tok)
+			: NodeInstruction(NodeType::CompoundAssignment, std::move(tok)), l_value(std::move(arrayVariable)), r_value(std::move(assignee)), op(op) {
+		NodeCompoundAssignment::set_child_parents();
+	}
+	NodeAST * accept(ASTVisitor &visitor) override;
+	NodeCompoundAssignment(const NodeCompoundAssignment& other);
+	// Clone Method
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		l_value->update_parents(this);
+		r_value->update_parents(this);
+	}
+	void set_child_parents() override {
+		if(l_value) l_value->parent = this;
+		if(r_value) r_value->parent = this;
+	}
+	std::string get_string() override {
+		return l_value->get_string() + " " + tokenStrings[static_cast<int>(op)] + "= " + r_value->get_string();
+	}
+	void update_token_data(const Token& token) override {
+		l_value -> update_token_data(token);
+		r_value -> update_token_data(token);
+	}
+	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 };
 
 struct NodeDeclaration final : NodeInstruction {

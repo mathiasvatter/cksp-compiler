@@ -4,18 +4,24 @@
 
 #include "ASTCollectLowerings.h"
 #include "ASTHandleStringRepresentations.h"
+#include "../../Lowering/LoweringStruct.h"
+#include "../../Lowering/PreLoweringStruct.h"
 #include "FunctionHandling/UIControlParamHandling.h"
 
 NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	m_program = &node;
 	m_program->global_declarations->accept(*this);
 	for(auto & struct_def : node.struct_definitions) {
-		struct_def->pre_lower(m_program);
+		static PreLoweringStruct pre_lowering_struct(m_program);
+		struct_def->accept(pre_lowering_struct);
 	}
 	for(auto & struct_def : node.struct_definitions) {
 		struct_def->generate_ref_count_methods(m_program);
 	}
-//	node.struct_definitions.at(0)->debug_print();
+	for(auto & struct_def : node.struct_definitions) {
+		static LoweringStructMembers lowering_struct_members(m_program);
+		struct_def->accept(lowering_struct_members);
+	}
 	for(const auto & struct_def : node.struct_definitions) {
 		struct_def->accept(*this);
 	}
@@ -84,25 +90,12 @@ NodeAST * ASTCollectLowerings::visit(NodeFunctionDefinition& node) {
 NodeAST * ASTCollectLowerings::visit(NodeSingleDeclaration &node) {
 	node.variable->accept(*this);
 	if(node.value) node.value->accept(*this);
-//	if(node.variable -> get_node_type() == NodeType::NDArray || node.variable -> get_node_type() == NodeType::Array) {
-//		return &node;
-//	} else {
-//		node.variable->accept(*this);
-//	}
 	return node.lower(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeSingleAssignment& node) {
-//	if(node.r_value -> get_node_type() != NodeType::NDArrayRef) {
-//		node.r_value->accept(*this);
-//	}
-//	if(node.l_value -> get_node_type() == NodeType::NDArrayRef) {
-//		return &node;
-//	}
-
 	node.r_value->accept(*this);
 	node.l_value->accept(*this);
-//		if(node.r_value) node.r_value->accept(*this);
 	return &node;
 }
 
@@ -167,7 +160,6 @@ NodeAST * ASTCollectLowerings::visit(NodeList& node) {
 		b->accept(*this);
 	}
 	return &node;
-//	return node.lower(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodePointer& node) {

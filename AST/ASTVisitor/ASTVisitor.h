@@ -144,6 +144,11 @@ public:
 		node.r_value -> accept(*this);
 		return &node;
     }
+	virtual NodeAST* visit(NodeCompoundAssignment& node) {
+		node.l_value ->accept(*this);
+		node.r_value -> accept(*this);
+		return &node;
+	}
 	virtual NodeAST* visit(NodeBreak& node) {return &node;}
 	virtual NodeAST* visit(NodeReturn& node) {
 		for(const auto &ret : node.return_variables) ret->accept(*this);

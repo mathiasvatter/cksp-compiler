@@ -18,9 +18,10 @@ class TypeInference final : public ASTVisitor {
 			if (call->kind != NodeFunctionCall::Kind::UserDefined) continue;
 			auto const def = call->get_definition();
 			if (!def) continue;
+			int method_idx = is_in_access_chain(*call) ? 1 : 0;
 			for (int i = 0; i < call->function->get_num_args(); i++) {
 				auto& func_arg = call->function->get_arg(i);
-				auto& param = def->get_param(i);
+				auto& param = def->get_param(i+method_idx);
 				// infer formal param type only if function is no builtin function
 				// this throws errors with the-pulse
 				// const std::string error_message2 =
@@ -47,9 +48,10 @@ class TypeInference final : public ASTVisitor {
 			if (def->header->has_union_params()) {
 				auto new_header = clone_as<NodeFunctionHeader>(def->header.get());
 				const size_t param_count = new_header->params.size();
+				int method_idx = is_in_access_chain(*call) ? 1 : 0;
 				for (size_t i = 0; i< param_count; i++) {
 					auto& actual_param = call->function->get_arg(i);
-					auto& formal_param = new_header->get_param(i);
+					auto& formal_param = new_header->get_param(i+method_idx);
 					match_type(*formal_param, *actual_param);
 					formal_param->cast_type();
 				}
@@ -495,6 +497,10 @@ public:
     	// specialize types:
     	node1.set_element_type(generalize_type(node1.ty, type));
     	return node1.ty;
+    }
+
+	static bool is_in_access_chain(const NodeFunctionCall& node) {
+	    return node.parent and node.parent->cast<NodeAccessChain>();
     }
 
 };

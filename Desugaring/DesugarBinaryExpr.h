@@ -13,17 +13,18 @@
  * 1 << 3 -> sh_left(1, 3)
  * 3 ** 3 -> pow(2, 3)
  */
-class DesugarBinaryExpr : public ASTDesugaring {
-private:
+class DesugarBinaryExpr final : public ASTDesugaring {
+
 	inline static std::unordered_map<token, std::string> operator_to_function {
 		{token::SHIFT_RIGHT, "sh_right"},
 		{token::SHIFT_LEFT, "sh_left"},
 		{token::EXP, "pow"},
 	};
+
 public:
 	explicit DesugarBinaryExpr(NodeProgram* program) : ASTDesugaring(program) {};
 
-	inline NodeAST * visit(NodeBinaryExpr& node) override {
+	NodeAST * visit(NodeBinaryExpr& node) override {
 		node.left ->accept(*this);
 		node.right->accept(*this);
 

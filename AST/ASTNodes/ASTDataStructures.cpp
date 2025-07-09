@@ -14,7 +14,6 @@
 #include "../../Lowering/LoweringStruct.h"
 #include "../../Lowering/LoweringPointer.h"
 #include "NodeStructCreateRefCountFunctions.h"
-#include "../../Lowering/PreLoweringStruct.h"
 
 // ************* NodeVariable ***************
 NodeAST *NodeVariable::accept(ASTVisitor &visitor) {
@@ -390,12 +389,6 @@ ASTLowering* NodeStruct::get_lowering(NodeProgram *program) const {
 	static LoweringStruct lowering(program);
 	return &lowering;
 }
-
-void NodeStruct::pre_lower(NodeProgram* program) {
-	static PreLoweringStruct pre_lowering(program);
-	this->accept(pre_lowering);
-}
-
 
 std::unique_ptr<NodeBlock> NodeStruct::declare_struct_constants() {
 	auto node_block = std::make_unique<NodeBlock>(Token());

@@ -6,8 +6,7 @@
 
 #include "ASTLowering.h"
 
-class PreLoweringStruct : public ASTLowering {
-private:
+class PreLoweringStruct final : public ASTLowering {
 	NodeFunctionDefinition* m_current_func = nullptr;
 	NodeStruct* m_current_struct = nullptr;
 	std::unique_ptr<NodeVariableRef> m_max_structs_ref = std::make_unique<NodeVariableRef>("MAX::STRUCTS", Token());
@@ -31,10 +30,8 @@ public:
 			node.member_node_types.insert(member->get_node_type());
 		}
 
-//		node.collect_recursive_structs(m_program);
 		// add compiler struct vars
 		prepend_compiler_struct_vars(&node);
-//		node.generate_ref_count_methods();
 		node.rebuild_member_table();
 		return &node;
 	}
@@ -122,12 +119,10 @@ public:
 	}
 
 
-public:
-
 	/// uses the member table to determine the size max size of struct allocations
 	/// declare const Node.MAX_STRUCTS: int := MAX_STRUCTS/_max(10, 11*12)
 	/// returns either MAX_STRUCTS or binary_expr with biggest array member size
-	inline std::unique_ptr<NodeAST> get_max_individual_structs_size(NodeStruct* object) {
+	std::unique_ptr<NodeAST> get_max_individual_structs_size(NodeStruct* object) const {
 		std::vector<std::unique_ptr<NodeAST>> sizes;
 		for(auto & data : object->member_table) {
 			auto member = data.second.lock();
@@ -173,7 +168,7 @@ public:
 	}
 
 	/// creates a nested call to max(a, b) from many sizes
-	static inline std::unique_ptr<NodeFunctionCall> find_max_array_size(const std::vector<std::unique_ptr<NodeAST>> &sizes) {
+	static std::unique_ptr<NodeFunctionCall> find_max_array_size(const std::vector<std::unique_ptr<NodeAST>> &sizes) {
 		if (sizes.empty()) {
 			auto error = CompileError(ErrorType::InternalError, "", "", Token());
 			error.m_message = "No sizes given for struct.";
@@ -191,7 +186,7 @@ public:
 	 * 	result := (a + b + abs(a - b)) / 2
 	 * end function
 	 */
-	static inline bool add_max_function_def(NodeProgram* program) {
+	static bool add_max_function_def(NodeProgram* program) {
 		std::string func_name = "Struct"+OBJ_DELIMITER+"max";
 
 		// Prüfen, ob die Funktion bereits existiert

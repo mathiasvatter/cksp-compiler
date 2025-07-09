@@ -431,7 +431,6 @@ struct NodeStruct final : NodeDataStructure {
 	}
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 	ASTLowering* get_lowering(NodeProgram *program) const override;
-	void pre_lower(NodeProgram* program);
 	void rebuild_member_table() {
 		member_table.clear();
 		for(const auto& member : members->statements) {
