@@ -695,7 +695,7 @@ Result<std::unique_ptr<NodeCompoundAssignment>> Parser::parse_compound_assign_st
 	auto node_compound_assign_statement = std::make_unique<NodeCompoundAssignment>(get_tok());
 	auto valid_operator_tokens = extract_tokens_from_map(ALL_OPERATORS);
 	if (!valid_operator_tokens.contains(peek().type)) {
-		error.m_message = "Invalid Operator Syntax for <Compound Assignment>.";
+		error.set_message( "Invalid Operator Syntax for <Compound Assignment>.");
 		std::vector<std::string> valid_tokens{};
 		for (auto& tok : valid_operator_tokens) {
 			valid_tokens.push_back(std::string("<") + tokenStrings[static_cast<int>(tok)] + ">");
@@ -705,7 +705,7 @@ Result<std::unique_ptr<NodeCompoundAssignment>> Parser::parse_compound_assign_st
 	}
 	auto op = consume(); // consume operator token
 	if (peek().type != token::EQUAL) {
-		error.m_message = "Invalid Operator Syntax for <Compound Assignment>. Expected <equal> after operator.";
+		error.set_message( "Invalid Operator Syntax for <Compound Assignment>. Expected <equal> after operator.");
 		error.m_expected = "=";
 		return Result<std::unique_ptr<NodeCompoundAssignment>>(error);
 	}
@@ -727,7 +727,7 @@ Result<std::unique_ptr<NodeReturn>> Parser::parse_return_statement(NodeAST* pare
 	auto error = CompileError(ErrorType::SyntaxError, "", "", ret_tok);
 	auto node_return_statement = std::make_unique<NodeReturn>(get_tok());
 	if(peek().type == token::ASSIGN) {
-		error.m_message = "The <return> keyword is reserved for <Return> Statement within function definitions. Consider using a different name.";
+		error.set_message( "The <return> keyword is reserved for <Return> Statement within function definitions. Consider using a different name.");
 		return Result<std::unique_ptr<NodeReturn>>(error);
 	}
 	auto return_params = parse_multiple_values(node_return_statement.get());
@@ -736,7 +736,7 @@ Result<std::unique_ptr<NodeReturn>> Parser::parse_return_statement(NodeAST* pare
 	}
 	node_return_statement->return_variables = std::move(return_params.unwrap()->params);
 	if(!m_current_function_def) {
-		error.m_message = "Found <Return> Statement outside of function definition.";
+		error.set_message( "Found <Return> Statement outside of function definition.");
 		return Result<std::unique_ptr<NodeReturn>>(error);
 	}
 	m_current_function_def->num_return_params = node_return_statement->return_variables.size();
@@ -966,7 +966,7 @@ Result<std::unique_ptr<NodeNamespace>> Parser::parse_namespace(NodeAST *parent) 
 	token end_construct = token::END_NAMESPACE;
 	auto error = CompileError(ErrorType::SyntaxError, "Found invalid <namespace> syntax.", "", peek());
 	if(peek().type != token::KEYWORD) {
-		error.m_message = "Expected <namespace> name after <namespace> keyword.";
+		error.set_message( "Expected <namespace> name after <namespace> keyword.");
 		return Result<std::unique_ptr<NodeNamespace>>(error);
 	}
 	auto name = consume(); //consume name
@@ -990,8 +990,9 @@ Result<std::unique_ptr<NodeNamespace>> Parser::parse_namespace(NodeAST *parent) 
 			}
 			node_functions.push_back(std::move(func.unwrap()));
 		} else {
-			return Result<std::unique_ptr<NodeNamespace>>(CompileError(ErrorType::SyntaxError,
-							 "Found unknown <namespace> syntax.", "valid <namespace> variable or function", peek()));
+			error.add_message("<namespaces> can only contain <declare> statements or <function> definitions that get added to the global scope.");
+			error.set_token(peek());
+			return Result<std::unique_ptr<NodeNamespace>>(error);
 		}
 		_skip_linebreaks();
 	}
@@ -1029,15 +1030,15 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
         			// pass
         		} else if (func->override and node_function->override) {
         			auto error = CompileError(ErrorType::SyntaxError,"", "", node_function->header->tok);
-        			error.m_message = "Found duplicate function definition with the same name and parameter count. Both have been marked"
+        			error.set_message( "Found duplicate function definition with the same name and parameter count. Both have been marked"
 							 "as <override>. The compiler will use the last encountered definition that has been marked as <override>.\n"
-        					 "Consider removing the <override> keyword from one of the definitions.";
+        					 "Consider removing the <override> keyword from one of the definitions.");
         			error.print();
         		} else {
         			auto error = CompileError(ErrorType::SyntaxError,"", "", node_function->header->tok);
-        			error.m_message = "A function with this name and parameter count already exists. \n"
+        			error.set_message( "A function with this name and parameter count already exists. \n"
 							 "To override it, use the <override> keyword. \n"
-							 "To overload it, use <Union> types instead to define function templates accepting multiple types.";
+							 "To overload it, use <Union> types instead to define function templates accepting multiple types.");
         			return Result<std::unique_ptr<NodeProgram>>(error);
         		}
         	} else {
@@ -1240,7 +1241,7 @@ Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header(NodeAS
 	auto return_type = type.unwrap();
 	if(return_type->get_type_kind() == TypeKind::Function) {
 		auto error = CompileError(ErrorType::ParseError,"", "", peek());
-		error.m_message = "Function type not allowed as return type.";
+		error.set_message( "Function type not allowed as return type.");
 		error.exit();
 	}
 	// std::vector<Type*> arg_types;
@@ -1305,7 +1306,7 @@ Result<std::unique_ptr<NodeFunctionCall>> Parser::parse_function_call(NodeAST* p
 		consume(); // consume new
 		if(peek().type != token::KEYWORD) {
 			auto error = CompileError(ErrorType::ParseError,"", "", peek());
-			error.m_message = "Incorrect syntax for instantiating <Object>.";
+			error.set_message( "Incorrect syntax for instantiating <Object>.");
 			error.m_expected = "new <Object>";
 			error.exit();
 		}
@@ -1334,7 +1335,7 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     auto func_body = std::make_unique<NodeBlock>(get_tok(), true);
     bool func_override = false;
     if (peek().type != token::KEYWORD) {
-        error.m_message = "Missing function name.";
+        error.set_message( "Missing function name.");
         error.m_expected = "keyword";
         return Result<std::shared_ptr<NodeFunctionDefinition>>(error);
     }
@@ -1356,13 +1357,13 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
             }
             auto return_var = std::move(return_vars.unwrap()->variable);
 			if(return_var.size() > 1) {
-				error.m_message = "Only on return variable allowed. Use <Return> Statement to return multiple values.";
+				error.set_message( "Only on return variable allowed. Use <Return> Statement to return multiple values.");
 				error.exit();
 			}
 			m_current_function_def->num_return_params = 1;
             func_return_var = std::move(return_var[0]);
         } else {
-            error.m_message = "Missing return variable after ->";
+            error.set_message( "Missing return variable after ->");
             error.m_expected = "<return variable>";
             return Result<std::shared_ptr<NodeFunctionDefinition>>(error);
         }
@@ -1372,7 +1373,8 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
         func_override = true;
     }
     if (peek().type != token::LINEBRK) {
-        error.m_message = "Missing linebreak after function header."; error.m_expected = "linebreak";
+        error.set_message( "Missing linebreak after function header.");
+    	error.set_expected("linebreak");
         return Result<std::shared_ptr<NodeFunctionDefinition>>(error);
     }
     consume(); // consume linebreak

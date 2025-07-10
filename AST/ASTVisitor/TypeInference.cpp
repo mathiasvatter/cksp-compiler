@@ -377,9 +377,7 @@ NodeAST * TypeInference::visit(NodeForEach& node) {
 };
 
 NodeAST * TypeInference::visit(NodeAccessChain& node) {
-	if (node.tok.line == 28) {
 
-	}
 	for(int i = 0; i<node.chain.size(); i++) {
 		auto& ptr = node.chain[i];
 		auto error = CompileError(ErrorType::SyntaxError, "", "", ptr->tok);
