@@ -18,7 +18,7 @@ std::string Parser::sanitize_binary(const std::string& input) {
     // Entferne das 'b' oder 'B' am Anfang oder Ende und kehre die Zeichenfolge um, falls nötig
     if (input[0] == 'b' || input[0] == 'B') {
         sanitized = input.substr(1);
-        std::reverse(sanitized.begin(), sanitized.end());
+        std::ranges::reverse(sanitized);
     } else if (input.back() == 'b' || input.back() == 'B') {
         sanitized = input.substr(0, input.size() - 1);
     }
@@ -474,9 +474,9 @@ Result<std::unique_ptr<NodeFunctionParam>> Parser::parse_function_param(NodeAST*
 		node_func_param->is_pass_by_ref = true;
 	}
 
-	auto error = CompileError(ErrorType::ParseError,"Incorrect syntax in declare statement.", "", peek());
+	auto error = CompileError(ErrorType::ParseError,"Incorrect syntax in function parameter.", "", peek());
 	if(peek().type != token::KEYWORD) {
-		error.m_expected = "<ui_control>, <variable>, <array>";
+		error.m_expected = "<variable>, <array>";
 		return Result<std::unique_ptr<NodeFunctionParam>>(error);
 	}
 
@@ -494,7 +494,7 @@ Result<std::unique_ptr<NodeFunctionParam>> Parser::parse_function_param(NodeAST*
 		}
 		node_func_param->variable = std::move(parsed_var.unwrap());
 	} else {
-		error.m_expected = "<ui_control>, <variable>, <array>";
+		error.m_expected = "<variable>, <array>";
 		return Result<std::unique_ptr<NodeFunctionParam>>(error);
 	}
 
@@ -536,11 +536,10 @@ Result<std::unique_ptr<NodeFunctionParam>> Parser::parse_function_param(NodeAST*
 Result<std::unique_ptr<NodeSingleDeclaration>> Parser::parse_single_declare_statement(NodeAST* parent) {
 	auto node_declare_statement = std::make_unique<NodeSingleDeclaration>(get_tok());
 	if(peek().type == token::DECLARE) consume(); //consume declare
-	if(not(peek().type == token::KEYWORD or peek().type == token::UI_CONTROL or get_persistent_keyword(peek())
-		or peek().type == token::CONST or peek().type == token::POLYPHONIC or peek().type== token::LOCAL or peek().type== token::GLOBAL))
+	if(!modifier_keywords.contains(peek().type) and peek().type != token::KEYWORD) {
 		return Result<std::unique_ptr<NodeSingleDeclaration>>(CompileError(ErrorType::ParseError,
-																	 "Incorrect syntax in declare statement.", "<ui_control>, <variable>, <array>", peek()));
-
+																	 "Incorrect syntax in declare statement. Found unknown <modifier>.", "<ui_control>, <variable>, <array>", peek()));
+	}
 	// ui_control
 	if (peek().type == token::UI_CONTROL xor peek(1).type == token::UI_CONTROL) {
 		auto parsed_ui_control = parse_declare_ui_control(node_declare_statement.get());
@@ -667,7 +666,7 @@ bool Parser::is_func_call_reference_chain(NodeReference& ref) {
 }
 
 Result<std::unique_ptr<NodeAssignment>> Parser::parse_assign_statement(std::vector<std::unique_ptr<NodeReference>> l_values, NodeAST* parent) {
-    auto node_assign_statement = std::make_unique<NodeAssignment>(get_tok());
+    auto node_assign_statement = std::make_unique<NodeAssignment>(l_values[0]->tok);
 
     if(peek().type != token::ASSIGN) {
         return Result<std::unique_ptr<NodeAssignment>>(CompileError(ErrorType::SyntaxError,
@@ -962,6 +961,50 @@ Result<std::unique_ptr<NodeCallback>> Parser::parse_callback(NodeAST* parent) {
     return Result<std::unique_ptr<NodeCallback>>(std::move(node_callback));
 }
 
+Result<std::unique_ptr<NodeNamespace>> Parser::parse_namespace(NodeAST *parent) {
+	Token construct = consume(); //consume namespace
+	token end_construct = token::END_NAMESPACE;
+	auto error = CompileError(ErrorType::SyntaxError, "Found invalid <namespace> syntax.", "", peek());
+	if(peek().type != token::KEYWORD) {
+		error.m_message = "Expected <namespace> name after <namespace> keyword.";
+		return Result<std::unique_ptr<NodeNamespace>>(error);
+	}
+	auto name = consume(); //consume name
+	auto l = consume_linebreak("<namespace>");
+	if(l.is_error())
+		return Result<std::unique_ptr<NodeNamespace>>(l.get_error());
+	auto node_declarations = std::make_unique<NodeBlock>(construct);
+	std::vector<std::shared_ptr<NodeFunctionDefinition>> node_functions;
+	while(peek().type != end_construct) {
+		_skip_linebreaks();
+		if(peek().type == token::DECLARE) {
+			auto declare_stmt = parse_declare_statement(node_declarations.get());
+			if(declare_stmt.is_error()) {
+				return Result<std::unique_ptr<NodeNamespace>>(declare_stmt.get_error());
+			}
+			node_declarations->add_stmt(std::make_unique<NodeStatement>(std::move(declare_stmt.unwrap()), construct));
+		} else if (peek().type == token::FUNCTION) {
+			auto func = parse_function_definition(node_declarations.get());
+			if(func.is_error()) {
+				return Result<std::unique_ptr<NodeNamespace>>(func.get_error());
+			}
+			node_functions.push_back(std::move(func.unwrap()));
+		} else {
+			return Result<std::unique_ptr<NodeNamespace>>(CompileError(ErrorType::SyntaxError,
+							 "Found unknown <namespace> syntax.", "valid <namespace> variable or function", peek()));
+		}
+		_skip_linebreaks();
+	}
+	consume(); // consume end struct
+	auto node_namespace = std::make_unique<NodeNamespace>(
+		name.val,
+		std::move(node_declarations),
+		std::move(node_functions),
+		name);
+	node_namespace -> parent = parent;
+	return Result<std::unique_ptr<NodeNamespace>>(std::move(node_namespace));
+}
+
 Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
     auto node_program = std::make_unique<NodeProgram>(get_tok());
 	// int init_callback_idx = 0;
@@ -1011,6 +1054,12 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 				return Result<std::unique_ptr<NodeProgram>>(const_def.get_error());
 			}
 			node_program->global_declarations->add_as_stmt(std::move(const_def.unwrap()));
+		} else if (peek().type == token::NAMESPACE) {
+			auto namespace_def = parse_namespace(node_program.get());
+			if (namespace_def.is_error()) {
+				return Result<std::unique_ptr<NodeProgram>>(namespace_def.get_error());
+			}
+			node_program->namespaces.push_back(std::move(namespace_def.unwrap()));
         } else {
             return Result<std::unique_ptr<NodeProgram>>(CompileError(ErrorType::ParseError,
              "Found unknown construct.", "<callback>, <function_definition>", peek()));
@@ -1353,10 +1402,10 @@ Result<std::unique_ptr<NodeDeclaration>> Parser::parse_declare_statement(NodeAST
     auto node_declare_statement = std::make_unique<NodeDeclaration>(get_tok());
     if(peek().type == token::DECLARE) consume(); //consume declare
     std::vector<std::unique_ptr<NodeDataStructure>> to_be_declared;
-    if(not(peek().type == token::KEYWORD or peek().type == token::UI_CONTROL or get_persistent_keyword(peek())
-           or peek().type == token::CONST or peek().type == token::POLYPHONIC or peek().type== token::LOCAL or peek().type== token::GLOBAL))
-        return Result<std::unique_ptr<NodeDeclaration>>(CompileError(ErrorType::ParseError,
-                                                                     "Incorrect syntax in declare statement.", "<ui_control>, <variable>, <array>", peek()));
+	if(!modifier_keywords.contains(peek().type) and peek().type != token::KEYWORD) {
+		return Result<std::unique_ptr<NodeDeclaration>>(CompileError(ErrorType::ParseError,
+																	 "Incorrect syntax in declare statement. Found unknown <modifier>.", "<ui_control>, <variable>, <array>", peek()));
+	}
     do {
         if(peek().type == token::COMMA) consume();
         // ui_control
@@ -1416,39 +1465,44 @@ Result<std::unique_ptr<NodeDeclaration>> Parser::parse_declare_statement(NodeAST
     return Result<std::unique_ptr<NodeDeclaration>>(std::move(node_declare_statement));
 }
 
+int Parser::peek_past_modifiers() {
+	int lookahead_index = 0;
+	std::vector<token> seen_modifiers;
+	bool has_persistence_keyword = false;
+
+	// Gehe durch alle Modifikator-Tokens am Anfang
+	while (modifier_keywords.contains(peek(lookahead_index).type)) {
+		token current_type = peek(lookahead_index).type;
+
+		// Verhindere Duplikate (z.B. "static static")
+		if (std::ranges::find(seen_modifiers, current_type) != seen_modifiers.end()) {
+			auto error = CompileError(ErrorType::SyntaxError, "Found duplicate modifier in variable declaration.", "", peek(lookahead_index));
+			error.exit();
+			return -1; // Fehler: Duplikat gefunden
+		}
+		seen_modifiers.push_back(current_type);
+		lookahead_index++;
+	}
+	return lookahead_index;
+}
 
 bool Parser::is_variable_declaration() {
-    // read local (const | polyphonic) keyword
-    const bool first = get_persistent_keyword(peek()) and (peek(1).type == token::LOCAL or peek(1).type == token::GLOBAL) and (peek(2).type == token::CONST || peek(2).type == token::POLYPHONIC) and peek(3).type == token::KEYWORD;
-    // read (const | polyphonic) keyword
-    const bool second = get_persistent_keyword(peek()) and (peek(1).type == token::CONST || peek(1).type == token::POLYPHONIC) and peek(2).type == token::KEYWORD;
-    // read keyword
-    const bool third = get_persistent_keyword(peek()) and peek(1).type == token::KEYWORD;
-    // read local keyword
-    const bool sixth = get_persistent_keyword(peek()) and (peek(1).type == token::LOCAL or peek(1).type == token::GLOBAL) and peek(2).type == token::KEYWORD;
-    // (const | polyphonic) keyword
-    const bool fifth = (peek().type == token::CONST || peek().type == token::POLYPHONIC) and peek(1).type == token::KEYWORD;
-    // local keyword
-    const bool seventh = (peek().type == token::LOCAL or peek().type == token::GLOBAL) and peek(1).type == token::KEYWORD;
-    // local (const | polyphonic) keyword
-    const bool eighth = (peek().type == token::LOCAL or peek().type == token::GLOBAL) and (peek(1).type == token::CONST || peek(1).type == token::POLYPHONIC) and peek(2).type == token::KEYWORD;
-    // keyword
-    const bool fourth = peek().type == token::KEYWORD;
-
-    return first xor second xor third xor fourth xor fifth xor sixth xor seventh xor eighth;
+	const int final_index = peek_past_modifiers();
+	// Bei einem Fehler in den Modifikatoren ist es keine gültige Deklaration.
+	if (final_index < 0) {
+		return false;
+	}
+	// Nach den Modifikatoren muss ein KEYWORD folgen.
+	return peek(final_index).type == token::KEYWORD;
 }
 
 bool Parser::is_array_declaration() {
-    // read local a[]
-    const bool first = get_persistent_keyword(peek()) and (peek(1).type == token::LOCAL or peek(1).type == token::GLOBAL) and peek(2).type == token::KEYWORD and peek(3).type == token::OPEN_BRACKET;
-    // local a[]
-    const bool second = (peek().type == token::LOCAL or peek().type == token::GLOBAL) and peek(1).type == token::KEYWORD and peek(2).type == token::OPEN_BRACKET;
-    // read a[]
-    const bool third = get_persistent_keyword(peek()) and peek(1).type == token::KEYWORD and peek(2).type == token::OPEN_BRACKET;
-    // a[]
-    const bool fourth = peek().type == token::KEYWORD and peek(1).type == token::OPEN_BRACKET;
-
-    return first xor second xor third xor fourth;
+	const int final_index = peek_past_modifiers();
+	if (final_index < 0) {
+		return false;
+	}
+	return peek(final_index).type == token::KEYWORD &&
+		   peek(final_index + 1).type == token::OPEN_BRACKET;
 }
 
 std::optional<Token> Parser::get_persistent_keyword(const Token& tok) {
@@ -1460,25 +1514,72 @@ std::optional<Token> Parser::get_persistent_keyword(const Token& tok) {
 
 
 Result<std::unique_ptr<NodeVariable>> Parser::parse_declare_variable(NodeAST* parent) {
-    auto persistence = get_persistent_keyword(peek());
-    if(persistence) {
-        consume();
-    }
     bool is_local = false;
     bool is_global = false;
-    if(peek().type == token::LOCAL or peek().type == token::GLOBAL) {
-        is_local = peek().type == token::LOCAL;
-        is_global = peek().type == token::GLOBAL;
-        consume();
-    }
     auto var_type = DataType::Mutable;
-    if(peek().type == token::CONST || peek().type == token::POLYPHONIC) {
-        if(peek().type == token::CONST)
-            var_type = DataType::Const;
-        else if (peek().type == token::POLYPHONIC)
-            var_type = DataType::Polyphonic;
-        consume();
-    }
+	NodeDataStructure::Kind kind = NodeDataStructure::Kind::None;
+	bool has_persistence_keyword = false;
+	std::optional<Token> persistence{};
+	while (modifier_keywords.contains(peek().type)) {
+		Token current_tok = peek();
+		auto error = CompileError(ErrorType::SyntaxError, "Found invalid variable declaration syntax.", "", peek());
+		switch (current_tok.type) {
+			case token::READ:
+			case token::PERS:
+			case token::INSTPERS:
+				if (has_persistence_keyword) {
+					error.m_message += " Only one persistence keyword is allowed.";
+					return Result<std::unique_ptr<NodeVariable>>(error);
+				}
+				has_persistence_keyword = true;
+				persistence = current_tok;
+				break;
+			case token::LOCAL:
+				if (is_global) {
+					error.m_message += " Cannot be both <local> and <global>.";
+					return Result<std::unique_ptr<NodeVariable>>(error);
+				}
+				is_local = true;
+				kind = NodeDataStructure::Kind::Local;
+				break;
+			case token::GLOBAL:
+				if (is_local) {
+					error.m_message += " Cannot be both <global> and <local>.";
+					return Result<std::unique_ptr<NodeVariable>>(error);
+				}
+				is_global = true;
+				break;
+
+			case token::CONST:
+				if (var_type == DataType::Polyphonic) {
+					error.m_message += " Cannot be both <const> and <polyphonic>.";
+					return Result<std::unique_ptr<NodeVariable>>(error);
+				}
+				var_type = DataType::Const;
+				break;
+			case token::POLYPHONIC:
+				if (var_type == DataType::Const) {
+					error.m_message += " Cannot be both <const> and <polyphonic>.";
+					return Result<std::unique_ptr<NodeVariable>>(error);
+				}
+				var_type = DataType::Polyphonic;
+				break;
+			case token::STATIC:
+				if (var_type == DataType::Polyphonic) {
+					error.m_message += " Cannot be both <static> and <polyphonic>.";
+					return Result<std::unique_ptr<NodeVariable>>(error);
+				}
+				if (is_local) {
+					error.m_message += " Cannot be both <local> and <static>.";
+					return Result<std::unique_ptr<NodeVariable>>(error);
+				}
+				kind = NodeDataStructure::Kind::Static;
+				break;
+			default: break;
+		}
+		consume(); // Verarbeite den Modifikator-Token
+	}
+
     if(peek().type != token::KEYWORD) {
         return Result<std::unique_ptr<NodeVariable>>(CompileError(ErrorType::SyntaxError,
                                                                   "Found unknown variable declaration syntax.", "variable keyword", peek()));
@@ -1494,26 +1595,68 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_declare_variable(NodeAST* pa
 	}
     node_variable->is_local = is_local;
     node_variable->is_global = is_global;
+	node_variable->kind = kind;
 	node_variable->ty = type.unwrap();
     return Result<std::unique_ptr<NodeVariable>>(std::move(node_variable));
 }
 
 Result<std::unique_ptr<NodeDataStructure>> Parser::parse_declare_array(NodeAST* parent) {
-    auto persistence = get_persistent_keyword(peek());
-    if(persistence) {
-        consume();
-    }
-    bool is_local = false;
+	bool is_local = false;
     bool is_global = false;
-    if(peek().type == token::LOCAL or peek().type == token::GLOBAL) {
-        is_local = peek().type == token::LOCAL;
-        is_global = peek().type == token::GLOBAL;
-        consume();
-    }
     auto var_type = DataType::Mutable;
+	NodeDataStructure::Kind kind = NodeDataStructure::Kind::None;
+	bool has_persistence_keyword = false;
+	std::optional<Token> persistence{};
+	auto error = CompileError(ErrorType::SyntaxError, "Found invalid array declaration syntax.", "", peek());
+	while (modifier_keywords.contains(peek().type)) {
+		Token current_tok = peek();
+		switch (current_tok.type) {
+			case token::READ:
+			case token::PERS:
+			case token::INSTPERS:
+				if (has_persistence_keyword) {
+					error.m_message += " Only one persistence keyword is allowed.";
+					return Result<std::unique_ptr<NodeDataStructure>>(error);
+				}
+				has_persistence_keyword = true;
+				persistence = current_tok;
+				break;
+			case token::LOCAL:
+				if (is_global) {
+					error.m_message += " Cannot be both <local> and <global>.";
+					return Result<std::unique_ptr<NodeDataStructure>>(error);
+				}
+				is_local = true;
+				kind = NodeDataStructure::Kind::Local;
+				break;
+			case token::GLOBAL:
+				if (is_local) {
+					error.m_message += " Cannot be both <global> and <local>.";
+					return Result<std::unique_ptr<NodeDataStructure>>(error);
+				}
+				is_global = true;
+				break;
+			case token::CONST:
+				var_type = DataType::Const;
+				break;
+			case token::POLYPHONIC:
+				error.m_message += " Arrays cannot be <polyphonic>.";
+				return Result<std::unique_ptr<NodeDataStructure>>(error);
+				break;
+			case token::STATIC:
+				if (is_local) {
+					error.m_message += " Cannot be both <local> and <static>.";
+					return Result<std::unique_ptr<NodeDataStructure>>(error);
+				}
+				kind = NodeDataStructure::Kind::Static;
+				break;
+			default: break;
+		}
+		consume(); // Verarbeite den Modifikator-Token
+	}
     if(peek().type != token::KEYWORD) {
-        return Result<std::unique_ptr<NodeDataStructure>>(CompileError(ErrorType::SyntaxError,
-                                                                       "Found unknown array declaration syntax.", "array keyword", peek()));
+    	error.m_expected = "array name (<keyword>)";
+        return Result<std::unique_ptr<NodeDataStructure>>(error);
     }
     auto parsed_arr = parse_array(parent, persistence, var_type);
     if(parsed_arr.is_error()) {

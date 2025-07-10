@@ -143,6 +143,9 @@ public:
     NodeAST* visit(NodeFamily& node) override {
 		return &node;
 	}
+	NodeAST* visit(NodeNamespace& node) override {
+	    return &node;
+    }
     NodeAST* visit(NodeList& node) override {
 		return &node;
     }

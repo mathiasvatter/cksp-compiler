@@ -218,6 +218,7 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ASTNoVisitor.h
         AST/ASTVisitor/FunctionHandling/UIControlParamHandling.h
         Desugaring/DesugarCompoundAssignment.h
+        Desugaring/DesugarNamespace.h
 )
 add_dependencies(cksp generate_headers)
 

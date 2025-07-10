@@ -44,6 +44,8 @@ class ASTDesugar final : public ASTVisitor {
 	/// desugar const block to single declare statements
 	NodeAST * visit(NodeConst& node) override;
 
+	NodeAST * visit(NodeNamespace& node) override;
+
 	/// desugar nested ParamLists [[1,2,3,4]]
 	NodeAST * visit(NodeParamList& node) override;
 

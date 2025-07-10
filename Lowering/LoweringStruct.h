@@ -6,12 +6,12 @@
 
 #include "ASTLowering.h"
 
-class LoweringStructMembers : public ASTLowering {
+class LoweringStructMembers final : public ASTLowering {
 	NodeFunctionDefinition* m_current_func = nullptr;
 	NodeStruct* m_current_struct = nullptr;
 
 	static bool determine_inflation_need(const NodeDataStructure& data) {
-		return data.is_member() and !data.is_engine and data.data_type != DataType::Const;
+		return data.is_member() and !data.is_engine; // and data.data_type != DataType::Const;
 	}
 public:
 	explicit LoweringStructMembers(NodeProgram *program) : ASTLowering(program) {}
@@ -92,11 +92,11 @@ class LoweringStruct final : public ASTLowering {
 	NodeFunctionDefinition* m_current_func = nullptr;
 	NodeStruct* m_current_struct = nullptr;
 	std::unique_ptr<NodeVariableRef> m_max_structs_ref = std::make_unique<NodeVariableRef>("MAX::STRUCTS", Token());
-	bool in_constructor() const {
+	[[nodiscard]] bool in_constructor() const {
 		return m_current_func and m_current_struct and m_current_func == m_current_struct->constructor.get();
 	}
 	/// returns free_idx as reference if in constructor, self as reference if not
-	std::unique_ptr<NodeReference> get_index_ref() const {
+	[[nodiscard]] std::unique_ptr<NodeReference> get_index_ref() const {
 		if(in_constructor()) {
 			return m_current_struct->free_idx_var->to_reference();
 		}
@@ -195,7 +195,7 @@ private:
 	bool determine_inflation_need(const NodeReference& ref) const {
 		auto strct = ref.is_member_ref();
 		if (strct and strct->name == m_current_struct->name) {
-			return !ref.is_engine and ref.get_declaration()->data_type != DataType::Const;
+			return !ref.is_engine; // and ref.get_declaration()->data_type != DataType::Const;
 		}
 		return false;
 	}

@@ -471,7 +471,7 @@ struct NodeSingleAssignment final : NodeInstruction {
     }
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 	NodeAST* do_array_normalization(NodeProgram *program);
-
+    void check_for_constant_assignment() const;
 };
 
 struct NodeCompoundAssignment final : NodeInstruction {
@@ -1144,4 +1144,43 @@ struct NodeBreak final : NodeInstruction {
 		}
 		return static_cast<NodeWhile*>(loop);
 	}
+};
+
+struct NodeNamespace final : NodeInstruction {
+	std::string prefix;
+	std::unique_ptr<NodeBlock> members;
+	std::vector<std::shared_ptr<NodeFunctionDefinition>> function_definitions{};
+
+	explicit NodeNamespace(Token tok) : NodeInstruction(NodeType::Namespace, std::move(tok)) {}
+	NodeNamespace(std::string prefix, std::unique_ptr<NodeBlock> members, std::vector<std::shared_ptr<NodeFunctionDefinition>> funcs, Token tok)
+			: NodeInstruction(NodeType::Namespace, std::move(tok)), prefix(std::move(prefix)), members(std::move(members)),
+			function_definitions(std::move(funcs)) {
+		NodeNamespace::set_child_parents();
+	}
+	NodeAST * accept(ASTVisitor &visitor) override;
+	NodeNamespace(const NodeNamespace& other);
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		members->update_parents(this);
+		for(const auto& func_def : function_definitions) {
+			func_def->update_parents(this);
+		}
+	}
+	void set_child_parents() override {
+		members->parent = this;
+		for(const auto& func_def : function_definitions) {
+			func_def->parent = this;
+		}
+	}
+	std::string get_string() override { return ""; }
+	void update_token_data(const Token& token) override {
+		members->update_token_data(token);
+		for(const auto& func_def : function_definitions) {
+			func_def->update_token_data(token);
+		}
+	}
+
+	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
+	void inline_namespace(NodeProgram* program);
 };

@@ -12,6 +12,7 @@ ASTSemanticAnalysis::ASTSemanticAnalysis(NodeProgram *main)
 NodeAST * ASTSemanticAnalysis::visit(NodeProgram& node) {
 	m_program->current_callback = nullptr;
 	m_program->global_declarations->accept(*this);
+	visit_all(node.namespaces, *this);
 	for(const auto & s : node.struct_definitions) {
 		s->accept(*this);
 	}
@@ -78,11 +79,6 @@ NodeAST * ASTSemanticAnalysis::visit(NodeRange& node) {
 /// check if declared constant variable ref gets new assignment -> throw error
 NodeAST* ASTSemanticAnalysis::visit(NodeSingleAssignment& node) {
 	node.l_value->accept(*this);
-	if(node.l_value->data_type == DataType::Const) {
-		auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-		error.m_message = "Cannot reassign value to constant variable.";
-		error.exit();
-	}
 	node.r_value->accept(*this);
 	return &node;
 }
@@ -105,6 +101,15 @@ NodeAST * ASTSemanticAnalysis::visit(NodeBlock &node) {
 
 NodeAST * ASTSemanticAnalysis::visit(NodeSingleDeclaration &node) {
 	node.variable->accept(*this);
+	// check if static variable is class member
+	if (node.variable->kind == NodeDataStructure::Kind::Static) {
+		if (!node.variable->is_member()) {
+			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+			error.m_message = "<static> variables can only be declared as <struct> members in order for the fields to be used without instantiation.";
+			error.exit();
+		}
+	}
+
 	// due to old KSP code -> initializer lists in declarations are allowed with ()
 	// could be misinterpreted by the parser as expressions and parsed without () -> hence initializer list
 	// might have to be reinstantiated here when variable is array

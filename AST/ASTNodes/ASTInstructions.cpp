@@ -19,6 +19,7 @@
 #include "../../Lowering/LoweringNumElements.h"
 #include "../../Desugaring/DesugarSingleAssignment.h"
 #include "../../Desugaring/DesugarUIControlArray.h"
+#include "../../Desugaring/DesugarNamespace.h"
 #include "../../Lowering/PostLowering/PostLoweringNumElements.h"
 #include "../../Lowering/LoweringUseCount.h"
 #include "../ASTVisitor/ReturnFunctionRewriting/ReturnFunctionCallHoisting.h"
@@ -532,6 +533,35 @@ ASTDesugaring * NodeSingleAssignment::get_desugaring(NodeProgram *program) const
 NodeAST *NodeSingleAssignment::do_array_normalization(NodeProgram *program) {
 	static NormalizeArrayAssign array_assign(program);
 	return accept(array_assign);
+}
+
+void NodeSingleAssignment::check_for_constant_assignment() const {
+	// check if l_value is a constant
+	if(auto declaration = l_value->get_declaration()) {
+		if (l_value->data_type == DataType::Const) {
+			// is ok when we are in a constructor and the variable is a member of the class that has not
+			// yet been initialized
+			auto strct = l_value->is_member_ref();
+			auto curr_func = get_current_function();
+			if (strct and curr_func) {
+				if(curr_func->header->name == strct->name + OBJ_DELIMITER + NodeStruct::CONSTRUCTOR) {
+					if (auto decl = declaration->parent->cast<NodeSingleDeclaration>(); decl->value) {
+						auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, *this);
+						error.m_message = "Cannot assign to constant member <"+ declaration->name +"> in the constructor because it was already given a value at its declaration.";
+						error.exit();
+						return;
+					} else return;
+				} else if (curr_func->header->name == strct->name + OBJ_DELIMITER + NodeStruct::DESTRUCTOR) {
+					// ok in destructor
+					return;
+				}
+			}
+			auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, *this);
+			error.m_message = "Cannot reassign value to constant variable <"+ l_value->name +">. Once declared, the value of a constant cannot be changed.";
+			error.exit();
+			return;
+		}
+	}
 }
 
 // ************* NodeCompoundAssignment ***************
@@ -1206,7 +1236,7 @@ NodeAST *NodeSelect::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> n
 }
 
 // ************* NodeBreak ***************
-NodeAST *NodeBreak::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeBreak::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeBreak::NodeBreak(const NodeBreak& other)
@@ -1214,4 +1244,36 @@ NodeBreak::NodeBreak(const NodeBreak& other)
 
 std::unique_ptr<NodeAST> NodeBreak::clone() const {
 	return std::make_unique<NodeBreak>(*this);
+}
+
+// ************* NodeNamespace ***************
+NodeAST *NodeNamespace::accept(ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeNamespace::NodeNamespace(const NodeNamespace& other)
+	: NodeInstruction(other), prefix(other.prefix), members(clone_unique(other.members)) {
+	for (auto &def: other.function_definitions) {
+		function_definitions.emplace_back(clone_shared(def));
+	}
+}
+
+std::unique_ptr<NodeAST> NodeNamespace::clone() const {
+	return std::make_unique<NodeNamespace>(*this);
+}
+
+ASTDesugaring * NodeNamespace::get_desugaring(NodeProgram *program) const {
+	static DesugarNamespace desugaring(program);
+	return &desugaring;
+}
+
+void NodeNamespace::inline_namespace(NodeProgram *program) {
+	// add struct methods to program functions
+	for(auto & func: function_definitions) {
+		func->parent = program;
+		program->function_definitions.push_back(func);
+	}
+	function_definitions.clear();
+	program->global_declarations->append_body(std::move(members));
+	members = std::make_unique<NodeBlock>(Token());
+	set_child_parents();
 }

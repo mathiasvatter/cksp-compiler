@@ -218,7 +218,7 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 	std::optional<Token> persistence;
 	bool is_local = false;
 	bool is_global = false;
-	enum Kind{Builtin, Compiler, Local, ThreadUnsafe, Throwaway, None};
+	enum Kind{Builtin, Compiler, Local, ThreadUnsafe, Throwaway, None, Static};
 	Kind kind = None;
 	bool has_obj_assigned = false;
 	bool is_thread_safe = true; // gets set to false, if dimension inflation needs to be used because of unsafe declaration environment
@@ -744,6 +744,7 @@ struct NodeProgram final : NodeAST {
 		if(function_call_stack.empty()) return nullptr;
 		return function_call_stack.top().lock();
 	}
+	std::vector<std::unique_ptr<struct NodeNamespace>> namespaces;
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::shared_ptr<NodeFunctionDefinition>> function_definitions;
 	std::vector<std::shared_ptr<NodeFunctionDefinition>> additional_function_definitions;
