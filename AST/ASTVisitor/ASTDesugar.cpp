@@ -11,16 +11,12 @@ NodeAST* ASTDesugar::visit(NodeProgram& node) {
 	m_program->global_declarations->prepend_body(NodeStruct::declare_struct_constants());
 	m_program->add_global_iterator();
 
+	visit_all(node.namespaces, *this);
 	// m_program->global_declarations->prepend_as_stmt(m_program->declare_global_iterators());
-	for(const auto & struct_def : node.struct_definitions) {
-		struct_def->accept(*this);
-	}
-    for(const auto & callback : node.callbacks) {
-        callback->accept(*this);
-    }
-    for(const auto & func_def : node.function_definitions) {
-        func_def->accept(*this);
-    }
+	visit_all(node.struct_definitions, *this);
+	visit_all(node.callbacks, *this);
+	visit_all(node.function_definitions, *this);
+
 	// update because function parameters might have been added which might cause problems in typechecking
 //	m_program->update_function_lookup();
 //	m_program->global_declarations->append_body(declare_compiler_variables());
@@ -77,6 +73,10 @@ NodeAST* ASTDesugar::visit(NodeSingleAssignment& node) {
 	return node.desugar(m_program);
 }
 
+NodeAST * ASTDesugar::visit(NodeCompoundAssignment &node) {
+	return node.desugar(m_program)->accept(*this);
+}
+
 //NodeAST* ASTDesugar::visit(NodeForEach& node) {
 //    node.body->accept(*this);
 //	// accept again to desugar resulting for loops
@@ -95,6 +95,14 @@ NodeAST* ASTDesugar::visit(NodeFamily &node) {
 
 NodeAST* ASTDesugar::visit(NodeConst &node) {
 	node.constants->accept(*this);
+	return node.desugar(m_program);
+}
+
+NodeAST * ASTDesugar::visit(NodeNamespace &node) {
+	node.members->accept(*this);
+	for(const auto & m: node.function_definitions) {
+		m->accept(*this);
+	}
 	return node.desugar(m_program);
 }
 

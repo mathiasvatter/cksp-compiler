@@ -18,7 +18,7 @@ std::string Parser::sanitize_binary(const std::string& input) {
     // Entferne das 'b' oder 'B' am Anfang oder Ende und kehre die Zeichenfolge um, falls nötig
     if (input[0] == 'b' || input[0] == 'B') {
         sanitized = input.substr(1);
-        std::reverse(sanitized.begin(), sanitized.end());
+        std::ranges::reverse(sanitized);
     } else if (input.back() == 'b' || input.back() == 'B') {
         sanitized = input.substr(0, input.size() - 1);
     }
@@ -474,9 +474,9 @@ Result<std::unique_ptr<NodeFunctionParam>> Parser::parse_function_param(NodeAST*
 		node_func_param->is_pass_by_ref = true;
 	}
 
-	auto error = CompileError(ErrorType::ParseError,"Incorrect syntax in declare statement.", "", peek());
+	auto error = CompileError(ErrorType::ParseError,"Incorrect syntax in function parameter.", "", peek());
 	if(peek().type != token::KEYWORD) {
-		error.m_expected = "<ui_control>, <variable>, <array>";
+		error.m_expected = "<variable>, <array>";
 		return Result<std::unique_ptr<NodeFunctionParam>>(error);
 	}
 
@@ -494,7 +494,7 @@ Result<std::unique_ptr<NodeFunctionParam>> Parser::parse_function_param(NodeAST*
 		}
 		node_func_param->variable = std::move(parsed_var.unwrap());
 	} else {
-		error.m_expected = "<ui_control>, <variable>, <array>";
+		error.m_expected = "<variable>, <array>";
 		return Result<std::unique_ptr<NodeFunctionParam>>(error);
 	}
 
@@ -536,11 +536,10 @@ Result<std::unique_ptr<NodeFunctionParam>> Parser::parse_function_param(NodeAST*
 Result<std::unique_ptr<NodeSingleDeclaration>> Parser::parse_single_declare_statement(NodeAST* parent) {
 	auto node_declare_statement = std::make_unique<NodeSingleDeclaration>(get_tok());
 	if(peek().type == token::DECLARE) consume(); //consume declare
-	if(not(peek().type == token::KEYWORD or peek().type == token::UI_CONTROL or get_persistent_keyword(peek())
-		or peek().type == token::CONST or peek().type == token::POLYPHONIC or peek().type== token::LOCAL or peek().type== token::GLOBAL))
+	if(!modifier_keywords.contains(peek().type) and peek().type != token::KEYWORD) {
 		return Result<std::unique_ptr<NodeSingleDeclaration>>(CompileError(ErrorType::ParseError,
-																	 "Incorrect syntax in declare statement.", "<ui_control>, <variable>, <array>", peek()));
-
+																	 "Incorrect syntax in declare statement. Found unknown <modifier>.", "<ui_control>, <variable>, <array>", peek()));
+	}
 	// ui_control
 	if (peek().type == token::UI_CONTROL xor peek(1).type == token::UI_CONTROL) {
 		auto parsed_ui_control = parse_declare_ui_control(node_declare_statement.get());
@@ -603,7 +602,12 @@ Result<std::unique_ptr<NodeSingleDeclaration>> Parser::parse_single_declare_stat
 }
 
 Result<std::unique_ptr<NodeSingleAssignment>> Parser::parse_single_assign_statement(NodeAST* parent) {
-    auto node_assign_statement_res = parse_assign_statement(parent);
+	auto l_values = parse_l_values(parent);
+	if(l_values.is_error()) {
+		return Result<std::unique_ptr<NodeSingleAssignment>>(l_values.get_error());
+	}
+	auto values = std::move(l_values.unwrap());
+    auto node_assign_statement_res = parse_assign_statement(std::move(values), parent);
     if(node_assign_statement_res.is_error())
         Result<std::unique_ptr<NodeSingleAssignment>>(node_assign_statement_res.get_error());
     const auto node_assign_statement = std::move(node_assign_statement_res.unwrap());
@@ -622,41 +626,49 @@ Result<std::unique_ptr<NodeSingleAssignment>> Parser::parse_single_assign_statem
     return Result<std::unique_ptr<NodeSingleAssignment>>(std::move(node_single_assign_statement));
 }
 
-Result<std::unique_ptr<NodeAssignment>> Parser::parse_assign_statement(NodeAST* parent) {
-    auto node_assign_statement = std::make_unique<NodeAssignment>(get_tok());
+Result<std::vector<std::unique_ptr<NodeReference>>> Parser::parse_l_values(NodeAST* parent) {
 	// make it possible to have more than one variable before assign
 	std::vector<std::unique_ptr<NodeReference>> vars;
 	if(peek().type == token::COMMA) {
-		auto error = CompileError(ErrorType::SyntaxError, "Found invalid Assign Statement Syntax.", "", peek());
-		error.m_message += " Assignments must not start with a <comma>.";
+		auto error = CompileError(ErrorType::SyntaxError, "Found invalid <l_value> Syntax.", "", peek());
+		error.m_message += " Lists of <l_values> must not start with a <comma>.";
 		error.exit();
 	}
 	do {
 		if(peek().type == token::COMMA) consume();
 		// ui_control
 		if (peek().type == token::KEYWORD) {
-			auto ref = parse_reference_chain(node_assign_statement.get());
+			auto ref = parse_reference_chain(parent);
 			if (ref.is_error()) {
-				return Result<std::unique_ptr<NodeAssignment>>(ref.get_error());
+				return Result<std::vector<std::unique_ptr<NodeReference>>>(ref.get_error());
 			}
 			auto reference = std::move(ref.unwrap());
-			if(reference->get_node_type() == NodeType::FunctionCall) {
-				auto error = CompileError(ErrorType::SyntaxError, "Found invalid Assign Statement Syntax.", "", peek());
-				error.m_message += " <Function Calls> cannot be l_values in Assign Statements.";
-				error.exit();
-			}
 			vars.push_back(std::unique_ptr<NodeReference>(static_cast<NodeReference*>(reference.release())));
 		} else {
-			return Result<std::unique_ptr<NodeAssignment>>(CompileError(ErrorType::ParseError,
-																		 "Incorrect syntax in declare statement.", "<ui_control>, <variable>, <array>", peek()));
+			return Result<std::vector<std::unique_ptr<NodeReference>>>(CompileError(ErrorType::ParseError,
+																		 "Found invalid <l_value> Syntax.", "<keyword>", peek()));
 		}
 	} while(peek().type == token::COMMA);
+	if(vars.empty()) {
+		auto error = CompileError(ErrorType::ParseError, "Found invalid <l_value> Syntax.", "", peek());
+		error.m_message += " At least one <l_value> is required.";
+		error.exit();
+	}
+	return Result<std::vector<std::unique_ptr<NodeReference>>>(std::move(vars));
+}
+
+bool Parser::is_func_call_reference_chain(NodeReference& ref) {
+	auto chain = ref.cast<NodeAccessChain>();
+	if (chain && chain->chain.back()->cast<NodeFunctionCall>()) {
+		return true;
+	}
+	return false;
+}
+
+Result<std::unique_ptr<NodeAssignment>> Parser::parse_assign_statement(std::vector<std::unique_ptr<NodeReference>> l_values, NodeAST* parent) {
+    auto node_assign_statement = std::make_unique<NodeAssignment>(l_values[0]->tok);
 
     if(peek().type != token::ASSIGN) {
-    	// in case of a access chain with method call at the end
-    	if (peek().type == token::LINEBRK) {
-    		// if (vars.size() == 1)
-    	}
         return Result<std::unique_ptr<NodeAssignment>>(CompileError(ErrorType::SyntaxError,
                                                                     "Found invalid Assign Statement Syntax.", ":=", peek()));
     }
@@ -668,11 +680,46 @@ Result<std::unique_ptr<NodeAssignment>> Parser::parse_assign_statement(NodeAST* 
         return Result<std::unique_ptr<NodeAssignment>>(assignee.get_error());
     }
 	assignees = std::move(assignee.unwrap());
-    node_assign_statement->l_values = std::move(vars);
+    node_assign_statement->l_values = std::move(l_values);
     node_assign_statement->r_values = std::move(assignees);
     node_assign_statement->set_child_parents();
     node_assign_statement->parent = parent;
     return Result<std::unique_ptr<NodeAssignment>>(std::move(node_assign_statement));
+}
+
+Result<std::unique_ptr<NodeCompoundAssignment>> Parser::parse_compound_assign_statement(
+	std::unique_ptr<NodeReference> l_value,
+	NodeAST *parent) {
+	auto error = CompileError(ErrorType::SyntaxError, "", "", peek());
+
+	auto node_compound_assign_statement = std::make_unique<NodeCompoundAssignment>(get_tok());
+	auto valid_operator_tokens = extract_tokens_from_map(ALL_OPERATORS);
+	if (!valid_operator_tokens.contains(peek().type)) {
+		error.set_message( "Invalid Operator Syntax for <Compound Assignment>.");
+		std::vector<std::string> valid_tokens{};
+		for (auto& tok : valid_operator_tokens) {
+			valid_tokens.push_back(std::string("<") + tokenStrings[static_cast<int>(tok)] + ">");
+		}
+		error.m_expected = StringUtils::join(valid_tokens, ',');
+		return Result<std::unique_ptr<NodeCompoundAssignment>>(error);
+	}
+	auto op = consume(); // consume operator token
+	if (peek().type != token::EQUAL) {
+		error.set_message( "Invalid Operator Syntax for <Compound Assignment>. Expected <equal> after operator.");
+		error.m_expected = "=";
+		return Result<std::unique_ptr<NodeCompoundAssignment>>(error);
+	}
+	consume(); // consume equal token
+	auto r_value = parse_binary_expr(node_compound_assign_statement.get());
+	if (r_value.is_error()) {
+		return Result<std::unique_ptr<NodeCompoundAssignment>>(r_value.get_error());
+	}
+	node_compound_assign_statement->l_value = std::move(l_value);
+	node_compound_assign_statement->r_value = std::move(r_value.unwrap());
+	node_compound_assign_statement->op = op.type;
+	node_compound_assign_statement->set_child_parents();
+	node_compound_assign_statement->parent = parent;
+	return Result<std::unique_ptr<NodeCompoundAssignment>>(std::move(node_compound_assign_statement));
 }
 
 Result<std::unique_ptr<NodeReturn>> Parser::parse_return_statement(NodeAST* parent) {
@@ -680,8 +727,8 @@ Result<std::unique_ptr<NodeReturn>> Parser::parse_return_statement(NodeAST* pare
 	auto error = CompileError(ErrorType::SyntaxError, "", "", ret_tok);
 	auto node_return_statement = std::make_unique<NodeReturn>(get_tok());
 	if(peek().type == token::ASSIGN) {
-		error.m_message = "The <return> keyword is reserved for <Return> Statement within function definitions. Consider using a different name.";
-		error.exit();
+		error.set_message( "The <return> keyword is reserved for <Return> Statement within function definitions. Consider using a different name.");
+		return Result<std::unique_ptr<NodeReturn>>(error);
 	}
 	auto return_params = parse_multiple_values(node_return_statement.get());
 	if(return_params.is_error()) {
@@ -689,8 +736,8 @@ Result<std::unique_ptr<NodeReturn>> Parser::parse_return_statement(NodeAST* pare
 	}
 	node_return_statement->return_variables = std::move(return_params.unwrap()->params);
 	if(!m_current_function_def) {
-		error.m_message = "Found <Return> Statement outside of function definition.";
-		error.exit();
+		error.set_message( "Found <Return> Statement outside of function definition.");
+		return Result<std::unique_ptr<NodeReturn>>(error);
 	}
 	m_current_function_def->num_return_params = node_return_statement->return_variables.size();
 	node_return_statement->definition = m_current_function_def;
@@ -706,7 +753,7 @@ Result<std::unique_ptr<NodeDelete>> Parser::parse_delete_statement(NodeAST* pare
 		if(peek().type != token::KEYWORD) {
 			auto error = CompileError(ErrorType::SyntaxError,"Found invalid <Delete> Syntax.", "", peek());
 			error.m_message += " Only References to Pointers can be deleted.";
-			error.exit();
+			return Result<std::unique_ptr<NodeDelete>>(error);
 		}
 		auto result = parse_reference_chain(node_delete_stmt.get());
 		if(result.is_error()) {
@@ -716,7 +763,7 @@ Result<std::unique_ptr<NodeDelete>> Parser::parse_delete_statement(NodeAST* pare
 		if(ptr_result->get_node_type() == NodeType::FunctionCall) {
 			auto error = CompileError(ErrorType::SyntaxError,"Found invalid <Delete> Syntax.", "", peek());
 			error.m_message += " <Function Calls> cannot be l_values in Delete Statements.";
-			error.exit();
+			return Result<std::unique_ptr<NodeDelete>>(error);
 		}
 		node_delete_stmt->add_pointer(unique_ptr_cast<NodeReference>(std::move(ptr_result)));
 		if(peek().type == token::COMMA) consume();
@@ -755,11 +802,25 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
 			}
 			stmt = std::move(function_call.unwrap());
         } else {
-            auto assign_stmt = parse_assign_statement(node_statement.get());
-            if (assign_stmt.is_error()) {
-                return Result<std::unique_ptr<NodeStatement>>(assign_stmt.get_error());
-            }
-            stmt = std::move(assign_stmt.unwrap());
+        	auto l_values = parse_l_values(node_statement.get());
+        	if (l_values.is_error()) return Result<std::unique_ptr<NodeStatement>>(l_values.get_error());
+        	// check if l_value is reference chain with function call at the end -> can stand isolated
+        	auto values = std::move(l_values.unwrap());
+        	if (values.size() == 1 and is_func_call_reference_chain(*values[0])) {
+        		stmt = std::move(values[0]);
+        	} else if (values.size() == 1 and peek().type != token::ASSIGN and peek().type != token::LINEBRK) {
+        		auto compound_assign = parse_compound_assign_statement(std::move(values[0]), node_statement.get());
+        		if (compound_assign.is_error()) {
+        			return Result<std::unique_ptr<NodeStatement>>(compound_assign.get_error());
+        		}
+        		stmt = std::move(compound_assign.unwrap());
+        	} else {
+	            auto assign_stmt = parse_assign_statement(std::move(values), node_statement.get());
+	            if (assign_stmt.is_error()) {
+	                return Result<std::unique_ptr<NodeStatement>>(assign_stmt.get_error());
+	            }
+	            stmt = std::move(assign_stmt.unwrap());
+        	}
         }
     } else if (peek().type == token::CONST) {
 		auto construct_stmt = parse_const_statement(node_statement.get());
@@ -848,7 +909,8 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
 Result<std::unique_ptr<NodeCallback>> Parser::parse_callback(NodeAST* parent) {
     auto node_callback = std::make_unique<NodeCallback>(get_tok());
     auto node_body = std::make_unique<NodeBlock>(get_tok());
-    std::string begin_callback = consume().val;
+	auto start_token = consume(); // consume BEGIN_CALLBACK
+    std::string begin_callback = start_token.val;
 	if(begin_callback == "on init") {
 		m_init_callback_idx = m_callbacks.size();
 	}
@@ -890,7 +952,9 @@ Result<std::unique_ptr<NodeCallback>> Parser::parse_callback(NodeAST* parent) {
             stmts.push_back(std::move(stmt.unwrap()));
     }
     node_body->statements = std::move(stmts);
-    std::string end_callback = consume().val; // Consume END_CALLBACK
+	auto end_token = consume();
+    std::string end_callback = end_token.val; // Consume END_CALLBACK
+	node_callback->set_range(start_token, end_token);
     node_callback->begin_callback = std::move(begin_callback);
     node_callback->callback_id = std::move(callback_id);
     node_callback->statements = std::move(node_body);
@@ -898,6 +962,52 @@ Result<std::unique_ptr<NodeCallback>> Parser::parse_callback(NodeAST* parent) {
     node_callback->set_child_parents();
     node_callback->parent = parent;
     return Result<std::unique_ptr<NodeCallback>>(std::move(node_callback));
+}
+
+Result<std::unique_ptr<NodeNamespace>> Parser::parse_namespace(NodeAST *parent) {
+	Token start_token = consume(); //consume namespace
+	token end_construct = token::END_NAMESPACE;
+	auto error = CompileError(ErrorType::SyntaxError, "Found invalid <namespace> syntax.", "", peek());
+	if(peek().type != token::KEYWORD) {
+		error.set_message( "Expected <namespace> name after <namespace> keyword.");
+		return Result<std::unique_ptr<NodeNamespace>>(error);
+	}
+	auto name = consume(); //consume name
+	auto l = consume_linebreak("<namespace>");
+	if(l.is_error())
+		return Result<std::unique_ptr<NodeNamespace>>(l.get_error());
+	auto node_declarations = std::make_unique<NodeBlock>(start_token);
+	std::vector<std::shared_ptr<NodeFunctionDefinition>> node_functions;
+	while(peek().type != end_construct) {
+		_skip_linebreaks();
+		if(peek().type == token::DECLARE) {
+			auto declare_stmt = parse_declare_statement(node_declarations.get());
+			if(declare_stmt.is_error()) {
+				return Result<std::unique_ptr<NodeNamespace>>(declare_stmt.get_error());
+			}
+			node_declarations->add_stmt(std::make_unique<NodeStatement>(std::move(declare_stmt.unwrap()), start_token));
+		} else if (peek().type == token::FUNCTION) {
+			auto func = parse_function_definition(node_declarations.get());
+			if(func.is_error()) {
+				return Result<std::unique_ptr<NodeNamespace>>(func.get_error());
+			}
+			node_functions.push_back(std::move(func.unwrap()));
+		} else {
+			error.add_message("<namespaces> can only contain <declare> statements or <function> definitions that get added to the global scope.");
+			error.set_token(peek());
+			return Result<std::unique_ptr<NodeNamespace>>(error);
+		}
+		_skip_linebreaks();
+	}
+	auto end_token = consume(); // consume end struct
+	auto node_namespace = std::make_unique<NodeNamespace>(
+		name.val,
+		std::move(node_declarations),
+		std::move(node_functions),
+		name);
+	node_namespace->set_range(start_token, end_token);
+	node_namespace -> parent = parent;
+	return Result<std::unique_ptr<NodeNamespace>>(std::move(node_namespace));
 }
 
 Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
@@ -924,15 +1034,15 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
         			// pass
         		} else if (func->override and node_function->override) {
         			auto error = CompileError(ErrorType::SyntaxError,"", "", node_function->header->tok);
-        			error.m_message = "Found duplicate function definition with the same name and parameter count. Both have been marked"
+        			error.set_message( "Found duplicate function definition with the same name and parameter count. Both have been marked"
 							 "as <override>. The compiler will use the last encountered definition that has been marked as <override>.\n"
-        					 "Consider removing the <override> keyword from one of the definitions.";
+        					 "Consider removing the <override> keyword from one of the definitions.");
         			error.print();
         		} else {
         			auto error = CompileError(ErrorType::SyntaxError,"", "", node_function->header->tok);
-        			error.m_message = "A function with this name and parameter count already exists. \n"
+        			error.set_message( "A function with this name and parameter count already exists. \n"
 							 "To override it, use the <override> keyword. \n"
-							 "To overload it, use <Union> types instead to define function templates accepting multiple types.";
+							 "To overload it, use <Union> types instead to define function templates accepting multiple types.");
         			return Result<std::unique_ptr<NodeProgram>>(error);
         		}
         	} else {
@@ -943,6 +1053,18 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 			if(struct_def.is_error())
 				return Result<std::unique_ptr<NodeProgram>>(struct_def.get_error());
 			node_program->struct_definitions.push_back(std::move(struct_def.unwrap()));
+		} else if (peek().type == token::CONST) {
+			auto const_def = parse_const_statement(node_program.get());
+			if (const_def.is_error()) {
+				return Result<std::unique_ptr<NodeProgram>>(const_def.get_error());
+			}
+			node_program->global_declarations->add_as_stmt(std::move(const_def.unwrap()));
+		} else if (peek().type == token::NAMESPACE) {
+			auto namespace_def = parse_namespace(node_program.get());
+			if (namespace_def.is_error()) {
+				return Result<std::unique_ptr<NodeProgram>>(namespace_def.get_error());
+			}
+			node_program->namespaces.push_back(std::move(namespace_def.unwrap()));
         } else {
             return Result<std::unique_ptr<NodeProgram>>(CompileError(ErrorType::ParseError,
              "Found unknown construct.", "<callback>, <function_definition>", peek()));
@@ -1088,9 +1210,10 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_init_list(NodeAST* parent) {
 
 Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header(NodeAST* parent) {
     std::string func_name;
-	Token func = consume();
-    func_name = func.val;
-    auto node_function_header = std::make_unique<NodeFunctionHeader>(func_name, func);
+	Token start_token = consume();
+	Token end_token = start_token;
+    func_name = start_token.val;
+    auto node_function_header = std::make_unique<NodeFunctionHeader>(func_name, start_token);
 	if (peek().type == token::OPEN_PARENTH) {
 		consume(); // consume (
 		if (peek().type != token::CLOSED_PARENTH) {
@@ -1109,7 +1232,7 @@ Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header(NodeAS
 			}
 		}
 		if (peek().type == token::CLOSED_PARENTH) {
-			consume();
+			end_token = consume();
 		}
 	}
 
@@ -1123,26 +1246,21 @@ Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header(NodeAS
 	auto return_type = type.unwrap();
 	if(return_type->get_type_kind() == TypeKind::Function) {
 		auto error = CompileError(ErrorType::ParseError,"", "", peek());
-		error.m_message = "Function type not allowed as return type.";
+		error.set_message( "Function type not allowed as return type.");
 		error.exit();
 	}
-	// std::vector<Type*> arg_types;
-	// for(const auto & arg: node_function_header->params) {
-	// 	arg_types.push_back(arg->variable->ty);
-	// }
-	// ty = TypeRegistry::add_function_type(arg_types, return_type);
-	node_function_header->create_function_type(return_type);
 
-	// node_function_header->ty = ty;
+	node_function_header->create_function_type(return_type);
+	node_function_header->set_range(start_token, end_token);
     node_function_header->parent = parent;
     return Result<std::unique_ptr<NodeFunctionHeader>>(std::move(node_function_header));
 }
 
 Result<std::unique_ptr<NodeFunctionHeaderRef>> Parser::parse_function_header_ref(NodeAST* parent) {
 	std::string func_name;
-	Token func_ref = consume();
-	func_name = func_ref.val;
-	auto node_function_header_ref = std::make_unique<NodeFunctionHeaderRef>(func_name, func_ref);
+	Token start_token = consume();
+	func_name = start_token.val;
+	auto node_function_header_ref = std::make_unique<NodeFunctionHeaderRef>(func_name, start_token);
 	auto func_args = parse_function_args(node_function_header_ref.get());
 	if(func_args.is_error()) {
 		return Result<std::unique_ptr<NodeFunctionHeaderRef>>(func_args.get_error());
@@ -1188,7 +1306,7 @@ Result<std::unique_ptr<NodeFunctionCall>> Parser::parse_function_call(NodeAST* p
 		consume(); // consume new
 		if(peek().type != token::KEYWORD) {
 			auto error = CompileError(ErrorType::ParseError,"", "", peek());
-			error.m_message = "Incorrect syntax for instantiating <Object>.";
+			error.set_message( "Incorrect syntax for instantiating <Object>.");
 			error.m_expected = "new <Object>";
 			error.exit();
 		}
@@ -1209,7 +1327,7 @@ Result<std::unique_ptr<NodeFunctionCall>> Parser::parse_function_call(NodeAST* p
 
 Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definition(NodeAST* parent) {
     auto error = CompileError(ErrorType::ParseError,"", "", peek());
-    consume(); //consume "function"
+    auto start_token = consume(); //consume "function"
     auto node_function_definition = std::make_shared<NodeFunctionDefinition>(get_tok());
 	m_current_function_def = node_function_definition;
     std::unique_ptr<NodeFunctionHeader> func_header;
@@ -1217,7 +1335,7 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     auto func_body = std::make_unique<NodeBlock>(get_tok(), true);
     bool func_override = false;
     if (peek().type != token::KEYWORD) {
-        error.m_message = "Missing function name.";
+        error.set_message( "Missing function name.");
         error.m_expected = "keyword";
         return Result<std::shared_ptr<NodeFunctionDefinition>>(error);
     }
@@ -1239,13 +1357,13 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
             }
             auto return_var = std::move(return_vars.unwrap()->variable);
 			if(return_var.size() > 1) {
-				error.m_message = "Only on return variable allowed. Use <Return> Statement to return multiple values.";
+				error.set_message( "Only on return variable allowed. Use <Return> Statement to return multiple values.");
 				error.exit();
 			}
 			m_current_function_def->num_return_params = 1;
             func_return_var = std::move(return_var[0]);
         } else {
-            error.m_message = "Missing return variable after ->";
+            error.set_message( "Missing return variable after ->");
             error.m_expected = "<return variable>";
             return Result<std::shared_ptr<NodeFunctionDefinition>>(error);
         }
@@ -1255,7 +1373,8 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
         func_override = true;
     }
     if (peek().type != token::LINEBRK) {
-        error.m_message = "Missing linebreak after function header."; error.m_expected = "linebreak";
+        error.set_message( "Missing linebreak after function header.");
+    	error.set_expected("linebreak");
         return Result<std::shared_ptr<NodeFunctionDefinition>>(error);
     }
     consume(); // consume linebreak
@@ -1270,7 +1389,8 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
         if(stmt.unwrap()->statement)
             func_body->add_stmt(std::move(stmt.unwrap()));
     }
-    consume();
+    auto end_token = consume();
+	node_function_definition->set_range(start_token, end_token);
     node_function_definition->header = std::move(func_header);
     node_function_definition->return_variable = std::move(func_return_var);
     node_function_definition->override = func_override;
@@ -1283,12 +1403,13 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
 
 Result<std::unique_ptr<NodeDeclaration>> Parser::parse_declare_statement(NodeAST* parent) {
     auto node_declare_statement = std::make_unique<NodeDeclaration>(get_tok());
-    if(peek().type == token::DECLARE) consume(); //consume declare
+	auto start_token = get_tok();
+    if(peek().type == token::DECLARE) start_token = consume(); //consume declare
     std::vector<std::unique_ptr<NodeDataStructure>> to_be_declared;
-    if(not(peek().type == token::KEYWORD or peek().type == token::UI_CONTROL or get_persistent_keyword(peek())
-           or peek().type == token::CONST or peek().type == token::POLYPHONIC or peek().type== token::LOCAL or peek().type== token::GLOBAL))
-        return Result<std::unique_ptr<NodeDeclaration>>(CompileError(ErrorType::ParseError,
-                                                                     "Incorrect syntax in declare statement.", "<ui_control>, <variable>, <array>", peek()));
+	if(!modifier_keywords.contains(peek().type) and peek().type != token::KEYWORD) {
+		return Result<std::unique_ptr<NodeDeclaration>>(CompileError(ErrorType::ParseError,
+																	 "Incorrect syntax in declare statement. Found unknown <modifier>.", "<ui_control>, <variable>, <array>", peek()));
+	}
     do {
         if(peek().type == token::COMMA) consume();
         // ui_control
@@ -1340,7 +1461,7 @@ Result<std::unique_ptr<NodeDeclaration>> Parser::parse_declare_statement(NodeAST
         // initializes empty param list
         assignees = std::make_unique<NodeParamList>(get_tok());
     }
-
+	node_declare_statement->set_range(start_token, get_tok());
     node_declare_statement->variable = std::move(to_be_declared);
     node_declare_statement->value = std::move(assignees);
     node_declare_statement->set_child_parents();
@@ -1348,39 +1469,44 @@ Result<std::unique_ptr<NodeDeclaration>> Parser::parse_declare_statement(NodeAST
     return Result<std::unique_ptr<NodeDeclaration>>(std::move(node_declare_statement));
 }
 
+int Parser::peek_past_modifiers() {
+	int lookahead_index = 0;
+	std::vector<token> seen_modifiers;
+	bool has_persistence_keyword = false;
+
+	// Gehe durch alle Modifikator-Tokens am Anfang
+	while (modifier_keywords.contains(peek(lookahead_index).type)) {
+		token current_type = peek(lookahead_index).type;
+
+		// Verhindere Duplikate (z.B. "static static")
+		if (std::ranges::find(seen_modifiers, current_type) != seen_modifiers.end()) {
+			auto error = CompileError(ErrorType::SyntaxError, "Found duplicate modifier in variable declaration.", "", peek(lookahead_index));
+			error.exit();
+			return -1; // Fehler: Duplikat gefunden
+		}
+		seen_modifiers.push_back(current_type);
+		lookahead_index++;
+	}
+	return lookahead_index;
+}
 
 bool Parser::is_variable_declaration() {
-    // read local (const | polyphonic) keyword
-    const bool first = get_persistent_keyword(peek()) and (peek(1).type == token::LOCAL or peek(1).type == token::GLOBAL) and (peek(2).type == token::CONST || peek(2).type == token::POLYPHONIC) and peek(3).type == token::KEYWORD;
-    // read (const | polyphonic) keyword
-    const bool second = get_persistent_keyword(peek()) and (peek(1).type == token::CONST || peek(1).type == token::POLYPHONIC) and peek(2).type == token::KEYWORD;
-    // read keyword
-    const bool third = get_persistent_keyword(peek()) and peek(1).type == token::KEYWORD;
-    // read local keyword
-    const bool sixth = get_persistent_keyword(peek()) and (peek(1).type == token::LOCAL or peek(1).type == token::GLOBAL) and peek(2).type == token::KEYWORD;
-    // (const | polyphonic) keyword
-    const bool fifth = (peek().type == token::CONST || peek().type == token::POLYPHONIC) and peek(1).type == token::KEYWORD;
-    // local keyword
-    const bool seventh = (peek().type == token::LOCAL or peek().type == token::GLOBAL) and peek(1).type == token::KEYWORD;
-    // local (const | polyphonic) keyword
-    const bool eighth = (peek().type == token::LOCAL or peek().type == token::GLOBAL) and (peek(1).type == token::CONST || peek(1).type == token::POLYPHONIC) and peek(2).type == token::KEYWORD;
-    // keyword
-    const bool fourth = peek().type == token::KEYWORD;
-
-    return first xor second xor third xor fourth xor fifth xor sixth xor seventh xor eighth;
+	const int final_index = peek_past_modifiers();
+	// Bei einem Fehler in den Modifikatoren ist es keine gültige Deklaration.
+	if (final_index < 0) {
+		return false;
+	}
+	// Nach den Modifikatoren muss ein KEYWORD folgen.
+	return peek(final_index).type == token::KEYWORD;
 }
 
 bool Parser::is_array_declaration() {
-    // read local a[]
-    const bool first = get_persistent_keyword(peek()) and (peek(1).type == token::LOCAL or peek(1).type == token::GLOBAL) and peek(2).type == token::KEYWORD and peek(3).type == token::OPEN_BRACKET;
-    // local a[]
-    const bool second = (peek().type == token::LOCAL or peek().type == token::GLOBAL) and peek(1).type == token::KEYWORD and peek(2).type == token::OPEN_BRACKET;
-    // read a[]
-    const bool third = get_persistent_keyword(peek()) and peek(1).type == token::KEYWORD and peek(2).type == token::OPEN_BRACKET;
-    // a[]
-    const bool fourth = peek().type == token::KEYWORD and peek(1).type == token::OPEN_BRACKET;
-
-    return first xor second xor third xor fourth;
+	const int final_index = peek_past_modifiers();
+	if (final_index < 0) {
+		return false;
+	}
+	return peek(final_index).type == token::KEYWORD &&
+		   peek(final_index + 1).type == token::OPEN_BRACKET;
 }
 
 std::optional<Token> Parser::get_persistent_keyword(const Token& tok) {
@@ -1392,25 +1518,72 @@ std::optional<Token> Parser::get_persistent_keyword(const Token& tok) {
 
 
 Result<std::unique_ptr<NodeVariable>> Parser::parse_declare_variable(NodeAST* parent) {
-    auto persistence = get_persistent_keyword(peek());
-    if(persistence) {
-        consume();
-    }
     bool is_local = false;
     bool is_global = false;
-    if(peek().type == token::LOCAL or peek().type == token::GLOBAL) {
-        is_local = peek().type == token::LOCAL;
-        is_global = peek().type == token::GLOBAL;
-        consume();
-    }
     auto var_type = DataType::Mutable;
-    if(peek().type == token::CONST || peek().type == token::POLYPHONIC) {
-        if(peek().type == token::CONST)
-            var_type = DataType::Const;
-        else if (peek().type == token::POLYPHONIC)
-            var_type = DataType::Polyphonic;
-        consume();
-    }
+	NodeDataStructure::Kind kind = NodeDataStructure::Kind::None;
+	bool has_persistence_keyword = false;
+	std::optional<Token> persistence{};
+	while (modifier_keywords.contains(peek().type)) {
+		Token current_tok = peek();
+		auto error = CompileError(ErrorType::SyntaxError, "Found invalid variable declaration syntax.", "", peek());
+		switch (current_tok.type) {
+			case token::READ:
+			case token::PERS:
+			case token::INSTPERS:
+				if (has_persistence_keyword) {
+					error.m_message += " Only one persistence keyword is allowed.";
+					return Result<std::unique_ptr<NodeVariable>>(error);
+				}
+				has_persistence_keyword = true;
+				persistence = current_tok;
+				break;
+			case token::LOCAL:
+				if (is_global) {
+					error.m_message += " Cannot be both <local> and <global>.";
+					return Result<std::unique_ptr<NodeVariable>>(error);
+				}
+				is_local = true;
+				kind = NodeDataStructure::Kind::Local;
+				break;
+			case token::GLOBAL:
+				if (is_local) {
+					error.m_message += " Cannot be both <global> and <local>.";
+					return Result<std::unique_ptr<NodeVariable>>(error);
+				}
+				is_global = true;
+				break;
+
+			case token::CONST:
+				if (var_type == DataType::Polyphonic) {
+					error.m_message += " Cannot be both <const> and <polyphonic>.";
+					return Result<std::unique_ptr<NodeVariable>>(error);
+				}
+				var_type = DataType::Const;
+				break;
+			case token::POLYPHONIC:
+				if (var_type == DataType::Const) {
+					error.m_message += " Cannot be both <const> and <polyphonic>.";
+					return Result<std::unique_ptr<NodeVariable>>(error);
+				}
+				var_type = DataType::Polyphonic;
+				break;
+			case token::STATIC:
+				if (var_type == DataType::Polyphonic) {
+					error.m_message += " Cannot be both <static> and <polyphonic>.";
+					return Result<std::unique_ptr<NodeVariable>>(error);
+				}
+				if (is_local) {
+					error.m_message += " Cannot be both <local> and <static>.";
+					return Result<std::unique_ptr<NodeVariable>>(error);
+				}
+				kind = NodeDataStructure::Kind::Static;
+				break;
+			default: break;
+		}
+		consume(); // Verarbeite den Modifikator-Token
+	}
+
     if(peek().type != token::KEYWORD) {
         return Result<std::unique_ptr<NodeVariable>>(CompileError(ErrorType::SyntaxError,
                                                                   "Found unknown variable declaration syntax.", "variable keyword", peek()));
@@ -1426,26 +1599,69 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_declare_variable(NodeAST* pa
 	}
     node_variable->is_local = is_local;
     node_variable->is_global = is_global;
+	node_variable->kind = kind;
 	node_variable->ty = type.unwrap();
     return Result<std::unique_ptr<NodeVariable>>(std::move(node_variable));
 }
 
 Result<std::unique_ptr<NodeDataStructure>> Parser::parse_declare_array(NodeAST* parent) {
-    auto persistence = get_persistent_keyword(peek());
-    if(persistence) {
-        consume();
-    }
-    bool is_local = false;
+	auto start_token = get_tok();
+	bool is_local = false;
     bool is_global = false;
-    if(peek().type == token::LOCAL or peek().type == token::GLOBAL) {
-        is_local = peek().type == token::LOCAL;
-        is_global = peek().type == token::GLOBAL;
-        consume();
-    }
     auto var_type = DataType::Mutable;
+	NodeDataStructure::Kind kind = NodeDataStructure::Kind::None;
+	bool has_persistence_keyword = false;
+	std::optional<Token> persistence{};
+	auto error = CompileError(ErrorType::SyntaxError, "Found invalid array declaration syntax.", "", peek());
+	while (modifier_keywords.contains(peek().type)) {
+		Token current_tok = peek();
+		switch (current_tok.type) {
+			case token::READ:
+			case token::PERS:
+			case token::INSTPERS:
+				if (has_persistence_keyword) {
+					error.m_message += " Only one persistence keyword is allowed.";
+					return Result<std::unique_ptr<NodeDataStructure>>(error);
+				}
+				has_persistence_keyword = true;
+				persistence = current_tok;
+				break;
+			case token::LOCAL:
+				if (is_global) {
+					error.m_message += " Cannot be both <local> and <global>.";
+					return Result<std::unique_ptr<NodeDataStructure>>(error);
+				}
+				is_local = true;
+				kind = NodeDataStructure::Kind::Local;
+				break;
+			case token::GLOBAL:
+				if (is_local) {
+					error.m_message += " Cannot be both <global> and <local>.";
+					return Result<std::unique_ptr<NodeDataStructure>>(error);
+				}
+				is_global = true;
+				break;
+			case token::CONST:
+				var_type = DataType::Const;
+				break;
+			case token::POLYPHONIC:
+				error.m_message += " Arrays cannot be <polyphonic>.";
+				return Result<std::unique_ptr<NodeDataStructure>>(error);
+				break;
+			case token::STATIC:
+				if (is_local) {
+					error.m_message += " Cannot be both <local> and <static>.";
+					return Result<std::unique_ptr<NodeDataStructure>>(error);
+				}
+				kind = NodeDataStructure::Kind::Static;
+				break;
+			default: break;
+		}
+		consume(); // Verarbeite den Modifikator-Token
+	}
     if(peek().type != token::KEYWORD) {
-        return Result<std::unique_ptr<NodeDataStructure>>(CompileError(ErrorType::SyntaxError,
-                                                                       "Found unknown array declaration syntax.", "array keyword", peek()));
+    	error.m_expected = "array name (<keyword>)";
+        return Result<std::unique_ptr<NodeDataStructure>>(error);
     }
     auto parsed_arr = parse_array(parent, persistence, var_type);
     if(parsed_arr.is_error()) {
@@ -1456,6 +1672,8 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_declare_array(NodeAST* 
 	if(type.is_error()) {
 		return Result<std::unique_ptr<NodeDataStructure>>(type.get_error());
 	}
+	auto end_token = peek(-1);
+	node_array->set_range(start_token, end_token);
     node_array->is_local = is_local;
     node_array->is_global = is_global;
 	node_array->ty = type.unwrap();
@@ -1538,8 +1756,8 @@ Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST*
 Result<std::unique_ptr<NodeIf>> Parser::parse_if_statement(NodeAST* parent) {
     auto node_if_statement = std::make_unique<NodeIf>(get_tok());
     //consume if
-    consume();
-
+    auto start_token = consume();
+	auto end_token = start_token;
     auto condition_result = parse_expression(node_if_statement.get());
     if(condition_result.is_error()) {
         return Result<std::unique_ptr<NodeIf>>(condition_result.get_error());
@@ -1594,7 +1812,8 @@ Result<std::unique_ptr<NodeIf>> Parser::parse_if_statement(NodeAST* parent) {
         return Result<std::unique_ptr<NodeIf>>(CompileError(ErrorType::SyntaxError,
                                                             "Missing end token.", "end if", peek()));
     }
-    if (!no_end_if) consume();
+    if (!no_end_if) end_token = consume();
+	node_if_statement->set_range(start_token, end_token);
     node_if_statement->condition = std::move(condition);
     node_if_statement->if_body = std::move(if_statements);
     node_if_statement->else_body = std::move(else_statements);
@@ -1606,7 +1825,7 @@ Result<std::unique_ptr<NodeIf>> Parser::parse_if_statement(NodeAST* parent) {
 Result<std::unique_ptr<NodeFor>> Parser::parse_for_statement(NodeAST* parent) {
     auto node_for_statement = std::make_unique<NodeFor>(get_tok());
     //consume for
-    consume();
+    auto start_token = consume();
     auto assign_stmt = parse_single_assign_statement(node_for_statement.get());
     if(assign_stmt.is_error()) {
         return Result<std::unique_ptr<NodeFor>>(assign_stmt.get_error());
@@ -1647,7 +1866,8 @@ Result<std::unique_ptr<NodeFor>> Parser::parse_for_statement(NodeAST* parent) {
         if(stmt.unwrap()->statement)
             node_body->statements.push_back(std::move(stmt.unwrap()));
     }
-    consume(); // consume end for
+    auto end_token = consume(); // consume end for
+	node_for_statement->set_range(start_token, end_token);
     node_for_statement->iterator = std::move(iterator);
     node_for_statement->to = to;
     node_for_statement->iterator_end = std::move(iterator_end);
@@ -1679,7 +1899,7 @@ bool Parser::is_for_each_syntax() {
 Result<std::unique_ptr<NodeForEach>> Parser::parse_for_each_statement(NodeAST* parent) {
     auto node_for_statement = std::make_unique<NodeForEach>(get_tok());
     //consume for
-    consume();
+    auto start_token = consume();
 
 	// make it possible to have more than one variable before assign
 	std::vector<std::unique_ptr<NodeVariable>> pair;
@@ -1753,7 +1973,8 @@ Result<std::unique_ptr<NodeForEach>> Parser::parse_for_each_statement(NodeAST* p
         if(stmt.unwrap()->statement)
             node_body->statements.push_back(std::move(stmt.unwrap()));
     }
-    consume(); // consume end for
+    auto end_token = consume(); // consume end for
+	node_for_statement->set_range(start_token, end_token);
     node_for_statement->key = std::move(key);
 	node_for_statement->value = std::move(value);
     node_for_statement->range = std::move(node_range);
@@ -1766,7 +1987,7 @@ Result<std::unique_ptr<NodeForEach>> Parser::parse_for_each_statement(NodeAST* p
 
 Result<std::unique_ptr<NodeWhile>> Parser::parse_while_statement(NodeAST* parent) {
     auto node_while_statement = std::make_unique<NodeWhile>(get_tok());
-    consume(); // consume while
+    auto start_token = consume(); // consume while
     auto condition_result = parse_expression(node_while_statement.get());
     if(condition_result.is_error()) {
         return Result<std::unique_ptr<NodeWhile>>(condition_result.get_error());
@@ -1790,7 +2011,8 @@ Result<std::unique_ptr<NodeWhile>> Parser::parse_while_statement(NodeAST* parent
         if(stmt.unwrap()->statement)
             node_body->statements.push_back(std::move(stmt.unwrap()));
     }
-    consume(); // consume end while
+    auto end_token = consume(); // consume end while
+	node_while_statement->set_range(start_token, end_token);
     node_while_statement->condition = std::move(condition);
     node_while_statement->body = std::move(node_body);
     node_while_statement->set_child_parents();
@@ -1800,7 +2022,7 @@ Result<std::unique_ptr<NodeWhile>> Parser::parse_while_statement(NodeAST* parent
 
 Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* parent) {
     auto node_select_statement = std::make_unique<NodeSelect>(get_tok());
-    consume(); //consume select
+    auto start_token = consume(); //consume select
     auto expression = parse_expression(node_select_statement.get());
     if(peek().type != token::LINEBRK) {
         return Result<std::unique_ptr<NodeSelect>>(CompileError(ErrorType::SyntaxError,
@@ -1859,7 +2081,8 @@ Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* pare
 			cases.emplace_back(std::move(cas),std::move(stmts));
 		}
 	}
-	consume(); // consume end select
+	auto end_token = consume(); // consume end select
+	node_select_statement->set_range(start_token, end_token);
 	node_select_statement->expression = std::move(expression.unwrap());
 	node_select_statement->cases = std::move(cases);
 	node_select_statement->set_child_parents();
@@ -1868,7 +2091,7 @@ Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* pare
 }
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_family_statement(NodeAST* parent) {
-	Token construct = consume(); //consume family
+	auto start_token = consume(); //consume family
 	token end_construct = token::END_FAMILY;
 	if(peek().type != token::KEYWORD) {
 		return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
@@ -1879,7 +2102,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_family_statement(NodeAST* parent)
 	auto l = consume_linebreak("<family statement>");
 	if(l.is_error())
 		return Result<std::unique_ptr<NodeAST>>(l.get_error());
-	auto node_block = std::make_unique<NodeBlock>(construct);
+	auto node_block = std::make_unique<NodeBlock>(start_token);
 	while(peek().type != token::END_FAMILY) {
 		_skip_linebreaks();
 		auto declare_stmt = parse_statement(nullptr);
@@ -1890,7 +2113,8 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_family_statement(NodeAST* parent)
 		if(declare_stmt.unwrap()->statement)
 			node_block->statements.push_back(std::move(declare_stmt.unwrap()));
 	}
-	consume(); // consume end family
+	auto end_token = consume(); // consume end family
+	node_family_statement->set_range(start_token, end_token);
 	node_family_statement->prefix = prefix.val;
 	node_family_statement->members = std::move(node_block);
 	node_family_statement->set_child_parents();
@@ -1899,7 +2123,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_family_statement(NodeAST* parent)
 }
 
 Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
-	Token construct = consume(); //consume struct
+	auto start_token = consume(); //consume struct
 	token end_construct = token::END_STRUCT;
 	if(peek().type != token::KEYWORD) {
 		return Result<std::unique_ptr<NodeStruct>>(CompileError(ErrorType::SyntaxError,
@@ -1909,7 +2133,7 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 	auto l = consume_linebreak("<struct>");
 	if(l.is_error())
 		return Result<std::unique_ptr<NodeStruct>>(l.get_error());
-	auto node_member_block = std::make_unique<NodeBlock>(construct);
+	auto node_member_block = std::make_unique<NodeBlock>(start_token);
 	std::vector<std::shared_ptr<NodeFunctionDefinition>> node_methods;
 	while(peek().type != end_construct) {
 		_skip_linebreaks();
@@ -1918,7 +2142,7 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 			if(declare_stmt.is_error()) {
 				return Result<std::unique_ptr<NodeStruct>>(declare_stmt.get_error());
 			}
-			node_member_block->add_stmt(std::make_unique<NodeStatement>(std::move(declare_stmt.unwrap()), construct));
+			node_member_block->add_stmt(std::make_unique<NodeStatement>(std::move(declare_stmt.unwrap()), start_token));
 		} else if (peek().type == token::FUNCTION) {
 			auto func = parse_function_definition(node_member_block.get());
 			if(func.is_error()) {
@@ -1931,12 +2155,13 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 		}
 		_skip_linebreaks();
 	}
-	consume(); // consume end struct
+	auto end_token = consume(); // consume end struct
 	auto node_struct = std::make_unique<NodeStruct>(
 		name.val,
 		std::move(node_member_block),
 		std::move(node_methods),
 		name);
+	node_struct->set_range(start_token, end_token);
 	node_struct -> parent = parent;
 	node_struct->rebuild_method_table();
 	node_struct->rebuild_lookup_sets();
@@ -2013,7 +2238,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_const_statement(NodeAST* parent) {
-	Token construct = consume(); //consume family, struct, const
+	auto start_token = consume(); //consume family, struct, const
 	token end_construct = token::END_CONST;
 	if(peek().type != token::KEYWORD) {
 		return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
@@ -2028,7 +2253,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_const_statement(NodeAST* parent) 
 	}
 	consume(); // consume linebreak
 
-	auto node_body = std::make_unique<NodeBlock>(construct);
+	auto node_body = std::make_unique<NodeBlock>(start_token);
 	while(peek().type != end_construct) {
 		_skip_linebreaks();
 		if(peek().type == end_construct) break;
@@ -2047,8 +2272,8 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_const_statement(NodeAST* parent) 
 		if(l.is_error())
 			return Result<std::unique_ptr<NodeAST>>(l.get_error());
 	}
-	consume(); // consume end_const
-
+	auto end_token = consume(); // consume end_const
+	node_const_statement->set_range(start_token, end_token);
 	node_const_statement -> parent = parent;
 	node_const_statement->name = prefix.val;
 	node_const_statement->constants = std::move(node_body);
@@ -2068,6 +2293,7 @@ Result<SuccessTag> Parser::consume_linebreak(const std::string& construct) {
 
 
 Result<std::unique_ptr<NodeGetControl>> Parser::parse_get_control_statement(std::unique_ptr<NodeAST> ui_id, NodeAST* parent) {
+	auto start_token = ui_id->tok;
 	if(peek().type != token::ARROW) {
 		return Result<std::unique_ptr<NodeGetControl>>(CompileError(ErrorType::SyntaxError,
                                                                     "Wrong control statement syntax.", "->", peek()));
@@ -2080,8 +2306,10 @@ Result<std::unique_ptr<NodeGetControl>> Parser::parse_get_control_statement(std:
 		return Result<std::unique_ptr<NodeGetControl>>(CompileError(ErrorType::SyntaxError,
                                                                     "Wrong control statement syntax.", "<control_parameter>", peek()));
 	}
-	auto control_param = consume().val;
+	auto end_token = consume(); // consume control parameter
+	auto control_param = end_token.val;
 	auto node_get_control_statement = std::make_unique<NodeGetControl>(std::move(ui_id), control_param, get_tok());
+	node_get_control_statement->set_range(start_token, end_token);
 	node_get_control_statement->set_child_parents();
 	node_get_control_statement->parent = parent;
 	return Result<std::unique_ptr<NodeGetControl>>(std::move(node_get_control_statement));

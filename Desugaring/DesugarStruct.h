@@ -37,7 +37,7 @@ private:
 	/// holds all declared members and local declarations to replace self
 	std::unordered_map<std::string, NodeDataStructure*> members;
 	void add_to_members(NodeDataStructure* node) {
-		if (members.find(node->name) != members.end()) {
+		if (members.contains(node->name)) {
 			auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
 			error.m_message = "Member already exists.";
 			error.m_got = node->tok.val;
@@ -56,7 +56,7 @@ private:
 		if (!m_structs.empty() && name.find("self.") == 0) {
 			std::string new_name = name;
 			new_name.replace(0, 5, m_structs.top()->name + OBJ_DELIMITER); // Ersetze 'self.' durch das Präfix
-			if (members.find(new_name) != members.end()) {
+			if (members.contains(new_name)) {
 				return new_name;
 			}
 		}
@@ -92,7 +92,7 @@ private:
 public:
 	explicit DesugarStruct(NodeProgram *program) : ASTDesugaring(program) {};
 
-	inline NodeAST* visit(NodeStruct& node) override {
+	NodeAST* visit(NodeStruct& node) override {
 		node.name = add_struct_prefix(node.name);
 		m_structs.push(&node);
 
@@ -100,7 +100,7 @@ public:
 		bool has_init_method = false;
 		bool has_repr_method = false;
 		for(auto & m: node.methods) {
-			if (m->header->name == "__init__") has_init_method = true;
+			if (m->header->name == NodeStruct::CONSTRUCTOR) has_init_method = true;
 			if (m->header->name == "__repr__") has_repr_method = true;
 			if (m->header->name == "__del__") {
 				auto error = CompileError(ErrorType::SyntaxError, "", "", m->tok);
@@ -126,7 +126,7 @@ public:
 		return &node;
 	}
 
-	inline NodeAST* visit(NodeFunctionDefinition& node) override {
+	NodeAST* visit(NodeFunctionDefinition& node) override {
 		if(!node.is_method()) {
 			auto error = CompileError(ErrorType::SyntaxError,"", "", node.tok);
 			error.m_message = "Method definition must contain <self> as first parameter.";
@@ -136,7 +136,7 @@ public:
 		node.header->get_param(0)->ty = TypeRegistry::get_object_type(m_structs.top()->name);
 
 		// add constructor type
-		if(node.header->name == "__init__") {
+		if(node.header->name == NodeStruct::CONSTRUCTOR) {
 			auto error = CompileError(ErrorType::SyntaxError,"", "", node.tok);
 			if(node.ty != TypeRegistry::Unknown and node.ty != TypeRegistry::get_object_type(m_structs.top()->name)) {
 				error.m_message = "Constructor method has to be of object type.";
@@ -178,13 +178,13 @@ public:
 
 		node.header->accept(*this);
 		node.header->name = add_struct_prefix(node.header->name);
-
+		// add_to_members(node.header.get());
 		node.body->accept(*this);
 		return &node;
 	}
 
 
-	inline NodeAST* visit(NodeSingleDeclaration& node) override {
+	NodeAST* visit(NodeSingleDeclaration& node) override {
 		if(node.variable->is_member()) {
 			node.variable->name = add_struct_prefix(node.variable->name);
 			add_to_members(node.variable.get());
@@ -220,14 +220,14 @@ public:
 			return node.replace_with(std::move(access_chain));
 		}
 		return &node;
-	};
+	}
 	NodeAST * visit(NodePointerRef& node) override {
 		node.name = replace_self_struct_prefix(node.name);
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			return node.replace_with(std::move(access_chain));
 		}
 		return &node;
-	};
+	}
 	NodeAST * visit(NodeArrayRef& node) override {
 		node.name = replace_self_struct_prefix(node.name);
 		if(node.index) node.index->accept(*this);
@@ -235,7 +235,7 @@ public:
 			return node.replace_with(std::move(access_chain));
 		}
 		return &node;
-	};
+	}
 	NodeAST * visit(NodeNDArrayRef& node) override {
 		node.name = replace_self_struct_prefix(node.name);
 		if(node.indexes) node.indexes->accept(*this);
@@ -243,7 +243,7 @@ public:
 			return node.replace_with(std::move(access_chain));
 		}
 		return &node;
-	};
+	}
 	NodeAST * visit(NodeListRef& node) override {
 		node.name = replace_self_struct_prefix(node.name);
 		node.indexes->accept(*this);
@@ -251,7 +251,7 @@ public:
 			return node.replace_with(std::move(access_chain));
 		}
 		return &node;
-	};
+	}
 	NodeAST * visit(NodeFunctionCall& node) override {
 		node.function->name = replace_self_struct_prefix(node.function->name);
 		node.function->accept(*this);
@@ -259,6 +259,6 @@ public:
 			return node.replace_with(std::move(access_chain));
 		}
 		return &node;
-	};
+	}
 
 };

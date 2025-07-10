@@ -68,6 +68,9 @@ public:
     void exit(ErrorType err=ErrorType::CompileError);
 
 	void set_message(const std::string &message);
+	void add_message(const std::string &message);
+	void set_expected(const std::string &expected);
+	void set_token(const Token &token);
 
     ErrorType m_type;
     std::string m_message;

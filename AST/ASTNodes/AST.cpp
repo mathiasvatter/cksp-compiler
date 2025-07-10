@@ -34,14 +34,14 @@
 #include "../ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h"
 
 // ************* NodeAST Base Class ***************
-NodeAST::NodeAST(Token tok, const NodeType node_type) : tok(std::move(tok)),
-	ty(TypeRegistry::Unknown), node_type(node_type) {}
+NodeAST::NodeAST(Token tok, const NodeType node_type) : range(SourceRange(tok)),
+	tok(std::move(tok)), ty(TypeRegistry::Unknown), node_type(node_type) {}
 
 NodeAST *NodeAST::accept(ASTVisitor &visitor) {
 	return nullptr;
 }
 
-NodeAST::NodeAST(const NodeAST& other) : tok(other.tok), ty(other.ty),
+NodeAST::NodeAST(const NodeAST& other) : range(other.range), tok(other.tok), ty(other.ty),
     node_type(other.node_type), parent(other.parent) {}
 
 NodeAST *NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
@@ -359,8 +359,11 @@ void NodeReference::match_data_structure(const std::shared_ptr<NodeDataStructure
 //	ty = data_structure->ty;
 }
 
-bool NodeReference::is_member_ref() const {
-	return get_declaration() and get_declaration()->is_member();
+NodeStruct* NodeReference::is_member_ref() const {
+	if ( auto decl = get_declaration()) {
+		return decl->is_member();
+	}
+	return nullptr;
 }
 
 NodeStruct *NodeReference::get_object_ptr(NodeProgram* program, const std::string& obj) {
@@ -1093,7 +1096,8 @@ NodeAST *NodeProgram::accept(ASTVisitor &visitor) {
 }
 
 NodeProgram::NodeProgram(const NodeProgram& other) : NodeAST(other), init_callback(other.init_callback) {
-    callbacks = clone_vector<NodeCallback>(other.callbacks);
+	namespaces = clone_vector(other.namespaces);
+    callbacks = clone_vector(other.callbacks);
     function_definitions = other.function_definitions;
 	additional_function_definitions = other.additional_function_definitions;
 	global_declarations = std::make_unique<NodeBlock>(*other.global_declarations);
@@ -1319,13 +1323,21 @@ void NodeProgram::inline_structs() {
 
 void NodeProgram::reset_function_visited_flag() {
 //	for(const auto & def : function_definitions) def->visited = false;
-	parallel_for_each(function_definitions.begin(), function_definitions.end(),
-				  [](auto const& def) {
-						def->visited = false;
-				  });
-	parallel_for_each(additional_function_definitions.begin(), additional_function_definitions.end(),
-			  [](auto const& def) {
-					def->visited = false;
+	// parallel_for_each(function_definitions.begin(), function_definitions.end(),
+	// 			  [](auto const& def) {
+	// 					def->visited = false;
+	// 			  });
+	// parallel_for_each(additional_function_definitions.begin(), additional_function_definitions.end(),
+	// 		  [](auto const& def) {
+	// 				def->visited = false;
+	// 		  });
+	parallel_for_each(function_lookup.begin(), function_lookup.end(),
+			  [](auto const& defs) {
+			  		for (auto & def : defs.second) {
+			  			if (auto func = def.lock()) {
+			  				func->visited = false;
+						}
+			  		}
 			  });
 }
 

@@ -14,7 +14,6 @@
 #include "../../Lowering/LoweringStruct.h"
 #include "../../Lowering/LoweringPointer.h"
 #include "NodeStructCreateRefCountFunctions.h"
-#include "../../Lowering/PreLoweringStruct.h"
 
 // ************* NodeVariable ***************
 NodeAST *NodeVariable::accept(ASTVisitor &visitor) {
@@ -391,12 +390,6 @@ ASTLowering* NodeStruct::get_lowering(NodeProgram *program) const {
 	return &lowering;
 }
 
-void NodeStruct::pre_lower(NodeProgram* program) {
-	static PreLoweringStruct pre_lowering(program);
-	this->accept(pre_lowering);
-}
-
-
 std::unique_ptr<NodeBlock> NodeStruct::declare_struct_constants() {
 	auto node_block = std::make_unique<NodeBlock>(Token());
 	auto node_max_structs = std::make_unique<NodeVariable>(std::nullopt, "MAX::STRUCTS", TypeRegistry::Integer, Token(), DataType::Const);
@@ -509,6 +502,7 @@ void NodeStruct::inline_struct(NodeProgram *program) {
 	node_self.reset();
 	program->init_callback->statements->prepend_body(std::move(members));
 	members = std::make_unique<NodeBlock>(Token());
+	set_child_parents();
 }
 
 std::shared_ptr<NodeFunctionDefinition> NodeStruct::get_overloaded_method(token op) {

@@ -380,7 +380,10 @@ struct NodeConst final : NodeDataStructure {
 
 };
 
+
 struct NodeStruct final : NodeDataStructure {
+	inline static std::string CONSTRUCTOR = "__init__";
+	inline static std::string DESTRUCTOR = "__del__";
 	std::shared_ptr<NodePointer> node_self = std::make_shared<NodePointer>(std::nullopt, "self", TypeRegistry::add_object_type(this->name), this->tok);
 	std::unique_ptr<NodeBlock> members;
 	std::unordered_map<std::string, std::weak_ptr<NodeDataStructure>> member_table;
@@ -431,7 +434,6 @@ struct NodeStruct final : NodeDataStructure {
 	}
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 	ASTLowering* get_lowering(NodeProgram *program) const override;
-	void pre_lower(NodeProgram* program);
 	void rebuild_member_table() {
 		member_table.clear();
 		for(const auto& member : members->statements) {

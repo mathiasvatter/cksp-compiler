@@ -192,7 +192,19 @@ std::string CompileError::generate_github_issue_url(const std::string &username,
 }
 
 void CompileError::set_message(const std::string &message) {
-	CompileError::m_message = message;
+	m_message = message;
+}
+
+void CompileError::add_message(const std::string &message) {
+    m_message += " "+ message;
+}
+
+void CompileError::set_expected(const std::string &expected) {
+    m_expected = expected;
+}
+
+void CompileError::set_token(const Token &token) {
+    m_line_number = token.line; m_file_name = token.file; m_got = token.val; m_line_position = token.pos;
 }
 
 #if defined(__APPLE__) || defined(__linux__)

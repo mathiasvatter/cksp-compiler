@@ -26,6 +26,11 @@ public:
 		return &node;
     }
 
+	NodeAST * visit(NodePointer& node) override {
+	    node.name = add_family_prefix(node.name);
+    	return &node;
+    }
+
 	NodeAST * visit(NodeArray& node) override {
         if(node.size) node.size->accept(*this);
         node.name = add_family_prefix(node.name);

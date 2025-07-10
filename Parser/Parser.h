@@ -43,26 +43,14 @@ inline static std::map<token, int> operator_precedence = {
         {token::DIV, 14},
         {token::MODULO, 14},
 		{token::EXP,15}
+};
 
-//	{token::BOOL_XOR, 2},      // Niedrigste Präzedenz unter den logischen Operatoren
-//	{token::BOOL_OR, 3},       // Logisches OR hat eine höhere Präzedenz als XOR
-//	{token::BOOL_AND, 4},      // Logisches AND hat eine höhere Präzedenz als OR und XOR
-//	{token::BOOL_NOT, 12},     // Logisches NOT hat eine der höchsten Präzedenzwerte, da es ein unärer Operator ist
-//	{token::GREATER_THAN, 9},  // Vergleichsoperatoren haben mittlere Präzedenz
-//	{token::LESS_THAN, 9},
-//	{token::GREATER_EQUAL, 9},
-//	{token::LESS_EQUAL, 9},
-//	{token::EQUAL, 8},         // Gleichheits- und Ungleichheitsoperatoren haben leicht niedrigere Präzedenz als Vergleichsoperatoren
-//	{token::NOT_EQUAL, 8},
-//	{token::BIT_XOR, 5},       // Bitweises XOR hat eine niedrigere Präzedenz als AND, aber höhere als logisches AND
-//	{token::BIT_OR, 6},        // Bitweises OR hat eine niedrigere Präzedenz als AND und XOR
-//	{token::BIT_AND, 7},       // Bitweises AND hat eine niedrigere Präzedenz als die Vergleichsoperatoren
-//	{token::BIT_NOT, 13},      // Bitweises NOT hat eine der höchsten Präzedenzwerte, da es ein unärer Operator ist
-//	{token::ADD, 10},          // Additive Operatoren haben eine höhere Präzedenz als die Vergleichsoperatoren
-//	{token::SUB, 10},
-//	{token::MULT, 11},         // Multiplikative Operatoren haben die höchste Präzedenz unter den binären Operatoren
-//	{token::DIV, 11},
-//	{token::MODULO, 11}
+static const std::unordered_set<token> modifier_keywords = {
+	token::READ, token::PERS, token::INSTPERS, token::CONST,
+	token::POLYPHONIC, token::LOCAL, token::GLOBAL, token::STATIC, token::UI_CONTROL
+};
+static const std::unordered_set<token> persistence_keywords = {
+	token::READ, token::PERS, token::INSTPERS
 };
 
 static int _get_binop_precedence(const token tok) {
@@ -81,6 +69,8 @@ public:
     Result<std::unique_ptr<NodeProgram>> parse();
 
     static std::optional<Token> get_persistent_keyword(const Token& tok);
+	int peek_past_modifiers();
+
     static std::string sanitize_binary(const std::string& input);
     /// convert eg 0bFFFh into 0xbFFF
     static std::string sanitize_hex(const std::string& input);
@@ -117,7 +107,10 @@ public:
 		/// parse identifierexpr, numberexpr, parenthexpr, functionheader
 		Result<std::unique_ptr<NodeAST>> _parse_primary_expr(NodeAST* parent);
     Result<std::unique_ptr<NodeDeclaration>> parse_declare_statement(NodeAST* parent);
-    Result<std::unique_ptr<NodeAssignment>> parse_assign_statement(NodeAST* parent);
+    Result<std::unique_ptr<NodeAssignment>> parse_assign_statement(std::vector<std::unique_ptr<NodeReference>> l_values, NodeAST* parent);
+	Result<std::unique_ptr<NodeCompoundAssignment>> parse_compound_assign_statement(std::unique_ptr<NodeReference> l_value, NodeAST* parent);
+	Result<std::vector<std::unique_ptr<NodeReference>>> parse_l_values(NodeAST* parent);
+    static bool is_func_call_reference_chain(NodeReference& ref);
 	Result<std::unique_ptr<NodeReturn>> parse_return_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeDelete>> parse_delete_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeBreak>> parse_break_statement(NodeAST* parent);
@@ -150,6 +143,7 @@ public:
 	Result<std::unique_ptr<NodeFunctionHeaderRef>> parse_function_header_ref(NodeAST* parent);
     Result<std::unique_ptr<NodeFunctionCall>> parse_function_call(NodeAST* parent);
     Result<std::unique_ptr<NodeCallback>> parse_callback(NodeAST* parent);
+	Result<std::unique_ptr<NodeNamespace>> parse_namespace(NodeAST* parent);
 
 	Result<std::unique_ptr<NodeProgram>> parse_program();
 	std::vector<std::unique_ptr<NodeCallback>> m_callbacks;

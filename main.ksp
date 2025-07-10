@@ -1,16 +1,18 @@
 
 #pragma output_path("test.txt")
 
-import "/Users/mathias/Scripting/sonu-libraries/ksp/3.0/floatmask-object.cksp"
+import "/Users/mathias/Scripting/preset-system/dev/ksp/Preset.cksp"
 
 
 struct MyStruct
+    declare const static PUPU: string
     declare my_int: int
     declare my_real: real
 
     function __init__(self, my_int: int, my_real: real)
         self.my_int := my_int
         self.my_real := my_real
+        self.PUPU := "pupu"
     end function
 
     function multiply(self, factor: number, factor2: number)
@@ -18,13 +20,27 @@ struct MyStruct
     end function
 end struct
 
+namespace Browser
+    declare const pupu: string := "pupu"
+
+    function do_sth(param2: int)
+        return "Doing something with " & param2 & pupu
+    end function
+
+    declare ckjkj: int := 5
+end namespace
+
 on init
+    message(Browser.do_sth(4))
 	declare b := Bitlist()
 	b.set(3, 1)
 	message(b.get(3), use_count(b))
     message(b.search())
 
-    // declare strct := MyStruct(10, 2.5)
-    // message(strct.multiply(4, 4.3))
-    // message(strct.multiply(4.4, 4.3))
+    // message(Browser::pupu)
+    declare strct := MyStruct(10, 2.5)
+    message(strct.my_int, strct.my_real)
+    message(strct.multiply(4, 4))
+    message(strct.multiply(4.4, 4.3))
+    message(strct.PUPU)
 end on

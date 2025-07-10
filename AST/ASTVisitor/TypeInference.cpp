@@ -7,12 +7,9 @@
 NodeAST * TypeInference::visit(NodeProgram& node) {
 	m_program = &node;
 	m_program->global_declarations->accept(*this);
-	for(const auto & s : node.struct_definitions) {
-		s->accept(*this);
-	}
-	for(const auto & callback : node.callbacks) {
-		callback->accept(*this);
-	}
+	visit_all(node.namespaces, *this);
+	visit_all(node.struct_definitions, *this);
+	visit_all(node.callbacks, *this);
 
 	return &node;
 }
@@ -395,24 +392,29 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				error.exit();
 			}
 			auto prev_obj = prev_type->to_string();
+			auto strct = NodeReference::get_object_ptr(m_program, prev_obj);
+			if(!strct) {
+				if(prev_type == TypeRegistry::Nil) {
+					error.m_message = "Method chaining can not be used on <Nil> types.";
+				} else if(prev_ptr->cast<NodeFunctionCall>()) {
+					error.m_message = prev_ptr->get_string()+" does not return <Object> type.";
+				} else {
+					error.m_message = "Struct "+prev_obj+" does not exist.";
+				}
+				error.exit();
+			}
 			if(auto func_call = ptr->cast<NodeFunctionCall>()) {
 				// since the name is not yet right (struct name infront)
-				// auto correct_name = prev_obj + OBJ_DELIMITER + func_call->function->name;
-				// func_call->find_definition(m_program, correct_name, func_call->function->get_num_args()+1, func_call->function->ty);
-				ptr->accept(*this);
-			} else {
-				auto reference = cast_node<NodeReference>(ptr.get());
-				auto strct = reference->get_object_ptr(m_program, prev_obj);
-				if(!strct) {
-					if(prev_type == TypeRegistry::Nil) {
-						error.m_message = "Method chaining can not be used on <Nil> types.";
-					} else if(prev_ptr->cast<NodeFunctionCall>()) {
-						error.m_message = prev_ptr->get_string()+" does not return <Object> type.";
-					} else {
-						error.m_message = "Struct "+prev_obj+" does not exist.";
-					}
+				auto correct_name = prev_obj + OBJ_DELIMITER + func_call->function->name;
+				auto definition = func_call->find_definition(m_program, correct_name, func_call->function->get_num_args()+1, func_call->function->ty);
+				if (!definition) {
+					error.m_message = "Method "+func_call->function->name+" does not exist in "+prev_obj+".";
 					error.exit();
 				}
+				ptr->accept(*this);
+			} else {
+				auto reference = ptr->is_reference();
+
 				auto node_declaration = strct->get_member(prev_obj+OBJ_DELIMITER+reference->name);
 				// could be nullptr because refs in accessChain are not yet reference-collected
 				if(!node_declaration) {
@@ -425,7 +427,8 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 					error.m_message = "Member "+reference->name+" does not exist in "+prev_obj+".";
 					error.exit();
 				}
-				reference->declaration = node_declaration;
+				reference->match_data_structure(node_declaration);
+				// reference->declaration = node_declaration;
 				reference->collect_references();
 				match_reference_declaration(*reference, reference->get_declaration());
 				// if declaration of this reference is unknown and it is not the end of the chain,
@@ -622,21 +625,8 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 	node.l_value->accept(*this);
 	node.r_value->accept(*this);
 
-	// check if l_value is a constant or function parameter
+	// check if l_value is a function parameter
 	if(auto declaration = node.l_value->get_declaration()) {
-		if(declaration->data_type == DataType::Const) {
-			auto error = get_raw_compile_error(ErrorType::VariableError, node);
-			error.m_message = "<"+node.l_value->tok.val + "> was declared as a constant. Cannot assign to a constant variable.";
-			error.exit();
-		}
-//		if(declaration->is_function_param() and declaration->data_type != DataType::Return) {
-//			// specific array indexes are allowed if declaration is array
-//			if(not(declaration->ty->cast<CompositeType>() and !node.l_value->ty->cast<CompositeType>())) {
-//				auto error = get_raw_compile_error(ErrorType::VariableError, node);
-//				error.m_message = "<"+node.l_value->tok.val + "> is a function parameter. Cannot assign to an immutable parameter.";
-//				error.exit();
-//			}
-//		}
 		if(node.l_value->ty->cast<FunctionType>()) {
 			auto error = get_raw_compile_error(ErrorType::VariableError, node);
 			error.m_message = "Cannot assign to a function.";
@@ -658,9 +648,11 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 		// declare ui_text_edit txt_keyswitch_name
 		// set_text_edit_properties(txt_keyswitch_name, "-/-", "alpha")
 		if (node.kind != NodeFunctionCall::Kind::Property) {
+			// add method_idx because at this point method definitions have 1 more parameter than the call (self)
+			int method_idx = is_in_access_chain(node) ? 1 : 0;
 			for (int i = 0; i < node.function->get_num_args(); i++) {
 				auto &func_arg = node.function->get_arg(i);
-				auto &param = definition->get_param(i);
+				auto &param = definition->get_param(i+method_idx);
 				const std::string error_message =
 					"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
 						+ param->ty->to_string() + " as argument type.";
@@ -719,10 +711,10 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 
 		}
 
-
+		int method_idx = is_in_access_chain(node) ? 1 : 0;
 		for (int i = 0; i < node.function->get_num_args(); i++) {
 			auto &func_arg = node.function->get_arg(i);
-			auto &param = definition->get_param(i);
+			auto &param = definition->get_param(i+method_idx);
 			const std::string error_message =
 				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
 					+ param->ty->to_string() + " as argument type.";
@@ -927,6 +919,29 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 	// match_type(node, *node.parent);
 	node.operand->ty = specialize_type(node.operand->ty, node.ty);
 	node.operand->accept(*this);
+
+	// if type if object -> check for operator overloading
+	if(node.operand->ty->get_type_kind() == TypeKind::Object) {
+		auto strct = NodeReference::get_object_ptr(m_program, node.operand->ty->to_string());
+		if(auto def = strct->get_overloaded_method(node.op)) {
+			auto call = std::make_unique<NodeFunctionCall>(
+				false,
+				std::make_unique<NodeFunctionHeaderRef>(
+					def->header->name,
+					std::make_unique<NodeParamList>(node.operand->tok, std::move(node.operand)),
+					node.tok
+				),
+				node.tok
+			);
+			// do not yet add definition to call -> will be done in function call
+			return node.replace_with(std::move(call))->accept(*this);
+		} else {
+			auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+			error.m_message = "Operator <"+std::string(tokenStrings[(int)node.op]) +"> has not been overloaded for type "+node.operand->ty->to_string()+".";
+			error.exit();
+		}
+
+	}
 
 	bool is_compatible = node.ty->is_compatible(node.operand->ty) && node.operand->ty->is_compatible(node.ty);
 	auto error = throw_type_error(*node.operand, node.ty);
