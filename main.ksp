@@ -24,11 +24,14 @@ namespace Browser
     declare const pupu: string := "pupu"
 
     function do_sth(param2: int)
-        return "Doing something with " & param2
+        return "Doing something with " & param2 & pupu
     end function
+
+    declare ckjkj: int := 5
 end namespace
 
 on init
+    message(Browser.do_sth(4))
 	declare b := Bitlist()
 	b.set(3, 1)
 	message(b.get(3), use_count(b))

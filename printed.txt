@@ -12,6 +12,7 @@ on init
 	declare MyStruct::PUPU[1] : string[] {Reuses: 0}
 	declare MyStruct::my_int[1] : int[] {Reuses: 0}
 	declare MyStruct::my_real[1] : real[] {Reuses: 0}
+	message("Doing something with " & 4 & "pupu"){Builtin, None, message}
 	declare b : int {Reuses: 0}
 	Bitlist::free_idx{int} {Bitlist::free_idx}  := search(Bitlist::allocation{int[]} {Bitlist::allocation} , 0){Builtin, None, search}
 	if(Bitlist::free_idx{int} {Bitlist::free_idx}  = -1)

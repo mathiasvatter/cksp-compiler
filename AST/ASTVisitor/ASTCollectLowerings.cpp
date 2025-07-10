@@ -12,6 +12,7 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	m_program = &node;
 	m_program->global_declarations->accept(*this);
 	visit_all(node.namespaces, *this);
+	node.namespaces.clear();
 
 	for(auto & struct_def : node.struct_definitions) {
 		static PreLoweringStruct pre_lowering_struct(m_program);

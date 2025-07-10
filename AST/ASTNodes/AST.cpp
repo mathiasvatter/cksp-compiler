@@ -34,14 +34,14 @@
 #include "../ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h"
 
 // ************* NodeAST Base Class ***************
-NodeAST::NodeAST(Token tok, const NodeType node_type) : tok(std::move(tok)),
-	ty(TypeRegistry::Unknown), node_type(node_type) {}
+NodeAST::NodeAST(Token tok, const NodeType node_type) : range(SourceRange(tok)),
+	tok(std::move(tok)), ty(TypeRegistry::Unknown), node_type(node_type) {}
 
 NodeAST *NodeAST::accept(ASTVisitor &visitor) {
 	return nullptr;
 }
 
-NodeAST::NodeAST(const NodeAST& other) : tok(other.tok), ty(other.ty),
+NodeAST::NodeAST(const NodeAST& other) : range(other.range), tok(other.tok), ty(other.ty),
     node_type(other.node_type), parent(other.parent) {}
 
 NodeAST *NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {

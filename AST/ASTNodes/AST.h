@@ -18,7 +18,27 @@ struct NodeProgram;
 struct NodeFunctionHeaderRef;
 struct NodeReference;
 
+struct SourcePosition {
+	size_t line;
+	size_t column;
+};
+
+struct SourceRange {
+	SourcePosition start;
+	SourcePosition end;
+
+	explicit SourceRange(const Token &tok) {
+		start ={tok.line, tok.pos};
+		end={tok.line, tok.pos + tok.val.length()};
+	}
+	SourceRange(const Token &start_tok, const Token &end_tok) {
+		start = {start_tok.line, start_tok.pos};
+		end = {end_tok.line, end_tok.pos + end_tok.val.length()};
+	}
+};
+
 struct NodeAST {
+	SourceRange range;
     Token tok;
 	Type* ty = nullptr;
     NodeType node_type;
@@ -31,7 +51,10 @@ struct NodeAST {
 	virtual NodeAST* replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 		throw std::runtime_error("replace_child not implemented for this node type");
 		return nullptr;
-	};
+	}
+	void set_range(Token start, Token end) {
+		range = {start, end};
+	}
 	NodeAST* replace_with(std::unique_ptr<NodeAST> newNode);
     // Hinzugefügte Methode zum Aktualisieren der Parent-Pointer
     virtual void update_parents(NodeAST* new_parent) {

@@ -12,7 +12,6 @@ NodeAST* ASTDesugar::visit(NodeProgram& node) {
 	m_program->add_global_iterator();
 
 	visit_all(node.namespaces, *this);
-	node.namespaces.clear();
 	// m_program->global_declarations->prepend_as_stmt(m_program->declare_global_iterators());
 	visit_all(node.struct_definitions, *this);
 	visit_all(node.callbacks, *this);
