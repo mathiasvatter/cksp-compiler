@@ -1096,7 +1096,8 @@ NodeAST *NodeProgram::accept(ASTVisitor &visitor) {
 }
 
 NodeProgram::NodeProgram(const NodeProgram& other) : NodeAST(other), init_callback(other.init_callback) {
-    callbacks = clone_vector<NodeCallback>(other.callbacks);
+	namespaces = clone_vector(other.namespaces);
+    callbacks = clone_vector(other.callbacks);
     function_definitions = other.function_definitions;
 	additional_function_definitions = other.additional_function_definitions;
 	global_declarations = std::make_unique<NodeBlock>(*other.global_declarations);

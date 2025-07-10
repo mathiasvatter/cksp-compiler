@@ -7,12 +7,9 @@
 NodeAST * TypeInference::visit(NodeProgram& node) {
 	m_program = &node;
 	m_program->global_declarations->accept(*this);
-	for(const auto & s : node.struct_definitions) {
-		s->accept(*this);
-	}
-	for(const auto & callback : node.callbacks) {
-		callback->accept(*this);
-	}
+	visit_all(node.namespaces, *this);
+	visit_all(node.struct_definitions, *this);
+	visit_all(node.callbacks, *this);
 
 	return &node;
 }
@@ -630,21 +627,8 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 	node.l_value->accept(*this);
 	node.r_value->accept(*this);
 
-	// check if l_value is a constant or function parameter
+	// check if l_value is a function parameter
 	if(auto declaration = node.l_value->get_declaration()) {
-		if(declaration->data_type == DataType::Const) {
-			auto error = get_raw_compile_error(ErrorType::VariableError, node);
-			error.m_message = "<"+node.l_value->tok.val + "> was declared as a constant. Cannot assign to a constant variable.";
-			error.exit();
-		}
-//		if(declaration->is_function_param() and declaration->data_type != DataType::Return) {
-//			// specific array indexes are allowed if declaration is array
-//			if(not(declaration->ty->cast<CompositeType>() and !node.l_value->ty->cast<CompositeType>())) {
-//				auto error = get_raw_compile_error(ErrorType::VariableError, node);
-//				error.m_message = "<"+node.l_value->tok.val + "> is a function parameter. Cannot assign to an immutable parameter.";
-//				error.exit();
-//			}
-//		}
 		if(node.l_value->ty->cast<FunctionType>()) {
 			auto error = get_raw_compile_error(ErrorType::VariableError, node);
 			error.m_message = "Cannot assign to a function.";

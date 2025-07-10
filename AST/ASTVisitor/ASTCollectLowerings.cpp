@@ -11,6 +11,8 @@
 NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	m_program = &node;
 	m_program->global_declarations->accept(*this);
+	visit_all(node.namespaces, *this);
+
 	for(auto & struct_def : node.struct_definitions) {
 		static PreLoweringStruct pre_lowering_struct(m_program);
 		struct_def->accept(pre_lowering_struct);
@@ -96,6 +98,7 @@ NodeAST * ASTCollectLowerings::visit(NodeSingleDeclaration &node) {
 NodeAST * ASTCollectLowerings::visit(NodeSingleAssignment& node) {
 	node.r_value->accept(*this);
 	node.l_value->accept(*this);
+	node.check_for_constant_assignment();
 	return &node;
 }
 
@@ -184,6 +187,12 @@ NodeAST * ASTCollectLowerings::visit(NodeSingleDelete& node) {
 
 NodeAST * ASTCollectLowerings::visit(NodeConst &node) {
     return node.replace_with(std::move(node.constants));
+}
+
+NodeAST * ASTCollectLowerings::visit(NodeNamespace &node) {
+	ASTVisitor::visit(node);
+	node.inline_namespace(m_program);
+	return &node;
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeWhile& node) {

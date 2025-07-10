@@ -87,6 +87,7 @@ enum class NodeType {
 	Const,
 	Struct,
 	Family,
+	Namespace,
 	List,
 	ListRef,
 	If,
@@ -107,6 +108,31 @@ enum class NodeType {
 
 // forward declaration
 struct NodeAST;
+
+/**
+ * Wendet die `accept`-Methode auf jedes Element in einem Vektor von unique_ptr an.
+ *
+ * @tparam T Der Basistyp der Elemente im Vektor (z.B. NodeAST).
+ * @tparam Visitor Der Typ der Visitor-Klasse (z.B. ASTSemanticAnalysis).
+ * @param elements Der Vektor mit den unique_ptr-Elementen.
+ * @param visitor Die Visitor-Instanz, die an die accept-Methode übergeben wird.
+ */
+template <typename T, typename Visitor>
+void visit_all(const std::vector<std::unique_ptr<T>>& elements, Visitor& visitor) {
+	for (const auto& element : elements) {
+		if (element) { // Sicherstellen, dass der Pointer nicht null ist
+			element->accept(visitor);
+		}
+	}
+}
+template <typename T, typename Visitor>
+void visit_all(const std::vector<std::shared_ptr<T>>& elements, Visitor& visitor) {
+	for (const auto& element : elements) {
+		if (element) { // Sicherstellen, dass der Pointer nicht null ist
+			element->accept(visitor);
+		}
+	}
+}
 
 template <typename T>
 std::shared_ptr<T> to_shared_ptr(std::unique_ptr<T> uniquePtr) {

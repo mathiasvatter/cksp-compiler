@@ -88,15 +88,15 @@ public:
 		// input_filename = "/Users/mathias/Scripting/sonu-libraries/try.ksp";
 	#endif
 
-		Timer compile_time;
+		static Timer compile_time;
 		compile_time.start("Total Time");
 		compile_time.start("Import");
 
-		FileHandler file_handler(input_filename);
-		Tokenizer tokenizer(file_handler.get_output(), input_filename);
+		static FileHandler file_handler(input_filename);
+		static Tokenizer tokenizer(file_handler.get_output(), input_filename);
 		auto tokens = tokenizer.tokenize();
 
-		ImportProcessor imports(tokens, input_filename, &m_definition_provider);
+		static ImportProcessor imports(tokens, input_filename, &m_definition_provider);
 		if(auto import_result = imports.process_imports(); import_result.is_error()) {
 			auto error = import_result.get_error();
 	        error.m_message += " Preprocessor failed while processing import statements.";
@@ -109,7 +109,7 @@ public:
 
 		std::string output_filename = m_config->output_filename;
 
-		Preprocessor preprocessor(tokens);
+		static Preprocessor preprocessor(tokens);
 		preprocessor.process(m_config);
 		auto preprocessed_tokens = preprocessor.get_token_vector();
 
@@ -126,7 +126,7 @@ public:
 		// output_filename = "/Users/mathias/Scripting/toc-single-instruments/samples/resources/scripts/legato.txt";
 		// output_filename = "/Users/mathias/Scripting/toc-single-instruments/samples/resources/scripts/keyswitch.txt";
 		// output_filename = "/Users/mathias/Scripting/the-orchestra-complete-4/Samples/Resources/scripts/sonu_orchestra_ensemble.txt";
-		// output_filename = "/Users/mathias/Scripting/sonu-libraries/resources/scripts/main.txt";
+		output_filename = "/Users/mathias/Scripting/sonu-libraries/resources/scripts/main.txt";
 	#endif
 		if(output_filename.empty() && !m_config->output_filename.empty())
 			output_filename = m_config->output_filename;
@@ -143,7 +143,7 @@ public:
 		compile_time.start("Parsing");
 
 
-		Parser parser(std::move(preprocessed_tokens));
+		static Parser parser(std::move(preprocessed_tokens));
 		auto ast_result = parser.parse();
 		if (ast_result.is_error()) {
 			ast_result.get_error().exit();
@@ -157,7 +157,7 @@ public:
 		std::cout << compile_time.print_timer("Parsing") << "\n";
 		compile_time.start("Desugaring");
 
-		ASTDesugar desugar;
+		static ASTDesugar desugar;
 		ast->accept(desugar);
 		ast->debug_print();
 
@@ -165,10 +165,10 @@ public:
 		std::cout << compile_time.print_timer("Desugaring") << "\n";
 		compile_time.start("Lexical Scope");
 
-		ASTTypeAnnotations type_annotations(m_program);
+		static ASTTypeAnnotations type_annotations(m_program);
 		ast->accept(type_annotations);
 
-		ASTVariableChecking variable_checking(m_program);
+		static ASTVariableChecking variable_checking(m_program);
 		variable_checking.do_complete_traversal(*ast, false);
 		ast->collect_references();
 		ast->debug_print();
@@ -178,7 +178,7 @@ public:
 		std::cout << compile_time.print_timer("Lexical Scope") << "\n";
 		compile_time.start("Semantic Analysis");
 
-		ASTSemanticAnalysis data_structures(ast.get());
+		static ASTSemanticAnalysis data_structures(ast.get());
 		ast->accept(data_structures);
 		ast->debug_print();
 
@@ -186,12 +186,12 @@ public:
 		std::cout << compile_time.print_timer("Semantic Analysis") << "\n";
 		compile_time.start("Type Checking");
 
-		TypeInference infer_types(ast.get());
+		static TypeInference infer_types(ast.get());
 		infer_types.do_complete_traversal(*ast);
 		ast->collect_call_sites(m_program); // collect call sites for ui controls param stuff
 		ast->debug_print();
 
-		UniqueParameterNamesProvider unique_names_provider(m_program);
+		static UniqueParameterNamesProvider unique_names_provider(m_program);
 		unique_names_provider.do_renaming(*m_program);
 		ast->debug_print();
 
@@ -199,14 +199,14 @@ public:
 		std::cout << compile_time.print_timer("Type Checking") << "\n";
 		compile_time.start("Lowering");
 
-		ASTPointerScope pointer_scope(m_program);
+		static ASTPointerScope pointer_scope(m_program);
 		ast->accept(pointer_scope);
 		ast->collect_references();
 
-		ASTCollectLowerings lowering(m_program);
+		static ASTCollectLowerings lowering(m_program);
 		ast->accept(lowering);
 
-		ASTLowerTypes lowering_types(m_program);
+		static ASTLowerTypes lowering_types(m_program);
 		ast->accept(lowering_types);
 		ast->debug_print();
 

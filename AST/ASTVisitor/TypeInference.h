@@ -47,9 +47,8 @@ class TypeInference final : public ASTVisitor {
 			}
 			if (def->header->has_union_params()) {
 				auto new_header = clone_as<NodeFunctionHeader>(def->header.get());
-				const size_t param_count = new_header->params.size();
 				int method_idx = is_in_access_chain(*call) ? 1 : 0;
-				for (size_t i = 0; i< param_count; i++) {
+				for (size_t i = 0; i< call->function->get_num_args(); i++) {
 					auto& actual_param = call->function->get_arg(i);
 					auto& formal_param = new_header->get_param(i+method_idx);
 					match_type(*formal_param, *actual_param);
@@ -99,7 +98,7 @@ class TypeInference final : public ASTVisitor {
 				new_func_def->collect_references();
 				new_func_def->accept(*this);
 
-				const std::string func_name = m_def_provider->get_fresh_name(call->function->name);
+				const std::string func_name = m_def_provider->get_fresh_name(new_func_def->header->name);
 				call->function->name = func_name;
 				// new_func_def->header->name = func_name;
 				call->function->declaration = new_func_def->header;

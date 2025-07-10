@@ -502,6 +502,7 @@ void NodeStruct::inline_struct(NodeProgram *program) {
 	node_self.reset();
 	program->init_callback->statements->prepend_body(std::move(members));
 	members = std::make_unique<NodeBlock>(Token());
+	set_child_parents();
 }
 
 std::shared_ptr<NodeFunctionDefinition> NodeStruct::get_overloaded_method(token op) {

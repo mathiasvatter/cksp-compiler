@@ -100,7 +100,7 @@ public:
 		bool has_init_method = false;
 		bool has_repr_method = false;
 		for(auto & m: node.methods) {
-			if (m->header->name == "__init__") has_init_method = true;
+			if (m->header->name == NodeStruct::CONSTRUCTOR) has_init_method = true;
 			if (m->header->name == "__repr__") has_repr_method = true;
 			if (m->header->name == "__del__") {
 				auto error = CompileError(ErrorType::SyntaxError, "", "", m->tok);
@@ -136,7 +136,7 @@ public:
 		node.header->get_param(0)->ty = TypeRegistry::get_object_type(m_structs.top()->name);
 
 		// add constructor type
-		if(node.header->name == "__init__") {
+		if(node.header->name == NodeStruct::CONSTRUCTOR) {
 			auto error = CompileError(ErrorType::SyntaxError,"", "", node.tok);
 			if(node.ty != TypeRegistry::Unknown and node.ty != TypeRegistry::get_object_type(m_structs.top()->name)) {
 				error.m_message = "Constructor method has to be of object type.";
@@ -253,9 +253,6 @@ public:
 		return &node;
 	}
 	NodeAST * visit(NodeFunctionCall& node) override {
-		if (node.tok.line == 28) {
-
-		}
 		node.function->name = replace_self_struct_prefix(node.function->name);
 		node.function->accept(*this);
 		if(auto access_chain = try_access_chain_transform(node.function->name, &node)) {
