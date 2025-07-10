@@ -15,6 +15,7 @@
  */
 class UniqueParameterNamesProvider final : public ASTVisitor {
 	DefinitionProvider* m_def_provider;
+	std::mutex m_name_mutex;
 
 	// rename reference if declaration is function param
 	static void rename_func_param_ref(NodeReference& node) {
@@ -37,10 +38,20 @@ public:
 
 	// do renaming by visiting all program functions
 	NodeAST* do_renaming(NodeProgram& node) {
-		for(const auto & func_def : node.function_definitions) {
-			if (func_def->header->has_no_params() and !func_def->return_variable) continue;
-			func_def->accept(*this);
-		}
+		parallel_for_each(node.function_lookup.begin(), node.function_lookup.end(),
+			[&](const auto & func_pair) {
+				for (auto& func_def : func_pair.second) {
+					if (auto func = func_def.lock()) {
+						if (func->header->has_no_params() and !func->return_variable) return;
+						func->accept(*this);
+					}
+				}
+			}
+		);
+		// for(const auto & func_def : node.function_definitions) {
+		// 	if (func_def->header->has_no_params() and !func_def->return_variable) continue;
+		// 	func_def->accept(*this);
+		// }
 		return &node;
 	}
 
@@ -55,7 +66,12 @@ private:
 		if (node.return_variable) {
 			auto& ret_var = node.return_variable.value();
 			ret_var->accept(*this);
-			ret_var->name = m_def_provider->get_fresh_name(ret_var->name);
+			std::string fresh_name;
+			{
+				std::lock_guard<std::mutex> lock(m_name_mutex);
+				fresh_name = m_def_provider->get_fresh_name(ret_var->name);
+			}
+			ret_var->name = std::move(fresh_name);
 		}
 		node.body->accept(*this);
 		return &node;
@@ -64,8 +80,13 @@ private:
 	// rename all function parameters
 	NodeAST* visit(NodeFunctionParam& node) override {
 		node.variable->accept(*this);
-		if (node.variable->is_function_param()) {
-			node.variable->name = m_def_provider->get_fresh_name(node.variable->name);
+		if (node.variable->is_function_param() and node.variable->name != "self") {
+			std::string fresh_name;
+			{
+				std::lock_guard<std::mutex> lock(m_name_mutex);
+				fresh_name = m_def_provider->get_fresh_name(node.variable->name);
+			}
+			node.variable->name = std::move(fresh_name);
 		}
 		if (node.value) node.value->accept(*this);
 		return &node;

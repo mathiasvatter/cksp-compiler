@@ -17,7 +17,7 @@
  * - NodeFor: alter for loops to while loops
  * Additionally, it desugars NodeFamily into single declare statements.
  */
-class ASTDesugar: public ASTVisitor {
+class ASTDesugar final : public ASTVisitor {
     NodeAST * visit(NodeProgram& node) override;
 	NodeAST * visit(NodeFunctionDefinition& node) override;
     /// desugar into single declare statements
@@ -26,6 +26,7 @@ class ASTDesugar: public ASTVisitor {
     /// desugar into single assign statements
 	NodeAST * visit(NodeAssignment& node) override;
 	NodeAST * visit(NodeSingleAssignment& node) override;
+	NodeAST * visit(NodeCompoundAssignment& node) override;
 
 	NodeAST * visit(NodeFunctionCall& node) override;
 
@@ -42,6 +43,8 @@ class ASTDesugar: public ASTVisitor {
 	NodeAST * visit(NodeFamily& node) override;
 	/// desugar const block to single declare statements
 	NodeAST * visit(NodeConst& node) override;
+
+	NodeAST * visit(NodeNamespace& node) override;
 
 	/// desugar nested ParamLists [[1,2,3,4]]
 	NodeAST * visit(NodeParamList& node) override;

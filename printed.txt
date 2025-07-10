@@ -1,338 +1,53 @@
-// Global Declarations:
-	declare _iter0 : int {Reuses: 0}
-	declare const MAX::STRUCTS : int := 1000000 {Reuses: 0}
-	declare const MEM::WARNING : string := "Memory Error: No more free space available to allocate objects of type" {Reuses: 0}
-struct MyStruct
-		declare local self{Ptr} : MyStruct {Reuses: 0}
-		declare local MyStruct::my_int : int {Reuses: 0}
-		declare local MyStruct::my_real : real {Reuses: 0}
-
-	function MyStruct::__init__(my_int : int, my_real : real)
-		MyStruct::my_int{unknown} {MyStruct::my_int}  := my_int{unknown} {my_int} 
-		MyStruct::my_real{unknown} {MyStruct::my_real}  := my_real{unknown} {my_real} 
-	end function
-
-	function MyStruct::multiply(self{Ptr} : MyStruct, factor : number, factor2 : number)
-		return (factor{unknown} {factor}  * factor2{unknown} {factor2} )
-	end function
-
-	function MyStruct::__repr__(self{Ptr} : MyStruct)
-		return ("<MyStruct> Object: " & self{Ptr}{MyStruct} {self} )
-	end function
-
-end struct
-
-struct Floatmask
-		declare local self{Ptr} : Floatmask {Reuses: 0}
-		declare local Floatmask::fm[2] : Bitlist[] {Reuses: 0}
-
-	function Floatmask::__init__
-		Floatmask::fm[0]{unknown} {Floatmask::fm}  := Bitlist{Constructor, None, Bitlist::__init__}
-		Floatmask::fm[1]{unknown} {Floatmask::fm}  := Bitlist{Constructor, None, Bitlist::__init__}
-	end function
-
-	function Floatmask::load(self{Ptr} : Floatmask, bl1{Ptr} : Bitlist, bl2{Ptr} : Bitlist)
-		Floatmask::fm[0]{unknown} {Floatmask::fm}  := bl1{Ptr}{unknown} {bl1} 
-		Floatmask::fm[1]{unknown} {Floatmask::fm}  := bl2{Ptr}{unknown} {bl2} 
-	end function
-
-	function Floatmask::size(self{Ptr} : Floatmask)
-		return (64)
-	end function
-
-	function Floatmask::search(self{Ptr} : Floatmask)
-		return (((bool(Floatmask::fm[0]{unknown} {Floatmask::fm} .val{unknown} {no declaration} ){UserDefined, None, bool} * Floatmask::fm[0]{unknown} {Floatmask::fm} .search{Undefined, None}) + (eq(Floatmask::fm[0]{unknown} {Floatmask::fm} .val{unknown} {no declaration} , 0){UserDefined, None, eq} * Floatmask::fm[1]{unknown} {Floatmask::fm} .search{Undefined, None})) + (32 * bool(Floatmask::fm[1]{unknown} {Floatmask::fm} .val{unknown} {no declaration} ){UserDefined, None, bool}))
-	end function
-
-	function Floatmask::clear(self{Ptr} : Floatmask)
-		Floatmask::fm[0]{unknown} {Floatmask::fm}  := 0
-		Floatmask::fm[1]{unknown} {Floatmask::fm}  := 0
-	end function
-
-	function Floatmask::__repr__(self{Ptr} : Floatmask)
-		return ("<Floatmask> Object: " & self{Ptr}{Floatmask} {self} )
-	end function
-
-end struct
-
-struct Bitlist
-		declare local self{Ptr} : Bitlist {Reuses: 0}
-		declare local Bitlist::val : int {Reuses: 0}
-
-	function Bitlist::__init__
-		Bitlist::val{unknown} {Bitlist::val}  := 0
-	end function
-
-	function Bitlist::load(self{Ptr} : Bitlist, val : int)
-		Bitlist::val{unknown} {Bitlist::val}  := val{unknown} {val} 
-	end function
-
-	function Bitlist::count_blocks(self{Ptr} : Bitlist)
-		return (self{Ptr}{unknown} {self} .count(.not. sh_left(Bitlist::val{unknown} {no declaration} , 1){Builtin, None, sh_left} .and. Bitlist::val{unknown} {no declaration} , 1){Undefined, None})
-	end function
-
-	function Bitlist::size(self{Ptr} : Bitlist)
-		return (32)
-	end function
-
-	function Bitlist::search(self{Ptr} : Bitlist)
-		return (ge(Bitlist::val{unknown} {Bitlist::val} , 0){UserDefined, None, ge} * ((31 - int(log(real(max(1, 2147483647 .and. Bitlist::val{unknown} {Bitlist::val} ){UserDefined, None, max}){Builtin, None, real}){Builtin, None, log} / log(2){Builtin, None, log}){Builtin, None, int}) + (eq(Bitlist::val{unknown} {Bitlist::val} , 0){UserDefined, None, eq} * - 32)))
-	end function
-
-	function Bitlist::clear(self{Ptr} : Bitlist)
-		Bitlist::val{unknown} {Bitlist::val}  := 0
-	end function
-
-	function Bitlist::control_to_bitlist(self{Ptr} : Bitlist, ui_array : int[])
-		declare local i : int {Reuses: 0}
-		for i{unknown} {i}  := 0 to min(31, num_elements[ui_array{unknown} {ui_array} ] - 1){UserDefined, None, min}
-			self{Ptr}{unknown} {self} .set(Bitlist::val{unknown} {no declaration} , i{unknown} {no declaration} , ui_array[i{unknown} {no declaration} ]{unknown} {no declaration}  -> value){Undefined, None}
-		end for
-	end function
-
-	function Bitlist::bitlist_to_control(self{Ptr} : Bitlist, ui_array : int[])
-		declare local i : int {Reuses: 0}
-		for i{unknown} {i}  := 0 to min(31, num_elements[ui_array{unknown} {ui_array} ] - 1){UserDefined, None, min}
-			set_control_par(ui_array[i{unknown} {i} ]{unknown} {ui_array} , CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} , self{Ptr}{unknown} {self} .get(Bitlist::val{unknown} {no declaration} , i{unknown} {no declaration} ){Undefined, None}){Builtin, None, set_control_par}
-		end for
-	end function
-
-	function Bitlist::count(self{Ptr} : Bitlist, val : unknown)
-		return (abs(((((((((((Bitlist::val{unknown} {Bitlist::val}  .and. 1431655765) + (sh_right(Bitlist::val{unknown} {Bitlist::val} , 1){Builtin, None, sh_right} .and. 1431655765)) .and. 858993459) + (sh_right((Bitlist::val{unknown} {Bitlist::val}  .and. 1431655765) + (sh_right(Bitlist::val{unknown} {Bitlist::val} , 1){Builtin, None, sh_right} .and. 1431655765), 2){Builtin, None, sh_right} .and. 858993459)) .and. 252645135) + (sh_right((((Bitlist::val{unknown} {Bitlist::val}  .and. 1431655765) + (sh_right(Bitlist::val{unknown} {Bitlist::val} , 1){Builtin, None, sh_right} .and. 1431655765)) .and. 858993459) + (sh_right((Bitlist::val{unknown} {Bitlist::val}  .and. 1431655765) + (sh_right(Bitlist::val{unknown} {Bitlist::val} , 1){Builtin, None, sh_right} .and. 1431655765), 2){Builtin, None, sh_right} .and. 858993459), 4){Builtin, None, sh_right} .and. 252645135)) .and. 16711935) + (sh_right((((((Bitlist::val{unknown} {Bitlist::val}  .and. 1431655765) + (sh_right(Bitlist::val{unknown} {Bitlist::val} , 1){Builtin, None, sh_right} .and. 1431655765)) .and. 858993459) + (sh_right((Bitlist::val{unknown} {Bitlist::val}  .and. 1431655765) + (sh_right(Bitlist::val{unknown} {Bitlist::val} , 1){Builtin, None, sh_right} .and. 1431655765), 2){Builtin, None, sh_right} .and. 858993459)) .and. 252645135) + (sh_right((((Bitlist::val{unknown} {Bitlist::val}  .and. 1431655765) + (sh_right(Bitlist::val{unknown} {Bitlist::val} , 1){Builtin, None, sh_right} .and. 1431655765)) .and. 858993459) + (sh_right((Bitlist::val{unknown} {Bitlist::val}  .and. 1431655765) + (sh_right(Bitlist::val{unknown} {Bitlist::val} , 1){Builtin, None, sh_right} .and. 1431655765), 2){Builtin, None, sh_right} .and. 858993459), 4){Builtin, None, sh_right} .and. 252645135), 8){Builtin, None, sh_right} .and. 16711935)) .and. 65535) + (sh_right((((((((Bitlist::val{unknown} {Bitlist::val}  .and. 1431655765) + (sh_right(Bitlist::val{unknown} {Bitlist::val} , 1){Builtin, None, sh_right} .and. 1431655765)) .and. 858993459) + (sh_right((Bitlist::val{unknown} {Bitlist::val}  .and. 1431655765) + (sh_right(Bitlist::val{unknown} {Bitlist::val} , 1){Builtin, None, sh_right} .and. 1431655765), 2){Builtin, None, sh_right} .and. 858993459)) .and. 252645135) + (sh_right((((Bitlist::val{unknown} {Bitlist::val}  .and. 1431655765) + (sh_right(Bitlist::val{unknown} {Bitlist::val} , 1){Builtin, None, sh_right} .and. 1431655765)) .and. 858993459) + (sh_right((Bitlist::val{unknown} {Bitlist::val}  .and. 1431655765) + (sh_right(Bitlist::val{unknown} {Bitlist::val} , 1){Builtin, None, sh_right} .and. 1431655765), 2){Builtin, None, sh_right} .and. 858993459), 4){Builtin, None, sh_right} .and. 252645135)) .and. 16711935) + (sh_right((((((Bitlist::val{unknown} {Bitlist::val}  .and. 1431655765) + (sh_right(Bitlist::val{unknown} {Bitlist::val} , 1){Builtin, None, sh_right} .and. 1431655765)) .and. 858993459) + (sh_right((Bitlist::val{unknown} {Bitlist::val}  .and. 1431655765) + (sh_right(Bitlist::val{unknown} {Bitlist::val} , 1){Builtin, None, sh_right} .and. 1431655765), 2){Builtin, None, sh_right} .and. 858993459)) .and. 252645135) + (sh_right((((Bitlist::val{unknown} {Bitlist::val}  .and. 1431655765) + (sh_right(Bitlist::val{unknown} {Bitlist::val} , 1){Builtin, None, sh_right} .and. 1431655765)) .and. 858993459) + (sh_right((Bitlist::val{unknown} {Bitlist::val}  .and. 1431655765) + (sh_right(Bitlist::val{unknown} {Bitlist::val} , 1){Builtin, None, sh_right} .and. 1431655765), 2){Builtin, None, sh_right} .and. 858993459), 4){Builtin, None, sh_right} .and. 252645135), 8){Builtin, None, sh_right} .and. 16711935), 16){Builtin, None, sh_right} .and. 65535)) - (eq(val{unknown} {val} , 0){UserDefined, None, eq} * 32)){Builtin, None, abs})
-	end function
-
-	function Bitlist::set(self{Ptr} : Bitlist, idx : int, val : int)
-		Bitlist::val{unknown} {Bitlist::val}  := .not. (.not. ((Bitlist::val{unknown} {Bitlist::val}  .and. .not. sh_left(1, 31 - idx{unknown} {idx} ){Builtin, None, sh_left}) .and. .not. ((Bitlist::val{unknown} {Bitlist::val}  .and. .not. sh_left(1, 31 - idx{unknown} {idx} ){Builtin, None, sh_left}) .and. (- val{unknown} {val}  .and. sh_left(1, 31 - idx{unknown} {idx} ){Builtin, None, sh_left}))) .and. .not. ((- val{unknown} {val}  .and. sh_left(1, 31 - idx{unknown} {idx} ){Builtin, None, sh_left}) .and. .not. ((Bitlist::val{unknown} {Bitlist::val}  .and. .not. sh_left(1, 31 - idx{unknown} {idx} ){Builtin, None, sh_left}) .and. (- val{unknown} {val}  .and. sh_left(1, 31 - idx{unknown} {idx} ){Builtin, None, sh_left}))))
-	end function
-
-	function Bitlist::set_range(self{Ptr} : Bitlist, start_idx : int, end_idx : int, val : int)
-		Bitlist::val{unknown} {Bitlist::val}  := (eq(val{unknown} {val} , 1){UserDefined, None, eq} * ((eq(end_idx{unknown} {end_idx}  - start_idx{unknown} {start_idx} , 32){UserDefined, None, eq} * sh_right(- 1, 32){Builtin, None, sh_right}) + (Bitlist::val{unknown} {Bitlist::val}  .or. sh_left(.not. sh_left(- 1, end_idx{unknown} {end_idx}  - start_idx{unknown} {start_idx} ){Builtin, None, sh_left}, 32 - end_idx{unknown} {end_idx} ){Builtin, None, sh_left}))) + (eq(val{unknown} {val} , 0){UserDefined, None, eq} * (lt(end_idx{unknown} {end_idx}  - start_idx{unknown} {start_idx} , 32){UserDefined, None, lt} * (Bitlist::val{unknown} {Bitlist::val}  .and. .not. sh_left(.not. sh_left(- 1, end_idx{unknown} {end_idx}  - start_idx{unknown} {start_idx} ){Builtin, None, sh_left}, 32 - end_idx{unknown} {end_idx} ){Builtin, None, sh_left})))
-	end function
-
-	function Bitlist::get(self{Ptr} : Bitlist, idx : int)
-		return (sh_right(Bitlist::val{unknown} {Bitlist::val} , 31 - idx{unknown} {idx} ){Builtin, None, sh_right} .and. 1)
-	end function
-
-	function Bitlist::get_range(self{Ptr} : Bitlist, start_idx : int, end_idx : int)
-		return ((eq(end_idx{unknown} {end_idx}  - start_idx{unknown} {start_idx} , 32){UserDefined, None, eq} * Bitlist::val{unknown} {Bitlist::val} ) + sh_left(sh_right(Bitlist::val{unknown} {Bitlist::val} , 32 - end_idx{unknown} {end_idx} ){Builtin, None, sh_right} .and. .not. sh_left(- 1, end_idx{unknown} {end_idx}  - start_idx{unknown} {start_idx} ){Builtin, None, sh_left}, 32 - end_idx{unknown} {end_idx} ){Builtin, None, sh_left})
-	end function
-
-	function Bitlist::reverse(self{Ptr} : Bitlist)
-		for i : unknown in range(0, (32 / 2) + 1, 1)
-			self{Ptr}{unknown} {self} .swap(Bitlist::val{unknown} {no declaration} , i{unknown} {no declaration} , 31 - i{unknown} {no declaration} ){Undefined, None}
-		end for
-	end function
-
-	function Bitlist::swap(self{Ptr} : Bitlist, idx1 : int, idx2 : int)
-		declare local val_idx1 : int := self{Ptr}{unknown} {self} .get(Bitlist::val{unknown} {no declaration} , idx1{unknown} {no declaration} ){Undefined, None} {Reuses: 0}
-		declare local val_idx2 : int := self{Ptr}{unknown} {self} .get(Bitlist::val{unknown} {no declaration} , idx2{unknown} {no declaration} ){Undefined, None} {Reuses: 0}
-		self{Ptr}{unknown} {self} .set(Bitlist::val{unknown} {no declaration} , idx1{unknown} {no declaration} , val_idx2{unknown} {no declaration} ){Undefined, None}
-		self{Ptr}{unknown} {self} .set(Bitlist::val{unknown} {no declaration} , idx2{unknown} {no declaration} , val_idx1{unknown} {no declaration} ){Undefined, None}
-	end function
-
-	function Bitlist::print(self{Ptr} : Bitlist)
-		declare local bl : string := "[" {Reuses: 0}
-		for i : unknown in range(0, 32, 1)
-			bl{unknown} {bl}  := bl{unknown} {bl}  & self{Ptr}{unknown} {self} .get(Bitlist::val{unknown} {no declaration} , i{unknown} {no declaration} ){Undefined, None}
-			if(i{unknown} {i}  < (32 - 1))
-				bl{unknown} {bl}  := bl{unknown} {bl}  & ", "
-			end if
-		end for
-		bl{unknown} {bl}  := bl{unknown} {bl}  & "]"
-		message(bl{unknown} {bl} ){Builtin, None, message}
-	end function
-
-	function Bitlist::__repr__(self{Ptr} : Bitlist)
-		return ("<Bitlist> Object: " & self{Ptr}{Bitlist} {self} )
-	end function
-
-end struct
-
 on init
-	declare b : unknown := Bitlist{Constructor, None, Bitlist::__init__} {Reuses: 0}
-	b{unknown} {b} .set(3, 1){Undefined, None}
-	message(b{unknown} {b} .get(3){Undefined, None} & ", " & b{unknown} {b} ){Builtin, None, message}
-	message(b{unknown} {b} .search{Undefined, None}){Builtin, None, message}
+	declare ret1 : int {Reuses: 1}
+	declare my_int0 : int {Reuses: 3}
+	declare my_real0 : real {Reuses: 0}
+	declare ret2 : string {Reuses: 0}
+	declare Bitlist::free_idx : int {Reuses: 0}
+	declare Bitlist::allocation[1] : int[] {Reuses: 0}
+	declare Bitlist::val[1] : int[] {Reuses: 0}
+	declare read Browser::current_idx[667] : int[] {Reuses: 0}
+	declare MyStruct::free_idx : int {Reuses: 0}
+	declare MyStruct::allocation[1] : int[] {Reuses: 0}
+	declare MyStruct::PUPU[1] : string[] {Reuses: 0}
+	declare MyStruct::my_int[1] : int[] {Reuses: 0}
+	declare MyStruct::my_real[1] : real[] {Reuses: 0}
+	message("Doing something with " & 4 & "pupu"){Builtin, None, message}
+	declare b : int {Reuses: 0}
+	Bitlist::free_idx{int} {Bitlist::free_idx}  := search(Bitlist::allocation{int[]} {Bitlist::allocation} , 0){Builtin, None, search}
+	if(Bitlist::free_idx{int} {Bitlist::free_idx}  = -1)
+		message("Error: No more free space available to allocate objects of type 'Bitlist'"){Builtin, None, message}
+	end if
+	Bitlist::allocation[Bitlist::free_idx{int} {Bitlist::free_idx} ]{int} {Bitlist::allocation}  := 1
+	Bitlist::val[Bitlist::free_idx{int} {Bitlist::free_idx} ]{int} {Bitlist::val}  := 0
+	my_int0{int} {my_int0}  := Bitlist::free_idx{int} {Bitlist::free_idx} 
+	b{int} {b}  := my_int0{int} {my_int0} 
+	my_int0{int} {my_int0}  := b{int} {b} 
+	ret1{int} {ret1}  := 3
+	Bitlist::val[my_int0{int} {my_int0} ]{int} {Bitlist::val}  := .not. (.not. ((Bitlist::val[my_int0{int} {my_int0} ]{int} {Bitlist::val}  .and. .not. sh_left(1, 31 - ret1{int} {ret1} ){Builtin, None, sh_left}) .and. .not. ((Bitlist::val[my_int0{int} {my_int0} ]{int} {Bitlist::val}  .and. .not. sh_left(1, 31 - ret1{int} {ret1} ){Builtin, None, sh_left}) .and. (-1 .and. sh_left(1, 31 - ret1{int} {ret1} ){Builtin, None, sh_left}))) .and. .not. ((-1 .and. sh_left(1, 31 - ret1{int} {ret1} ){Builtin, None, sh_left}) .and. .not. ((Bitlist::val[my_int0{int} {my_int0} ]{int} {Bitlist::val}  .and. .not. sh_left(1, 31 - ret1{int} {ret1} ){Builtin, None, sh_left}) .and. (-1 .and. sh_left(1, 31 - ret1{int} {ret1} ){Builtin, None, sh_left}))))
+	message((sh_right(Bitlist::val[b{int} {b} ]{int} {Bitlist::val} , 28){Builtin, None, sh_right} .and. 1) & ", " & Bitlist::allocation[(b{int} {b}  + abs(- b{int} {b} ){Builtin, None, abs}) / 2]{int} {Bitlist::allocation} ){Builtin, None, message}
+	message((sh_right(Bitlist::val[b{int} {b} ]{int} {Bitlist::val} , 31){Builtin, None, sh_right} + 1) * ((31 - int(log(real(1 - ((1 - (2147483647 .and. Bitlist::val[b{int} {b} ]{int} {Bitlist::val} )) .and. sh_right(1 - (2147483647 .and. Bitlist::val[b{int} {b} ]{int} {Bitlist::val} ), 31){Builtin, None, sh_right})){Builtin, None, real}){Builtin, None, log} / log(2){Builtin, None, log}){Builtin, None, int}) + (- sh_right(abs(Bitlist::val[b{int} {b} ]{int} {Bitlist::val} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right} * -32))){Builtin, None, message}
+	declare strct : int {Reuses: 0}
+	my_int0{int} {my_int0}  := 10
+	my_real0{real} {my_real0}  := 2.5
+	MyStruct::free_idx{int} {MyStruct::free_idx}  := search(MyStruct::allocation{int[]} {MyStruct::allocation} , 0){Builtin, None, search}
+	if(MyStruct::free_idx{int} {MyStruct::free_idx}  = -1)
+		message("Error: No more free space available to allocate objects of type 'MyStruct'"){Builtin, None, message}
+	end if
+	MyStruct::allocation[MyStruct::free_idx{int} {MyStruct::free_idx} ]{int} {MyStruct::allocation}  := 1
+	MyStruct::my_int[MyStruct::free_idx{int} {MyStruct::free_idx} ]{int} {MyStruct::my_int}  := my_int0{int} {my_int0} 
+	MyStruct::my_real[MyStruct::free_idx{int} {MyStruct::free_idx} ]{real} {MyStruct::my_real}  := my_real0{real} {my_real0} 
+	MyStruct::PUPU[MyStruct::free_idx{int} {MyStruct::free_idx} ]{string} {MyStruct::PUPU}  := "pupu"
+	ret1{int} {ret1}  := MyStruct::free_idx{int} {MyStruct::free_idx} 
+	strct{int} {strct}  := ret1{int} {ret1} 
+	message(MyStruct::my_int[strct{int} {strct} ]{int} {MyStruct::my_int}  & ", " & MyStruct::my_real[strct{int} {strct} ]{real} {MyStruct::my_real} ){Builtin, None, message}
+	message(16){Builtin, None, message}
+	message(18.92){Builtin, None, message}
+	declare _ret00 : string {Reuses: 0}
+	my_int0{int} {my_int0}  := strct{int} {strct} 
+	ret2{string} {ret2}  := "<MyStruct> Object: " & my_int0{int} {my_int0} 
+	_ret00{string} {_ret00}  := ret2{string} {ret2} 
+	message(MyStruct::PUPU[_ret00{string} {_ret00} ]{string} {MyStruct::PUPU} ){Builtin, None, message}
 end on
-
-function sh_right_safe(val : int, pos : int)
-	return ((sh_right(val{unknown} {val} , 31){Builtin, None, sh_right} .and. (1 * sh_left(1, 31 - pos{unknown} {pos} ){Builtin, None, sh_left})) .or. sh_right(val{unknown} {val}  .and. 2147483647, pos{unknown} {pos} ){Builtin, None, sh_right})
-end function
-
-function is_in_range(val : int, a : int, b : int)
-	return (1 + (sh_right(b{unknown} {b}  - val{unknown} {val} , 31){Builtin, None, sh_right} .or. sh_right(val{unknown} {val}  - a{unknown} {a} , 31){Builtin, None, sh_right}))
-end function
-
-function swap(a : int, b : int)
-	a{unknown} {a}  := a{unknown} {a}  .xor. b{unknown} {b} 
-	b{unknown} {b}  := b{unknown} {b}  .xor. a{unknown} {a} 
-	a{unknown} {a}  := a{unknown} {a}  .xor. b{unknown} {b} 
-end function
-
-function gt(a : int, b : int)
-	return (- sh_right(b{unknown} {b}  - a{unknown} {a} , 31){Builtin, None, sh_right})
-end function
-
-function ge(a : int, b : int)
-	return (sh_right(a{unknown} {a}  - b{unknown} {b} , 31){Builtin, None, sh_right} + 1)
-end function
-
-function eq(a : int, b : int)
-	return (- sh_right(abs(a{unknown} {a}  - b{unknown} {b} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
-end function
-
-function lt(a : int, b : int)
-	return (- sh_right(a{unknown} {a}  - b{unknown} {b} , 31){Builtin, None, sh_right})
-end function
-
-function le(a : int, b : int)
-	return (1 + sh_right(b{unknown} {b}  - a{unknown} {a} , 31){Builtin, None, sh_right})
-end function
-
-function ne(x : int)
-	return (abs(sh_right(abs(x{unknown} {x} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right}){Builtin, None, abs})
-end function
-
-function neg(x : int)
-	return (- sh_right(x{unknown} {x} , 31){Builtin, None, sh_right})
-end function
-
-function bool(x : int)
-	return (1 + sh_right(abs(x{unknown} {x} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
-end function
-
-function sign(x : int)
-	return (sh_right(x{unknown} {x} , 31){Builtin, None, sh_right} .or. 1)
-end function
-
-function sign3(x : int)
-	return (sign(x{unknown} {x} ){UserDefined, None, sign} .and. - bool(x{unknown} {x} ){UserDefined, None, bool})
-end function
-
-function scale_range(input : number, currentMin : number, currentMax : number, scaleToMin : number, scaleToMax : number)
-	return ((((input{unknown} {input}  - currentMin{unknown} {currentMin} ) * (scaleToMax{unknown} {scaleToMax}  - scaleToMin{unknown} {scaleToMin} )) / (currentMax{unknown} {currentMax}  - currentMin{unknown} {currentMin} )) + scaleToMin{unknown} {scaleToMin} )
-end function
-
-function scale_range_real(input : real, currentMin : real, currentMax : real, scaleToMin : real, scaleToMax : real)
-	return (int((((real(input{unknown} {input} ){Builtin, None, real} - currentMin{unknown} {currentMin} ) * (scaleToMax{unknown} {scaleToMax}  - scaleToMin{unknown} {scaleToMin} )) / (currentMax{unknown} {currentMax}  - currentMin{unknown} {currentMin} )) + scaleToMin{unknown} {scaleToMin} ){Builtin, None, int})
-end function
-
-function scale_range_slider(input : real, scaleToMin : real, scaleToMax : real)
-	return (int(((input{unknown} {input}  * (scaleToMax{unknown} {scaleToMax}  - scaleToMin{unknown} {scaleToMin} )) / 1e+06) + scaleToMin{unknown} {scaleToMin} ){Builtin, None, int})
-end function
-
-function scale_slider(input : int, scaleToMin : real, scaleToMax : real)
-	return (int(((real(input{unknown} {input} ){Builtin, None, real} * (scaleToMax{unknown} {scaleToMax}  - scaleToMin{unknown} {scaleToMin} )) / 1e+06) + scaleToMin{unknown} {scaleToMin} ){Builtin, None, int})
-end function
-
-function scale_range_log(input : real, currentMin : real, currentMax : real, scaleToMin : real, scaleToMax : real)
-	return (pow(10, (log(scaleToMin{unknown} {scaleToMin} ){Builtin, None, log} / log(10){Builtin, None, log}) + (((input{unknown} {input}  - currentMin{unknown} {currentMin} ) / (currentMax{unknown} {currentMax}  - currentMin{unknown} {currentMin} )) * ((log(scaleToMax{unknown} {scaleToMax} ){Builtin, None, log} / log(10){Builtin, None, log}) - (log(scaleToMin{unknown} {scaleToMin} ){Builtin, None, log} / log(10){Builtin, None, log})))){Builtin, None, pow})
-end function
-
-function scale_clamp_to(input : int, fromMin : int, fromMax : int, toMin : int, toMax : int)
-	return (int(scale.range(real(((input{unknown} {input}  * (1 + (sh_right(fromMax{unknown} {fromMax}  - input{unknown} {input} , 31){Builtin, None, sh_right} .or. sh_right(input{unknown} {input}  - fromMin{unknown} {fromMin} , 31){Builtin, None, sh_right}))) - (fromMin{unknown} {fromMin}  * sh_right(input{unknown} {input}  - fromMin{unknown} {fromMin} , 31){Builtin, None, sh_right})) - (fromMax{unknown} {fromMax}  * sh_right(fromMax{unknown} {fromMax}  - input{unknown} {input} , 31){Builtin, None, sh_right})){Builtin, None, real}, real(fromMin{unknown} {fromMin} ){Builtin, None, real}, real(fromMax{unknown} {fromMax} ){Builtin, None, real}, real(toMin{unknown} {toMin} ){Builtin, None, real}, real(toMax{unknown} {toMax} ){Builtin, None, real}){Undefined, None}){Builtin, None, int})
-end function
-
-function is_bit_set(x : int, pos : int)
-	return (sh_right(x{unknown} {x} , pos{unknown} {pos} ){Builtin, None, sh_right} .and. 1)
-end function
-
-function set_bit(x : int, pos : int)
-	return (x{unknown} {x}  .or. sh_left(1, pos{unknown} {pos} ){Builtin, None, sh_left})
-end function
-
-function clear_bit(x : int, pos : int)
-	return (x{unknown} {x}  .and. .not. sh_left(1, pos{unknown} {pos} ){Builtin, None, sh_left})
-end function
-
-function flip_bit(x : int, pos : int)
-	return (.not. (.not. (x{unknown} {x}  .and. .not. (x{unknown} {x}  .and. sh_left(1, pos{unknown} {pos} ){Builtin, None, sh_left})) .and. .not. (sh_left(1, pos{unknown} {pos} ){Builtin, None, sh_left} .and. .not. (x{unknown} {x}  .and. sh_left(1, pos{unknown} {pos} ){Builtin, None, sh_left}))))
-end function
-
-function modify_bit(x : int, pos : int, state : int)
-	return (.not. (.not. ((x{unknown} {x}  .and. .not. sh_left(1, pos{unknown} {pos} ){Builtin, None, sh_left}) .and. .not. ((x{unknown} {x}  .and. .not. sh_left(1, pos{unknown} {pos} ){Builtin, None, sh_left}) .and. (- state{unknown} {state}  .and. sh_left(1, pos{unknown} {pos} ){Builtin, None, sh_left}))) .and. .not. ((- state{unknown} {state}  .and. sh_left(1, pos{unknown} {pos} ){Builtin, None, sh_left}) .and. .not. ((x{unknown} {x}  .and. .not. sh_left(1, pos{unknown} {pos} ){Builtin, None, sh_left}) .and. (- state{unknown} {state}  .and. sh_left(1, pos{unknown} {pos} ){Builtin, None, sh_left})))))
-end function
-
-function decimal_to_binary(input : int, output_array : int[])
-	for lib.i{unknown} {no declaration}  := 0 to num_elements[output_array{unknown} {output_array} ] - 2
-		output_array[(num_elements[output_array{unknown} {output_array} ] - 2) - lib.i{unknown} {no declaration} ]{unknown} {output_array}  := abs(sh_right(- (input{unknown} {input}  .and. sh_left(1, lib.i{unknown} {no declaration} ){Builtin, None, sh_left}), 31){Builtin, None, sh_right}){Builtin, None, abs}
-	end for
-end function
-
-function binary_to_decimal(length : int, input_array : int[])
-	declare local result : int {Reuses: 0}
-	for lib.i{unknown} {no declaration}  := 0 to length{unknown} {length}  - 1
-		result{unknown} {result}  := result{unknown} {result}  + (input_array[(length{unknown} {length}  - 1) - lib.i{unknown} {no declaration} ]{unknown} {input_array}  * int(pow(2, real(lib.i{unknown} {no declaration} ){Builtin, None, real}){Builtin, None, pow}){Builtin, None, int})
-	end for
-	return (result{unknown} {result} )
-end function
-
-function clamp(x : int, min : int, max : int)
-	return (((x{unknown} {x}  * is_in_range(x{unknown} {x} , min{unknown} {min} , max{unknown} {max} ){UserDefined, None, is_in_range}) - (min{unknown} {min}  * sh_right(x{unknown} {x}  - min{unknown} {min} , 31){Builtin, None, sh_right})) - (max{unknown} {max}  * sh_right(max{unknown} {max}  - x{unknown} {x} , 31){Builtin, None, sh_right}))
-end function
-
-function clamp_slider(x : int)
-	return ((x{unknown} {x}  * is_in_range(x{unknown} {x} , 0, 1000000){UserDefined, None, is_in_range}) - (1000000 * sh_right(1000000 - x{unknown} {x} , 31){Builtin, None, sh_right}))
-end function
-
-function clip(x : int, top : int)
-	return ((x{unknown} {x}  * is_in_range(x{unknown} {x} , 0, top{unknown} {top} ){UserDefined, None, is_in_range}) - (top{unknown} {top}  * sh_right(top{unknown} {top}  - x{unknown} {x} , 31){Builtin, None, sh_right}))
-end function
-
-function max(a : int, b : int)
-	return (a{unknown} {a}  - ((a{unknown} {a}  - b{unknown} {b} ) .and. sh_right(a{unknown} {a}  - b{unknown} {b} , 31){Builtin, None, sh_right}))
-end function
-
-function max4(a : int, b : int, c : int, d : int)
-	return (max(a{unknown} {a} , b{unknown} {b} ){UserDefined, None, max} - ((max(a{unknown} {a} , b{unknown} {b} ){UserDefined, None, max} - max(c{unknown} {c} , d{unknown} {d} ){UserDefined, None, max}) .and. sh_right(max(a{unknown} {a} , b{unknown} {b} ){UserDefined, None, max} - max(c{unknown} {c} , d{unknown} {d} ){UserDefined, None, max}, 31){Builtin, None, sh_right}))
-end function
-
-function min(a : int, b : int)
-	return (a{unknown} {a}  - ((a{unknown} {a}  - b{unknown} {b} ) .and. sh_right(b{unknown} {b}  - a{unknown} {a} , 31){Builtin, None, sh_right}))
-end function
-
-function min4(a : int, b : int, c : int, d : int)
-	return (min(a{unknown} {a} , b{unknown} {b} ){UserDefined, None, min} - ((min(a{unknown} {a} , b{unknown} {b} ){UserDefined, None, min} - min(c{unknown} {c} , d{unknown} {d} ){UserDefined, None, min}) .and. sh_right(min(c{unknown} {c} , d{unknown} {d} ){UserDefined, None, min} - min(a{unknown} {a} , b{unknown} {b} ){UserDefined, None, min}, 31){Builtin, None, sh_right}))
-end function
-
-function div(x : int, y : int)
-	return ((x{unknown} {x}  + (x{unknown} {x}  mod y{unknown} {y} )) / y{unknown} {y} )
-end function
-
-function log(base : int, value : real)
-	return (log(value{unknown} {value} ){Builtin, None, log} / log(real(base{unknown} {base} ){Builtin, None, real}){Builtin, None, log})
-end function
-
-function decimals(value : int, div : int, dec_div : int)
-	return ((value{unknown} {value}  / div{unknown} {div} ) & '.' & abs((value{unknown} {value}  mod div{unknown} {div} ) / dec_div{unknown} {dec_div} ){Builtin, None, abs})
-end function
-
-function fmod(a : real, b : real)
-	return (a{unknown} {a}  - (floor(a{unknown} {a}  / b{unknown} {b} ){Builtin, None, floor} * b{unknown} {b} ))
-end function
-
-function trim(input : real, decim : real)
-	return (round(input{unknown} {input}  * pow(10, real(decim{unknown} {decim} ){Builtin, None, real}){Builtin, None, pow}){Builtin, None, round} / pow(10, real(decim{unknown} {decim} ){Builtin, None, real}){Builtin, None, pow})
-end function
-
-function non_rpt_random(last_random : int, min_random : int, max_random : int)
-	declare local result : int := rand(min_random{unknown} {min_random}  + 1, max_random{unknown} {max_random} ){UserDefined, None, rand} {Reuses: 0}
-	result{unknown} {result}  := (last_random{unknown} {last_random}  + result{unknown} {result} ) mod (max_random{unknown} {max_random}  + 1)
-	last_random{unknown} {last_random}  := result{unknown} {result} 
-	return (result{unknown} {result} )
-end function
-
-function rand(min : int, max : int)
-	___M.Seed{unknown} {no declaration}  := (8088405 * ___M.Seed{unknown} {no declaration} ) + 1
-	return (((sh_right(___M.Seed{unknown} {no declaration} , 8){Builtin, None, sh_right} .and. 16777215) mod ((max{unknown} {max}  - min{unknown} {min} ) + 1)) + min{unknown} {min} )
-end function
-
-function rand_seed
-	___M.Seed{unknown} {no declaration}  := KSP_TIMER{unknown} {KSP_TIMER} 
-end function
-
-function reset_rand
-	___M.Seed{unknown} {no declaration}  := 1107155288
-end function
 
 

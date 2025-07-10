@@ -6,7 +6,7 @@
 
 #include "ASTVisitor.h"
 
-class ASTPrinter : public ASTVisitor {
+class ASTPrinter final : public ASTVisitor {
 	std::ostringstream os;
 	std::string m_indent = "\t";
 	int m_scope_count = 0;
@@ -51,6 +51,7 @@ public:
 	NodeAST * visit(NodeConst& node) override;
 	NodeAST * visit(NodeStruct& node) override;
 	NodeAST * visit(NodeFamily& node) override;
+	NodeAST * visit(NodeNamespace& node) override;
     NodeAST * visit(NodeStatement& node) override;
     NodeAST * visit(NodeBlock& node) override;
 	NodeAST * visit(NodeIf& node) override;

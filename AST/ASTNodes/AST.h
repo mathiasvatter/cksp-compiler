@@ -18,7 +18,27 @@ struct NodeProgram;
 struct NodeFunctionHeaderRef;
 struct NodeReference;
 
+struct SourcePosition {
+	size_t line;
+	size_t column;
+};
+
+struct SourceRange {
+	SourcePosition start;
+	SourcePosition end;
+
+	explicit SourceRange(const Token &tok) {
+		start ={tok.line, tok.pos};
+		end={tok.line, tok.pos + tok.val.length()};
+	}
+	SourceRange(const Token &start_tok, const Token &end_tok) {
+		start = {start_tok.line, start_tok.pos};
+		end = {end_tok.line, end_tok.pos + end_tok.val.length()};
+	}
+};
+
 struct NodeAST {
+	SourceRange range;
     Token tok;
 	Type* ty = nullptr;
     NodeType node_type;
@@ -31,7 +51,10 @@ struct NodeAST {
 	virtual NodeAST* replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 		throw std::runtime_error("replace_child not implemented for this node type");
 		return nullptr;
-	};
+	}
+	void set_range(Token start, Token end) {
+		range = {start, end};
+	}
 	NodeAST* replace_with(std::unique_ptr<NodeAST> newNode);
     // Hinzugefügte Methode zum Aktualisieren der Parent-Pointer
     virtual void update_parents(NodeAST* new_parent) {
@@ -155,7 +178,7 @@ struct NodeReference : NodeAST {
 	// std::unique_ptr<struct NodeFunctionCall> wrap_in_get_ui_id();
 	// [[nodiscard]] bool needs_get_ui_id() const;
 	/// determines if reference is reference to struct member
-	[[nodiscard]] bool is_member_ref() const;
+	[[nodiscard]] struct NodeStruct* is_member_ref() const;
 	/// checks if reference is raw version of multidimensional array
 	[[nodiscard]] bool is_raw_array() const {
 		return (name[0] == '_' && name[1] != '_') or name.ends_with(".raw()");
@@ -218,7 +241,7 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 	std::optional<Token> persistence;
 	bool is_local = false;
 	bool is_global = false;
-	enum Kind{Builtin, Compiler, Local, ThreadUnsafe, Throwaway, None};
+	enum Kind{Builtin, Compiler, Local, ThreadUnsafe, Throwaway, None, Static};
 	Kind kind = None;
 	bool has_obj_assigned = false;
 	bool is_thread_safe = true; // gets set to false, if dimension inflation needs to be used because of unsafe declaration environment
@@ -744,6 +767,7 @@ struct NodeProgram final : NodeAST {
 		if(function_call_stack.empty()) return nullptr;
 		return function_call_stack.top().lock();
 	}
+	std::vector<std::unique_ptr<struct NodeNamespace>> namespaces;
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::shared_ptr<NodeFunctionDefinition>> function_definitions;
 	std::vector<std::shared_ptr<NodeFunctionDefinition>> additional_function_definitions;

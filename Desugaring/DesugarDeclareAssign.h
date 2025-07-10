@@ -13,7 +13,7 @@ class DesugarDeclareAssign : public ASTDesugaring {
 public:
 	explicit DesugarDeclareAssign(NodeProgram* program) : ASTDesugaring(program) {};
 
-	inline NodeAST* visit(NodeDeclaration& node) override {
+	NodeAST* visit(NodeDeclaration& node) override {
         // error handling
         if(node.variable.size() < node.value->params.size()) {
             auto error = CompileError(ErrorType::SyntaxError,"", node.tok.line, "", "", node.tok.file);
@@ -33,7 +33,8 @@ public:
 
 		std::vector<std::unique_ptr<NodeSingleDeclaration>> declare_statements;
         for(auto &declaration : node.variable) {
-            auto node_single_declare_stmt = std::make_unique<NodeSingleDeclaration>(std::move(declaration), nullptr, node.tok);
+        	auto tok = declaration->tok;
+            auto node_single_declare_stmt = std::make_unique<NodeSingleDeclaration>(std::move(declaration), nullptr, tok);
             declare_statements.push_back(std::move(node_single_declare_stmt));
         }
         std::vector<std::unique_ptr<NodeAST>> values;
@@ -62,7 +63,7 @@ public:
         return node.replace_with(std::move(node_body));
     }
 
-	inline bool handle_multiple_func_returns(std::unique_ptr<NodeBlock>& node_body, std::vector<std::unique_ptr<NodeAST>>& l_values,
+	bool handle_multiple_func_returns(std::unique_ptr<NodeBlock>& node_body, std::vector<std::unique_ptr<NodeAST>>& l_values,
 											 std::vector<std::unique_ptr<NodeAST>>& r_values, NodeType node_type) {
 		// only permissible if value is function call with multiple return values
 		// declare a, b, c := f(), 0 -> declare a := f(b) + declare b + declare c := 0
@@ -102,12 +103,12 @@ public:
 			} else num_values++;
 		}
 		// delete all nullptr from variables vector
-		l_values.erase(std::remove(l_values.begin(), l_values.end(), nullptr), l_values.end());
+		std::erase(l_values, nullptr);
 
 		return true;
 	}
 
-    inline NodeAST* visit(NodeAssignment &node) override {
+    NodeAST* visit(NodeAssignment &node) override {
         // error handling
         if(node.l_values.size() < node.r_values->params.size()) {
             auto error = CompileError(ErrorType::SyntaxError,
@@ -128,7 +129,8 @@ public:
 
         std::vector<std::unique_ptr<NodeSingleAssignment>> assign_statements;
         for(auto &arr_var : node.l_values) {
-            auto node_single_assign_stmt = std::make_unique<NodeSingleAssignment>(std::move(arr_var), nullptr, node.tok);
+        	auto tok = arr_var->tok;
+            auto node_single_assign_stmt = std::make_unique<NodeSingleAssignment>(std::move(arr_var), nullptr, tok);
             assign_statements.push_back(std::move(node_single_assign_stmt));
         }
         std::vector<std::unique_ptr<NodeAST>> values;

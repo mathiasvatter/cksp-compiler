@@ -144,6 +144,11 @@ public:
 		node.r_value -> accept(*this);
 		return &node;
     }
+	virtual NodeAST* visit(NodeCompoundAssignment& node) {
+		node.l_value ->accept(*this);
+		node.r_value -> accept(*this);
+		return &node;
+	}
 	virtual NodeAST* visit(NodeBreak& node) {return &node;}
 	virtual NodeAST* visit(NodeReturn& node) {
 		for(const auto &ret : node.return_variables) ret->accept(*this);
@@ -225,6 +230,13 @@ public:
         node.members->accept(*this);
 		return &node;
 	}
+	virtual NodeAST* visit(NodeNamespace& node) {
+		node.members->accept(*this);
+		for(const auto & m: node.function_definitions) {
+			m->accept(*this);
+		}
+		return &node;
+	}
     virtual NodeAST* visit(NodeList& node) {
         for(const auto & b : node.body) {
             b->accept(*this);
@@ -302,15 +314,10 @@ public:
     virtual NodeAST* visit(NodeProgram& node) {
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
-		for(const auto & struct_def : node.struct_definitions) {
-			struct_def->accept(*this);
-		}
-		for(const auto & callback : node.callbacks) {
-			callback->accept(*this);
-		}
-		for(const auto & func_def : node.function_definitions) {
-			func_def->accept(*this);
-		}
+		visit_all(node.namespaces, *this);
+		visit_all(node.struct_definitions, *this);
+		visit_all(node.callbacks, *this);
+		visit_all(node.function_definitions, *this);
 		// node.merge_function_definitions();
 		node.reset_function_visited_flag();
 		return &node;

@@ -1,9 +1,15 @@
-{ Compiled with cksp version 0.0.7-alpha.4 on Mon Jul 07 17:40:41 2025 }
+{ Compiled with cksp version 0.0.7-alpha.4 on Thu Jul 10 09:40:35 2025 }
 on init
-  declare $ret0
+  declare $ret1
+  declare $my_int
+  declare ~my_real
   declare $Bitlist____free_idx
   declare %Bitlist____allocation[1]
   declare %Bitlist____val[1]
+  declare $MyStruct____free_idx
+  declare %MyStruct____allocation[1]
+  declare %MyStruct____my_int[1]
+  declare ?MyStruct____my_real[1]
   declare $b
   $Bitlist____free_idx := search(%Bitlist____allocation, 0)
   if($Bitlist____free_idx = -1)
@@ -11,11 +17,25 @@ on init
   end if
   %Bitlist____allocation[$Bitlist____free_idx] := 1
   %Bitlist____val[$Bitlist____free_idx] := 0
-  $ret0 := $Bitlist____free_idx
-  $b := $ret0
-  $ret0 := $b
-  %Bitlist____val[$ret0] := .not. (.not. ((%Bitlist____val[$ret0] .and. .not. 268435456) .and. .not. ((%Bitlist____val[$ret0] .and. .not. 268435456) .and. 268435456)) .and. .not. (268435456 .and. .not. ((%Bitlist____val[$ret0] .and. .not. 268435456) .and. 268435456)))
+  $my_int := $Bitlist____free_idx
+  $b := $my_int
+  $my_int := $b
+  $ret1 := 3
+  %Bitlist____val[$my_int] := .not. (.not. ((%Bitlist____val[$my_int] .and. .not. sh_left(1, 31 - $ret1)) .and. .not. ((%Bitlist____val[$my_int] .and. .not. sh_left(1, 31 - $ret1)) .and. (-1 .and. sh_left(1, 31 - $ret1)))) .and. .not. ((-1 .and. sh_left(1, 31 - $ret1)) .and. .not. ((%Bitlist____val[$my_int] .and. .not. sh_left(1, 31 - $ret1)) .and. (-1 .and. sh_left(1, 31 - $ret1)))))
   message((sh_right(%Bitlist____val[$b], 28) .and. 1) & ", " & %Bitlist____allocation[($b + abs(- $b)) / 2])
   message((sh_right(%Bitlist____val[$b], 31) + 1) * ((31 - int(log(real(1 - ((1 - (2147483647 .and. %Bitlist____val[$b])) .and. sh_right(1 - (2147483647 .and. %Bitlist____val[$b]), 31)))) / log(2.))) + (- sh_right(abs(%Bitlist____val[$b]) - 1, 31) * -32)))
+  declare $strct
+  $my_int := 10
+  ~my_real := 2.5
+  $MyStruct____free_idx := search(%MyStruct____allocation, 0)
+  if($MyStruct____free_idx = -1)
+    message("Error: No more free space available to allocate objects of type 'MyStruct'")
+  end if
+  %MyStruct____allocation[$MyStruct____free_idx] := 1
+  %MyStruct____my_int[$MyStruct____free_idx] := $my_int
+  ?MyStruct____my_real[$MyStruct____free_idx] := ~my_real
+  $ret1 := $MyStruct____free_idx
+  $strct := $ret1
+  message(%MyStruct____my_int[$strct] & ", " & ?MyStruct____my_real[$strct])
 end on
 

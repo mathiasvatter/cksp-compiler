@@ -6,8 +6,6 @@
 
 #include "ASTVisitor.h"
 #include "../ASTNodes/AST.h"
-#include "../../BuiltinsProcessing/DefinitionProvider.h"
-#include "../../Lowering/ASTLowering.h"
 
 /**
  * @class ASTCollectLowerings
@@ -30,7 +28,7 @@
  * @param definition_provider A pointer to a DefinitionProvider object. This object is used to resolve definitions of
  * variables, arrays, etc.
  */
-class ASTCollectLowerings: public ASTVisitor {
+class ASTCollectLowerings final : public ASTVisitor {
 public:
     explicit ASTCollectLowerings(NodeProgram *main) : m_def_provider(main->def_provider) {
 		m_program = main;
@@ -65,6 +63,7 @@ public:
 	NodeAST * visit(NodeArrayRef& node) override;
 	/// move node block of const out of const construct
 	NodeAST * visit(NodeConst& node) override;
+	NodeAST * visit(NodeNamespace& node) override;
 //    void visit(NodeFamily& node) override;
 	/// transform break stmts
 	NodeAST * visit(NodeWhile& node) override;

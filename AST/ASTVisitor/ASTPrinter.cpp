@@ -390,9 +390,9 @@ NodeAST * ASTPrinter::visit(NodeStruct &node) {
 		os << "]";
 	}
 	os << std::endl;
-	m_scope_count++;
 	node.members->accept(*this);
 	os << std::endl;
+	m_scope_count++;
     for(auto &m: node.methods) {
         m->accept(*this);
 		os << std::endl;
@@ -406,6 +406,20 @@ NodeAST * ASTPrinter::visit(NodeFamily &node) {
     os << "family " << node.prefix << std::endl;
     node.members->accept(*this);
     os << "end family";
+	return &node;
+}
+
+NodeAST * ASTPrinter::visit(NodeNamespace &node) {
+	os << "namespace " << node.prefix << std::endl;
+	node.members->accept(*this);
+	os << std::endl;
+	m_scope_count++;
+	for(auto &f: node.function_definitions) {
+		f->accept(*this);
+		os << std::endl;
+	}
+	m_scope_count--;
+	os << "end namespace" << std::endl;
 	return &node;
 }
 
@@ -592,6 +606,10 @@ NodeAST * ASTPrinter::visit(NodeProgram &node) {
 	if(!node.global_declarations->statements.empty()) {
 		os << "// Global Declarations:" << std::endl;
 		node.global_declarations->accept(*this);
+	}
+	for(auto& s : node.namespaces) {
+		s->accept(*this);
+		os << std::endl;
 	}
 	for(auto& s : node.struct_definitions) {
 		s->accept(*this);

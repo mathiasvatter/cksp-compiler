@@ -18,6 +18,7 @@ NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 	}
 	// most func defs will be visited when called, keeping local scopes in mind
 	m_program->global_declarations->accept(*this);
+	visit_all(node.namespaces, *this);
 	m_program->init_callback->accept(*this);
 	for(const auto & s : node.struct_definitions) {
 		s->accept(*this);
@@ -127,6 +128,7 @@ NodeAST* ASTVariableChecking::visit(NodeAccessChain& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
+	node.function->accept(*this);
 	if(!node.bind_definition(m_program)) {
 		if (auto access_chain = try_access_chain_transform(node.function->name, &node)) {
 			access_chain->accept(*this);
@@ -134,13 +136,6 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 			return &node;
 		}
 	}
-
-	// const auto definition = node.get_definition();
-	// if(node.kind == NodeFunctionCall::UserDefined and definition) {
-	// 	if(!definition->visited) definition->accept(*this);
-	// }
-	node.function->accept(*this);
-
 	return &node;
 }
 
