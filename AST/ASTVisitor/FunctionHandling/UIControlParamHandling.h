@@ -129,9 +129,9 @@ private:
 	void find_declaration(NodeReference& ref, std::vector<NodeReference*> &references) {
 		if (auto decl = ref.get_declaration()) {
 			if (auto param = decl->is_function_param()) {
-				if (!param->is_pass_by_ref) {
+				// if (!param->is_pass_by_ref) {
 					find_original_references(*param, references);
-				}
+				// }
 			} else if (decl->parent and decl->parent->cast<NodeUIControl>()) {
 				references.push_back(&ref);
 			}

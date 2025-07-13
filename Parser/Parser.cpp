@@ -1028,7 +1028,7 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
         	if (auto func = node_program->look_up_exact({node_function->header->name, (int)node_function->header->params.size()}, node_function->header->ty)) {
         		// was already declared, see if it overrides
         		if (node_function->override) {
-        			node_program->replace_function_definition(func, node_function);
+        			NodeProgram::replace_function_definition(func, node_function);
         		} else if (func->override and !node_function->override) {
         			// function in map is already override and encountered function is not
         			// pass
@@ -1046,7 +1046,7 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
         			return Result<std::unique_ptr<NodeProgram>>(error);
         		}
         	} else {
-        		node_program->add_function_definition(std::move(node_function));
+        		node_program->add_function_definition(node_function);
         	}
 		} else if(peek().type == token::STRUCT) {
 			auto struct_def = parse_struct(node_program.get());
@@ -1054,7 +1054,7 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 				return Result<std::unique_ptr<NodeProgram>>(struct_def.get_error());
 			node_program->struct_definitions.push_back(std::move(struct_def.unwrap()));
 		} else if (peek().type == token::CONST) {
-			auto const_def = parse_const_statement(node_program.get());
+			auto const_def = parse_const_statement(node_program->global_declarations.get());
 			if (const_def.is_error()) {
 				return Result<std::unique_ptr<NodeProgram>>(const_def.get_error());
 			}
@@ -1065,6 +1065,24 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 				return Result<std::unique_ptr<NodeProgram>>(namespace_def.get_error());
 			}
 			node_program->namespaces.push_back(std::move(namespace_def.unwrap()));
+		} else if (peek().type == token::DECLARE) {
+			auto declare_stmt = parse_declare_statement(node_program->global_declarations.get());
+			if (declare_stmt.is_error()) {
+				return Result<std::unique_ptr<NodeProgram>>(declare_stmt.get_error());
+			}
+			node_program->global_declarations->add_as_stmt(std::move(declare_stmt.unwrap()));
+		} else if (peek().type == token::FAMILY) {
+			auto family_stmt = parse_family_statement(node_program->global_declarations.get());
+			if (family_stmt.is_error()) {
+				return Result<std::unique_ptr<NodeProgram>>(family_stmt.get_error());
+			}
+			node_program->global_declarations->add_as_stmt(std::move(family_stmt.unwrap()));
+		} else if (peek().type == token::LIST) {
+			auto list_block = parse_list_block(node_program->global_declarations.get());
+			if (list_block.is_error()) {
+				return Result<std::unique_ptr<NodeProgram>>(list_block.get_error());
+			}
+			node_program->global_declarations->add_as_stmt(std::move(list_block.unwrap()));
         } else {
             return Result<std::unique_ptr<NodeProgram>>(CompileError(ErrorType::ParseError,
              "Found unknown construct.", "<callback>, <function_definition>", peek()));

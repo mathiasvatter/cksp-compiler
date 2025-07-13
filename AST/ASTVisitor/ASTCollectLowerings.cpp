@@ -61,9 +61,7 @@ NodeAST* ASTCollectLowerings::visit(NodeFor& node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeBlock& node) {
-	for(auto & stmt : node.statements) {
-		stmt->accept(*this);
-	}
+	visit_all(node.statements, *this);
 	node.flatten();
 	return &node;
 }
@@ -76,9 +74,7 @@ NodeAST * ASTCollectLowerings::visit(NodeNil& node) {
 NodeAST * ASTCollectLowerings::visit(NodeStruct& node) {
 	node.lower(m_program);
 	node.members->accept(*this);
-	for(auto &m : node.methods) {
-		m->accept(*this);
-	}
+	visit_all(node.methods, *this);
 	return &node;
 }
 
@@ -119,7 +115,7 @@ NodeAST * ASTCollectLowerings::visit(NodeSetControl& node) {
 
 NodeAST * ASTCollectLowerings::visit(NodeFunctionCall& node) {
 	node.function->accept(*this);
-	node.bind_definition(m_program);
+	node.bind_definition(m_program, true);
 	if (const auto& definition = node.get_definition()) {
 		if(!definition->visited) {
 			static UIControlParamHandling ui_control_param_handling;
@@ -160,9 +156,7 @@ NodeAST * ASTCollectLowerings::visit(NodeListRef& node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeList& node) {
-	for(auto & b : node.body) {
-		b->accept(*this);
-	}
+	visit_all(node.body, *this);
 	return &node;
 }
 

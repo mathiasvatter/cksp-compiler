@@ -176,7 +176,11 @@ bool NodeFunctionCall::bind_definition(NodeProgram* program, const bool fail, co
 	} else if(find_constructor_definition(program)) {
 		return true;
     } else if(fail) {
-        CompileError(ErrorType::SyntaxError,"Function has not been declared.", tok.line, "", function->name, tok.file).exit();
+    	// check for function header reference
+    	if (this->function->get_declaration()) {
+    		return true;
+    	}
+        CompileError(ErrorType::SyntaxError,"A function with this signature has not been declared.", tok.line, "", function->name, tok.file).exit();
     }
     return false;
 }
@@ -867,10 +871,21 @@ void NodeBlock::flatten(const bool force) {
 	statements = std::move(new_statements);
 }
 
+bool NodeBlock::determine_scope() {
+	if(scope) return true;
+	scope = false;
+	if (parent->cast<NodeNamespace>()) return false;
+	if (parent->cast<NodeStruct>()) return false;
+	if(!parent->cast<NodeStatement>()) { // and !is_instance_of<NodeDataStructure>(parent)) {
+		scope = true;
+		return scope;
+	}
+	return false;
+}
 
 NodeBlock* NodeBlock::wrap_in_loop_nest(std::vector<std::shared_ptr<NodeDataStructure>> iterators,
-								  std::vector<std::unique_ptr<NodeAST>> lower_bounds,
-								  std::vector<std::unique_ptr<NodeAST>> upper_bounds, bool declare) {
+                                        std::vector<std::unique_ptr<NodeAST>> lower_bounds,
+                                        std::vector<std::unique_ptr<NodeAST>> upper_bounds, bool declare) {
 	auto inner_body = std::make_unique<NodeBlock>(std::move(statements), tok);
 	inner_body->scope = true;
 	NodeBlock* for_loop_body = nullptr;
