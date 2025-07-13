@@ -257,17 +257,29 @@ private:
 
 
 		if(node.variable->is_local) {
-			// if(is_thread_safe_env()) {
-				if (auto free_passive_var = get_free_passive_var(*node.variable)) {
-					free_passive_var->num_reuses = free_passive_var->num_reuses + 1 + node.variable->num_reuses;
-					m_used_passive_vars[get_current_block()].push_back(free_passive_var);
-					m_passive_vars_replace.back().insert({node.variable->name, free_passive_var});
-					auto replacement = to_assign_statement(node);
-					// visit replacement (assign statement) to replace local var with passive_var
-					replacement->accept(*this);
-					return node.replace_with(std::move(replacement));
-				}
-			// }
+			if (auto free_passive_var = get_free_passive_var(*node.variable)) {
+				free_passive_var->num_reuses = free_passive_var->num_reuses + 1 + node.variable->num_reuses;
+				m_used_passive_vars[get_current_block()].push_back(free_passive_var);
+				m_passive_vars_replace.back().insert({node.variable->name, free_passive_var});
+				auto replacement = to_assign_statement(node);
+				// visit replacement (assign statement) to replace local var with passive_var
+				replacement->accept(*this);
+				return node.replace_with(std::move(replacement));
+			} else if (m_program->current_callback == m_program->init_callback) {
+				// weird stuff happens if local variables are declared in init callback in nested
+				// while loops for example. Hence, replace with assign statement and move to global declarations
+				auto replacement = to_assign_statement(node);
+				auto node_decl = std::make_unique<NodeSingleDeclaration>(
+					std::move(node.variable),
+					nullptr,
+					node.tok
+				);
+				m_def_provider->set_declaration(node_decl->variable, false);
+				m_all_local_vars.push_back(node_decl->variable);
+				replacement->accept(*this);
+				m_program->global_declarations->add_as_stmt(std::move(node_decl));
+				return node.replace_with(std::move(replacement));
+			}
 			// add local vars w/o free_passive_var to lists for later renaming
 			if(m_program->current_callback)
 				m_all_callback_decl[m_program->current_callback].push_back(&node);
