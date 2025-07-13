@@ -24,8 +24,8 @@ struct SourcePosition {
 };
 
 struct SourceRange {
-	SourcePosition start;
-	SourcePosition end;
+	SourcePosition start{};
+	SourcePosition end{};
 
 	explicit SourceRange(const Token &tok) {
 		start ={tok.line, tok.pos};
@@ -52,7 +52,7 @@ struct NodeAST {
 		throw std::runtime_error("replace_child not implemented for this node type");
 		return nullptr;
 	}
-	void set_range(Token start, Token end) {
+	void set_range(const Token& start, const Token& end) {
 		range = {start, end};
 	}
 	NodeAST* replace_with(std::unique_ptr<NodeAST> newNode);

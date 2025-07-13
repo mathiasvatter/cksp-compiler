@@ -55,7 +55,7 @@ NodeAST *NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
 Type* NodeAST::set_element_type(Type *element_type) {
 	if(ty->get_type_kind() == TypeKind::Composite and (element_type->get_type_kind() == TypeKind::Basic or element_type->get_type_kind() == TypeKind::Object)) {
         // if composite type does not yet exist -> create it without throwing error
-        ty = TypeRegistry::add_composite_type(static_cast<CompositeType*>(ty)->get_compound_type(), element_type, ty->get_dimensions());
+        ty = TypeRegistry::add_composite_type(ty->cast<CompositeType>()->get_compound_type(), element_type, ty->get_dimensions());
 		return ty;
 	}
 	if(ty->get_type_kind() == TypeKind::Basic and element_type->get_type_kind() == TypeKind::Basic) {
@@ -71,7 +71,7 @@ Type* NodeAST::set_element_type(Type *element_type) {
 		return ty;
 	}
 	if(ty->get_type_kind() == TypeKind::Composite and element_type->get_type_kind() == TypeKind::Composite) {
-		ty = TypeRegistry::add_composite_type(static_cast<CompositeType *>(ty)->get_compound_type(),
+		ty = TypeRegistry::add_composite_type(ty->cast<CompositeType>()->get_compound_type(),
 											  element_type->get_element_type(),
 											  ty->get_dimensions());
 		return ty;
@@ -1201,6 +1201,11 @@ void NodeProgram::update_function_lookup() {
 	for(const auto & struct_def : struct_definitions) {
 		for(const auto & method : struct_def->methods) {
 			function_lookup[{method->header->name, static_cast<int>(method->header->params.size())}].push_back(method);
+		}
+	}
+	for (const auto & namespace_def : namespaces) {
+		for (const auto & def : namespace_def->function_definitions) {
+			function_lookup[{def->header->name, static_cast<int>(def->header->params.size())}].push_back(def);
 		}
 	}
 }

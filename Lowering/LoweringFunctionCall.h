@@ -131,6 +131,8 @@ private:
 				if (!param->is_pass_by_ref) {
 					return false;
 				}
+				/// i would think if it is a function parameter, this was already handled by UIControlParamHandling
+				return false;
 			// if we are in a function, decl might not be markes as an ui_control data_type
 			} else if (ref.data_type != DataType::UIControl) {
 				return false;

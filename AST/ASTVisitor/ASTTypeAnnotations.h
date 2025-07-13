@@ -181,7 +181,7 @@ private:
 		return nullptr;
 	}
 
-	Type* check_reference_annotation_with_expected(const NodeReference& node, const Type* expected) {
+	static Type* check_reference_annotation_with_expected(const NodeReference& node, const Type* expected) {
 		if(node.ty == TypeRegistry::Unknown) return node.ty;
 		if(!node.ty->is_compatible(expected)) {
 			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);

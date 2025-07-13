@@ -639,7 +639,6 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 }
 
 NodeAST * TypeInference::visit(NodeFunctionCall& node) {
-	// match_type(node, *node.parent);
 	node.bind_definition(m_program);
 	auto definition = node.get_definition();
 	if (definition) {
