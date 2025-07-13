@@ -13,9 +13,18 @@ ASTVariableChecking::ASTVariableChecking(NodeProgram* main)
 NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 	m_program = &node;
 	// add all function definition header variables to global scope
-	for(const auto & func_def : node.function_definitions) {
-		m_def_provider->set_declaration(func_def->header, true);
-	}
+	parallel_for_each(node.function_lookup.begin(), node.function_lookup.end(),
+			[&](auto const& defs) {
+				for (auto & def : defs.second) {
+					if (auto func = def.lock()) {
+						std::lock_guard<std::mutex> guard(mutex);
+						m_def_provider->set_declaration(func->header, true);
+					}
+				}
+			});
+	// for(const auto & func_def : node.function_definitions) {
+	// 	m_def_provider->set_declaration(func_def->header, true);
+	// }
 	// most func defs will be visited when called, keeping local scopes in mind
 	m_program->global_declarations->accept(*this);
 	visit_all(node.namespaces, *this);
@@ -72,9 +81,9 @@ NodeAST* ASTVariableChecking::visit(NodeBlock &node) {
 	node.determine_scope();
 
 	if(node.scope) {
-		if(!node.parent->cast<NodeStruct>()) {
+		// if(!node.parent->cast<NodeStruct>()) {
 			m_def_provider->add_scope();
-		}
+		// }
 	}
 	// if body is in function definition, copy over last scope of header variables
 	if(node.parent->cast<NodeFunctionDefinition>()) {
@@ -85,9 +94,9 @@ NodeAST* ASTVariableChecking::visit(NodeBlock &node) {
 	}
 
 	if(node.scope) {
-		if(!node.parent->cast<NodeStruct>()) {
+		// if(!node.parent->cast<NodeStruct>()) {
 			m_def_provider->remove_scope();
-		}
+		// }
 	}
 	m_current_block.pop();
 	return &node;
@@ -235,8 +244,11 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 	if(const auto func_call = node.parent->cast<NodeFunctionCall>()) {
 		if(const auto def = func_call->get_definition()) {
 			node.declaration = def->header;
+			return &node;
 		}
-		return &node;
+		if (func_call->kind == NodeFunctionCall::Kind::Builtin || func_call->kind == NodeFunctionCall::Kind::Property) {
+			return &node;
+		}
 	}
 
 	if(node.get_declaration()) return &node;

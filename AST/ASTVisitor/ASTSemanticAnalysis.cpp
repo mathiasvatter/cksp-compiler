@@ -67,6 +67,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeRange& node) {
 	node.stop->accept(*this);
 	if(node.step) node.step->accept(*this);
 
+	// can also be r_value in declaration statement
 	// check that it is only in for each loop (for now)
 	if(!node.parent->cast<NodeForEach>() and !node.parent->cast<NodePairs>()) {
 		auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);

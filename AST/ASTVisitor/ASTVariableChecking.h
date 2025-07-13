@@ -5,10 +5,9 @@
 #pragma once
 
 #include "ASTVisitor.h"
-#include "FunctionHandling/FunctionParamDataTypeGetter.h"
 
 class ASTVariableChecking final : public ASTVisitor {
-
+	std::mutex mutex;
 public:
 	explicit ASTVariableChecking(NodeProgram* main);
 
