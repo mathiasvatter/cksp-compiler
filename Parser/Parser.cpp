@@ -697,6 +697,7 @@ Result<std::unique_ptr<NodeCompoundAssignment>> Parser::parse_compound_assign_st
 	if (!valid_operator_tokens.contains(peek().type)) {
 		error.set_message( "Invalid Operator Syntax for <Compound Assignment>.");
 		std::vector<std::string> valid_tokens{};
+		valid_tokens.reserve(valid_operator_tokens.size());
 		for (auto& tok : valid_operator_tokens) {
 			valid_tokens.push_back(std::string("<") + tokenStrings[static_cast<int>(tok)] + ">");
 		}

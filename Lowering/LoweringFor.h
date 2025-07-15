@@ -27,69 +27,65 @@
  */
 class LoweringFor final : public ASTLowering {
 public:
-        explicit LoweringFor(NodeProgram *program) : ASTLowering(program) {
-        };
+	explicit LoweringFor(NodeProgram *program) : ASTLowering(program) {
+		m_program = program;
+	}
 
-        NodeAST *visit(NodeFor &node) override {
-                node.remove_references();
-                // function arg
-                auto iterator_var = clone_as<NodeReference>(node.iterator->l_value.get());
-                auto assign_var = clone_as<NodeReference>(iterator_var.get());
-                auto function_var = clone_as<NodeReference>(iterator_var.get());
+	NodeAST *visit(NodeFor &node) override {
+		node.remove_references();
+		// function arg
+		auto iterator_var = clone_as<NodeReference>(node.iterator->l_value.get());
+		auto assign_var = clone_as<NodeReference>(iterator_var.get());
+		auto function_var = clone_as<NodeReference>(iterator_var.get());
 
-                if (!node.step) {
-                        std::unique_ptr<NodeFunctionCall> node_inc;
-                        // function call
-                        if (node.to == token::TO) {
-                                node_inc = DefinitionProvider::inc(std::move(function_var));
-                        } else {
-                                node_inc = DefinitionProvider::dec(std::move(function_var));
-                        }
-                        node.body->add_as_stmt(std::move(node_inc));
-                } else {
-                        // i := i + step
-                        auto inc_expression = std::make_unique<NodeBinaryExpr>(
-                                token::ADD,
-                                function_var->clone(),
-                                std::move(node.step),
-                                node.tok
-                        );
-                        inc_expression->ty = TypeRegistry::Integer;
-                        auto node_inc_statement = std::make_unique<NodeSingleAssignment>(
-                                std::move(function_var),
-                                std::move(inc_expression),
-                                node.tok);
-                        node.body->add_stmt(std::make_unique<NodeStatement>(std::move(node_inc_statement), node.tok));
-                }
+		if (!node.step) {
+			std::unique_ptr<NodeFunctionCall> node_inc;
+			// function call
+			if (node.to == token::TO) {
+				node.step = std::make_unique<NodeInt>(1, node.tok);
+			} else {
+				node.step = std::make_unique<NodeInt>(-1, node.tok);
+			}
+		}
 
-                // handle while condition
-                token comparison_op = token::LESS_EQUAL;
-                if (node.to == token::DOWNTO) comparison_op = token::GREATER_EQUAL;
-                // make comparison expression
-                auto comparison = std::make_unique<NodeBinaryExpr>(
-                        comparison_op,
-                        std::move(iterator_var),
-                        std::move(node.iterator_end),
-                        node.tok
-                );
-                comparison->ty = TypeRegistry::Comparison;
+		// i += step
+		auto compound_assignment = std::make_unique<NodeCompoundAssignment>(
+			clone_as<NodeReference>(function_var.get()),
+			std::move(node.step),
+			token::ADD,
+			node.tok
+		);
+		node.body->add_as_stmt(std::move(compound_assignment));
+		node.body->get_last_statement()->desugar(m_program);
 
-                auto node_while_statement = std::make_unique<NodeWhile>(
-                        std::move(comparison),
-                        std::move(node.body),
-                        node.tok
-                );
+		// handle while condition
+		auto comparison_op = token::LESS_EQUAL;
+		if (node.to == token::DOWNTO) comparison_op = token::GREATER_EQUAL;
+		// make comparison expression
+		auto comparison = std::make_unique<NodeBinaryExpr>(
+			comparison_op,
+			std::move(iterator_var),
+			std::move(node.iterator_end),
+			node.tok
+		);
+		comparison->ty = TypeRegistry::Comparison;
 
-                auto node_assign_statement = std::make_unique<NodeSingleAssignment>(
-                        std::move(assign_var),
-                        std::move(node.iterator->r_value),
-                        node.tok
-                );
+		auto node_while_statement = std::make_unique<NodeWhile>(
+			std::move(comparison),
+			std::move(node.body),
+			node.tok
+		);
 
-                auto node_body = std::make_unique<NodeBlock>(node.tok);
-                node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assign_statement), node.tok));
-                node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_while_statement), node.tok));
-                node_body->collect_references();
-                return node.replace_with(std::move(node_body));
-        }
+		auto node_assign_statement = std::make_unique<NodeSingleAssignment>(
+			std::move(assign_var),
+			std::move(node.iterator->r_value),
+			node.tok
+		);
+
+		auto node_body = std::make_unique<NodeBlock>(node.tok);
+		node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_assign_statement), node.tok));
+		node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_while_statement), node.tok));
+		node_body->collect_references();
+		return node.replace_with(std::move(node_body));
+	}
 };

@@ -225,9 +225,6 @@ private:
 				}
 			}
 
-			if (ref->name == "value_array0") {
-
-			}
 			if (nd_substitute and ref_ndarray) {
 				// sizes of nd_substitute have to moved to ref_ndarray
 				if (nd_substitute->sizes) ref_ndarray->set_sizes(std::move(nd_substitute->sizes));
