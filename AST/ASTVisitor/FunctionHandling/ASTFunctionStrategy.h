@@ -100,6 +100,7 @@ private:
 	}
 
 
+public:
 	static bool is_parameterstack_candidate(const NodeFunctionDefinition& def) {
 		for(const auto &param : def.header->params) {
 			if (param->variable->ty->is_union_type() ||

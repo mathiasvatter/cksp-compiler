@@ -20,6 +20,7 @@
 #include "../../Desugaring/DesugarSingleAssignment.h"
 #include "../../Desugaring/DesugarUIControlArray.h"
 #include "../../Desugaring/DesugarNamespace.h"
+#include "../../Lowering/LoweringRange.h"
 #include "../../Lowering/PostLowering/PostLoweringNumElements.h"
 #include "../../Lowering/LoweringUseCount.h"
 #include "../ASTVisitor/ReturnFunctionRewriting/ReturnFunctionCallHoisting.h"
@@ -30,6 +31,7 @@
 #include "../../misc/CommandLineOptions.h"
 #include "../ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
 #include "../ASTVisitor/FunctionHandling/BuiltinRestrictionValidator.h"
+#include "../ASTVisitor/FunctionHandling/FunctionShortCircuit.h"
 #include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 
 // ************* NodeStatement ***************
@@ -973,6 +975,17 @@ NodeIf::NodeIf(const NodeIf& other)
 std::unique_ptr<NodeAST> NodeIf::clone() const {
     return std::make_unique<NodeIf>(*this);
 }
+
+NodeAST * NodeIf::do_short_circuit_transform(NodeProgram *program) {
+	if (auto node_binary = condition->cast<NodeBinaryExpr>()) {
+		if (node_binary->needs_short_circuiting()) {
+			static FunctionShortCircuit transform(program);
+			return transform.do_short_circuit(*this);
+		}
+	}
+	return this;
+}
+
 NodeAST *NodeIf::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     if (condition.get() == oldChild) {
         condition = std::move(newChild);
@@ -1120,6 +1133,18 @@ NodePairs::NodePairs(const NodePairs& other)
 std::unique_ptr<NodeAST> NodePairs::clone() const {
 	return std::make_unique<NodePairs>(*this);
 }
+
+bool NodePairs::check_environment() const {
+	// check if in for each loop
+	if (parent->cast<NodeForEach>()) {
+		return true;
+	}
+	auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
+	error.m_message = "As of v"+COMPILER_VERSION+", <pairs> can only be used in for-each loops.";
+	error.exit();
+	return false;
+}
+
 NodeAST *NodePairs::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (range.get() == oldChild) {
 		range = std::move(newChild);
@@ -1174,6 +1199,66 @@ std::unique_ptr<NodeAST> NodeRange::get_num_iterations() {
 	}
 	expr->ty = TypeRegistry::Integer;
 	return DefinitionProvider::create_builtin_call("abs", std::move(expr));
+}
+
+std::unique_ptr<NodeInitializerList> NodeRange::to_initializer_list() const {
+	if (!start or !stop) {
+		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
+		error.m_message = "Cannot convert <range> to <initializer_list> because it is missing start or stop.";
+		error.exit();
+		return nullptr;
+	}
+	if (!all_literals()) {
+		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
+		error.m_message = "Cannot convert <range> to <initializer_list> because not all elements are literals.";
+		error.exit();
+	}
+	auto initializer_list = std::make_unique<NodeInitializerList>(tok);
+	auto start_int = start->cast<NodeInt>();
+	auto stop_int = stop->cast<NodeInt>();
+	auto step_int = step->cast<NodeInt>();
+	if (start_int && stop_int && step_int) {
+		for (int32_t val = start_int->value; val < stop_int->value; val += step_int->value) {
+			initializer_list->add_element(std::make_unique<NodeInt>(val, tok));
+		}
+		return initializer_list;
+	}
+
+	auto start_real = start->cast<NodeReal>();
+	auto stop_real = stop->cast<NodeReal>();
+	auto step_real = step->cast<NodeReal>();
+	if (start_real && stop_real && step_real) {
+		for (double val = start_real->value; val < stop_real->value; val += step_real->value) {
+			initializer_list->add_element(std::make_unique<NodeReal>(val, tok));
+		}
+		return initializer_list;
+	}
+
+	auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
+	error.m_message = "Cannot convert <range> to <initializer_list> because it contains non-integer or non-real values.";
+	error.exit();
+	return nullptr;
+
+}
+
+bool NodeRange::check_environment() const {
+	// check if in for each loop
+	if (parent->cast<NodeForEach>() or parent->cast<NodePairs>()) {
+		return true;
+	}
+	// check if this should be lowered to initializer list
+	if (parent->cast<NodeSingleAssignment>() or parent->cast<NodeSingleDeclaration>()) {
+		return true;
+	}
+	auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
+	error.m_message = "As of v"+COMPILER_VERSION+", <range> can only be used in for-each loops, assignments or declarations.";
+	error.exit();
+	return false;
+}
+
+ASTLowering * NodeRange::get_lowering(NodeProgram *program) const {
+	static LoweringRange lowering(program);
+	return &lowering;
 }
 
 // ************* NodeWhile ***************

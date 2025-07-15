@@ -10,8 +10,7 @@
  * Tries to transform initializer lists to range nodes when applicable.
  * As for now: only init lists in for-each loop ranges will be transformed.
  */
-class LoweringInitializerList : public ASTLowering {
-private:
+class LoweringInitializerList final : public ASTLowering {
 	DefinitionProvider* m_def_provider;
 public:
 	explicit LoweringInitializerList(NodeProgram *program) : ASTLowering(program) {
