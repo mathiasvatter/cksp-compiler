@@ -73,6 +73,7 @@ enum class NodeType {
 	Int,
 	Real,
 	String,
+	FormatString,
 	Nil,
 	DeadCode,
 	NumElements,

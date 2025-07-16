@@ -16,6 +16,7 @@ public:
 	NodeAST * visit(NodeInt& node) override;
 	NodeAST * visit(NodeReal& node) override;
 	NodeAST * visit(NodeString& node) override;
+	NodeAST * visit(NodeFormatString& node) override;
 	NodeAST * visit(NodeNil& node) override;
 	NodeAST * visit(NodeWildcard& node) override;
 	NodeAST * visit(NodeReturn& node) override;

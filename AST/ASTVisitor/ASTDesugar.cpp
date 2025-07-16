@@ -4,6 +4,8 @@
 
 #include "ASTDesugar.h"
 
+#include "../../Desugaring/DesugarNamespace.h"
+
 NodeAST* ASTDesugar::visit(NodeProgram& node) {
     m_program = &node;
 
@@ -11,6 +13,10 @@ NodeAST* ASTDesugar::visit(NodeProgram& node) {
 	m_program->global_declarations->prepend_body(NodeStruct::declare_struct_constants());
 	m_program->add_global_iterator();
 
+	for (auto& ns : m_program->namespaces) {
+		static UnnestNamespaces unns(m_program);
+		unns.unnest(*ns);
+	}
 	visit_all(node.namespaces, *this);
 	// m_program->global_declarations->prepend_as_stmt(m_program->declare_global_iterators());
 	visit_all(node.struct_definitions, *this);
@@ -126,6 +132,10 @@ NodeAST* ASTDesugar::visit(NodeStruct& node) {
 		m->accept(*this);
 	}
 	return node.desugar(m_program);
+}
+
+NodeAST * ASTDesugar::visit(NodeFormatString &node) {
+	return node.desugar(m_program)->accept(*this);
 }
 
 NodeAST *ASTDesugar::visit(NodeBinaryExpr &node) {

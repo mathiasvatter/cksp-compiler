@@ -5,7 +5,7 @@ on init
 	declare ii0 : int {Reuses: 1}
 	declare hide0 : int {Reuses: 1}
 	declare ret0 : int {Reuses: 2}
-	declare param1 : int {Reuses: 2}
+	declare param0 : int {Reuses: 2}
 	declare preset_idx1 : int {Reuses: 0}
 	declare add_line0 : int {Reuses: 0}
 	declare scrollable_items0 : int {Reuses: 0}
@@ -14,11 +14,13 @@ on init
 	declare local u00 : int {Reuses: 3}
 	declare local u01 : int {Reuses: 3}
 	declare _short_circuit00 : int {Reuses: 1}
+	declare _sc_temp00 : int {Reuses: 2}
+	declare _sc_temp10 : int {Reuses: 1}
 	declare _ret00 : int {Reuses: 0}
-	declare _ret10 : int {Reuses: 0}
 	declare ii01 : int {Reuses: 1}
+	message("This is a " & 2 & " and " & 'Das ist ein ' & 44 & '' & ""){Builtin, None, message}
 	make_perfview{Builtin, None, make_perfview}
-	message("** Script " & "'" & "Preset Browser" & "'" & " Compile " & "00:35:58" & " " & "07/16/25" & " with " & "0.0.7-alpha.4" & " **"){Builtin, None, message}
+	message("** Script " & "'" & "Preset Browser" & "'" & " Compile " & "19:24:10" & " " & "07/16/25" & " with " & "0.0.7-alpha.4" & " **"){Builtin, None, message}
 	set_script_title("Preset Browser"){Builtin, None, set_script_title}
 	set_ui_height_px(510){Builtin, None, set_ui_height_px}
 	set_ui_width_px(850){Builtin, None, set_ui_width_px}
@@ -392,13 +394,14 @@ on init
 	set_control_par(get_ui_id(lbl_presetcount{int} {lbl_presetcount} ){Builtin, None, get_ui_id}, CONTROL_PAR_PARENT_PANEL{int} {CONTROL_PAR_PARENT_PANEL} , get_ui_id(Scrollarea{int} {Scrollarea} ){Builtin, None, get_ui_id}){Builtin, None, set_control_par}
 	watch_var(scroll.up{int} {scroll.up} ){Builtin, None, watch_var}
 	watch_var(sli_scrollbar{int} {sli_scrollbar} ){Builtin, None, watch_var}
+	message("sdlfkj <test>"){Builtin, None, message}
 end on
 
 on ui_control(sli_scrollbar{int} {sli_scrollbar} )
 	i00{int} {i00}  := 1
 		scroll.up{int} {scroll.up}  := ((20 + i00{int} {i00} ) - (((20 + i00{int} {i00} ) * sli_scrollbar{int} {sli_scrollbar} ) / 1000000)) / 3
 		scroll.up{int} {scroll.up}  := scroll.up{int} {scroll.up}  * 3
-		param1{int} {param1}  := 50
+		param0{int} {param0}  := 50
 		call Scrollarea.repaint{UserDefined, Call, Scrollarea.repaint}
 
 end on
@@ -409,27 +412,29 @@ on persistence_changed
 	u00{int} {u00}  := 0
 	ii01{int} {ii01}  := 0
 	_short_circuit00{int} {_short_circuit00}  := 0
-	param1{int} {param1}  := 5
+	_sc_temp00{int} {_sc_temp00}  := 0
+	_sc_temp10{int} {_sc_temp10}  := 0
+	param0{int} {param0}  := 5
 	call return_stuff{UserDefined, Call, return_stuff}
 	_ret00{int} {_ret00}  := ret0{int} {ret0} 
 	if(_ret00{int} {_ret00}  > 10)
 		if(u01{int} {u01}  < 0)
-			_short_circuit00{int} {_short_circuit00}  := 1
+			_sc_temp00{int} {_sc_temp00}  := 1
 		end if
-	else
-		if(u00{int} {u00}  > 10)
-			if(ii01{int} {ii01}  < 0)
-				_short_circuit00{int} {_short_circuit00}  := 1
-			end if
-		end if
+	end if
+	if((u00{int} {u00}  > 10) and (ii01{int} {ii01}  < 0))
+		_sc_temp10{int} {_sc_temp10}  := 1
+	end if
+	if(_sc_temp00{int} {_sc_temp00}  # _sc_temp10{int} {_sc_temp10} )
+		_short_circuit00{int} {_short_circuit00}  := 1
 	end if
 	if(_short_circuit00{int} {_short_circuit00}  = 1)
 		i00{int} {i00}  := 1
 	else
-		param1{int} {param1}  := 5
+		param0{int} {param0}  := 5
 		call return_stuff{UserDefined, Call, return_stuff}
-		_ret10{int} {_ret10}  := ret0{int} {ret0} 
-		if(_ret10{int} {_ret10}  < 20)
+		_sc_temp00{int} {_sc_temp00}  := ret0{int} {ret0} 
+		if(_sc_temp00{int} {_sc_temp00}  < 20)
 			i00{int} {i00}  := 1
 		end if
 	end if
@@ -457,7 +462,7 @@ function Scrollarea.repaint
 				hide0{int} {hide0}  := 1
 				set_control_par_str(_btn_preset[(i1{int} {i1}  * 3) + ii0{int} {ii0} ]{int} {_btn_preset} , CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , "      " & final_preset_title_array[ret0{int} {ret0} ]{int} {final_preset_title_array} ){Builtin, None, set_control_par_str}
 				set_control_par_str(_lbl_preset_info[(i1{int} {i1}  * 3) + ii0{int} {ii0} ]{int} {_lbl_preset_info} , CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , final_preset_info[ret0{int} {ret0} ]{string} {final_preset_info} ){Builtin, None, set_control_par_str}
-				if(ret0{int} {ret0}  = param1{int} {param1} )
+				if(ret0{int} {ret0}  = param0{int} {param0} )
 					set_control_par(_btn_preset[(i1{int} {i1}  * 3) + ii0{int} {ii0} ]{int} {_btn_preset} , CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} , 1){Builtin, None, set_control_par}
 				else
 					set_control_par(_btn_preset[(i1{int} {i1}  * 3) + ii0{int} {ii0} ]{int} {_btn_preset} , CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} , 0){Builtin, None, set_control_par}
@@ -479,15 +484,15 @@ function Scrollarea.repaint
 end function
 
 function return_stuff
-	param1{int} {param1}  := param1{int} {param1}  + random(0, 10){Builtin, None, random}
-	ret0{int} {ret0}  := param1{int} {param1} 
+	param0{int} {param0}  := param0{int} {param0}  + random(0, 10){Builtin, None, random}
+	ret0{int} {ret0}  := param0{int} {param0} 
 end function
 
 function Scrollarea.update_position
 	add_line0{int} {add_line0}  := 1
 	scrollable_items0{int} {scrollable_items0}  := 20 + add_line0{int} {add_line0} 
 	set_control_par(get_ui_id(sli_scrollbar{int} {sli_scrollbar} ){Builtin, None, get_ui_id}, CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} , (1000000 * (scrollable_items0{int} {scrollable_items0}  - scroll.up{int} {scroll.up} )) / scrollable_items0{int} {scrollable_items0} ){Builtin, None, set_control_par}
-	param1{int} {param1}  := preset_idx1{int} {preset_idx1} 
+	param0{int} {param0}  := preset_idx1{int} {preset_idx1} 
 	call Scrollarea.repaint{UserDefined, Call, Scrollarea.repaint}
 end function
 
@@ -517,8 +522,8 @@ function Scrollarea.focus
 			scroll.up{int} {scroll.up}  := 0
 		end if
 	end if
-	param1{int} {param1}  := 1
-	hide0{int} {hide0}  := 20 + param1{int} {param1} 
+	param0{int} {param0}  := 1
+	hide0{int} {hide0}  := 20 + param0{int} {param0} 
 	scroll.up{int} {scroll.up}  := (scroll.up{int} {scroll.up}  * (1 + (sh_right(hide0{int} {hide0}  - scroll.up{int} {scroll.up} , 31){Builtin, None, sh_right} .or. sh_right(scroll.up{int} {scroll.up} , 31){Builtin, None, sh_right}))) - (hide0{int} {hide0}  * sh_right(hide0{int} {hide0}  - scroll.up{int} {scroll.up} , 31){Builtin, None, sh_right})
 	preset_idx1{int} {preset_idx1}  := ret0{int} {ret0} 
 	call Scrollarea.update_position{UserDefined, Call, Scrollarea.update_position}

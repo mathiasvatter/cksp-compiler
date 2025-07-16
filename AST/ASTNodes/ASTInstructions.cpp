@@ -983,6 +983,12 @@ NodeAST * NodeIf::do_short_circuit_transform(NodeProgram *program) {
 			return transform.do_short_circuit(*this);
 		}
 	}
+	if (auto node_unary = condition->cast<NodeUnaryExpr>()) {
+		if (node_unary->needs_short_circuiting()) {
+			static FunctionShortCircuit transform(program);
+			return transform.do_short_circuit(*this);
+		}
+	}
 	return this;
 }
 
