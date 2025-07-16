@@ -222,6 +222,7 @@ add_executable(cksp main.cpp
         Lowering/LoweringRange.h
         Optimization/PreConstantPropagation.h
         AST/ASTVisitor/FunctionHandling/FunctionShortCircuit.h
+        Desugaring/DesugarFormatString.h
 )
 add_dependencies(cksp generate_headers)
 

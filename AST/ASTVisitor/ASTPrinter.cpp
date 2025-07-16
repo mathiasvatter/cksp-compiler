@@ -19,6 +19,11 @@ NodeAST * ASTPrinter::visit(NodeString &node) {
 	return &node;
 }
 
+NodeAST * ASTPrinter::visit(NodeFormatString &node) {
+	os << "format(" << node.get_string() << ")";
+	return &node;
+}
+
 NodeAST * ASTPrinter::visit(NodeNil &node) {
 	os << node.name;
 	return &node;

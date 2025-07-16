@@ -51,6 +51,7 @@ public:
 	Tokenizer(const std::string& input, const std::string& file, FileType file_type = FileType::ksp);
 	~Tokenizer() = default;
 	std::vector<Token> tokenize();
+	void token_loop();
 
 protected:
     std::string m_input;
@@ -62,6 +63,8 @@ protected:
     size_t m_line_pos;
     std::string m_buffer;
     std::vector<Token> m_tokens;
+	bool is_in_fstring = false;
+	std::stack<char> fstring_starting_char;
 
     bool m_is_json = false;
     [[nodiscard]] char peek(int ahead = 0) const;
@@ -98,5 +101,6 @@ protected:
     void get_arrow();
     void get_keyword_or_num();
     void get_curly_brackets();
+	void get_format_string();
 
 };

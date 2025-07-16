@@ -386,6 +386,41 @@ struct NodeString final : NodeAST {
     }
 };
 
+struct NodeFormatString final : NodeAST {
+	std::string quotes;
+	std::vector<std::unique_ptr<NodeAST>> elements;
+	explicit NodeFormatString(Token tok) : NodeAST(std::move(tok), NodeType::FormatString) {
+		set_child_parents();
+	}
+	NodeAST* accept(ASTVisitor &visitor) override;
+	// Kopierkonstruktor
+	NodeFormatString(const NodeFormatString& other);
+	// Clone Methode
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override {
+		return std::make_unique<NodeFormatString>(*this);
+	}
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		for(const auto& elem : elements) elem->update_parents(this);
+	}
+	void set_child_parents() override {
+		for(auto& elem : elements) {
+			if(elem) elem->parent = this;
+		}
+	}
+	std::string get_string() override {
+		std::string str;
+		if(elements.empty()) return str;
+		return StringUtils::join_apply(elements, [&str](auto& elem) {elem->get_string(); return elem->get_string();}, " ");
+	}
+	void add_element(std::unique_ptr<NodeAST> elem) {
+		elem->parent = this;
+		elements.push_back(std::move(elem));
+	}
+	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
+
+};
+
 struct NodeReferenceList final : NodeAST {
 	std::vector<std::unique_ptr<NodeReference>> references;
 	explicit NodeReferenceList(Token tok) : NodeAST(std::move(tok), NodeType::ReferenceList) {
@@ -638,6 +673,9 @@ struct NodeUnaryExpr final : NodeAST {
     void update_token_data(const Token& token) override {
         operand -> update_token_data(token);
     }
+	bool needs_short_circuiting();
+	bool has_return_func() const;
+	bool has_return_func_and_bool() const;
 };
 
 struct NodeBinaryExpr final : NodeAST {

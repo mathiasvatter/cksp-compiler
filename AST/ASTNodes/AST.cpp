@@ -15,6 +15,7 @@
 #include "../../Optimization/TokenCounter.h"
 #include "../../Desugaring/DesugarParamList.h"
 #include "../../Desugaring/DesugarBinaryExpr.h"
+#include "../../Desugaring/DesugarFormatString.h"
 #include "../../Lowering/LoweringFunctionDef.h"
 #include "../../Optimization/NilValidator.h"
 #include "../ASTVisitor/ReferenceManagement/ASTCollectReferences.h"
@@ -509,6 +510,20 @@ std::unique_ptr<NodeAST> NodeString::clone() const {
     return std::make_unique<NodeString>(*this);
 }
 
+// ************* NodeFormatString ***************
+NodeAST *NodeFormatString::accept(ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeFormatString::NodeFormatString(const NodeFormatString &other): NodeAST(other),
+elements(clone_vector(other.elements)), quotes(other.quotes) {
+	NodeFormatString::set_child_parents();
+}
+
+ASTDesugaring * NodeFormatString::get_desugaring(NodeProgram *program) const {
+	static DesugarFormatString desugaring(program);
+	return &desugaring;
+}
+
 // ************* NodeReferenceList ***************
 NodeAST *NodeReferenceList::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);
@@ -834,6 +849,29 @@ NodeUnaryExpr::NodeUnaryExpr(const NodeUnaryExpr& other)
 std::unique_ptr<NodeAST> NodeUnaryExpr::clone() const {
     return std::make_unique<NodeUnaryExpr>(*this);
 }
+
+bool NodeUnaryExpr::needs_short_circuiting() {
+	static ShortCircuitNeed need;
+	return need.needs_transformation(*this);
+}
+
+bool NodeUnaryExpr::has_return_func() const {
+	// func_call > 0 or func_call == 0
+	if (auto call = operand->cast<NodeFunctionCall>()) {
+		if (call and !call->is_builtin_kind()) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool NodeUnaryExpr::has_return_func_and_bool() const {
+	if (has_return_func()) {
+		return BOOL_TOKENS.contains(op);
+	}
+	return false;
+}
+
 NodeAST *NodeUnaryExpr::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     if (operand.get() == oldChild) {
         operand = std::move(newChild);
@@ -878,7 +916,6 @@ bool NodeBinaryExpr::has_return_func() const {
 		auto right_func = right->cast<NodeFunctionCall>();
 		if (left_func and !left_func->is_builtin_kind() or right_func and !right_func->is_builtin_kind()) {
 			// func_call() > 0 or func_call() == 0
-			// check if operator is boolean
 			return true;
 		}
 	}
