@@ -21,6 +21,7 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	for(auto & struct_def : node.struct_definitions) {
 		struct_def->generate_ref_count_methods(m_program);
 	}
+	node.update_function_lookup();
 	for(auto & struct_def : node.struct_definitions) {
 		static LoweringStructMembers lowering_struct_members(m_program);
 		struct_def->accept(lowering_struct_members);
