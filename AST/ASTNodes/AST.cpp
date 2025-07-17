@@ -805,11 +805,13 @@ std::optional<std::unique_ptr<NodeRange>> NodeInitializerList::transform_to_rang
 
 std::unique_ptr<NodeComposite> NodeInitializerList::transform_to_array(const std::string& name) {
 	auto dimensions = get_dimensions();
+	// init list ty has always num_dimensions = 0
+	auto arr_ty = TypeRegistry::add_composite_type(CompoundKind::Array, ty->get_element_type(), dimensions.size());
 	if (dimensions.size() == 1) {
 		auto array = std::make_unique<NodeArray>(
 			std::nullopt,
 			name,
-			ty,
+			arr_ty,
 			std::make_unique<NodeInt>(dimensions[0], tok),
 			tok
 		);
@@ -819,7 +821,7 @@ std::unique_ptr<NodeComposite> NodeInitializerList::transform_to_array(const std
 		auto ndarray = std::make_unique<NodeNDArray>(
 			std::nullopt,
 			name,
-			ty,
+			arr_ty,
 			std::make_unique<NodeParamList>(dimensions, tok),
 			tok
 		);
