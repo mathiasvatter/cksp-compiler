@@ -1,20 +1,22 @@
 on init
 	declare _iter0 : int {Reuses: 0}
 	declare Utils.font_types[6] : int[] := [CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , CONTROL_PAR_FONT_TYPE_ON{int} {CONTROL_PAR_FONT_TYPE_ON} , CONTROL_PAR_FONT_TYPE_OFF_PRESSED{int} {CONTROL_PAR_FONT_TYPE_OFF_PRESSED} , CONTROL_PAR_FONT_TYPE_ON_PRESSED{int} {CONTROL_PAR_FONT_TYPE_ON_PRESSED} , CONTROL_PAR_FONT_TYPE_OFF_HOVER{int} {CONTROL_PAR_FONT_TYPE_OFF_HOVER} , CONTROL_PAR_FONT_TYPE_ON_HOVER{int} {CONTROL_PAR_FONT_TYPE_ON_HOVER} ] {Reuses: 0}
+	declare Utils.hide_state[2] : int[] := [HIDE_WHOLE_CONTROL{int} {HIDE_WHOLE_CONTROL} , HIDE_PART_NOTHING{int} {HIDE_PART_NOTHING} ] {Reuses: 0}
 	declare i2 : int {Reuses: 6}
 	declare ii0 : int {Reuses: 4}
-	declare hide0 : int {Reuses: 4}
-	declare ret1 : int {Reuses: 2}
-	declare param0 : int {Reuses: 2}
+	declare hide0 : int {Reuses: 5}
+	declare ret1 : int {Reuses: 4}
+	declare param1 : int {Reuses: 3}
 	declare preset_idx0 : int {Reuses: 0}
 	declare add_line0 : int {Reuses: 0}
 	declare scrollable_items0 : int {Reuses: 0}
+	declare hide000 : int {Reuses: 2}
 	declare local _ret00 : int {Reuses: 0}
 	declare local _ret10 : int {Reuses: 0}
 	declare local _ret20 : int {Reuses: 0}
-	declare local i00 : int {Reuses: 8}
-	declare local _arr10[3] : int[] {Reuses: 0}
-	declare local u00 : int {Reuses: 4}
+	declare local category_positions0[3] : int[] {Reuses: 1}
+	declare local i00 : int {Reuses: 9}
+	declare local u00 : int {Reuses: 6}
 	declare local u01 : int {Reuses: 3}
 	declare _short_circuit00 : int {Reuses: 1}
 	declare _sc_temp00 : int {Reuses: 2}
@@ -26,7 +28,7 @@ on init
 	declare Position::x[3] : int[] {Reuses: 0}
 	declare Position::y[3] : int[] {Reuses: 0}
 	make_perfview{Builtin, None, make_perfview}
-	message("** Script " & "'" & "Preset Browser" & "'" & " Compile " & "17:48:08" & " " & "07/17/25" & " with " & "0.0.7-alpha.5" & " **"){Builtin, None, message}
+	message("** Script '" & "Preset Browser" & "' Compile " & "19:01:23" & " " & "07/17/25" & " with " & "0.0.7-alpha.5" & " **"){Builtin, None, message}
 	set_script_title("Preset Browser"){Builtin, None, set_script_title}
 	set_ui_height_px(510){Builtin, None, set_ui_height_px}
 	set_ui_width_px(850){Builtin, None, set_ui_width_px}
@@ -35,7 +37,6 @@ on init
 	set_snapshot_type(0){Builtin, None, set_snapshot_type}
 	set_listener(NI_SIGNAL_TIMER_MS{int} {NI_SIGNAL_TIMER_MS} , 10000){Builtin, None, set_listener}
 	set_key_pressed_support(1){Builtin, None, set_key_pressed_support}
-	declare hide_state[2] : int[] := [HIDE_WHOLE_CONTROL{int} {HIDE_WHOLE_CONTROL} , HIDE_PART_NOTHING{int} {HIDE_PART_NOTHING} ] {Reuses: 0}
 	declare ui_button btn_lock : int  {Reuses: 0}
 	set_control_par_str(get_ui_id(btn_lock{int} {btn_lock} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , ""){Builtin, None, set_control_par_str}
 	set_control_par_str(get_ui_id(btn_lock{int} {btn_lock} ){Builtin, None, get_ui_id}, CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "alpha"){Builtin, None, set_control_par_str}
@@ -127,32 +128,34 @@ on init
 	Position::y[Position::free_idx{int} {Position::free_idx} ]{int} {Position::y}  := i2{int} {i2} 
 	hide0{int} {hide0}  := Position::free_idx{int} {Position::free_idx} 
 	_ret20{int} {_ret20}  := hide0{int} {hide0} 
-	declare category_positions[3] : int[] := [_ret00{int} {_ret00} , _ret10{int} {_ret10} , _ret20{int} {_ret20} ] {Reuses: 0}
-	i2{int} {i2}  := category_positions[0]{int} {category_positions} 
-	ii0{int} {ii0}  := 1
-	if(i2{int} {i2}  # -1)
-		Position::allocation[i2{int} {i2} ]{int} {Position::allocation}  := Position::allocation[i2{int} {i2} ]{int} {Position::allocation}  + ii0{int} {ii0} 
+	category_positions0[0]{int[]} {category_positions0}  := _ret00{int} {_ret00} 
+	category_positions0[1]{int[]} {category_positions0}  := _ret10{int} {_ret10} 
+	category_positions0[2]{int[]} {category_positions0}  := _ret20{int} {_ret20} 
+	hide000{int} {hide000}  := category_positions0[0]{int} {category_positions0} 
+	ret1{int} {ret1}  := 1
+	if(hide000{int} {hide000}  # -1)
+		Position::allocation[hide000{int} {hide000} ]{int} {Position::allocation}  := Position::allocation[hide000{int} {hide000} ]{int} {Position::allocation}  + ret1{int} {ret1} 
 	end if
-	i2{int} {i2}  := category_positions[1]{int} {category_positions} 
-	ii0{int} {ii0}  := 1
-	if(i2{int} {i2}  # -1)
-		Position::allocation[i2{int} {i2} ]{int} {Position::allocation}  := Position::allocation[i2{int} {i2} ]{int} {Position::allocation}  + ii0{int} {ii0} 
+	hide000{int} {hide000}  := category_positions0[1]{int} {category_positions0} 
+	ret1{int} {ret1}  := 1
+	if(hide000{int} {hide000}  # -1)
+		Position::allocation[hide000{int} {hide000} ]{int} {Position::allocation}  := Position::allocation[hide000{int} {hide000} ]{int} {Position::allocation}  + ret1{int} {ret1} 
 	end if
-	i2{int} {i2}  := category_positions[2]{int} {category_positions} 
-	ii0{int} {ii0}  := num_elements(category_positions{int[]} {category_positions} ){Builtin, None, num_elements} - 2
-	if(i2{int} {i2}  # -1)
-		Position::allocation[i2{int} {i2} ]{int} {Position::allocation}  := Position::allocation[i2{int} {i2} ]{int} {Position::allocation}  + ii0{int} {ii0} 
+	hide000{int} {hide000}  := category_positions0[2]{int} {category_positions0} 
+	ret1{int} {ret1}  := num_elements(category_positions0{int[]} {category_positions0} ){Builtin, None, num_elements} - 2
+	if(hide000{int} {hide000}  # -1)
+		Position::allocation[hide000{int} {hide000} ]{int} {Position::allocation}  := Position::allocation[hide000{int} {hide000} ]{int} {Position::allocation}  + ret1{int} {ret1} 
 	end if
 	declare ui_panel Categories : int  {Reuses: 0}
 	set_control_par(get_ui_id(Categories{int} {Categories} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , 10){Builtin, None, set_control_par}
 	set_control_par(get_ui_id(Categories{int} {Categories} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 10){Builtin, None, set_control_par}
 	declare category_accum[4] : int[] {Reuses: 0}
-	_arr10[0]{int[]} {_arr10}  := 3
-	_arr10[1]{int[]} {_arr10}  := 3
-	_arr10[2]{int[]} {_arr10}  := 4
+	category_positions0[0]{int[]} {category_positions0}  := 3
+	category_positions0[1]{int[]} {category_positions0}  := 3
+	category_positions0[2]{int[]} {category_positions0}  := 4
 	i2{int} {i2}  := 0
-	while(i2{int} {i2}  < num_elements(_arr10{int[]} {_arr10} ){Builtin, None, num_elements}) 
-		category_accum[i2{int} {i2} ]{int} {category_accum}  := category_accum[- (- (i2{int} {i2}  - 1) .and. sh_right(- (i2{int} {i2}  - 1), 31){Builtin, None, sh_right})]{int} {category_accum}  + _arr10[i2{int} {i2} ]{int} {_arr10} 
+	while(i2{int} {i2}  < num_elements(category_positions0{int[]} {category_positions0} ){Builtin, None, num_elements}) 
+		category_accum[i2{int} {i2} ]{int} {category_accum}  := category_accum[- (- (i2{int} {i2}  - 1) .and. sh_right(- (i2{int} {i2}  - 1), 31){Builtin, None, sh_right})]{int} {category_accum}  + category_positions0[i2{int} {i2} ]{int} {category_positions0} 
 		inc(i2{int} {i2} ){Builtin, None, inc}
 	end while
 	i2{int} {i2}  := 0
@@ -241,9 +244,9 @@ on init
 		inc(i00{int} {i00} ){Builtin, None, inc}
 	end while
 	i00{int} {i00}  := 0
-	while(i00{int} {i00}  <= (num_elements(category_positions{int[]} {category_positions} ){Builtin, None, num_elements} - 1)) 
-		set_control_par(pnl_category[i00{int} {i00} ]{int} {pnl_category} , CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , Position::x[category_positions[i00{int} {i00} ]{int} {category_positions} ]{int} {Position::x} ){Builtin, None, set_control_par}
-		set_control_par(pnl_category[i00{int} {i00} ]{int} {pnl_category} , CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , Position::y[category_positions[i00{int} {i00} ]{int} {category_positions} ]{int} {Position::y} ){Builtin, None, set_control_par}
+	while(i00{int} {i00}  <= (num_elements(category_positions0{int[]} {category_positions0} ){Builtin, None, num_elements} - 1)) 
+		set_control_par(pnl_category[i00{int} {i00} ]{int} {pnl_category} , CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , Position::x[category_positions0[i00{int} {i00} ]{int} {category_positions0} ]{int} {Position::x} ){Builtin, None, set_control_par}
+		set_control_par(pnl_category[i00{int} {i00} ]{int} {pnl_category} , CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , Position::y[category_positions0[i00{int} {i00} ]{int} {category_positions0} ]{int} {Position::y} ){Builtin, None, set_control_par}
 		inc(i00{int} {i00} ){Builtin, None, inc}
 	end while
 	declare ui_panel PresetStrip : int  {Reuses: 0}
@@ -449,7 +452,7 @@ on init
 			set_control_par(info{int} {info} , CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 20){Builtin, None, set_control_par}
 			set_control_par(info{int} {info} , CONTROL_PAR_PARENT_PANEL{int} {CONTROL_PAR_PARENT_PANEL} , get_ui_id(Scrollarea{int} {Scrollarea} ){Builtin, None, get_ui_id}){Builtin, None, set_control_par}
 			set_control_par(info{int} {info} , CONTROL_PAR_Z_LAYER{int} {CONTROL_PAR_Z_LAYER} , -1){Builtin, None, set_control_par}
-			set_control_par(info{int} {info} , CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[0]{int} {hide_state} ){Builtin, None, set_control_par}
+			set_control_par(info{int} {info} , CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , Utils.hide_state[0]{int} {Utils.hide_state} ){Builtin, None, set_control_par}
 			inc(u00{int} {u00} ){Builtin, None, inc}
 		end while
 		inc(i00{int} {i00} ){Builtin, None, inc}
@@ -494,34 +497,58 @@ on init
 	set_control_par(get_ui_id(lbl_presetcount{int} {lbl_presetcount} ){Builtin, None, get_ui_id}, CONTROL_PAR_PARENT_PANEL{int} {CONTROL_PAR_PARENT_PANEL} , get_ui_id(Scrollarea{int} {Scrollarea} ){Builtin, None, get_ui_id}){Builtin, None, set_control_par}
 	watch_var(scroll.up{int} {scroll.up} ){Builtin, None, watch_var}
 	watch_var(sli_scrollbar{int} {sli_scrollbar} ){Builtin, None, watch_var}
+	i00{int} {i00}  := 0
+	while(i00{int} {i00}  <= (num_elements(category_positions0{int[]} {category_positions0} ){Builtin, None, num_elements} - 1)) 
+		hide0{int} {hide0}  := category_positions0[i00{int} {i00} ]{int} {category_positions0} 
+		param1{int} {param1}  := 1
+		ret1{int} {ret1}  := hide0{int} {hide0} 
+		while(ret1{int} {ret1}  # -1) 
+			Position::allocation[ret1{int} {ret1} ]{int} {Position::allocation}  := Position::allocation[ret1{int} {ret1} ]{int} {Position::allocation}  - param1{int} {param1} 
+			if(Position::allocation[ret1{int} {ret1} ]{int} {Position::allocation}  > 0)
+				ret1{int} {ret1}  := -1
+				continue{Builtin, None, continue}
+			else
+				Position::allocation[ret1{int} {ret1} ]{int} {Position::allocation}  := 0
+			end if
+			hide0{int} {hide0}  := ret1{int} {ret1} 
+			ret1{int} {ret1}  := -1
+			i2{int} {i2}  := hide0{int} {hide0} 
+			ii0{int} {ii0}  := 0
+			if(i2{int} {i2}  # -1)
+				Position::x[i2{int} {i2} ]{int} {Position::x}  := 0
+				Position::y[i2{int} {i2} ]{int} {Position::y}  := 0
+			end if
+		end while
+		inc(i00{int} {i00} ){Builtin, None, inc}
+	end while
 end on
 
 on ui_control(sli_scrollbar{int} {sli_scrollbar} )
 	i00{int} {i00}  := 1
 		scroll.up{int} {scroll.up}  := ((20 + i00{int} {i00} ) - (((20 + i00{int} {i00} ) * sli_scrollbar{int} {sli_scrollbar} ) / 1000000)) / 3
 		scroll.up{int} {scroll.up}  := scroll.up{int} {scroll.up}  * 3
-		param0{int} {param0}  := 50
+		param1{int} {param1}  := 50
 		call Scrollarea.repaint{UserDefined, Call, Scrollarea.repaint}
 
 end on
 
 on persistence_changed
 	i00{int} {i00}  := 0
-	u01{int} {u01}  := 0
 	u00{int} {u00}  := 0
+	u01{int} {u01}  := 0
 	ii01{int} {ii01}  := 0
 	_short_circuit00{int} {_short_circuit00}  := 0
 	_sc_temp00{int} {_sc_temp00}  := 0
 	_sc_temp10{int} {_sc_temp10}  := 0
-	param0{int} {param0}  := 5
+	param1{int} {param1}  := 5
 	call return_stuff{UserDefined, Call, return_stuff}
 	_ret30{int} {_ret30}  := ret1{int} {ret1} 
 	if(_ret30{int} {_ret30}  > 10)
-		if(u01{int} {u01}  < 0)
+		if(u00{int} {u00}  < 0)
 			_sc_temp00{int} {_sc_temp00}  := 1
 		end if
 	end if
-	if((u00{int} {u00}  > 10) and (ii01{int} {ii01}  < 0))
+	if((u01{int} {u01}  > 10) and (ii01{int} {ii01}  < 0))
 		_sc_temp10{int} {_sc_temp10}  := 1
 	end if
 	if(_sc_temp00{int} {_sc_temp00}  # _sc_temp10{int} {_sc_temp10} )
@@ -530,7 +557,7 @@ on persistence_changed
 	if(_short_circuit00{int} {_short_circuit00}  = 1)
 		i00{int} {i00}  := 1
 	else
-		param0{int} {param0}  := 5
+		param1{int} {param1}  := 5
 		call return_stuff{UserDefined, Call, return_stuff}
 		_sc_temp00{int} {_sc_temp00}  := ret1{int} {ret1} 
 		if(_sc_temp00{int} {_sc_temp00}  < 20)
@@ -561,7 +588,7 @@ function Scrollarea.repaint
 				hide0{int} {hide0}  := 1
 				set_control_par_str(_btn_preset[(i2{int} {i2}  * 3) + ii0{int} {ii0} ]{int} {_btn_preset} , CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , "      " & final_preset_title_array[ret1{int} {ret1} ]{int} {final_preset_title_array} ){Builtin, None, set_control_par_str}
 				set_control_par_str(_lbl_preset_info[(i2{int} {i2}  * 3) + ii0{int} {ii0} ]{int} {_lbl_preset_info} , CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , final_preset_info[ret1{int} {ret1} ]{string} {final_preset_info} ){Builtin, None, set_control_par_str}
-				if(ret1{int} {ret1}  = param0{int} {param0} )
+				if(ret1{int} {ret1}  = param1{int} {param1} )
 					set_control_par(_btn_preset[(i2{int} {i2}  * 3) + ii0{int} {ii0} ]{int} {_btn_preset} , CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} , 1){Builtin, None, set_control_par}
 				else
 					set_control_par(_btn_preset[(i2{int} {i2}  * 3) + ii0{int} {ii0} ]{int} {_btn_preset} , CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} , 0){Builtin, None, set_control_par}
@@ -569,9 +596,9 @@ function Scrollarea.repaint
 				set_control_par(_lbl_preset_info[(i2{int} {i2}  * 3) + ii0{int} {ii0} ]{int} {_lbl_preset_info} , CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , _font.2pt7[get_control_par(_btn_preset[(i2{int} {i2}  * 3) + ii0{int} {ii0} ]{int} {_btn_preset} , CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} ){Builtin, None, get_control_par} * 2]{int} {_font.2pt7} ){Builtin, None, set_control_par}
 				set_control_par(_btn_favorite[(i2{int} {i2}  * 3) + ii0{int} {ii0} ]{int} {_btn_favorite} , CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} , final_favorite_presets_array[ret1{int} {ret1} ]{int} {final_favorite_presets_array} ){Builtin, None, set_control_par}
 			end if
-			set_control_par(_btn_preset[(i2{int} {i2}  * 3) + ii0{int} {ii0} ]{int} {_btn_preset} , CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[hide0{int} {hide0} ]{int} {hide_state} ){Builtin, None, set_control_par}
-			set_control_par(_lbl_preset_info[(i2{int} {i2}  * 3) + ii0{int} {ii0} ]{int} {_lbl_preset_info} , CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[0]{int} {hide_state} ){Builtin, None, set_control_par}
-			set_control_par(_btn_favorite[(i2{int} {i2}  * 3) + ii0{int} {ii0} ]{int} {_btn_favorite} , CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[hide0{int} {hide0} ]{int} {hide_state} ){Builtin, None, set_control_par}
+			set_control_par(_btn_preset[(i2{int} {i2}  * 3) + ii0{int} {ii0} ]{int} {_btn_preset} , CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , Utils.hide_state[hide0{int} {hide0} ]{int} {Utils.hide_state} ){Builtin, None, set_control_par}
+			set_control_par(_lbl_preset_info[(i2{int} {i2}  * 3) + ii0{int} {ii0} ]{int} {_lbl_preset_info} , CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , Utils.hide_state[0]{int} {Utils.hide_state} ){Builtin, None, set_control_par}
+			set_control_par(_btn_favorite[(i2{int} {i2}  * 3) + ii0{int} {ii0} ]{int} {_btn_favorite} , CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , Utils.hide_state[hide0{int} {hide0} ]{int} {Utils.hide_state} ){Builtin, None, set_control_par}
 			inc(ret1{int} {ret1} ){Builtin, None, inc}
 			inc(ii0{int} {ii0} ){Builtin, None, inc}
 		end while
@@ -583,15 +610,15 @@ function Scrollarea.repaint
 end function
 
 function return_stuff
-	param0{int} {param0}  := param0{int} {param0}  + random(0, 10){Builtin, None, random}
-	ret1{int} {ret1}  := param0{int} {param0} 
+	param1{int} {param1}  := param1{int} {param1}  + random(0, 10){Builtin, None, random}
+	ret1{int} {ret1}  := param1{int} {param1} 
 end function
 
 function Scrollarea.update_position
 	add_line0{int} {add_line0}  := 1
 	scrollable_items0{int} {scrollable_items0}  := 20 + add_line0{int} {add_line0} 
 	set_control_par(get_ui_id(sli_scrollbar{int} {sli_scrollbar} ){Builtin, None, get_ui_id}, CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} , (1000000 * (scrollable_items0{int} {scrollable_items0}  - scroll.up{int} {scroll.up} )) / scrollable_items0{int} {scrollable_items0} ){Builtin, None, set_control_par}
-	param0{int} {param0}  := preset_idx0{int} {preset_idx0} 
+	param1{int} {param1}  := preset_idx0{int} {preset_idx0} 
 	call Scrollarea.repaint{UserDefined, Call, Scrollarea.repaint}
 end function
 
@@ -621,8 +648,8 @@ function Scrollarea.focus
 			scroll.up{int} {scroll.up}  := 0
 		end if
 	end if
-	param0{int} {param0}  := 1
-	hide0{int} {hide0}  := 20 + param0{int} {param0} 
+	param1{int} {param1}  := 1
+	hide0{int} {hide0}  := 20 + param1{int} {param1} 
 	scroll.up{int} {scroll.up}  := (scroll.up{int} {scroll.up}  * (1 + (sh_right(hide0{int} {hide0}  - scroll.up{int} {scroll.up} , 31){Builtin, None, sh_right} .or. sh_right(scroll.up{int} {scroll.up} , 31){Builtin, None, sh_right}))) - (hide0{int} {hide0}  * sh_right(hide0{int} {hide0}  - scroll.up{int} {scroll.up} , 31){Builtin, None, sh_right})
 	preset_idx0{int} {preset_idx0}  := ret1{int} {ret1} 
 	call Scrollarea.update_position{UserDefined, Call, Scrollarea.update_position}
