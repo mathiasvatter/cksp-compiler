@@ -838,7 +838,10 @@ struct NodeIf final : NodeInstruction {
     std::unique_ptr<NodeAST> condition;
     std::unique_ptr<NodeBlock> if_body;
     std::unique_ptr<NodeBlock> else_body;
-    explicit NodeIf(Token tok) : NodeInstruction(NodeType::If, std::move(tok)) {}
+    explicit NodeIf(Token tok) : NodeInstruction(NodeType::If, std::move(tok)) {
+	    set_else_body(std::make_unique<NodeBlock>(tok, true));
+    	set_if_body(std::make_unique<NodeBlock>(tok, true));
+    }
     NodeIf(std::unique_ptr<NodeAST> condition, std::unique_ptr<NodeBlock> statements, std::unique_ptr<NodeBlock> elseStatements, Token tok)
             : NodeInstruction(NodeType::If, std::move(tok)), condition(std::move(condition)), if_body(std::move(statements)), else_body(std::move(elseStatements)) {
             NodeIf::set_child_parents();
@@ -876,7 +879,7 @@ struct NodeIf final : NodeInstruction {
 		condition = std::move(new_condition);
 		condition->parent = this;
 	}
-
+	NodeAST* do_short_circuit_transform(NodeProgram* program);
 };
 
 struct NodeLoop : NodeInstruction {
@@ -996,6 +999,7 @@ struct NodePairs final : NodeInstruction {
 	void update_token_data(const Token& token) override {
 		range -> update_token_data(token);
 	}
+	bool check_environment() const;
 };
 
 // for key, val in range(10)
@@ -1036,6 +1040,10 @@ struct NodeRange final : NodeInstruction {
 		return all_literals;
 	}
 	std::unique_ptr<NodeAST> get_num_iterations();
+	std::unique_ptr<NodeInitializerList> to_initializer_list() const;
+	bool check_environment() const;
+	ASTLowering* get_lowering(NodeProgram *program) const override;
+
 };
 
 struct NodeWhile final : NodeLoop {

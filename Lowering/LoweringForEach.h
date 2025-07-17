@@ -28,6 +28,7 @@ class LoweringForEach : public ASTLowering {
 public:
 	explicit LoweringForEach(NodeProgram* program) : ASTLowering(program) {
 		m_def_provider = program->def_provider;
+		m_program = program;
 	};
 
 private:
@@ -152,7 +153,7 @@ public:
 		return nullptr;
 	}
 
-	static std::unique_ptr<NodeBlock> lower_foreach_range(std::shared_ptr<NodeDataStructure>& key, std::shared_ptr<NodeDataStructure>& value, NodeForEach& node) {
+	std::unique_ptr<NodeBlock> lower_foreach_range(std::shared_ptr<NodeDataStructure>& key, std::shared_ptr<NodeDataStructure>& value, NodeForEach& node) {
 		auto node_scope = std::make_unique<NodeBlock>(node.tok, true);
 		auto range = node.range->cast<NodeRange>();
 		value->ty = range->start->ty;
@@ -165,17 +166,15 @@ public:
 			std::move(node.body),
 			node.tok
 		);
-		auto increase = std::make_unique<NodeSingleAssignment>(
+		// i += step
+		auto compound_assignment = std::make_unique<NodeCompoundAssignment>(
 			value->to_reference(),
-			std::make_unique<NodeBinaryExpr>(
-				token::ADD,
-				value->to_reference(),
-				range->step->clone(),
-				range->tok
-			),
+			range->step->clone(),
+			token::ADD,
 			range->tok
 		);
-		node_while->body->add_as_stmt(std::move(increase));
+		node_while->body->add_as_stmt(std::move(compound_assignment));
+		node_while->body->get_last_statement()->desugar(m_program);
 		if(key) {
 			node_while->body->add_as_stmt(DefinitionProvider::inc(key->to_reference()));
 		}

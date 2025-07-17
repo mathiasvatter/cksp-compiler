@@ -386,6 +386,41 @@ struct NodeString final : NodeAST {
     }
 };
 
+struct NodeFormatString final : NodeAST {
+	std::string quotes;
+	std::vector<std::unique_ptr<NodeAST>> elements;
+	explicit NodeFormatString(Token tok) : NodeAST(std::move(tok), NodeType::FormatString) {
+		set_child_parents();
+	}
+	NodeAST* accept(ASTVisitor &visitor) override;
+	// Kopierkonstruktor
+	NodeFormatString(const NodeFormatString& other);
+	// Clone Methode
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override {
+		return std::make_unique<NodeFormatString>(*this);
+	}
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		for(const auto& elem : elements) elem->update_parents(this);
+	}
+	void set_child_parents() override {
+		for(auto& elem : elements) {
+			if(elem) elem->parent = this;
+		}
+	}
+	std::string get_string() override {
+		std::string str;
+		if(elements.empty()) return str;
+		return StringUtils::join_apply(elements, [&str](auto& elem) {elem->get_string(); return elem->get_string();}, " ");
+	}
+	void add_element(std::unique_ptr<NodeAST> elem) {
+		elem->parent = this;
+		elements.push_back(std::move(elem));
+	}
+	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
+
+};
+
 struct NodeReferenceList final : NodeAST {
 	std::vector<std::unique_ptr<NodeReference>> references;
 	explicit NodeReferenceList(Token tok) : NodeAST(std::move(tok), NodeType::ReferenceList) {
@@ -450,6 +485,12 @@ struct NodeParamList final : NodeAST {
         NodeParamList::set_child_parents();
     }
     explicit NodeParamList(std::vector<std::unique_ptr<NodeAST>> params, Token tok) : NodeAST(std::move(tok), NodeType::ParamList), params(std::move(params)) {
+		NodeParamList::set_child_parents();
+	}
+	NodeParamList(const std::vector<int> &int_params, Token tok) : NodeAST(std::move(tok), NodeType::ParamList) {
+		for (const auto& p : int_params) {
+			params.push_back(std::make_unique<NodeInt>(p, tok));
+		}
 		NodeParamList::set_child_parents();
 	}
 	// Variadischer Template-Konstruktor
@@ -560,10 +601,7 @@ struct NodeInitializerList final : NodeAST {
 	std::string get_string() override {
 		std::string str;
 		if (elements.empty()) return str;
-		for (const auto &p : elements) {
-			str += p->get_string() + ", ";
-		}
-		return str.erase(str.size() - 2);
+		return StringUtils::join_apply(elements, [](auto& el){return el->get_string();});
 	}
 
 	void update_token_data(const Token &token) override {
@@ -578,7 +616,7 @@ struct NodeInitializerList final : NodeAST {
 		param->parent = this;
 		elements.insert(elements.begin(), std::move(param));
 	}
-	std::unique_ptr<NodeAST>& elem(int idx) {
+	std::unique_ptr<NodeAST>& elem(const int idx) {
 		return elements.at(idx);
 	}
 	[[nodiscard]] size_t size() const {
@@ -602,7 +640,8 @@ struct NodeInitializerList final : NodeAST {
 	 */
 	[[nodiscard]] std::vector<int> get_dimensions() const;
 	/// tries to find constant step size with start and stop and transform to range
-	std::optional<std::unique_ptr<class NodeRange>> transform_to_range();
+	std::optional<std::unique_ptr<struct NodeRange>> transform_to_range();
+	std::unique_ptr<struct NodeComposite> transform_to_array(const std::string& name);
 	[[nodiscard]] ASTLowering *get_lowering(NodeProgram *program) const override;
 
 };
@@ -634,6 +673,9 @@ struct NodeUnaryExpr final : NodeAST {
     void update_token_data(const Token& token) override {
         operand -> update_token_data(token);
     }
+	bool needs_short_circuiting();
+	bool has_return_func() const;
+	bool has_return_func_and_bool() const;
 };
 
 struct NodeBinaryExpr final : NodeAST {
@@ -672,6 +714,10 @@ struct NodeBinaryExpr final : NodeAST {
 	/// ndarray3[4,5, 6, 7] -> _ndarray3[(4 * ((10 * 10) * 10)) + ((5 * (10 * 10)) + ((6 * 10) + 7))]
 	static std::unique_ptr<NodeAST> calculate_index_expression(const std::vector<std::unique_ptr<NodeAST>>& sizes, const std::vector<std::unique_ptr<NodeAST>>& indices, size_t dimension, const Token& tok);
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
+	/// returns true if one of the operands is a user-defined return function and the operator is a logical operator
+	bool has_return_func() const;
+	bool has_return_func_and_bool() const;
+	bool needs_short_circuiting();
 };
 
 struct NodeCallback final : NodeAST {

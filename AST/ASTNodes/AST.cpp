@@ -15,6 +15,7 @@
 #include "../../Optimization/TokenCounter.h"
 #include "../../Desugaring/DesugarParamList.h"
 #include "../../Desugaring/DesugarBinaryExpr.h"
+#include "../../Desugaring/DesugarFormatString.h"
 #include "../../Lowering/LoweringFunctionDef.h"
 #include "../../Optimization/NilValidator.h"
 #include "../ASTVisitor/ReferenceManagement/ASTCollectReferences.h"
@@ -32,6 +33,8 @@
 #include "../ASTVisitor/GlobalScope/MarkThreadSafe.h"
 #include "../ASTVisitor/ReferenceManagement/ASTCollectCallSites.h"
 #include "../ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h"
+#include "../ASTVisitor/FunctionHandling/FunctionShortCircuit.h"
+
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, const NodeType node_type) : range(SourceRange(tok)),
@@ -507,6 +510,20 @@ std::unique_ptr<NodeAST> NodeString::clone() const {
     return std::make_unique<NodeString>(*this);
 }
 
+// ************* NodeFormatString ***************
+NodeAST *NodeFormatString::accept(ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeFormatString::NodeFormatString(const NodeFormatString &other): NodeAST(other),
+elements(clone_vector(other.elements)), quotes(other.quotes) {
+	NodeFormatString::set_child_parents();
+}
+
+ASTDesugaring * NodeFormatString::get_desugaring(NodeProgram *program) const {
+	static DesugarFormatString desugaring(program);
+	return &desugaring;
+}
+
 // ************* NodeReferenceList ***************
 NodeAST *NodeReferenceList::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);
@@ -786,6 +803,36 @@ std::optional<std::unique_ptr<NodeRange>> NodeInitializerList::transform_to_rang
 	return std::make_optional(std::make_unique<NodeRange>(std::move(node_start), std::move(node_stop), std::move(node_step), tok));
 }
 
+std::unique_ptr<NodeComposite> NodeInitializerList::transform_to_array(const std::string& name) {
+	auto dimensions = get_dimensions();
+	if (dimensions.size() == 1) {
+		auto array = std::make_unique<NodeArray>(
+			std::nullopt,
+			name,
+			ty,
+			std::make_unique<NodeInt>(dimensions[0], tok),
+			tok
+		);
+		array->kind = NodeArray::Kind::Throwaway;
+		return array;
+	} else if (dimensions.size() > 1) {
+		auto ndarray = std::make_unique<NodeNDArray>(
+			std::nullopt,
+			name,
+			ty,
+			std::make_unique<NodeParamList>(dimensions, tok),
+			tok
+		);
+		ndarray->dimensions = dimensions.size();
+		ndarray->kind = NodeNDArray::Kind::Throwaway;
+		return ndarray;
+	}
+	auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
+	error.m_message = "Failed to transform <InitializerList> to <Array> or <NDArray>.";
+	error.exit();
+	return nullptr;
+}
+
 ASTLowering *NodeInitializerList::get_lowering(NodeProgram *program) const {
 	static LoweringInitializerList lowering(program);
 	return &lowering;
@@ -802,6 +849,29 @@ NodeUnaryExpr::NodeUnaryExpr(const NodeUnaryExpr& other)
 std::unique_ptr<NodeAST> NodeUnaryExpr::clone() const {
     return std::make_unique<NodeUnaryExpr>(*this);
 }
+
+bool NodeUnaryExpr::needs_short_circuiting() {
+	static ShortCircuitNeed need;
+	return need.needs_transformation(*this);
+}
+
+bool NodeUnaryExpr::has_return_func() const {
+	// func_call > 0 or func_call == 0
+	if (auto call = operand->cast<NodeFunctionCall>()) {
+		if (call and !call->is_builtin_kind()) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool NodeUnaryExpr::has_return_func_and_bool() const {
+	if (has_return_func()) {
+		return BOOL_TOKENS.contains(op);
+	}
+	return false;
+}
+
 NodeAST *NodeUnaryExpr::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     if (operand.get() == oldChild) {
         operand = std::move(newChild);
@@ -839,9 +909,39 @@ ASTDesugaring *NodeBinaryExpr::get_desugaring(NodeProgram *program) const {
 	return &desugaring;
 }
 
+bool NodeBinaryExpr::has_return_func() const {
+	// func_call > 0 or func_call == 0
+	if (left->cast<NodeFunctionCall>() or right->cast<NodeFunctionCall>()) {
+		auto left_func = left->cast<NodeFunctionCall>();
+		auto right_func = right->cast<NodeFunctionCall>();
+		if (left_func and !left_func->is_builtin_kind() or right_func and !right_func->is_builtin_kind()) {
+			// func_call() > 0 or func_call() == 0
+			return true;
+		}
+	}
+	return false;
+}
+
+bool NodeBinaryExpr::has_return_func_and_bool() const {
+	auto left_binary = left->cast<NodeBinaryExpr>();
+	auto right_binary = right->cast<NodeBinaryExpr>();
+	if (left_binary and left_binary->has_return_func() or right_binary and right_binary->has_return_func()) {
+		// check if operator is boolean
+		if (BOOL_TOKENS.contains(op)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool NodeBinaryExpr::needs_short_circuiting() {
+	static ShortCircuitNeed need;
+	return need.needs_transformation(*this);
+}
+
 std::unique_ptr<NodeAST> NodeBinaryExpr::create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>> &nodes,
-																		 const size_t index,
-																		 token op) {
+                                                                         const size_t index,
+                                                                         token op) {
 	// Basisfall: Wenn nur ein Element übrig ist, gib dieses zurück.
 	if (index >= nodes.size() - 1) {
 		return nodes[index]->clone();

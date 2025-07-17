@@ -43,6 +43,10 @@
 	XX(BIT_NOT, "bit_not") \
 	XX(SHIFT_LEFT, "sh_left") \
 	XX(SHIFT_RIGHT, "sh_right") \
+	XX(FSTRING_EXPR_START, "<") \
+	XX(FSTRING_EXPR_STOP, ">") \
+	XX(FSTRING_START, "format") \
+	XX(FSTRING_STOP, "end format") \
     XX(OPEN_PARENTH, "open_parenth")\
     XX(CLOSED_PARENTH, "closed_parenth")       \
     XX(OPEN_BRACKET, "open_bracket")\

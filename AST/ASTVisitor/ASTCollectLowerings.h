@@ -67,6 +67,7 @@ public:
 //    void visit(NodeFamily& node) override;
 	/// transform break stmts
 	NodeAST * visit(NodeWhile& node) override;
+	NodeAST * visit(NodeIf& node) override;
 	/// throw error since they are not in loop
 	NodeAST * visit(NodeBreak& node) override;
 	/// lower list struct references to array references
@@ -87,6 +88,7 @@ public:
 	NodeAST * visit(NodeUseCount& node) override;
 	/// flatten nested lists
 	NodeAST * visit(NodeInitializerList& node) override;
+	NodeAST * visit(NodeRange& node) override;
 private:
     DefinitionProvider* m_def_provider;
 };

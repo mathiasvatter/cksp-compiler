@@ -6,6 +6,7 @@
 
 
 #include "ASTDesugaring.h"
+#include "../AST/ASTVisitor/ASTNoVisitor.h"
 
 /**
  * Prepending prefix to variables and references that were declared in namespace
@@ -31,6 +32,7 @@ public:
 		for(const auto & m: node.function_definitions) {
 			m->accept(*this);
 		}
+		m_namespace_variables.clear();
 		return &node;
 	}
 
@@ -114,5 +116,45 @@ public:
 		return &node;
 	}
 
+};
+
+class UnnestNamespaces final : public ASTNoVisitor {
+	std::string m_prefixes;
+	void add_prefix(const std::string& prefix) {
+		if (!m_prefixes.empty()) {
+			m_prefixes += ".";
+		}
+		m_prefixes += prefix;
+	}
+	std::stack<NodeNamespace*> m_stack;
+public:
+	explicit UnnestNamespaces(NodeProgram* program) {
+		m_program = program;
+	}
+
+	NodeAST* unnest(NodeNamespace& node) {
+		return node.accept(*this);
+	}
+
+private:
+	NodeAST* visit(NodeNamespace& node) override {
+		add_prefix(node.prefix);
+		node.prefix = m_prefixes;
+		node.members->accept(*this);
+		return &node;
+	}
+
+	NodeAST* visit(NodeStatement &node) override {
+		if (auto ns = node.statement->cast<NodeNamespace>()) {
+			node.statement->accept(*this);
+			m_program->namespaces.push_back(unique_ptr_cast<NodeNamespace>(std::move(node.statement)));
+			node.statement = std::make_unique<NodeDeadCode>(node.tok);
+		}
+		return &node;
+	}
+
+	NodeAST* visit(NodeBlock &node) override {
+		return ASTVisitor::visit(node);
+	}
 
 };

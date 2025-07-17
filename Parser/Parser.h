@@ -80,6 +80,7 @@ public:
     Result<std::unique_ptr<NodeAST>> parse_number(NodeAST* parent);
 	Result<std::unique_ptr<NodeAST>> parse_nil(NodeAST* parent);
     Result<std::unique_ptr<NodeString>> parse_string(NodeAST* parent);
+	Result<std::unique_ptr<NodeFormatString>> parse_fstring(NodeAST* parent);
     Result<std::unique_ptr<NodeVariable>> parse_variable(NodeAST* parent, const std::optional<Token>& is_persistent=std::optional<Token>(), DataType var_type=DataType::Mutable);
 	Result<std::unique_ptr<NodeVariableRef>> parse_variable_ref(NodeAST* parent);
 	Result<std::unique_ptr<NodePointer>> parse_pointer(NodeAST* parent, const std::optional<Token>& is_persistent=std::optional<Token>());

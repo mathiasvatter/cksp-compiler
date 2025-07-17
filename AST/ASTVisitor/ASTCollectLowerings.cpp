@@ -191,9 +191,12 @@ NodeAST * ASTCollectLowerings::visit(NodeNamespace &node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeWhile& node) {
-	node.condition->accept(*this);
-	node.body->accept(*this);
-	return node.lower(m_program);
+	return ASTVisitor::visit(node)->lower(m_program);
+}
+
+NodeAST * ASTCollectLowerings::visit(NodeIf &node) {
+	ASTVisitor::visit(node);
+	return node.do_short_circuit_transform(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeBreak& node) {
@@ -202,22 +205,20 @@ NodeAST * ASTCollectLowerings::visit(NodeBreak& node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeNumElements& node) {
-	node.array->accept(*this);
-	if(node.dimension) node.dimension->accept(*this);
-	return &node;
+	return ASTVisitor::visit(node);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeUseCount& node) {
-	node.ref->accept(*this);
-	return node.lower(m_program);
+	return ASTVisitor::visit(node)->lower(m_program);
 }
 
 
 NodeAST * ASTCollectLowerings::visit(NodeInitializerList &node) {
-	for(auto & init : node.elements) {
-		init->accept(*this);
-	}
-	return node.lower(m_program);
+	return ASTVisitor::visit(node)->lower(m_program);
+}
+
+NodeAST * ASTCollectLowerings::visit(NodeRange &node) {
+	return ASTVisitor::visit(node)->lower(m_program);
 }
 
 

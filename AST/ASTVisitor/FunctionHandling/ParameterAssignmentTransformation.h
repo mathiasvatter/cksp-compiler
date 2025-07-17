@@ -15,6 +15,7 @@
  */
 class ParameterAssignmentTransformation final : public ASTVisitor {
 	DefinitionProvider* m_def_provider = nullptr;
+	std::string throwaway_array_name{};
 	std::vector<NodeFunctionCall*> m_function_call_stack{};
 	struct FunctionTransformData {
 		std::vector<std::unique_ptr<NodeFunctionParam>> promoted_params;
@@ -32,6 +33,7 @@ public:
 	explicit ParameterAssignmentTransformation(NodeProgram* main) {
 		m_program = main;
 		m_def_provider = main->def_provider;
+		throwaway_array_name = m_def_provider->get_fresh_name("_arr");
 	}
 
 	NodeAST* do_parameter_assignment(NodeProgram& node) {
@@ -153,6 +155,24 @@ private:
 			m_global_declarations.erase(it);
 		}
 
+		// if func args are init list -> replace with local array variable
+		if (ASTFunctionStrategy::is_initializer_function(node)) {
+			for (int i = 0; i < node.function->get_num_args(); i++) {
+				auto& arg = node.function->get_arg(i);
+				if (auto init_list = arg->cast<NodeInitializerList>()) {
+					auto decl = std::make_unique<NodeSingleDeclaration>(
+						init_list->transform_to_array(m_def_provider->get_fresh_name("_arr")),
+						std::move(arg),
+						arg->tok
+					);
+					decl->variable->is_local = true;
+					auto ref = decl->variable->to_reference();
+					node.function->set_arg(i, std::move(ref));
+					block->add_as_stmt(std::move(decl));
+				}
+			}
+		}
+
 		// check if there is transformation data available for this function
 		auto it1 = m_func_transform_data.find(definition.get());
 		if (it1 != m_func_transform_data.end()) {
@@ -240,14 +260,6 @@ private:
 			}
 		}
 
-		// for (const auto& def : m_function_definition_stack) {
-		// 	auto existing_def = def;
-		// 	auto current_def = &node;
-		// 	if (existing_def) {
-		// 		m_subcalls_per_function[current_def].insert(existing_def);
-		// 		m_subcalls_per_function[existing_def].insert(current_def);
-		// 	}
-		// }
 		m_subcalls_per_function[&node].insert(&node);
 
 		{

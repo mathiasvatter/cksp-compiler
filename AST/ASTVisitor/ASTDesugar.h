@@ -53,6 +53,8 @@ class ASTDesugar final : public ASTVisitor {
 	/// add namespaces
 	NodeAST * visit(NodeStruct& node) override;
 
+	NodeAST * visit(NodeFormatString& node) override;
+
 private:
 
     std::unique_ptr<NodeBlock> m_global_variable_declarations = std::make_unique<NodeBlock>(Token());

@@ -183,6 +183,24 @@ inline std::string join(const std::vector<std::string>& elements, char delimiter
     return oss.str();
 }
 
+template<typename Container, typename Protector = std::string, typename Proj>
+std::string join_apply(const Container& elements, Proj proj, const std::string& delimiter = ", ") {
+    std::ostringstream oss;
+    auto it  = std::begin(elements);
+    auto end = std::end(elements);
+    if (it == end) return "";
+
+    // erstes Element
+    oss << proj(*it);
+    ++it;
+
+    // Rest mit Delimiter
+    for (; it != end; ++it) {
+        oss << delimiter << proj(*it);
+    }
+    return oss.str();
+}
+
 /// Converts a vector of bytes to a hex string representation.
 static std::string bytes_to_hex_string(const std::vector<unsigned char>& bytes) {
     std::stringstream ss;
