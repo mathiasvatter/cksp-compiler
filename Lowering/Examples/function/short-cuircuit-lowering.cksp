@@ -1,0 +1,56 @@
+
+
+function return_stuff(param: int)
+	param += random(0,10)
+	return param
+end function
+
+{-------------------------------------------------------------------------------------------
+										AND Pre Lowering
+--------------------------------------------------------------------------------------------}
+if return_stuff(5) > 10 and return_stuff(5) < 20
+	print("Value is between 10 and 20")
+else
+	print("Value is outside the range")
+end if
+
+{-------------------------------------------------------------------------------------------
+										AND Post Lowering
+--------------------------------------------------------------------------------------------}
+declare short_circuit: bool := false
+
+if return_stuff(5) > 10
+	if return_stuff(5) < 20
+		short_circuit := true
+	end if
+end if
+if short_circuit
+	message("Value is between 10 and 20")
+else
+	message("Value is outside the range")
+end if
+
+{-------------------------------------------------------------------------------------------
+										OR Pre Lowering
+--------------------------------------------------------------------------------------------}
+if return_stuff(5) > 10 or return_stuff(5) < 20
+	message("Value is between 10 or 20")
+else
+	message("Value is outside the range")
+end if
+
+{-------------------------------------------------------------------------------------------
+										OR Post Lowering
+--------------------------------------------------------------------------------------------}
+declare short_circuit: bool := false
+
+if return_stuff(5) > 10
+	short_circuit := true
+else if return_stuff(5) < 20
+	short_circuit := true
+end if
+if short_circuit
+	message("Value is between 10 and 20")
+else
+	message("Value is outside the range")
+end if

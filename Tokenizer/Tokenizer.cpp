@@ -34,53 +34,71 @@ Tokenizer::Tokenizer(const std::string& input, const std::string& file, FileType
 }
 
 std::vector<Token> Tokenizer::tokenize() {
+	is_in_fstring = false;
     if(m_input.empty())
         CompileError(ErrorType::TokenError, "Missing input file to tokenize.", 0, "<input file>", "", m_current_file).exit();
 
-    while (m_pos < m_input_length - 1) {
-        if(is_pragma()) {
-            consume();
-            consume();
-        }
-        else if (peek() == '/' && (peek(1) == '*' || peek(1) == '/') || (peek() == '{' && !m_is_json)) {
-            get_comment();
-        } else if (peek() == '\n') {
-            get_linebreak();
-            fix_line_continuation();
-        } else if (PARENTH.contains(peek())) {
-            get_parenth();
-        } else if (peek() == ':' && peek(1) == '=') {
-            get_assignment();
-        } else if (peek() == '-' && peek(1) == '>') {
-            get_arrow();
-        } else if (BINARY_OPERATORS.contains(peek()) && peek(1) != '>') {
-			get_binary_operators();
-        } else if (is_keyword_or_num()) {
-            get_keyword_or_num();
-        } else if (is_string()) {
-            get_string();
-        } else if (COMPARISON_OPERATORS_START.contains(peek())) {
-            get_comparison_operators();
-        } else if (peek() == '.' && peek(1) != '.') {
-            get_bitwise_operator();
-        } else if (peek() == '.' && peek(1) == '.' && peek(2) == '.') {
-            get_line_continuation();
-        } else if (peek() == ',') {
-            get_comma();
-        } else if(is_space(peek())) {
-            skip_whitespace();
-        } else if(peek() == ':') {
-            get_type();
-        } else if(m_is_json and (peek() == '}' || peek() == '{')) {
-            get_curly_brackets();
-        } else
-            get_invalid();
-    }
+	token_loop();
+
     add_token(token::LINEBRK, "\n");
     // m_tokens.emplace_back(token::LINEBRK, "\n", m_line, m_line_pos-std::string("\n").length(), m_current_file);
     // m_tokens.emplace_back(token::END_TOKEN, "", 0, m_line_pos, m_current_file);
     add_token(token::END_TOKEN, m_buffer);
     return m_tokens;
+}
+
+void Tokenizer::token_loop() {
+	while (m_pos < m_input_length - 1) {
+		if(is_pragma()) {
+			consume();
+			consume();
+		}
+		else if (peek() == '/' && (peek(1) == '*' || peek(1) == '/') || (peek() == '{' && !m_is_json)) {
+			get_comment();
+		} else if (peek() == '\n') {
+			get_linebreak();
+			fix_line_continuation();
+		} else if (PARENTH.contains(peek())) {
+			get_parenth();
+		} else if (peek() == 'f' && (peek(1) == '\'' || peek(1) == '"')) {
+			flush_buffer();
+			consume(); // consume f
+			fstring_starting_char.push(consume());
+			add_token(token::FSTRING_START, m_buffer);
+			get_format_string();
+		} else if (peek() == '>' && !fstring_starting_char.empty()) {
+			flush_buffer();
+			consume(); // consume >
+			add_token(token::FSTRING_EXPR_STOP, m_buffer);
+			flush_buffer();
+			get_format_string();
+		} else if (peek() == ':' && peek(1) == '=') {
+			get_assignment();
+		} else if (peek() == '-' && peek(1) == '>') {
+			get_arrow();
+		} else if (BINARY_OPERATORS.contains(peek()) && peek(1) != '>') {
+			get_binary_operators();
+		} else if (is_keyword_or_num()) {
+			get_keyword_or_num();
+		} else if (is_string()) {
+			get_string();
+		} else if (COMPARISON_OPERATORS_START.contains(peek())) {
+			get_comparison_operators();
+		} else if (peek() == '.' && peek(1) != '.') {
+			get_bitwise_operator();
+		} else if (peek() == '.' && peek(1) == '.' && peek(2) == '.') {
+			get_line_continuation();
+		} else if (peek() == ',') {
+			get_comma();
+		} else if(is_space(peek())) {
+			skip_whitespace();
+		} else if(peek() == ':') {
+			get_type();
+		} else if(m_is_json and (peek() == '}' || peek() == '{')) {
+			get_curly_brackets();
+		} else
+			get_invalid();
+	}
 }
 
 char Tokenizer::consume() {
@@ -203,6 +221,33 @@ void Tokenizer::get_string() {
 	}
 	consume();
 	add_token(token::STRING, m_buffer);
+	skip_whitespace();
+}
+
+void Tokenizer::get_format_string() {
+    while(peek() != fstring_starting_char.top()) {
+        if (peek() == '\\' and peek(1) == fstring_starting_char.top()) {
+            consume();
+        }
+    	if (peek() == '\\' and peek(1) == '<') {
+    		consume();
+    	}
+    	if (peek() == '<') {
+    		if (!m_buffer.empty()) {
+    			add_token(token::STRING, m_buffer);
+    		}
+    		flush_buffer();
+    		consume();
+    		add_token(token::FSTRING_EXPR_START, m_buffer);
+    		return;
+    	}
+    	consume();
+    }
+	add_token(token::STRING, m_buffer);
+	consume(); // consume the fstring_starting_char
+	add_token(token::FSTRING_STOP, m_buffer);
+	flush_buffer();
+	fstring_starting_char.pop();
 	skip_whitespace();
 }
 

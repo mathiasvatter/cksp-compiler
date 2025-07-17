@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 project(CKSP_Compiler VERSION 0.0.7)
-set(PRE_RELEASE_VERSION "-alpha.4")
+set(PRE_RELEASE_VERSION "-alpha.5")
 
 set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
 configure_file(
@@ -219,6 +219,10 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/FunctionHandling/UIControlParamHandling.h
         Desugaring/DesugarCompoundAssignment.h
         Desugaring/DesugarNamespace.h
+        Lowering/LoweringRange.h
+        Optimization/PreConstantPropagation.h
+        AST/ASTVisitor/FunctionHandling/FunctionShortCircuit.h
+        Desugaring/DesugarFormatString.h
 )
 add_dependencies(cksp generate_headers)
 

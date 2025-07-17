@@ -64,6 +64,44 @@ Result<std::unique_ptr<NodeString>> Parser::parse_string(NodeAST* parent) {
     return Result<std::unique_ptr<NodeString>>(std::move(node_string));
 }
 
+Result<std::unique_ptr<NodeFormatString>> Parser::parse_fstring(NodeAST *parent) {
+	auto start_tok = consume(); // consume 'f"'
+
+	auto fstring_node = std::make_unique<NodeFormatString>(start_tok);
+	while (peek().type != token::FSTRING_STOP) {
+		if (peek().type == token::FSTRING_EXPR_START) {
+			consume(); // consume '<'
+			auto expr = parse_expression(parent);
+			if (expr.is_error()) {
+				return Result<std::unique_ptr<NodeFormatString>>(expr.get_error());
+			}
+			fstring_node->add_element(std::move(expr.unwrap()));
+			if (peek().type != token::FSTRING_EXPR_STOP) {
+				return Result<std::unique_ptr<NodeFormatString>>(
+					CompileError(ErrorType::ParseError, "Expected '>' to close format string expression.", ">", peek()));
+			}
+			consume(); // consume '>'
+		} else if (peek().type == token::STRING) {
+			auto fstring = parse_string(parent);
+			if (fstring.is_error()) {
+				return Result<std::unique_ptr<NodeFormatString>>(fstring.get_error());
+			}
+			fstring_node->add_element(std::move(fstring.unwrap()));
+		} else {
+			auto error = CompileError(
+				ErrorType::ParseError,
+				"Expected a string or format string expression inside format string.",
+				"string or format string expression",
+				peek());
+			return Result<std::unique_ptr<NodeFormatString>>(error);
+		}
+	}
+	auto quotes = consume(); // consume fstring end
+	fstring_node->parent = parent;
+	fstring_node->quotes = quotes.val;
+	return Result<std::unique_ptr<NodeFormatString>>(std::move(fstring_node));
+}
+
 Result<std::unique_ptr<NodeAST>> Parser::parse_nil(NodeAST* parent) {
 	auto nil = consume(); // consume 'nil'
 	auto node_nil = std::make_unique<NodeNil>(nil);
@@ -276,8 +314,12 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_expression(NodeAST* parent) {
 Result<std::unique_ptr<NodeAST>> Parser::parse_string_expr(NodeAST* parent) {
     if (peek().type == token::STRING) {
 	    if (auto expr = parse_string(parent); !expr.is_error()) {
-            return Result<std::unique_ptr<NodeAST>>(std::move(expr.unwrap()));
-        } else return Result<std::unique_ptr<NodeAST>>(expr.get_error());
+	    	return Result<std::unique_ptr<NodeAST>>(std::move(expr.unwrap()));
+	    } else return Result<std::unique_ptr<NodeAST>>(expr.get_error());
+    } else if (peek().type == token::FSTRING_START) {
+    	if (auto expr = parse_fstring(parent); !expr.is_error()) {
+    		return Result<std::unique_ptr<NodeAST>>(std::move(expr.unwrap()));
+    	} else return Result<std::unique_ptr<NodeAST>>(expr.get_error());
     } else {
 	    if (auto expr = parse_binary_expr(parent); !expr.is_error()) {
             return Result<std::unique_ptr<NodeAST>>(std::move(expr.unwrap()));
@@ -697,6 +739,7 @@ Result<std::unique_ptr<NodeCompoundAssignment>> Parser::parse_compound_assign_st
 	if (!valid_operator_tokens.contains(peek().type)) {
 		error.set_message( "Invalid Operator Syntax for <Compound Assignment>.");
 		std::vector<std::string> valid_tokens{};
+		valid_tokens.reserve(valid_operator_tokens.size());
 		for (auto& tok : valid_operator_tokens) {
 			valid_tokens.push_back(std::string("<") + tokenStrings[static_cast<int>(tok)] + ">");
 		}
@@ -985,13 +1028,19 @@ Result<std::unique_ptr<NodeNamespace>> Parser::parse_namespace(NodeAST *parent) 
 			if(declare_stmt.is_error()) {
 				return Result<std::unique_ptr<NodeNamespace>>(declare_stmt.get_error());
 			}
-			node_declarations->add_stmt(std::make_unique<NodeStatement>(std::move(declare_stmt.unwrap()), start_token));
+			node_declarations->add_as_stmt(std::move(declare_stmt.unwrap()));
 		} else if (peek().type == token::FUNCTION) {
 			auto func = parse_function_definition(node_declarations.get());
 			if(func.is_error()) {
 				return Result<std::unique_ptr<NodeNamespace>>(func.get_error());
 			}
 			node_functions.push_back(std::move(func.unwrap()));
+		} else if (peek().type == token::NAMESPACE) {
+			auto namespace_def = parse_namespace(node_declarations.get());
+			if (namespace_def.is_error()) {
+				return Result<std::unique_ptr<NodeNamespace>>(namespace_def.get_error());
+			}
+			node_declarations->add_as_stmt(std::move(namespace_def.unwrap()));
 		} else {
 			error.add_message("<namespaces> can only contain <declare> statements or <function> definitions that get added to the global scope.");
 			error.set_token(peek());

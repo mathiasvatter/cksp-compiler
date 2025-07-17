@@ -139,7 +139,7 @@ private:
 		return error;
 	}
 
-	static inline std::unique_ptr<NodeParamList> inline_message_parameters(std::unique_ptr<NodeParamList>& params) {
+	static std::unique_ptr<NodeParamList> inline_message_parameters(std::unique_ptr<NodeParamList>& params) {
 		// it is already only one parameter
 		if (params->params.size() == 1) return std::move(params);
 

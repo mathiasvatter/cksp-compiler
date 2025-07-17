@@ -67,14 +67,13 @@ NodeAST * ASTSemanticAnalysis::visit(NodeRange& node) {
 	node.stop->accept(*this);
 	if(node.step) node.step->accept(*this);
 
-	// can also be r_value in declaration statement
-	// check that it is only in for each loop (for now)
-	if(!node.parent->cast<NodeForEach>() and !node.parent->cast<NodePairs>()) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-		error.m_message = "As of v"+COMPILER_VERSION+", <range> can only be used in for-each loop.";
-		error.exit();
-	}
+	node.check_environment();
 	return &node;
+}
+
+NodeAST * ASTSemanticAnalysis::visit(NodePairs &node) {
+	node.check_environment();
+	return ASTVisitor::visit(node);
 }
 
 /// check if declared constant variable ref gets new assignment -> throw error
@@ -117,7 +116,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeSingleDeclaration &node) {
 	// declare array[] := (0)
 	if (node.value) {
 		if (node.variable->cast<NodeArray>() or node.variable->cast<NodeNDArray>()) {
-			if (!node.value->cast<NodeInitializerList>()) {
+			if (!node.value->cast<NodeInitializerList>() and !node.value->cast<NodeRange>()) {
 				auto init_list = std::make_unique<NodeInitializerList>(node.tok, std::move(node.value));
 				node.set_value(std::move(init_list));
 			}

@@ -320,7 +320,29 @@ NodeAST * TypeInference::visit(NodeRange& node) {
 	node.step->accept(*this);
 	match_against(*node.step, TypeRegistry::Number);
 
-	match_against(node, TypeRegistry::ArrayOfUnknown);
+	match_type(*node.start, *node.stop);
+	match_type(*node.stop, *node.step);
+
+	// all three nodes need to be of the same type
+	auto error = CompileError(ErrorType::TypeError, "", "", node.start->tok);
+	if (!node.start->ty->is_same_type(node.stop->ty)) {
+		error.m_message = "<range> start and stop values need to be of the same type.";
+		error.m_got = "<"+node.start->ty->to_string() + "> and <" + node.stop->ty->to_string() + ">";
+		error.exit();
+	}
+	if (!node.start->ty->is_same_type(node.step->ty)) {
+		error.m_message = "<range> start and step values need to be of the same type.";
+		error.m_got = "<"+node.start->ty->to_string() + "> and <" + node.step->ty->to_string() + ">";
+		error.exit();
+	}
+
+	if (node.start->ty == TypeRegistry::Integer) {
+		match_against(node, TypeRegistry::ArrayOfInt);
+	} else if (node.start->ty == TypeRegistry::Real) {
+		match_against(node, TypeRegistry::ArrayOfReal);
+	} else {
+		match_against(node, TypeRegistry::ArrayOfUnknown);
+	}
 	return &node;
 }
 
