@@ -56,6 +56,7 @@ private:
 
 	NodeAST* visit(NodeSingleDeclaration& node) override {
 		if (!node.value) return &node;
+		node.value->accept(*this);
 		if (const auto func_call = node.value->cast<NodeFunctionCall>()) {
 			func_call->bind_definition(m_program);
 			const auto definition = func_call->get_definition();

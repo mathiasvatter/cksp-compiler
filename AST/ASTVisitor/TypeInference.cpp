@@ -384,10 +384,16 @@ NodeAST * TypeInference::visit(NodeForEach& node) {
 		match_against(*node.key->variable, TypeRegistry::Integer);
 	}
 
+	node.range->accept(*this);
+	if(auto pairs = node.range->cast<NodePairs>()) {
+		match_element_types(*pairs->range, *node.value->variable);
+	} else {
+		match_element_types(*node.range, *node.value->variable);
+	}
+
 	node.body->accept(*this);
 	node.value->accept(*this);
 
-	node.range->accept(*this);
 	if(auto pairs = node.range->cast<NodePairs>()) {
 		match_element_types(*pairs->range, *node.value->variable);
 	} else {
