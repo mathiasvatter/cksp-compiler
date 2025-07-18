@@ -176,6 +176,7 @@ public:
 		if(node.get_node_type() == NodeType::NDArrayRef) type = "<NDArray>";
 		if(node.get_node_type() == NodeType::PointerRef) type = "<Pointer>";
 		if(node.get_node_type() == NodeType::ListRef) type = "<List>";
+		if (node.get_node_type() == NodeType::FunctionHeaderRef) type = "<Function> Variable of this name";
 		compile_error.m_message = type+" has not been declared: " + node.tok.val+". "+add_msg;
 		compile_error.m_expected = "Valid declaration";
 		return compile_error;

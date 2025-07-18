@@ -1,24 +1,27 @@
 on init
 	declare _iter0 : int {Reuses: 0}
-	declare Utils.font_types[6] : int[] := [CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , CONTROL_PAR_FONT_TYPE_ON{int} {CONTROL_PAR_FONT_TYPE_ON} , CONTROL_PAR_FONT_TYPE_OFF_PRESSED{int} {CONTROL_PAR_FONT_TYPE_OFF_PRESSED} , CONTROL_PAR_FONT_TYPE_ON_PRESSED{int} {CONTROL_PAR_FONT_TYPE_ON_PRESSED} , CONTROL_PAR_FONT_TYPE_OFF_HOVER{int} {CONTROL_PAR_FONT_TYPE_OFF_HOVER} , CONTROL_PAR_FONT_TYPE_ON_HOVER{int} {CONTROL_PAR_FONT_TYPE_ON_HOVER} ] {Reuses: 0}
 	declare Utils.hide_state[2] : int[] := [HIDE_WHOLE_CONTROL{int} {HIDE_WHOLE_CONTROL} , HIDE_PART_NOTHING{int} {HIDE_PART_NOTHING} ] {Reuses: 0}
-	declare i2 : int {Reuses: 6}
+	declare BrowserFont.types[6] : int[] := [CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , CONTROL_PAR_FONT_TYPE_ON{int} {CONTROL_PAR_FONT_TYPE_ON} , CONTROL_PAR_FONT_TYPE_OFF_PRESSED{int} {CONTROL_PAR_FONT_TYPE_OFF_PRESSED} , CONTROL_PAR_FONT_TYPE_ON_PRESSED{int} {CONTROL_PAR_FONT_TYPE_ON_PRESSED} , CONTROL_PAR_FONT_TYPE_OFF_HOVER{int} {CONTROL_PAR_FONT_TYPE_OFF_HOVER} , CONTROL_PAR_FONT_TYPE_ON_HOVER{int} {CONTROL_PAR_FONT_TYPE_ON_HOVER} ] {Reuses: 0}
+	declare BrowserFont.preset[7] : int[] := [get_font_id("roboto_2pt8_white_off.png"){Builtin, None, get_font_id}, get_font_id("roboto_2pt8_white_on.png"){Builtin, None, get_font_id}, get_font_id("roboto_2pt8_white_off_hover.png"){Builtin, None, get_font_id}, get_font_id("roboto_2pt8_white_on.png"){Builtin, None, get_font_id}, get_font_id("roboto_2pt8_white_off_hover.png"){Builtin, None, get_font_id}, get_font_id("roboto_2pt8_white_on.png"){Builtin, None, get_font_id}, get_font_id("roboto_2pt8_white_disabled.png"){Builtin, None, get_font_id}] {Reuses: 0}
+	declare BrowserFont.preset_strip[7] : int[] := [get_font_id("roboto_3pt6_white_off.png"){Builtin, None, get_font_id}, get_font_id("roboto_3pt6_white_on.png"){Builtin, None, get_font_id}, get_font_id("roboto_3pt6_white_off_hover.png"){Builtin, None, get_font_id}, get_font_id("roboto_3pt6_white_on.png"){Builtin, None, get_font_id}, get_font_id("roboto_3pt6_white_off_hover.png"){Builtin, None, get_font_id}, get_font_id("roboto_3pt6_white_on.png"){Builtin, None, get_font_id}, get_font_id("roboto_3pt6_white_disabled.png"){Builtin, None, get_font_id}] {Reuses: 0}
+	declare BrowserFont.tag[7] : int[] := [get_font_id("roboto_2pt8_white_off.png"){Builtin, None, get_font_id}, get_font_id("roboto_2pt8_white_on.png"){Builtin, None, get_font_id}, get_font_id("roboto_2pt8_white_off_hover.png"){Builtin, None, get_font_id}, get_font_id("roboto_2pt8_white_on.png"){Builtin, None, get_font_id}, get_font_id("roboto_2pt8_white_off_hover.png"){Builtin, None, get_font_id}, get_font_id("roboto_2pt8_white_on.png"){Builtin, None, get_font_id}, get_font_id("roboto_2pt8_white_disabled.png"){Builtin, None, get_font_id}] {Reuses: 0}
+	declare BrowserFont.category[7] : int[] := [get_font_id("roboto_3pt3_white_disabled.png"){Builtin, None, get_font_id}, get_font_id("roboto_3pt3_white_on.png"){Builtin, None, get_font_id}, get_font_id("roboto_3pt3_white_disabled.png"){Builtin, None, get_font_id}, get_font_id("roboto_3pt3_white_on.png"){Builtin, None, get_font_id}, get_font_id("roboto_3pt3_white_disabled.png"){Builtin, None, get_font_id}, get_font_id("roboto_3pt3_white_on.png"){Builtin, None, get_font_id}, get_font_id("roboto_3pt3_white_disabled.png"){Builtin, None, get_font_id}] {Reuses: 0}
+	declare i3 : int {Reuses: 7}
 	declare ii0 : int {Reuses: 4}
-	declare hide0 : int {Reuses: 5}
-	declare ret1 : int {Reuses: 4}
-	declare param1 : int {Reuses: 3}
-	declare preset_idx0 : int {Reuses: 0}
+	declare hide0 : int {Reuses: 4}
+	declare ret1 : int {Reuses: 2}
+	declare param1 : int {Reuses: 2}
+	declare preset_idx1 : int {Reuses: 0}
 	declare add_line0 : int {Reuses: 0}
 	declare scrollable_items0 : int {Reuses: 0}
-	declare hide000 : int {Reuses: 2}
 	declare local _ret00 : int {Reuses: 0}
 	declare local _ret10 : int {Reuses: 0}
 	declare local _ret20 : int {Reuses: 0}
-	declare local category_positions0[3] : int[] {Reuses: 1}
-	declare local i00 : int {Reuses: 9}
-	declare local u00 : int {Reuses: 6}
+	declare local i00 : int {Reuses: 10}
+	declare local _arr10[3] : int[] {Reuses: 0}
+	declare local u00 : int {Reuses: 4}
 	declare local u01 : int {Reuses: 3}
-	declare _short_circuit00 : int {Reuses: 1}
+	declare _short_circuit10 : int {Reuses: 1}
 	declare _sc_temp00 : int {Reuses: 2}
 	declare _sc_temp10 : int {Reuses: 1}
 	declare _ret30 : int {Reuses: 0}
@@ -27,8 +30,9 @@ on init
 	declare Position::allocation[3] : int[] {Reuses: 0}
 	declare Position::x[3] : int[] {Reuses: 0}
 	declare Position::y[3] : int[] {Reuses: 0}
+	declare read Browser::current_idx[667] : int[] {Reuses: 0}
 	make_perfview{Builtin, None, make_perfview}
-	message("** Script '" & "Preset Browser" & "' Compile " & "19:01:23" & " " & "07/17/25" & " with " & "0.0.7-alpha.5" & " **"){Builtin, None, message}
+	message("** Script '" & "Preset Browser" & "' Compile " & "17:16:51" & " " & "07/18/25" & " with " & "0.0.7-alpha.5" & " **"){Builtin, None, message}
 	set_script_title("Preset Browser"){Builtin, None, set_script_title}
 	set_ui_height_px(510){Builtin, None, set_ui_height_px}
 	set_ui_width_px(850){Builtin, None, set_ui_width_px}
@@ -44,128 +48,77 @@ on init
 	set_control_par(get_ui_id(btn_lock{int} {btn_lock} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 484){Builtin, None, set_control_par}
 	set_control_par(get_ui_id(btn_lock{int} {btn_lock} ){Builtin, None, get_ui_id}, CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 80){Builtin, None, set_control_par}
 	set_control_par(get_ui_id(btn_lock{int} {btn_lock} ){Builtin, None, get_ui_id}, CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 30){Builtin, None, set_control_par}
-	declare _font.2pt7[14] : int[] {Reuses: 0}
-	declare _font.2pt8[14] : int[] {Reuses: 0}
-	declare _font.3pt3[14] : int[] {Reuses: 0}
-	declare _font.3pt6[14] : int[] {Reuses: 0}
-	declare _font.3pt8[14] : int[] {Reuses: 0}
-	declare _font.4pt5[14] : int[] {Reuses: 0}
-		_font.2pt7[0]{int} {_font.2pt7}  := get_font_id("roboto_2pt7_white_off.png"){Builtin, None, get_font_id}
-		_font.2pt7[2]{int} {_font.2pt7}  := get_font_id("roboto_2pt7_white_on.png"){Builtin, None, get_font_id}
-		_font.2pt7[4]{int} {_font.2pt7}  := get_font_id("roboto_2pt7_white_off_hover.png"){Builtin, None, get_font_id}
-		_font.2pt7[6]{int} {_font.2pt7}  := get_font_id("roboto_2pt7_white_on.png"){Builtin, None, get_font_id}
-		_font.2pt7[8]{int} {_font.2pt7}  := get_font_id("roboto_2pt7_white_off_hover.png"){Builtin, None, get_font_id}
-		_font.2pt7[10]{int} {_font.2pt7}  := get_font_id("roboto_2pt7_white_on.png"){Builtin, None, get_font_id}
-		_font.2pt7[12]{int} {_font.2pt7}  := get_font_id("roboto_2pt7_white_disabled.png"){Builtin, None, get_font_id}
-		_font.2pt8[0]{int} {_font.2pt8}  := get_font_id("roboto_2pt8_white_off.png"){Builtin, None, get_font_id}
-		_font.2pt8[2]{int} {_font.2pt8}  := get_font_id("roboto_2pt8_white_on.png"){Builtin, None, get_font_id}
-		_font.2pt8[4]{int} {_font.2pt8}  := get_font_id("roboto_2pt8_white_off_hover.png"){Builtin, None, get_font_id}
-		_font.2pt8[6]{int} {_font.2pt8}  := get_font_id("roboto_2pt8_white_on.png"){Builtin, None, get_font_id}
-		_font.2pt8[8]{int} {_font.2pt8}  := get_font_id("roboto_2pt8_white_off_hover.png"){Builtin, None, get_font_id}
-		_font.2pt8[10]{int} {_font.2pt8}  := get_font_id("roboto_2pt8_white_on.png"){Builtin, None, get_font_id}
-		_font.2pt8[12]{int} {_font.2pt8}  := get_font_id("roboto_2pt8_white_disabled.png"){Builtin, None, get_font_id}
-		_font.3pt3[0]{int} {_font.3pt3}  := get_font_id("roboto_3pt3_white_off.png"){Builtin, None, get_font_id}
-		_font.3pt3[2]{int} {_font.3pt3}  := get_font_id("roboto_3pt3_white_on.png"){Builtin, None, get_font_id}
-		_font.3pt3[4]{int} {_font.3pt3}  := get_font_id("roboto_3pt3_white_off_hover.png"){Builtin, None, get_font_id}
-		_font.3pt3[6]{int} {_font.3pt3}  := get_font_id("roboto_3pt3_white_on.png"){Builtin, None, get_font_id}
-		_font.3pt3[8]{int} {_font.3pt3}  := get_font_id("roboto_3pt3_white_off_hover.png"){Builtin, None, get_font_id}
-		_font.3pt3[10]{int} {_font.3pt3}  := get_font_id("roboto_3pt3_white_on.png"){Builtin, None, get_font_id}
-		_font.3pt3[12]{int} {_font.3pt3}  := get_font_id("roboto_3pt3_white_disabled.png"){Builtin, None, get_font_id}
-		_font.3pt6[0]{int} {_font.3pt6}  := get_font_id("roboto_3pt6_white_off.png"){Builtin, None, get_font_id}
-		_font.3pt6[2]{int} {_font.3pt6}  := get_font_id("roboto_3pt6_white_on.png"){Builtin, None, get_font_id}
-		_font.3pt6[4]{int} {_font.3pt6}  := get_font_id("roboto_3pt6_white_off_hover.png"){Builtin, None, get_font_id}
-		_font.3pt6[6]{int} {_font.3pt6}  := get_font_id("roboto_3pt6_white_on.png"){Builtin, None, get_font_id}
-		_font.3pt6[8]{int} {_font.3pt6}  := get_font_id("roboto_3pt6_white_off_hover.png"){Builtin, None, get_font_id}
-		_font.3pt6[10]{int} {_font.3pt6}  := get_font_id("roboto_3pt6_white_on.png"){Builtin, None, get_font_id}
-		_font.3pt6[12]{int} {_font.3pt6}  := get_font_id("roboto_3pt6_white_disabled.png"){Builtin, None, get_font_id}
-		_font.3pt8[0]{int} {_font.3pt8}  := get_font_id("roboto_3pt8_white_off.png"){Builtin, None, get_font_id}
-		_font.3pt8[2]{int} {_font.3pt8}  := get_font_id("roboto_3pt8_white_on.png"){Builtin, None, get_font_id}
-		_font.3pt8[4]{int} {_font.3pt8}  := get_font_id("roboto_3pt8_white_off_hover.png"){Builtin, None, get_font_id}
-		_font.3pt8[6]{int} {_font.3pt8}  := get_font_id("roboto_3pt8_white_on.png"){Builtin, None, get_font_id}
-		_font.3pt8[8]{int} {_font.3pt8}  := get_font_id("roboto_3pt8_white_off_hover.png"){Builtin, None, get_font_id}
-		_font.3pt8[10]{int} {_font.3pt8}  := get_font_id("roboto_3pt8_white_on.png"){Builtin, None, get_font_id}
-		_font.3pt8[12]{int} {_font.3pt8}  := get_font_id("roboto_3pt8_white_disabled.png"){Builtin, None, get_font_id}
-		_font.4pt5[0]{int} {_font.4pt5}  := get_font_id("roboto_4pt5_white_off.png"){Builtin, None, get_font_id}
-		_font.4pt5[2]{int} {_font.4pt5}  := get_font_id("roboto_4pt5_white_on.png"){Builtin, None, get_font_id}
-		_font.4pt5[4]{int} {_font.4pt5}  := get_font_id("roboto_4pt5_white_off_hover.png"){Builtin, None, get_font_id}
-		_font.4pt5[6]{int} {_font.4pt5}  := get_font_id("roboto_4pt5_white_on.png"){Builtin, None, get_font_id}
-		_font.4pt5[8]{int} {_font.4pt5}  := get_font_id("roboto_4pt5_white_off_hover.png"){Builtin, None, get_font_id}
-		_font.4pt5[10]{int} {_font.4pt5}  := get_font_id("roboto_4pt5_white_on.png"){Builtin, None, get_font_id}
-		_font.4pt5[12]{int} {_font.4pt5}  := get_font_id("roboto_4pt5_white_disabled.png"){Builtin, None, get_font_id}
-
 	declare tag_names[10] : string[] := ["All", "Bass", "Drums", "Keys", "Leads", "Pads", "Plucks", "Strings", "Synths", "FX"] {Reuses: 0}
 	declare category_titles[3] : string[] := ["Category 1", "Category 2", "Category 3"] {Reuses: 0}
 	ii0{int} {ii0}  := 10
-	i2{int} {i2}  := 10
+	i3{int} {i3}  := 10
 	Position::free_idx{int} {Position::free_idx}  := search(Position::allocation{int[]} {Position::allocation} , 0){Builtin, None, search}
 	if(Position::free_idx{int} {Position::free_idx}  = -1)
 		message("Error: No more free space available to allocate objects of type 'Position'"){Builtin, None, message}
 	end if
 	Position::allocation[Position::free_idx{int} {Position::free_idx} ]{int} {Position::allocation}  := 1
 	Position::x[Position::free_idx{int} {Position::free_idx} ]{int} {Position::x}  := ii0{int} {ii0} 
-	Position::y[Position::free_idx{int} {Position::free_idx} ]{int} {Position::y}  := i2{int} {i2} 
+	Position::y[Position::free_idx{int} {Position::free_idx} ]{int} {Position::y}  := i3{int} {i3} 
 	hide0{int} {hide0}  := Position::free_idx{int} {Position::free_idx} 
 	_ret00{int} {_ret00}  := hide0{int} {hide0} 
-	ii0{int} {ii0}  := 100
-	i2{int} {i2}  := 10
+	ii0{int} {ii0}  := 170
+	i3{int} {i3}  := 10
 	Position::free_idx{int} {Position::free_idx}  := search(Position::allocation{int[]} {Position::allocation} , 0){Builtin, None, search}
 	if(Position::free_idx{int} {Position::free_idx}  = -1)
 		message("Error: No more free space available to allocate objects of type 'Position'"){Builtin, None, message}
 	end if
 	Position::allocation[Position::free_idx{int} {Position::free_idx} ]{int} {Position::allocation}  := 1
 	Position::x[Position::free_idx{int} {Position::free_idx} ]{int} {Position::x}  := ii0{int} {ii0} 
-	Position::y[Position::free_idx{int} {Position::free_idx} ]{int} {Position::y}  := i2{int} {i2} 
+	Position::y[Position::free_idx{int} {Position::free_idx} ]{int} {Position::y}  := i3{int} {i3} 
 	hide0{int} {hide0}  := Position::free_idx{int} {Position::free_idx} 
 	_ret10{int} {_ret10}  := hide0{int} {hide0} 
-	ii0{int} {ii0}  := 200
-	i2{int} {i2}  := 10
+	ii0{int} {ii0}  := 330
+	i3{int} {i3}  := 10
 	Position::free_idx{int} {Position::free_idx}  := search(Position::allocation{int[]} {Position::allocation} , 0){Builtin, None, search}
 	if(Position::free_idx{int} {Position::free_idx}  = -1)
 		message("Error: No more free space available to allocate objects of type 'Position'"){Builtin, None, message}
 	end if
 	Position::allocation[Position::free_idx{int} {Position::free_idx} ]{int} {Position::allocation}  := 1
 	Position::x[Position::free_idx{int} {Position::free_idx} ]{int} {Position::x}  := ii0{int} {ii0} 
-	Position::y[Position::free_idx{int} {Position::free_idx} ]{int} {Position::y}  := i2{int} {i2} 
+	Position::y[Position::free_idx{int} {Position::free_idx} ]{int} {Position::y}  := i3{int} {i3} 
 	hide0{int} {hide0}  := Position::free_idx{int} {Position::free_idx} 
 	_ret20{int} {_ret20}  := hide0{int} {hide0} 
-	category_positions0[0]{int[]} {category_positions0}  := _ret00{int} {_ret00} 
-	category_positions0[1]{int[]} {category_positions0}  := _ret10{int} {_ret10} 
-	category_positions0[2]{int[]} {category_positions0}  := _ret20{int} {_ret20} 
-	hide000{int} {hide000}  := category_positions0[0]{int} {category_positions0} 
-	ret1{int} {ret1}  := 1
-	if(hide000{int} {hide000}  # -1)
-		Position::allocation[hide000{int} {hide000} ]{int} {Position::allocation}  := Position::allocation[hide000{int} {hide000} ]{int} {Position::allocation}  + ret1{int} {ret1} 
+	declare category_positions[3] : int[] := [_ret00{int} {_ret00} , _ret10{int} {_ret10} , _ret20{int} {_ret20} ] {Reuses: 0}
+	i3{int} {i3}  := category_positions[0]{int} {category_positions} 
+	ii0{int} {ii0}  := 1
+	if(i3{int} {i3}  # -1)
+		Position::allocation[i3{int} {i3} ]{int} {Position::allocation}  := Position::allocation[i3{int} {i3} ]{int} {Position::allocation}  + ii0{int} {ii0} 
 	end if
-	hide000{int} {hide000}  := category_positions0[1]{int} {category_positions0} 
-	ret1{int} {ret1}  := 1
-	if(hide000{int} {hide000}  # -1)
-		Position::allocation[hide000{int} {hide000} ]{int} {Position::allocation}  := Position::allocation[hide000{int} {hide000} ]{int} {Position::allocation}  + ret1{int} {ret1} 
+	i3{int} {i3}  := category_positions[1]{int} {category_positions} 
+	ii0{int} {ii0}  := 1
+	if(i3{int} {i3}  # -1)
+		Position::allocation[i3{int} {i3} ]{int} {Position::allocation}  := Position::allocation[i3{int} {i3} ]{int} {Position::allocation}  + ii0{int} {ii0} 
 	end if
-	hide000{int} {hide000}  := category_positions0[2]{int} {category_positions0} 
-	ret1{int} {ret1}  := num_elements(category_positions0{int[]} {category_positions0} ){Builtin, None, num_elements} - 2
-	if(hide000{int} {hide000}  # -1)
-		Position::allocation[hide000{int} {hide000} ]{int} {Position::allocation}  := Position::allocation[hide000{int} {hide000} ]{int} {Position::allocation}  + ret1{int} {ret1} 
+	i3{int} {i3}  := category_positions[2]{int} {category_positions} 
+	ii0{int} {ii0}  := num_elements(category_positions{int[]} {category_positions} ){Builtin, None, num_elements} - 2
+	if(i3{int} {i3}  # -1)
+		Position::allocation[i3{int} {i3} ]{int} {Position::allocation}  := Position::allocation[i3{int} {i3} ]{int} {Position::allocation}  + ii0{int} {ii0} 
 	end if
 	declare ui_panel Categories : int  {Reuses: 0}
-	set_control_par(get_ui_id(Categories{int} {Categories} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , 10){Builtin, None, set_control_par}
-	set_control_par(get_ui_id(Categories{int} {Categories} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 10){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(Categories{int} {Categories} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , 150){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(Categories{int} {Categories} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 120){Builtin, None, set_control_par}
 	declare category_accum[4] : int[] {Reuses: 0}
-	category_positions0[0]{int[]} {category_positions0}  := 3
-	category_positions0[1]{int[]} {category_positions0}  := 3
-	category_positions0[2]{int[]} {category_positions0}  := 4
-	i2{int} {i2}  := 0
-	while(i2{int} {i2}  < num_elements(category_positions0{int[]} {category_positions0} ){Builtin, None, num_elements}) 
-		category_accum[i2{int} {i2} ]{int} {category_accum}  := category_accum[- (- (i2{int} {i2}  - 1) .and. sh_right(- (i2{int} {i2}  - 1), 31){Builtin, None, sh_right})]{int} {category_accum}  + category_positions0[i2{int} {i2} ]{int} {category_positions0} 
-		inc(i2{int} {i2} ){Builtin, None, inc}
+	_arr10[0]{int[]} {_arr10}  := 3
+	_arr10[1]{int[]} {_arr10}  := 3
+	_arr10[2]{int[]} {_arr10}  := 4
+	i3{int} {i3}  := 0
+	while(i3{int} {i3}  < num_elements(_arr10{int[]} {_arr10} ){Builtin, None, num_elements}) 
+		category_accum[i3{int} {i3} ]{int} {category_accum}  := category_accum[- (- (i3{int} {i3}  - 1) .and. sh_right(- (i3{int} {i3}  - 1), 31){Builtin, None, sh_right})]{int} {category_accum}  + _arr10[i3{int} {i3} ]{int} {_arr10} 
+		inc(i3{int} {i3} ){Builtin, None, inc}
 	end while
-	i2{int} {i2}  := 0
+	i3{int} {i3}  := 0
 	ii0{int} {ii0}  := 0
 	hide0{int} {hide0}  := num_elements(category_accum{int[]} {category_accum} ){Builtin, None, num_elements} - 2
-	while(hide0{int} {hide0}  >= i2{int} {i2} ) 
+	while(hide0{int} {hide0}  >= i3{int} {i3} ) 
 		category_accum[hide0{int} {hide0}  + 1]{int} {category_accum}  := category_accum[hide0{int} {hide0} ]{int} {category_accum} 
 		dec(hide0{int} {hide0} ){Builtin, None, dec}
 	end while
-	category_accum[i2{int} {i2} ]{int} {category_accum}  := ii0{int} {ii0} 
+	category_accum[i3{int} {i3} ]{int} {category_accum}  := ii0{int} {ii0} 
 	declare pnl_category[3] : int[] {Reuses: 0}
 	declare ui_panel pnl_category0 : int  {Reuses: 0}
 	declare ui_panel pnl_category1 : int  {Reuses: 0}
@@ -197,19 +150,20 @@ on init
 		if(i00{int} {i00}  > (category_accum[category_idx{int} {category_idx}  + 1]{int} {category_accum}  - 1))
 			inc(category_idx{int} {category_idx} ){Builtin, None, inc}
 		end if
-		message("category_idx: " & category_idx{int} {category_idx}  & ""){Builtin, None, message}
-		set_control_par_str(btn_tags[i00{int} {i00} ]{int} {btn_tags} , CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , tag_names[i00{int} {i00} ]{string} {tag_names} ){Builtin, None, set_control_par_str}
+		set_control_par_str(btn_tags[i00{int} {i00} ]{int} {btn_tags} , CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , "Tag " & (i00{int} {i00}  + 1) & ""){Builtin, None, set_control_par_str}
 		set_control_par_str(btn_tags[i00{int} {i00} ]{int} {btn_tags} , CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "alpha"){Builtin, None, set_control_par_str}
 		set_control_par(btn_tags[i00{int} {i00} ]{int} {btn_tags} , CONTROL_PAR_TEXT_ALIGNMENT{int} {CONTROL_PAR_TEXT_ALIGNMENT} , 0){Builtin, None, set_control_par}
 		set_control_par(btn_tags[i00{int} {i00} ]{int} {btn_tags} , CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , 0){Builtin, None, set_control_par}
 		set_control_par(btn_tags[i00{int} {i00} ]{int} {btn_tags} , CONTROL_PAR_DISABLE_TEXT_SHIFTING{int} {CONTROL_PAR_DISABLE_TEXT_SHIFTING} , 1){Builtin, None, set_control_par}
 		hide0{int} {hide0}  := 0
-		while(hide0{int} {hide0}  < num_elements(Utils.font_types{int[]} {Utils.font_types} ){Builtin, None, num_elements}) 
-			set_control_par(btn_tags[i00{int} {i00} ]{int} {btn_tags} , Utils.font_types[hide0{int} {hide0} ]{int} {Utils.font_types} , _font.2pt7[hide0{int} {hide0}  * 2]{int} {_font.2pt7} ){Builtin, None, set_control_par}
+		while(hide0{int} {hide0}  < num_elements(BrowserFont.types{int[]} {BrowserFont.types} ){Builtin, None, num_elements}) 
+			set_control_par(btn_tags[i00{int} {i00} ]{int} {btn_tags} , BrowserFont.types[hide0{int} {hide0} ]{int} {BrowserFont.types} , BrowserFont.tag[hide0{int} {hide0} ]{int} {BrowserFont.tag} ){Builtin, None, set_control_par}
 			inc(hide0{int} {hide0} ){Builtin, None, inc}
 		end while
-		set_control_par(btn_tags[i00{int} {i00} ]{int} {btn_tags} , CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , 0){Builtin, None, set_control_par}
-		set_control_par(btn_tags[i00{int} {i00} ]{int} {btn_tags} , CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 20 + ((i00{int} {i00}  - category_accum[category_idx{int} {category_idx} ]{int} {category_accum} ) * 21)){Builtin, None, set_control_par}
+		declare pox_x : int := ((i00{int} {i00}  - category_accum[category_idx{int} {category_idx} ]{int} {category_accum} ) / 2) * 81 {Reuses: 0}
+		declare pos_y : int := ((i00{int} {i00}  - category_accum[category_idx{int} {category_idx} ]{int} {category_accum} ) mod 2) * 21 {Reuses: 0}
+		set_control_par(btn_tags[i00{int} {i00} ]{int} {btn_tags} , CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , pox_x{int} {pox_x} ){Builtin, None, set_control_par}
+		set_control_par(btn_tags[i00{int} {i00} ]{int} {btn_tags} , CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 20 + pos_y{int} {pos_y} ){Builtin, None, set_control_par}
 		set_control_par(btn_tags[i00{int} {i00} ]{int} {btn_tags} , CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 80){Builtin, None, set_control_par}
 		set_control_par(btn_tags[i00{int} {i00} ]{int} {btn_tags} , CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 20){Builtin, None, set_control_par}
 		set_control_par(btn_tags[i00{int} {i00} ]{int} {btn_tags} , CONTROL_PAR_PARENT_PANEL{int} {CONTROL_PAR_PARENT_PANEL} , pnl_category[category_idx{int} {category_idx} ]{int} {pnl_category} ){Builtin, None, set_control_par}
@@ -226,28 +180,39 @@ on init
 	end while
 	i00{int} {i00}  := 0
 	while(i00{int} {i00}  < 3) 
-		set_control_par_str(lbl_category[i00{int} {i00} ]{int} {lbl_category} , CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , category_titles[i00{int} {i00} ]{string} {category_titles} ){Builtin, None, set_control_par_str}
+		set_control_par_str(lbl_category[i00{int} {i00} ]{int} {lbl_category} , CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , "Category " & (i00{int} {i00}  + 1) & ""){Builtin, None, set_control_par_str}
 		set_control_par_str(lbl_category[i00{int} {i00} ]{int} {lbl_category} , CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "alpha"){Builtin, None, set_control_par_str}
 		set_control_par(lbl_category[i00{int} {i00} ]{int} {lbl_category} , CONTROL_PAR_TEXT_ALIGNMENT{int} {CONTROL_PAR_TEXT_ALIGNMENT} , 0){Builtin, None, set_control_par}
 		set_control_par(lbl_category[i00{int} {i00} ]{int} {lbl_category} , CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , 0){Builtin, None, set_control_par}
-		hide0{int} {hide0}  := 0
-		while(hide0{int} {hide0}  < num_elements(Utils.font_types{int[]} {Utils.font_types} ){Builtin, None, num_elements}) 
-			set_control_par(lbl_category[i00{int} {i00} ]{int} {lbl_category} , Utils.font_types[hide0{int} {hide0} ]{int} {Utils.font_types} , _font.2pt7[hide0{int} {hide0}  * 2]{int} {_font.2pt7} ){Builtin, None, set_control_par}
-			inc(hide0{int} {hide0} ){Builtin, None, inc}
-		end while
 		set_control_par(lbl_category[i00{int} {i00} ]{int} {lbl_category} , CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , 0){Builtin, None, set_control_par}
 		set_control_par(lbl_category[i00{int} {i00} ]{int} {lbl_category} , CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 0){Builtin, None, set_control_par}
-		set_control_par(lbl_category[i00{int} {i00} ]{int} {lbl_category} , CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 80){Builtin, None, set_control_par}
+		set_control_par(lbl_category[i00{int} {i00} ]{int} {lbl_category} , CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 160){Builtin, None, set_control_par}
 		set_control_par(lbl_category[i00{int} {i00} ]{int} {lbl_category} , CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 20){Builtin, None, set_control_par}
 		set_control_par(lbl_category[i00{int} {i00} ]{int} {lbl_category} , CONTROL_PAR_DISABLE_TEXT_SHIFTING{int} {CONTROL_PAR_DISABLE_TEXT_SHIFTING} , 1){Builtin, None, set_control_par}
 		set_control_par(lbl_category[i00{int} {i00} ]{int} {lbl_category} , CONTROL_PAR_PARENT_PANEL{int} {CONTROL_PAR_PARENT_PANEL} , pnl_category[i00{int} {i00} ]{int} {pnl_category} ){Builtin, None, set_control_par}
+		hide0{int} {hide0}  := 0
+		while(hide0{int} {hide0}  < num_elements(BrowserFont.types{int[]} {BrowserFont.types} ){Builtin, None, num_elements}) 
+			set_control_par(lbl_category[i00{int} {i00} ]{int} {lbl_category} , BrowserFont.types[hide0{int} {hide0} ]{int} {BrowserFont.types} , BrowserFont.category[hide0{int} {hide0} ]{int} {BrowserFont.category} ){Builtin, None, set_control_par}
+			inc(hide0{int} {hide0} ){Builtin, None, inc}
+		end while
+		set_control_par(pnl_category[i00{int} {i00} ]{int} {pnl_category} , CONTROL_PAR_PARENT_PANEL{int} {CONTROL_PAR_PARENT_PANEL} , get_ui_id(Categories{int} {Categories} ){Builtin, None, get_ui_id}){Builtin, None, set_control_par}
 		inc(i00{int} {i00} ){Builtin, None, inc}
 	end while
 	i00{int} {i00}  := 0
-	while(i00{int} {i00}  <= (num_elements(category_positions0{int[]} {category_positions0} ){Builtin, None, num_elements} - 1)) 
-		set_control_par(pnl_category[i00{int} {i00} ]{int} {pnl_category} , CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , Position::x[category_positions0[i00{int} {i00} ]{int} {category_positions0} ]{int} {Position::x} ){Builtin, None, set_control_par}
-		set_control_par(pnl_category[i00{int} {i00} ]{int} {pnl_category} , CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , Position::y[category_positions0[i00{int} {i00} ]{int} {category_positions0} ]{int} {Position::y} ){Builtin, None, set_control_par}
+	while(i00{int} {i00}  <= (num_elements(category_positions{int[]} {category_positions} ){Builtin, None, num_elements} - 1)) 
+		set_control_par(pnl_category[i00{int} {i00} ]{int} {pnl_category} , CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , Position::x[category_positions[i00{int} {i00} ]{int} {category_positions} ]{int} {Position::x} ){Builtin, None, set_control_par}
+		set_control_par(pnl_category[i00{int} {i00} ]{int} {pnl_category} , CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , Position::y[category_positions[i00{int} {i00} ]{int} {category_positions} ]{int} {Position::y} ){Builtin, None, set_control_par}
 		inc(i00{int} {i00} ){Builtin, None, inc}
+	end while
+	i3{int} {i3}  := 0
+	while(i3{int} {i3}  <= (num_elements(btn_tags{int[]} {btn_tags} ){Builtin, None, num_elements} - 1)) 
+		set_control_par_str(btn_tags[i3{int} {i3} ]{int} {btn_tags} , CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , tag_names[i3{int} {i3} ]{string} {tag_names} ){Builtin, None, set_control_par_str}
+		inc(i3{int} {i3} ){Builtin, None, inc}
+	end while
+	i3{int} {i3}  := 0
+	while(i3{int} {i3}  <= (num_elements(lbl_category{int[]} {lbl_category} ){Builtin, None, num_elements} - 1)) 
+		set_control_par_str(lbl_category[i3{int} {i3} ]{int} {lbl_category} , CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , category_titles[i3{int} {i3} ]{string} {category_titles} ){Builtin, None, set_control_par_str}
+		inc(i3{int} {i3} ){Builtin, None, inc}
 	end while
 	declare ui_panel PresetStrip : int  {Reuses: 0}
 	set_control_par(get_ui_id(PresetStrip{int} {PresetStrip} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , 245){Builtin, None, set_control_par}
@@ -277,8 +242,8 @@ on init
 	set_control_par(get_ui_id(btn_preset_browser{int} {btn_preset_browser} ){Builtin, None, get_ui_id}, CONTROL_PAR_DISABLE_TEXT_SHIFTING{int} {CONTROL_PAR_DISABLE_TEXT_SHIFTING} , 1){Builtin, None, set_control_par}
 	set_control_par(get_ui_id(btn_preset_browser{int} {btn_preset_browser} ){Builtin, None, get_ui_id}, CONTROL_PAR_PARENT_PANEL{int} {CONTROL_PAR_PARENT_PANEL} , get_ui_id(PresetStrip{int} {PresetStrip} ){Builtin, None, get_ui_id}){Builtin, None, set_control_par}
 	hide0{int} {hide0}  := 0
-	while(hide0{int} {hide0}  < num_elements(Utils.font_types{int[]} {Utils.font_types} ){Builtin, None, num_elements}) 
-		set_control_par(get_ui_id(btn_preset_browser{int} {btn_preset_browser} ){Builtin, None, get_ui_id}, Utils.font_types[hide0{int} {hide0} ]{int} {Utils.font_types} , _font.3pt6[hide0{int} {hide0}  * 2]{int} {_font.3pt6} ){Builtin, None, set_control_par}
+	while(hide0{int} {hide0}  < num_elements(BrowserFont.types{int[]} {BrowserFont.types} ){Builtin, None, num_elements}) 
+		set_control_par(get_ui_id(btn_preset_browser{int} {btn_preset_browser} ){Builtin, None, get_ui_id}, BrowserFont.types[hide0{int} {hide0} ]{int} {BrowserFont.types} , BrowserFont.preset_strip[hide0{int} {hide0} ]{int} {BrowserFont.preset_strip} ){Builtin, None, set_control_par}
 		inc(hide0{int} {hide0} ){Builtin, None, inc}
 	end while
 	declare ui_button btn_save : int  {Reuses: 0}
@@ -298,7 +263,7 @@ on init
 	declare final_preset_info[50] : string[] := ["Preset 1", "Preset 2", "Preset 3", "Preset 4", "Preset 5", "Preset 6", "Preset 7", "Preset 8", "Preset 9", "Preset 10", "Preset 11", "Preset 12", "Preset 13", "Preset 14", "Preset 15", "Preset 16", "Preset 17", "Preset 18", "Preset 19", "Preset 20", "Preset 21", "Preset 22", "Preset 23", "Preset 24", "Preset 25", "Preset 26", "Preset 27", "Preset 28", "Preset 29", "Preset 30"] {Reuses: 0}
 	declare ui_panel Scrollarea : int  {Reuses: 0}
 	set_control_par(get_ui_id(Scrollarea{int} {Scrollarea} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , 150){Builtin, None, set_control_par}
-	set_control_par(get_ui_id(Scrollarea{int} {Scrollarea} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 200){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(Scrollarea{int} {Scrollarea} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 230){Builtin, None, set_control_par}
 	declare read scroll.up : int := 0 {Reuses: 0}
 	declare _btn_preset[30] : int[] {Reuses: 0}
 	declare ui_button _btn_preset0 : int  {Reuses: 0}
@@ -426,8 +391,8 @@ on init
 			set_control_par(preset{int} {preset} , CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 22){Builtin, None, set_control_par}
 			set_control_par(preset{int} {preset} , CONTROL_PAR_Z_LAYER{int} {CONTROL_PAR_Z_LAYER} , 1){Builtin, None, set_control_par}
 			hide0{int} {hide0}  := 0
-			while(hide0{int} {hide0}  < num_elements(Utils.font_types{int[]} {Utils.font_types} ){Builtin, None, num_elements}) 
-				set_control_par(preset{int} {preset} , Utils.font_types[hide0{int} {hide0} ]{int} {Utils.font_types} , _font.2pt8[hide0{int} {hide0}  * 2]{int} {_font.2pt8} ){Builtin, None, set_control_par}
+			while(hide0{int} {hide0}  < num_elements(BrowserFont.types{int[]} {BrowserFont.types} ){Builtin, None, num_elements}) 
+				set_control_par(preset{int} {preset} , BrowserFont.types[hide0{int} {hide0} ]{int} {BrowserFont.types} , BrowserFont.preset[hide0{int} {hide0} ]{int} {BrowserFont.preset} ){Builtin, None, set_control_par}
 				inc(hide0{int} {hide0} ){Builtin, None, inc}
 			end while
 			set_control_par(preset{int} {preset} , CONTROL_PAR_DISABLE_TEXT_SHIFTING{int} {CONTROL_PAR_DISABLE_TEXT_SHIFTING} , 1){Builtin, None, set_control_par}
@@ -444,7 +409,7 @@ on init
 			set_control_par_str(info{int} {info} , CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , "info"){Builtin, None, set_control_par_str}
 			set_control_par_str(info{int} {info} , CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "alpha"){Builtin, None, set_control_par_str}
 			set_control_par(info{int} {info} , CONTROL_PAR_TEXT_ALIGNMENT{int} {CONTROL_PAR_TEXT_ALIGNMENT} , 0){Builtin, None, set_control_par}
-			set_control_par(info{int} {info} , CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , _font.2pt7[0]{int} {_font.2pt7} ){Builtin, None, set_control_par}
+			set_control_par(info{int} {info} , CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , BrowserFont.preset[0]{int} {BrowserFont.preset} ){Builtin, None, set_control_par}
 			set_control_par(info{int} {info} , CONTROL_PAR_TEXTPOS_Y{int} {CONTROL_PAR_TEXTPOS_Y} , 4){Builtin, None, set_control_par}
 			set_control_par(info{int} {info} , CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , (get_control_par(preset{int} {preset} , CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} ){Builtin, None, get_control_par} + 200) + (u00{int} {u00}  * 200)){Builtin, None, set_control_par}
 			set_control_par(info{int} {info} , CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , get_control_par(preset{int} {preset} , CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} ){Builtin, None, get_control_par}){Builtin, None, set_control_par}
@@ -487,40 +452,15 @@ on init
 	set_control_par_str(get_ui_id(lbl_presetcount{int} {lbl_presetcount} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , "<shown>" & "/" & "<presets>"){Builtin, None, set_control_par_str}
 	set_control_par_str(get_ui_id(lbl_presetcount{int} {lbl_presetcount} ){Builtin, None, get_ui_id}, CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "alpha"){Builtin, None, set_control_par_str}
 	set_control_par(get_ui_id(lbl_presetcount{int} {lbl_presetcount} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXT_ALIGNMENT{int} {CONTROL_PAR_TEXT_ALIGNMENT} , 2){Builtin, None, set_control_par}
-	set_control_par(get_ui_id(lbl_presetcount{int} {lbl_presetcount} ){Builtin, None, get_ui_id}, CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , _font.2pt7[0]{int} {_font.2pt7} ){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(lbl_presetcount{int} {lbl_presetcount} ){Builtin, None, get_ui_id}, CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , BrowserFont.preset[0]{int} {BrowserFont.preset} ){Builtin, None, set_control_par}
 	set_control_par(get_ui_id(lbl_presetcount{int} {lbl_presetcount} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXTPOS_Y{int} {CONTROL_PAR_TEXTPOS_Y} , 2){Builtin, None, set_control_par}
 	set_control_par(get_ui_id(lbl_presetcount{int} {lbl_presetcount} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , 0){Builtin, None, set_control_par}
 	set_control_par(get_ui_id(lbl_presetcount{int} {lbl_presetcount} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , get_control_par(get_ui_id(sli_scrollbar{int} {sli_scrollbar} ){Builtin, None, get_ui_id}, CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} ){Builtin, None, get_control_par}){Builtin, None, set_control_par}
 	set_control_par(get_ui_id(lbl_presetcount{int} {lbl_presetcount} ){Builtin, None, get_ui_id}, CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 600){Builtin, None, set_control_par}
 	set_control_par(get_ui_id(lbl_presetcount{int} {lbl_presetcount} ){Builtin, None, get_ui_id}, CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 18){Builtin, None, set_control_par}
 	set_control_par(get_ui_id(lbl_presetcount{int} {lbl_presetcount} ){Builtin, None, get_ui_id}, CONTROL_PAR_Z_LAYER{int} {CONTROL_PAR_Z_LAYER} , -1){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(lbl_presetcount{int} {lbl_presetcount} ){Builtin, None, get_ui_id}, CONTROL_PAR_DISABLE_TEXT_SHIFTING{int} {CONTROL_PAR_DISABLE_TEXT_SHIFTING} , 1){Builtin, None, set_control_par}
 	set_control_par(get_ui_id(lbl_presetcount{int} {lbl_presetcount} ){Builtin, None, get_ui_id}, CONTROL_PAR_PARENT_PANEL{int} {CONTROL_PAR_PARENT_PANEL} , get_ui_id(Scrollarea{int} {Scrollarea} ){Builtin, None, get_ui_id}){Builtin, None, set_control_par}
-	watch_var(scroll.up{int} {scroll.up} ){Builtin, None, watch_var}
-	watch_var(sli_scrollbar{int} {sli_scrollbar} ){Builtin, None, watch_var}
-	i00{int} {i00}  := 0
-	while(i00{int} {i00}  <= (num_elements(category_positions0{int[]} {category_positions0} ){Builtin, None, num_elements} - 1)) 
-		hide0{int} {hide0}  := category_positions0[i00{int} {i00} ]{int} {category_positions0} 
-		param1{int} {param1}  := 1
-		ret1{int} {ret1}  := hide0{int} {hide0} 
-		while(ret1{int} {ret1}  # -1) 
-			Position::allocation[ret1{int} {ret1} ]{int} {Position::allocation}  := Position::allocation[ret1{int} {ret1} ]{int} {Position::allocation}  - param1{int} {param1} 
-			if(Position::allocation[ret1{int} {ret1} ]{int} {Position::allocation}  > 0)
-				ret1{int} {ret1}  := -1
-				continue{Builtin, None, continue}
-			else
-				Position::allocation[ret1{int} {ret1} ]{int} {Position::allocation}  := 0
-			end if
-			hide0{int} {hide0}  := ret1{int} {ret1} 
-			ret1{int} {ret1}  := -1
-			i2{int} {i2}  := hide0{int} {hide0} 
-			ii0{int} {ii0}  := 0
-			if(i2{int} {i2}  # -1)
-				Position::x[i2{int} {i2} ]{int} {Position::x}  := 0
-				Position::y[i2{int} {i2} ]{int} {Position::y}  := 0
-			end if
-		end while
-		inc(i00{int} {i00} ){Builtin, None, inc}
-	end while
 end on
 
 on ui_control(sli_scrollbar{int} {sli_scrollbar} )
@@ -534,27 +474,27 @@ end on
 
 on persistence_changed
 	i00{int} {i00}  := 0
-	u00{int} {u00}  := 0
 	u01{int} {u01}  := 0
+	u00{int} {u00}  := 0
 	ii01{int} {ii01}  := 0
-	_short_circuit00{int} {_short_circuit00}  := 0
+	_short_circuit10{int} {_short_circuit10}  := 0
 	_sc_temp00{int} {_sc_temp00}  := 0
 	_sc_temp10{int} {_sc_temp10}  := 0
 	param1{int} {param1}  := 5
 	call return_stuff{UserDefined, Call, return_stuff}
 	_ret30{int} {_ret30}  := ret1{int} {ret1} 
 	if(_ret30{int} {_ret30}  > 10)
-		if(u00{int} {u00}  < 0)
+		if(u01{int} {u01}  < 0)
 			_sc_temp00{int} {_sc_temp00}  := 1
 		end if
 	end if
-	if((u01{int} {u01}  > 10) and (ii01{int} {ii01}  < 0))
+	if((u00{int} {u00}  > 10) and (ii01{int} {ii01}  < 0))
 		_sc_temp10{int} {_sc_temp10}  := 1
 	end if
 	if(_sc_temp00{int} {_sc_temp00}  # _sc_temp10{int} {_sc_temp10} )
-		_short_circuit00{int} {_short_circuit00}  := 1
+		_short_circuit10{int} {_short_circuit10}  := 1
 	end if
-	if(_short_circuit00{int} {_short_circuit00}  = 1)
+	if(_short_circuit10{int} {_short_circuit10}  = 1)
 		i00{int} {i00}  := 1
 	else
 		param1{int} {param1}  := 5
@@ -579,33 +519,33 @@ end on
 
 function Scrollarea.repaint
 	ret1{int} {ret1}  := scroll.up{int} {scroll.up} 
-	i2{int} {i2}  := 0
-	while(i2{int} {i2}  < 10) 
+	i3{int} {i3}  := 0
+	while(i3{int} {i3}  < 10) 
 		ii0{int} {ii0}  := 0
 		while(ii0{int} {ii0}  < 3) 
 			hide0{int} {hide0}  := 0
 			if(ret1{int} {ret1}  < 50)
 				hide0{int} {hide0}  := 1
-				set_control_par_str(_btn_preset[(i2{int} {i2}  * 3) + ii0{int} {ii0} ]{int} {_btn_preset} , CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , "      " & final_preset_title_array[ret1{int} {ret1} ]{int} {final_preset_title_array} ){Builtin, None, set_control_par_str}
-				set_control_par_str(_lbl_preset_info[(i2{int} {i2}  * 3) + ii0{int} {ii0} ]{int} {_lbl_preset_info} , CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , final_preset_info[ret1{int} {ret1} ]{string} {final_preset_info} ){Builtin, None, set_control_par_str}
+				set_control_par_str(_btn_preset[(i3{int} {i3}  * 3) + ii0{int} {ii0} ]{int} {_btn_preset} , CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , "      " & final_preset_title_array[ret1{int} {ret1} ]{int} {final_preset_title_array} ){Builtin, None, set_control_par_str}
+				set_control_par_str(_lbl_preset_info[(i3{int} {i3}  * 3) + ii0{int} {ii0} ]{int} {_lbl_preset_info} , CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , final_preset_info[ret1{int} {ret1} ]{string} {final_preset_info} ){Builtin, None, set_control_par_str}
 				if(ret1{int} {ret1}  = param1{int} {param1} )
-					set_control_par(_btn_preset[(i2{int} {i2}  * 3) + ii0{int} {ii0} ]{int} {_btn_preset} , CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} , 1){Builtin, None, set_control_par}
+					set_control_par(_btn_preset[(i3{int} {i3}  * 3) + ii0{int} {ii0} ]{int} {_btn_preset} , CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} , 1){Builtin, None, set_control_par}
 				else
-					set_control_par(_btn_preset[(i2{int} {i2}  * 3) + ii0{int} {ii0} ]{int} {_btn_preset} , CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} , 0){Builtin, None, set_control_par}
+					set_control_par(_btn_preset[(i3{int} {i3}  * 3) + ii0{int} {ii0} ]{int} {_btn_preset} , CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} , 0){Builtin, None, set_control_par}
 				end if
-				set_control_par(_lbl_preset_info[(i2{int} {i2}  * 3) + ii0{int} {ii0} ]{int} {_lbl_preset_info} , CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , _font.2pt7[get_control_par(_btn_preset[(i2{int} {i2}  * 3) + ii0{int} {ii0} ]{int} {_btn_preset} , CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} ){Builtin, None, get_control_par} * 2]{int} {_font.2pt7} ){Builtin, None, set_control_par}
-				set_control_par(_btn_favorite[(i2{int} {i2}  * 3) + ii0{int} {ii0} ]{int} {_btn_favorite} , CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} , final_favorite_presets_array[ret1{int} {ret1} ]{int} {final_favorite_presets_array} ){Builtin, None, set_control_par}
+				set_control_par(_lbl_preset_info[(i3{int} {i3}  * 3) + ii0{int} {ii0} ]{int} {_lbl_preset_info} , CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , BrowserFont.preset[1]{int} {BrowserFont.preset} ){Builtin, None, set_control_par}
+				set_control_par(_btn_favorite[(i3{int} {i3}  * 3) + ii0{int} {ii0} ]{int} {_btn_favorite} , CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} , final_favorite_presets_array[ret1{int} {ret1} ]{int} {final_favorite_presets_array} ){Builtin, None, set_control_par}
 			end if
-			set_control_par(_btn_preset[(i2{int} {i2}  * 3) + ii0{int} {ii0} ]{int} {_btn_preset} , CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , Utils.hide_state[hide0{int} {hide0} ]{int} {Utils.hide_state} ){Builtin, None, set_control_par}
-			set_control_par(_lbl_preset_info[(i2{int} {i2}  * 3) + ii0{int} {ii0} ]{int} {_lbl_preset_info} , CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , Utils.hide_state[0]{int} {Utils.hide_state} ){Builtin, None, set_control_par}
-			set_control_par(_btn_favorite[(i2{int} {i2}  * 3) + ii0{int} {ii0} ]{int} {_btn_favorite} , CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , Utils.hide_state[hide0{int} {hide0} ]{int} {Utils.hide_state} ){Builtin, None, set_control_par}
+			set_control_par(_btn_preset[(i3{int} {i3}  * 3) + ii0{int} {ii0} ]{int} {_btn_preset} , CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , Utils.hide_state[hide0{int} {hide0} ]{int} {Utils.hide_state} ){Builtin, None, set_control_par}
+			set_control_par(_lbl_preset_info[(i3{int} {i3}  * 3) + ii0{int} {ii0} ]{int} {_lbl_preset_info} , CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , Utils.hide_state[0]{int} {Utils.hide_state} ){Builtin, None, set_control_par}
+			set_control_par(_btn_favorite[(i3{int} {i3}  * 3) + ii0{int} {ii0} ]{int} {_btn_favorite} , CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , Utils.hide_state[hide0{int} {hide0} ]{int} {Utils.hide_state} ){Builtin, None, set_control_par}
 			inc(ret1{int} {ret1} ){Builtin, None, inc}
 			inc(ii0{int} {ii0} ){Builtin, None, inc}
 		end while
-		inc(i2{int} {i2} ){Builtin, None, inc}
+		inc(i3{int} {i3} ){Builtin, None, inc}
 	end while
-	i2{int} {i2}  := get_control_par(get_ui_id(sli_scrollbar{int} {sli_scrollbar} ){Builtin, None, get_ui_id}, CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} ){Builtin, None, get_control_par} / 5
-	set_control_par(get_ui_id(lbl_scrollhandle{int} {lbl_scrollhandle} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , get_control_par(get_ui_id(sli_scrollbar{int} {sli_scrollbar} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} ){Builtin, None, get_control_par} + ((get_control_par(get_ui_id(sli_scrollbar{int} {sli_scrollbar} ){Builtin, None, get_ui_id}, CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} ){Builtin, None, get_control_par} - i2{int} {i2} ) - ((get_control_par(get_ui_id(sli_scrollbar{int} {sli_scrollbar} ){Builtin, None, get_ui_id}, CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} ){Builtin, None, get_control_par} * (get_control_par(get_ui_id(sli_scrollbar{int} {sli_scrollbar} ){Builtin, None, get_ui_id}, CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} ){Builtin, None, get_control_par} - i2{int} {i2} )) / 1000000))){Builtin, None, set_control_par}
+	i3{int} {i3}  := get_control_par(get_ui_id(sli_scrollbar{int} {sli_scrollbar} ){Builtin, None, get_ui_id}, CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} ){Builtin, None, get_control_par} / 5
+	set_control_par(get_ui_id(lbl_scrollhandle{int} {lbl_scrollhandle} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , get_control_par(get_ui_id(sli_scrollbar{int} {sli_scrollbar} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} ){Builtin, None, get_control_par} + ((get_control_par(get_ui_id(sli_scrollbar{int} {sli_scrollbar} ){Builtin, None, get_ui_id}, CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} ){Builtin, None, get_control_par} - i3{int} {i3} ) - ((get_control_par(get_ui_id(sli_scrollbar{int} {sli_scrollbar} ){Builtin, None, get_ui_id}, CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} ){Builtin, None, get_control_par} * (get_control_par(get_ui_id(sli_scrollbar{int} {sli_scrollbar} ){Builtin, None, get_ui_id}, CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} ){Builtin, None, get_control_par} - i3{int} {i3} )) / 1000000))){Builtin, None, set_control_par}
 	set_control_par_str(get_ui_id(lbl_presetcount{int} {lbl_presetcount} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , 50 & "/" & 50){Builtin, None, set_control_par_str}
 end function
 
@@ -618,7 +558,7 @@ function Scrollarea.update_position
 	add_line0{int} {add_line0}  := 1
 	scrollable_items0{int} {scrollable_items0}  := 20 + add_line0{int} {add_line0} 
 	set_control_par(get_ui_id(sli_scrollbar{int} {sli_scrollbar} ){Builtin, None, get_ui_id}, CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} , (1000000 * (scrollable_items0{int} {scrollable_items0}  - scroll.up{int} {scroll.up} )) / scrollable_items0{int} {scrollable_items0} ){Builtin, None, set_control_par}
-	param1{int} {param1}  := preset_idx0{int} {preset_idx0} 
+	param1{int} {param1}  := preset_idx1{int} {preset_idx1} 
 	call Scrollarea.repaint{UserDefined, Call, Scrollarea.repaint}
 end function
 
@@ -651,7 +591,7 @@ function Scrollarea.focus
 	param1{int} {param1}  := 1
 	hide0{int} {hide0}  := 20 + param1{int} {param1} 
 	scroll.up{int} {scroll.up}  := (scroll.up{int} {scroll.up}  * (1 + (sh_right(hide0{int} {hide0}  - scroll.up{int} {scroll.up} , 31){Builtin, None, sh_right} .or. sh_right(scroll.up{int} {scroll.up} , 31){Builtin, None, sh_right}))) - (hide0{int} {hide0}  * sh_right(hide0{int} {hide0}  - scroll.up{int} {scroll.up} , 31){Builtin, None, sh_right})
-	preset_idx0{int} {preset_idx0}  := ret1{int} {ret1} 
+	preset_idx1{int} {preset_idx1}  := ret1{int} {ret1} 
 	call Scrollarea.update_position{UserDefined, Call, Scrollarea.update_position}
 end function
 
