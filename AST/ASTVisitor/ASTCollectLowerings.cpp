@@ -14,21 +14,23 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	visit_all(node.namespaces, *this);
 	node.namespaces.clear();
 
-	for(auto & struct_def : node.struct_definitions) {
+	for(const auto & struct_def : node.struct_definitions) {
 		static PreLoweringStruct pre_lowering_struct(m_program);
 		struct_def->accept(pre_lowering_struct);
 	}
-	for(auto & struct_def : node.struct_definitions) {
+	for(const auto & struct_def : node.struct_definitions) {
 		struct_def->generate_ref_count_methods(m_program);
 	}
 	node.update_function_lookup();
-	for(auto & struct_def : node.struct_definitions) {
+	for(const auto & struct_def : node.struct_definitions) {
 		static LoweringStructMembers lowering_struct_members(m_program);
 		struct_def->accept(lowering_struct_members);
 	}
 	for(const auto & struct_def : node.struct_definitions) {
-		struct_def->accept(*this);
+		struct_def->lower(m_program);
 	}
+
+	visit_all(node.struct_definitions, *this);
 	for(const auto & callback : node.callbacks) {
 		callback->accept(*this);
 	}
@@ -73,7 +75,6 @@ NodeAST * ASTCollectLowerings::visit(NodeNil& node) {
 
 
 NodeAST * ASTCollectLowerings::visit(NodeStruct& node) {
-	node.lower(m_program);
 	node.members->accept(*this);
 	visit_all(node.methods, *this);
 	return &node;
