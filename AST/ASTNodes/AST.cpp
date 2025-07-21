@@ -454,6 +454,18 @@ std::unique_ptr<NodeAST> NodeReference::get_size() {
 	return std::make_unique<NodeInt>(1, tok);
 }
 
+NodeFunctionCall* NodeReference::is_in_get_ui_id() const {
+	if (const auto header = is_func_arg()) {
+		if (const auto func_call = header->parent->cast<NodeFunctionCall>()) {
+			if (!func_call->is_builtin_kind()) return nullptr;
+			if (func_call->function->name == "get_ui_id") {
+				return func_call;
+			}
+		}
+	}
+	return nullptr;
+}
+
 // ************* NodeInstruction ***************
 std::unique_ptr<NodeAST> NodeInstruction::clone() const {
     return std::make_unique<NodeInstruction>(*this);

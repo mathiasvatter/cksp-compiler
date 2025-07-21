@@ -227,6 +227,7 @@ struct NodeReference : NodeAST {
 	NodeReference *replace_reference(std::unique_ptr<NodeReference> new_node);
 	// gets effective size of references (1 unless it is array or ndarray with wildcards)
 	virtual std::unique_ptr<NodeAST> get_size();
+	struct NodeFunctionCall* is_in_get_ui_id() const;
 };
 
 struct NodeVariable;
