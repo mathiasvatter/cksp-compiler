@@ -110,6 +110,7 @@ for entry in "${BUILDS[@]}"; do
     # Start Spinner
     start_spinner &
     spinner_pid=$!
+    OUTPUT_FILE="$log_dir/code_output.txt"
 
     # Run and capture output
     "$executable" -o "$OUTPUT_FILE" "$file" >"$log_dir/.tmp_stdout" 2>&1

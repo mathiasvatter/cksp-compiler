@@ -8,6 +8,7 @@
 #include "../../SyntaxChecks/KSPPersistency.h"
 #include "../../SyntaxChecks/KSPDeclarations.h"
 #include "../../Optimization/MemoryExhaustedNesting.h"
+#include "../../Lowering/LoweringFunctionCall.h"
 
 /**
  * Adds persistence functions to variables that are declared with a persistence keyword.
@@ -82,20 +83,22 @@ public:
 		return &node;
 	}
 
-	// NodeAST* visit(NodeArrayRef& node) override {
-	// 	if(node.index) node.index->accept(*this);
-	// 	if(node.needs_get_ui_id()) {
-	// 		return node.replace_with(std::move(node.wrap_in_get_ui_id()));
-	// 	}
-	// 	return &node;
-	// }
-	//
-	// NodeAST* visit(NodeVariableRef& node) override {
-	// 	if(node.needs_get_ui_id()) {
-	// 		return node.replace_with(std::move(node.wrap_in_get_ui_id()));
-	// 	}
-	// 	return &node;
-	// }
+	NodeAST* visit(NodeArrayRef& node) override {
+		if(node.index) node.index->accept(*this);
+		check_nested_get_ui_id(node);
+		if(LoweringFunctionCall::needs_get_ui_id(node)) {
+			return node.replace_with(std::move(LoweringFunctionCall::wrap_in_get_ui_id(node)));
+		}
+		return &node;
+	}
+
+	NodeAST* visit(NodeVariableRef& node) override {
+		check_nested_get_ui_id(node);
+		if(LoweringFunctionCall::needs_get_ui_id(node)) {
+			return node.replace_with(std::move(LoweringFunctionCall::wrap_in_get_ui_id(node)));
+		}
+		return &node;
+	}
 
 	NodeAST* visit(NodeUIControl& node) override {
 		m_ui_control_count[node.ui_control_type]++;
@@ -103,6 +106,22 @@ public:
 		node.control_var->accept(*this);
 		node.params->accept(*this);
 		return &node;
+	}
+
+	/// checks if given reference is in a nested get_ui_id call
+	static void check_nested_get_ui_id(const NodeReference& ref) {
+		if (auto func_call = ref.is_in_get_ui_id()) {
+			if (auto header = func_call->is_func_arg()) {
+				if (auto fun = header->parent->cast<NodeFunctionCall>()) {
+					if (!fun->is_builtin_kind()) return;
+					if (fun->function->name == "get_ui_id") {
+						auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, ref);
+						error.m_message = "Found nested <get_ui_id> call. This will cause a <script error> in Kontakt.";
+						error.exit();
+					}
+				}
+			}
+		}
 	}
 
 

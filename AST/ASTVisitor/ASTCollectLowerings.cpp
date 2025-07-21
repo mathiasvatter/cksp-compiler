@@ -147,10 +147,22 @@ NodeAST * ASTCollectLowerings::visit(NodeNDArrayRef& node) {
 	return &node;
 }
 
+
 NodeAST * ASTCollectLowerings::visit(NodeArrayRef& node) {
 	if(node.index) node.index->accept(*this);
 	return &node;
-};
+}
+
+NodeAST * ASTCollectLowerings::visit(NodeVariableRef &node) {
+	if (node.name == "btn_preset_button0") {
+		if (auto header = node.is_func_arg()) {
+			if (header->name == "doubleclick_start0") {
+
+			}
+		}
+	}
+	return ASTVisitor::visit(node);
+}
 
 NodeAST * ASTCollectLowerings::visit(NodeListRef& node) {
 	node.indexes->accept(*this);

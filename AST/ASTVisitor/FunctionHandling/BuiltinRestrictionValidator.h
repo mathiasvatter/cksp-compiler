@@ -48,6 +48,7 @@ public:
 		{ "EVENT_NOTE", { "note", "release", "midi_in" } },
 		{ "EVENT_ID",     {"note", "release", "midi_in"} },
 		{ "EVENT_VELOCITY", {"note", "release", "midi_in"} },
+		{"NI_SIGNAL_TYPE", {"listener"}}
 	};
 
 	inline static const std::unordered_map<std::string, std::unordered_set<std::string>> m_thread_unsafe_functions = {

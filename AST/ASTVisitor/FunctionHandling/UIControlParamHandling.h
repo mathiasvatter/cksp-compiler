@@ -28,6 +28,9 @@ private:
 			if (node.kind == NodeFunctionCall::Kind::Property || StringUtils::contains(node.function->name, "control_par")) {
 				auto& first_arg = node.function->get_arg(0);
 				if (auto ref = first_arg->is_reference()) {
+					if (ref->name == "btn_preset_button0") {
+
+					}
 					std::vector<NodeReference*> references;
 					find_declaration(*ref, references);
 					wrap_in_get_ui_id(references);
@@ -36,26 +39,26 @@ private:
 		}
 		return &node;
 	}
-
-	NodeAST* visit(NodeGetControl& node) override {
-		node.ui_id->accept(*this);
-		if (auto ref = node.ui_id->is_reference()) {
-			std::vector<NodeReference*> references;
-			find_declaration(*ref, references);
-			wrap_in_get_ui_id(references);
-		}
-		return &node;
-	}
-
-	NodeAST* visit(NodeSetControl& node) override {
-		node.ui_id->accept(*this);
-		if (auto ref = node.ui_id->is_reference()) {
-			std::vector<NodeReference*> references;
-			find_declaration(*ref, references);
-			wrap_in_get_ui_id(references);
-		}
-		return &node;
-	}
+	//
+	// NodeAST* visit(NodeGetControl& node) override {
+	// 	node.ui_id->accept(*this);
+	// 	if (auto ref = node.ui_id->is_reference()) {
+	// 		std::vector<NodeReference*> references;
+	// 		find_declaration(*ref, references);
+	// 		wrap_in_get_ui_id(references);
+	// 	}
+	// 	return &node;
+	// }
+	//
+	// NodeAST* visit(NodeSetControl& node) override {
+	// 	node.ui_id->accept(*this);
+	// 	if (auto ref = node.ui_id->is_reference()) {
+	// 		std::vector<NodeReference*> references;
+	// 		find_declaration(*ref, references);
+	// 		wrap_in_get_ui_id(references);
+	// 	}
+	// 	return &node;
+	// }
 
 
 /// helper functions
@@ -105,6 +108,9 @@ private:
 	/// wrap in get_ui_id if all references are either ui controls or ui control arrays -> only wrap single ui_controls
 	static void wrap_in_get_ui_id(const std::vector<NodeReference*>& references) {
 		for (auto& ref : references) {
+			if (ref->name == "btn_preset_button0") {
+
+			}
 			// see if ref is not already wrapped in get_ui_id
 			if (is_in_get_ui_id(*ref)) {
 				continue;
@@ -129,9 +135,11 @@ private:
 	void find_declaration(NodeReference& ref, std::vector<NodeReference*> &references) {
 		if (auto decl = ref.get_declaration()) {
 			if (auto param = decl->is_function_param()) {
-				// if (!param->is_pass_by_ref) {
+				// only wrap in get_ui_id if para is not passed by reference -> if it
+				// is already pass-by-ref, user is responsible for using get_ui_id
+				if (!param->is_pass_by_ref) {
 					find_original_references(*param, references);
-				// }
+				}
 			} else if (decl->parent and decl->parent->cast<NodeUIControl>()) {
 				references.push_back(&ref);
 			}
