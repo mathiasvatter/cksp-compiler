@@ -97,6 +97,13 @@ class TypeInference final : public ASTVisitor {
 
 				new_func_def->collect_references();
 				new_func_def->accept(*this);
+				// parallel_for_each(new_func_def->header->params.begin(), new_func_def->header->params.end(),
+				// 	[](const auto& param) {
+				// 		for (auto& ref : param->variable->references) {
+				// 			match_reference_declaration(*ref, param->variable);
+				// 		}
+				// 	});
+
 
 				const std::string func_name = m_def_provider->get_fresh_name(new_func_def->header->name);
 				call->function->name = func_name;
@@ -131,18 +138,21 @@ public:
 		m_program->current_callback = nullptr;
 		m_program = &node;
 		node.accept(*this);
+
+		cast_data_structure_types(&node, true);
+		do_monomorphization();
+
+		// its important that the visiting of unused function definitions is done after the monomorphization
+		// because m_func_calls is gonna collect and monorphization could happen in an already replaced function
+		// -> segfault
 		for(const auto & func_def : node.function_definitions) {
 			if(!func_def->visited) func_def->accept(*this);
 		}
-
-		cast_data_structure_types(&node, true);
+		node.reset_function_visited_flag();
 		// do cycle detection
 		for(const auto & s : node.struct_definitions) {
 			s->collect_recursive_structs(m_program);
 		}
-		// node.debug_print();
-		do_monomorphization();
-		node.reset_function_visited_flag();
 		return &node;
 	}
 
@@ -155,8 +165,10 @@ public:
 		m_program->current_callback = nullptr;
 		m_program = &node;
 		node.accept(*this);
-		node.reset_function_visited_flag();
 		// cast_data_structure_types(&node, true);
+		// do_monomorphization();
+
+		node.reset_function_visited_flag();
 		return &node;
 	}
 
@@ -254,7 +266,7 @@ public:
     	if (!func_type) return false;
     	if (func_type->m_params.empty()) return false;
     	// check if all param types are the same;
-    	if (std::adjacent_find(func_type->m_params.begin(), func_type->m_params.end(), std::not_equal_to<>()) != func_type->m_params.end()) return false;
+    	if (std::ranges::adjacent_find(func_type->m_params, std::not_equal_to<>()) != func_type->m_params.end()) return false;
     	if (!func_type->m_params[0]->is_union_type()) return false;
     	// check if return type is the same as param type
     	if (func_type->m_return_type != func_type->m_params[0]) return false;

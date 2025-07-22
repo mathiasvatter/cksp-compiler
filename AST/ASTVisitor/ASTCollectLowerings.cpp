@@ -29,7 +29,7 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	for(const auto & struct_def : node.struct_definitions) {
 		struct_def->lower(m_program);
 	}
-
+	node.debug_print();
 	visit_all(node.struct_definitions, *this);
 	for(const auto & callback : node.callbacks) {
 		callback->accept(*this);
@@ -154,13 +154,6 @@ NodeAST * ASTCollectLowerings::visit(NodeArrayRef& node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeVariableRef &node) {
-	if (node.name == "btn_preset_button0") {
-		if (auto header = node.is_func_arg()) {
-			if (header->name == "doubleclick_start0") {
-
-			}
-		}
-	}
 	return ASTVisitor::visit(node);
 }
 

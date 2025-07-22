@@ -111,6 +111,9 @@ private:
 /**
  * Marks all variables in the program as thread unsafe if they are used in a non-thread-safe
  * environment. Will not visit callbacks or functions that are thread safe.
+ *
+ * There need to be special array handlings for local arrays that are used in builtin commands that
+ * have array types as arguments such as e.g. save_array -> these need to be marked as thread safe!
  */
 class MarkThreadSafeVars final : public ASTVisitor {
 	DefinitionProvider* m_def_provider = nullptr;
@@ -123,8 +126,8 @@ public:
 	NodeAST* mark_variables(NodeProgram& node) {
 		m_program = &node;
 		m_program->current_callback = nullptr;
-		m_program->global_declarations->accept(*this);
-		m_program->init_callback->accept(*this);
+		// m_program->global_declarations->accept(*this);
+		// m_program->init_callback->accept(*this);
 		for(const auto & s : node.struct_definitions) {
 			s->accept(*this);
 		}
@@ -154,8 +157,33 @@ public:
 		return node.is_thread_safe;
 	}
 
+	static bool check_array_in_builtin_command(const NodeCompositeRef& arr) {
+		if (auto header = arr.is_func_arg()) {
+			if (auto func_call = header->parent->cast<NodeFunctionCall>()) {
+				if (func_call->is_builtin_kind()) {
+					if (auto decl = arr.get_declaration()) {
+						decl->is_thread_safe = true;
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
 
 private:
+	NodeAST *visit(NodeArrayRef &node) override {
+		ASTVisitor::visit(node);
+		check_array_in_builtin_command(node);
+		return &node;
+	}
+
+	NodeAST *visit(NodeNDArrayRef &node) override {
+		ASTVisitor::visit(node);
+		check_array_in_builtin_command(node);
+		return &node;
+	}
 
 	NodeAST* visit(NodeCallback &node) override {
 		if (node.is_thread_safe) {

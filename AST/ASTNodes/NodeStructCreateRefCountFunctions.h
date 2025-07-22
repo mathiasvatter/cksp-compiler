@@ -8,6 +8,8 @@
 #include "../ASTVisitor/ASTVisitor.h"
 
 class NodeStructCreateRefCountFunctions {
+	NodeProgram* m_program;
+	DefinitionProvider* m_def_provider = nullptr;
 	NodeStruct& m_struct;
 	Token tok;
 	std::unique_ptr<NodeFunctionDefinition> m_del_func;
@@ -16,16 +18,17 @@ class NodeStructCreateRefCountFunctions {
 	std::shared_ptr<NodeVariable> m_num_refs; // num_refs : int
 	std::unique_ptr<NodeReference> m_num_refs_ref;
 	std::unique_ptr<NodeReference> m_self_ref; // self
-	std::unique_ptr<NodeReference> m_alloc_ref; // List::allocation[self]
+	std::unique_ptr<NodeArrayRef> m_alloc_ref; // List::allocation[self]
 	std::unique_ptr<NodeReference> m_stack_top_ref; // List::stack_top
 	std::unique_ptr<NodeArrayRef> m_stack_ref; // List::stack[]
 	std::unique_ptr<NodeReference> m_iterator_ref;
 	std::vector<std::shared_ptr<NodeDataStructure>> m_recursive_member_structs;
 	std::vector<std::shared_ptr<NodeDataStructure>> m_non_recursive_member_structs;
 public:
-	explicit NodeStructCreateRefCountFunctions(NodeStruct& strct) : m_struct(strct) {
+	explicit NodeStructCreateRefCountFunctions(NodeStruct& strct, NodeProgram* program) : m_struct(strct) {
 		tok = m_struct.tok;
-
+		m_program = program;
+		m_def_provider = m_program->def_provider;
 		// num_refs
 		m_num_refs = std::make_unique<NodeVariable>(
 			std::nullopt,
@@ -48,8 +51,8 @@ public:
 		m_self_ref->ty = m_struct.node_self->ty;
 
 		// List::allocation[self]
-		m_alloc_ref = m_struct.allocation_var->to_reference();
-		m_alloc_ref->cast<NodeArrayRef>()->set_index(m_self_ref->clone());
+		m_alloc_ref = unique_ptr_cast<NodeArrayRef>(m_struct.allocation_var->to_reference());
+		m_alloc_ref->set_index(m_self_ref->clone());
 		m_alloc_ref->ty = TypeRegistry::Integer;
 
 		// List::stack_top
@@ -82,6 +85,7 @@ public:
 	std::unique_ptr<NodeFunctionDefinition> create_incr_function() {
 		set_self_ref_declaration(m_incr_func.get());
 		set_num_refs_ref_declaration(m_incr_func.get());
+		set_alloc_declaration(m_incr_func.get());
 		auto &func_body = m_incr_func->body;
 		auto nil_check = ASTVisitor::make_nil_check(clone_as<NodeReference>(m_self_ref.get()));
 		// List::allocation[self] := List::allocation[self] + num_refs
@@ -104,7 +108,7 @@ public:
 	}
 
 	/// checks if member is of composite type -> if yes wraps block in loop and iterates over array
-	void wrap_in_loop(std::unique_ptr<NodeStatement>& stmt, std::shared_ptr<NodeDataStructure> mem, std::shared_ptr<NodeDataStructure> iterator) {
+	void wrap_in_loop(const std::unique_ptr<NodeStatement>& stmt, const std::shared_ptr<NodeDataStructure> &mem, const std::shared_ptr<NodeDataStructure> &iterator) {
 		if(mem->ty->cast<CompositeType>()) {
 			auto block = std::make_unique<NodeBlock>(stmt->tok);
 			block->add_as_stmt(std::move(stmt->statement));
@@ -184,6 +188,7 @@ public:
 	std::unique_ptr<NodeFunctionDefinition> create_non_lin_rec_heterogenous_decr() {
 		set_self_ref_declaration(m_decr_func.get());
 		set_num_refs_ref_declaration(m_decr_func.get());
+		set_alloc_declaration(m_decr_func.get());
 		auto &func_body = m_decr_func->body;
 		// Node::stack[Node::stack_top] := self
 		func_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
@@ -223,7 +228,7 @@ public:
 					tok
 				);
 			}
-			auto while_body = rec->generate_ref_count_while(m_self_ref->get_declaration(), m_num_refs_ref->get_declaration());
+			auto while_body = rec->generate_ref_count_while(m_self_ref->get_declaration(), m_num_refs_ref->get_declaration(), m_program);
 			node_while->body->add_as_stmt(std::move(while_body));
 		}
 		node_while->set_condition(std::move(condition));
@@ -236,7 +241,7 @@ public:
 		return std::move(m_decr_func);
 	}
 
-	std::unique_ptr<NodeWhile> get_stack_while_loop(std::shared_ptr<NodeDataStructure> self, std::shared_ptr<NodeDataStructure> num_refs) {
+	std::unique_ptr<NodeWhile> get_stack_while_loop(const std::shared_ptr<NodeDataStructure>& self, std::shared_ptr<NodeDataStructure> num_refs) {
 		auto iter_decl = get_iterator_declaration();
 		m_self_ref->declaration = self;
 		m_num_refs_ref->declaration = num_refs;
@@ -330,6 +335,7 @@ public:
 	std::unique_ptr<NodeFunctionDefinition> create_non_lin_rec_homogenous_decr() {
 		set_self_ref_declaration(m_decr_func.get());
 		set_num_refs_ref_declaration(m_decr_func.get());
+		set_alloc_declaration(m_decr_func.get());
 		auto &func_body = m_decr_func->body;
 		// Node::stack[Node::stack_top] := self
 		func_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
@@ -354,6 +360,7 @@ public:
 		auto iter_decl = get_iterator_declaration();
 		set_self_ref_declaration(m_decr_func.get());
 		set_num_refs_ref_declaration(m_decr_func.get());
+		set_alloc_declaration(m_decr_func.get());
 		// declare current
 		auto current_decl = std::make_unique<NodeSingleDeclaration>(
 			std::make_unique<NodeVariable>(
@@ -451,6 +458,7 @@ public:
 			tok
 		));
 
+		outer_while->body->prepend_as_stmt(std::move(iter_decl));
 		m_decr_func->body->add_as_stmt(std::move(outer_while));
 		m_decr_func->parent = &m_struct;
 		m_decr_func->ty = TypeRegistry::Void;
@@ -474,7 +482,9 @@ private:
 			std::make_unique<NodeBlock>(tok, true),
 			tok
 		);
+		func_def->header->get_param(0)->name = m_def_provider->get_fresh_name(m_struct.node_self->name);
 		if(add_param) {
+			add_param->name = m_def_provider->get_fresh_name(add_param->name);
 			func_def->header->add_param(std::move(add_param));
 		}
 		return func_def;
@@ -521,11 +531,19 @@ private:
 	/// gets pointer to node_self from function definition and sets the declaration of m_self_ref
 	void set_self_ref_declaration(const NodeFunctionDefinition* func_def) const {
 		m_self_ref->declaration = func_def->header->get_param(0);
+		m_self_ref->name = func_def->header->get_param(0)->name;
 	}
 
 	/// gets pointer to num_refs from function definition and sets the declaration of m_num_refs_ref
 	void set_num_refs_ref_declaration(const NodeFunctionDefinition* func_def) const {
 		m_num_refs_ref->declaration = func_def->header->get_param(1);
+		m_num_refs_ref->name = func_def->header->get_param(1)->name;
+	}
+
+	void set_alloc_declaration(const NodeFunctionDefinition* func_def) const {
+		auto self_idx = m_alloc_ref->index->is_reference();
+		self_idx->declaration = func_def->header->get_param(0);
+		self_idx->name = func_def->header->get_param(0)->name;
 	}
 
 	///	List::allocation[self] := List::allocation[self] - num_refs

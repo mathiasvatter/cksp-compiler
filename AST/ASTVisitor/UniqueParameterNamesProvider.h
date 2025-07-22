@@ -80,7 +80,7 @@ private:
 	// rename all function parameters
 	NodeAST* visit(NodeFunctionParam& node) override {
 		node.variable->accept(*this);
-		if (node.variable->is_function_param() and node.variable->name != "self") {
+		if (node.variable->is_function_param()) { // and node.variable->name != "self") {
 			std::string fresh_name;
 			{
 				std::lock_guard<std::mutex> lock(m_name_mutex);
