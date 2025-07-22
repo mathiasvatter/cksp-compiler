@@ -61,12 +61,24 @@ public:
 
 	NodeAST* visit(NodeSingleDeclaration& node) override {
 		node.variable->accept(*this);
+		if (TypeRegistry::get_identifier_from_type(node.variable->ty) == ' ') {
+			auto error = ASTVisitor::get_raw_compile_error(ErrorType::InternalError, node);
+			error.m_message = "Type identifier for variable '" + node.variable->name + "' is empty. This should not happen.";
+			error.exit();
+		}
 		if(node.value) node.value->accept(*this);
 
 		static KSPDeclarations declarations;
 		auto new_node = node.accept(declarations);
 		static KSPPersistency persistency;
 		return new_node->accept(persistency);
+	}
+
+	NodeAST* visit(NodeWildcard& node) override {
+		auto error = ASTVisitor::get_raw_compile_error(ErrorType::InternalError, node);
+		error.m_message = "<wildcard> node should not exist anymore in AST.";
+		error.exit();
+		return &node;
 	}
 
 	NodeAST* visit(NodeBlock& node) override {

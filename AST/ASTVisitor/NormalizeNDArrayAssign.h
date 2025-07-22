@@ -122,13 +122,16 @@ private:
 		std::vector<std::shared_ptr<NodeDataStructure>> iterators; int count = 1;
 		std::vector<std::unique_ptr<NodeAST>> lower_bounds;
 		std::vector<std::unique_ptr<NodeAST>> upper_bounds;
-		for (size_t i = 0; i < node->sizes->params.size(); i++) {
-			auto &param = node->sizes->params[i];
+		for (size_t i = 0; i < node->indexes->params.size(); i++) {
+			auto &param = node->indexes->params[i];
 			if(param->get_node_type() == NodeType::Wildcard) {
-				iterators.push_back(program->get_global_iterator(i));
+				auto new_index = program->get_global_iterator(i);
+				node->indexes->set_param(i, new_index->to_reference());
+				iterators.push_back(std::move(new_index));
 				auto num_elements = node->get_size(std::make_unique<NodeInt>(count, node->tok));
 				upper_bounds.push_back(std::move(num_elements));
 				lower_bounds.push_back(std::make_unique<NodeInt>(0, node->tok));
+
 				count++;
 			}
 		}

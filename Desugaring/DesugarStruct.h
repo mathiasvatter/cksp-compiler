@@ -31,8 +31,7 @@
  *		List::next := next
  *	end function
  */
-class DesugarStruct : public ASTDesugaring {
-private:
+class DesugarStruct final : public ASTDesugaring {
 	std::stack<NodeStruct*> m_structs;
 	/// holds all declared members and local declarations to replace self
 	std::unordered_map<std::string, NodeDataStructure*> members;
@@ -114,7 +113,7 @@ public:
 
 		node.members->accept(*this);
 		// add self keyword for declarations
-		node.members->prepend_as_stmt(std::make_unique<NodeSingleDeclaration>(node.node_self, nullptr, node.tok));
+		// node.members->prepend_as_stmt(std::make_unique<NodeSingleDeclaration>(node.node_self, nullptr, node.tok));
 		for(auto & m: node.methods) {
 			m->accept(*this);
 		}
@@ -253,6 +252,9 @@ public:
 		return &node;
 	}
 	NodeAST * visit(NodeFunctionCall& node) override {
+		// if (StringUtils::starts_with(node.function->name, "self.tags")) {
+		//
+		// }
 		node.function->name = replace_self_struct_prefix(node.function->name);
 		node.function->accept(*this);
 		if(auto access_chain = try_access_chain_transform(node.function->name, &node)) {

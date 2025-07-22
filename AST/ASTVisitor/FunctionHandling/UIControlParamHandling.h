@@ -28,9 +28,6 @@ private:
 			if (node.kind == NodeFunctionCall::Kind::Property || StringUtils::contains(node.function->name, "control_par")) {
 				auto& first_arg = node.function->get_arg(0);
 				if (auto ref = first_arg->is_reference()) {
-					if (ref->name == "btn_preset_button0") {
-
-					}
 					std::vector<NodeReference*> references;
 					find_declaration(*ref, references);
 					wrap_in_get_ui_id(references);
@@ -108,9 +105,6 @@ private:
 	/// wrap in get_ui_id if all references are either ui controls or ui control arrays -> only wrap single ui_controls
 	static void wrap_in_get_ui_id(const std::vector<NodeReference*>& references) {
 		for (auto& ref : references) {
-			if (ref->name == "btn_preset_button0") {
-
-			}
 			// see if ref is not already wrapped in get_ui_id
 			if (is_in_get_ui_id(*ref)) {
 				continue;

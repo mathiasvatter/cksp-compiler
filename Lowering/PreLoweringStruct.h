@@ -36,7 +36,7 @@ public:
 		return &node;
 	}
 
-	void prepend_compiler_struct_vars(NodeStruct* strct) {
+	void prepend_compiler_struct_vars(NodeStruct* strct) const {
 		auto node_block = std::make_unique<NodeBlock>(Token());
 		auto max_structs_var = std::make_shared<NodeVariable>(
 			std::nullopt,
@@ -142,11 +142,16 @@ public:
 			return max_structs;
 		}
 		add_max_function_def(m_program);
-		return std::make_unique<NodeBinaryExpr>(
+		//wrap everything in max call again to ensure at least size of 1
+		auto bin_expr = std::make_unique<NodeBinaryExpr>(
 			token::DIV,
 			std::move(max_structs),
 			find_max_array_size(sizes),
 			Token()
+		);
+		return create_max_call(
+			std::make_unique<NodeInt>(1, Token()),
+			std::move(bin_expr)
 		);
 	}
 

@@ -35,6 +35,7 @@
 #include "AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
 #include "AST/ASTVisitor/FunctionHandling/ParameterAssignmentTransformation.h"
 #include "AST/ASTVisitor/GlobalScope/ASTParameterPromotion.h"
+#include "AST/ASTVisitor/GlobalScope/MarkThreadSafe.h"
 #include "AST/ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 #include "Optimization/ArrayInitializationRaising.h"
 
@@ -67,7 +68,7 @@ public:
 		//	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 		//    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 		//    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
-		input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+		// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 		// input_filename = "/Users/mathias/Scripting/legato-dev/one-shot.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score-essentials/the-score-essentials.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
@@ -205,6 +206,7 @@ public:
 
 		static ASTCollectLowerings lowering(m_program);
 		ast->accept(lowering);
+		ast->debug_print();
 
 		static ASTLowerTypes lowering_types(m_program);
 		ast->accept(lowering_types);

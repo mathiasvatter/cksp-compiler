@@ -498,7 +498,7 @@ struct NodeStruct final : NodeDataStructure {
 	 */
 	std::shared_ptr<NodeFunctionDefinition> generate_repr_method();
 	void generate_ref_count_methods(NodeProgram* program);
-	std::unique_ptr<NodeWhile> generate_ref_count_while(std::shared_ptr<NodeDataStructure> self, std::shared_ptr<NodeDataStructure> num_refs);
+	std::unique_ptr<NodeWhile> generate_ref_count_while(std::shared_ptr<NodeDataStructure> self, std::shared_ptr<NodeDataStructure> num_refs, NodeProgram* program);
 	void inline_struct(NodeProgram* program);
 	std::shared_ptr<NodeFunctionDefinition> get_overloaded_method(token op);
 

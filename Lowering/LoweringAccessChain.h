@@ -45,6 +45,7 @@ public:
 				node_func_call->function->prepend_arg(std::move(prev_node));
 			}
 		}
+		node.chain.back()->collect_references();
 		return node.replace_with(std::move(node.chain.back()));
 	}
 
