@@ -497,8 +497,8 @@ void NodeStruct::inline_struct(NodeProgram *program) {
 	constructor.reset();
 //	program->update_function_lookup();
 	// remove self node
-	auto self = this->node_self->parent->cast<NodeSingleDeclaration>();
-	self->remove_node();
+	// auto self = this->node_self->parent->cast<NodeSingleDeclaration>();
+	// self->remove_node();
 	node_self.reset();
 	program->init_callback->statements->prepend_body(std::move(members));
 	members = std::make_unique<NodeBlock>(Token());
@@ -514,7 +514,7 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::get_overloaded_method(token 
 }
 
 void NodeStruct::generate_ref_count_methods(NodeProgram* program) {
-	NodeStructCreateRefCountFunctions rf_methods(*this);
+	NodeStructCreateRefCountFunctions rf_methods(*this, program);
 	auto del = rf_methods.create_delete();
 	add_method(std::move(del));
 
@@ -527,8 +527,8 @@ void NodeStruct::generate_ref_count_methods(NodeProgram* program) {
 	this->rebuild_method_table();
 }
 
-std::unique_ptr<NodeWhile> NodeStruct::generate_ref_count_while(std::shared_ptr<NodeDataStructure> self, std::shared_ptr<NodeDataStructure> num_refs) {
-	NodeStructCreateRefCountFunctions rf_methods(*this);
+std::unique_ptr<NodeWhile> NodeStruct::generate_ref_count_while(std::shared_ptr<NodeDataStructure> self, std::shared_ptr<NodeDataStructure> num_refs, NodeProgram* program) {
+	NodeStructCreateRefCountFunctions rf_methods(*this, program);
 	return rf_methods.get_stack_while_loop(std::move(self), std::move(num_refs));
 }
 

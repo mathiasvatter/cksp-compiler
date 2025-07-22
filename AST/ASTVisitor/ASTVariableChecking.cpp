@@ -137,14 +137,19 @@ NodeAST* ASTVariableChecking::visit(NodeAccessChain& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
-	node.function->accept(*this);
-	if(!node.bind_definition(m_program)) {
+	node.bind_definition(m_program);
+	if(!node.get_definition()) {
 		if (auto access_chain = try_access_chain_transform(node.function->name, &node)) {
+			// needs to visit the arguments of the function call too
+			if (auto func_call = access_chain->chain.back()->cast<NodeFunctionCall>()) {
+				func_call->function->args->accept(*this);
+			}
 			access_chain->accept(*this);
 			node.replace_with(std::move(access_chain));
 			return &node;
 		}
 	}
+	node.function->accept(*this);
 	return &node;
 }
 
@@ -255,9 +260,11 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 	const auto node_declaration = m_def_provider->get_declaration(node);
 	if(!node_declaration) {
 		// if (!fail) return &node;
-		auto error = CompileError(ErrorType::VariableError, "", "", node.tok);
-		error.m_message = "Function Variable has not been declared: "+node.name;
-		error.exit();
+		if(m_current_struct) {
+			const auto msg = "When referencing a struct method, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
+			DefinitionProvider::throw_declaration_error(node, msg).exit();
+		}
+		DefinitionProvider::throw_declaration_error(node).exit();
 		return &node;
 	}
 	node.match_data_structure(node_declaration);

@@ -56,6 +56,8 @@ private:
 
 	NodeAST* visit(NodeSingleDeclaration& node) override {
 		if (!node.value) return &node;
+		// TODO: This does not work with LUX when assigning a local variable declaration to a function call
+		// node.value->accept(*this);
 		if (const auto func_call = node.value->cast<NodeFunctionCall>()) {
 			func_call->bind_definition(m_program);
 			const auto definition = func_call->get_definition();
@@ -76,6 +78,7 @@ private:
 				return node.replace_with(std::move(node_block))->accept(*this);
 			}
 		}
+		node.value->accept(*this);
 		return &node;
 	}
 

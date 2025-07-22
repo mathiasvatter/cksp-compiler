@@ -35,6 +35,7 @@
 #include "AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
 #include "AST/ASTVisitor/FunctionHandling/ParameterAssignmentTransformation.h"
 #include "AST/ASTVisitor/GlobalScope/ASTParameterPromotion.h"
+#include "AST/ASTVisitor/GlobalScope/MarkThreadSafe.h"
 #include "AST/ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 #include "Optimization/ArrayInitializationRaising.h"
 
@@ -71,7 +72,7 @@ public:
 		// input_filename = "/Users/mathias/Scripting/legato-dev/one-shot.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score-essentials/the-score-essentials.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
-		input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
+		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/toc-single-instruments/legato.ksp";
 		// input_filename = "/Users/mathias/Scripting/toc-single-instruments/keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/the-orchestra-complete-4/the_orchestra_ens_V1.2.ksp";
@@ -205,6 +206,7 @@ public:
 
 		static ASTCollectLowerings lowering(m_program);
 		ast->accept(lowering);
+		ast->debug_print();
 
 		static ASTLowerTypes lowering_types(m_program);
 		ast->accept(lowering_types);
@@ -329,6 +331,8 @@ public:
 		ASTKSPSyntaxCheck syntax_check(m_program);
 		ast->accept(syntax_check);
 		ASTKSPSyntaxCheck::fix_memory_exhausted_error(*ast);
+		ast->debug_print();
+
 
 		ASTGenerator generator;
 		ast->accept(generator);

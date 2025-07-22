@@ -34,7 +34,7 @@
  */
 class ASTPointerScope final : public ASTVisitor {
 	std::vector<NodeLoop*> m_loop_stack;
-	bool is_linear_environment = false;
+	// bool is_linear_environment = false;
 	std::unordered_map<NodeStruct*, std::unique_ptr<NodeAST>> m_num_constructors;
 
 	DefinitionProvider* m_def_provider = nullptr;
@@ -190,18 +190,22 @@ public:
 	}
 
 	//------- Nodes for struct instance analysis -------
+	bool is_linear_environment() const {
+		if (!m_program->function_call_stack.empty()) return false;
+		if (!m_program->current_callback) return false;
+		return m_program->current_callback == m_program->init_callback or m_program->current_callback->begin_callback == "on persistence_changed";
+	}
 
 	NodeAST* visit(NodeCallback& node) override {
-		if(&node == m_program->init_callback or node.begin_callback == "on persistence_changed") {
-			is_linear_environment = true;
-		}
+		m_program->current_callback = &node;
+
 
 		if(node.callback_id) node.callback_id->accept(*this);
 		node.statements->accept(*this);
 
-		is_linear_environment = false;
+		m_program->current_callback = nullptr;
 		return &node;
-	};
+	}
 
 	NodeAST* visit(NodeFor& node) override {
 		node.iterator->accept(*this);
@@ -237,15 +241,20 @@ public:
 	NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		node.bind_definition(m_program);
-		if(node.get_definition() and node.kind != NodeFunctionCall::Kind::Builtin) {
-			if(!node.get_definition()->visited) node.get_definition()->accept(*this);
-			node.get_definition()->visited = true;
+		auto definition = node.get_definition();
+		if(definition and node.kind != NodeFunctionCall::Kind::Builtin) {
+			if(!definition->visited) {
+				m_program->function_call_stack.push(definition);
+				definition->accept(*this);
+				m_program->function_call_stack.pop();
+			}
+			definition->visited = true;
 		}
 
 		if(node.kind == NodeFunctionCall::Kind::Constructor) {
 			// temporary constructor only  when in access chain or func arg of func that is not constructor
 			node.is_temporary_constructor = node.is_func_arg() || node.parent->cast<NodeAccessChain>();
-			if(auto struct_def = node.get_definition()->parent->cast<NodeStruct>()) {
+			if(auto struct_def = definition->parent->cast<NodeStruct>()) {
 				increase_num_constructors(struct_def);
 			}
 		}
@@ -294,7 +303,7 @@ private:
 	}
 
 	void increase_num_constructors(NodeStruct* struct_def) {
-		if(is_linear_environment) {
+		if(is_linear_environment()) {
 			// if the constructor is called in a linear loop environment, add the number of iterations to the constructor count
 			if(!m_loop_stack.empty()) {
 				if(auto num = determine_num_iterations()) {

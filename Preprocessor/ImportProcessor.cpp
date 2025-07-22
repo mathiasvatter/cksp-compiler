@@ -61,24 +61,37 @@ Result<SuccessTag> ImportProcessor::evaluate_import(std::vector<Token>& tokens, 
     auto path = path_handler.resolve_import_path(import_stmt->filepath);
     if(path.is_error()) {
 		return Result<SuccessTag>(path.get_error());
-    } else {
-        if (m_imported_files.find(path.unwrap()) == m_imported_files.end()) {  // Überprüfe auf zirkuläre Abhängigkeiten
-            m_imported_files.insert(path.unwrap());
-            FileHandler file_handler(path.unwrap());
-            Tokenizer tokenizer(file_handler.get_output(), path.unwrap(), file_handler.get_file_type());
-            auto new_tokens = tokenizer.tokenize();
+    }
+    std::filesystem::path current_file_path(path.unwrap());
+    if (!m_imported_files.contains(current_file_path)) {  // Überprüfe auf zirkuläre Abhängigkeiten
+        m_imported_files.insert(current_file_path);
 
-            size_t og_pos = m_pos;
-            auto processed_imports = process_import_statements(new_tokens, path.unwrap());
-            if(processed_imports.is_error())
-                return Result<SuccessTag>(processed_imports.get_error());
-            m_pos = og_pos;
-            // check END_TOKEN status and remove END_TOKEN from imported files
-            if (!tokens.empty() && tokens.back().type == token::END_TOKEN) {
-                tokens.pop_back();
-            }
-            tokens.insert(tokens.end(), new_tokens.begin(), new_tokens.end());
+        auto basename = current_file_path.filename().string();
+        auto it = m_basename_map.find(basename);
+        if (it != m_basename_map.end() && it->second != current_file_path.string()) {
+            auto error = CompileError(ErrorType::CompileWarning, "", "", import_stmt->tok);
+            error.m_message = "File with basename '" + current_file_path.filename().string() + "' already imported from: " +
+                              m_basename_map[current_file_path.filename()] + ". \nImporting again from: " + current_file_path.string() + ".";
+            error.m_message += " This may lead to unexpected behavior.";
+            // return Result<SuccessTag>(error);
+            error.print();
         }
+        m_basename_map[basename] = current_file_path.string();
+
+        FileHandler file_handler(current_file_path);
+        Tokenizer tokenizer(file_handler.get_output(), current_file_path, file_handler.get_file_type());
+        auto new_tokens = tokenizer.tokenize();
+
+        size_t og_pos = m_pos;
+        auto processed_imports = process_import_statements(new_tokens, current_file_path);
+        if(processed_imports.is_error())
+            return Result<SuccessTag>(processed_imports.get_error());
+        m_pos = og_pos;
+        // check END_TOKEN status and remove END_TOKEN from imported files
+        if (!tokens.empty() && tokens.back().type == token::END_TOKEN) {
+            tokens.pop_back();
+        }
+        tokens.insert(tokens.end(), new_tokens.begin(), new_tokens.end());
     }
 	return Result<SuccessTag>(SuccessTag{});
 }

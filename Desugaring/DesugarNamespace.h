@@ -133,6 +133,7 @@ public:
 	}
 
 	NodeAST* unnest(NodeNamespace& node) {
+		m_prefixes = "";
 		return node.accept(*this);
 	}
 
