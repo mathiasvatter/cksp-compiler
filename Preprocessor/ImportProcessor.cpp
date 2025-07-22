@@ -79,12 +79,12 @@ Result<SuccessTag> ImportProcessor::evaluate_import(std::vector<Token>& tokens, 
         }
         m_basename_map[basename] = import_path;
 
-        FileHandler file_handler(current_file_path);
-        Tokenizer tokenizer(file_handler.get_output(), current_file_path, file_handler.get_file_type());
+        FileHandler file_handler(import_path);
+        Tokenizer tokenizer(file_handler.get_output(), import_path, file_handler.get_file_type());
         auto new_tokens = tokenizer.tokenize();
 
         size_t og_pos = m_pos;
-        auto processed_imports = process_import_statements(new_tokens, current_file_path);
+        auto processed_imports = process_import_statements(new_tokens, import_path);
         if(processed_imports.is_error())
             return Result<SuccessTag>(processed_imports.get_error());
         m_pos = og_pos;
