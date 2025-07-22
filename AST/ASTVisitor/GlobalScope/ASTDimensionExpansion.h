@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "MarkThreadSafe.h"
 #include "../ASTVisitor.h"
 
 /**
@@ -146,7 +145,7 @@ public:
 		return &node;
 	}
 
-	bool determine_expansion_need(const NodeReference& ref) const {
+	static bool determine_expansion_need(const NodeReference& ref) {
 		// if(is_thread_safe_env()) return false;
 		// if(ref.kind != NodeReference::User) return false;
 		const auto declaration = ref.get_declaration();

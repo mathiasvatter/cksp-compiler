@@ -89,7 +89,7 @@ public:
 	std::unique_ptr<NodeFunctionCall> generate_copy_function() {
 		auto func_call = generate_function_call();
 		// check if function with this type already exists
-		if(program->function_lookup.find({func_call->function->name, (int)func_params.size()}) != program->function_lookup.end()) {
+		if(program->function_lookup.contains({func_call->function->name, (int)func_params.size()})) {
 			return func_call;
 		}
 		func_call->strategy = NodeFunctionCall::Inlining;
@@ -250,7 +250,7 @@ private:
 					indexes->add_param(iterators[count1]->to_reference());
 					count1++;
 				} else {
-					indexes->add_param(dim_vars_to_copy[count2]->to_reference());
+					indexes->add_param(dims_to_copy[count2]->clone());
 					count2++;
 				}
 			}

@@ -92,6 +92,7 @@ class LoweringStruct final : public ASTLowering {
 	NodeFunctionDefinition* m_current_func = nullptr;
 	NodeStruct* m_current_struct = nullptr;
 	std::unique_ptr<NodeVariableRef> m_max_structs_ref = std::make_unique<NodeVariableRef>("MAX::STRUCTS", Token());
+	NodeDataStructure* m_current_self = nullptr;
 	[[nodiscard]] bool in_constructor() const {
 		return m_current_func and m_current_struct and m_current_func == m_current_struct->constructor.get();
 	}
@@ -99,6 +100,13 @@ class LoweringStruct final : public ASTLowering {
 	[[nodiscard]] std::unique_ptr<NodeReference> get_index_ref() const {
 		if(in_constructor()) {
 			return m_current_struct->free_idx_var->to_reference();
+		}
+		if (m_current_self) {
+			return m_current_self->to_reference();
+		} else {
+			auto error = CompileError(ErrorType::InternalError, "", "", m_current_struct->tok);
+			error.m_message = "Current self is not set in LoweringStruct. This should never happen.";
+			error.exit();
 		}
 		return m_current_struct->node_self->to_reference();
 	}
@@ -121,9 +129,11 @@ public:
 	}
 
 	NodeAST * visit(NodeAccessChain& node) override {
-		// All access chains get lowered in collect lowering phase
+		// only access the first in case it is member and needs to be expanded (since the first
+		// element does not interfere with later on access chain lowering where the previous is the index
+		// of the next element!!
+		node.chain[0]->accept(*this);
 		return &node;
-		// return node.lower(m_program);
 	}
 
 	NodeAST * visit(NodeSingleDeclaration& node) override {
@@ -141,14 +151,19 @@ public:
 		// if member reference, turn into array reference with (struct.free_idx as index if in constructor, self as index if not)
 		if(determine_inflation_need(node)) {
 			auto new_node = node.expand_dimension(get_index_ref());
+			new_node->collect_references();
 			return node.replace_reference(std::move(new_node));
 		}
 		return &node;
 	}
 	NodeAST * visit(NodeArrayRef& node) override {
+		// if (node.name == "Floatmask::fm" and m_current_func->header->name == "Floatmask::__del__") {
+		//
+		// }
 		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
 		if(determine_inflation_need(node)) {
 			auto new_node = node.expand_dimension(get_index_ref());
+			new_node->collect_references();
 			return node.replace_reference(std::move(new_node));
 		}
 		return &node;
@@ -157,6 +172,7 @@ public:
 	NodeAST * visit(NodePointerRef& node) override {
 		if(determine_inflation_need(node)) {
 			auto new_node = node.expand_dimension(get_index_ref());
+			new_node->collect_references();
 			return node.replace_reference(std::move(new_node));
 		}
 		return &node;
@@ -166,6 +182,7 @@ public:
 		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
 		if(determine_inflation_need(node)) {
 			auto new_node = node.expand_dimension(get_index_ref());
+			new_node->collect_references();
 			return node.replace_reference(std::move(new_node));
 		}
 		return &node;
@@ -174,10 +191,16 @@ public:
 
 	NodeAST * visit(NodeFunctionDefinition& node) override {
 		m_current_func = &node;
+		if (node.header->name == "Floatmask::from_int") {
+
+		}
+		if (!in_constructor()) {
+			m_current_self = node.header->get_param(0).get();
+		}
 		node.header->accept(*this);
 		node.body->accept(*this);
 		// lower init function
-		if(node.header->name == m_current_struct->name+OBJ_DELIMITER+"__init__") {
+		if(node.header->name == m_current_struct->name+OBJ_DELIMITER+NodeStruct::CONSTRUCTOR) {
 			node.mark_threadsafety(m_program);
 			if (!node.is_thread_safe) {
 				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
@@ -192,8 +215,9 @@ public:
 	}
 
 private:
-	bool determine_inflation_need(const NodeReference& ref) const {
+	[[nodiscard]] bool determine_inflation_need(const NodeReference& ref) const {
 		auto strct = ref.is_member_ref();
+		// check with name to only inflate members with prefix
 		if (strct and strct->name == m_current_struct->name) {
 			return !ref.is_engine; // and ref.get_declaration()->data_type != DataType::Const;
 		}

@@ -23,6 +23,7 @@ private:
 
     std::vector<Token> m_imported_tokens;
     std::unordered_set<std::string> m_imported_files;  // Um zirkuläre Abhängigkeiten zu vermeiden
+	std::unordered_map<std::string, std::string> m_basename_map; // Map to store basename to full path mapping
     std::vector<std::unique_ptr<NodeImport>> m_import_statements;
 
 	DefinitionProvider* m_def_provider;

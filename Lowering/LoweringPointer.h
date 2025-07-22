@@ -6,20 +6,19 @@
 
 #include "ASTLowering.h"
 
-class LoweringPointer : public ASTLowering {
-private:
+class LoweringPointer final : public ASTLowering {
 
 public:
 	explicit LoweringPointer(NodeProgram *program) : ASTLowering(program) {}
 
 
-	inline NodeAST * visit(NodePointer& node) override {
+	NodeAST * visit(NodePointer& node) override {
 		auto node_var = node.to_variable();
 		node_var->ty = node.ty;
 		return node.replace_datastruct(std::move(node_var));
 	}
 
-	inline NodeAST * visit(NodePointerRef& node) override {
+	NodeAST * visit(NodePointerRef& node) override {
 		// check if parent string -> call __repr__ method
 		if(node.ty == TypeRegistry::Nil) {
 			auto new_node = node.replace_with(std::make_unique<NodeNil>(node.tok));

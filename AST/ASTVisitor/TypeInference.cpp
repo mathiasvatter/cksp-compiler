@@ -138,8 +138,8 @@ NodeAST * TypeInference::visit(NodePointerRef& node) {
 		auto ptr = node_var->to_pointer();
 		ptr->match_metadata(node_var);
 		auto new_node = node_var->replace_datastruct(std::move(ptr));
-		auto &references = node.get_declaration()->references;
-		for(auto ref : references) {
+		const auto references = std::vector<NodeReference*>(node.get_declaration()->references.begin(), node.get_declaration()->references.end());
+		for(const auto ref : references) {
 			ref->accept(*this);
 //			ASTSemanticAnalysis::replace_incorrectly_detected_reference(m_program, ref);
 		}
@@ -384,10 +384,16 @@ NodeAST * TypeInference::visit(NodeForEach& node) {
 		match_against(*node.key->variable, TypeRegistry::Integer);
 	}
 
+	node.range->accept(*this);
+	if(auto pairs = node.range->cast<NodePairs>()) {
+		match_element_types(*pairs->range, *node.value->variable);
+	} else {
+		match_element_types(*node.range, *node.value->variable);
+	}
+
 	node.body->accept(*this);
 	node.value->accept(*this);
 
-	node.range->accept(*this);
 	if(auto pairs = node.range->cast<NodePairs>()) {
 		match_element_types(*pairs->range, *node.value->variable);
 	} else {
@@ -715,13 +721,17 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 	}
 
 	if(definition) {
-		// if it is not builtin kind and it is a function that is actually used in the program
-		if (node.kind == NodeFunctionCall::UserDefined and m_program->current_callback != nullptr) {
+		// if it is not builtin kind
+		if (node.kind == NodeFunctionCall::UserDefined) {
+			// only if the function is reachable
 			m_func_calls.push_back(&node);
 		}
+
 		// explicitly visit builtin functions regardless of visited flag since its not reset for those anyways
 		if (!definition->visited || node.is_builtin_kind()) {
+			m_program->function_call_stack.push(definition);
 			definition->accept(*this);
+			m_program->function_call_stack.pop();
 			definition->visited = true;
 			// apply references to function params
 			for (auto &param : definition->header->params) {
@@ -729,7 +739,6 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 					match_reference_declaration(*ref, param->variable);
 				}
             }
-
 		}
 
 		int method_idx = is_in_access_chain(node) ? 1 : 0;

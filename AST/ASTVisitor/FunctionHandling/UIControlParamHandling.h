@@ -36,26 +36,26 @@ private:
 		}
 		return &node;
 	}
-
-	NodeAST* visit(NodeGetControl& node) override {
-		node.ui_id->accept(*this);
-		if (auto ref = node.ui_id->is_reference()) {
-			std::vector<NodeReference*> references;
-			find_declaration(*ref, references);
-			wrap_in_get_ui_id(references);
-		}
-		return &node;
-	}
-
-	NodeAST* visit(NodeSetControl& node) override {
-		node.ui_id->accept(*this);
-		if (auto ref = node.ui_id->is_reference()) {
-			std::vector<NodeReference*> references;
-			find_declaration(*ref, references);
-			wrap_in_get_ui_id(references);
-		}
-		return &node;
-	}
+	//
+	// NodeAST* visit(NodeGetControl& node) override {
+	// 	node.ui_id->accept(*this);
+	// 	if (auto ref = node.ui_id->is_reference()) {
+	// 		std::vector<NodeReference*> references;
+	// 		find_declaration(*ref, references);
+	// 		wrap_in_get_ui_id(references);
+	// 	}
+	// 	return &node;
+	// }
+	//
+	// NodeAST* visit(NodeSetControl& node) override {
+	// 	node.ui_id->accept(*this);
+	// 	if (auto ref = node.ui_id->is_reference()) {
+	// 		std::vector<NodeReference*> references;
+	// 		find_declaration(*ref, references);
+	// 		wrap_in_get_ui_id(references);
+	// 	}
+	// 	return &node;
+	// }
 
 
 /// helper functions
@@ -129,9 +129,11 @@ private:
 	void find_declaration(NodeReference& ref, std::vector<NodeReference*> &references) {
 		if (auto decl = ref.get_declaration()) {
 			if (auto param = decl->is_function_param()) {
-				// if (!param->is_pass_by_ref) {
+				// only wrap in get_ui_id if para is not passed by reference -> if it
+				// is already pass-by-ref, user is responsible for using get_ui_id
+				if (!param->is_pass_by_ref) {
 					find_original_references(*param, references);
-				// }
+				}
 			} else if (decl->parent and decl->parent->cast<NodeUIControl>()) {
 				references.push_back(&ref);
 			}
