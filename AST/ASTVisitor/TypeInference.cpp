@@ -4,6 +4,8 @@
 
 #include "TypeInference.h"
 
+#include "ASTSemanticAnalysis.h"
+
 NodeAST * TypeInference::visit(NodeProgram& node) {
 	m_program = &node;
 	m_program->global_declarations->accept(*this);
@@ -384,6 +386,10 @@ NodeAST * TypeInference::visit(NodeForEach& node) {
 		match_against(*node.key->variable, TypeRegistry::Integer);
 	}
 
+	// if (node.value->variable->name == "preset") {
+	//
+	// }
+
 	node.range->accept(*this);
 	if(auto pairs = node.range->cast<NodePairs>()) {
 		match_element_types(*pairs->range, *node.value->variable);
@@ -458,6 +464,11 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				reference->match_data_structure(node_declaration);
 				// reference->declaration = node_declaration;
 				reference->collect_references();
+				if (auto new_node = ASTSemanticAnalysis::replace_incorrectly_detected_reference(reference)) {
+					reference = new_node;
+				}
+
+				reference->accept(*this);
 				match_reference_declaration(*reference, reference->get_declaration());
 				// if declaration of this reference is unknown and it is not the end of the chain,
 				// we can assume that it is also an object. we can check if the next reference is also in this struct
@@ -473,7 +484,6 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 					}
 				}
 
-				reference->accept(*this);
 			}
 		}
 

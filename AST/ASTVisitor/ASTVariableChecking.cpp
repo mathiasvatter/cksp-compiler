@@ -4,6 +4,8 @@
 
 #include "ASTVariableChecking.h"
 
+#include "ReferenceManagement/ASTCollectDeclarations.h"
+
 ASTVariableChecking::ASTVariableChecking(NodeProgram* main)
 	: m_def_provider(main->def_provider) {
 	fail = false;
@@ -133,6 +135,10 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionDefinition &node) {
 NodeAST* ASTVariableChecking::visit(NodeAccessChain& node) {
 	node.chain[0]->accept(*this);
 	node.flatten();
+	// collect args of func calls in access chain or indexes of arrays etc w/o errors
+	static ASTCollectDeclarations collect(m_program);
+	visit_all(node.chain, collect);
+
 	return &node;
 }
 

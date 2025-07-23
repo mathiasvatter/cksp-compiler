@@ -203,6 +203,7 @@ public:
 		static ASTPointerScope pointer_scope(m_program);
 		ast->accept(pointer_scope);
 		ast->collect_references();
+		ast->debug_print();
 
 		static ASTCollectLowerings lowering(m_program);
 		ast->accept(lowering);
@@ -310,6 +311,8 @@ public:
 
 		ASTCollectPostLowerings post_lowering(m_program);
 		ast->accept(post_lowering);
+		ast->debug_print();
+
 		ASTRelinkGlobalScope relink_global_scope(m_program);
 		ast->accept(relink_global_scope);
 

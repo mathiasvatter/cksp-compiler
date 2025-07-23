@@ -7,46 +7,46 @@
 #include "ASTVisitor.h"
 #include "../../BuiltinsProcessing/DefinitionProvider.h"
 
-class ASTHandleStringRepresentations: public ASTVisitor {
+class ASTHandleStringRepresentations final : public ASTVisitor {
 public:
 	explicit ASTHandleStringRepresentations(DefinitionProvider *definition_provider) : m_def_provider(definition_provider) {};
 
-	inline NodeAST * visit(NodeVariable& node) override {
+	NodeAST * visit(NodeVariable& node) override {
 		return &node;
 	}
-	inline NodeAST * visit(NodeVariableRef& node) override {
+	NodeAST * visit(NodeVariableRef& node) override {
 		return wrap_in_repr_call(node);
 	}
-	inline NodeAST * visit(NodePointer& node) override {
+	NodeAST * visit(NodePointer& node) override {
 		return &node;
 	}
-	inline NodeAST * visit(NodePointerRef& node) override {
+	NodeAST * visit(NodePointerRef& node) override {
 		return wrap_in_repr_call(node);
 	}
-	inline NodeAST * visit(NodeArray& node) override {
-		if(node.size) node.size->accept(*this);
+	NodeAST * visit(NodeArray& node) override {
+		// if(node.size) node.size->accept(*this);
 		return &node;
 	}
-	inline NodeAST * visit(NodeArrayRef& node) override {
+	NodeAST * visit(NodeArrayRef& node) override {
 		if(node.index) node.index->accept(*this);
 		return wrap_in_repr_call(node);
 	}
-	inline NodeAST * visit(NodeNDArray& node) override {
-		if(node.sizes) node.sizes->accept(*this);
+	NodeAST * visit(NodeNDArray& node) override {
+		// if(node.sizes) node.sizes->accept(*this);
 		return &node;
 	}
-	inline NodeAST * visit(NodeNDArrayRef& node) override {
+	NodeAST * visit(NodeNDArrayRef& node) override {
 		if(node.indexes) node.indexes->accept(*this);
 		return wrap_in_repr_call(node);
 	}
-	inline NodeAST * visit(NodeList& node) override {
+	NodeAST * visit(NodeList& node) override {
 		return &node;
 	}
-	inline NodeAST * visit(NodeListRef& node) override {
-		if(node.indexes) node.indexes->accept(*this);
+	NodeAST * visit(NodeListRef& node) override {
+		// if(node.indexes) node.indexes->accept(*this);
 		return wrap_in_repr_call(node);
 	}
-	inline NodeAST * visit(NodeFunctionDefinition& node) override {
+	NodeAST * visit(NodeFunctionDefinition& node) override {
 		auto repr_type = is_repr_header(*node.header);
 		// check because of recursion
 		if(repr_type) m_repr_functions_in_use.insert(repr_type);
@@ -57,7 +57,7 @@ public:
 		if(repr_type) m_repr_functions_in_use.erase(repr_type);
 		return &node;
 	}
-	inline NodeAST * visit(NodeFunctionCall& node) override {
+	NodeAST * visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		return wrap_in_repr_call(node);
 	}
@@ -97,7 +97,7 @@ private:
 
 		if(ref.is_string_env()) {
 			// try to prohibit recursive repr constructions inside repr functions
-			if(!m_repr_functions_in_use.empty() and m_repr_functions_in_use.find(ref.ty) != m_repr_functions_in_use.end()) {
+			if(!m_repr_functions_in_use.empty() and m_repr_functions_in_use.contains(ref.ty)) {
 				return &ref;
 			}
 

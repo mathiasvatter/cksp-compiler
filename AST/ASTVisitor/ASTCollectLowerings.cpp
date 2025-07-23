@@ -40,6 +40,7 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	node.merge_function_definitions();
 	node.reset_function_visited_flag();
 
+	node.debug_print();
 	ASTHandleStringRepresentations handle_string_representations(m_def_provider);
 	node.accept(handle_string_representations);
 

@@ -133,6 +133,17 @@ public:
 		// element does not interfere with later on access chain lowering where the previous is the index
 		// of the next element!!
 		node.chain[0]->accept(*this);
+		// of the rest, only visit func args or indices
+		for (int i = 1; i<node.chain.size(); i++) {
+			auto& ref = node.chain[i];
+			if (auto array_ref = ref->cast<NodeArrayRef>()) {
+				if (array_ref->index) array_ref->index->accept(*this);
+			} else if (auto ndarray_ref = ref->cast<NodeNDArrayRef>()) {
+				ndarray_ref->indexes->accept(*this);
+			} else if (auto func_call = ref->cast<NodeFunctionCall>()) {
+				func_call->accept(*this);
+			}
+		}
 		return &node;
 	}
 

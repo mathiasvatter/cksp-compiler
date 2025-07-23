@@ -132,8 +132,8 @@ private:
 				upper_bounds.push_back(std::move(num_elements));
 				lower_bounds.push_back(std::make_unique<NodeInt>(0, node->tok));
 
-				count++;
 			}
+			count++;
 		}
 
 		// create for loop

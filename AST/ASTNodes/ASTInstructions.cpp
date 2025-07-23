@@ -151,6 +151,7 @@ std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_constructor_defin
 		if(!constructor) return nullptr;
 		function->ty = constructor->header->ty;
 		definition = constructor;
+		function->name = constructor->header->name;
 //		constructor->call_sites.emplace(this);
 		kind = Kind::Constructor;
 		return it->second->constructor;
