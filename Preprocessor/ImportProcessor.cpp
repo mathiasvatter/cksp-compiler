@@ -63,27 +63,28 @@ Result<SuccessTag> ImportProcessor::evaluate_import(std::vector<Token>& tokens, 
 		return Result<SuccessTag>(path.get_error());
     }
     std::filesystem::path current_file_path(path.unwrap());
-    if (!m_imported_files.contains(current_file_path)) {  // Überprüfe auf zirkuläre Abhängigkeiten
-        m_imported_files.insert(current_file_path);
+    std::string import_path = current_file_path.string();
+    if (!m_imported_files.contains(import_path)) {  // Überprüfe auf zirkuläre Abhängigkeiten
+        m_imported_files.insert(import_path);
 
         auto basename = current_file_path.filename().string();
         auto it = m_basename_map.find(basename);
-        if (it != m_basename_map.end() && it->second != current_file_path.string()) {
+        if (it != m_basename_map.end() && it->second != import_path) {
             auto error = CompileError(ErrorType::CompileWarning, "", "", import_stmt->tok);
-            error.m_message = "File with basename '" + current_file_path.filename().string() + "' already imported from: " +
-                              m_basename_map[current_file_path.filename()] + ". \nImporting again from: " + current_file_path.string() + ".";
+            error.m_message = "File with basename '" + basename + "' already imported from: " +
+                              m_basename_map[basename] + ". \nImporting again from: " + import_path + ".";
             error.m_message += " This may lead to unexpected behavior.";
             // return Result<SuccessTag>(error);
             error.print();
         }
-        m_basename_map[basename] = current_file_path.string();
+        m_basename_map[basename] = import_path;
 
-        FileHandler file_handler(current_file_path);
-        Tokenizer tokenizer(file_handler.get_output(), current_file_path, file_handler.get_file_type());
+        FileHandler file_handler(import_path);
+        Tokenizer tokenizer(file_handler.get_output(), import_path, file_handler.get_file_type());
         auto new_tokens = tokenizer.tokenize();
 
         size_t og_pos = m_pos;
-        auto processed_imports = process_import_statements(new_tokens, current_file_path);
+        auto processed_imports = process_import_statements(new_tokens, import_path);
         if(processed_imports.is_error())
             return Result<SuccessTag>(processed_imports.get_error());
         m_pos = og_pos;
