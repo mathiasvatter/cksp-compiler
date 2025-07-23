@@ -86,8 +86,8 @@ public:
 		// most func defs will be visited when called, keeping local scopes in mind
 		m_program->global_declarations->accept(*this);
 		m_program->init_callback->accept(*this);
-		visit_all(node.namespaces, *this);
-		visit_all(node.struct_definitions, *this);
+		// visit_all(node.namespaces, *this);
+		// visit_all(node.struct_definitions, *this);
 		for(const auto & callback : node.callbacks) {
 			if(callback.get() != m_program->init_callback) callback->accept(*this);
 		}
@@ -100,6 +100,16 @@ public:
 			struct_def.first->max_individual_structs_count->parent = struct_def.first;
 		}
 
+		return &node;
+	}
+
+	NodeAST* visit(NodeNamespace& node) override {
+		node.members->accept(*this);
+		return &node;
+	}
+
+	NodeAST* visit(NodeStruct& node)  override {
+		node.members->accept(*this);
 		return &node;
 	}
 
@@ -171,7 +181,6 @@ public:
 
 	NodeAST* visit(NodeSingleDeclaration &node) override {
 		if(node.variable->is_member()) return &node;
-
 		node.variable->accept(*this);
 		if(node.value) node.value->accept(*this);
 
@@ -265,7 +274,7 @@ public:
 
 	NodeAST* visit(NodeFunctionDefinition& node) override {
 		// do this because function definitions are also in the structs
-		if(node.visited) return &node;
+		// if(node.visited) return &node;
 
 		node.header ->accept(*this);
 		if (node.return_variable.has_value())

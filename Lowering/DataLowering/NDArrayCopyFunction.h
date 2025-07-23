@@ -153,8 +153,8 @@ private:
 				if (idx->get_node_type() == NodeType::Wildcard) {
 					upper_bounds.push_back(nd_arr_ref->get_size(std::make_unique<NodeInt>(count, nd_arr_ref->tok)));
 					lower_bounds.push_back(std::make_unique<NodeInt>(0, nd_arr_ref->tok));
-					count++;
 				}
+				count++;
 			}
 		}
 	}
