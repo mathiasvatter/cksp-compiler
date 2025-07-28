@@ -135,10 +135,21 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionDefinition &node) {
 NodeAST* ASTVariableChecking::visit(NodeAccessChain& node) {
 	node.chain[0]->accept(*this);
 	node.flatten();
+	m_current_access.push(&node);
 	// collect args of func calls in access chain or indexes of arrays etc w/o errors
 	static ASTCollectDeclarations collect(m_program);
-	visit_all(node.chain, collect);
-
+	for (int i = 1; i<node.chain.size(); i++) {
+		auto& ref = node.chain[i];
+		if (auto array_ref = ref->cast<NodeArrayRef>()) {
+			if (array_ref->index) array_ref->index->accept(*this);
+		} else if (auto ndarray_ref = ref->cast<NodeNDArrayRef>()) {
+			ndarray_ref->indexes->accept(*this);
+		} else if (auto func_call = ref->cast<NodeFunctionCall>()) {
+			func_call->function->args->accept(*this);
+		}
+	}
+	// visit_all(node.chain, *this);
+	m_current_access.pop();
 	return &node;
 }
 

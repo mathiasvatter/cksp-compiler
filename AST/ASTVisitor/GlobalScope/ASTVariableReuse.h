@@ -113,9 +113,9 @@ public:
 		if(node.kind == NodeSingleDeclaration::Kind::Promoted or node.kind == NodeSingleDeclaration::Kind::ReturnVar) {
 			return std::make_unique<NodeDeadCode>(node.tok);
 		}
-		if (!node.variable->is_thread_safe) {
-			return std::make_unique<NodeDeadCode>(node.tok);
-		}
+		// if (!node.variable->is_thread_safe) {
+		// 	return std::make_unique<NodeDeadCode>(node.tok);
+		// }
 		auto node_assignment = node.to_assign_stmt();
 		node_assignment->collect_references();
 		return std::move(node_assignment);

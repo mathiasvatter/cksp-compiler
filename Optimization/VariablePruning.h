@@ -117,14 +117,22 @@ public:
 				error.exit();
 			}
 		}
-		node.get_declaration()->is_used |= is_used(node);
+		if (auto declaration = node.get_declaration()) {
+			declaration->is_used |= is_used(node);
+		} else {
+			DefinitionProvider::throw_declaration_error(node).exit();
+		}
 		return &node;
 	}
 
 
 	NodeAST *visit(NodeArrayRef &node) override {
 		if(node.index) node.index->accept(*this);
-		node.get_declaration()->is_used |= is_used(node);
+		if (auto declaration = node.get_declaration()) {
+			declaration->is_used |= is_used(node);
+		} else {
+			DefinitionProvider::throw_declaration_error(node).exit();
+		}
 		return &node;
 	}
 

@@ -90,6 +90,7 @@ private:
 	// boolean to continue after not finding declaration or fail
 	bool fail = false;
 	NodeStruct* m_current_struct = nullptr;
+	std::stack<NodeAccessChain*> m_current_access;
     std::stack<NodeBlock*> m_current_block;
 	DefinitionProvider* m_def_provider = nullptr;
 

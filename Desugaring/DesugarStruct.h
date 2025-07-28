@@ -120,6 +120,13 @@ public:
 		node.rebuild_member_table();
 		node.rebuild_method_table();
 
+		auto self_decl = std::make_unique<NodeSingleDeclaration>(
+			node.node_self,
+			nullptr,
+			node.tok
+		);
+		node.members->prepend_as_stmt(std::move(self_decl));
+
 		m_structs.pop();
 		members.clear();
 		return &node;

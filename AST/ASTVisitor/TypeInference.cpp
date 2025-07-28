@@ -357,18 +357,22 @@ NodeAST * TypeInference::visit(NodeUseCount& node) {
 	}
 	match_against(node, TypeRegistry::Integer);
 	return &node;
-};
+}
 
 NodeAST * TypeInference::visit(NodeSortSearch& node) {
 	node.array->accept(*this);
-	match_against(*node.array, TypeRegistry::NDArrayOfInt, "<search> can only be used on <Composite> types like <Arrays> or <NDArrays>.");
+	if (node.array->ty->get_element_type()->get_type_kind() != TypeKind::Object) {
+		match_against(*node.array, TypeRegistry::NDArrayOfInt, "<search> can only be used on <Composite> types like <Arrays> or <NDArrays>.");
+	}
 	if(!node.array->ty->cast<CompositeType>()) {
 		auto error = CompileError(ErrorType::TypeError, "", "", node.array->tok);
 		error.m_message = "<search> can only be used on <Composite> types like <Arrays> or <NDArrays>.";
 		error.exit();
 	}
 	node.value->accept(*this);
-	match_against(*node.value, TypeRegistry::Integer);
+	if (node.value->ty->get_type_kind() != TypeKind::Object) {
+		match_against(*node.value, TypeRegistry::Integer);
+	}
 	if(node.from) {
 		node.from->accept(*this);
 		match_against(*node.from, TypeRegistry::Integer);
@@ -445,6 +449,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 					error.m_message = "Method "+func_call->function->name+" does not exist in "+prev_obj+".";
 					error.exit();
 				}
+				// func_call->function->match_data_structure(definition->header);
 				ptr->accept(*this);
 			} else {
 				auto reference = ptr->is_reference();
@@ -686,7 +691,7 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 		// set_text_edit_properties(txt_keyswitch_name, "-/-", "alpha")
 		if (node.kind != NodeFunctionCall::Kind::Property) {
 			// add method_idx because at this point method definitions have 1 more parameter than the call (self)
-			int method_idx = is_in_access_chain(node) ? 1 : 0;
+			int method_idx = node.is_in_access_chain() ? 1 : 0;
 			for (int i = 0; i < node.function->get_num_args(); i++) {
 				auto &func_arg = node.function->get_arg(i);
 				auto &param = definition->get_param(i+method_idx);
@@ -751,7 +756,7 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
             }
 		}
 
-		int method_idx = is_in_access_chain(node) ? 1 : 0;
+		int method_idx = node.is_in_access_chain() ? 1 : 0;
 		for (int i = 0; i < node.function->get_num_args(); i++) {
 			auto &func_arg = node.function->get_arg(i);
 			auto &param = definition->get_param(i+method_idx);
@@ -774,6 +779,8 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 }
 
 NodeAST * TypeInference::visit(NodeFunctionHeaderRef& node) {
+	// int method_idx = node.is_in_access_chain() ? 1 : 0;
+
 	if(node.args) node.args->accept(*this);
 	// node.create_function_type(TypeRegistry::Unknown);
 	// if declaration type has empty params -> get type from reference
@@ -871,7 +878,8 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	node.left->accept(*this);
 	node.right->accept(*this);
 
-	// if type if object -> check for operator overloading
+	bool is_object = false;
+	// if type is object -> check for operator overloading
 	if(node.left->ty->get_type_kind() == TypeKind::Object) {
 		auto strct = NodeReference::get_object_ptr(m_program, node.left->ty->to_string());
 		if(auto def = strct->get_overloaded_method(node.op)) {
@@ -887,11 +895,8 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 			);
 			// do not yet add definition to call -> will be done in function call
 			return node.replace_with(std::move(call))->accept(*this);
-		} else {
-			auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
-			error.m_message = "Operator <"+std::string(tokenStrings[(int)node.op]) +"> has not been overloaded for type "+node.left->ty->to_string()+".";
-			error.exit();
 		}
+		is_object = true;
 
 	}
 
@@ -941,10 +946,15 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	} else if (COMPARISON_TOKENS.contains(node.op)) {
 		node.ty = TypeRegistry::Comparison;
 		is_compatible = node.left->ty->is_compatible(node.ty) and node.right->ty->is_compatible(node.ty);
+		is_compatible |= is_object;
 		error.m_message += "<Comparison Operators> can only be used in between <Integer> or <Real> values.";
 
 	} else {
 		error.exit();
+	}
+
+	if (is_object) {
+		error.m_message += " Operator <"+std::string(tokenStrings[(int)node.op]) +"> has not been overloaded for type "+node.left->ty->to_string()+".";
 	}
 
 	if(!is_compatible) {
@@ -960,6 +970,7 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 	node.operand->ty = specialize_type(node.operand->ty, node.ty);
 	node.operand->accept(*this);
 
+	bool is_object = false;
 	// if type if object -> check for operator overloading
 	if(node.operand->ty->get_type_kind() == TypeKind::Object) {
 		auto strct = NodeReference::get_object_ptr(m_program, node.operand->ty->to_string());
@@ -975,10 +986,6 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 			);
 			// do not yet add definition to call -> will be done in function call
 			return node.replace_with(std::move(call))->accept(*this);
-		} else {
-			auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
-			error.m_message = "Operator <"+std::string(tokenStrings[(int)node.op]) +"> has not been overloaded for type "+node.operand->ty->to_string()+".";
-			error.exit();
 		}
 
 	}
@@ -1003,10 +1010,14 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 		is_compatible = node.operand->ty->is_compatible(node.ty);
 	} else if(node.op == token::BOOL_NOT) {
 		node.ty = TypeRegistry::Boolean;
-		is_compatible = node.operand->ty->is_compatible(node.ty);
+		is_compatible = node.operand->ty->is_compatible(node.ty) || is_object;
 		error.m_message += "<Bool Operators> can only be used in between <Boolean> or <Comparison> values. Be sure to use correct parentheses.";
 	} else {
 		error.exit();
+	}
+
+	if (is_object) {
+		error.m_message += " Operator <"+std::string(tokenStrings[(int)node.op]) +"> has not been overloaded for type "+node.operand->ty->to_string()+".";
 	}
 
 	if(!is_compatible)
