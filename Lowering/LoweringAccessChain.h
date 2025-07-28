@@ -13,17 +13,15 @@
  * this_list{List}.next{List}.get_value() -> List.get_value(List.next[this_list])
  */
 
-class LoweringAccessChain : public ASTLowering {
-private:
+class LoweringAccessChain final : public ASTLowering {
 	NodeAST* start_pointer = nullptr;
 	Type* prev_type = nullptr;
 public:
 	explicit LoweringAccessChain(NodeProgram *program) : ASTLowering(program) {}
 
-	inline NodeAST * visit(NodeAccessChain& node) override {
+	NodeAST * visit(NodeAccessChain& node) override {
 		node.update_types();
 		// if first element is pointer do not accept
-//		auto start = node.chain[0]->get_node_type() == NodeType::FunctionCall ? 0 : 1;
 		start_pointer = node.chain[0].get();
 		for(int i=0; i<node.chain.size(); i++) {
 			auto& ref = node.chain[i];
@@ -50,7 +48,7 @@ public:
 	}
 
 	/// every pointer ref in access chain is replaced by array_ref with name "<obj_type>.<name>"
-	inline NodeAST * visit(NodePointerRef& node) override {
+	NodeAST * visit(NodePointerRef& node) override {
 		if(node.ty == TypeRegistry::Unknown || node.ty->get_type_kind() != TypeKind::Object) {
 			auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
 			error.m_message = "Unknown type for pointer reference. Pointer references have to be typed or of type <Object>.";
@@ -60,44 +58,34 @@ public:
 		if(&node == start_pointer) return &node;
 		node.name = prev_type->to_string() + OBJ_DELIMITER + node.name;
 		auto node_array = node.expand_dimension(nullptr);
-//		auto node_array = node.to_array_ref(nullptr);
-//		node_array->declaration = node.declaration;
-//		node_array->ty = node.ty;
 		return node.replace_reference(std::move(node_array));
 	}
 
 	// increase dimensions -> to ndarray_ref
-	inline NodeAST * visit(NodeArrayRef& node) override {
+	NodeAST * visit(NodeArrayRef& node) override {
 		if(&node == start_pointer) return &node;
 		// no index -> array -> List.array[sth, *]
 //		if(!node.index) node.set_index(std::make_unique<NodeWildcard>("*", node.tok));
 		node.name = prev_type->to_string()+OBJ_DELIMITER+node.name;
 		auto node_ndarray_ref = node.expand_dimension(nullptr);
-//		auto node_ndarray_ref = node.to_ndarray_ref();
-//		node_ndarray_ref->declaration = node.declaration;
-//		node_ndarray_ref->determine_sizes();
-//		node_ndarray_ref->ty = node.ty;
 		return node.replace_reference(std::move(node_ndarray_ref));
 	}
 
-	inline NodeAST * visit(NodeNDArrayRef& node) override {
+	NodeAST * visit(NodeNDArrayRef& node) override {
 		if(&node == start_pointer) return &node;
 		node.name = prev_type->to_string()+OBJ_DELIMITER+node.name;
 		auto node_ndarray_ref = node.expand_dimension(nullptr);
 		return &node;
 	}
 
-	inline NodeAST * visit(NodeVariableRef& node) override {
+	NodeAST * visit(NodeVariableRef& node) override {
 		if(&node == start_pointer) return &node;
 		node.name = prev_type->to_string()+OBJ_DELIMITER+node.name;
 		auto node_array_ref = node.expand_dimension(nullptr);
-//		auto node_array_ref = node.to_array_ref(nullptr);
-//		node_array_ref->declaration = node.declaration;
-//		node_array_ref->ty = node.ty;
 		return node.replace_reference(std::move(node_array_ref));
 	}
 
-	inline NodeAST * visit(NodeFunctionCall& node) override {
+	NodeAST * visit(NodeFunctionCall& node) override {
 		if(&node == start_pointer) return &node;
 		node.function->name = prev_type->to_string()+OBJ_DELIMITER+node.function->name;
 		node.bind_definition(m_program);

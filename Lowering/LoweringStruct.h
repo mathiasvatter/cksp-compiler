@@ -93,6 +93,7 @@ class LoweringStruct final : public ASTLowering {
 	NodeStruct* m_current_struct = nullptr;
 	std::unique_ptr<NodeVariableRef> m_max_structs_ref = std::make_unique<NodeVariableRef>("MAX::STRUCTS", Token());
 	NodeDataStructure* m_current_self = nullptr;
+	NodeSingleDeclaration* m_self_decl = nullptr;
 	[[nodiscard]] bool in_constructor() const {
 		return m_current_func and m_current_struct and m_current_func == m_current_struct->constructor.get();
 	}
@@ -125,6 +126,11 @@ public:
 
 		m_current_struct = nullptr;
 		m_current_func = nullptr;
+
+		if (m_self_decl) {
+			m_self_decl->remove_node();
+		}
+
 		return &node;
 	}
 
@@ -150,6 +156,7 @@ public:
 	NodeAST * visit(NodeSingleDeclaration& node) override {
 		// "self" gets deleted in the struct method -> ignore here
 		if(node.variable == m_current_struct->node_self) {
+			m_self_decl = &node;
 			return &node;
 		}
 		node.variable->accept(*this);
@@ -168,9 +175,7 @@ public:
 		return &node;
 	}
 	NodeAST * visit(NodeArrayRef& node) override {
-		// if (node.name == "Floatmask::fm" and m_current_func->header->name == "Floatmask::__del__") {
-		//
-		// }
+		if(node.index) node.index->accept(*this);
 		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
 		if(determine_inflation_need(node)) {
 			auto new_node = node.expand_dimension(get_index_ref());
@@ -181,6 +186,9 @@ public:
 	}
 
 	NodeAST * visit(NodePointerRef& node) override {
+		if (node.get_declaration() == m_current_struct->node_self) {
+			return &node;
+		}
 		if(determine_inflation_need(node)) {
 			auto new_node = node.expand_dimension(get_index_ref());
 			new_node->collect_references();
@@ -190,6 +198,7 @@ public:
 	}
 
 	NodeAST * visit(NodeNDArrayRef& node) override {
+		if (node.indexes) node.indexes ->accept(*this);
 		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
 		if(determine_inflation_need(node)) {
 			auto new_node = node.expand_dimension(get_index_ref());
@@ -202,9 +211,6 @@ public:
 
 	NodeAST * visit(NodeFunctionDefinition& node) override {
 		m_current_func = &node;
-		if (node.header->name == "Floatmask::from_int") {
-
-		}
 		if (!in_constructor()) {
 			m_current_self = node.header->get_param(0).get();
 		}
