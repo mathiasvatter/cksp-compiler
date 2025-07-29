@@ -93,6 +93,7 @@ class LoweringStruct final : public ASTLowering {
 	NodeStruct* m_current_struct = nullptr;
 	std::unique_ptr<NodeVariableRef> m_max_structs_ref = std::make_unique<NodeVariableRef>("MAX::STRUCTS", Token());
 	NodeDataStructure* m_current_self = nullptr;
+	NodeSingleDeclaration* m_self_decl = nullptr;
 	[[nodiscard]] bool in_constructor() const {
 		return m_current_func and m_current_struct and m_current_func == m_current_struct->constructor.get();
 	}
@@ -110,6 +111,16 @@ class LoweringStruct final : public ASTLowering {
 		}
 		return m_current_struct->node_self->to_reference();
 	}
+
+	// checks if the node is in an access chain and not the first element
+	static bool is_in_access_chain_and_not_first(const NodeAST& node) {
+		if (!node.parent) return false;
+		if (auto chain = node.parent->cast<NodeAccessChain>()) {
+			if (chain->chain[0].get() == &node) return false;
+			return true;
+		}
+		return false;
+	}
 public:
 	explicit LoweringStruct(NodeProgram *program) : ASTLowering(program) {}
 
@@ -123,8 +134,14 @@ public:
 			m->accept(*this);
 		}
 
+
 		m_current_struct = nullptr;
 		m_current_func = nullptr;
+
+		// if (m_self_decl) {
+		// 	m_self_decl->remove_node();
+		// }
+
 		return &node;
 	}
 
@@ -132,13 +149,26 @@ public:
 		// only access the first in case it is member and needs to be expanded (since the first
 		// element does not interfere with later on access chain lowering where the previous is the index
 		// of the next element!!
-		node.chain[0]->accept(*this);
+		// node.chain[0]->accept(*this);
+		// // of the rest, only visit func args or indices
+		// for (int i = 1; i<node.chain.size(); i++) {
+		// 	auto& ref = node.chain[i];
+		// 	if (auto array_ref = ref->cast<NodeArrayRef>()) {
+		// 		if (array_ref->index) array_ref->index->accept(*this);
+		// 	} else if (auto ndarray_ref = ref->cast<NodeNDArrayRef>()) {
+		// 		ndarray_ref->indexes->accept(*this);
+		// 	} else if (auto func_call = ref->cast<NodeFunctionCall>()) {
+		// 		func_call->accept(*this);
+		// 	}
+		// }
+		visit_all(node.chain, *this);
 		return &node;
 	}
 
 	NodeAST * visit(NodeSingleDeclaration& node) override {
 		// "self" gets deleted in the struct method -> ignore here
 		if(node.variable == m_current_struct->node_self) {
+			m_self_decl = &node;
 			return &node;
 		}
 		node.variable->accept(*this);
@@ -157,9 +187,7 @@ public:
 		return &node;
 	}
 	NodeAST * visit(NodeArrayRef& node) override {
-		// if (node.name == "Floatmask::fm" and m_current_func->header->name == "Floatmask::__del__") {
-		//
-		// }
+		if(node.index) node.index->accept(*this);
 		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
 		if(determine_inflation_need(node)) {
 			auto new_node = node.expand_dimension(get_index_ref());
@@ -170,6 +198,17 @@ public:
 	}
 
 	NodeAST * visit(NodePointerRef& node) override {
+		if (node.get_declaration() == m_current_struct->node_self) {
+			if (in_constructor()) {
+				// access in chains in constructor, self is not defined -> free_idx
+				auto free_idx_ref = m_current_struct->free_idx_var->to_reference();
+				// give this one the type of the pointer for potentially later access chain lowering where
+				// the type is the prefix
+				free_idx_ref->ty = node.ty;
+				return node.replace_with(std::move(free_idx_ref));
+			}
+			return &node;
+		}
 		if(determine_inflation_need(node)) {
 			auto new_node = node.expand_dimension(get_index_ref());
 			new_node->collect_references();
@@ -179,6 +218,7 @@ public:
 	}
 
 	NodeAST * visit(NodeNDArrayRef& node) override {
+		if (node.indexes) node.indexes ->accept(*this);
 		// if member reference, turn into multi-dimensional array reference with struct.free_idx as index
 		if(determine_inflation_need(node)) {
 			auto new_node = node.expand_dimension(get_index_ref());
@@ -191,9 +231,6 @@ public:
 
 	NodeAST * visit(NodeFunctionDefinition& node) override {
 		m_current_func = &node;
-		if (node.header->name == "Floatmask::from_int") {
-
-		}
 		if (!in_constructor()) {
 			m_current_self = node.header->get_param(0).get();
 		}
@@ -216,6 +253,7 @@ public:
 
 private:
 	[[nodiscard]] bool determine_inflation_need(const NodeReference& ref) const {
+		if (is_in_access_chain_and_not_first(ref)) return false;
 		auto strct = ref.is_member_ref();
 		// check with name to only inflate members with prefix
 		if (strct and strct->name == m_current_struct->name) {

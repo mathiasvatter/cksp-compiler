@@ -48,6 +48,14 @@ public:
 				}
 			}
 		);
+		// for (auto& func_def : node.function_lookup) {
+		// 	for (auto& fun : func_def.second) {
+		// 		if (auto func = fun.lock()) {
+		// 			if (func->header->has_no_params() and !func->return_variable) continue;
+		// 			func->accept(*this);
+		// 		}
+		// 	}
+		// }
 		// for(const auto & func_def : node.function_definitions) {
 		// 	if (func_def->header->has_no_params() and !func_def->return_variable) continue;
 		// 	func_def->accept(*this);

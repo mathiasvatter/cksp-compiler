@@ -11,6 +11,9 @@
 #include "../ASTNodes/ASTReferences.h"
 #include "../../BuiltinsProcessing/DefinitionProvider.h"
 
+#define TRACE() \
+std::fprintf(stderr, ">> %s\n", __PRETTY_FUNCTION__);
+
 class ASTVisitor {
 protected:
 	NodeProgram* m_program = nullptr;

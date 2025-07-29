@@ -44,7 +44,9 @@ public:
 		}
 		for(auto & reference : m_def_provider->get_all_references()) {
 			auto new_declaration = m_def_provider->get_declaration(*reference);
-			if(!new_declaration) DefinitionProvider::throw_declaration_error(*reference).exit();
+			if(!new_declaration) {
+				DefinitionProvider::throw_declaration_error(*reference).exit();
+			}
 			reference->match_data_structure(new_declaration);
 		}
 	}
@@ -74,8 +76,9 @@ public:
 	NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		if(node.bind_definition(m_program)) {
-			if(node.kind != NodeFunctionCall::Kind::UserDefined) return &node;
-			if(!node.get_definition()->visited) node.get_definition()->body->accept(*this);
+			if(node.is_builtin_kind()) return &node;
+			const auto definition = node.get_definition();
+			if (!definition -> visited) definition->body->accept(*this);
 			node.get_definition()->visited = true;
 		}
 		return &node;

@@ -167,12 +167,12 @@ private:
 
 	/**
 	 * function clip(x, b)
-	 * 	return x + (-x .and. sh_right(x, 31)) - ((x - b) .and. sh_right((b - x), 31))
+	 * 	return b - ((b - (x .and. sh_right(-x, 31))) .and. sh_right((x .and. sh_right(-x, 31)) - b, 31))
 	 * end function
 	 */
 	bool add_clip_function(NodeProgram* program) {
 		// Prüfen, ob die Funktion bereits existiert
-		auto it = program->function_lookup.find({m_func_name, 2});
+		const auto it = program->function_lookup.find({m_func_name, 2});
 		if (it != program->function_lookup.end()) {
 			return false; // Funktion existiert bereits
 		}
@@ -194,55 +194,56 @@ private:
 		);
 		b -> is_local = true;
 
-		// b-x
-		auto b_minus_x = std::make_unique<NodeBinaryExpr>(
-			token::SUB,
-			b->to_reference(),
-			x->to_reference(),
-			Token()
-		);
-		// sh_right(b-x, 31)
-		auto sh_right_b_minus_x = DefinitionProvider::sh_right(std::move(b_minus_x), std::make_unique<NodeInt>(31, Token()));
 
-		// (x-b) .and. sh_right((b-x), 31)
-		auto and_expr = std::make_unique<NodeBinaryExpr>(
-			token::BIT_AND,
-			std::make_unique<NodeBinaryExpr>(
-				token::SUB,
-				x->to_reference(),
-				b->to_reference(),
-				Token()
-			),
-			std::move(sh_right_b_minus_x),
-			Token()
-		);
-
-		// -x .and. sh_right(x, 31)
-		auto sh_right_x = DefinitionProvider::sh_right(x->to_reference(), std::make_unique<NodeInt>(31, Token()));
-		auto and_expr2 = std::make_unique<NodeBinaryExpr>(
-			token::BIT_AND,
+		// sh_right(-x, 31)
+		auto sh_right_minus_x = DefinitionProvider::sh_right(
 			std::make_unique<NodeUnaryExpr>(
 				token::SUB,
 				x->to_reference(),
 				Token()
 			),
-			std::move(sh_right_x),
-			Token()
+			std::make_unique<NodeInt>(31, Token())
 		);
 
-		// -x .and. sh_right(x, 31) + (x-b) .and. sh_right((b-x), 31)
-		auto add_expr = std::make_unique<NodeBinaryExpr>(
-			token::ADD,
-			std::move(and_expr2),
-			std::move(and_expr),
-			Token()
-		);
-
-		// x + (-x .and. sh_right(x, 31)) - ((x - b) .and. sh_right((b - x), 31))
-		auto final_expr = std::make_unique<NodeBinaryExpr>(
-			token::ADD,
+		// x .and. sh_right(-x, 31)
+		auto x_and_sh_right_minus_x = std::make_unique<NodeBinaryExpr>(
+			token::BIT_AND,
 			x->to_reference(),
-			std::move(add_expr),
+			sh_right_minus_x->clone(),
+			Token()
+		);
+
+		// b - (x .and. sh_right(-x, 31))
+		auto b_minus_x_and_sh_right = std::make_unique<NodeBinaryExpr>(
+			token::SUB,
+			b->to_reference(),
+			x_and_sh_right_minus_x->clone(),
+			Token()
+		);
+
+		// sh_right((x .and. sh_right(-x, 31)) - b, 31)
+		auto sh_right_expr = DefinitionProvider::sh_right(
+			std::make_unique<NodeBinaryExpr>(
+				token::SUB,
+				std::move(x_and_sh_right_minus_x),
+				b->to_reference(),
+				Token()
+			),
+			std::make_unique<NodeInt>(31, Token())
+		);
+
+		// first -> (b - (x .and. sh_right(-x, 31)))
+		// second -> sh_right((x .and. sh_right(-x, 31)) - b, 31)
+		// final -> b - (first .and. second)
+		auto final_expr = std::make_unique<NodeBinaryExpr>(
+			token::SUB,
+			b->to_reference(),
+			std::make_unique<NodeBinaryExpr>(
+				token::BIT_AND,
+				std::move(b_minus_x_and_sh_right),
+				std::move(sh_right_expr),
+				Token()
+			),
 			Token()
 		);
 
@@ -268,7 +269,7 @@ private:
 
 		node_function->num_return_stmts = 1;
 		node_function->num_return_params = 1;
-		node_function->return_stmts.push_back(static_cast<NodeReturn*>(node_function->body->statements[0]->statement.get()));
+		node_function->return_stmts.push_back(node_function->body->statements[0]->statement->cast<NodeReturn>());
 		program->add_function_definition(node_function);
 		program->merge_function_definitions();
 		return true;

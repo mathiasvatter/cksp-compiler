@@ -434,11 +434,15 @@ NodeReference *NodeReference::replace_reference(std::unique_ptr<NodeReference> n
 bool NodeReference::is_string_env() const {
 	bool is_string = false;
 	// is within string environment
-	is_string |= parent->ty == TypeRegistry::String;
+	if (auto binary_expr = parent->cast<NodeBinaryExpr>()) {
+		is_string |= binary_expr->ty == TypeRegistry::String;
+	}
 	// is within message call
-	is_string |= is_func_arg() and static_cast<NodeFunctionHeaderRef*>(parent->parent)->name == "message";
+	if (auto header = is_func_arg()) {
+		is_string |= header->name == "message";
+	}
 	// is within return statement
-	is_string |= parent->get_node_type() == NodeType::Return and static_cast<NodeReturn*>(parent)->get_definition()->ty == TypeRegistry::String;
+	is_string |= parent->get_node_type() == NodeType::Return and parent->cast<NodeReturn>()->get_definition()->ty == TypeRegistry::String;
 	return is_string;
 }
 

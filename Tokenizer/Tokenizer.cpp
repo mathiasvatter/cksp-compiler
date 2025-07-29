@@ -102,7 +102,7 @@ void Tokenizer::token_loop() {
 }
 
 char Tokenizer::consume() {
-    if (m_pos < m_input_length) {
+    if (m_pos + 1 < m_input_length) {
         m_buffer += peek();
         m_line_pos++;
         m_current_char = m_input.at(m_pos + 1);
