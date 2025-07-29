@@ -63,11 +63,13 @@ public:
 	/// Compile the input file
 	void compile() {
 		std::string input_filename = m_config->input_filename;
+		// input_filename = R"(C:\Users\mathi\Documents\Scripting\preset-system\main.ksp)";
 
 	#ifndef NDEBUG
 		//	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 		//    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 		//    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
+		input_filename = R"(C:\Users\mathi\Documents\Scripting\preset-system\main.ksp)";
 		// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 		// input_filename = "/Users/mathias/Scripting/legato-dev/one-shot.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score-essentials/the-score-essentials.ksp";
@@ -81,7 +83,7 @@ public:
 		// input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
 		// input_filename = "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp";
-		input_filename = "/Users/mathias/Scripting/preset-system/main.ksp";
+		// input_filename = "/Users/mathias/Scripting/preset-system/main.ksp";
 		// input_filename = "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp";
 		// input_filename = "/Users/Mathias/Scripting/action-strings-2/action_strings2_V0.1.ksp";
 		// input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";

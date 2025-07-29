@@ -1,3 +1,4 @@
+
 //
 // Created by Mathias Vatter on 09.07.25.
 //
@@ -39,15 +40,16 @@ public:
 		// transform to dec or inc if operator is +/- and r_value is 1 or -1
 		auto it = m_inc_dec_transform.find(node.op);
 		if (it != m_inc_dec_transform.end()) {
-			auto transformed = it->second(node);
-			if (transformed) {
+			if (auto transformed = it->second(node)) {
 				return transformed;
 			}
 		}
 
 
+		// clone l_value beforehand to avoid dangling pointers because windows thx
+		auto l_value = clone_as<NodeReference>(node.l_value.get());
 		auto assignment = std::make_unique<NodeSingleAssignment>(
-			clone_as<NodeReference>(node.l_value.get()),
+			std::move(l_value),
 			std::make_unique<NodeBinaryExpr>(
 				node.op,
 				std::move(node.l_value),

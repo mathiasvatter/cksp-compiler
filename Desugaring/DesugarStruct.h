@@ -259,9 +259,6 @@ public:
 		return &node;
 	}
 	NodeAST * visit(NodeFunctionCall& node) override {
-		// if (StringUtils::starts_with(node.function->name, "self.tags")) {
-		//
-		// }
 		node.function->name = replace_self_struct_prefix(node.function->name);
 		node.function->accept(*this);
 		if(auto access_chain = try_access_chain_transform(node.function->name, &node)) {
