@@ -63,7 +63,7 @@ public:
 		free_idx_var->is_engine = true;
 		strct->free_idx_var = free_idx_var;
 		auto free_idx_decl = std::make_unique<NodeSingleDeclaration>(
-			std::move(free_idx_var),
+			free_idx_var,
 			nullptr,
 			Token()
 		);
@@ -91,7 +91,7 @@ public:
 		stack_var->is_engine= true;
 		strct->stack_var = stack_var;
 		auto stack_decl = std::make_unique<NodeSingleDeclaration>(
-			std::move(stack_var),
+			stack_var,
 			nullptr,
 			Token()
 		);
@@ -106,7 +106,7 @@ public:
 		stack_top_var->is_engine = true;
 		strct->stack_top_var = stack_top_var;
 		auto stack_top_decl = std::make_unique<NodeSingleDeclaration>(
-			std::move(stack_top_var),
+			stack_top_var,
 			nullptr,
 			Token()
 		);

@@ -112,75 +112,6 @@ private:
 	}
 
 
-	// /// returns empty string if ndarray constant pattern is not found
-	// static std::string get_ndarray_constant_base(const std::string& input) {
-	// 	// Finde die Position des letzten Punktes
-	// 	const size_t pos = input.find_last_of('.');
-	// 	if (pos == std::string::npos) {
-	// 		return ""; // Kein Punkt gefunden, also kein gültiges Muster
-	// 	}
-	//
-	// 	// Überprüfe, ob der Teil nach dem Punkt dem erwarteten Muster entspricht
-	// 	std::string suffix = input.substr(pos + 1);
-	// 	if (suffix.size() > 6 && suffix.substr(0, 6) == "SIZE_D" && std::all_of(suffix.begin() + 6, suffix.end(), ::isdigit)) {
-	// 		return input.substr(0, pos); // Der Teil vor dem Punkt wird zurückgegeben
-	// 	}
-	//
-	// 	return ""; // Wenn kein gültiges Muster gefunden wurde, leere Zeichenfolge zurückgeben
-	// }
-
-	// static std::string get_array_constant_base(const std::string& input) {
-	// 	size_t pos = input.find_last_of('.');
-	// 	if (pos == std::string::npos) {
-	// 		return ""; // Kein Punkt gefunden, also kein gültiges Muster
-	// 	}
-	// 	std::string suffix = input.substr(pos + 1);
-	// 	// if array.SIZE constant
-	// 	if(suffix.size() == 4 && suffix.substr(0, 4) == "SIZE") {
-	// 		return input.substr(0, pos); // Der Teil vor dem Punkt wird zurückgegeben
-	// 	}
-	// 	return "";
-	// }
-
-	// /// returns nullptr if ref was no ndarray constant and could not be substituted
-	// /// ndarray.SIZE_D1 -> nd.SIZE_D1
-	// NodeAST* substitute_ndarray_constants(NodeReference* ref) {
-	// 	// special case when variable ref is ndarray constant
-	// 	if(ref->data_type == DataType::Const) {
-	// 		const std::string ndarray_name = get_ndarray_constant_base(ref->name);
-	// 		if(ndarray_name.empty()) {
-	// 			// no ndarray constant pattern found -> search for array constant pattern array.SIZE
-	// 			const std::string array_name = get_array_constant_base(ref->name);
-	// 			if(array_name.empty()) return nullptr;
-	// 			if(const auto substitute = get_substitute(array_name)) {
-	// 				if(const auto array_ref = substitute->cast<NodeArrayRef>()) {
-	// 					ref->name = array_ref->sanitize_name() + remove_substring(ref->name, array_name);
-	// 					ref->ty = TypeRegistry::Integer;
-	// 					ref->declaration.reset();
-	// 					return ref;
-	// 				}
-	// 			}
-	// 		}
-	// 		if(const auto substitute = get_substitute("_"+ndarray_name)) {
-	// 			if(const auto array_ref = substitute->cast<NodeArrayRef>()) {
-	// 				ref->name = array_ref->sanitize_name() + remove_substring(ref->name, ndarray_name);
-	// 				ref->ty = TypeRegistry::Integer;
-	// 				ref->declaration.reset();
-	// 				return ref;
-	// 			}
-	// 			// in case it is before datastructure lowering and ndarray refs still exist
-	// 		} else if(const auto nd_substitute = get_substitute(ndarray_name)) {
-	// 			if(const auto nd_array_ref = nd_substitute->cast<NodeNDArrayRef>()) {
-	// 				ref->name = nd_array_ref->name + remove_substring(ref->name, ndarray_name);
-	// 				ref->ty = TypeRegistry::Integer;
-	// 				ref->declaration.reset();
-	// 				return ref;
-	// 			}
-	// 		}
-	// 	}
-	// 	return nullptr;
-	// }
-
 	/// if substitute and ref are both of type <Composite> and <ArrayRef>: only change name
 	static NodeReference* substitute_composite_type(NodeReference* ref, NodeAST* substitute) {
 		if(substitute->cast<NodeInitializerList>()) return nullptr;
@@ -301,7 +232,7 @@ private:
 				return ref->replace_with(std::move(substitute));
 			}
 		// } else if(auto ndarray_substitute = substitute_ndarray_constants(ref)) {
-		// 	return ndarray_substitute;
+		// 	return ndarray_substitute;d
 		}
 		return ref;
 	}

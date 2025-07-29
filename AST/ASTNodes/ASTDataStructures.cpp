@@ -497,8 +497,8 @@ void NodeStruct::inline_struct(NodeProgram *program) {
 	constructor.reset();
 //	program->update_function_lookup();
 	// remove self node
-	// auto self = this->node_self->parent->cast<NodeSingleDeclaration>();
-	// self->remove_node();
+	auto self = this->node_self->parent->cast<NodeSingleDeclaration>();
+	self->remove_node();
 	node_self.reset();
 	program->init_callback->statements->prepend_body(std::move(members));
 	members = std::make_unique<NodeBlock>(Token());
@@ -516,12 +516,18 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::get_overloaded_method(token 
 void NodeStruct::generate_ref_count_methods(NodeProgram* program) {
 	NodeStructCreateRefCountFunctions rf_methods(*this, program);
 	auto del = rf_methods.create_delete();
-	add_method(std::move(del));
-
 	auto decr = rf_methods.create_decr_function();
-	add_method(std::move(decr));
-
 	auto incr = rf_methods.create_incr_function();
+
+	del->remove_references();
+	del->collect_references();
+	decr->remove_references();
+	decr->collect_references();
+	incr->remove_references();
+	incr->collect_references();
+
+	add_method(std::move(del));
+	add_method(std::move(decr));
 	add_method(std::move(incr));
 
 	this->rebuild_method_table();

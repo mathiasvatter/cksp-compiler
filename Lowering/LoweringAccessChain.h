@@ -58,6 +58,7 @@ public:
 		if(&node == start_pointer) return &node;
 		node.name = prev_type->to_string() + OBJ_DELIMITER + node.name;
 		auto node_array = node.expand_dimension(nullptr);
+		node_array->collect_references();
 		return node.replace_reference(std::move(node_array));
 	}
 
@@ -68,6 +69,7 @@ public:
 //		if(!node.index) node.set_index(std::make_unique<NodeWildcard>("*", node.tok));
 		node.name = prev_type->to_string()+OBJ_DELIMITER+node.name;
 		auto node_ndarray_ref = node.expand_dimension(nullptr);
+		node_ndarray_ref->collect_references();
 		return node.replace_reference(std::move(node_ndarray_ref));
 	}
 
@@ -75,6 +77,7 @@ public:
 		if(&node == start_pointer) return &node;
 		node.name = prev_type->to_string()+OBJ_DELIMITER+node.name;
 		auto node_ndarray_ref = node.expand_dimension(nullptr);
+		node_ndarray_ref->collect_references();
 		return &node;
 	}
 
@@ -82,6 +85,7 @@ public:
 		if(&node == start_pointer) return &node;
 		node.name = prev_type->to_string()+OBJ_DELIMITER+node.name;
 		auto node_array_ref = node.expand_dimension(nullptr);
+		node_array_ref->collect_references();
 		return node.replace_reference(std::move(node_array_ref));
 	}
 
