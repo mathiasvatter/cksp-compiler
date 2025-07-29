@@ -6,6 +6,7 @@
 
 #include "ASTDataStructures.h"
 #include "../ASTVisitor/ASTVisitor.h"
+#include "../ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h"
 
 class NodeStructCreateRefCountFunctions {
 	NodeProgram* m_program;
@@ -41,9 +42,9 @@ public:
 		m_num_refs_ref = m_num_refs->to_reference();
 		m_num_refs_ref->match_data_structure(m_num_refs);
 
-		m_del_func = get_base_func(m_struct.name + OBJ_DELIMITER + "__del__");
-		m_decr_func = get_base_func(m_struct.name + OBJ_DELIMITER + "__decr__", clone_as<NodeDataStructure>(m_num_refs.get()));
-		m_incr_func = get_base_func(m_struct.name + OBJ_DELIMITER + "__incr__", clone_as<NodeDataStructure>(m_num_refs.get()));
+		// m_del_func = get_base_func(m_struct.name + OBJ_DELIMITER + "__del__");
+		// m_decr_func = get_base_func(m_struct.name + OBJ_DELIMITER + "__decr__", clone_as<NodeDataStructure>(m_num_refs.get()));
+		// m_incr_func = get_base_func(m_struct.name + OBJ_DELIMITER + "__incr__", clone_as<NodeDataStructure>(m_num_refs.get()));
 
 		// self
 		m_self_ref = m_struct.node_self->to_reference();
@@ -82,10 +83,37 @@ public:
 		return decl;
 	}
 
+	[[nodiscard]] std::shared_ptr<NodeDataStructure> get_self_param() const {
+		auto self = clone_as<NodeDataStructure>(m_struct.node_self.get());
+		self->name = m_def_provider->get_fresh_name(self->name);
+		return std::move(self);
+	}
+
+	[[nodiscard]] std::shared_ptr<NodeDataStructure> get_num_refs_param() const {
+		auto num_refs = clone_as<NodeDataStructure>(m_num_refs.get());
+		num_refs->name = m_def_provider->get_fresh_name(num_refs->name);
+		return std::move(num_refs);
+	}
+
+	[[nodiscard]] std::unique_ptr<NodeArrayRef> get_alloc_ref(const std::unique_ptr<NodeReference>& self) const {
+		auto alloc_ref = unique_ptr_cast<NodeArrayRef>(m_struct.allocation_var->to_reference());
+		alloc_ref->set_index(self->clone());
+		alloc_ref->ty = TypeRegistry::Integer;
+		return std::move(alloc_ref);
+	}
+
+
 	std::unique_ptr<NodeFunctionDefinition> create_incr_function() {
-		set_self_ref_declaration(m_incr_func.get());
-		set_num_refs_ref_declaration(m_incr_func.get());
-		set_alloc_declaration(m_incr_func.get());
+		auto self = get_self_param();
+		m_self_ref = self->to_reference();
+		m_alloc_ref = get_alloc_ref(m_self_ref);
+		auto num_refs = get_num_refs_param();
+		m_num_refs_ref = num_refs->to_reference();
+		m_incr_func = get_base_func(
+			m_struct.name+OBJ_DELIMITER+"__incr__",
+			std::move(self),
+			std::move(num_refs)
+		);
 		auto &func_body = m_incr_func->body;
 		auto nil_check = ASTVisitor::make_nil_check(clone_as<NodeReference>(m_self_ref.get()));
 		// List::allocation[self] := List::allocation[self] + num_refs
@@ -103,7 +131,6 @@ public:
 		m_incr_func->parent = &m_struct;
 		m_incr_func->header->create_function_type(TypeRegistry::Void);
 		m_incr_func->ty = TypeRegistry::Void;
-		m_incr_func->collect_references();
 		return std::move(m_incr_func);
 	}
 
@@ -119,7 +146,9 @@ public:
 	}
 
 	std::unique_ptr<NodeFunctionDefinition> create_delete() {
-		set_self_ref_declaration(m_del_func.get());
+		auto self = get_self_param();
+		m_self_ref = self->to_reference();
+		m_alloc_ref = get_alloc_ref(m_self_ref);
 		auto iter_decl = get_iterator_declaration();
 		// if(self # nil)
 		auto nil_check = ASTVisitor::make_nil_check(clone_as<NodeReference>(m_self_ref.get()));
@@ -136,12 +165,15 @@ public:
 			// no need to wrap in loop since array to initializer list assignment
 			// wrap_in_loop(nil_check->if_body->statements.back(), member, iter_decl->variable);
 		}
+		m_del_func = get_base_func(
+			m_struct.name+OBJ_DELIMITER+"__del__",
+			std::move(self)
+		);
 		m_del_func->body->add_as_stmt(std::move(iter_decl));
 		m_del_func->body->add_as_stmt(std::move(nil_check));
 		m_del_func->parent = &m_struct;
 		m_del_func->ty = TypeRegistry::Void;
 		m_del_func->header->create_function_type(TypeRegistry::Void);
-		m_del_func->collect_references();
 		return std::move(m_del_func);
 	}
 
@@ -160,7 +192,7 @@ public:
 	}
 
 	/// returns true if struct has more than one recursive member and these members are itself
-	bool is_non_linear_recursive_with_homogenous_types() {
+	bool is_non_linear_direct_recursion() {
 		if(is_linear_recursive()) return false;
 		for(const auto &mem : m_recursive_member_structs) {
 			if(mem->ty->get_element_type() != m_struct.ty) return false;
@@ -170,25 +202,27 @@ public:
 
 	/// returns true if struct has more than one recursive member and these members are not itself
 	/// e.g. List -> Node -> List-> ...
-	bool is_non_linear_recursive_with_heterogenous_types() {
-		return !is_linear_recursive() and !is_non_linear_recursive_with_homogenous_types();
+	bool is_non_linear_indirect_recursion() {
+		return !is_linear_recursive() and !is_non_linear_direct_recursion();
 	}
 
 	std::unique_ptr<NodeFunctionDefinition> create_decr_function() {
 		// is linear recursive
 		if(is_linear_recursive()) {
 			return create_lin_rec_decr();
-		} else if(is_non_linear_recursive_with_homogenous_types()) {
-			return create_non_lin_rec_homogenous_decr();
+		} else if(is_non_linear_direct_recursion()) {
+			return create_non_lin_direct_rec_decr();
 		} else {
-			return create_non_lin_rec_heterogenous_decr();
+			return create_non_lin_indirect_rec_decr();
 		}
 	}
 
-	std::unique_ptr<NodeFunctionDefinition> create_non_lin_rec_heterogenous_decr() {
-		set_self_ref_declaration(m_decr_func.get());
-		set_num_refs_ref_declaration(m_decr_func.get());
-		set_alloc_declaration(m_decr_func.get());
+	std::unique_ptr<NodeFunctionDefinition> create_non_lin_indirect_rec_decr() {
+		auto self = get_self_param();
+		m_self_ref = self->to_reference();
+		m_alloc_ref = get_alloc_ref(m_self_ref);
+		auto num_refs = get_num_refs_param();
+		m_num_refs_ref = num_refs->to_reference();
 		auto &func_body = m_decr_func->body;
 		// Node::stack[Node::stack_top] := self
 		func_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
@@ -232,7 +266,11 @@ public:
 			node_while->body->add_as_stmt(std::move(while_body));
 		}
 		node_while->set_condition(std::move(condition));
-
+		m_decr_func = get_base_func(
+					m_struct.name+OBJ_DELIMITER+"__decr__",
+					std::move(self),
+					std::move(num_refs)
+				);
 		m_decr_func->body->add_as_stmt(std::move(node_while));
 		m_decr_func->parent = &m_struct;
 		m_decr_func->ty = TypeRegistry::Void;
@@ -244,7 +282,9 @@ public:
 	std::unique_ptr<NodeWhile> get_stack_while_loop(const std::shared_ptr<NodeDataStructure>& self, std::shared_ptr<NodeDataStructure> num_refs) {
 		auto iter_decl = get_iterator_declaration();
 		m_self_ref->declaration = self;
+		m_self_ref->name = self->name;
 		m_num_refs_ref->declaration = num_refs;
+		m_num_refs_ref->name = num_refs->name;
 		// while Node::stack_top > 0
 		auto node_while = std::make_unique<NodeWhile>(
 			std::make_unique<NodeBinaryExpr>(
@@ -332,10 +372,12 @@ public:
 		return node_while;
 	}
 
-	std::unique_ptr<NodeFunctionDefinition> create_non_lin_rec_homogenous_decr() {
-		set_self_ref_declaration(m_decr_func.get());
-		set_num_refs_ref_declaration(m_decr_func.get());
-		set_alloc_declaration(m_decr_func.get());
+	std::unique_ptr<NodeFunctionDefinition> create_non_lin_direct_rec_decr() {
+		auto self = get_self_param();
+		m_self_ref = self->to_reference();
+		m_alloc_ref = get_alloc_ref(m_self_ref);
+		auto num_refs = get_num_refs_param();
+		m_num_refs_ref = num_refs->to_reference();
 		auto &func_body = m_decr_func->body;
 		// Node::stack[Node::stack_top] := self
 		func_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
@@ -347,7 +389,11 @@ public:
 		func_body->add_as_stmt(DefinitionProvider::inc(clone_as<NodeReference>(m_stack_top_ref.get())));
 
 		auto node_while = get_stack_while_loop(m_self_ref->get_declaration(), m_num_refs_ref->get_declaration());
-
+		m_decr_func = get_base_func(
+			m_struct.name+OBJ_DELIMITER+"__decr__",
+			std::move(self),
+			std::move(num_refs)
+		);
 		m_decr_func->body->add_as_stmt(std::move(node_while));
 		m_decr_func->parent = &m_struct;
 		m_decr_func->ty = TypeRegistry::Void;
@@ -358,9 +404,11 @@ public:
 
 	std::unique_ptr<NodeFunctionDefinition> create_lin_rec_decr() {
 		auto iter_decl = get_iterator_declaration();
-		set_self_ref_declaration(m_decr_func.get());
-		set_num_refs_ref_declaration(m_decr_func.get());
-		set_alloc_declaration(m_decr_func.get());
+		auto self = get_self_param();
+		m_self_ref = self->to_reference();
+		m_alloc_ref = get_alloc_ref(m_self_ref);
+		auto num_refs = get_num_refs_param();
+		m_num_refs_ref = num_refs->to_reference();
 		// declare current
 		auto current_decl = std::make_unique<NodeSingleDeclaration>(
 			std::make_unique<NodeVariable>(
@@ -375,7 +423,6 @@ public:
 		current_decl->variable->is_local = true;
 		auto current_ref = current_decl->variable->to_reference();
 //		current_ref->match_data_structure(current_decl->variable);
-		m_decr_func->body->add_as_stmt(std::move(current_decl));
 
 		// while self # nil
 		auto outer_while = std::make_unique<NodeWhile>(
@@ -459,22 +506,32 @@ public:
 		));
 
 		outer_while->body->prepend_as_stmt(std::move(iter_decl));
+		m_decr_func = get_base_func(
+			m_struct.name+OBJ_DELIMITER+"__decr__",
+			std::move(self),
+			std::move(num_refs)
+		);
+		m_decr_func->body->add_as_stmt(std::move(current_decl));
 		m_decr_func->body->add_as_stmt(std::move(outer_while));
 		m_decr_func->parent = &m_struct;
 		m_decr_func->ty = TypeRegistry::Void;
 		m_decr_func->header->create_function_type(TypeRegistry::Void);
-		m_decr_func->collect_references();
+
 		return std::move(m_decr_func);
 	}
 
 
 private:
 
-	std::unique_ptr<NodeFunctionDefinition> get_base_func(const std::string& name, std::unique_ptr<NodeDataStructure> add_param = nullptr) {
+	std::unique_ptr<NodeFunctionDefinition> get_base_func(
+		const std::string& name,
+		std::shared_ptr<NodeDataStructure> self,
+		std::shared_ptr<NodeDataStructure> add_param = nullptr
+	) {
 		auto func_def = std::make_unique<NodeFunctionDefinition>(
 			std::make_unique<NodeFunctionHeader>(
 				name,
-				std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(m_struct.node_self.get())),
+				std::make_unique<NodeFunctionParam>(std::move(self), nullptr, tok),
 				tok
 			),
 			std::nullopt,
@@ -482,9 +539,7 @@ private:
 			std::make_unique<NodeBlock>(tok, true),
 			tok
 		);
-		func_def->header->get_param(0)->name = m_def_provider->get_fresh_name(m_struct.node_self->name);
 		if(add_param) {
-			add_param->name = m_def_provider->get_fresh_name(add_param->name);
 			func_def->header->add_param(std::move(add_param));
 		}
 		return func_def;
@@ -529,15 +584,16 @@ private:
 	}
 
 	/// gets pointer to node_self from function definition and sets the declaration of m_self_ref
-	void set_self_ref_declaration(const NodeFunctionDefinition* func_def) const {
-		m_self_ref->declaration = func_def->header->get_param(0);
-		m_self_ref->name = func_def->header->get_param(0)->name;
+	void set_self_ref_declaration(const NodeFunctionDefinition* func_def) {
+		m_self_ref = func_def->header->get_param(0)->to_reference();
+		m_alloc_ref->set_index(m_self_ref->clone());
+		// m_self_ref->name = func_def->header->get_param(0)->name;
 	}
 
 	/// gets pointer to num_refs from function definition and sets the declaration of m_num_refs_ref
-	void set_num_refs_ref_declaration(const NodeFunctionDefinition* func_def) const {
-		m_num_refs_ref->declaration = func_def->header->get_param(1);
-		m_num_refs_ref->name = func_def->header->get_param(1)->name;
+	void set_num_refs_ref_declaration(const NodeFunctionDefinition* func_def) {
+		m_num_refs_ref = func_def->header->get_param(1)->to_reference();
+		// m_num_refs_ref->name = func_def->header->get_param(1)->name;
 	}
 
 	void set_alloc_declaration(const NodeFunctionDefinition* func_def) const {

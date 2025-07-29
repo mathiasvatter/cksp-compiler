@@ -8,6 +8,38 @@
 #include "ReturnFunctionRewriting/ReturnFunctionIsolation.h"
 #include "ASTTemporaryPointerScope.h"
 
+
+class ExpressionChainValidator final : public ASTVisitor {
+	DefinitionProvider *m_def_provider = nullptr;
+	bool m_is_expression_chain = true;
+public:
+
+	bool is_expression_chain(NodeAST& node) {
+		m_is_expression_chain = true;
+		node.accept(*this);
+		return m_is_expression_chain;
+	}
+
+	NodeAST* visit(NodeFunctionCall& node) override {
+		if (!m_is_expression_chain) return &node;
+
+		node.function->accept(*this);
+		auto definition = node.get_definition();
+		if (!definition) {
+			m_is_expression_chain = false;
+			return &node;
+		}
+
+		if (definition->is_expression_function() || node.is_builtin_kind()) {
+			m_is_expression_chain &= true;
+		} else {
+			m_is_expression_chain &= false;
+		}
+		return &node;
+	}
+
+};
+
 class ASTReturnFunctionRewriting final : public ASTVisitor {
 	DefinitionProvider *m_def_provider;
 	NodeAST* m_just_hoisted = nullptr;
@@ -56,25 +88,24 @@ private:
 
 	NodeAST* visit(NodeSingleDeclaration& node) override {
 		if (!node.value) return &node;
-		// TODO: This does not work with LUX when assigning a local variable declaration to a function call
-		// node.value->accept(*this);
 		if (const auto func_call = node.value->cast<NodeFunctionCall>()) {
 			func_call->bind_definition(m_program);
 			const auto definition = func_call->get_definition();
-			if (!definition) return &node;
-			if (definition->is_expression_function()) return &node;
-			if (func_call->is_builtin_kind()) return &node;
+
+			static ExpressionChainValidator expression_chain_validator;
+			if (expression_chain_validator.is_expression_chain(*func_call)) {
+				// do not hoist expression chains
+				return node.value->accept(*this);
+			}
+
 			if (definition->num_return_params > 0) {
-				node.variable->data_type = DataType::Return;
-				func_call->function->prepend_arg(node.variable->to_reference());
-				node.remove_references();
 				auto node_block = std::make_unique<NodeBlock>(node.tok, false);
+				auto node_assignment = std::make_unique<NodeSingleAssignment>(
+					node.variable->to_reference(), std::move(node.value), node.tok);
+				node_assignment->collect_references();
 				auto node_decl = std::make_unique<NodeSingleDeclaration>(std::move(node.variable), nullptr, node.tok);
-				// important for optimization algos
-				node_decl->kind = NodeSingleDeclaration::Kind::ReturnVar;
 				node_block->add_as_stmt(std::move(node_decl));
-				node_block->add_as_stmt(std::move(node.value));
-				m_just_hoisted = func_call;
+				node_block->add_as_stmt(std::move(node_assignment));
 				return node.replace_with(std::move(node_block))->accept(*this);
 			}
 		}
@@ -126,4 +157,25 @@ private:
 		return &node;
 	}
 
+	// checks if the function call is a chain of expression functions that do not get hoisted
+	// static bool is_expression_chain(const NodeFunctionCall* node) {
+	// 	bool is_chain = true;
+	// 	auto definition = node->get_definition();
+	// 	if (definition and definition->is_expression_function()) {
+	// 		for (auto& arg : node->function->args->params) {
+	// 			if (const auto func_call = arg->cast<NodeFunctionCall>()) {
+	// 				auto def = func_call->get_definition();
+	// 				if (def and def->is_expression_function()) {
+	// 					is_chain &= is_expression_chain(func_call);
+	// 				}
+	// 			} else {
+	// 				is_chain &= true;
+	// 			}
+	// 		}
+	// 	}
+	// 	return false;
+	// }
+
 };
+
+

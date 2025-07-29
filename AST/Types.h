@@ -169,7 +169,12 @@ public:
 		bool is_unknown = other->get_kind() == Kind::Unknown and other->get_type_kind() == TypeKind::Basic;
 		bool is_any = other->get_kind() == Kind::Any and other->get_type_kind() == TypeKind::Basic;
 		bool is_unknown_dim = m_dimensions == 0 or (other->get_type_kind() == TypeKind::Composite and other->get_dimensions() == 0);
-		return is_unknown or is_any or is_unknown_dim or (get_type_kind() == other->get_type_kind() and m_dimensions == other->get_dimensions() and m_element_type->is_compatible(other->get_element_type()));
+    	// if the dimension is unknown the element types still have to be compatible
+    	if (is_unknown_dim) {
+			return is_unknown or is_any or (get_type_kind() == other->get_type_kind() and m_element_type->is_compatible(other->get_element_type()));
+    	} else {
+			return is_unknown or is_any or (get_type_kind() == other->get_type_kind() and m_dimensions == other->get_dimensions() and m_element_type->is_compatible(other->get_element_type()));
+    	}
 	}
 	[[nodiscard]] Type* get_element_type() const override {return m_element_type;}
 	[[nodiscard]] CompoundKind get_compound_type() const {return m_compound_kind;}

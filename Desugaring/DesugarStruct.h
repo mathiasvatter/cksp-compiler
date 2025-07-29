@@ -120,6 +120,13 @@ public:
 		node.rebuild_member_table();
 		node.rebuild_method_table();
 
+		auto self_decl = std::make_unique<NodeSingleDeclaration>(
+			node.node_self,
+			nullptr,
+			node.tok
+		);
+		node.members->prepend_as_stmt(std::move(self_decl));
+
 		m_structs.pop();
 		members.clear();
 		return &node;
@@ -252,9 +259,6 @@ public:
 		return &node;
 	}
 	NodeAST * visit(NodeFunctionCall& node) override {
-		// if (StringUtils::starts_with(node.function->name, "self.tags")) {
-		//
-		// }
 		node.function->name = replace_self_struct_prefix(node.function->name);
 		node.function->accept(*this);
 		if(auto access_chain = try_access_chain_transform(node.function->name, &node)) {

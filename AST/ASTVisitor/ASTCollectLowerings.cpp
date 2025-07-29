@@ -40,6 +40,7 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	node.merge_function_definitions();
 	node.reset_function_visited_flag();
 
+	node.debug_print();
 	ASTHandleStringRepresentations handle_string_representations(m_def_provider);
 	node.accept(handle_string_representations);
 
@@ -47,6 +48,7 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 }
 
 NodeAST* ASTCollectLowerings::visit(NodeForEach& node) {
+	//TRACE();
 	if(node.key) node.key->accept(*this);
 	if(node.value) node.value->accept(*this);
 	node.range->accept(*this);
@@ -56,6 +58,7 @@ NodeAST* ASTCollectLowerings::visit(NodeForEach& node) {
 }
 
 NodeAST* ASTCollectLowerings::visit(NodeFor& node) {
+	//TRACE();
 	node.iterator->accept(*this);
 	node.iterator_end->accept(*this);
 	if(node.step) node.step->accept(*this);
@@ -64,23 +67,27 @@ NodeAST* ASTCollectLowerings::visit(NodeFor& node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeBlock& node) {
+	//TRACE();
 	visit_all(node.statements, *this);
 	node.flatten();
 	return &node;
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeNil& node) {
+	//TRACE();
 	return node.lower(m_program);
 }
 
 
 NodeAST * ASTCollectLowerings::visit(NodeStruct& node) {
+	//TRACE();
 	node.members->accept(*this);
 	visit_all(node.methods, *this);
 	return &node;
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeFunctionDefinition& node) {
+	//TRACE();
 	node.header ->accept(*this);
 	if (node.return_variable.has_value())
 		node.return_variable.value()->accept(*this);
@@ -89,12 +96,14 @@ NodeAST * ASTCollectLowerings::visit(NodeFunctionDefinition& node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeSingleDeclaration &node) {
+	//TRACE();
 	node.variable->accept(*this);
 	if(node.value) node.value->accept(*this);
 	return node.lower(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeSingleAssignment& node) {
+	//TRACE();
 	node.r_value->accept(*this);
 	node.l_value->accept(*this);
 	node.check_for_constant_assignment();
@@ -102,12 +111,14 @@ NodeAST * ASTCollectLowerings::visit(NodeSingleAssignment& node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeGetControl& node) {
+	//TRACE();
 	node.ui_id->accept(*this);
 	// only handles get control
 	return node.lower(m_program)->accept(*this);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeSetControl& node) {
+	//TRACE();
 	node.ui_id->accept(*this);
 	node.value->accept(*this);
 	// only handles get control
@@ -116,6 +127,7 @@ NodeAST * ASTCollectLowerings::visit(NodeSetControl& node) {
 
 
 NodeAST * ASTCollectLowerings::visit(NodeFunctionCall& node) {
+	//TRACE();
 	node.function->accept(*this);
 	node.bind_definition(m_program, true);
 	if (const auto& definition = node.get_definition()) {
@@ -130,18 +142,21 @@ NodeAST * ASTCollectLowerings::visit(NodeFunctionCall& node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeArray& node) {
+	//TRACE();
     if(node.size) node.size->accept(*this);
 	if(node.num_elements) node.num_elements->accept(*this);
 	return node.data_lower(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeNDArray& node) {
+	//TRACE();
 	if(node.sizes) node.sizes->accept(*this);
 	if(node.num_elements) node.num_elements->accept(*this);
 	return &node;
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeNDArrayRef& node) {
+	//TRACE();
 	if(node.indexes) node.indexes->accept(*this);
 	if(node.sizes) node.sizes->accept(*this);
 	return &node;
@@ -149,82 +164,100 @@ NodeAST * ASTCollectLowerings::visit(NodeNDArrayRef& node) {
 
 
 NodeAST * ASTCollectLowerings::visit(NodeArrayRef& node) {
+	//TRACE();
 	if(node.index) node.index->accept(*this);
 	return &node;
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeVariableRef &node) {
+	//TRACE();
 	return ASTVisitor::visit(node);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeListRef& node) {
+	//TRACE();
 	node.indexes->accept(*this);
 	return node.lower(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeList& node) {
+	//TRACE();
 	visit_all(node.body, *this);
 	return &node;
 }
 
 NodeAST * ASTCollectLowerings::visit(NodePointer& node) {
+	//TRACE();
 	return node.lower(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodePointerRef& node) {
+	//TRACE();
 	return node.lower(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeAccessChain& node) {
+	//TRACE();
 	return node.lower(m_program)->accept(*this);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeSingleRetain& node) {
+	//TRACE();
 	return node.lower(m_program)->accept(*this);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeSingleDelete& node) {
+	//TRACE();
 	return node.lower(m_program)->accept(*this);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeConst &node) {
+	//TRACE();
     return node.replace_with(std::move(node.constants));
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeNamespace &node) {
+	//TRACE();
 	ASTVisitor::visit(node);
 	node.inline_namespace(m_program);
 	return &node;
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeWhile& node) {
+	//TRACE();
 	return ASTVisitor::visit(node)->lower(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeIf &node) {
+	//TRACE();
 	ASTVisitor::visit(node);
 	return node.do_short_circuit_transform(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeBreak& node) {
+	//TRACE();
 	// node.get_nearest_loop();
 	return &node;
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeNumElements& node) {
+	//TRACE();
 	return ASTVisitor::visit(node);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeUseCount& node) {
+	//TRACE();
 	return ASTVisitor::visit(node)->lower(m_program);
 }
 
 
 NodeAST * ASTCollectLowerings::visit(NodeInitializerList &node) {
+	//TRACE();
 	return ASTVisitor::visit(node)->lower(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeRange &node) {
+	//TRACE();
 	return ASTVisitor::visit(node)->lower(m_program);
 }
 

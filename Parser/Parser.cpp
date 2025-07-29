@@ -1866,6 +1866,8 @@ Result<std::unique_ptr<NodeIf>> Parser::parse_if_statement(NodeAST* parent) {
             else_statements->statements.push_back(std::move(stmt_val));
         } else {
             while (peek().type != token::END_IF) {
+				_skip_linebreaks();
+				if(peek().type == token::END_IF) break;
                 auto stmt = parse_statement(node_if_statement.get());
                 if (stmt.is_error()) {
                     return Result<std::unique_ptr<NodeIf>>(stmt.get_error());

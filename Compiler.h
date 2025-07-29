@@ -63,11 +63,13 @@ public:
 	/// Compile the input file
 	void compile() {
 		std::string input_filename = m_config->input_filename;
+		// input_filename = R"(C:\Users\mathi\Documents\Scripting\preset-system\main.ksp)";
 
 	#ifndef NDEBUG
 		//	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 		//    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 		//    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
+		// input_filename = R"(C:\Users\mathi\Documents\Scripting\preset-system\main.ksp)";
 		// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 		// input_filename = "/Users/mathias/Scripting/legato-dev/one-shot.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score-essentials/the-score-essentials.ksp";
@@ -203,6 +205,7 @@ public:
 		static ASTPointerScope pointer_scope(m_program);
 		ast->accept(pointer_scope);
 		ast->collect_references();
+		ast->debug_print();
 
 		static ASTCollectLowerings lowering(m_program);
 		ast->accept(lowering);
@@ -310,6 +313,8 @@ public:
 
 		ASTCollectPostLowerings post_lowering(m_program);
 		ast->accept(post_lowering);
+		ast->debug_print();
+
 		ASTRelinkGlobalScope relink_global_scope(m_program);
 		ast->accept(relink_global_scope);
 
