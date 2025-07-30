@@ -138,6 +138,12 @@ public:
 			error.m_message = "Method definition must contain <self> as first parameter.";
 			error.exit();
 		}
+		// check if header name has dot in it -> this is not allowed
+		if (node.header->name.find('.') != std::string::npos) {
+			auto error = CompileError(ErrorType::SyntaxError,"", "", node.tok);
+			error.m_message = "Method name cannot contain '.' character. This is reserved for struct member access.";
+			error.exit();
+		}
 		// every self as first parameter has to be of type object
 		node.header->get_param(0)->ty = TypeRegistry::get_object_type(m_structs.top()->name);
 
