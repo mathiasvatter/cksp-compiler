@@ -385,6 +385,50 @@ struct NodeString final : NodeAST {
     std::string get_string() override {
         return value;
     }
+	/**
+	 * @brief Überprüft die Korrektheit eines geparsten Strings.
+	 *
+	 * Diese Funktion validiert einen String anhand der folgenden Regeln:
+	 * 1. Das erste und das letzte Zeichen müssen übereinstimmende Anführungszeichen
+	 * sein (entweder beide ' oder beide ").
+	 * 2. Dasselbe Anführungszeichen darf nicht innerhalb des Strings vorkommen.
+	 *
+	 * @param str Der zu überprüfende String.
+	 * @return true, wenn der String gültig ist, andernfalls false.
+	 */
+	bool is_valid_string(const std::string& str) {
+    	// 1. Überprüfen, ob der String lang genug ist.
+    	if (str.length() < 2) {
+    		return false;
+    	}
+
+    	// 2. Das umschließende Anführungszeichen bestimmen.
+    	char quoteType = str.front();
+    	if (quoteType != '"' && quoteType != '\'') {
+    		return false; // Muss mit einem Anführungszeichen beginnen.
+    	}
+
+    	// 3. Überprüfen, ob das letzte Zeichen dem ersten entspricht.
+    	if (str.back() != quoteType) {
+    		return false;
+    	}
+
+    	// 4. Den inneren Teil des Strings überprüfen.
+    	// Die Schleife beginnt bei Index 1 und endet vor dem letzten Zeichen.
+    	for (size_t i = 1; i < str.length() - 1; ++i) {
+    		// Prüfe nur, wenn das Zeichen dem umschließenden Anführungszeichen entspricht.
+    		if (str[i] == quoteType) {
+    			// Wenn das Zeichen davor KEIN Backslash ist, ist es ein Fehler.
+    			if (str[i - 1] != '\\') {
+    				return false; // Ungültig, da nicht maskiert.
+    			}
+    		}
+    	}
+
+    	// Alle Prüfungen bestanden.
+    	return true;
+    }
+
 };
 
 struct NodeFormatString final : NodeAST {

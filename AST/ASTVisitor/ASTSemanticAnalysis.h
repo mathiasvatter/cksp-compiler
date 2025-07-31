@@ -37,6 +37,7 @@ public:
 
 	NodeAST * visit(NodeArray& node) override;
     NodeAST * visit(NodeArrayRef& node) override;
+	NodeAST * visit(NodeString& node) override;
 
 	NodeAST * visit(NodeNDArray& node) override;
     NodeAST * visit(NodeNDArrayRef& node) override;
