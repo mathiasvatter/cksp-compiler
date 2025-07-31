@@ -179,8 +179,8 @@ NodeAST* ASTVariableChecking::visit(NodeSingleDeclaration& node) {
 						  "to be declared in the <on init> callback.";
 		error.exit();
 	}
-    node.variable->accept(*this);
     if(node.value) node.value->accept(*this);
+    node.variable->accept(*this);
 	m_def_provider->add_to_declarations(&node);
 	return &node;
 }
