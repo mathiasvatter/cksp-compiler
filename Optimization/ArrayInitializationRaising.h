@@ -72,10 +72,10 @@ private:
 
 	NodeAST* visit(NodeSingleDeclaration& node) override {
 		/// WHY WAS THIS HERE???
-		// if (node.variable->data_type == DataType::Const) {
-		// 	clear_data_structures();
-		// 	return &node;
-		// }
+		if (node.variable->data_type == DataType::Const) {
+			clear_data_structures();
+			return &node;
+		}
 		const auto array = node.variable->cast<NodeArray>();
 		if (!array) return &node;
 		if (!array->size) return &node;

@@ -57,7 +57,7 @@ Result<SuccessTag> BuiltinsProcessor::parse_builtin_variables(const std::string 
 	while(peek(m_tokens).type != token::END_TOKEN) {
 		if(peek(m_tokens).type == token::KEYWORD) {
 			if(VAR_IDENT.contains(peek(m_tokens).val[0])) {
-				auto node_variable_res = parse_builtin_variable(DataType::Const);
+				auto node_variable_res = parse_builtin_variable(DataType::Mutable);
 				if(node_variable_res.is_error()) {
 					return Result<SuccessTag>(node_variable_res.get_error());
 				}
@@ -82,7 +82,7 @@ Result<SuccessTag> BuiltinsProcessor::parse_builtin_constants(const std::string 
     while(peek(m_tokens).type != token::END_TOKEN) {
         if(peek(m_tokens).type == token::KEYWORD) {
             if(VAR_IDENT.contains(peek(m_tokens).val[0])) {
-				auto node_variable_res = parse_builtin_variable(DataType::Mutable);
+				auto node_variable_res = parse_builtin_variable(DataType::Const);
 				if(node_variable_res.is_error()) {
 					return Result<SuccessTag>(node_variable_res.get_error());
 				}
@@ -96,6 +96,7 @@ Result<SuccessTag> BuiltinsProcessor::parse_builtin_constants(const std::string 
 				auto node_array = std::move(node_array_res.unwrap());
                 m_builtin_arrays.insert({node_array->name, std::move(node_array)});
             } else {
+            	// preprocessor constants
 				auto node_variable_res = parse_builtin_variable(DataType::Mutable);
 				if(node_variable_res.is_error()) {
 					return Result<SuccessTag>(node_variable_res.get_error());

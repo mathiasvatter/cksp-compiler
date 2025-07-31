@@ -184,6 +184,21 @@ NodeAST * ASTSemanticAnalysis::visit(NodeArrayRef &node) {
 	return replace_incorrectly_detected_data_struct(new_node->get_declaration());
 }
 
+NodeAST * ASTSemanticAnalysis::visit(NodeString &node) {
+	if (!node.is_valid_string(node.value)) {
+		auto error = ASTVisitor::get_raw_compile_error(ErrorType::CompileError, node);
+		error.add_message("Invalid string literal: " + node.value);
+		error.add_message(". This might have been caused by faulty preprocessor macros.");
+		error.exit();
+	}
+	// string values have to have " " on both sides -> ' ' is not permissible
+	if (node.value[0] == '\'') {
+		StringUtils::remove_quotes(node.value);
+		node.value = StringUtils::add_double_quotes(node.value);
+	}
+	return &node;
+}
+
 NodeAST * ASTSemanticAnalysis::visit(NodeNDArray& node) {
 	if(node.sizes) node.sizes->accept(*this);
 	return replace_incorrectly_detected_data_struct(node.get_shared());
