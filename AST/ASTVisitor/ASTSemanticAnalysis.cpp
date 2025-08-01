@@ -185,7 +185,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeArrayRef &node) {
 }
 
 NodeAST * ASTSemanticAnalysis::visit(NodeString &node) {
-	if (!node.is_valid_string(node.value)) {
+	if (!node.is_valid_string()) {
 		auto error = ASTVisitor::get_raw_compile_error(ErrorType::CompileError, node);
 		error.add_message("Invalid string literal: " + node.value);
 		error.add_message(". This might have been caused by faulty preprocessor macros.");

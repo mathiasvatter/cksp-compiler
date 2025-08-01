@@ -151,7 +151,10 @@ void Tokenizer::get_invalid() {
 	flush_buffer();
 	consume();
 	add_token(token::INVALID, m_buffer);
-	CompileError(ErrorType::TokenError, "Found invalid token.", m_line, "valid token", m_buffer, m_current_file).exit();
+	auto got = !m_buffer.empty() ? m_buffer : std::string(1, m_current_char);
+	auto error = CompileError(ErrorType::TokenError, "", m_line, "valid token", got, m_current_file);
+	error.exit();
+	error.add_message("Found invalid token: " + got);
 	skip_whitespace();
 }
 
