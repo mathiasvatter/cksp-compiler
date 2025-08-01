@@ -396,36 +396,31 @@ struct NodeString final : NodeAST {
 	 * @param str Der zu überprüfende String.
 	 * @return true, wenn der String gültig ist, andernfalls false.
 	 */
-	bool is_valid_string(const std::string& str) {
+	bool is_valid_string() const {
     	// 1. Überprüfen, ob der String lang genug ist.
-    	if (str.length() < 2) {
+    	if (value.length() < 2) {
     		return false;
     	}
-
     	// 2. Das umschließende Anführungszeichen bestimmen.
-    	char quoteType = str.front();
+    	char quoteType = value.front();
     	if (quoteType != '"' && quoteType != '\'') {
     		return false; // Muss mit einem Anführungszeichen beginnen.
     	}
-
     	// 3. Überprüfen, ob das letzte Zeichen dem ersten entspricht.
-    	if (str.back() != quoteType) {
+    	if (value.back() != quoteType) {
     		return false;
     	}
-
     	// 4. Den inneren Teil des Strings überprüfen.
     	// Die Schleife beginnt bei Index 1 und endet vor dem letzten Zeichen.
-    	for (size_t i = 1; i < str.length() - 1; ++i) {
+    	for (size_t i = 1; i < value.length() - 1; ++i) {
     		// Prüfe nur, wenn das Zeichen dem umschließenden Anführungszeichen entspricht.
-    		if (str[i] == quoteType) {
+    		if (value[i] == quoteType) {
     			// Wenn das Zeichen davor KEIN Backslash ist, ist es ein Fehler.
-    			if (str[i - 1] != '\\') {
+    			if (value[i - 1] != '\\') {
     				return false; // Ungültig, da nicht maskiert.
     			}
     		}
     	}
-
-    	// Alle Prüfungen bestanden.
     	return true;
     }
 
