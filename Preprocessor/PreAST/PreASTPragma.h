@@ -15,11 +15,11 @@ class PreASTPragma final : public PreASTVisitor {
 	std::unordered_map<std::string, std::function<void(const std::string&, const Token&)>> pragma_handlers{};
 
 public:
-	explicit PreASTPragma(PreNodeProgram* program, CompilerConfig* config) : PreASTVisitor(program), m_config(config) {
+	explicit PreASTPragma(CompilerConfig* config) : m_config(config) {
 		register_pragma_handlers();
 	}
 
-	void visit(PreNodePragma& node) override {
+	PreNodeAST *visit(PreNodePragma &node) override {
 		const std::string& option = node.option->get_string();
 		const Token& token = node.argument->value;
 
@@ -28,13 +28,13 @@ public:
 			get_pragma_error(token, option, "valid <#pragma> option.").exit();
 		}
 		it->second(node.argument->value.val, token);
+		return &node;
 	}
 
-	void visit(PreNodeProgram &node) override {
+	PreNodeAST *visit(PreNodeProgram &node) override {
 		m_program = &node;
-		for(auto & n : node.program) {
-			n->accept(*this);
-		}
+		visit_all(node.program, *this);
+		return &node;
 	}
 
 private:

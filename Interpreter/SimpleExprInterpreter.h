@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "../Preprocessor/PreAST/PreAST.h"
+#include "../Preprocessor/PreAST/PreASTNodes/PreAST.h"
 
 class SimpleExprInterpreter {
 public:

@@ -8,20 +8,19 @@
 
 class PreASTIncrementer final : public PreASTVisitor {
 public:
-	explicit PreASTIncrementer(PreNodeProgram* program) : PreASTVisitor(program) {}
-    void visit(PreNodeProgram& node) override;
-    void visit(PreNodeNumber& node) override;
-    void visit(PreNodeInt& node) override;
-    void visit(PreNodeKeyword& node) override;
-    void visit(PreNodeIncrementer& node) override;
+	PreNodeAST *visit(PreNodeProgram &node) override;
+    PreNodeAST *visit(PreNodeNumber &node) override;
+    PreNodeAST *visit(PreNodeInt &node) override;
+    PreNodeAST *visit(PreNodeKeyword &node) override;
+	PreNodeAST *visit(PreNodeIncrementer &node) override;
 	/// move to macro_defitions vector
-	void visit(PreNodeMacroDefinition& node) override;
+	PreNodeAST *visit(PreNodeMacroDefinition &node) override;
 
 
 private:
 	PreNodeProgram* m_program = nullptr;
 
-	bool substitute_with_incremented_value(const std::string& name, size_t line, PreNodeAST* node);
+	PreNodeAST *substitute_with_incremented_value(const std::string &name, size_t line, PreNodeAST *node);
 
 	/// counter_var, step_value, PreAST node_int
     std::vector<std::tuple<std::string, int32_t, std::unique_ptr<PreNodeInt>>> m_incrementer_stack;

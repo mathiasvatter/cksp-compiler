@@ -5,22 +5,21 @@
 #include "PreASTDesugar.h"
 #include "../../Interpreter/SimpleExprInterpreter.h"
 
-void PreASTDesugar::visit(PreNodeProgram& node) {
+PreNodeAST *PreASTDesugar::visit(PreNodeProgram &node) {
     m_program = &node;
 
     for(auto & def : node.macro_definitions) {
         m_macro_lookup.insert({{def->header->name->value.val, (int)def->header->args->params.size()}, def.get()});
 		m_macro_string_lookup.insert({def->header->name->value.val, def.get()});
     }
-    for(const auto & n : node.program) {
-        n->accept(*this);
-    }
+	visit_all(node.program, *this);
+	return &node;
 }
 
-void PreASTDesugar::do_substitution(PreNodeLiteral& node) {
+PreNodeAST *PreASTDesugar::do_substitution(PreNodeLiteral &node) {
 	if (!m_substitution_stack.empty()) {
 		if (auto substitute = get_substitute(node.value.val)) {
-			node.replace_with(std::move(substitute));
+			return node.replace_with(std::move(substitute));
 		} else if(node.cast<PreNodeKeyword>()) {
 			// in case there are more # substitutions in one word
 			if (StringUtils::count_char(node.value.val, '#') >= 2) {
@@ -28,51 +27,53 @@ void PreASTDesugar::do_substitution(PreNodeLiteral& node) {
 			}
 		}
 	}
+	return &node;
 }
 
-void PreASTDesugar::visit(PreNodeNumber& node) {
+PreNodeAST *PreASTDesugar::visit(PreNodeNumber &node) {
 //	m_debug_token = node.get_string();
     // substitution
-	do_substitution(node);
+	return do_substitution(node);
 }
 
-void PreASTDesugar::visit(PreNodeInt& node) {
+PreNodeAST *PreASTDesugar::visit(PreNodeInt &node) {
 //	m_debug_token = node.get_string();
     // substitution
-	do_substitution(node);
+	return do_substitution(node);
 }
 
-void PreASTDesugar::visit(PreNodeKeyword& node) {
+PreNodeAST *PreASTDesugar::visit(PreNodeKeyword &node) {
 //	m_debug_token = node.get_string();
     // substitution
-	do_substitution(node);
+	return do_substitution(node);
 }
 
-void PreASTDesugar::visit(PreNodeIncrementer& node) {
-	for(auto &b : node.body) {
-		b->accept(*this);
-	}
+PreNodeAST *PreASTDesugar::visit(PreNodeIncrementer &node) {
+	visit_all(node.body, *this);
+	return &node;
 }
 
-void PreASTDesugar::visit(PreNodeOther& node) {
+PreNodeAST *PreASTDesugar::visit(PreNodeOther &node) {
 //	m_debug_token = node.get_string();
+	return &node;
 }
 
-void PreASTDesugar::visit(PreNodeStatement& node) {
+PreNodeAST *PreASTDesugar::visit(PreNodeStatement &node) {
     node.statement->accept(*this);
+	return &node;
 }
 
-void PreASTDesugar::visit(PreNodeChunk& node) {
-    for(auto &c : node.chunk) {
-        c->accept(*this);
-    }
+PreNodeAST *PreASTDesugar::visit(PreNodeChunk &node) {
+	visit_all(node.chunk, *this);
 	node.flatten();
+	return &node;
 }
 
-void PreASTDesugar::visit(PreNodeList& node) {
+PreNodeAST *PreASTDesugar::visit(PreNodeList &node) {
     for(auto &p : node.params){
         if(p) p->accept(*this);
     }
+	return &node;
 }
 
 void PreASTDesugar::check_recursion(const Token &tok) const {
@@ -85,7 +86,7 @@ void PreASTDesugar::check_recursion(const Token &tok) const {
 	}
 }
 
-void PreASTDesugar::visit(PreNodeMacroCall& node) {
+PreNodeAST *PreASTDesugar::visit(PreNodeMacroCall &node) {
 //	m_debug_token = node.get_string();
 
 	m_program->macro_call_stack.push(&node);
@@ -129,17 +130,20 @@ void PreASTDesugar::visit(PreNodeMacroCall& node) {
 			m_substitution_stack.pop();
 		}
         m_macros_used.erase(token_name.val);
-    	node.replace_with(std::move(node_new_chunk));
+		m_program->macro_call_stack.pop();
+    	return node.replace_with(std::move(node_new_chunk));
     }
 	m_program->macro_call_stack.pop();
+	return &node;
 }
 
-void PreASTDesugar::visit(PreNodeMacroHeader& node) {
+PreNodeAST *PreASTDesugar::visit(PreNodeMacroHeader &node) {
 	node.name->accept(*this);
 	node.args->accept(*this);
+	return &node;
 }
 
-void PreASTDesugar::visit(PreNodeIterateMacro& node) {
+PreNodeAST *PreASTDesugar::visit(PreNodeIterateMacro &node) {
     if(node.macro_call->params.size()>1) {
     	auto error = CompileError(ErrorType::PreprocessorError,"",  "", node.to);
     	error.m_message = "Found incorrect <iterate_macro> syntax.";
@@ -216,10 +220,10 @@ void PreASTDesugar::visit(PreNodeIterateMacro& node) {
         if(node.to.type == token::DOWNTO) i-=step; else i+=step;
     }
 	node_new_chunk->accept(*this);
-    node.replace_with(std::move(node_new_chunk));
+    return node.replace_with(std::move(node_new_chunk));
 }
 
-void PreASTDesugar::visit(PreNodeLiterateMacro& node) {
+PreNodeAST *PreASTDesugar::visit(PreNodeLiterateMacro &node) {
     if(node.macro_call->params.size()>1) {
         CompileError(ErrorType::PreprocessorError,"Found incorrect <literate_macro> syntax.", -1, "", "", "").exit();
     }
@@ -258,7 +262,7 @@ void PreASTDesugar::visit(PreNodeLiterateMacro& node) {
         m_substitution_stack.pop();
 
     }
-    node.replace_with(std::move(node_new_chunk));
+    return node.replace_with(std::move(node_new_chunk));
 }
 
 std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> PreASTDesugar::get_substitution_map(PreNodeMacroHeader& definition, const PreNodeMacroHeader& call) {
