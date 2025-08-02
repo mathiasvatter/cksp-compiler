@@ -44,7 +44,7 @@ private:
 			auto path = StringUtils::remove_quotes(arg);
 
 			std::string error_message = "Found unknown <output_path> option in <#pragma>. ";
-			static PathHandler path_handler(token, token.file);
+			static PathHandler path_handler(token, token.file, "");
 			auto output_path = path_handler.resolve_path(path);
 			if (output_path.is_error()) {
 				auto error = output_path.get_error();

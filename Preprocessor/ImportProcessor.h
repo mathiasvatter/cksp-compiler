@@ -16,19 +16,16 @@ public:
     ImportProcessor(std::vector<Token> tokens, std::string current_file, DefinitionProvider* definition_provider);
 
 	Result<SuccessTag> process_imports();
-//	[[nodiscard]] const std::vector<std::unique_ptr<NodeDataStructure>> &get_external_variables() const;
 
 private:
+	DefinitionProvider* m_def_provider;
 	std::string m_current_file;
+	std::string m_root_directory;
 
     std::vector<Token> m_imported_tokens;
     std::unordered_set<std::string> m_imported_files;  // Um zirkuläre Abhängigkeiten zu vermeiden
 	std::unordered_map<std::string, std::string> m_basename_map; // Map to store basename to full path mapping
     std::vector<std::unique_ptr<NodeImport>> m_import_statements;
-
-	DefinitionProvider* m_def_provider;
-//    const std::unordered_map<std::string, std::unique_ptr<NodeUIControl>> &m_builtin_widgets;
-//    std::vector<std::unique_ptr<NodeDataStructure>> m_external_variables;
 
     // Imports
 	Result<SuccessTag> process_import_statements(std::vector<Token>& tokens, const std::string& current_file);

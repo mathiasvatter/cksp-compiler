@@ -5,6 +5,7 @@
 #include "ImportProcessor.h"
 
 #include <utility>
+#include <filesystem>
 #include "../JSON/JSONParser.h"
 #include "../JSON/JSONVisitor.h"
 #include "../misc/FileHandler.h"
@@ -14,6 +15,7 @@ ImportProcessor::ImportProcessor(std::vector<Token> tokens, std::string current_
         : Processor(std::move(tokens)), m_current_file(std::move(current_file)), m_def_provider(definition_provider) {
     m_pos = 0;
 	m_curr_token_type = m_tokens.at(0).type;
+    m_root_directory = std::filesystem::path(m_current_file).parent_path().string();
 }
 
 Result<SuccessTag> ImportProcessor::process_imports() {
@@ -56,7 +58,7 @@ Result<SuccessTag> ImportProcessor::process_import_statements(std::vector<Token>
 
 Result<SuccessTag> ImportProcessor::evaluate_import(std::vector<Token>& tokens, std::unique_ptr<NodeImport>& import_stmt, const std::string& current_file) {
     auto alias = import_stmt->alias;
-	PathHandler path_handler(import_stmt->tok, current_file);
+	PathHandler path_handler(import_stmt->tok, current_file, m_root_directory);
 
     auto path = path_handler.resolve_import_path(import_stmt->filepath);
     if(path.is_error()) {
@@ -98,7 +100,7 @@ Result<SuccessTag> ImportProcessor::evaluate_import(std::vector<Token>& tokens, 
 }
 
 Result<SuccessTag> ImportProcessor::evaluate_import_nckp(std::vector<Token>& tokens, std::unique_ptr<NodeImport>& import_stmt, const std::string& current_file) {
-	PathHandler path_handler(peek(tokens), current_file);
+	PathHandler path_handler(peek(tokens), current_file, m_root_directory);
 	// try to resolve current_file and import_path into absolute path
 	auto path = path_handler.resolve_import_path(import_stmt->filepath);
     if(path.is_error()) {
@@ -175,72 +177,3 @@ Result<std::unique_ptr<NodeImport>> ImportProcessor::parse_import(std::vector<To
     }
 }
 
-Result<std::string> resolve_path(const std::string& import_path, const Token& token, const std::string& curr_file) {
-    std::filesystem::path current_file(curr_file);
-    std::filesystem::path current_base = current_file.parent_path();
-    std::filesystem::path rel(import_path);
-
-    // Wenn der Pfad bereits absolut ist, überprüfe, ob er existiert
-    if (rel.is_absolute()) {
-        if (std::filesystem::exists(rel)) {
-            return Result<std::string>(rel.string());
-        } else {
-            return Result<std::string>(CompileError(ErrorType::FileError,
-			"Found incorrect path.", token.line, "valid path", rel.string(), curr_file));
-        }
-    }
-
-    // Andernfalls mache den Pfad absolut in Bezug auf den Basispfad. Lexically normal removes ../
-    std::filesystem::path combined = (current_base / rel).lexically_normal();
-    std::filesystem::path absPath = std::filesystem::absolute(combined);
-
-    // Überprüfe, ob der Pfad existiert
-    if (std::filesystem::exists(absPath)) {
-        return Result<std::string>(absPath.string());
-    } else {
-        auto resolve_error = current_base.string() + ", " + rel.string();
-        auto new_absPath = resolve_overlap(current_base.string(), rel.string());
-        if(new_absPath.is_error())
-            return Result<std::string>(CompileError(ErrorType::FileError,
-            "Could not resolve paths.", token.line, "valid path", resolve_error, curr_file));
-
-        if (std::filesystem::exists(new_absPath.unwrap()))
-            return Result<std::string>(new_absPath.unwrap());
-        return Result<std::string>(CompileError(ErrorType::FileError,
-		"Could not resolve paths.", token.line, "valid path", resolve_error, curr_file));
-    }
-}
-
-Result<std::string> resolve_overlap(const std::string& base_path, const std::string& relative_path) {
-    std::filesystem::path base(base_path);
-    std::filesystem::path relative(relative_path);
-
-    std::vector<std::filesystem::path> baseParts;
-    for (const auto& part : base) {
-        baseParts.push_back(part);
-    }
-    std::vector<std::filesystem::path> relativeParts;
-    for (const auto& part : relative) {
-        relativeParts.push_back(part);
-    }
-    // do as long as its
-    while (!baseParts.empty() && !relativeParts.empty() && baseParts.back() != relativeParts.front()) {
-        baseParts.pop_back();
-    }
-
-    // Überprüfen, ob keine Übereinstimmung gefunden wurde
-    if (baseParts.empty() || relativeParts.empty() || baseParts.back() != relativeParts.front()) {
-        return Result<std::string>(CompileError(ErrorType::FileError,
-        "Could not resolve paths.", -1, "valid path", "", ""));
-    }
-
-    baseParts.pop_back(); //erase common bit
-    std::filesystem::path mergedPath;
-    for (const auto& part : baseParts) {
-        mergedPath /= part;
-    }
-    for (const auto& part : relativeParts) {
-        mergedPath /= part;
-    }
-    return Result<std::string>(mergedPath.string());
-}
