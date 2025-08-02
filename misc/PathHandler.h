@@ -9,13 +9,14 @@
 
 class PathHandler {
 public:
-	PathHandler(Token current_token, std::string current_file);
+	PathHandler(Token current_token, std::string current_file, std::string root_directory);
 	~PathHandler() = default;
 
 private:
 	Token m_current_token;
     CompileError m_error = CompileError(ErrorType::FileError, "Found incorrect path.", "valid path", m_current_token);
 	std::string m_current_file;
+	std::string m_root_directory;
 public:
 
 	/**
