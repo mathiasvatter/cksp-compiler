@@ -2,11 +2,11 @@
 // Created by Mathias Vatter on 25.01.24.
 //
 
+#pragma once
+
 #include <filesystem>
 #include <unordered_map>
 #include "CompileError.h"
-
-#pragma once
 
 enum class FileType {
     ksp,
