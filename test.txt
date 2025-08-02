@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.5 on Sat Aug 02 16:37:26 2025 }
+{ Compiled with cksp version 0.0.7-alpha.5 on Sat Aug 02 21:42:39 2025 }
 on init
   declare $_iter12
   declare $_iter0
@@ -72,9 +72,9 @@ on init
   declare $ret3
   declare $self87
   declare $num_refs7
-  declare $self59
+  declare $self69
   declare $val110
-  declare $val28
+  declare $val29
   declare $self82
   declare $self83
   declare $num_refs4
@@ -82,25 +82,25 @@ on init
   declare $_iter6
   declare $self84
   declare $num_refs5
-  declare $self37
-  declare $idx19
-  declare $val17
-  declare $self40
+  declare $self47
+  declare $idx22
+  declare $val26
+  declare $self21
   declare $i0
   declare $EXIT_FLAG210
   declare $fm0
   declare $current0100
-  declare $self2
+  declare $self5
   declare $i1
   declare $fm1
   declare $self91
   declare $self92
   declare $num_refs10
   declare $current3
+  declare $self31
   declare $self64
-  declare $self49
-  declare $self23
-  declare $self3
+  declare $self50
+  declare $self0
   declare $ret5
   declare $current13
   declare $_iter63
@@ -108,38 +108,38 @@ on init
   declare $_iter3013
   declare $self93
   declare $num_refs11
-  declare $self60
+  declare $self26
   declare $current0120
   declare $_iter30120
-  declare $self21
+  declare $self16
   declare @___print_string0
   declare $i4
   declare @nka_path0
   declare $_iter41000
   declare $_iter301000
-  declare $self26
+  declare $self55
   declare $i5
   declare $preset3
   declare @_ret00
-  declare $self44
+  declare $self51
   declare $i7
   declare $ret8
-  declare $self14
-  declare $start_idx0
-  declare $end_idx0
+  declare $self24
+  declare $start_idx1
+  declare $end_idx2
   declare $ret15
   declare $ret9
-  declare $self73
-  declare $other4
+  declare $self41
+  declare $other2
   declare $ret16
   declare $ret10
-  declare $self71
+  declare $self37
   declare $ret17
   declare $ret11
-  declare $self72
-  declare $other3
+  declare $self39
+  declare $other1
   declare $ret18
-  declare $self58
+  declare $self53
   declare $i90
   declare $z0
   declare $i10
@@ -150,7 +150,7 @@ on init
   declare $current14
   declare $_iter414
   declare $_iter3014
-  declare $self39
+  declare $self61
   declare $i11
   declare $current15
   declare $_iter65
@@ -167,7 +167,7 @@ on init
   declare $_iter4022
   declare $_iter30023
   declare $_iter3017
-  declare $font0
+  declare $font1
   declare $u1
   declare $categories0
   declare $i12
@@ -197,7 +197,7 @@ on init
   declare $ii000
   declare $hide000
   declare $bool1
-  declare $browser1
+  declare $browser0
   declare $_iter402000
   declare $_iter3002000
   declare @bl000
@@ -214,24 +214,24 @@ on init
   declare $btn_idx1
   declare $value0
   declare $current_idx1
-  declare $browser0
-  declare %self30[100]
+  declare $browser2
+  declare %self11[100]
   declare %new_preset0[100]
   declare @_ret000
-  declare %self29[100]
+  declare %self57[100]
   declare %preset0[100]
-  declare %self32[100]
+  declare %self59[100]
   declare %preset1[100]
   declare @_ret001
-  declare %self9[100]
+  declare %self12[100]
   declare !title0[100]
-  declare $self43
-  declare $idx21
+  declare $self63
+  declare $idx27
   declare $browser6
   declare $btn_idx0
   declare $_ret120
   declare $browser4
-  declare %self16[100]
+  declare %self9[100]
   declare %alt_key_pressed0[100]
   declare @path00
   declare $_id00
@@ -366,7 +366,7 @@ on init
   if(abs(sh_right(abs(- sh_right(abs(%decode[0] - 81202) - 1, 31)) - 1, 31)) = 1)
     message("***** Script is ENCODED *****")
   end if
-  message("** Script '" & "Preset Browser" & "' Compile " & "16:37:25" & " " & "08/02/25" & " with " & "0.0.7-alpha.5" & " **")
+  message("** Script '" & "Preset Browser" & "' Compile " & "21:42:38" & " " & "08/02/25" & " with " & "0.0.7-alpha.5" & " **")
   set_script_title("Preset Browser")
   set_ui_height_px(564)
   set_ui_width_px(905)
@@ -403,7 +403,7 @@ on init
   %Browser____allocation[$Browser____free_idx] := 1
   $num_refs7 := $Browser____free_idx
   $browser := $num_refs7
-  $self21 := $browser
+  $self16 := $browser
   load_array(%favorite_presets_array, 1)
   load_array(%user_preset_tags0, 1)
   @___print_string0 := "user_preset_tags0[" & num_elements(%user_preset_tags0) & "]: "
@@ -431,7 +431,7 @@ on init
   load_array_str(!category_titles, @nka_path0 & "category_titles" & ".nka")
   load_array_str(!file_name_array, @nka_path0 & "file_name_array" & ".nka")
   load_array_str(%category_elements, @nka_path0 & "category_elements" & ".nka")
-  $self40 := $self21
+  $self21 := $self16
   $i0 := 0
   $EXIT_FLAG210 := 0
   while(($i0 < num_elements(!preset_title_array)) and ($EXIT_FLAG210 = 0)) 
@@ -505,12 +505,12 @@ on init
     end if
     $preset_idx4 := $Floatmask____free_idx
     $fm0 := $preset_idx4
-    $self59 := $fm0
+    $self69 := $fm0
     $val110 := %preset_tags0[$i0]
-    $val28 := %preset_tags1[$i0]
-    %Bitlist____val[%_Floatmask____fm[$self59 * 2]] := $val110
-    %Bitlist____val[%_Floatmask____fm[($self59 * 2) + 1]] := $val28
-    $EXIT_FLAG3000 := %_Browser____presets[($self40 * 1499) + $i0]
+    $val29 := %preset_tags1[$i0]
+    %Bitlist____val[%_Floatmask____fm[$self69 * 2]] := $val110
+    %Bitlist____val[%_Floatmask____fm[($self69 * 2) + 1]] := $val29
+    $EXIT_FLAG3000 := %_Browser____presets[($self21 * 1499) + $i0]
     $_iter3002000 := 1
     $_iter402000 := $EXIT_FLAG3000
     while($_iter402000 # -1) 
@@ -646,18 +646,18 @@ on init
     !Preset____file[$Preset____free_idx] := @nka0
     %Preset____deleted[$Preset____free_idx] := $_iter30170
     $col0 := $Preset____free_idx
-    %_Browser____presets[($self40 * 1499) + $i0] := $col0
-    $i13 := %_Browser____presets[($self40 * 1499) + $i0]
+    %_Browser____presets[($self21 * 1499) + $i0] := $col0
+    $i13 := %_Browser____presets[($self21 * 1499) + $i0]
     $current_idx0 := 1
     if($i13 # -1)
       %Preset____allocation[$i13] := %Preset____allocation[$i13] + $current_idx0
     end if
-    $font0 := %_Browser____presets[($self40 * 1499) + $i0]
+    $font1 := %_Browser____presets[($self21 * 1499) + $i0]
     $u1 := %favorite_presets_array[$i0]
-    $self37 := %Preset____tags[$font0]
-    $idx19 := 10
-    $val17 := $u1
-    %Bitlist____val[%_Floatmask____fm[($self37 * 2) + ($idx19 / 32)]] := (%Bitlist____val[%_Floatmask____fm[($self37 * 2) + ($idx19 / 32)]] .and. .not. 2097152) .or. sh_left($val17, 21)
+    $self47 := %Preset____tags[$font1]
+    $idx22 := 10
+    $val26 := $u1
+    %Bitlist____val[%_Floatmask____fm[($self47 * 2) + ($idx22 / 32)]] := (%Bitlist____val[%_Floatmask____fm[($self47 * 2) + ($idx22 / 32)]] .and. .not. 2097152) .or. sh_left($val26, 21)
     $current0100 := 0
     if(abs(sh_right(abs(1 + sh_right(abs(%Bitlist____val[%_Floatmask____fm[$fm0 * 2]] + %Bitlist____val[%_Floatmask____fm[($fm0 * 2) + 1]]) - 1, 31)) - 1, 31)) = 1)
       if($i0 # 0)
@@ -665,7 +665,7 @@ on init
       end if
     end if
     if($current0100 = 1)
-      %Browser____num_factory_presets[$self40] := $i0
+      %Browser____num_factory_presets[$self21] := $i0
       $EXIT_FLAG210 := 1
       continue
     end if
@@ -716,8 +716,8 @@ on init
     end while
     inc($i0)
   end while
-  %Browser____num_presets[$self40] := %Browser____num_factory_presets[$self40] + %Browser____num_user_presets[$self40]
-  $self2 := $self21
+  %Browser____num_presets[$self21] := %Browser____num_factory_presets[$self21] + %Browser____num_user_presets[$self21]
+  $self5 := $self16
   $i1 := 0
   while($i1 < num_elements(!user_preset_titles)) 
     $fm1 := 0
@@ -790,12 +790,12 @@ on init
     end if
     $preset_idx4 := $Floatmask____free_idx
     $fm1 := $preset_idx4
-    $self59 := $fm1
+    $self69 := $fm1
     $val110 := %user_preset_tags0[$i1]
-    $val28 := %user_preset_tags1[$i1]
-    %Bitlist____val[%_Floatmask____fm[$self59 * 2]] := $val110
-    %Bitlist____val[%_Floatmask____fm[($self59 * 2) + 1]] := $val28
-    $EXIT_FLAG3000 := %_Browser____user_presets[($self2 * 500) + $i1]
+    $val29 := %user_preset_tags1[$i1]
+    %Bitlist____val[%_Floatmask____fm[$self69 * 2]] := $val110
+    %Bitlist____val[%_Floatmask____fm[($self69 * 2) + 1]] := $val29
+    $EXIT_FLAG3000 := %_Browser____user_presets[($self5 * 500) + $i1]
     $_iter3002000 := 1
     $_iter402000 := $EXIT_FLAG3000
     while($_iter402000 # -1) 
@@ -931,13 +931,13 @@ on init
     !Preset____file[$Preset____free_idx] := @nka0
     %Preset____deleted[$Preset____free_idx] := $_iter30170
     $col0 := $Preset____free_idx
-    %_Browser____user_presets[($self2 * 500) + $i1] := $col0
-    $i13 := %_Browser____user_presets[($self2 * 500) + $i1]
+    %_Browser____user_presets[($self5 * 500) + $i1] := $col0
+    $i13 := %_Browser____user_presets[($self5 * 500) + $i1]
     $current_idx0 := 1
     if($i13 # -1)
       %Preset____allocation[$i13] := %Preset____allocation[$i13] + $current_idx0
     end if
-    %Browser____num_user_presets[$self2] := $i1
+    %Browser____num_user_presets[$self5] := $i1
     $self83 := $fm1
     $num_refs4 := 1
     $current1 := $self83
@@ -985,8 +985,8 @@ on init
     end while
     inc($i1)
   end while
-  $self60 := $self21
-  $self92 := %Browser____categories[$self60]
+  $self26 := $self16
+  $self92 := %Browser____categories[$self26]
   $num_refs10 := 1
   $current3 := $self92
   while($current3 # -1) 
@@ -1250,11 +1250,11 @@ on init
   if($self84 # -1)
     %Floatmask____allocation[$self84] := %Floatmask____allocation[$self84] + $num_refs5
   end if
-  $self49 := %Categories____tags[$Categories____free_idx]
-  $self64 := %_Floatmask____fm[$self49 * 2]
-  %Bitlist____val[$self64] := 0
-  $self64 := %_Floatmask____fm[($self49 * 2) + 1]
-  %Bitlist____val[$self64] := 0
+  $self64 := %Categories____tags[$Categories____free_idx]
+  $self31 := %_Floatmask____fm[$self64 * 2]
+  %Bitlist____val[$self31] := 0
+  $self31 := %_Floatmask____fm[($self64 * 2) + 1]
+  %Bitlist____val[$self31] := 0
   $self83 := %Categories____tagmask[$Categories____free_idx]
   $num_refs4 := 1
   $current1 := $self83
@@ -1374,11 +1374,11 @@ on init
   if($self84 # -1)
     %Floatmask____allocation[$self84] := %Floatmask____allocation[$self84] + $num_refs5
   end if
-  $self3 := %Categories____tagmask[$Categories____free_idx]
-  $self23 := %_Floatmask____fm[$self3 * 2]
-  %Bitlist____val[$self23] := -1
-  $self23 := %_Floatmask____fm[($self3 * 2) + 1]
-  %Bitlist____val[$self23] := -1
+  $self0 := %Categories____tagmask[$Categories____free_idx]
+  $self50 := %_Floatmask____fm[$self0 * 2]
+  %Bitlist____val[$self50] := -1
+  $self50 := %_Floatmask____fm[($self0 * 2) + 1]
+  %Bitlist____val[$self50] := -1
   $_iter12 := 0
   while($_iter12 <= 10) 
     !_Categories____tag_names[($Categories____free_idx * 11) + $_iter12] := !tag_names_array[$_iter12]
@@ -1400,31 +1400,31 @@ on init
     inc($_iter4140)
   end while
   $bool1 := 0
-  $browser1 := 0
+  $browser0 := 0
   $hide00 := 5
   while($hide00 > $bool1) 
     %_Categories____accum[($Categories____free_idx * 6) + $hide00] := %_Categories____accum[($Categories____free_idx * 6) + ($hide00 - 1)]
     dec($hide00)
   end while
-  %_Categories____accum[($Categories____free_idx * 6) + $bool1] := $browser1
+  %_Categories____accum[($Categories____free_idx * 6) + $bool1] := $browser0
   $ret5 := $Categories____free_idx
-  %Browser____categories[$self60] := $ret5
-  $self93 := %Browser____categories[$self60]
+  %Browser____categories[$self26] := $ret5
+  $self93 := %Browser____categories[$self26]
   $num_refs11 := 1
   if($self93 # -1)
     %Categories____allocation[$self93] := %Categories____allocation[$self93] + $num_refs11
   end if
-  $self26 := $browser
-  %Browser____num_user_presets[$self26] := search(%user_preset_tags0, 0)
-  if(%Browser____num_user_presets[$self26] > 0)
-    $i5 := %Browser____num_factory_presets[$self26]
-    while($i5 < %Browser____num_presets[$self26]) 
-      %_Browser____presets[($self26 * 1499) + $i5] := -1
+  $self55 := $browser
+  %Browser____num_user_presets[$self55] := search(%user_preset_tags0, 0)
+  if(%Browser____num_user_presets[$self55] > 0)
+    $i5 := %Browser____num_factory_presets[$self55]
+    while($i5 < %Browser____num_presets[$self55]) 
+      %_Browser____presets[($self55 * 1499) + $i5] := -1
       inc($i5)
     end while
     $i5 := 0
-    while($i5 < %Browser____num_user_presets[$self26]) 
-      $preset3 := %_Browser____user_presets[($self26 * 500) + $i5]
+    while($i5 < %Browser____num_user_presets[$self55]) 
+      $preset3 := %_Browser____user_presets[($self55 * 500) + $i5]
       $i13 := $preset3
       $current_idx0 := 1
       if($i13 # -1)
@@ -1435,7 +1435,7 @@ on init
       @_ret00 := @nka0
       message(@_ret00)
       if(($preset3 # -1) and (%Preset____deleted[$preset3] = 0))
-        $EXIT_FLAG3000 := %_Browser____presets[($self26 * 1499) + (%Browser____num_factory_presets[$self26] + $i5)]
+        $EXIT_FLAG3000 := %_Browser____presets[($self55 * 1499) + (%Browser____num_factory_presets[$self55] + $i5)]
         $_iter3002000 := 1
         $_iter402000 := $EXIT_FLAG3000
         while($_iter402000 # -1) 
@@ -1503,8 +1503,8 @@ on init
             %Preset____idx[$current140] := 0
           end if
         end while
-        %_Browser____presets[($self26 * 1499) + (%Browser____num_factory_presets[$self26] + $i5)] := $preset3
-        $i13 := %_Browser____presets[($self26 * 1499) + (%Browser____num_factory_presets[$self26] + $i5)]
+        %_Browser____presets[($self55 * 1499) + (%Browser____num_factory_presets[$self55] + $i5)] := $preset3
+        $i13 := %_Browser____presets[($self55 * 1499) + (%Browser____num_factory_presets[$self55] + $i5)]
         $current_idx0 := 1
         if($i13 # -1)
           %Preset____allocation[$i13] := %Preset____allocation[$i13] + $current_idx0
@@ -1582,8 +1582,8 @@ on init
       inc($i5)
     end while
   end if
-  %Browser____num_presets[$self26] := %Browser____num_factory_presets[$self26] + %Browser____num_user_presets[$self26]
-  message("Number of presets: " & ", " & %Browser____num_presets[$self26] & ", " & " Number of user presets: " & ", " & %Browser____num_user_presets[$self26])
+  %Browser____num_presets[$self55] := %Browser____num_factory_presets[$self55] + %Browser____num_user_presets[$self55]
+  message("Number of presets: " & ", " & %Browser____num_presets[$self55] & ", " & " Number of user presets: " & ", " & %Browser____num_user_presets[$self55])
   @path00 := @path00
   declare ui_panel $PresetStrip 
   set_control_par(get_ui_id($PresetStrip), $CONTROL_PAR_POS_X, 54)
@@ -2189,58 +2189,58 @@ on init
   set_control_par(get_ui_id($btn_disable_input), $CONTROL_PAR_DISABLE_TEXT_SHIFTING, 1)
   set_control_par(get_ui_id($btn_disable_input), $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
   set_control_par(get_ui_id($btn_disable_input), $CONTROL_PAR_PARENT_PANEL, get_ui_id($Scrollarea))
-  $font0 := 411
+  $font1 := 411
   $hide00 := 297
   $Position____free_idx := search(%Position____allocation, 0)
   if($Position____free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'Position'")
   end if
   %Position____allocation[$Position____free_idx] := 1
-  %Position____x[$Position____free_idx] := $font0
+  %Position____x[$Position____free_idx] := $font1
   %Position____y[$Position____free_idx] := $hide00
   $u1 := $Position____free_idx
   $current010000 := $u1
-  $font0 := 0
+  $font1 := 0
   $hide00 := 0
   $Position____free_idx := search(%Position____allocation, 0)
   if($Position____free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'Position'")
   end if
   %Position____allocation[$Position____free_idx] := 1
-  %Position____x[$Position____free_idx] := $font0
+  %Position____x[$Position____free_idx] := $font1
   %Position____y[$Position____free_idx] := $hide00
   $u1 := $Position____free_idx
   $_iter60000 := $u1
-  $font0 := 280
+  $font1 := 280
   $hide00 := 0
   $Position____free_idx := search(%Position____allocation, 0)
   if($Position____free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'Position'")
   end if
   %Position____allocation[$Position____free_idx] := 1
-  %Position____x[$Position____free_idx] := $font0
+  %Position____x[$Position____free_idx] := $font1
   %Position____y[$Position____free_idx] := $hide00
   $u1 := $Position____free_idx
   $_iter3010000 := $u1
-  $font0 := 560
+  $font1 := 560
   $hide00 := 0
   $Position____free_idx := search(%Position____allocation, 0)
   if($Position____free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'Position'")
   end if
   %Position____allocation[$Position____free_idx] := 1
-  %Position____x[$Position____free_idx] := $font0
+  %Position____x[$Position____free_idx] := $font1
   %Position____y[$Position____free_idx] := $hide00
   $u1 := $Position____free_idx
   $current00000 := $u1
-  $font0 := 0
+  $font1 := 0
   $hide00 := 0
   $Position____free_idx := search(%Position____allocation, 0)
   if($Position____free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'Position'")
   end if
   %Position____allocation[$Position____free_idx] := 1
-  %Position____x[$Position____free_idx] := $font0
+  %Position____x[$Position____free_idx] := $font1
   %Position____y[$Position____free_idx] := $hide00
   $u1 := $Position____free_idx
   $_iter40000 := $u1
@@ -2251,39 +2251,39 @@ on init
   %Categories__positions[3] := $current00000
   %Categories__positions[4] := $_iter40000
   $hide00 := %Categories__positions[0]
-  $font0 := 1
+  $font1 := 1
   if(%Categories__positions[0] # -1)
-    %Position____allocation[$hide00] := %Position____allocation[$hide00] + $font0
+    %Position____allocation[$hide00] := %Position____allocation[$hide00] + $font1
   end if
   $hide00 := %Categories__positions[1]
-  $font0 := 1
+  $font1 := 1
   if(%Categories__positions[1] # -1)
-    %Position____allocation[$hide00] := %Position____allocation[$hide00] + $font0
+    %Position____allocation[$hide00] := %Position____allocation[$hide00] + $font1
   end if
   $hide00 := %Categories__positions[2]
-  $font0 := 1
+  $font1 := 1
   if(%Categories__positions[2] # -1)
-    %Position____allocation[$hide00] := %Position____allocation[$hide00] + $font0
+    %Position____allocation[$hide00] := %Position____allocation[$hide00] + $font1
   end if
   $hide00 := %Categories__positions[3]
-  $font0 := 1
+  $font1 := 1
   if(%Categories__positions[3] # -1)
-    %Position____allocation[$hide00] := %Position____allocation[$hide00] + $font0
+    %Position____allocation[$hide00] := %Position____allocation[$hide00] + $font1
   end if
   $hide00 := %Categories__positions[4]
-  $font0 := num_elements(%Categories__positions) - 4
+  $font1 := num_elements(%Categories__positions) - 4
   if(%Categories__positions[4] # -1)
-    %Position____allocation[$hide00] := %Position____allocation[$hide00] + $font0
+    %Position____allocation[$hide00] := %Position____allocation[$hide00] + $font1
   end if
   declare $Categories__favorite_position
-  $font0 := 315
+  $font1 := 315
   $hide00 := 335
   $Position____free_idx := search(%Position____allocation, 0)
   if($Position____free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'Position'")
   end if
   %Position____allocation[$Position____free_idx] := 1
-  %Position____x[$Position____free_idx] := $font0
+  %Position____x[$Position____free_idx] := $font1
   %Position____y[$Position____free_idx] := $hide00
   $u1 := $Position____free_idx
   $Categories__favorite_position := $u1
@@ -2303,13 +2303,13 @@ on init
     inc($_iter4140)
   end while
   $bool1 := 0
-  $browser1 := 0
+  $browser0 := 0
   $hide00 := num_elements(%category_accum) - 1
   while($hide00 > $bool1) 
     %category_accum[$hide00] := %category_accum[$hide00 - 1]
     dec($hide00)
   end while
-  %category_accum[$bool1] := $browser1
+  %category_accum[$bool1] := $browser0
   declare %pnl_category[5]
   declare ui_panel $pnl_category0 
   declare ui_panel $pnl_category1 
@@ -2450,7 +2450,7 @@ on init
   declare %new_preset1[100]
 end on
 function Floatmask____set
-  %Bitlist____val[%_Floatmask____fm[($self37 * 2) + ($idx19 / 32)]] := (%Bitlist____val[%_Floatmask____fm[($self37 * 2) + ($idx19 / 32)]] .and. .not. sh_left(1, (31 - $idx19) mod 32)) .or. sh_left($val17, (31 - $idx19) mod 32)
+  %Bitlist____val[%_Floatmask____fm[($self47 * 2) + ($idx22 / 32)]] := (%Bitlist____val[%_Floatmask____fm[($self47 * 2) + ($idx22 / 32)]] .and. .not. sh_left(1, (31 - $idx22) mod 32)) .or. sh_left($val26, (31 - $idx22) mod 32)
 end function
 function Floatmask______init__
   $Floatmask____free_idx := search(%Floatmask____allocation, 0)
@@ -2526,16 +2526,16 @@ function Floatmask____get_range
   $ret15 := 0
   call Floatmask______init__
   $ret15 := $preset_idx4
-  %Bitlist____val[%_Floatmask____fm[$ret15 * 2]] := (- sh_right(abs(((32 - ((32 - $end_idx0) .and. sh_right($end_idx0 - 32, 31))) - (32 - ((32 - $start_idx0) .and. sh_right($start_idx0 - 32, 31)))) - 32) - 1, 31) * %Bitlist____val[%_Floatmask____fm[$self14 * 2]]) + sh_left(sh_right(%Bitlist____val[%_Floatmask____fm[$self14 * 2]], 32 - (32 - ((32 - $end_idx0) .and. sh_right($end_idx0 - 32, 31)))) .and. .not. sh_left(-1, (32 - ((32 - $end_idx0) .and. sh_right($end_idx0 - 32, 31))) - (32 - ((32 - $start_idx0) .and. sh_right($start_idx0 - 32, 31)))), 32 - (32 - ((32 - $end_idx0) .and. sh_right($end_idx0 - 32, 31))))
-  %Bitlist____val[%_Floatmask____fm[($ret15 * 2) + 1]] := (- sh_right(abs((((32 - ((32 - $end_idx0) .and. sh_right(32 - $end_idx0, 31))) - 32) - ((32 - ((32 - $start_idx0) .and. sh_right(32 - $start_idx0, 31))) - 32)) - 32) - 1, 31) * %Bitlist____val[%_Floatmask____fm[($self14 * 2) + 1]]) + sh_left(sh_right(%Bitlist____val[%_Floatmask____fm[($self14 * 2) + 1]], 32 - ((32 - ((32 - $end_idx0) .and. sh_right(32 - $end_idx0, 31))) - 32)) .and. .not. sh_left(-1, ((32 - ((32 - $end_idx0) .and. sh_right(32 - $end_idx0, 31))) - 32) - ((32 - ((32 - $start_idx0) .and. sh_right(32 - $start_idx0, 31))) - 32)), 32 - ((32 - ((32 - $end_idx0) .and. sh_right(32 - $end_idx0, 31))) - 32))
+  %Bitlist____val[%_Floatmask____fm[$ret15 * 2]] := (- sh_right(abs(((32 - ((32 - $end_idx2) .and. sh_right($end_idx2 - 32, 31))) - (32 - ((32 - $start_idx1) .and. sh_right($start_idx1 - 32, 31)))) - 32) - 1, 31) * %Bitlist____val[%_Floatmask____fm[$self24 * 2]]) + sh_left(sh_right(%Bitlist____val[%_Floatmask____fm[$self24 * 2]], 32 - (32 - ((32 - $end_idx2) .and. sh_right($end_idx2 - 32, 31)))) .and. .not. sh_left(-1, (32 - ((32 - $end_idx2) .and. sh_right($end_idx2 - 32, 31))) - (32 - ((32 - $start_idx1) .and. sh_right($start_idx1 - 32, 31)))), 32 - (32 - ((32 - $end_idx2) .and. sh_right($end_idx2 - 32, 31))))
+  %Bitlist____val[%_Floatmask____fm[($ret15 * 2) + 1]] := (- sh_right(abs((((32 - ((32 - $end_idx2) .and. sh_right(32 - $end_idx2, 31))) - 32) - ((32 - ((32 - $start_idx1) .and. sh_right(32 - $start_idx1, 31))) - 32)) - 32) - 1, 31) * %Bitlist____val[%_Floatmask____fm[($self24 * 2) + 1]]) + sh_left(sh_right(%Bitlist____val[%_Floatmask____fm[($self24 * 2) + 1]], 32 - ((32 - ((32 - $end_idx2) .and. sh_right(32 - $end_idx2, 31))) - 32)) .and. .not. sh_left(-1, ((32 - ((32 - $end_idx2) .and. sh_right(32 - $end_idx2, 31))) - 32) - ((32 - ((32 - $start_idx1) .and. sh_right(32 - $start_idx1, 31))) - 32)), 32 - ((32 - ((32 - $end_idx2) .and. sh_right(32 - $end_idx2, 31))) - 32))
   $ret8 := $ret15
 end function
 function Categories____update_active_tags
   $_iter63 := 0
   while($_iter63 < 5) 
-    $self14 := %Categories____tags[$current013]
-    $start_idx0 := %_Categories____accum[($current013 * 6) + $_iter63]
-    $end_idx0 := %_Categories____accum[($current013 * 6) + ($_iter63 + 1)]
+    $self24 := %Categories____tags[$current013]
+    $start_idx1 := %_Categories____accum[($current013 * 6) + $_iter63]
+    $end_idx2 := %_Categories____accum[($current013 * 6) + ($_iter63 + 1)]
     call Floatmask____get_range
     $current13 := $ret8
     %_Categories____active[($current013 * 5) + $_iter63] := abs((((((((((%Bitlist____val[%_Floatmask____fm[$current13 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$current13 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$current13 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$current13 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$current13 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$current13 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$current13 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$current13 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[$current13 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$current13 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$current13 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$current13 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$current13 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$current13 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$current13 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$current13 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935)) .and. 65535) + (sh_right((((((((%Bitlist____val[%_Floatmask____fm[$current13 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$current13 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$current13 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$current13 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$current13 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$current13 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$current13 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$current13 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[$current13 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$current13 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$current13 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$current13 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$current13 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$current13 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$current13 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$current13 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935), 16) .and. 65535)) + abs((((((((((%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935)) .and. 65535) + (sh_right((((((((%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($current13 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935), 16) .and. 65535))
@@ -2544,13 +2544,13 @@ function Categories____update_active_tags
 end function
 function Floatmask____print
   @nka0 := "["
-  $self59 := 0
-  while($self59 < 64) 
-    @nka0 := @nka0 & (sh_right(%Bitlist____val[%_Floatmask____fm[($val28 * 2) + ($self59 / 32)]], (31 - $self59) mod 32) .and. 1)
-    if($self59 < 63)
+  $self69 := 0
+  while($self69 < 64) 
+    @nka0 := @nka0 & (sh_right(%Bitlist____val[%_Floatmask____fm[($val29 * 2) + ($self69 / 32)]], (31 - $self69) mod 32) .and. 1)
+    if($self69 < 63)
       @nka0 := @nka0 & ", "
     end if
-    inc($self59)
+    inc($self69)
   end while
   @nka0 := @nka0 & "]"
   message(@nka0)
@@ -2609,24 +2609,24 @@ function Floatmask______and__
   $ret16 := 0
   call Floatmask______init__
   $ret16 := $preset_idx4
-  %Bitlist____val[%_Floatmask____fm[$ret16 * 2]] := %Bitlist____val[%_Floatmask____fm[$self73 * 2]] .and. %Bitlist____val[%_Floatmask____fm[$other4 * 2]]
-  %Bitlist____val[%_Floatmask____fm[($ret16 * 2) + 1]] := %Bitlist____val[%_Floatmask____fm[($self73 * 2) + 1]] .and. %Bitlist____val[%_Floatmask____fm[($other4 * 2) + 1]]
+  %Bitlist____val[%_Floatmask____fm[$ret16 * 2]] := %Bitlist____val[%_Floatmask____fm[$self41 * 2]] .and. %Bitlist____val[%_Floatmask____fm[$other2 * 2]]
+  %Bitlist____val[%_Floatmask____fm[($ret16 * 2) + 1]] := %Bitlist____val[%_Floatmask____fm[($self41 * 2) + 1]] .and. %Bitlist____val[%_Floatmask____fm[($other2 * 2) + 1]]
   $ret9 := $ret16
 end function
 function Floatmask______invert__
   $ret17 := 0
   call Floatmask______init__
   $ret17 := $preset_idx4
-  %Bitlist____val[%_Floatmask____fm[$ret17 * 2]] := .not. %Bitlist____val[%_Floatmask____fm[$self71 * 2]]
-  %Bitlist____val[%_Floatmask____fm[($ret17 * 2) + 1]] := .not. %Bitlist____val[%_Floatmask____fm[($self71 * 2) + 1]]
+  %Bitlist____val[%_Floatmask____fm[$ret17 * 2]] := .not. %Bitlist____val[%_Floatmask____fm[$self37 * 2]]
+  %Bitlist____val[%_Floatmask____fm[($ret17 * 2) + 1]] := .not. %Bitlist____val[%_Floatmask____fm[($self37 * 2) + 1]]
   $ret10 := $ret17
 end function
 function Floatmask______or__
   $ret18 := 0
   call Floatmask______init__
   $ret18 := $preset_idx4
-  %Bitlist____val[%_Floatmask____fm[$ret18 * 2]] := %Bitlist____val[%_Floatmask____fm[$self72 * 2]] .or. %Bitlist____val[%_Floatmask____fm[$other3 * 2]]
-  %Bitlist____val[%_Floatmask____fm[($ret18 * 2) + 1]] := %Bitlist____val[%_Floatmask____fm[($self72 * 2) + 1]] .or. %Bitlist____val[%_Floatmask____fm[($other3 * 2) + 1]]
+  %Bitlist____val[%_Floatmask____fm[$ret18 * 2]] := %Bitlist____val[%_Floatmask____fm[$self39 * 2]] .or. %Bitlist____val[%_Floatmask____fm[$other1 * 2]]
+  %Bitlist____val[%_Floatmask____fm[($ret18 * 2) + 1]] := %Bitlist____val[%_Floatmask____fm[($self39 * 2) + 1]] .or. %Bitlist____val[%_Floatmask____fm[($other1 * 2) + 1]]
   $ret11 := $ret18
 end function
 function Preset______decr__
@@ -2705,41 +2705,41 @@ end function
 function Browser____filter_presets
   $_iter12 := 0
   while($_iter12 <= 1498) 
-    %_Browser____filtered_presets[($self58 * 1499) + $_iter12] := -1
+    %_Browser____filtered_presets[($self53 * 1499) + $_iter12] := -1
     inc($_iter12)
   end while
-  $val28 := %Categories____tags[%Browser____categories[$self58]]
+  $val29 := %Categories____tags[%Browser____categories[$self53]]
   call Floatmask____print
   $i90 := 0
   $z0 := 0
   $i10 := 0
-  while($i10 < %Browser____num_presets[$self58]) 
-    $preset4 := %Preset____tags[%_Browser____presets[($self58 * 1499) + $i10]]
+  while($i10 < %Browser____num_presets[$self53]) 
+    $preset4 := %Preset____tags[%_Browser____presets[($self53 * 1499) + $i10]]
     $self84 := $preset4
     $num_refs5 := 1
     call Floatmask______incr__
     $v0 := 0
     $EXIT_FLAG300 := 0
     while(($v0 < 5) and ($EXIT_FLAG300 = 0)) 
-      $current_filtermethod0 := %_Categories____filtermethod[(%Browser____categories[$self58] * 5) + $v0]
+      $current_filtermethod0 := %_Categories____filtermethod[(%Browser____categories[$self53] * 5) + $v0]
       if($current_filtermethod0 = 1)
         $self83 := $preset4
         $num_refs4 := 1
         call Floatmask______decr__
-        $self14 := $preset4
-        $start_idx0 := %_Categories____accum[(%Browser____categories[$self58] * 6) + $v0]
-        $end_idx0 := %_Categories____accum[(%Browser____categories[$self58] * 6) + ($v0 + 1)]
+        $self24 := $preset4
+        $start_idx1 := %_Categories____accum[(%Browser____categories[$self53] * 6) + $v0]
+        $end_idx2 := %_Categories____accum[(%Browser____categories[$self53] * 6) + ($v0 + 1)]
         call Floatmask____get_range
-        $self73 := %Categories____tags[%Browser____categories[$self58]]
-        $other4 := $current14
+        $self41 := %Categories____tags[%Browser____categories[$self53]]
+        $other2 := $current14
         call Floatmask______and__
         $preset4 := $ret9
         $self84 := $preset4
         $num_refs5 := 1
         call Floatmask______incr__
         $current14 := abs((((((((((%Bitlist____val[%_Floatmask____fm[$preset4 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$preset4 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$preset4 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$preset4 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$preset4 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$preset4 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$preset4 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$preset4 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[$preset4 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$preset4 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$preset4 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$preset4 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$preset4 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$preset4 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$preset4 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$preset4 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935)) .and. 65535) + (sh_right((((((((%Bitlist____val[%_Floatmask____fm[$preset4 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$preset4 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$preset4 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$preset4 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$preset4 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$preset4 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$preset4 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$preset4 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[$preset4 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$preset4 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$preset4 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$preset4 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$preset4 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$preset4 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$preset4 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$preset4 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935), 16) .and. 65535)) + abs((((((((((%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935)) .and. 65535) + (sh_right((((((((%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($preset4 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935), 16) .and. 65535))
-        if(($current14 > 0) or (%_Categories____active[(%Browser____categories[$self58] * 5) + $v0] = 0))
-          $i90 := $i90 + %_Categories____elements[(%Browser____categories[$self58] * 5) + $v0]
+        if(($current14 > 0) or (%_Categories____active[(%Browser____categories[$self53] * 5) + $v0] = 0))
+          $i90 := $i90 + %_Categories____elements[(%Browser____categories[$self53] * 5) + $v0]
         else
           $EXIT_FLAG300 := 1
           continue
@@ -2747,7 +2747,7 @@ function Browser____filter_presets
       else
         if(($current_filtermethod0 = 0) or ($current_filtermethod0 = 2))
           $current14 := 0
-          $self71 := %Categories____tags[%Browser____categories[$self58]]
+          $self37 := %Categories____tags[%Browser____categories[$self53]]
           call Floatmask______invert__
           $current14 := $ret10
           $self84 := $current14
@@ -2756,16 +2756,16 @@ function Browser____filter_presets
           $self83 := $preset4
           $num_refs4 := 1
           call Floatmask______decr__
-          $self72 := $current14
-          $other3 := $preset4
+          $self39 := $current14
+          $other1 := $preset4
           call Floatmask______or__
           $preset4 := $ret11
           $self84 := $preset4
           $num_refs5 := 1
           call Floatmask______incr__
-          $self14 := $preset4
-          $start_idx0 := %_Categories____accum[(%Browser____categories[$self58] * 6) + $v0]
-          $end_idx0 := %_Categories____accum[(%Browser____categories[$self58] * 6) + ($v0 + 1)]
+          $self24 := $preset4
+          $start_idx1 := %_Categories____accum[(%Browser____categories[$self53] * 6) + $v0]
+          $end_idx2 := %_Categories____accum[(%Browser____categories[$self53] * 6) + ($v0 + 1)]
           call Floatmask____get_range
           $_iter414 := $ret8
           $_iter3014 := abs((((((((((%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935)) .and. 65535) + (sh_right((((((((%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_iter414 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935), 16) .and. 65535)) + abs((((((((((%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935)) .and. 65535) + (sh_right((((((((%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_iter414 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935), 16) .and. 65535))
@@ -2778,16 +2778,16 @@ function Browser____filter_presets
       inc($v0)
     end while
     if($i90 = 11)
-      $EXIT_FLAG3000 := %_Browser____filtered_presets[($self58 * 1499) + $z0]
+      $EXIT_FLAG3000 := %_Browser____filtered_presets[($self53 * 1499) + $z0]
       $_iter3002000 := 1
       call Preset______decr__
-      %_Browser____filtered_presets[($self58 * 1499) + $z0] := %_Browser____presets[($self58 * 1499) + $i10]
-      $i13 := %_Browser____filtered_presets[($self58 * 1499) + $z0]
+      %_Browser____filtered_presets[($self53 * 1499) + $z0] := %_Browser____presets[($self53 * 1499) + $i10]
+      $i13 := %_Browser____filtered_presets[($self53 * 1499) + $z0]
       $current_idx0 := 1
       call Preset______incr__
       inc($z0)
     end if
-    %Browser____num_shown_presets[$self58] := $z0
+    %Browser____num_shown_presets[$self53] := $z0
     $i90 := 0
     $self83 := $preset4
     $num_refs4 := 1
@@ -2796,63 +2796,63 @@ function Browser____filter_presets
   end while
 end function
 function Floatmask____clear
-  $self64 := %_Floatmask____fm[$self49 * 2]
-  %Bitlist____val[$self64] := 0
-  $self64 := %_Floatmask____fm[($self49 * 2) + 1]
-  %Bitlist____val[$self64] := 0
+  $self31 := %_Floatmask____fm[$self64 * 2]
+  %Bitlist____val[$self31] := 0
+  $self31 := %_Floatmask____fm[($self64 * 2) + 1]
+  %Bitlist____val[$self31] := 0
 end function
 function Bitlist____set_range
-  %Bitlist____val[$self23] := (- sh_right(abs($ret3 - 1) - 1, 31) * ((- sh_right(abs(($num_refs5 - $self64) - 32) - 1, 31) * -1) + (%Bitlist____val[$self23] .or. sh_left(.not. sh_left(-1, $num_refs5 - $self64), 32 - $num_refs5)))) + (- sh_right(abs($ret3) - 1, 31) * (- sh_right(($num_refs5 - $self64) - 32, 31) * (%Bitlist____val[$self23] .and. .not. sh_left(.not. sh_left(-1, $num_refs5 - $self64), 32 - $num_refs5))))
+  %Bitlist____val[$self50] := (- sh_right(abs($ret3 - 1) - 1, 31) * ((- sh_right(abs(($num_refs5 - $self31) - 32) - 1, 31) * -1) + (%Bitlist____val[$self50] .or. sh_left(.not. sh_left(-1, $num_refs5 - $self31), 32 - $num_refs5)))) + (- sh_right(abs($ret3) - 1, 31) * (- sh_right(($num_refs5 - $self31) - 32, 31) * (%Bitlist____val[$self50] .and. .not. sh_left(.not. sh_left(-1, $num_refs5 - $self31), 32 - $num_refs5))))
 end function
 function Floatmask____set_range
-  $self23 := %_Floatmask____fm[$val17 * 2]
-  $self64 := 32 - ((32 - $idx19) .and. sh_right($idx19 - 32, 31))
-  $num_refs5 := 32 - ((32 - $self37) .and. sh_right($self37 - 32, 31))
+  $self50 := %_Floatmask____fm[$val26 * 2]
+  $self31 := 32 - ((32 - $idx22) .and. sh_right($idx22 - 32, 31))
+  $num_refs5 := 32 - ((32 - $self47) .and. sh_right($self47 - 32, 31))
   $ret3 := $val110
   call Bitlist____set_range
-  $self23 := %_Floatmask____fm[($val17 * 2) + 1]
-  $self64 := (32 - ((32 - $idx19) .and. sh_right(32 - $idx19, 31))) - 32
-  $num_refs5 := (32 - ((32 - $self37) .and. sh_right(32 - $self37, 31))) - 32
+  $self50 := %_Floatmask____fm[($val26 * 2) + 1]
+  $self31 := (32 - ((32 - $idx22) .and. sh_right(32 - $idx22, 31))) - 32
+  $num_refs5 := (32 - ((32 - $self47) .and. sh_right(32 - $self47, 31))) - 32
   $ret3 := $val110
   call Bitlist____set_range
 end function
 function Browser____update_disabled_tags
-  $self49 := %Categories____tagmask[%Browser____categories[$self39]]
+  $self64 := %Categories____tagmask[%Browser____categories[$self61]]
   call Floatmask____clear
   $i11 := 0
-  while($i11 < %Browser____num_shown_presets[$self39]) 
-    $self83 := %Categories____tagmask[%Browser____categories[$self39]]
+  while($i11 < %Browser____num_shown_presets[$self61]) 
+    $self83 := %Categories____tagmask[%Browser____categories[$self61]]
     $num_refs4 := 1
     call Floatmask______decr__
-    $self72 := %Categories____tagmask[%Browser____categories[$self39]]
-    $other3 := %Preset____tags[%_Browser____filtered_presets[($self39 * 1499) + $i11]]
+    $self39 := %Categories____tagmask[%Browser____categories[$self61]]
+    $other1 := %Preset____tags[%_Browser____filtered_presets[($self61 * 1499) + $i11]]
     call Floatmask______or__
-    %Categories____tagmask[%Browser____categories[$self39]] := $ret11
-    $self84 := %Categories____tagmask[%Browser____categories[$self39]]
+    %Categories____tagmask[%Browser____categories[$self61]] := $ret11
+    $self84 := %Categories____tagmask[%Browser____categories[$self61]]
     $num_refs5 := 1
     call Floatmask______incr__
     inc($i11)
   end while
   $i11 := 0
   while($i11 < 5) 
-    $_iter415 := %_Categories____filtermethod[(%Browser____categories[$self39] * 5) + $i11]
+    $_iter415 := %_Categories____filtermethod[(%Browser____categories[$self61] * 5) + $i11]
     if(($_iter415 = 2) or ($_iter415 = 1))
-      $current015 := %Categories____tags[%Browser____categories[$self39]]
+      $current015 := %Categories____tags[%Browser____categories[$self61]]
       $self84 := $current015
       $num_refs5 := 1
       call Floatmask______incr__
-      $val17 := $current015
-      $idx19 := %_Categories____accum[(%Browser____categories[$self39] * 6) + $i11]
-      $self37 := %_Categories____accum[(%Browser____categories[$self39] * 6) + 5]
+      $val26 := $current015
+      $idx22 := %_Categories____accum[(%Browser____categories[$self61] * 6) + $i11]
+      $self47 := %_Categories____accum[(%Browser____categories[$self61] * 6) + 5]
       $val110 := 0
       call Floatmask____set_range
       $_iter65 := 0
       while($_iter65 < 5) 
-        if(%_Categories____filtermethod[(%Browser____categories[$self39] * 5) + $_iter65] # 0)
-          if(%_Categories____active[(%Browser____categories[$self39] * 5) + $_iter65] = 0)
-            $val17 := $current015
-            $idx19 := %_Categories____accum[(%Browser____categories[$self39] * 6) + $_iter65]
-            $self37 := %_Categories____accum[(%Browser____categories[$self39] * 6) + ($_iter65 + 1)]
+        if(%_Categories____filtermethod[(%Browser____categories[$self61] * 5) + $_iter65] # 0)
+          if(%_Categories____active[(%Browser____categories[$self61] * 5) + $_iter65] = 0)
+            $val26 := $current015
+            $idx22 := %_Categories____accum[(%Browser____categories[$self61] * 6) + $_iter65]
+            $self47 := %_Categories____accum[(%Browser____categories[$self61] * 6) + ($_iter65 + 1)]
             $val110 := 1
             call Floatmask____set_range
           end if
@@ -2860,19 +2860,19 @@ function Browser____update_disabled_tags
         inc($_iter65)
       end while
       $_iter65 := 0
-      while($_iter65 < %Browser____num_presets[$self39]) 
-        $current15 := %Preset____tags[%_Browser____presets[($self39 * 1499) + $_iter65]]
+      while($_iter65 < %Browser____num_presets[$self61]) 
+        $current15 := %Preset____tags[%_Browser____presets[($self61 * 1499) + $_iter65]]
         $self84 := $current15
         $num_refs5 := 1
         call Floatmask______incr__
         $_iter3016 := 0
-        $self14 := $current15
-        $start_idx0 := 0
-        $end_idx0 := %_Categories____accum[(%Browser____categories[$self39] * 6) + $i11]
+        $self24 := $current15
+        $start_idx1 := 0
+        $end_idx2 := %_Categories____accum[(%Browser____categories[$self61] * 6) + $i11]
         call Floatmask____get_range
         $_ret90 := $ret8
-        $self73 := $current015
-        $other4 := $_ret90
+        $self41 := $current015
+        $other2 := $_ret90
         call Floatmask______and__
         $_iter3016 := $ret9
         $self84 := $_iter3016
@@ -2882,11 +2882,11 @@ function Browser____update_disabled_tags
         $current0021 := 0
         $_iter4021 := 0
         while($_iter4021 < $i11) 
-          if(%_Categories____filtermethod[(%Browser____categories[$self39] * 5) + $_iter4021] # 0)
+          if(%_Categories____filtermethod[(%Browser____categories[$self61] * 5) + $_iter4021] # 0)
             $ret151 := 0
-            $self14 := $_iter3016
-            $start_idx0 := %_Categories____accum[(%Browser____categories[$self39] * 6) + $_iter4021]
-            $end_idx0 := %_Categories____accum[(%Browser____categories[$self39] * 6) + ($_iter4021 + 1)]
+            $self24 := $_iter3016
+            $start_idx1 := %_Categories____accum[(%Browser____categories[$self61] * 6) + $_iter4021]
+            $end_idx2 := %_Categories____accum[(%Browser____categories[$self61] * 6) + ($_iter4021 + 1)]
             call Floatmask____get_range
             $ret151 := $ret8
             $self84 := $ret151
@@ -2909,19 +2909,19 @@ function Browser____update_disabled_tags
           end if
         end if
         if($_iter4021 = 1)
-          $self83 := %Categories____tagmask[%Browser____categories[$self39]]
+          $self83 := %Categories____tagmask[%Browser____categories[$self61]]
           $num_refs4 := 1
           call Floatmask______decr__
-          $self14 := $current15
-          $start_idx0 := %_Categories____accum[(%Browser____categories[$self39] * 6) + $i11]
-          $end_idx0 := %_Categories____accum[(%Browser____categories[$self39] * 6) + ($i11 + 1)]
+          $self24 := $current15
+          $start_idx1 := %_Categories____accum[(%Browser____categories[$self61] * 6) + $i11]
+          $end_idx2 := %_Categories____accum[(%Browser____categories[$self61] * 6) + ($i11 + 1)]
           call Floatmask____get_range
           $ret152 := $ret8
-          $self72 := %Categories____tagmask[%Browser____categories[$self39]]
-          $other3 := $ret152
+          $self39 := %Categories____tagmask[%Browser____categories[$self61]]
+          $other1 := $ret152
           call Floatmask______or__
-          %Categories____tagmask[%Browser____categories[$self39]] := $ret11
-          $self84 := %Categories____tagmask[%Browser____categories[$self39]]
+          %Categories____tagmask[%Browser____categories[$self61]] := $ret11
+          $self84 := %Categories____tagmask[%Browser____categories[$self61]]
           $num_refs5 := 1
           call Floatmask______incr__
         end if
@@ -3031,37 +3031,37 @@ function UserSaveStrip__show
   set_control_par(get_ui_id($btn_save), $CONTROL_PAR_VALUE, $bool1)
 end function
 function PresetStrip__update_strip
-  set_control_par_str(get_ui_id($btn_preset_browser), $CONTROL_PAR_TEXT, !Preset____name[%Browser____current[$browser1]])
-  set_control_par(get_ui_id($btn_current_favorite), $CONTROL_PAR_VALUE, sh_right(%Bitlist____val[%_Floatmask____fm[%Preset____tags[%Browser____current[$browser1]] * 2]], 21) .and. 1)
+  set_control_par_str(get_ui_id($btn_preset_browser), $CONTROL_PAR_TEXT, !Preset____name[%Browser____current[$browser0]])
+  set_control_par(get_ui_id($btn_current_favorite), $CONTROL_PAR_VALUE, sh_right(%Bitlist____val[%_Floatmask____fm[%Preset____tags[%Browser____current[$browser0]] * 2]], 21) .and. 1)
   $bool1 := $btn_save
   call UserSaveStrip__show
 end function
 function PresetBrowser__update_view
   $_iter30120 := $browser
   $_iter3013 := %Browser____categories[$_iter30120]
-  $self44 := %Categories____tags[$_iter3013]
+  $self51 := %Categories____tags[$_iter3013]
   $i7 := 0
   while($i7 < (64 - ((64 - num_elements(%btn_tags)) .and. sh_right(num_elements(%btn_tags) - 64, 31)))) 
-    $self37 := $self44
-    $idx19 := $i7
-    $val17 := get_control_par(%btn_tags[$i7], $CONTROL_PAR_VALUE)
+    $self47 := $self51
+    $idx22 := $i7
+    $val26 := get_control_par(%btn_tags[$i7], $CONTROL_PAR_VALUE)
     call Floatmask____set
     inc($i7)
   end while
   $current013 := %Browser____categories[$_iter30120]
   call Categories____update_active_tags
   $current0120 := $current13
-  $self58 := $browser
+  $self53 := $browser
   call Browser____filter_presets
-  $self39 := $browser
+  $self61 := $browser
   call Browser____update_disabled_tags
   $_iter300210 := $_ret90
   $categories0 := %Browser____categories[$browser]
   $i12 := 0
   while($i12 < 4) 
-    $self14 := %Categories____tagmask[$categories0]
-    $start_idx0 := %_Categories____accum[($categories0 * 6) + $i12]
-    $end_idx0 := %_Categories____accum[($categories0 * 6) + ($i12 + 1)]
+    $self24 := %Categories____tagmask[$categories0]
+    $start_idx1 := %_Categories____accum[($categories0 * 6) + $i12]
+    $end_idx2 := %_Categories____accum[($categories0 * 6) + ($i12 + 1)]
     call Floatmask____get_range
     $_ret110 := $ret8
     $count1 := abs((((((((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935)) .and. 65535) + (sh_right((((((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935), 16) .and. 65535)) + abs((((((((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935)) .and. 65535) + (sh_right((((((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935), 16) .and. 65535))
@@ -3081,10 +3081,10 @@ function PresetBrowser__update_view
         inc($hide00)
       end while
     else
-      $font0 := %BrowserFont__tag[6]
+      $font1 := %BrowserFont__tag[6]
       $u1 := 0
       while($u1 < num_elements(%BrowserFont__types)) 
-        set_control_par(%btn_tags[$i12], %BrowserFont__types[$u1], $font0)
+        set_control_par(%btn_tags[$i12], %BrowserFont__types[$u1], $font1)
         inc($u1)
       end while
     end if
@@ -3097,22 +3097,22 @@ function PresetBrowser__update_view
   $browser3 := $browser
   $preset_idx2 := search(%_Browser____filtered_presets, %Browser____current[$browser], $browser * 1499, ($browser * 1499) + 1498)
   call Scrollarea__focus
-  $browser1 := $browser
+  $browser0 := $browser
   call PresetStrip__update_strip
 end function
 function Preset____set_favorite
-  $self37 := %Preset____tags[$font0]
-  $idx19 := 10
-  $val17 := $u1
-  %Bitlist____val[%_Floatmask____fm[($self37 * 2) + ($idx19 / 32)]] := (%Bitlist____val[%_Floatmask____fm[($self37 * 2) + ($idx19 / 32)]] .and. .not. 2097152) .or. sh_left($val17, 21)
+  $self47 := %Preset____tags[$font1]
+  $idx22 := 10
+  $val26 := $u1
+  %Bitlist____val[%_Floatmask____fm[($self47 * 2) + ($idx22 / 32)]] := (%Bitlist____val[%_Floatmask____fm[($self47 * 2) + ($idx22 / 32)]] .and. .not. 2097152) .or. sh_left($val26, 21)
 end function
 function Scrollarea__update_favorite
   $current_idx1 := $scroll__up + $btn_idx1
   set_control_par(%_btn_favorite[$btn_idx1], $CONTROL_PAR_VALUE, $value0)
-  $font0 := %_Browser____filtered_presets[($browser7 * 1499) + $current_idx1]
+  $font1 := %_Browser____filtered_presets[($browser7 * 1499) + $current_idx1]
   $u1 := $value0
   call Preset____set_favorite
-  $browser1 := $browser7
+  $browser0 := $browser7
   call PresetStrip__update_strip
 end function
 function Preset______init__
@@ -3197,10 +3197,10 @@ function Bitlist____load
   %Bitlist____val[$ret3] := $num_refs5
 end function
 function Floatmask____copy
-  $ret3 := %_Floatmask____fm[$val28 * 2]
+  $ret3 := %_Floatmask____fm[$val29 * 2]
   $num_refs5 := %Bitlist____val[%_Floatmask____fm[$val110 * 2]]
   call Bitlist____load
-  $ret3 := %_Floatmask____fm[($val28 * 2) + 1]
+  $ret3 := %_Floatmask____fm[($val29 * 2) + 1]
   $num_refs5 := %Bitlist____val[%_Floatmask____fm[($val110 * 2) + 1]]
   call Bitlist____load
 end function
@@ -3255,16 +3255,16 @@ function Browser____validate_user_preset_idx
   end while
 end function
 function Browser____update_preset_situation
-  %Browser____num_user_presets[$self26] := search(%user_preset_tags0, 0)
-  if(%Browser____num_user_presets[$self26] > 0)
-    $i5 := %Browser____num_factory_presets[$self26]
-    while($i5 < %Browser____num_presets[$self26]) 
-      %_Browser____presets[($self26 * 1499) + $i5] := -1
+  %Browser____num_user_presets[$self55] := search(%user_preset_tags0, 0)
+  if(%Browser____num_user_presets[$self55] > 0)
+    $i5 := %Browser____num_factory_presets[$self55]
+    while($i5 < %Browser____num_presets[$self55]) 
+      %_Browser____presets[($self55 * 1499) + $i5] := -1
       inc($i5)
     end while
     $i5 := 0
-    while($i5 < %Browser____num_user_presets[$self26]) 
-      $preset3 := %_Browser____user_presets[($self26 * 500) + $i5]
+    while($i5 < %Browser____num_user_presets[$self55]) 
+      $preset3 := %_Browser____user_presets[($self55 * 500) + $i5]
       $i13 := $preset3
       $current_idx0 := 1
       if($i13 # -1)
@@ -3275,7 +3275,7 @@ function Browser____update_preset_situation
       @_ret00 := @nka0
       message(@_ret00)
       if(($preset3 # -1) and (%Preset____deleted[$preset3] = 0))
-        $EXIT_FLAG3000 := %_Browser____presets[($self26 * 1499) + (%Browser____num_factory_presets[$self26] + $i5)]
+        $EXIT_FLAG3000 := %_Browser____presets[($self55 * 1499) + (%Browser____num_factory_presets[$self55] + $i5)]
         $_iter3002000 := 1
         $_iter402000 := $EXIT_FLAG3000
         while($_iter402000 # -1) 
@@ -3343,8 +3343,8 @@ function Browser____update_preset_situation
             %Preset____idx[$current140] := 0
           end if
         end while
-        %_Browser____presets[($self26 * 1499) + (%Browser____num_factory_presets[$self26] + $i5)] := $preset3
-        $i13 := %_Browser____presets[($self26 * 1499) + (%Browser____num_factory_presets[$self26] + $i5)]
+        %_Browser____presets[($self55 * 1499) + (%Browser____num_factory_presets[$self55] + $i5)] := $preset3
+        $i13 := %_Browser____presets[($self55 * 1499) + (%Browser____num_factory_presets[$self55] + $i5)]
         $current_idx0 := 1
         if($i13 # -1)
           %Preset____allocation[$i13] := %Preset____allocation[$i13] + $current_idx0
@@ -3422,25 +3422,25 @@ function Browser____update_preset_situation
       inc($i5)
     end while
   end if
-  %Browser____num_presets[$self26] := %Browser____num_factory_presets[$self26] + %Browser____num_user_presets[$self26]
-  message("Number of presets: " & ", " & %Browser____num_presets[$self26] & ", " & " Number of user presets: " & ", " & %Browser____num_user_presets[$self26])
+  %Browser____num_presets[$self55] := %Browser____num_factory_presets[$self55] + %Browser____num_user_presets[$self55]
+  message("Number of presets: " & ", " & %Browser____num_presets[$self55] & ", " & " Number of user presets: " & ", " & %Browser____num_user_presets[$self55])
 end function
 function DevSaveStrip__show
   set_control_par(get_ui_id($pnl_save_dialog), $CONTROL_PAR_HIDE, %Utils__hide_state[$bool1])
 end function
 function Browser____set_current_preset
-  $EXIT_FLAG3000 := %Browser____last[$self43]
+  $EXIT_FLAG3000 := %Browser____last[$self63]
   $_iter3002000 := 1
   call Preset______decr__
-  %Browser____last[$self43] := %Browser____current[$self43]
-  $i13 := %Browser____last[$self43]
+  %Browser____last[$self63] := %Browser____current[$self63]
+  $i13 := %Browser____last[$self63]
   $current_idx0 := 1
   call Preset______incr__
-  $EXIT_FLAG3000 := %Browser____current[$self43]
+  $EXIT_FLAG3000 := %Browser____current[$self63]
   $_iter3002000 := 1
   call Preset______decr__
-  %Browser____current[$self43] := %_Browser____filtered_presets[($self43 * 1499) + $idx21]
-  $i13 := %Browser____current[$self43]
+  %Browser____current[$self63] := %_Browser____filtered_presets[($self63 * 1499) + $idx27]
+  $i13 := %Browser____current[$self63]
   $current_idx0 := 1
   call Preset______incr__
 end function
@@ -3484,21 +3484,21 @@ on ui_control($btn_save_cancel)
   $btn_save_cancel := 0
   $bool1 := $btn_save_cancel
   call UserSaveStrip__show
-  $browser0 := $browser
-  $self3 := %Categories____tags[%Browser____categories[$browser0]]
-  $self49 := 0
-  while($self49 < (64 - ((64 - num_elements(%btn_tags)) .and. sh_right(num_elements(%btn_tags) - 64, 31)))) 
-    set_control_par(%btn_tags[$self49], $CONTROL_PAR_VALUE, sh_right(%Bitlist____val[%_Floatmask____fm[($self3 * 2) + ($self49 / 32)]], (31 - $self49) mod 32) .and. 1)
-    inc($self49)
+  $browser2 := $browser
+  $self0 := %Categories____tags[%Browser____categories[$browser2]]
+  $self64 := 0
+  while($self64 < (64 - ((64 - num_elements(%btn_tags)) .and. sh_right(num_elements(%btn_tags) - 64, 31)))) 
+    set_control_par(%btn_tags[$self64], $CONTROL_PAR_VALUE, sh_right(%Bitlist____val[%_Floatmask____fm[($self0 * 2) + ($self64 / 32)]], (31 - $self64) mod 32) .and. 1)
+    inc($self64)
   end while
-  $val28 := %Categories____tags[%Browser____categories[$browser0]]
+  $val29 := %Categories____tags[%Browser____categories[$browser2]]
   call Floatmask____print
-  $categories0 := %Browser____categories[$browser0]
+  $categories0 := %Browser____categories[$browser2]
   $i12 := 0
   while($i12 < 4) 
-    $self14 := %Categories____tagmask[$categories0]
-    $start_idx0 := %_Categories____accum[($categories0 * 6) + $i12]
-    $end_idx0 := %_Categories____accum[($categories0 * 6) + ($i12 + 1)]
+    $self24 := %Categories____tagmask[$categories0]
+    $start_idx1 := %_Categories____accum[($categories0 * 6) + $i12]
+    $end_idx2 := %_Categories____accum[($categories0 * 6) + ($i12 + 1)]
     call Floatmask____get_range
     $_ret110 := $ret8
     $count1 := abs((((((((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935)) .and. 65535) + (sh_right((((((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935), 16) .and. 65535)) + abs((((((((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935)) .and. 65535) + (sh_right((((((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935), 16) .and. 65535))
@@ -3518,10 +3518,10 @@ on ui_control($btn_save_cancel)
         inc($hide00)
       end while
     else
-      $font0 := %BrowserFont__tag[6]
+      $font1 := %BrowserFont__tag[6]
       $u1 := 0
       while($u1 < num_elements(%BrowserFont__types)) 
-        set_control_par(%btn_tags[$i12], %BrowserFont__types[$u1], $font0)
+        set_control_par(%btn_tags[$i12], %BrowserFont__types[$u1], $font1)
         inc($u1)
       end while
     end if
@@ -3539,7 +3539,7 @@ on ui_control($btn_save_confirm)
     %preset_exists1[$_iter0] := 0
     inc($_iter0)
   end while
-  %self29[$NI_CALLBACK_ID mod 100] := $browser
+  %self57[$NI_CALLBACK_ID mod 100] := $browser
   !title0[$NI_CALLBACK_ID mod 100] := @txt_presetname
   %RETURN_FLAG30[$NI_CALLBACK_ID mod 100] := 0
   while(%RETURN_FLAG30[$NI_CALLBACK_ID mod 100] = 0) 
@@ -3568,44 +3568,44 @@ on ui_control($btn_save_confirm)
   %preset_exists1[$NI_CALLBACK_ID mod 100] := %preset0[$NI_CALLBACK_ID mod 100]
   message("Preset exists: " & %preset_exists1[$NI_CALLBACK_ID mod 100])
   if((%preset_exists1[$NI_CALLBACK_ID mod 100] = 0) or (get_control_par(get_ui_id($lbl_overwrite), $CONTROL_PAR_HIDE) = $HIDE_PART_NOTHING))
-    %self9[$NI_CALLBACK_ID mod 100] := $browser
+    %self12[$NI_CALLBACK_ID mod 100] := $browser
     !title0[$NI_CALLBACK_ID mod 100] := @txt_presetname
-    %Browser____current_state[%self9[$NI_CALLBACK_ID mod 100]] := 1
-    $_iter3013 := %Browser____categories[%self9[$NI_CALLBACK_ID mod 100]]
-    $self44 := %Categories____tags[$_iter3013]
+    %Browser____current_state[%self12[$NI_CALLBACK_ID mod 100]] := 1
+    $_iter3013 := %Browser____categories[%self12[$NI_CALLBACK_ID mod 100]]
+    $self51 := %Categories____tags[$_iter3013]
     $i7 := 0
     while($i7 < (64 - ((64 - num_elements(%btn_tags)) .and. sh_right(num_elements(%btn_tags) - 64, 31)))) 
-      $self37 := $self44
-      $idx19 := $i7
-      $val17 := get_control_par(%btn_tags[$i7], $CONTROL_PAR_VALUE)
+      $self47 := $self51
+      $idx22 := $i7
+      $val26 := get_control_par(%btn_tags[$i7], $CONTROL_PAR_VALUE)
       call Floatmask____set
       inc($i7)
     end while
-    $current013 := %Browser____categories[%self9[$NI_CALLBACK_ID mod 100]]
+    $current013 := %Browser____categories[%self12[$NI_CALLBACK_ID mod 100]]
     call Categories____update_active_tags
     %new_preset1[$NI_CALLBACK_ID mod 100] := 0
     $row0 := 0
     @parent_folder0 := ""
-    $_iter30140 := %Preset____tags[%Browser____current[%self9[$NI_CALLBACK_ID mod 100]]]
+    $_iter30140 := %Preset____tags[%Browser____current[%self12[$NI_CALLBACK_ID mod 100]]]
     @bl000 := ""
     @nka0 := ""
     $_iter30170 := 0
     call Preset______init__
     %new_preset1[$NI_CALLBACK_ID mod 100] := $col0
     $ii00 := %new_preset1[$NI_CALLBACK_ID mod 100]
-    $i130 := %Browser____current[%self9[$NI_CALLBACK_ID mod 100]]
+    $i130 := %Browser____current[%self12[$NI_CALLBACK_ID mod 100]]
     call Preset____copy
     !Preset____name[%new_preset1[$NI_CALLBACK_ID mod 100]] := !title0[$NI_CALLBACK_ID mod 100]
-    $val28 := %Preset____tags[%new_preset1[$NI_CALLBACK_ID mod 100]]
-    $val110 := %Categories____tags[%Browser____categories[%self9[$NI_CALLBACK_ID mod 100]]]
+    $val29 := %Preset____tags[%new_preset1[$NI_CALLBACK_ID mod 100]]
+    $val110 := %Categories____tags[%Browser____categories[%self12[$NI_CALLBACK_ID mod 100]]]
     call Floatmask____copy
-    $self37 := %Preset____tags[%new_preset1[$NI_CALLBACK_ID mod 100]]
-    $idx19 := %Categories____user_tag[%Browser____categories[%self9[$NI_CALLBACK_ID mod 100]]]
-    $val17 := 1
+    $self47 := %Preset____tags[%new_preset1[$NI_CALLBACK_ID mod 100]]
+    $idx22 := %Categories____user_tag[%Browser____categories[%self12[$NI_CALLBACK_ID mod 100]]]
+    $val26 := 1
     call Floatmask____set
-    select(%Browser____current_save_mode[%self9[$NI_CALLBACK_ID mod 100]])
+    select(%Browser____current_save_mode[%self12[$NI_CALLBACK_ID mod 100]])
       case 2
-        %self30[$NI_CALLBACK_ID mod 100] := %self9[$NI_CALLBACK_ID mod 100]
+        %self11[$NI_CALLBACK_ID mod 100] := %self12[$NI_CALLBACK_ID mod 100]
         %new_preset0[$NI_CALLBACK_ID mod 100] := %new_preset1[$NI_CALLBACK_ID mod 100]
         $preset__load_id := load_array_str(%preset__array, @base_path & !Preset____name[%new_preset0[$NI_CALLBACK_ID mod 100]] & ".nka")
         wait_async(load_array_str(%preset__array, @base_path & !Preset____name[%new_preset0[$NI_CALLBACK_ID mod 100]] & ".nka"))
@@ -3614,27 +3614,27 @@ on ui_control($btn_save_confirm)
           %_iter11[$NI_CALLBACK_ID mod 100] := 0
           %EXIT_FLAG480[$NI_CALLBACK_ID mod 100] := 0
           while((%_iter11[$NI_CALLBACK_ID mod 100] <= 499) and (%EXIT_FLAG480[$NI_CALLBACK_ID mod 100] = 0)) 
-            if(%Preset____idx[%_Browser____user_presets[(%self30[$NI_CALLBACK_ID mod 100] * 500) + %_iter11[$NI_CALLBACK_ID mod 100]]] = %preset__array[4])
-              $ii00 := %_Browser____user_presets[(%self30[$NI_CALLBACK_ID mod 100] * 500) + %_iter11[$NI_CALLBACK_ID mod 100]]
+            if(%Preset____idx[%_Browser____user_presets[(%self11[$NI_CALLBACK_ID mod 100] * 500) + %_iter11[$NI_CALLBACK_ID mod 100]]] = %preset__array[4])
+              $ii00 := %_Browser____user_presets[(%self11[$NI_CALLBACK_ID mod 100] * 500) + %_iter11[$NI_CALLBACK_ID mod 100]]
               $i130 := %new_preset0[$NI_CALLBACK_ID mod 100]
               call Preset____copy
-              %Preset____deleted[%_Browser____user_presets[(%self30[$NI_CALLBACK_ID mod 100] * 500) + %_iter11[$NI_CALLBACK_ID mod 100]]] := 0
+              %Preset____deleted[%_Browser____user_presets[(%self11[$NI_CALLBACK_ID mod 100] * 500) + %_iter11[$NI_CALLBACK_ID mod 100]]] := 0
               %EXIT_FLAG480[$NI_CALLBACK_ID mod 100] := 1
               continue
             end if
             inc(%_iter11[$NI_CALLBACK_ID mod 100])
           end while
         else
-          $EXIT_FLAG3000 := %_Browser____user_presets[(%self30[$NI_CALLBACK_ID mod 100] * 500) + %Browser____num_user_presets[%self30[$NI_CALLBACK_ID mod 100]]]
+          $EXIT_FLAG3000 := %_Browser____user_presets[(%self11[$NI_CALLBACK_ID mod 100] * 500) + %Browser____num_user_presets[%self11[$NI_CALLBACK_ID mod 100]]]
           $_iter3002000 := 1
           call Preset______decr__
-          %_Browser____user_presets[(%self30[$NI_CALLBACK_ID mod 100] * 500) + %Browser____num_user_presets[%self30[$NI_CALLBACK_ID mod 100]]] := %new_preset0[$NI_CALLBACK_ID mod 100]
-          $i13 := %_Browser____user_presets[(%self30[$NI_CALLBACK_ID mod 100] * 500) + %Browser____num_user_presets[%self30[$NI_CALLBACK_ID mod 100]]]
+          %_Browser____user_presets[(%self11[$NI_CALLBACK_ID mod 100] * 500) + %Browser____num_user_presets[%self11[$NI_CALLBACK_ID mod 100]]] := %new_preset0[$NI_CALLBACK_ID mod 100]
+          $i13 := %_Browser____user_presets[(%self11[$NI_CALLBACK_ID mod 100] * 500) + %Browser____num_user_presets[%self11[$NI_CALLBACK_ID mod 100]]]
           $current_idx0 := 1
           call Preset______incr__
           %_iter11[$NI_CALLBACK_ID mod 100] := 0
-          $_iter30023 := %self30[$NI_CALLBACK_ID mod 100]
-          $_iter4022 := %Browser____num_user_presets[%self30[$NI_CALLBACK_ID mod 100]] + 999
+          $_iter30023 := %self11[$NI_CALLBACK_ID mod 100]
+          $_iter4022 := %Browser____num_user_presets[%self11[$NI_CALLBACK_ID mod 100]] + 999
           call Browser____validate_user_preset_idx
           %_iter11[$NI_CALLBACK_ID mod 100] := $_iter3017
           %Preset____idx[%new_preset0[$NI_CALLBACK_ID mod 100]] := %_iter11[$NI_CALLBACK_ID mod 100]
@@ -3645,9 +3645,9 @@ on ui_control($btn_save_confirm)
         %preset__array[2] := %Bitlist____val[%_Floatmask____fm[%Preset____tags[$u1] * 2]]
         %preset__array[3] := %Bitlist____val[%_Floatmask____fm[(%Preset____tags[$u1] * 2) + 1]]
         %preset__array[4] := %Preset____idx[$u1]
-        inc(%Browser____num_user_presets[%self30[$NI_CALLBACK_ID mod 100]])
+        inc(%Browser____num_user_presets[%self11[$NI_CALLBACK_ID mod 100]])
         save_array_str(%preset__array, @base_path & !Preset____name[%new_preset0[$NI_CALLBACK_ID mod 100]] & ".nka")
-        $_iter301000 := %self30[$NI_CALLBACK_ID mod 100]
+        $_iter301000 := %self11[$NI_CALLBACK_ID mod 100]
         message("EXPORTING ARRAYS")
         $_iter41000 := 0
         while($_iter41000 < %Browser____num_presets[$_iter301000]) 
@@ -3681,28 +3681,28 @@ on ui_control($btn_save_confirm)
         save_array(%user_deleted_presets, 1)
         save_array(%user_preset_numbers, 1)
         save_array(!user_preset_info, 1)
-        $self26 := %self30[$NI_CALLBACK_ID mod 100]
+        $self55 := %self11[$NI_CALLBACK_ID mod 100]
         call Browser____update_preset_situation
         @_ret000 := @_ret00
-        $EXIT_FLAG3000 := %Browser____last[%self30[$NI_CALLBACK_ID mod 100]]
+        $EXIT_FLAG3000 := %Browser____last[%self11[$NI_CALLBACK_ID mod 100]]
         $_iter3002000 := 1
         call Preset______decr__
-        %Browser____last[%self30[$NI_CALLBACK_ID mod 100]] := %Browser____current[%self30[$NI_CALLBACK_ID mod 100]]
-        $i13 := %Browser____last[%self30[$NI_CALLBACK_ID mod 100]]
+        %Browser____last[%self11[$NI_CALLBACK_ID mod 100]] := %Browser____current[%self11[$NI_CALLBACK_ID mod 100]]
+        $i13 := %Browser____last[%self11[$NI_CALLBACK_ID mod 100]]
         $current_idx0 := 1
         call Preset______incr__
-        $EXIT_FLAG3000 := %Browser____current[%self30[$NI_CALLBACK_ID mod 100]]
+        $EXIT_FLAG3000 := %Browser____current[%self11[$NI_CALLBACK_ID mod 100]]
         $_iter3002000 := 1
         call Preset______decr__
-        %Browser____current[%self30[$NI_CALLBACK_ID mod 100]] := %new_preset0[$NI_CALLBACK_ID mod 100]
-        $i13 := %Browser____current[%self30[$NI_CALLBACK_ID mod 100]]
+        %Browser____current[%self11[$NI_CALLBACK_ID mod 100]] := %new_preset0[$NI_CALLBACK_ID mod 100]
+        $i13 := %Browser____current[%self11[$NI_CALLBACK_ID mod 100]]
         $current_idx0 := 1
         call Preset______incr__
-        $self58 := %self30[$NI_CALLBACK_ID mod 100]
+        $self53 := %self11[$NI_CALLBACK_ID mod 100]
         call Browser____filter_presets
         message("Preset saved: " & ", " & !Preset____name[%new_preset0[$NI_CALLBACK_ID mod 100]] & ", " & " with idx: " & ", " & %Preset____idx[%new_preset0[$NI_CALLBACK_ID mod 100]])
       case 1
-        %self30[$NI_CALLBACK_ID mod 100] := %self9[$NI_CALLBACK_ID mod 100]
+        %self11[$NI_CALLBACK_ID mod 100] := %self12[$NI_CALLBACK_ID mod 100]
         %new_preset0[$NI_CALLBACK_ID mod 100] := %new_preset1[$NI_CALLBACK_ID mod 100]
         $preset__load_id := load_array_str(%preset__array, @base_path & !Preset____name[%new_preset0[$NI_CALLBACK_ID mod 100]] & ".nka")
         wait_async(load_array_str(%preset__array, @base_path & !Preset____name[%new_preset0[$NI_CALLBACK_ID mod 100]] & ".nka"))
@@ -3711,27 +3711,27 @@ on ui_control($btn_save_confirm)
           %_iter11[$NI_CALLBACK_ID mod 100] := 0
           %EXIT_FLAG480[$NI_CALLBACK_ID mod 100] := 0
           while((%_iter11[$NI_CALLBACK_ID mod 100] <= 499) and (%EXIT_FLAG480[$NI_CALLBACK_ID mod 100] = 0)) 
-            if(%Preset____idx[%_Browser____user_presets[(%self30[$NI_CALLBACK_ID mod 100] * 500) + %_iter11[$NI_CALLBACK_ID mod 100]]] = %preset__array[4])
-              $ii00 := %_Browser____user_presets[(%self30[$NI_CALLBACK_ID mod 100] * 500) + %_iter11[$NI_CALLBACK_ID mod 100]]
+            if(%Preset____idx[%_Browser____user_presets[(%self11[$NI_CALLBACK_ID mod 100] * 500) + %_iter11[$NI_CALLBACK_ID mod 100]]] = %preset__array[4])
+              $ii00 := %_Browser____user_presets[(%self11[$NI_CALLBACK_ID mod 100] * 500) + %_iter11[$NI_CALLBACK_ID mod 100]]
               $i130 := %new_preset0[$NI_CALLBACK_ID mod 100]
               call Preset____copy
-              %Preset____deleted[%_Browser____user_presets[(%self30[$NI_CALLBACK_ID mod 100] * 500) + %_iter11[$NI_CALLBACK_ID mod 100]]] := 0
+              %Preset____deleted[%_Browser____user_presets[(%self11[$NI_CALLBACK_ID mod 100] * 500) + %_iter11[$NI_CALLBACK_ID mod 100]]] := 0
               %EXIT_FLAG480[$NI_CALLBACK_ID mod 100] := 1
               continue
             end if
             inc(%_iter11[$NI_CALLBACK_ID mod 100])
           end while
         else
-          $EXIT_FLAG3000 := %_Browser____user_presets[(%self30[$NI_CALLBACK_ID mod 100] * 500) + %Browser____num_user_presets[%self30[$NI_CALLBACK_ID mod 100]]]
+          $EXIT_FLAG3000 := %_Browser____user_presets[(%self11[$NI_CALLBACK_ID mod 100] * 500) + %Browser____num_user_presets[%self11[$NI_CALLBACK_ID mod 100]]]
           $_iter3002000 := 1
           call Preset______decr__
-          %_Browser____user_presets[(%self30[$NI_CALLBACK_ID mod 100] * 500) + %Browser____num_user_presets[%self30[$NI_CALLBACK_ID mod 100]]] := %new_preset0[$NI_CALLBACK_ID mod 100]
-          $i13 := %_Browser____user_presets[(%self30[$NI_CALLBACK_ID mod 100] * 500) + %Browser____num_user_presets[%self30[$NI_CALLBACK_ID mod 100]]]
+          %_Browser____user_presets[(%self11[$NI_CALLBACK_ID mod 100] * 500) + %Browser____num_user_presets[%self11[$NI_CALLBACK_ID mod 100]]] := %new_preset0[$NI_CALLBACK_ID mod 100]
+          $i13 := %_Browser____user_presets[(%self11[$NI_CALLBACK_ID mod 100] * 500) + %Browser____num_user_presets[%self11[$NI_CALLBACK_ID mod 100]]]
           $current_idx0 := 1
           call Preset______incr__
           %_iter11[$NI_CALLBACK_ID mod 100] := 0
-          $_iter30023 := %self30[$NI_CALLBACK_ID mod 100]
-          $_iter4022 := %Browser____num_user_presets[%self30[$NI_CALLBACK_ID mod 100]] + 999
+          $_iter30023 := %self11[$NI_CALLBACK_ID mod 100]
+          $_iter4022 := %Browser____num_user_presets[%self11[$NI_CALLBACK_ID mod 100]] + 999
           call Browser____validate_user_preset_idx
           %_iter11[$NI_CALLBACK_ID mod 100] := $_iter3017
           %Preset____idx[%new_preset0[$NI_CALLBACK_ID mod 100]] := %_iter11[$NI_CALLBACK_ID mod 100]
@@ -3742,9 +3742,9 @@ on ui_control($btn_save_confirm)
         %preset__array[2] := %Bitlist____val[%_Floatmask____fm[%Preset____tags[$u1] * 2]]
         %preset__array[3] := %Bitlist____val[%_Floatmask____fm[(%Preset____tags[$u1] * 2) + 1]]
         %preset__array[4] := %Preset____idx[$u1]
-        inc(%Browser____num_user_presets[%self30[$NI_CALLBACK_ID mod 100]])
+        inc(%Browser____num_user_presets[%self11[$NI_CALLBACK_ID mod 100]])
         save_array_str(%preset__array, @base_path & !Preset____name[%new_preset0[$NI_CALLBACK_ID mod 100]] & ".nka")
-        $_iter301000 := %self30[$NI_CALLBACK_ID mod 100]
+        $_iter301000 := %self11[$NI_CALLBACK_ID mod 100]
         message("EXPORTING ARRAYS")
         $_iter41000 := 0
         while($_iter41000 < %Browser____num_presets[$_iter301000]) 
@@ -3778,36 +3778,36 @@ on ui_control($btn_save_confirm)
         save_array(%user_deleted_presets, 1)
         save_array(%user_preset_numbers, 1)
         save_array(!user_preset_info, 1)
-        $self26 := %self30[$NI_CALLBACK_ID mod 100]
+        $self55 := %self11[$NI_CALLBACK_ID mod 100]
         call Browser____update_preset_situation
         @_ret000 := @_ret00
-        $EXIT_FLAG3000 := %Browser____last[%self30[$NI_CALLBACK_ID mod 100]]
+        $EXIT_FLAG3000 := %Browser____last[%self11[$NI_CALLBACK_ID mod 100]]
         $_iter3002000 := 1
         call Preset______decr__
-        %Browser____last[%self30[$NI_CALLBACK_ID mod 100]] := %Browser____current[%self30[$NI_CALLBACK_ID mod 100]]
-        $i13 := %Browser____last[%self30[$NI_CALLBACK_ID mod 100]]
+        %Browser____last[%self11[$NI_CALLBACK_ID mod 100]] := %Browser____current[%self11[$NI_CALLBACK_ID mod 100]]
+        $i13 := %Browser____last[%self11[$NI_CALLBACK_ID mod 100]]
         $current_idx0 := 1
         call Preset______incr__
-        $EXIT_FLAG3000 := %Browser____current[%self30[$NI_CALLBACK_ID mod 100]]
+        $EXIT_FLAG3000 := %Browser____current[%self11[$NI_CALLBACK_ID mod 100]]
         $_iter3002000 := 1
         call Preset______decr__
-        %Browser____current[%self30[$NI_CALLBACK_ID mod 100]] := %new_preset0[$NI_CALLBACK_ID mod 100]
-        $i13 := %Browser____current[%self30[$NI_CALLBACK_ID mod 100]]
+        %Browser____current[%self11[$NI_CALLBACK_ID mod 100]] := %new_preset0[$NI_CALLBACK_ID mod 100]
+        $i13 := %Browser____current[%self11[$NI_CALLBACK_ID mod 100]]
         $current_idx0 := 1
         call Preset______incr__
-        $self58 := %self30[$NI_CALLBACK_ID mod 100]
+        $self53 := %self11[$NI_CALLBACK_ID mod 100]
         call Browser____filter_presets
         message("Preset saved: " & ", " & !Preset____name[%new_preset0[$NI_CALLBACK_ID mod 100]] & ", " & " with idx: " & ", " & %Preset____idx[%new_preset0[$NI_CALLBACK_ID mod 100]])
       case 0
-        %self32[$NI_CALLBACK_ID mod 100] := %self9[$NI_CALLBACK_ID mod 100]
-        %preset1[$NI_CALLBACK_ID mod 100] := %Browser____current[%self9[$NI_CALLBACK_ID mod 100]]
+        %self59[$NI_CALLBACK_ID mod 100] := %self12[$NI_CALLBACK_ID mod 100]
+        %preset1[$NI_CALLBACK_ID mod 100] := %Browser____current[%self12[$NI_CALLBACK_ID mod 100]]
         %i17[$NI_CALLBACK_ID mod 100] := 0
         %_iter20[$NI_CALLBACK_ID mod 100] := 0
         %_iter20[$NI_CALLBACK_ID mod 100] := 0
         %EXIT_FLAG590[$NI_CALLBACK_ID mod 100] := 0
         while((%_iter20[$NI_CALLBACK_ID mod 100] <= 499) and (%EXIT_FLAG590[$NI_CALLBACK_ID mod 100] = 0)) 
-          if(%Preset____idx[%_Browser____user_presets[(%self32[$NI_CALLBACK_ID mod 100] * 500) + %_iter20[$NI_CALLBACK_ID mod 100]]] = %Preset____idx[%preset1[$NI_CALLBACK_ID mod 100]])
-            %Preset____deleted[%_Browser____user_presets[(%self32[$NI_CALLBACK_ID mod 100] * 500) + %_iter20[$NI_CALLBACK_ID mod 100]]] := 1
+          if(%Preset____idx[%_Browser____user_presets[(%self59[$NI_CALLBACK_ID mod 100] * 500) + %_iter20[$NI_CALLBACK_ID mod 100]]] = %Preset____idx[%preset1[$NI_CALLBACK_ID mod 100]])
+            %Preset____deleted[%_Browser____user_presets[(%self59[$NI_CALLBACK_ID mod 100] * 500) + %_iter20[$NI_CALLBACK_ID mod 100]]] := 1
             %EXIT_FLAG590[$NI_CALLBACK_ID mod 100] := 1
             continue
           end if
@@ -3822,14 +3822,14 @@ on ui_control($btn_save_confirm)
         %preset__array[3] := %Bitlist____val[%_Floatmask____fm[(%Preset____tags[$u1] * 2) + 1]]
         %preset__array[4] := %Preset____idx[$u1]
         wait_async(save_array_str(%preset__array, @base_path & !Preset____name[%preset1[$NI_CALLBACK_ID mod 100]] & ".nka"))
-        $EXIT_FLAG3000 := %Browser____current[%self32[$NI_CALLBACK_ID mod 100]]
+        $EXIT_FLAG3000 := %Browser____current[%self59[$NI_CALLBACK_ID mod 100]]
         $_iter3002000 := 1
         call Preset______decr__
-        %Browser____current[%self32[$NI_CALLBACK_ID mod 100]] := %_Browser____filtered_presets[(%self32[$NI_CALLBACK_ID mod 100] * 1499) + (search(%_Browser____filtered_presets, %Browser____current[%self32[$NI_CALLBACK_ID mod 100]], %self32[$NI_CALLBACK_ID mod 100] * 1499, (%self32[$NI_CALLBACK_ID mod 100] * 1499) + 1498) mod %Browser____num_shown_presets[%self32[$NI_CALLBACK_ID mod 100]])]
-        $i13 := %Browser____current[%self32[$NI_CALLBACK_ID mod 100]]
+        %Browser____current[%self59[$NI_CALLBACK_ID mod 100]] := %_Browser____filtered_presets[(%self59[$NI_CALLBACK_ID mod 100] * 1499) + (search(%_Browser____filtered_presets, %Browser____current[%self59[$NI_CALLBACK_ID mod 100]], %self59[$NI_CALLBACK_ID mod 100] * 1499, (%self59[$NI_CALLBACK_ID mod 100] * 1499) + 1498) mod %Browser____num_shown_presets[%self59[$NI_CALLBACK_ID mod 100]])]
+        $i13 := %Browser____current[%self59[$NI_CALLBACK_ID mod 100]]
         $current_idx0 := 1
         call Preset______incr__
-        $_iter301000 := %self32[$NI_CALLBACK_ID mod 100]
+        $_iter301000 := %self59[$NI_CALLBACK_ID mod 100]
         message("EXPORTING ARRAYS")
         $_iter41000 := 0
         while($_iter41000 < %Browser____num_presets[$_iter301000]) 
@@ -3863,23 +3863,23 @@ on ui_control($btn_save_confirm)
         save_array(%user_deleted_presets, 1)
         save_array(%user_preset_numbers, 1)
         save_array(!user_preset_info, 1)
-        $self26 := %self32[$NI_CALLBACK_ID mod 100]
+        $self55 := %self59[$NI_CALLBACK_ID mod 100]
         call Browser____update_preset_situation
         @_ret001 := @_ret00
-        %self29[$NI_CALLBACK_ID mod 100] := %self32[$NI_CALLBACK_ID mod 100]
-        %preset0[$NI_CALLBACK_ID mod 100] := %Browser____current[%self32[$NI_CALLBACK_ID mod 100]]
-        if((%Browser____is_loading[%self29[$NI_CALLBACK_ID mod 100]] = 0) and (%Browser____current[%self29[$NI_CALLBACK_ID mod 100]] # -1))
-          if(%Browser____current[%self29[$NI_CALLBACK_ID mod 100]] # %Browser____last[%self29[$NI_CALLBACK_ID mod 100]])
-            $EXIT_FLAG3000 := %Browser____last[%self29[$NI_CALLBACK_ID mod 100]]
+        %self57[$NI_CALLBACK_ID mod 100] := %self59[$NI_CALLBACK_ID mod 100]
+        %preset0[$NI_CALLBACK_ID mod 100] := %Browser____current[%self59[$NI_CALLBACK_ID mod 100]]
+        if((%Browser____is_loading[%self57[$NI_CALLBACK_ID mod 100]] = 0) and (%Browser____current[%self57[$NI_CALLBACK_ID mod 100]] # -1))
+          if(%Browser____current[%self57[$NI_CALLBACK_ID mod 100]] # %Browser____last[%self57[$NI_CALLBACK_ID mod 100]])
+            $EXIT_FLAG3000 := %Browser____last[%self57[$NI_CALLBACK_ID mod 100]]
             $_iter3002000 := 1
             call Preset______decr__
-            %Browser____last[%self29[$NI_CALLBACK_ID mod 100]] := %Browser____current[%self29[$NI_CALLBACK_ID mod 100]]
-            $i13 := %Browser____last[%self29[$NI_CALLBACK_ID mod 100]]
+            %Browser____last[%self57[$NI_CALLBACK_ID mod 100]] := %Browser____current[%self57[$NI_CALLBACK_ID mod 100]]
+            $i13 := %Browser____last[%self57[$NI_CALLBACK_ID mod 100]]
             $current_idx0 := 1
             call Preset______incr__
             %load_id0[$NI_CALLBACK_ID mod 100] := 0
             !path1[$NI_CALLBACK_ID mod 100] := ""
-            if((sh_right(%Bitlist____val[%_Floatmask____fm[(%Preset____tags[%preset0[$NI_CALLBACK_ID mod 100]] * 2) + (%Categories____user_tag[%Browser____categories[%self29[$NI_CALLBACK_ID mod 100]]] / 32)]], (31 - %Categories____user_tag[%Browser____categories[%self29[$NI_CALLBACK_ID mod 100]]]) mod 32) .and. 1) = 1)
+            if((sh_right(%Bitlist____val[%_Floatmask____fm[(%Preset____tags[%preset0[$NI_CALLBACK_ID mod 100]] * 2) + (%Categories____user_tag[%Browser____categories[%self57[$NI_CALLBACK_ID mod 100]]] / 32)]], (31 - %Categories____user_tag[%Browser____categories[%self57[$NI_CALLBACK_ID mod 100]]]) mod 32) .and. 1) = 1)
               !path1[$NI_CALLBACK_ID mod 100] := @base_path
               message("loading user_preset")
             else
@@ -3895,7 +3895,7 @@ on ui_control($btn_save_confirm)
         end if
         message("Preset deleted: " & ", " & !Preset____name[%preset1[$NI_CALLBACK_ID mod 100]] & ", " & " with idx: " & ", " & %Preset____idx[%preset1[$NI_CALLBACK_ID mod 100]])
     end select
-    %Browser____current_state[%self9[$NI_CALLBACK_ID mod 100]] := 0
+    %Browser____current_state[%self12[$NI_CALLBACK_ID mod 100]] := 0
     $EXIT_FLAG3000 := %new_preset1[$NI_CALLBACK_ID mod 100]
     $_iter3002000 := 1
     call Preset______decr__
@@ -3903,21 +3903,21 @@ on ui_control($btn_save_confirm)
     @path00 := @path00
     $bool1 := $btn_save_confirm
     call UserSaveStrip__show
-    $browser0 := $browser
-    $self3 := %Categories____tags[%Browser____categories[$browser0]]
-    $self49 := 0
-    while($self49 < (64 - ((64 - num_elements(%btn_tags)) .and. sh_right(num_elements(%btn_tags) - 64, 31)))) 
-      set_control_par(%btn_tags[$self49], $CONTROL_PAR_VALUE, sh_right(%Bitlist____val[%_Floatmask____fm[($self3 * 2) + ($self49 / 32)]], (31 - $self49) mod 32) .and. 1)
-      inc($self49)
+    $browser2 := $browser
+    $self0 := %Categories____tags[%Browser____categories[$browser2]]
+    $self64 := 0
+    while($self64 < (64 - ((64 - num_elements(%btn_tags)) .and. sh_right(num_elements(%btn_tags) - 64, 31)))) 
+      set_control_par(%btn_tags[$self64], $CONTROL_PAR_VALUE, sh_right(%Bitlist____val[%_Floatmask____fm[($self0 * 2) + ($self64 / 32)]], (31 - $self64) mod 32) .and. 1)
+      inc($self64)
     end while
-    $val28 := %Categories____tags[%Browser____categories[$browser0]]
+    $val29 := %Categories____tags[%Browser____categories[$browser2]]
     call Floatmask____print
-    $categories0 := %Browser____categories[$browser0]
+    $categories0 := %Browser____categories[$browser2]
     $i12 := 0
     while($i12 < 4) 
-      $self14 := %Categories____tagmask[$categories0]
-      $start_idx0 := %_Categories____accum[($categories0 * 6) + $i12]
-      $end_idx0 := %_Categories____accum[($categories0 * 6) + ($i12 + 1)]
+      $self24 := %Categories____tagmask[$categories0]
+      $start_idx1 := %_Categories____accum[($categories0 * 6) + $i12]
+      $end_idx2 := %_Categories____accum[($categories0 * 6) + ($i12 + 1)]
       call Floatmask____get_range
       $_ret110 := $ret8
       $count1 := abs((((((((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935)) .and. 65535) + (sh_right((((((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935), 16) .and. 65535)) + abs((((((((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935)) .and. 65535) + (sh_right((((((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935), 16) .and. 65535))
@@ -3937,10 +3937,10 @@ on ui_control($btn_save_confirm)
           inc($hide00)
         end while
       else
-        $font0 := %BrowserFont__tag[6]
+        $font1 := %BrowserFont__tag[6]
         $u1 := 0
         while($u1 < num_elements(%BrowserFont__types)) 
-          set_control_par(%btn_tags[$i12], %BrowserFont__types[$u1], $font0)
+          set_control_par(%btn_tags[$i12], %BrowserFont__types[$u1], $font1)
           inc($u1)
         end while
       end if
@@ -3971,8 +3971,8 @@ on ui_control($btn_dev_save_cancel)
   call DevSaveStrip__show
 end on
 on ui_control($vlue_preset_idx)
-  $self43 := $browser
-  $idx21 := get_control_par(get_ui_id($vlue_preset_idx), $CONTROL_PAR_VALUE)
+  $self63 := $browser
+  $idx27 := get_control_par(get_ui_id($vlue_preset_idx), $CONTROL_PAR_VALUE)
   call Browser____set_current_preset
   call PresetBrowser__update_view
   $_iter300000 := $_iter300000
@@ -4002,12 +4002,12 @@ on ui_control($_btn_preset0)
     set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 0)
     set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[0])
   end if
-  $self43 := $browser6
-  $idx21 := $scroll__up + $btn_idx0
+  $self63 := $browser6
+  $idx27 := $scroll__up + $btn_idx0
   call Browser____set_current_preset
   set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 1)
   set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[1])
-  $browser1 := $browser6
+  $browser0 := $browser6
   call PresetStrip__update_strip
   $_iter60000 := $_iter60000
 end on
@@ -4027,12 +4027,12 @@ on ui_control($_btn_preset1)
     set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 0)
     set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[0])
   end if
-  $self43 := $browser6
-  $idx21 := $scroll__up + $btn_idx0
+  $self63 := $browser6
+  $idx27 := $scroll__up + $btn_idx0
   call Browser____set_current_preset
   set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 1)
   set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[1])
-  $browser1 := $browser6
+  $browser0 := $browser6
   call PresetStrip__update_strip
   $_iter3010000 := $_iter3010000
 end on
@@ -4052,12 +4052,12 @@ on ui_control($_btn_preset2)
     set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 0)
     set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[0])
   end if
-  $self43 := $browser6
-  $idx21 := $scroll__up + $btn_idx0
+  $self63 := $browser6
+  $idx27 := $scroll__up + $btn_idx0
   call Browser____set_current_preset
   set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 1)
   set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[1])
-  $browser1 := $browser6
+  $browser0 := $browser6
   call PresetStrip__update_strip
   $_iter60000 := $_iter60000
 end on
@@ -4077,12 +4077,12 @@ on ui_control($_btn_preset3)
     set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 0)
     set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[0])
   end if
-  $self43 := $browser6
-  $idx21 := $scroll__up + $btn_idx0
+  $self63 := $browser6
+  $idx27 := $scroll__up + $btn_idx0
   call Browser____set_current_preset
   set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 1)
   set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[1])
-  $browser1 := $browser6
+  $browser0 := $browser6
   call PresetStrip__update_strip
   $_iter3010000 := $_iter3010000
 end on
@@ -4102,12 +4102,12 @@ on ui_control($_btn_preset4)
     set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 0)
     set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[0])
   end if
-  $self43 := $browser6
-  $idx21 := $scroll__up + $btn_idx0
+  $self63 := $browser6
+  $idx27 := $scroll__up + $btn_idx0
   call Browser____set_current_preset
   set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 1)
   set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[1])
-  $browser1 := $browser6
+  $browser0 := $browser6
   call PresetStrip__update_strip
   $_iter60000 := $_iter60000
 end on
@@ -4127,12 +4127,12 @@ on ui_control($_btn_preset5)
     set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 0)
     set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[0])
   end if
-  $self43 := $browser6
-  $idx21 := $scroll__up + $btn_idx0
+  $self63 := $browser6
+  $idx27 := $scroll__up + $btn_idx0
   call Browser____set_current_preset
   set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 1)
   set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[1])
-  $browser1 := $browser6
+  $browser0 := $browser6
   call PresetStrip__update_strip
   $_iter3010000 := $_iter3010000
 end on
@@ -4152,12 +4152,12 @@ on ui_control($_btn_preset6)
     set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 0)
     set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[0])
   end if
-  $self43 := $browser6
-  $idx21 := $scroll__up + $btn_idx0
+  $self63 := $browser6
+  $idx27 := $scroll__up + $btn_idx0
   call Browser____set_current_preset
   set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 1)
   set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[1])
-  $browser1 := $browser6
+  $browser0 := $browser6
   call PresetStrip__update_strip
   $_iter60000 := $_iter60000
 end on
@@ -4177,12 +4177,12 @@ on ui_control($_btn_preset7)
     set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 0)
     set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[0])
   end if
-  $self43 := $browser6
-  $idx21 := $scroll__up + $btn_idx0
+  $self63 := $browser6
+  $idx27 := $scroll__up + $btn_idx0
   call Browser____set_current_preset
   set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 1)
   set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[1])
-  $browser1 := $browser6
+  $browser0 := $browser6
   call PresetStrip__update_strip
   $_iter3010000 := $_iter3010000
 end on
@@ -4202,12 +4202,12 @@ on ui_control($_btn_preset8)
     set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 0)
     set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[0])
   end if
-  $self43 := $browser6
-  $idx21 := $scroll__up + $btn_idx0
+  $self63 := $browser6
+  $idx27 := $scroll__up + $btn_idx0
   call Browser____set_current_preset
   set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 1)
   set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[1])
-  $browser1 := $browser6
+  $browser0 := $browser6
   call PresetStrip__update_strip
   $_iter60000 := $_iter60000
 end on
@@ -4227,12 +4227,12 @@ on ui_control($_btn_preset9)
     set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 0)
     set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[0])
   end if
-  $self43 := $browser6
-  $idx21 := $scroll__up + $btn_idx0
+  $self63 := $browser6
+  $idx27 := $scroll__up + $btn_idx0
   call Browser____set_current_preset
   set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 1)
   set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[1])
-  $browser1 := $browser6
+  $browser0 := $browser6
   call PresetStrip__update_strip
   $_iter3010000 := $_iter3010000
 end on
@@ -4252,12 +4252,12 @@ on ui_control($_btn_preset10)
     set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 0)
     set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[0])
   end if
-  $self43 := $browser6
-  $idx21 := $scroll__up + $btn_idx0
+  $self63 := $browser6
+  $idx27 := $scroll__up + $btn_idx0
   call Browser____set_current_preset
   set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 1)
   set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[1])
-  $browser1 := $browser6
+  $browser0 := $browser6
   call PresetStrip__update_strip
   $_iter60000 := $_iter60000
 end on
@@ -4277,12 +4277,12 @@ on ui_control($_btn_preset11)
     set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 0)
     set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[0])
   end if
-  $self43 := $browser6
-  $idx21 := $scroll__up + $btn_idx0
+  $self63 := $browser6
+  $idx27 := $scroll__up + $btn_idx0
   call Browser____set_current_preset
   set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 1)
   set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[1])
-  $browser1 := $browser6
+  $browser0 := $browser6
   call PresetStrip__update_strip
   $_iter3010000 := $_iter3010000
 end on
@@ -4302,12 +4302,12 @@ on ui_control($_btn_preset12)
     set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 0)
     set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[0])
   end if
-  $self43 := $browser6
-  $idx21 := $scroll__up + $btn_idx0
+  $self63 := $browser6
+  $idx27 := $scroll__up + $btn_idx0
   call Browser____set_current_preset
   set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 1)
   set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[1])
-  $browser1 := $browser6
+  $browser0 := $browser6
   call PresetStrip__update_strip
   $_iter60000 := $_iter60000
 end on
@@ -4327,12 +4327,12 @@ on ui_control($_btn_preset13)
     set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 0)
     set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[0])
   end if
-  $self43 := $browser6
-  $idx21 := $scroll__up + $btn_idx0
+  $self63 := $browser6
+  $idx27 := $scroll__up + $btn_idx0
   call Browser____set_current_preset
   set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 1)
   set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[1])
-  $browser1 := $browser6
+  $browser0 := $browser6
   call PresetStrip__update_strip
   $_iter3010000 := $_iter3010000
 end on
@@ -4352,12 +4352,12 @@ on ui_control($_btn_preset14)
     set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 0)
     set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[0])
   end if
-  $self43 := $browser6
-  $idx21 := $scroll__up + $btn_idx0
+  $self63 := $browser6
+  $idx27 := $scroll__up + $btn_idx0
   call Browser____set_current_preset
   set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 1)
   set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[1])
-  $browser1 := $browser6
+  $browser0 := $browser6
   call PresetStrip__update_strip
   $_iter60000 := $_iter60000
 end on
@@ -4377,12 +4377,12 @@ on ui_control($_btn_preset15)
     set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 0)
     set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[0])
   end if
-  $self43 := $browser6
-  $idx21 := $scroll__up + $btn_idx0
+  $self63 := $browser6
+  $idx27 := $scroll__up + $btn_idx0
   call Browser____set_current_preset
   set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 1)
   set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[1])
-  $browser1 := $browser6
+  $browser0 := $browser6
   call PresetStrip__update_strip
   $_iter3010000 := $_iter3010000
 end on
@@ -4402,12 +4402,12 @@ on ui_control($_btn_preset16)
     set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 0)
     set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[0])
   end if
-  $self43 := $browser6
-  $idx21 := $scroll__up + $btn_idx0
+  $self63 := $browser6
+  $idx27 := $scroll__up + $btn_idx0
   call Browser____set_current_preset
   set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 1)
   set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[1])
-  $browser1 := $browser6
+  $browser0 := $browser6
   call PresetStrip__update_strip
   $_iter60000 := $_iter60000
 end on
@@ -4427,12 +4427,12 @@ on ui_control($_btn_preset17)
     set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 0)
     set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[0])
   end if
-  $self43 := $browser6
-  $idx21 := $scroll__up + $btn_idx0
+  $self63 := $browser6
+  $idx27 := $scroll__up + $btn_idx0
   call Browser____set_current_preset
   set_control_par(%_btn_preset[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_VALUE, 1)
   set_control_par(%_lbl_preset_name[search(%_Browser____filtered_presets, %Browser____current[$browser6], $browser6 * 1499, ($browser6 * 1499) + 1498) - $scroll__up], $CONTROL_PAR_FONT_TYPE, %BrowserFont__preset[1])
-  $browser1 := $browser6
+  $browser0 := $browser6
   call PresetStrip__update_strip
   $_iter3010000 := $_iter3010000
 end on
@@ -4564,19 +4564,19 @@ on ui_control($btn_save_preset)
     %Browser____current_save_mode[$browser] := 1
     set_control_par_str(get_ui_id(@txt_presetname), $CONTROL_PAR_TEXT, !Preset____name[%Browser____current[$browser]] & " (User)")
     $browser4 := $browser
-    $self3 := %Preset____tags[%Browser____current[$browser4]]
-    $self49 := 0
-    while($self49 < (64 - ((64 - num_elements(%btn_tags)) .and. sh_right(num_elements(%btn_tags) - 64, 31)))) 
-      set_control_par(%btn_tags[$self49], $CONTROL_PAR_VALUE, sh_right(%Bitlist____val[%_Floatmask____fm[($self3 * 2) + ($self49 / 32)]], (31 - $self49) mod 32) .and. 1)
-      inc($self49)
+    $self0 := %Preset____tags[%Browser____current[$browser4]]
+    $self64 := 0
+    while($self64 < (64 - ((64 - num_elements(%btn_tags)) .and. sh_right(num_elements(%btn_tags) - 64, 31)))) 
+      set_control_par(%btn_tags[$self64], $CONTROL_PAR_VALUE, sh_right(%Bitlist____val[%_Floatmask____fm[($self0 * 2) + ($self64 / 32)]], (31 - $self64) mod 32) .and. 1)
+      inc($self64)
     end while
     set_control_par(%btn_tags[%Categories____user_tag[%Browser____categories[$browser4]]], $CONTROL_PAR_VALUE, 1)
     $categories0 := %Browser____categories[$browser4]
     $i12 := 0
     while($i12 < 4) 
-      $self14 := %Categories____tagmask[$categories0]
-      $start_idx0 := %_Categories____accum[($categories0 * 6) + $i12]
-      $end_idx0 := %_Categories____accum[($categories0 * 6) + ($i12 + 1)]
+      $self24 := %Categories____tagmask[$categories0]
+      $start_idx1 := %_Categories____accum[($categories0 * 6) + $i12]
+      $end_idx2 := %_Categories____accum[($categories0 * 6) + ($i12 + 1)]
       call Floatmask____get_range
       $_ret110 := $ret8
       $count1 := abs((((((((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935)) .and. 65535) + (sh_right((((((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[$_ret110 * 2]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935), 16) .and. 65535)) + abs((((((((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935)) .and. 65535) + (sh_right((((((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135)) .and. 16711935) + (sh_right((((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459)) .and. 252645135) + (sh_right((((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765)) .and. 858993459) + (sh_right((%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]] .and. 1431655765) + (sh_right(%Bitlist____val[%_Floatmask____fm[($_ret110 * 2) + 1]], 1) .and. 1431655765), 2) .and. 858993459), 4) .and. 252645135), 8) .and. 16711935), 16) .and. 65535))
@@ -4596,10 +4596,10 @@ on ui_control($btn_save_preset)
           inc($hide00)
         end while
       else
-        $font0 := %BrowserFont__tag[6]
+        $font1 := %BrowserFont__tag[6]
         $u1 := 0
         while($u1 < num_elements(%BrowserFont__types)) 
-          set_control_par(%btn_tags[$i12], %BrowserFont__types[$u1], $font0)
+          set_control_par(%btn_tags[$i12], %BrowserFont__types[$u1], $font1)
           inc($u1)
         end while
       end if
@@ -4614,7 +4614,7 @@ on ui_control($btn_save_preset)
   end if
 end on
 on ui_control($file_browser)
-  %self16[$NI_CALLBACK_ID mod 100] := $browser
+  %self9[$NI_CALLBACK_ID mod 100] := $browser
   %alt_key_pressed0[$NI_CALLBACK_ID mod 100] := get_control_par(get_ui_id($btn_scan_presets), $CONTROL_PAR_KEY_ALT)
   $preset__load_id := load_array_str(%preset__array, fs_get_filename(get_ui_id($file_browser), 2))
   wait_async(load_array_str(%preset__array, fs_get_filename(get_ui_id($file_browser), 2)))
@@ -4622,10 +4622,10 @@ on ui_control($file_browser)
     wait(5000)
   end if
   message("file name: " & fs_get_filename(get_ui_id($file_browser), 0))
-  if((%Browser____current_state[%self16[$NI_CALLBACK_ID mod 100]] = 2) and (%preset__array[0] # -9999))
+  if((%Browser____current_state[%self9[$NI_CALLBACK_ID mod 100]] = 2) and (%preset__array[0] # -9999))
     if(%preset__array[0] = 1)
       if(%alt_key_pressed0[$NI_CALLBACK_ID mod 100] = 1)
-        $_iter30023 := %self16[$NI_CALLBACK_ID mod 100]
+        $_iter30023 := %self9[$NI_CALLBACK_ID mod 100]
         $_iter4022 := %preset__array[4]
         call Browser____validate_user_preset_idx
         %preset__array[4] := $_iter3017
@@ -4636,7 +4636,7 @@ on ui_control($file_browser)
         %user_preset_tags0[$scanning_preset_count] := %preset__array[2]
         %user_preset_tags1[$scanning_preset_count] := %preset__array[3]
         %user_deleted_presets[$scanning_preset_count] := %preset__array[1]
-        $_iter30023 := %self16[$NI_CALLBACK_ID mod 100]
+        $_iter30023 := %self9[$NI_CALLBACK_ID mod 100]
         $_iter4022 := %preset__array[4]
         call Browser____validate_user_preset_idx
         %preset__array[4] := $_iter3017
@@ -4648,8 +4648,8 @@ on ui_control($file_browser)
     end if
     fs_navigate(get_ui_id($file_browser), 1)
   else
-    %Browser____current_state[%self16[$NI_CALLBACK_ID mod 100]] := 0
-    $_iter301000 := %self16[$NI_CALLBACK_ID mod 100]
+    %Browser____current_state[%self9[$NI_CALLBACK_ID mod 100]] := 0
+    $_iter301000 := %self9[$NI_CALLBACK_ID mod 100]
     message("EXPORTING ARRAYS")
     $_iter41000 := 0
     while($_iter41000 < %Browser____num_presets[$_iter301000]) 
@@ -4683,7 +4683,7 @@ on ui_control($file_browser)
     save_array(%user_deleted_presets, 1)
     save_array(%user_preset_numbers, 1)
     save_array(!user_preset_info, 1)
-    $self2 := %self16[$NI_CALLBACK_ID mod 100]
+    $self5 := %self9[$NI_CALLBACK_ID mod 100]
     $i1 := 0
     while($i1 < num_elements(!user_preset_titles)) 
       $fm1 := 0
@@ -4756,12 +4756,12 @@ on ui_control($file_browser)
       end if
       $preset_idx4 := $Floatmask____free_idx
       $fm1 := $preset_idx4
-      $self59 := $fm1
+      $self69 := $fm1
       $val110 := %user_preset_tags0[$i1]
-      $val28 := %user_preset_tags1[$i1]
-      %Bitlist____val[%_Floatmask____fm[$self59 * 2]] := $val110
-      %Bitlist____val[%_Floatmask____fm[($self59 * 2) + 1]] := $val28
-      $EXIT_FLAG3000 := %_Browser____user_presets[($self2 * 500) + $i1]
+      $val29 := %user_preset_tags1[$i1]
+      %Bitlist____val[%_Floatmask____fm[$self69 * 2]] := $val110
+      %Bitlist____val[%_Floatmask____fm[($self69 * 2) + 1]] := $val29
+      $EXIT_FLAG3000 := %_Browser____user_presets[($self5 * 500) + $i1]
       $_iter3002000 := 1
       $_iter402000 := $EXIT_FLAG3000
       while($_iter402000 # -1) 
@@ -4897,13 +4897,13 @@ on ui_control($file_browser)
       !Preset____file[$Preset____free_idx] := @nka0
       %Preset____deleted[$Preset____free_idx] := $_iter30170
       $col0 := $Preset____free_idx
-      %_Browser____user_presets[($self2 * 500) + $i1] := $col0
-      $i13 := %_Browser____user_presets[($self2 * 500) + $i1]
+      %_Browser____user_presets[($self5 * 500) + $i1] := $col0
+      $i13 := %_Browser____user_presets[($self5 * 500) + $i1]
       $current_idx0 := 1
       if($i13 # -1)
         %Preset____allocation[$i13] := %Preset____allocation[$i13] + $current_idx0
       end if
-      %Browser____num_user_presets[$self2] := $i1
+      %Browser____num_user_presets[$self5] := $i1
       $self83 := $fm1
       $num_refs4 := 1
       $current1 := $self83
@@ -4951,7 +4951,7 @@ on ui_control($file_browser)
       end while
       inc($i1)
     end while
-    $self26 := %self16[$NI_CALLBACK_ID mod 100]
+    $self55 := %self9[$NI_CALLBACK_ID mod 100]
     call Browser____update_preset_situation
   end if
   @nka_path00 := @nka_path00

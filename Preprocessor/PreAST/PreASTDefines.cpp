@@ -8,19 +8,16 @@
 
 #include "PreASTPragma.h"
 
-void PreASTDefines::visit(PreNodeProgram& node) {
+PreNodeAST *PreASTDefines::visit(PreNodeProgram &node) {
 	m_program = &node;
 	for(const auto & def : node.define_statements) {
 		m_define_lookup.insert({def->header->name->value.val, def.get()});
 	}
 
 	m_builtin_defines = get_builtin_defines();
-	for(const auto & def : node.define_statements) {
-		def->accept(*this);
-	}
-	for(const auto & n : node.program) {
-		n->accept(*this);
-	}
+	visit_all(node.define_statements, *this);
+	visit_all(node.program, *this);
+	return &node;
 }
 
 // void PreASTDefines::visit(PreNodePragma &node) {
@@ -28,34 +25,34 @@ void PreASTDefines::visit(PreNodeProgram& node) {
 // 	node.accept(pragma);
 // }
 
-void PreASTDefines::do_substitution(PreNodeLiteral& node) {
-	if(m_program->define_call_stack.empty()) return;
+PreNodeAST *PreASTDefines::do_substitution(PreNodeLiteral &node) {
+	if(m_program->define_call_stack.empty()) return &node;
 	if (!m_substitution_stack.empty()) {
 		if (auto substitute = get_substitute(node.value.val)) {
 //			substitute->update_token_data(tok);
-			node.replace_with(std::move(substitute));
+			return node.replace_with(std::move(substitute));
 		}
 	}
+	return &node;
 }
 
-void PreASTDefines::visit(PreNodeNumber& node) {
+PreNodeAST *PreASTDefines::visit(PreNodeNumber &node) {
 	// substitution
-	do_substitution(node);
+	return do_substitution(node);
 }
 
-void PreASTDefines::visit(PreNodeInt& node) {
+PreNodeAST *PreASTDefines::visit(PreNodeInt &node) {
 	// substitution
-	do_substitution(node);
+	return do_substitution(node);
 }
 
-void PreASTDefines::visit(PreNodeKeyword& node) {
+PreNodeAST *PreASTDefines::visit(PreNodeKeyword &node) {
 	if(auto builtin_define = get_builtin_define(node.value.val)) {
 		builtin_define->update_token_data(node.value);
-		node.replace_with(std::move(builtin_define));
-		return;
+		return node.replace_with(std::move(builtin_define));
 	}
 	// substitution
-	do_substitution(node);
+	return do_substitution(node);
 }
 
 std::unique_ptr<PreNodeAST> PreASTDefines::get_builtin_define(const std::string& keyword) {
@@ -66,27 +63,27 @@ std::unique_ptr<PreNodeAST> PreASTDefines::get_builtin_define(const std::string&
 	return nullptr;
 }
 
+PreNodeAST *PreASTDefines::visit(PreNodeOther &node) {
+	return &node;
+}
 
-void PreASTDefines::visit(PreNodeOther& node) {}
-
-void PreASTDefines::visit(PreNodeChunk& node) {
-	for(auto &c : node.chunk) {
-		c->accept(*this);
-	}
+PreNodeAST *PreASTDefines::visit(PreNodeChunk &node) {
+	visit_all(node.chunk, *this);
 	node.flatten();
+	return &node;
 }
 
-void PreASTDefines::visit(PreNodeDefineHeader& node) {
+PreNodeAST *PreASTDefines::visit(PreNodeDefineHeader &node) {
 	if(node.args) node.args->accept(*this);
+	return &node;
 }
 
-void PreASTDefines::visit(PreNodeList& node) {
-	for(auto &p : node.params){
-		if(p) p->accept(*this);
-	}
+PreNodeAST *PreASTDefines::visit(PreNodeList &node) {
+	visit_all(node.params, *this);
+	return &node;
 }
 
-void PreASTDefines::visit(PreNodeDefineStatement& node) {
+PreNodeAST *PreASTDefines::visit(PreNodeDefineStatement &node) {
 	node.header->accept(*this);
 	node.body->accept(*this);
 
@@ -100,6 +97,7 @@ void PreASTDefines::visit(PreNodeDefineStatement& node) {
 		node.body->chunk.clear();
 		node.body->add_chunk(std::move(node_statement));
 	}
+	return &node;
 }
 
 void PreASTDefines::check_recursion(const Token &tok) const {
@@ -112,7 +110,7 @@ void PreASTDefines::check_recursion(const Token &tok) const {
 	}
 }
 
-void PreASTDefines::visit(PreNodeDefineCall& node) {
+PreNodeAST *PreASTDefines::visit(PreNodeDefineCall &node) {
 	const Token token_name = node.define->name->value;
 	check_recursion(token_name);
 
@@ -132,7 +130,7 @@ void PreASTDefines::visit(PreNodeDefineCall& node) {
 		m_program->define_call_stack.pop();
 		m_defines_used.erase(token_name.val);
 	}
-	node.replace_with(std::move(node_new_chunk));
+	return node.replace_with(std::move(node_new_chunk));
 }
 
 std::unique_ptr<PreNodeDefineStatement> PreASTDefines::get_define_definition(const PreNodeDefineHeader& define_header) {

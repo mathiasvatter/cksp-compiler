@@ -70,9 +70,9 @@ public:
 	NodeAST * visit(NodeAccessChain& node) override;
 
     void generate(const std::string& path) {
-        std::ofstream outFile(path);
-        if (outFile) {
-            outFile << os.str();
+        std::ofstream out_file(path);
+        if (out_file) {
+            out_file << os.str();
         } else {
             // Fehlerbehandlung, falls die Datei nicht geöffnet werden kann
             std::cerr << "Fehler beim Öffnen der Datei: " << path << std::endl;

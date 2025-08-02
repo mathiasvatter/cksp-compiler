@@ -4,53 +4,56 @@
 
 #include "PreASTCombine.h"
 
-void PreASTCombine::visit(PreNodeChunk& node) {
-	for(auto & n : node.chunk) {
-		n->accept(*this);
-	}
+PreNodeAST *PreASTCombine::visit(PreNodeChunk &node) {
+	visit_all(node.chunk, *this);
+	return &node;
 }
 
-void PreASTCombine::visit(PreNodeNumber &node) {
+PreNodeAST *PreASTCombine::visit(PreNodeNumber &node) {
     m_tokens.push_back(std::move(node.value));
+	return &node;
 }
 
-void PreASTCombine::visit(PreNodeInt &node) {
+PreNodeAST *PreASTCombine::visit(PreNodeInt &node) {
     m_tokens.push_back(std::move(node.value));
+	return &node;
 }
 
-void PreASTCombine::visit(PreNodeKeyword &node) {
+PreNodeAST *PreASTCombine::visit(PreNodeKeyword &node) {
     m_tokens.push_back(std::move(node.value));
+	return &node;
 }
 
-void PreASTCombine::visit(PreNodeOther &node) {
+PreNodeAST *PreASTCombine::visit(PreNodeOther &node) {
     m_tokens.push_back(std::move(node.other));
+	return &node;
 }
 
-void PreASTCombine::visit(PreNodeProgram& node) {
+PreNodeAST *PreASTCombine::visit(PreNodeProgram &node) {
 	m_tokens.reserve(m_tokens.size() + node.program.size());
-    for(auto & n : node.program) {
-        n->accept(*this);
-    }
+	visit_all(node.program, *this);
+	return &node;
 }
 
-void PreASTCombine::visit(PreNodeUnaryExpr& node) {
+PreNodeAST *PreASTCombine::visit(PreNodeUnaryExpr &node) {
     m_tokens.push_back(std::move(node.op));
     node.operand->accept(*this);
+	return &node;
 }
 
-void PreASTCombine::visit(PreNodeBinaryExpr& node) {
+PreNodeAST *PreASTCombine::visit(PreNodeBinaryExpr &node) {
     node.left->accept(*this);
     m_tokens.push_back(std::move(node.op));
     node.right->accept(*this);
-};
-
-void PreASTCombine::visit(PreNodeIncrementer& node) {
-    for(auto & b : node.body) {
-        b->accept(*this);
-    }
+	return &node;
 }
 
-void PreASTCombine::visit(PreNodeList& node) {
+PreNodeAST *PreASTCombine::visit(PreNodeIncrementer &node) {
+	visit_all(node.body, *this);
+	return &node;
+}
+
+PreNodeAST *PreASTCombine::visit(PreNodeList &node) {
 
 	// create tokens for open parenthesis, closed parenthesis and comma
 	auto reference_token = m_tokens.back();
@@ -71,11 +74,13 @@ void PreASTCombine::visit(PreNodeList& node) {
 	}
 	if(!node.params.empty()) m_tokens.pop_back();
 	m_tokens.push_back(closed_parenthesis);
+	return &node;
 }
 
-void PreASTCombine::visit(PreNodeMacroHeader& node) {
+PreNodeAST *PreASTCombine::visit(PreNodeMacroHeader &node) {
 	node.name->accept(*this);
 	if(node.has_parenth) {
 		node.args->accept(*this);
 	}
+	return &node;
 };
