@@ -500,7 +500,7 @@ struct NodeCompoundAssignment final : NodeInstruction {
 		if(r_value) r_value->parent = this;
 	}
 	std::string get_string() override {
-		return l_value->get_string() + " " + tokenStrings[static_cast<int>(op)] + "= " + r_value->get_string();
+		return l_value->get_string() + " " + get_token_string(op) + "= " + r_value->get_string();
 	}
 	void update_token_data(const Token& token) override {
 		l_value -> update_token_data(token);

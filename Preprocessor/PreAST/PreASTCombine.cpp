@@ -10,22 +10,22 @@ PreNodeAST *PreASTCombine::visit(PreNodeChunk &node) {
 }
 
 PreNodeAST *PreASTCombine::visit(PreNodeNumber &node) {
-    m_tokens.push_back(std::move(node.value));
+    m_tokens.push_back(std::move(node.tok));
 	return &node;
 }
 
 PreNodeAST *PreASTCombine::visit(PreNodeInt &node) {
-    m_tokens.push_back(std::move(node.value));
+    m_tokens.push_back(std::move(node.tok));
 	return &node;
 }
 
 PreNodeAST *PreASTCombine::visit(PreNodeKeyword &node) {
-    m_tokens.push_back(std::move(node.value));
+    m_tokens.push_back(std::move(node.tok));
 	return &node;
 }
 
 PreNodeAST *PreASTCombine::visit(PreNodeOther &node) {
-    m_tokens.push_back(std::move(node.other));
+    m_tokens.push_back(std::move(node.tok));
 	return &node;
 }
 
@@ -36,14 +36,14 @@ PreNodeAST *PreASTCombine::visit(PreNodeProgram &node) {
 }
 
 PreNodeAST *PreASTCombine::visit(PreNodeUnaryExpr &node) {
-    m_tokens.push_back(std::move(node.op));
+    m_tokens.push_back(std::move(node.tok));
     node.operand->accept(*this);
 	return &node;
 }
 
 PreNodeAST *PreASTCombine::visit(PreNodeBinaryExpr &node) {
     node.left->accept(*this);
-    m_tokens.push_back(std::move(node.op));
+    m_tokens.push_back(std::move(node.tok));
     node.right->accept(*this);
 	return &node;
 }

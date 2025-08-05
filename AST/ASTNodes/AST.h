@@ -708,7 +708,7 @@ struct NodeUnaryExpr final : NodeAST {
 		if(operand) operand->parent = this;
 	}
     std::string get_string() override {
-        return tokenStrings[static_cast<int>(op)] + operand->get_string();
+        return get_token_string(op) + operand->get_string();
     }
     void update_token_data(const Token& token) override {
         operand -> update_token_data(token);
@@ -743,7 +743,7 @@ struct NodeBinaryExpr final : NodeAST {
 		if(right) right->parent = this;
 	}
     std::string get_string() override {
-        return left->get_string() + tokenStrings[static_cast<int>(op)] + right->get_string();
+        return left->get_string() + get_token_string(op) + right->get_string();
     }
     void update_token_data(const Token& token) override {
         left -> update_token_data(token);

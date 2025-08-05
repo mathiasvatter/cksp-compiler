@@ -741,7 +741,7 @@ Result<std::unique_ptr<NodeCompoundAssignment>> Parser::parse_compound_assign_st
 		std::vector<std::string> valid_tokens{};
 		valid_tokens.reserve(valid_operator_tokens.size());
 		for (auto& tok : valid_operator_tokens) {
-			valid_tokens.push_back(std::string("<") + tokenStrings[static_cast<int>(tok)] + ">");
+			valid_tokens.push_back(std::string("<") + get_token_string(tok) + ">");
 		}
 		error.m_expected = StringUtils::join(valid_tokens, ',');
 		return Result<std::unique_ptr<NodeCompoundAssignment>>(error);
