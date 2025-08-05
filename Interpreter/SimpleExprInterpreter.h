@@ -15,7 +15,7 @@ public:
 	size_t m_pos = 0;
 	int m_line;
 	std::string m_file;
-	[[nodiscard]] PreNodeAST* peek(const std::vector<std::unique_ptr<PreNodeAST>>& nodes, int ahead = 0);
+	[[nodiscard]] PreNodeAST* peek(const std::vector<std::unique_ptr<PreNodeAST>>& nodes, int ahead = 0) const;
 	std::unique_ptr<PreNodeAST> consume(const std::vector<std::unique_ptr<PreNodeAST>>& nodes);
 
     Result<int> evaluate_int_expression(std::unique_ptr<PreNodeAST>& root);

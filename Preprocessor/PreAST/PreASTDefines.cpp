@@ -11,7 +11,7 @@
 PreNodeAST *PreASTDefines::visit(PreNodeProgram &node) {
 	m_program = &node;
 	for(const auto & def : node.define_statements) {
-		m_define_lookup.insert({def->header->name->value.val, def.get()});
+		m_define_lookup.insert({def->header->name->tok.val, def.get()});
 	}
 
 	m_builtin_defines = get_builtin_defines();
@@ -28,7 +28,7 @@ PreNodeAST *PreASTDefines::visit(PreNodeProgram &node) {
 PreNodeAST *PreASTDefines::do_substitution(PreNodeLiteral &node) {
 	if(m_program->define_call_stack.empty()) return &node;
 	if (!m_substitution_stack.empty()) {
-		if (auto substitute = get_substitute(node.value.val)) {
+		if (auto substitute = get_substitute(node.tok.val)) {
 //			substitute->update_token_data(tok);
 			return node.replace_with(std::move(substitute));
 		}
@@ -47,8 +47,8 @@ PreNodeAST *PreASTDefines::visit(PreNodeInt &node) {
 }
 
 PreNodeAST *PreASTDefines::visit(PreNodeKeyword &node) {
-	if(auto builtin_define = get_builtin_define(node.value.val)) {
-		builtin_define->update_token_data(node.value);
+	if(auto builtin_define = get_builtin_define(node.tok.val)) {
+		builtin_define->update_token_data(node.tok);
 		return node.replace_with(std::move(builtin_define));
 	}
 	// substitution
@@ -93,7 +93,7 @@ PreNodeAST *PreASTDefines::visit(PreNodeDefineStatement &node) {
 	if(!eval_result.is_error()) {
 		auto tok = Token(token::INT, std::to_string(eval_result.unwrap()), 0, 0,"");
 		auto int_token = std::make_unique<PreNodeInt>(eval_result.unwrap(), tok, nullptr);
-		auto node_statement = std::make_unique<PreNodeStatement>(std::move(int_token), nullptr);
+		auto node_statement = std::make_unique<PreNodeStatement>(std::move(int_token), Token(), nullptr);
 		node.body->chunk.clear();
 		node.body->add_chunk(std::move(node_statement));
 	}
@@ -111,12 +111,12 @@ void PreASTDefines::check_recursion(const Token &tok) const {
 }
 
 PreNodeAST *PreASTDefines::visit(PreNodeDefineCall &node) {
-	const Token token_name = node.define->name->value;
+	const Token token_name = node.define->name->tok;
 	check_recursion(token_name);
 
 	node.define->accept(*this);
 	//substitution
-	auto node_new_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
+	auto node_new_chunk = std::make_unique<PreNodeChunk>(Token(), node.parent);
 	if( auto node_define_definition = get_define_definition(*node.define)) {
 		m_defines_used.insert(token_name.val);
 		m_program->define_call_stack.push(node_define_definition.get());
@@ -134,7 +134,7 @@ PreNodeAST *PreASTDefines::visit(PreNodeDefineCall &node) {
 }
 
 std::unique_ptr<PreNodeDefineStatement> PreASTDefines::get_define_definition(const PreNodeDefineHeader& define_header) {
-	const auto it = m_define_lookup.find(define_header.name->value.val);
+	const auto it = m_define_lookup.find(define_header.name->tok.val);
 	if(it != m_define_lookup.end()) {
 		return clone_as<PreNodeDefineStatement>(it->second);
 	}
@@ -155,7 +155,7 @@ std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> PreASTDefines::ge
 	for(int i= 0; i<definition.num_args(); i++) {
 		const auto &var = definition.get_arg(i)->get_chunk(0);
 		if(definition.get_arg(i)->num_chunks() > 1) {
-			auto error = CompileError(ErrorType::SyntaxError,"", "", definition.name->value);
+			auto error = CompileError(ErrorType::SyntaxError,"", "", definition.name->tok);
 			error.m_message = "Unable to substitute <define> arguments. Found wrong number of substitution tokens in <define-header>.";
 			error.m_got = definition.get_string();
 			error.exit();

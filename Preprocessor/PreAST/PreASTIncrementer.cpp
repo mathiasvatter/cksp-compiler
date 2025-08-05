@@ -13,17 +13,17 @@ PreNodeAST *PreASTIncrementer::visit(PreNodeProgram &node) {
 
 PreNodeAST *PreASTIncrementer::visit(PreNodeNumber &node) {
     // substitution
-	return substitute_with_incremented_value(node.value.val, node.value.line, &node);
+	return substitute_with_incremented_value(node.tok.val, node.tok.line, &node);
 }
 
 PreNodeAST *PreASTIncrementer::visit(PreNodeInt &node) {
     // substitution
-	return substitute_with_incremented_value(node.value.val, node.value.line, &node);
+	return substitute_with_incremented_value(node.tok.val, node.tok.line, &node);
 }
 
 PreNodeAST *PreASTIncrementer::visit(PreNodeKeyword &node) {
     // substitution
-	return substitute_with_incremented_value(node.value.val, node.value.line, &node);
+	return substitute_with_incremented_value(node.tok.val, node.tok.line, &node);
 }
 
 PreNodeAST *PreASTIncrementer::substitute_with_incremented_value(const std::string &name, size_t line, PreNodeAST *node) {
@@ -46,7 +46,7 @@ bool PreASTIncrementer::update_last_incrementer_var(const PreNodeAST* node, PreN
 				auto step_val = get_step_value(node_val);
 				// increase for next time
 				substitute->integer = substitute->integer+step_val;
-				substitute->value.val = std::to_string(substitute->integer);
+				substitute->tok.val = std::to_string(substitute->integer);
 			}
 			var.first = std::move(node->clone());
 			var.second = node_line;
@@ -122,6 +122,6 @@ PreNodeAST *PreASTIncrementer::visit(PreNodeMacroDefinition &node) {
 		m_program->macro_definitions.push_back(std::move(node_macro_definition));
 	}
 	// replace node with dead code after incrementation
-	return node.replace_with(std::make_unique<PreNodeDeadCode>(node.header->name->value, node.parent));
+	return node.replace_with(std::make_unique<PreNodeDeadCode>(node.header->name->tok, node.parent));
 }
 

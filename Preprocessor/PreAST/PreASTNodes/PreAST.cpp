@@ -352,7 +352,7 @@ PreNodeAST *PreNodeIncrementer::accept(PreASTVisitor &visitor) {
 }
 
 PreNodeIncrementer::PreNodeIncrementer(const PreNodeIncrementer& other)
-: PreNodeAST(other), tok(other.tok), body(clone_vector(other.body)),
+: PreNodeAST(other), body(clone_vector(other.body)),
 counter(clone_unique(other.counter)), iterator_start(clone_unique(other.iterator_start)),
 iterator_step(clone_unique(other.iterator_step)),
 incrementation(other.incrementation) {

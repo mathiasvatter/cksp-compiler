@@ -21,13 +21,13 @@ public:
 
 	PreNodeAST *visit(PreNodePragma &node) override {
 		const std::string& option = node.option->get_string();
-		const Token& token = node.argument->value;
+		const Token& token = node.argument->tok;
 
 		auto it = pragma_handlers.find(option);
 		if (it == pragma_handlers.end()) {
 			get_pragma_error(token, option, "valid <#pragma> option.").exit();
 		}
-		it->second(node.argument->value.val, token);
+		it->second(node.argument->tok.val, token);
 		return &node;
 	}
 

@@ -16,7 +16,7 @@ public:
 	// ~PreASTPrinter() override = default;
 
 	PreNodeAST *visit(PreNodeNumber &node) override {
-	    os << node.value;
+	    os << node.tok.val;
 		return &node;
 	}
 
@@ -26,30 +26,30 @@ public:
     }
 
 	PreNodeAST *visit(PreNodeUnaryExpr &node) override {
-	    os << node.op.val;
+	    os << get_token_string(node.op);
         node.operand->accept(*this);
 		return &node;
     }
 
 	PreNodeAST *visit(PreNodeBinaryExpr &node) override {
         node.left->accept(*this);
-	    os << " " << node.op.val << " ";
+	    os << " " << get_token_string(node.op) << " ";
         node.right->accept(*this);
 		return &node;
     }
 
 	PreNodeAST *visit(PreNodeKeyword &node) override {
-	    os << node.value;
+	    os << node.tok.val;
 		return &node;
     }
 
 	PreNodeAST *visit(PreNodeOther &node) override {
-	    os << node.other.val;
+	    os << node.tok.val;
 		return &node;
     }
 
 	PreNodeAST *visit(PreNodeDeadCode &node) override {
-        os << node.sth.val;
+        os << node.tok.val;
 		return &node;
 	}
 
@@ -60,23 +60,34 @@ public:
     }
 
 	PreNodeAST *visit(PreNodeStatement &node) override {
+
+		os << get_indent();
         node.statement->accept(*this);
 		return &node;
     }
 
 	PreNodeAST *visit(PreNodeChunk &node) override {
+		m_scope_count++;
 	    visit_all(node.chunk, *this);
+		m_scope_count--;
 		return &node;
     }
 
 	PreNodeAST *visit(PreNodeDefineHeader &node) override {
-	    node.name->accept(*this);
+	    os << node.name->accept(*this);
+		os << "(";
         node.args->accept(*this);
+		os << ")";
 		return &node;
     }
 
 	PreNodeAST *visit(PreNodeList &node) override {
-	    visit_all(node.params, *this);
+		for (auto& param : node.params) {
+			param->accept(*this);
+			if (&param != &node.params.back()) {
+				os << ", ";
+			}
+		}
 		return &node;
     }
 
@@ -91,6 +102,7 @@ public:
 
 	PreNodeAST *visit(PreNodeDefineCall &node) override {
         node.define->accept(*this);
+		os << "()";
 		return &node;
     }
 
@@ -105,7 +117,9 @@ public:
 
 	PreNodeAST *visit(PreNodeMacroHeader &node) override {
 		node.name->accept(*this);
+		os << "(";
         node.args->accept(*this);
+		os << ")";
 		return &node;
     }
 
@@ -139,6 +153,7 @@ public:
 			os << " step ";
 		}
 		node.step ->accept(*this);
+		os << "\n";
 		return &node;
     }
 
@@ -147,6 +162,7 @@ public:
         node.macro_call->accept(*this);
 		os << ") on ";
         node.literate_tokens->accept(*this);
+		os << "\n";
 		return &node;
     }
 
@@ -177,6 +193,15 @@ public:
 	void print() {
 		std::cout << os.str();
 		os.str("");
+	}
+
+private:
+	std::string get_indent() const {
+		std::string result;
+		for (int i = 0; i < m_scope_count; i++) {
+			result += m_indent;
+		}
+		return result;
 	}
 
 };
