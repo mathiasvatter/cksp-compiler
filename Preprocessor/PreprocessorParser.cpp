@@ -100,6 +100,7 @@ bool PreprocessorParser::is_macro_call(const Token &tok) {
 		// macro call has to have linebreak or open parenth after it
 		is_macro_call &= peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK;
 	} else {
+	    is_iterator_macro_call &= peek(-2).type == token::ITERATE_MACRO || peek(-2).type == token::LITERATE_MACRO;
 		// iterator macro call has to have open parenth beforehand
 		is_iterator_macro_call &= peek(-1).type == token::OPEN_PARENTH and (m_parsing_iterator_macro || m_parsing_literate_macro) and (peek(1).type == token::OPEN_PARENTH or peek(1).type == token::CLOSED_PARENTH);
 		// macro call has to have linebreak before and either linebreak or open parenth after it
