@@ -227,6 +227,16 @@ std::unique_ptr<PreNodeAST> PreNodeMacroHeader::clone() const {
 	return std::make_unique<PreNodeMacroHeader>(*this);
 }
 
+PreNodeAST * PreNodeMacroHeader::replace_child(PreNodeAST *oldChild, std::unique_ptr<PreNodeAST> newChild) {
+	if (name.get() == oldChild) {
+		if(const auto new_name = dynamic_cast<PreNodeKeyword*>(newChild.release())) {
+			name = std::unique_ptr<PreNodeKeyword>(new_name);
+			return name.get();
+		}
+	}
+	return nullptr;
+}
+
 // ************* PreNodeDefineHeader *************
 PreNodeAST *PreNodeDefineHeader::accept(PreASTVisitor &visitor) {
 	return visitor.visit(*this);

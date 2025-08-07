@@ -8,7 +8,8 @@
 
 class SimpleExprInterpreter {
 public:
-    explicit SimpleExprInterpreter(const std::string& file, int line) : m_file(file), m_line(line) {}
+    explicit SimpleExprInterpreter(const std::string& file, const int line) : m_line(line), m_file(file) {}
+	explicit SimpleExprInterpreter(const Token& tok) : m_line(tok.line), m_file(tok.file) {}
     Result<int> parse_and_evaluate(std::vector<std::unique_ptr<PreNodeAST>> n);
 
 //	std::vector<std::unique_ptr<PreNodeAST>> m_nodes;
