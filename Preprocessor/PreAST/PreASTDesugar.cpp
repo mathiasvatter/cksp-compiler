@@ -9,8 +9,8 @@ PreNodeAST *PreASTDesugar::visit(PreNodeProgram &node) {
     m_program = &node;
 
     for(auto & def : node.macro_definitions) {
-        m_macro_lookup.insert({{def->header->name->tok.val, (int)def->header->args->params.size()}, def.get()});
-		m_macro_string_lookup.insert({def->header->name->tok.val, def.get()});
+        m_macro_lookup.insert({{def->header->get_name(), (int)def->header->num_args()}, def.get()});
+		m_macro_string_lookup.insert({def->header->get_name(), def.get()});
     }
 	visit_all(node.program, *this);
 	return &node;
@@ -31,19 +31,19 @@ PreNodeAST *PreASTDesugar::do_substitution(PreNodeLiteral &node) {
 }
 
 PreNodeAST *PreASTDesugar::visit(PreNodeNumber &node) {
-//	m_debug_token = node.get_string();
+	m_debug_token = node.get_string();
     // substitution
 	return do_substitution(node);
 }
 
 PreNodeAST *PreASTDesugar::visit(PreNodeInt &node) {
-//	m_debug_token = node.get_string();
+	m_debug_token = node.get_string();
     // substitution
 	return do_substitution(node);
 }
 
 PreNodeAST *PreASTDesugar::visit(PreNodeKeyword &node) {
-//	m_debug_token = node.get_string();
+	m_debug_token = node.get_string();
     // substitution
 	return do_substitution(node);
 }
@@ -54,7 +54,7 @@ PreNodeAST *PreASTDesugar::visit(PreNodeIncrementer &node) {
 }
 
 PreNodeAST *PreASTDesugar::visit(PreNodeOther &node) {
-//	m_debug_token = node.get_string();
+	m_debug_token = node.get_string();
 	return &node;
 }
 
@@ -87,7 +87,7 @@ void PreASTDesugar::check_recursion(const Token &tok) const {
 }
 
 PreNodeAST *PreASTDesugar::visit(PreNodeMacroCall &node) {
-//	m_debug_token = node.get_string();
+	m_debug_token = node.get_string();
 
 	m_program->macro_call_stack.push(&node);
     node.macro->accept(*this);
@@ -95,7 +95,7 @@ PreNodeAST *PreASTDesugar::visit(PreNodeMacroCall &node) {
     const Token token_name = node.macro->name->tok;
 	check_recursion(token_name);
     // substitution
-    auto node_new_chunk = std::make_unique<PreNodeChunk>(Token(), node.parent);
+    auto node_new_chunk = std::make_unique<PreNodeChunk>(node.tok, node.parent);
 
 	// see if parent is iterate or literate -> ignore amount of parameters then
     if(const auto def = get_macro_definition(*node.macro)) {
@@ -145,18 +145,24 @@ PreNodeAST *PreASTDesugar::visit(PreNodeMacroHeader &node) {
 
 PreNodeAST *PreASTDesugar::visit(PreNodeIterateMacro &node) {
     if(node.macro_call->params.size()>1) {
-    	auto error = CompileError(ErrorType::PreprocessorError,"",  "", node.to);
+    	auto error = CompileError(ErrorType::PreprocessorError,"",  "", node.tok);
     	error.m_message = "Found incorrect <iterate_macro> syntax.";
     	error.exit();
     }
 
-    node.macro_call->get_element(0)->add_chunk(std::make_unique<PreNodeOther>(Token(token::LINEBRK, "\n", 0, 0,""),nullptr));
+	if (StringUtils::starts_with(node.macro_call->get_element(0)->get_string(), "PanEn.setup_control_functions")) {
+
+	}
+	// node.macro_call->accept(*this);
+
+	auto linebreak_tok = node.tok; linebreak_tok.set_type(token::LINEBRK); linebreak_tok.set_val("\n");
+    node.macro_call->get_element(0)->add_chunk(std::make_unique<PreNodeOther>(linebreak_tok,nullptr));
 
     node.iterator_start->accept(*this);
     node.iterator_end->accept(*this);
     node.step->accept(*this);
 
-    SimpleExprInterpreter eval(node.to.file, node.to.line);
+    SimpleExprInterpreter eval(node.tok);
     auto from_result = eval.parse_and_evaluate(std::move(node.iterator_start->chunk));
     if(from_result.is_error()) from_result.get_error().exit();
 
@@ -170,16 +176,17 @@ PreNodeAST *PreASTDesugar::visit(PreNodeIterateMacro &node) {
     int to = to_result.unwrap();
     int step = step_result.unwrap();
 
-    auto node_new_chunk = std::make_unique<PreNodeChunk>(Token(), node.parent);
+    auto node_new_chunk = std::make_unique<PreNodeChunk>(node.tok, node.parent);
     int i = from;
     while(node.to.type == token::DOWNTO ? i >= to : i <= to) {
-        auto node_number_chunk = std::make_unique<PreNodeChunk>(Token(), node.parent);
+        auto node_number_chunk = std::make_unique<PreNodeChunk>(node.tok, node.parent);
+    	auto number_tok = node.tok; number_tok.set_type(token::INT); number_tok.set_val(std::to_string(i));
         auto node_statement = std::make_unique<PreNodeStatement>(
 			std::make_unique<PreNodeNumber>(
-				Token(token::INT, std::to_string(i), 0, 0, ""),
+				number_tok,
 				nullptr
 			),
-			Token(),
+			node.tok,
 			nullptr
 		);
         node_number_chunk->add_chunk(std::move(node_statement));
@@ -227,12 +234,12 @@ PreNodeAST *PreASTDesugar::visit(PreNodeLiterateMacro &node) {
     if(node.macro_call->params.size()>1) {
         CompileError(ErrorType::PreprocessorError,"Found incorrect <literate_macro> syntax.", -1, "", "", "").exit();
     }
-
-    node.macro_call->get_element(0)->add_chunk(std::make_unique<PreNodeOther>(Token(token::LINEBRK, "\n", 0, 0, ""),nullptr));
+	auto linebreak_tok = node.tok; linebreak_tok.set_type(token::LINEBRK); linebreak_tok.set_val("\n");
+    node.macro_call->get_element(0)->add_chunk(std::make_unique<PreNodeOther>(linebreak_tok,nullptr));
 
 	node.literate_tokens->accept(*this);
 	// if literate_tokens was define call then there are still comma (PreNodeOther) in there. Filter out!
-	auto node_new_literate_tokens = std::make_unique<PreNodeChunk>(Token(), &node);
+	auto node_new_literate_tokens = std::make_unique<PreNodeChunk>(node.tok, &node);
 	for(auto &keyword : node.literate_tokens->chunk) {
 		if(safe_cast<PreNodeStatement>(keyword.get(), PreNodeType::STATEMENT)) {
 			node_new_literate_tokens->chunk.push_back(std::move(keyword));
@@ -240,15 +247,16 @@ PreNodeAST *PreASTDesugar::visit(PreNodeLiterateMacro &node) {
 	}
 	node.literate_tokens->chunk = std::move(node_new_literate_tokens->chunk);
 
-    auto node_new_chunk = std::make_unique<PreNodeChunk>(Token(), node.parent);
+    auto node_new_chunk = std::make_unique<PreNodeChunk>(node.tok, node.parent);
     for (int i = 0; i<node.literate_tokens->chunk.size(); i++) {
-        auto node_number_chunk = std::make_unique<PreNodeChunk>(Token(), node.parent);
-        auto node_number_statement = std::make_unique<PreNodeStatement>(std::make_unique<PreNodeNumber>(Token(token::INT, std::to_string(i), 0, 0,""),nullptr), Token(), nullptr);
+        auto node_number_chunk = std::make_unique<PreNodeChunk>(node.tok, node.parent);
+    	auto number_tok = node.tok; number_tok.set_type(token::INT); number_tok.set_val(std::to_string(i));
+        auto node_number_statement = std::make_unique<PreNodeStatement>(std::make_unique<PreNodeNumber>(number_tok,nullptr), node.tok, nullptr);
         node_number_chunk->chunk.push_back(std::move(node_number_statement));
 
         auto literate_token = node.literate_tokens->chunk[i]->clone();
-        auto node_literate_statement = std::make_unique<PreNodeStatement>(std::move(literate_token), Token(), nullptr);
-        auto node_literate_chunk = std::make_unique<PreNodeChunk>(Token(), node.parent);
+        auto node_literate_statement = std::make_unique<PreNodeStatement>(std::move(literate_token), node.tok, nullptr);
+        auto node_literate_chunk = std::make_unique<PreNodeChunk>(node.tok, node.parent);
         node_literate_chunk->chunk.push_back(std::move(node_literate_statement));
 
         std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> subst_map;
@@ -283,12 +291,12 @@ std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> PreASTDesugar::ge
 }
 
 PreNodeMacroDefinition* PreASTDesugar::get_macro_definition(const PreNodeMacroHeader& macro_header) {
-    const auto it = m_macro_lookup.find({macro_header.name->tok.val, (int)macro_header.args->params.size()});
+    const auto it = m_macro_lookup.find({macro_header.get_name(), (int)macro_header.num_args()});
     if(it != m_macro_lookup.end()) {
         return it->second;
     }
 	// if macro call has no arguments (literate or iterate) and therefore does not match its original definition
-	const auto it2 = m_macro_string_lookup.find(macro_header.name->tok.val);
+	const auto it2 = m_macro_string_lookup.find(macro_header.get_name());
 	if(it2 != m_macro_string_lookup.end()) {
 		return it2->second;
 	}

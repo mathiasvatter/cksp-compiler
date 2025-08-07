@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.5 on Tue Aug 05 22:45:16 2025 }
+{ Compiled with cksp version 0.0.7-alpha.5 on Thu Aug 07 17:20:53 2025 }
 on init
   if(1 = 1)
     declare $_iter1
@@ -35,7 +35,7 @@ on init
     declare $rr0
     declare $i7
     declare !unit1[100]
-    declare !label_text0[100]
+    declare !label_text1[100]
     declare $i9
     declare $n4
     declare $group_id0
@@ -19629,22 +19629,22 @@ function update_assigned_instruments
         $env1__latch_mode := %env_latch0[$NI_CALLBACK_ID mod 100]
         if(%loaded_instruments[%i12[$NI_CALLBACK_ID mod 100]] > 0)
           !unit1[$NI_CALLBACK_ID mod 100] := " %"
-          !label_text0[$NI_CALLBACK_ID mod 100] := "Sample Start Rand"
+          !label_text1[$NI_CALLBACK_ID mod 100] := "Sample Start Rand"
           $ctrl_id := get_ui_id($sld_sample_start_rand0)
           $ctrl_label := get_ui_id($sld_sample_start_rand0)
           call handle_control_change
           !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-          !label_text0[$NI_CALLBACK_ID mod 100] := ""
+          !label_text1[$NI_CALLBACK_ID mod 100] := ""
           $ctrl_id := get_ui_id($attack0)
           $ctrl_label := get_ui_id($attack0)
           call handle_control_change
           !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-          !label_text0[$NI_CALLBACK_ID mod 100] := ""
+          !label_text1[$NI_CALLBACK_ID mod 100] := ""
           $ctrl_id := get_ui_id($decay0)
           $ctrl_label := get_ui_id($decay0)
           call handle_control_change
           !unit1[$NI_CALLBACK_ID mod 100] := ""
-          !label_text0[$NI_CALLBACK_ID mod 100] := ""
+          !label_text1[$NI_CALLBACK_ID mod 100] := ""
           $ctrl := $btn_sustain0
           $ctrl_id := get_ui_id($btn_sustain0)
           @ctrl_unit := ""
@@ -19661,22 +19661,22 @@ function update_assigned_instruments
         $env2__latch_mode := %env_latch0[$NI_CALLBACK_ID mod 100]
         if(%loaded_instruments[%i12[$NI_CALLBACK_ID mod 100]] > 0)
           !unit1[$NI_CALLBACK_ID mod 100] := " %"
-          !label_text0[$NI_CALLBACK_ID mod 100] := "Sample Start Rand"
+          !label_text1[$NI_CALLBACK_ID mod 100] := "Sample Start Rand"
           $ctrl_id := get_ui_id($sld_sample_start_rand1)
           $ctrl_label := get_ui_id($sld_sample_start_rand1)
           call handle_control_change
           !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-          !label_text0[$NI_CALLBACK_ID mod 100] := ""
+          !label_text1[$NI_CALLBACK_ID mod 100] := ""
           $ctrl_id := get_ui_id($attack1)
           $ctrl_label := get_ui_id($attack1)
           call handle_control_change
           !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-          !label_text0[$NI_CALLBACK_ID mod 100] := ""
+          !label_text1[$NI_CALLBACK_ID mod 100] := ""
           $ctrl_id := get_ui_id($decay1)
           $ctrl_label := get_ui_id($decay1)
           call handle_control_change
           !unit1[$NI_CALLBACK_ID mod 100] := ""
-          !label_text0[$NI_CALLBACK_ID mod 100] := ""
+          !label_text1[$NI_CALLBACK_ID mod 100] := ""
           $ctrl := $btn_sustain1
           $ctrl_id := get_ui_id($btn_sustain1)
           @ctrl_unit := ""
@@ -19693,22 +19693,22 @@ function update_assigned_instruments
         $env3__latch_mode := %env_latch0[$NI_CALLBACK_ID mod 100]
         if(%loaded_instruments[%i12[$NI_CALLBACK_ID mod 100]] > 0)
           !unit1[$NI_CALLBACK_ID mod 100] := " %"
-          !label_text0[$NI_CALLBACK_ID mod 100] := "Sample Start Rand"
+          !label_text1[$NI_CALLBACK_ID mod 100] := "Sample Start Rand"
           $ctrl_id := get_ui_id($sld_sample_start_rand2)
           $ctrl_label := get_ui_id($sld_sample_start_rand2)
           call handle_control_change
           !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-          !label_text0[$NI_CALLBACK_ID mod 100] := ""
+          !label_text1[$NI_CALLBACK_ID mod 100] := ""
           $ctrl_id := get_ui_id($attack2)
           $ctrl_label := get_ui_id($attack2)
           call handle_control_change
           !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-          !label_text0[$NI_CALLBACK_ID mod 100] := ""
+          !label_text1[$NI_CALLBACK_ID mod 100] := ""
           $ctrl_id := get_ui_id($decay2)
           $ctrl_label := get_ui_id($decay2)
           call handle_control_change
           !unit1[$NI_CALLBACK_ID mod 100] := ""
-          !label_text0[$NI_CALLBACK_ID mod 100] := ""
+          !label_text1[$NI_CALLBACK_ID mod 100] := ""
           $ctrl := $btn_sustain2
           $ctrl_id := get_ui_id($btn_sustain2)
           @ctrl_unit := ""
@@ -19725,22 +19725,22 @@ function update_assigned_instruments
         $env4__latch_mode := %env_latch0[$NI_CALLBACK_ID mod 100]
         if(%loaded_instruments[%i12[$NI_CALLBACK_ID mod 100]] > 0)
           !unit1[$NI_CALLBACK_ID mod 100] := " %"
-          !label_text0[$NI_CALLBACK_ID mod 100] := "Sample Start Rand"
+          !label_text1[$NI_CALLBACK_ID mod 100] := "Sample Start Rand"
           $ctrl_id := get_ui_id($sld_sample_start_rand3)
           $ctrl_label := get_ui_id($sld_sample_start_rand3)
           call handle_control_change
           !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-          !label_text0[$NI_CALLBACK_ID mod 100] := ""
+          !label_text1[$NI_CALLBACK_ID mod 100] := ""
           $ctrl_id := get_ui_id($attack3)
           $ctrl_label := get_ui_id($attack3)
           call handle_control_change
           !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-          !label_text0[$NI_CALLBACK_ID mod 100] := ""
+          !label_text1[$NI_CALLBACK_ID mod 100] := ""
           $ctrl_id := get_ui_id($decay3)
           $ctrl_label := get_ui_id($decay3)
           call handle_control_change
           !unit1[$NI_CALLBACK_ID mod 100] := ""
-          !label_text0[$NI_CALLBACK_ID mod 100] := ""
+          !label_text1[$NI_CALLBACK_ID mod 100] := ""
           $ctrl := $btn_sustain3
           $ctrl_id := get_ui_id($btn_sustain3)
           @ctrl_unit := ""
@@ -19995,7 +19995,7 @@ function update_rev_type
     $idx24 := 0
     call relink_control_to_ep
     !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-    !label_text0[$NI_CALLBACK_ID mod 100] := ""
+    !label_text1[$NI_CALLBACK_ID mod 100] := ""
     $ctrl_id := get_ui_id($mixer__rev_predelay)
     $ctrl_label := get_ui_id($mixer__rev_predelay)
     call handle_control_change
@@ -20006,7 +20006,7 @@ function update_rev_type
     $idx24 := 0
     call relink_control_to_ep
     !unit1[$NI_CALLBACK_ID mod 100] := ""
-    !label_text0[$NI_CALLBACK_ID mod 100] := ""
+    !label_text1[$NI_CALLBACK_ID mod 100] := ""
     $ctrl := $mixer__rev_time
     $ctrl_id := get_ui_id($mixer__rev_time)
     @ctrl_unit := ""
@@ -20021,7 +20021,7 @@ function update_rev_type
     $idx24 := 0
     call relink_control_to_ep
     !unit1[$NI_CALLBACK_ID mod 100] := ""
-    !label_text0[$NI_CALLBACK_ID mod 100] := ""
+    !label_text1[$NI_CALLBACK_ID mod 100] := ""
     $ctrl_id := get_ui_id($mixer__rev_predelay)
     $ctrl_label := get_ui_id($mixer__rev_predelay)
     call handle_control_change
@@ -20032,7 +20032,7 @@ function update_rev_type
     $idx24 := 0
     call relink_control_to_ep
     !unit1[$NI_CALLBACK_ID mod 100] := ""
-    !label_text0[$NI_CALLBACK_ID mod 100] := ""
+    !label_text1[$NI_CALLBACK_ID mod 100] := ""
     $ctrl := $mixer__rev_time
     $ctrl_id := get_ui_id($mixer__rev_time)
     @ctrl_unit := ""
@@ -20125,22 +20125,22 @@ function update_solo
     inc(%i16[$NI_CALLBACK_ID mod 100])
   end while
   !unit1[$NI_CALLBACK_ID mod 100] := "dB"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($mixer__vol0)
   $ctrl_label := get_ui_id($mixer__vol_value0)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := "dB"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($mixer__vol1)
   $ctrl_label := get_ui_id($mixer__vol_value1)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := "dB"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($mixer__vol2)
   $ctrl_label := get_ui_id($mixer__vol_value2)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := "dB"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__vol3
   $ctrl_id := get_ui_id($mixer__vol3)
   @ctrl_unit := "dB"
@@ -20156,7 +20156,7 @@ function update_delay_time
     set_engine_par($ENGINE_PAR_RDL_TIME, %mixer__SYNC_EP[%mixer__SYNC_COUNTER[$v] - 1], -1, 1, 0)
     set_control_par_str(get_ui_id($mixer__delay_time), $CONTROL_PAR_LABEL, !mixer__SYNC_NAMES[$v])
     !unit1[$NI_CALLBACK_ID mod 100] := !mixer__SYNC_NAMES[$v]
-    !label_text0[$NI_CALLBACK_ID mod 100] := ""
+    !label_text1[$NI_CALLBACK_ID mod 100] := ""
     $ctrl := $mixer__delay_time
     $ctrl_id := get_ui_id($mixer__delay_time)
     @ctrl_unit := !unit1[$NI_CALLBACK_ID mod 100]
@@ -20168,7 +20168,7 @@ function update_delay_time
     set_engine_par($ENGINE_PAR_RDL_TIME, $mixer__delay_time, -1, 1, 0)
     set_control_par_str(get_ui_id($mixer__delay_time), $CONTROL_PAR_LABEL, get_engine_par_disp($ENGINE_PAR_RDL_TIME, -1, 1, 0) & " ms")
     !unit1[$NI_CALLBACK_ID mod 100] := "ms"
-    !label_text0[$NI_CALLBACK_ID mod 100] := ""
+    !label_text1[$NI_CALLBACK_ID mod 100] := ""
     $ctrl := $mixer__delay_time
     $ctrl_id := get_ui_id($mixer__delay_time)
     @ctrl_unit := "ms"
@@ -20546,22 +20546,22 @@ function panstep_bypass_pan1
     end while
   end if
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($mixer__pan0)
   $ctrl_label := get_ui_id($mixer__pan_value0)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($mixer__pan1)
   $ctrl_label := get_ui_id($mixer__pan_value1)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($mixer__pan2)
   $ctrl_label := get_ui_id($mixer__pan_value2)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__pan3
   $ctrl_id := get_ui_id($mixer__pan3)
   @ctrl_unit := ""
@@ -20606,22 +20606,22 @@ function panstep_bypass_pan2
     end while
   end if
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($mixer__pan0)
   $ctrl_label := get_ui_id($mixer__pan_value0)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($mixer__pan1)
   $ctrl_label := get_ui_id($mixer__pan_value1)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($mixer__pan2)
   $ctrl_label := get_ui_id($mixer__pan_value2)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__pan3
   $ctrl_id := get_ui_id($mixer__pan3)
   @ctrl_unit := ""
@@ -28488,21 +28488,21 @@ function load_preset
   set_control_par(get_ui_id($mixer__delay_feedback), $CONTROL_PAR_VALUE, %preset__array[$preset__n])
   inc($preset__n)
   !unit1[$NI_CALLBACK_ID mod 100] := " %"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($mixer__delay_feedback)
   $ctrl_label := get_ui_id($mixer__delay_feedback)
   call handle_control_change
   set_control_par(get_ui_id($mixer__delay_hicut), $CONTROL_PAR_VALUE, %preset__array[$preset__n])
   inc($preset__n)
   !unit1[$NI_CALLBACK_ID mod 100] := " Hz"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($mixer__delay_hicut)
   $ctrl_label := get_ui_id($mixer__delay_hicut)
   call handle_control_change
   set_control_par(get_ui_id($mixer__delay_return), $CONTROL_PAR_VALUE, %preset__array[$preset__n])
   inc($preset__n)
   !unit1[$NI_CALLBACK_ID mod 100] := " dB"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__delay_return
   $ctrl_id := get_ui_id($mixer__delay_return)
   @ctrl_unit := " dB"
@@ -28578,7 +28578,7 @@ function load_preset
   set_control_par(get_ui_id($mixer__rev_return), $CONTROL_PAR_VALUE, %preset__array[$preset__n])
   inc($preset__n)
   !unit1[$NI_CALLBACK_ID mod 100] := " dB"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__rev_return
   $ctrl_id := get_ui_id($mixer__rev_return)
   @ctrl_unit := " dB"
@@ -28593,14 +28593,14 @@ function load_preset
     set_control_par(get_ui_id($mixer__rev_predelay), $CONTROL_PAR_VALUE, %preset__array[$preset__n])
     inc($preset__n)
     !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-    !label_text0[$NI_CALLBACK_ID mod 100] := ""
+    !label_text1[$NI_CALLBACK_ID mod 100] := ""
     $ctrl_id := get_ui_id($mixer__rev_predelay)
     $ctrl_label := get_ui_id($mixer__rev_predelay)
     call handle_control_change
     set_control_par(get_ui_id($mixer__rev_time), $CONTROL_PAR_VALUE, %preset__array[$preset__n])
     inc($preset__n)
     !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-    !label_text0[$NI_CALLBACK_ID mod 100] := ""
+    !label_text1[$NI_CALLBACK_ID mod 100] := ""
     $ctrl := $mixer__rev_time
     $ctrl_id := get_ui_id($mixer__rev_time)
     @ctrl_unit := " ms"
@@ -34575,7 +34575,7 @@ end on
 on ui_control($arp1__note_repeat)
   $arp1__repeat_max := $arp1__note_repeat
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $arp1__note_repeat
   $ctrl_id := get_ui_id($arp1__note_repeat)
   @ctrl_unit := ""
@@ -34586,7 +34586,7 @@ end on
 on ui_control($arp2__note_repeat)
   $arp2__repeat_max := $arp2__note_repeat
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $arp2__note_repeat
   $ctrl_id := get_ui_id($arp2__note_repeat)
   @ctrl_unit := ""
@@ -34597,7 +34597,7 @@ end on
 on ui_control($arp3__note_repeat)
   $arp3__repeat_max := $arp3__note_repeat
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $arp3__note_repeat
   $ctrl_id := get_ui_id($arp3__note_repeat)
   @ctrl_unit := ""
@@ -34608,7 +34608,7 @@ end on
 on ui_control($arp4__note_repeat)
   $arp4__repeat_max := $arp4__note_repeat
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $arp4__note_repeat
   $ctrl_id := get_ui_id($arp4__note_repeat)
   @ctrl_unit := ""
@@ -39892,7 +39892,7 @@ on ui_control($mixer__output_menus3)
 end on
 on ui_control($mixer__vol0)
   !unit1[$NI_CALLBACK_ID mod 100] := " dB"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__vol0
   $ctrl_id := get_ui_id($mixer__vol0)
   @ctrl_unit := " dB"
@@ -39903,7 +39903,7 @@ on ui_control($mixer__vol0)
 end on
 on ui_control($mixer__vol1)
   !unit1[$NI_CALLBACK_ID mod 100] := " dB"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__vol1
   $ctrl_id := get_ui_id($mixer__vol1)
   @ctrl_unit := " dB"
@@ -39914,7 +39914,7 @@ on ui_control($mixer__vol1)
 end on
 on ui_control($mixer__vol2)
   !unit1[$NI_CALLBACK_ID mod 100] := " dB"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__vol2
   $ctrl_id := get_ui_id($mixer__vol2)
   @ctrl_unit := " dB"
@@ -39925,7 +39925,7 @@ on ui_control($mixer__vol2)
 end on
 on ui_control($mixer__vol3)
   !unit1[$NI_CALLBACK_ID mod 100] := " dB"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__vol3
   $ctrl_id := get_ui_id($mixer__vol3)
   @ctrl_unit := " dB"
@@ -39936,7 +39936,7 @@ on ui_control($mixer__vol3)
 end on
 on ui_control($mixer__pan0)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__pan0
   $ctrl_id := get_ui_id($mixer__pan0)
   @ctrl_unit := ""
@@ -39946,7 +39946,7 @@ on ui_control($mixer__pan0)
 end on
 on ui_control($mixer__pan1)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__pan1
   $ctrl_id := get_ui_id($mixer__pan1)
   @ctrl_unit := ""
@@ -39956,7 +39956,7 @@ on ui_control($mixer__pan1)
 end on
 on ui_control($mixer__pan2)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__pan2
   $ctrl_id := get_ui_id($mixer__pan2)
   @ctrl_unit := ""
@@ -39966,7 +39966,7 @@ on ui_control($mixer__pan2)
 end on
 on ui_control($mixer__pan3)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__pan3
   $ctrl_id := get_ui_id($mixer__pan3)
   @ctrl_unit := ""
@@ -39976,7 +39976,7 @@ on ui_control($mixer__pan3)
 end on
 on ui_control($mixer__senddel0)
   !unit1[$NI_CALLBACK_ID mod 100] := " dB"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__senddel0
   $ctrl_id := get_ui_id($mixer__senddel0)
   @ctrl_unit := " dB"
@@ -39986,7 +39986,7 @@ on ui_control($mixer__senddel0)
 end on
 on ui_control($mixer__senddel1)
   !unit1[$NI_CALLBACK_ID mod 100] := " dB"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__senddel1
   $ctrl_id := get_ui_id($mixer__senddel1)
   @ctrl_unit := " dB"
@@ -39996,7 +39996,7 @@ on ui_control($mixer__senddel1)
 end on
 on ui_control($mixer__senddel2)
   !unit1[$NI_CALLBACK_ID mod 100] := " dB"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__senddel2
   $ctrl_id := get_ui_id($mixer__senddel2)
   @ctrl_unit := " dB"
@@ -40006,7 +40006,7 @@ on ui_control($mixer__senddel2)
 end on
 on ui_control($mixer__senddel3)
   !unit1[$NI_CALLBACK_ID mod 100] := " dB"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__senddel3
   $ctrl_id := get_ui_id($mixer__senddel3)
   @ctrl_unit := " dB"
@@ -40016,7 +40016,7 @@ on ui_control($mixer__senddel3)
 end on
 on ui_control($mixer__sendrev0)
   !unit1[$NI_CALLBACK_ID mod 100] := " dB"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__sendrev0
   $ctrl_id := get_ui_id($mixer__sendrev0)
   @ctrl_unit := " dB"
@@ -40026,7 +40026,7 @@ on ui_control($mixer__sendrev0)
 end on
 on ui_control($mixer__sendrev1)
   !unit1[$NI_CALLBACK_ID mod 100] := " dB"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__sendrev1
   $ctrl_id := get_ui_id($mixer__sendrev1)
   @ctrl_unit := " dB"
@@ -40036,7 +40036,7 @@ on ui_control($mixer__sendrev1)
 end on
 on ui_control($mixer__sendrev2)
   !unit1[$NI_CALLBACK_ID mod 100] := " dB"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__sendrev2
   $ctrl_id := get_ui_id($mixer__sendrev2)
   @ctrl_unit := " dB"
@@ -40046,7 +40046,7 @@ on ui_control($mixer__sendrev2)
 end on
 on ui_control($mixer__sendrev3)
   !unit1[$NI_CALLBACK_ID mod 100] := " dB"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__sendrev3
   $ctrl_id := get_ui_id($mixer__sendrev3)
   @ctrl_unit := " dB"
@@ -40061,7 +40061,7 @@ end on
 on ui_control($mixer__comp_threshold)
   call mirror_comp_settings
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__comp_threshold
   $ctrl_id := get_ui_id($mixer__comp_threshold)
   @ctrl_unit := ""
@@ -40072,7 +40072,7 @@ end on
 on ui_control($mixer__comp_makeup)
   call mirror_comp_settings
   !unit1[$NI_CALLBACK_ID mod 100] := " dB"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__comp_makeup
   $ctrl_id := get_ui_id($mixer__comp_makeup)
   @ctrl_unit := " dB"
@@ -40083,7 +40083,7 @@ end on
 on ui_control($mixer__delay_bypass)
   call update_fx_active_labels
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__delay_bypass
   $ctrl_id := get_ui_id($mixer__delay_bypass)
   @ctrl_unit := ""
@@ -40107,21 +40107,21 @@ on ui_control($mixer__delay_preset_menu)
     set_control_par(get_ui_id($mixer__delay_feedback), $CONTROL_PAR_VALUE, %mixer__del_preset_array[$preset__n])
     inc($preset__n)
     !unit1[$NI_CALLBACK_ID mod 100] := " %"
-    !label_text0[$NI_CALLBACK_ID mod 100] := ""
+    !label_text1[$NI_CALLBACK_ID mod 100] := ""
     $ctrl_id := get_ui_id($mixer__delay_feedback)
     $ctrl_label := get_ui_id($mixer__delay_feedback)
     call handle_control_change
     set_control_par(get_ui_id($mixer__delay_hicut), $CONTROL_PAR_VALUE, %mixer__del_preset_array[$preset__n])
     inc($preset__n)
     !unit1[$NI_CALLBACK_ID mod 100] := " Hz"
-    !label_text0[$NI_CALLBACK_ID mod 100] := ""
+    !label_text1[$NI_CALLBACK_ID mod 100] := ""
     $ctrl_id := get_ui_id($mixer__delay_hicut)
     $ctrl_label := get_ui_id($mixer__delay_hicut)
     call handle_control_change
     set_control_par(get_ui_id($mixer__delay_return), $CONTROL_PAR_VALUE, %mixer__del_preset_array[$preset__n])
     inc($preset__n)
     !unit1[$NI_CALLBACK_ID mod 100] := " dB"
-    !label_text0[$NI_CALLBACK_ID mod 100] := ""
+    !label_text1[$NI_CALLBACK_ID mod 100] := ""
     $ctrl := $mixer__delay_return
     $ctrl_id := get_ui_id($mixer__delay_return)
     @ctrl_unit := " dB"
@@ -40202,7 +40202,7 @@ on ui_control($mixer__delay_time)
 end on
 on ui_control($mixer__delay_feedback)
   !unit1[$NI_CALLBACK_ID mod 100] := " %"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__delay_feedback
   $ctrl_id := get_ui_id($mixer__delay_feedback)
   @ctrl_unit := " %"
@@ -40212,7 +40212,7 @@ on ui_control($mixer__delay_feedback)
 end on
 on ui_control($mixer__delay_hicut)
   !unit1[$NI_CALLBACK_ID mod 100] := " Hz"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__delay_hicut
   $ctrl_id := get_ui_id($mixer__delay_hicut)
   @ctrl_unit := " Hz"
@@ -40222,7 +40222,7 @@ on ui_control($mixer__delay_hicut)
 end on
 on ui_control($mixer__delay_return)
   !unit1[$NI_CALLBACK_ID mod 100] := " dB"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__delay_return
   $ctrl_id := get_ui_id($mixer__delay_return)
   @ctrl_unit := " dB"
@@ -40233,7 +40233,7 @@ end on
 on ui_control($mixer__rev_bypass)
   call update_fx_active_labels
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__rev_bypass
   $ctrl_id := get_ui_id($mixer__rev_bypass)
   @ctrl_unit := ""
@@ -40255,7 +40255,7 @@ on ui_control($mixer__rev_preset_menu)
     set_control_par(get_ui_id($mixer__rev_return), $CONTROL_PAR_VALUE, %mixer__rev_preset_array[$preset__n])
     inc($preset__n)
     !unit1[$NI_CALLBACK_ID mod 100] := " dB"
-    !label_text0[$NI_CALLBACK_ID mod 100] := ""
+    !label_text1[$NI_CALLBACK_ID mod 100] := ""
     $ctrl := $mixer__rev_return
     $ctrl_id := get_ui_id($mixer__rev_return)
     @ctrl_unit := " dB"
@@ -40270,14 +40270,14 @@ on ui_control($mixer__rev_preset_menu)
       set_control_par(get_ui_id($mixer__rev_predelay), $CONTROL_PAR_VALUE, %mixer__rev_preset_array[$preset__n])
       inc($preset__n)
       !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-      !label_text0[$NI_CALLBACK_ID mod 100] := ""
+      !label_text1[$NI_CALLBACK_ID mod 100] := ""
       $ctrl_id := get_ui_id($mixer__rev_predelay)
       $ctrl_label := get_ui_id($mixer__rev_predelay)
       call handle_control_change
       set_control_par(get_ui_id($mixer__rev_time), $CONTROL_PAR_VALUE, %mixer__rev_preset_array[$preset__n])
       inc($preset__n)
       !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-      !label_text0[$NI_CALLBACK_ID mod 100] := ""
+      !label_text1[$NI_CALLBACK_ID mod 100] := ""
       $ctrl := $mixer__rev_time
       $ctrl_id := get_ui_id($mixer__rev_time)
       @ctrl_unit := " ms"
@@ -40332,7 +40332,7 @@ on ui_control($mixer__rev_type)
       set_control_par(get_ui_id($mixer__rev_return), $CONTROL_PAR_VALUE, %mixer__rev_preset_array[$preset__n])
       inc($preset__n)
       !unit1[$NI_CALLBACK_ID mod 100] := " dB"
-      !label_text0[$NI_CALLBACK_ID mod 100] := ""
+      !label_text1[$NI_CALLBACK_ID mod 100] := ""
       $ctrl := $mixer__rev_return
       $ctrl_id := get_ui_id($mixer__rev_return)
       @ctrl_unit := " dB"
@@ -40347,14 +40347,14 @@ on ui_control($mixer__rev_type)
         set_control_par(get_ui_id($mixer__rev_predelay), $CONTROL_PAR_VALUE, %mixer__rev_preset_array[$preset__n])
         inc($preset__n)
         !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-        !label_text0[$NI_CALLBACK_ID mod 100] := ""
+        !label_text1[$NI_CALLBACK_ID mod 100] := ""
         $ctrl_id := get_ui_id($mixer__rev_predelay)
         $ctrl_label := get_ui_id($mixer__rev_predelay)
         call handle_control_change
         set_control_par(get_ui_id($mixer__rev_time), $CONTROL_PAR_VALUE, %mixer__rev_preset_array[$preset__n])
         inc($preset__n)
         !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-        !label_text0[$NI_CALLBACK_ID mod 100] := ""
+        !label_text1[$NI_CALLBACK_ID mod 100] := ""
         $ctrl := $mixer__rev_time
         $ctrl_id := get_ui_id($mixer__rev_time)
         @ctrl_unit := " ms"
@@ -40396,7 +40396,7 @@ end on
 on ui_control($mixer__rev_predelay)
   if($mixer__rev_type # 0)
     !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-    !label_text0[$NI_CALLBACK_ID mod 100] := ""
+    !label_text1[$NI_CALLBACK_ID mod 100] := ""
     $ctrl := $mixer__rev_predelay
     $ctrl_id := get_ui_id($mixer__rev_predelay)
     @ctrl_unit := " ms"
@@ -40408,7 +40408,7 @@ end on
 on ui_control($mixer__rev_time)
   if($mixer__rev_type # 0)
     !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-    !label_text0[$NI_CALLBACK_ID mod 100] := ""
+    !label_text1[$NI_CALLBACK_ID mod 100] := ""
     $ctrl := $mixer__rev_time
     $ctrl_id := get_ui_id($mixer__rev_time)
     @ctrl_unit := " ms"
@@ -40419,7 +40419,7 @@ on ui_control($mixer__rev_time)
 end on
 on ui_control($mixer__rev_return)
   !unit1[$NI_CALLBACK_ID mod 100] := " dB"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $mixer__rev_return
   $ctrl_id := get_ui_id($mixer__rev_return)
   @ctrl_unit := " dB"
@@ -47097,7 +47097,7 @@ on ui_control($fx_filter_view)
 end on
 on ui_control($sld_sample_start_rand0)
   !unit1[$NI_CALLBACK_ID mod 100] := " %"
-  !label_text0[$NI_CALLBACK_ID mod 100] := "Sample Start"
+  !label_text1[$NI_CALLBACK_ID mod 100] := "Sample Start"
   $ctrl := $sld_sample_start_rand0
   $ctrl_id := get_ui_id($sld_sample_start_rand0)
   @ctrl_unit := " %"
@@ -47110,7 +47110,7 @@ on ui_control($sld_sample_start_rand0)
 end on
 on ui_control($sld_sample_start_rand1)
   !unit1[$NI_CALLBACK_ID mod 100] := " %"
-  !label_text0[$NI_CALLBACK_ID mod 100] := "Sample Start"
+  !label_text1[$NI_CALLBACK_ID mod 100] := "Sample Start"
   $ctrl := $sld_sample_start_rand1
   $ctrl_id := get_ui_id($sld_sample_start_rand1)
   @ctrl_unit := " %"
@@ -47123,7 +47123,7 @@ on ui_control($sld_sample_start_rand1)
 end on
 on ui_control($sld_sample_start_rand2)
   !unit1[$NI_CALLBACK_ID mod 100] := " %"
-  !label_text0[$NI_CALLBACK_ID mod 100] := "Sample Start"
+  !label_text1[$NI_CALLBACK_ID mod 100] := "Sample Start"
   $ctrl := $sld_sample_start_rand2
   $ctrl_id := get_ui_id($sld_sample_start_rand2)
   @ctrl_unit := " %"
@@ -47136,7 +47136,7 @@ on ui_control($sld_sample_start_rand2)
 end on
 on ui_control($sld_sample_start_rand3)
   !unit1[$NI_CALLBACK_ID mod 100] := " %"
-  !label_text0[$NI_CALLBACK_ID mod 100] := "Sample Start"
+  !label_text1[$NI_CALLBACK_ID mod 100] := "Sample Start"
   $ctrl := $sld_sample_start_rand3
   $ctrl_id := get_ui_id($sld_sample_start_rand3)
   @ctrl_unit := " %"
@@ -47150,7 +47150,7 @@ end on
 on ui_control($pre_lowcut0)
   call update_pre_lowcut_labels
   !unit1[$NI_CALLBACK_ID mod 100] := "Low Cut"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $pre_lowcut0
   $ctrl_id := get_ui_id($pre_lowcut0)
   @ctrl_unit := "Low Cut"
@@ -47161,7 +47161,7 @@ end on
 on ui_control($pre_lowcut1)
   call update_pre_lowcut_labels
   !unit1[$NI_CALLBACK_ID mod 100] := "Low Cut"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $pre_lowcut1
   $ctrl_id := get_ui_id($pre_lowcut1)
   @ctrl_unit := "Low Cut"
@@ -47172,7 +47172,7 @@ end on
 on ui_control($pre_lowcut2)
   call update_pre_lowcut_labels
   !unit1[$NI_CALLBACK_ID mod 100] := "Low Cut"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $pre_lowcut2
   $ctrl_id := get_ui_id($pre_lowcut2)
   @ctrl_unit := "Low Cut"
@@ -47183,7 +47183,7 @@ end on
 on ui_control($pre_lowcut3)
   call update_pre_lowcut_labels
   !unit1[$NI_CALLBACK_ID mod 100] := "Low Cut"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $pre_lowcut3
   $ctrl_id := get_ui_id($pre_lowcut3)
   @ctrl_unit := "Low Cut"
@@ -47193,7 +47193,7 @@ on ui_control($pre_lowcut3)
 end on
 on ui_control($btn_sustain0)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $btn_sustain0
   $ctrl_id := get_ui_id($btn_sustain0)
   @ctrl_unit := ""
@@ -47203,7 +47203,7 @@ on ui_control($btn_sustain0)
 end on
 on ui_control($btn_sustain1)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $btn_sustain1
   $ctrl_id := get_ui_id($btn_sustain1)
   @ctrl_unit := ""
@@ -47213,7 +47213,7 @@ on ui_control($btn_sustain1)
 end on
 on ui_control($btn_sustain2)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $btn_sustain2
   $ctrl_id := get_ui_id($btn_sustain2)
   @ctrl_unit := ""
@@ -47223,7 +47223,7 @@ on ui_control($btn_sustain2)
 end on
 on ui_control($btn_sustain3)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $btn_sustain3
   $ctrl_id := get_ui_id($btn_sustain3)
   @ctrl_unit := ""
@@ -47233,7 +47233,7 @@ on ui_control($btn_sustain3)
 end on
 on ui_control($attack0)
   !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $attack0
   $ctrl_id := get_ui_id($attack0)
   @ctrl_unit := " ms"
@@ -47250,7 +47250,7 @@ on ui_control($attack0)
 end on
 on ui_control($attack1)
   !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $attack1
   $ctrl_id := get_ui_id($attack1)
   @ctrl_unit := " ms"
@@ -47267,7 +47267,7 @@ on ui_control($attack1)
 end on
 on ui_control($attack2)
   !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $attack2
   $ctrl_id := get_ui_id($attack2)
   @ctrl_unit := " ms"
@@ -47284,7 +47284,7 @@ on ui_control($attack2)
 end on
 on ui_control($attack3)
   !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $attack3
   $ctrl_id := get_ui_id($attack3)
   @ctrl_unit := " ms"
@@ -47301,7 +47301,7 @@ on ui_control($attack3)
 end on
 on ui_control($decay0)
   !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $decay0
   $ctrl_id := get_ui_id($decay0)
   @ctrl_unit := " ms"
@@ -47318,7 +47318,7 @@ on ui_control($decay0)
 end on
 on ui_control($decay1)
   !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $decay1
   $ctrl_id := get_ui_id($decay1)
   @ctrl_unit := " ms"
@@ -47335,7 +47335,7 @@ on ui_control($decay1)
 end on
 on ui_control($decay2)
   !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $decay2
   $ctrl_id := get_ui_id($decay2)
   @ctrl_unit := " ms"
@@ -47352,7 +47352,7 @@ on ui_control($decay2)
 end on
 on ui_control($decay3)
   !unit1[$NI_CALLBACK_ID mod 100] := " ms"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $decay3
   $ctrl_id := get_ui_id($decay3)
   @ctrl_unit := " ms"
@@ -47370,7 +47370,7 @@ end on
 on ui_control($sat_bypass0)
   call update_fx_active_labels
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $sat_bypass0
   $ctrl_id := get_ui_id($sat_bypass0)
   @ctrl_unit := ""
@@ -47381,7 +47381,7 @@ end on
 on ui_control($sat_bypass1)
   call update_fx_active_labels
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $sat_bypass1
   $ctrl_id := get_ui_id($sat_bypass1)
   @ctrl_unit := ""
@@ -47392,7 +47392,7 @@ end on
 on ui_control($sat_bypass2)
   call update_fx_active_labels
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $sat_bypass2
   $ctrl_id := get_ui_id($sat_bypass2)
   @ctrl_unit := ""
@@ -47403,7 +47403,7 @@ end on
 on ui_control($sat_bypass3)
   call update_fx_active_labels
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $sat_bypass3
   $ctrl_id := get_ui_id($sat_bypass3)
   @ctrl_unit := ""
@@ -47413,282 +47413,282 @@ on ui_control($sat_bypass3)
 end on
 on ui_control($sat_knob00)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[0], $CONTROL_PAR_VALUE) * 7) + 1]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[0], $CONTROL_PAR_VALUE) * 7) + 1]
   $ctrl := $sat_knob00
   $ctrl_id := get_ui_id($sat_knob00)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob0_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_knob01)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[1], $CONTROL_PAR_VALUE) * 7) + 1]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[1], $CONTROL_PAR_VALUE) * 7) + 1]
   $ctrl := $sat_knob01
   $ctrl_id := get_ui_id($sat_knob01)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob0_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_knob02)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[2], $CONTROL_PAR_VALUE) * 7) + 1]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[2], $CONTROL_PAR_VALUE) * 7) + 1]
   $ctrl := $sat_knob02
   $ctrl_id := get_ui_id($sat_knob02)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob0_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_knob03)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[3], $CONTROL_PAR_VALUE) * 7) + 1]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[3], $CONTROL_PAR_VALUE) * 7) + 1]
   $ctrl := $sat_knob03
   $ctrl_id := get_ui_id($sat_knob03)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob0_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_knob10)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[0], $CONTROL_PAR_VALUE) * 7) + 2]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[0], $CONTROL_PAR_VALUE) * 7) + 2]
   $ctrl := $sat_knob10
   $ctrl_id := get_ui_id($sat_knob10)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob1_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_knob11)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[1], $CONTROL_PAR_VALUE) * 7) + 2]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[1], $CONTROL_PAR_VALUE) * 7) + 2]
   $ctrl := $sat_knob11
   $ctrl_id := get_ui_id($sat_knob11)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob1_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_knob12)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[2], $CONTROL_PAR_VALUE) * 7) + 2]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[2], $CONTROL_PAR_VALUE) * 7) + 2]
   $ctrl := $sat_knob12
   $ctrl_id := get_ui_id($sat_knob12)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob1_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_knob13)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[3], $CONTROL_PAR_VALUE) * 7) + 2]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[3], $CONTROL_PAR_VALUE) * 7) + 2]
   $ctrl := $sat_knob13
   $ctrl_id := get_ui_id($sat_knob13)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob1_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_knob20)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[0], $CONTROL_PAR_VALUE) * 7) + 3]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[0], $CONTROL_PAR_VALUE) * 7) + 3]
   $ctrl := $sat_knob20
   $ctrl_id := get_ui_id($sat_knob20)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob2_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_knob21)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[1], $CONTROL_PAR_VALUE) * 7) + 3]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[1], $CONTROL_PAR_VALUE) * 7) + 3]
   $ctrl := $sat_knob21
   $ctrl_id := get_ui_id($sat_knob21)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob2_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_knob22)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[2], $CONTROL_PAR_VALUE) * 7) + 3]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[2], $CONTROL_PAR_VALUE) * 7) + 3]
   $ctrl := $sat_knob22
   $ctrl_id := get_ui_id($sat_knob22)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob2_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_knob23)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[3], $CONTROL_PAR_VALUE) * 7) + 3]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[3], $CONTROL_PAR_VALUE) * 7) + 3]
   $ctrl := $sat_knob23
   $ctrl_id := get_ui_id($sat_knob23)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob2_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_knob30)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[0], $CONTROL_PAR_VALUE) * 7) + 4]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[0], $CONTROL_PAR_VALUE) * 7) + 4]
   $ctrl := $sat_knob30
   $ctrl_id := get_ui_id($sat_knob30)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob3_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_knob31)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[1], $CONTROL_PAR_VALUE) * 7) + 4]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[1], $CONTROL_PAR_VALUE) * 7) + 4]
   $ctrl := $sat_knob31
   $ctrl_id := get_ui_id($sat_knob31)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob3_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_knob32)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[2], $CONTROL_PAR_VALUE) * 7) + 4]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[2], $CONTROL_PAR_VALUE) * 7) + 4]
   $ctrl := $sat_knob32
   $ctrl_id := get_ui_id($sat_knob32)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob3_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_knob33)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[3], $CONTROL_PAR_VALUE) * 7) + 4]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[3], $CONTROL_PAR_VALUE) * 7) + 4]
   $ctrl := $sat_knob33
   $ctrl_id := get_ui_id($sat_knob33)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob3_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_knob40)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[0], $CONTROL_PAR_VALUE) * 7) + 5]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[0], $CONTROL_PAR_VALUE) * 7) + 5]
   $ctrl := $sat_knob40
   $ctrl_id := get_ui_id($sat_knob40)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob4_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_knob41)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[1], $CONTROL_PAR_VALUE) * 7) + 5]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[1], $CONTROL_PAR_VALUE) * 7) + 5]
   $ctrl := $sat_knob41
   $ctrl_id := get_ui_id($sat_knob41)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob4_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_knob42)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[2], $CONTROL_PAR_VALUE) * 7) + 5]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[2], $CONTROL_PAR_VALUE) * 7) + 5]
   $ctrl := $sat_knob42
   $ctrl_id := get_ui_id($sat_knob42)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob4_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_knob43)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[3], $CONTROL_PAR_VALUE) * 7) + 5]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[3], $CONTROL_PAR_VALUE) * 7) + 5]
   $ctrl := $sat_knob43
   $ctrl_id := get_ui_id($sat_knob43)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob4_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_knob50)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[0], $CONTROL_PAR_VALUE) * 7) + 6]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[0], $CONTROL_PAR_VALUE) * 7) + 6]
   $ctrl := $sat_knob50
   $ctrl_id := get_ui_id($sat_knob50)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob5_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_knob51)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[1], $CONTROL_PAR_VALUE) * 7) + 6]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[1], $CONTROL_PAR_VALUE) * 7) + 6]
   $ctrl := $sat_knob51
   $ctrl_id := get_ui_id($sat_knob51)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob5_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_knob52)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[2], $CONTROL_PAR_VALUE) * 7) + 6]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[2], $CONTROL_PAR_VALUE) * 7) + 6]
   $ctrl := $sat_knob52
   $ctrl_id := get_ui_id($sat_knob52)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob5_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_knob53)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[3], $CONTROL_PAR_VALUE) * 7) + 6]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[(get_control_par(%sat_menu[3], $CONTROL_PAR_VALUE) * 7) + 6]
   $ctrl := $sat_knob53
   $ctrl_id := get_ui_id($sat_knob53)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_knob5_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_gain0)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[get_control_par(%sat_menu[0], $CONTROL_PAR_VALUE) * 7]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[get_control_par(%sat_menu[0], $CONTROL_PAR_VALUE) * 7]
   $ctrl := $sat_gain0
   $ctrl_id := get_ui_id($sat_gain0)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_gain_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_gain1)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[get_control_par(%sat_menu[1], $CONTROL_PAR_VALUE) * 7]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[get_control_par(%sat_menu[1], $CONTROL_PAR_VALUE) * 7]
   $ctrl := $sat_gain1
   $ctrl_id := get_ui_id($sat_gain1)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_gain_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_gain2)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[get_control_par(%sat_menu[2], $CONTROL_PAR_VALUE) * 7]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[get_control_par(%sat_menu[2], $CONTROL_PAR_VALUE) * 7]
   $ctrl := $sat_gain2
   $ctrl_id := get_ui_id($sat_gain2)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_gain_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_gain3)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[get_control_par(%sat_menu[3], $CONTROL_PAR_VALUE) * 7]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_sat_type_link_names[get_control_par(%sat_menu[3], $CONTROL_PAR_VALUE) * 7]
   $ctrl := $sat_gain3
   $ctrl_id := get_ui_id($sat_gain3)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($sat_gain_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($sat_menu0)
@@ -47792,7 +47792,7 @@ on ui_control($sat_menu0)
   end if
   call update_visibility
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $sat_bypass0
   $ctrl_id := get_ui_id($sat_bypass0)
   @ctrl_unit := ""
@@ -47901,7 +47901,7 @@ on ui_control($sat_menu1)
   end if
   call update_visibility
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $sat_bypass1
   $ctrl_id := get_ui_id($sat_bypass1)
   @ctrl_unit := ""
@@ -48010,7 +48010,7 @@ on ui_control($sat_menu2)
   end if
   call update_visibility
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $sat_bypass2
   $ctrl_id := get_ui_id($sat_bypass2)
   @ctrl_unit := ""
@@ -48119,7 +48119,7 @@ on ui_control($sat_menu3)
   end if
   call update_visibility
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $sat_bypass3
   $ctrl_id := get_ui_id($sat_bypass3)
   @ctrl_unit := ""
@@ -48130,7 +48130,7 @@ end on
 on ui_control($filter_bypass0)
   call update_fx_active_labels
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_bypass0
   $ctrl_id := get_ui_id($filter_bypass0)
   @ctrl_unit := ""
@@ -48141,7 +48141,7 @@ end on
 on ui_control($filter_bypass1)
   call update_fx_active_labels
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_bypass1
   $ctrl_id := get_ui_id($filter_bypass1)
   @ctrl_unit := ""
@@ -48152,7 +48152,7 @@ end on
 on ui_control($filter_bypass2)
   call update_fx_active_labels
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_bypass2
   $ctrl_id := get_ui_id($filter_bypass2)
   @ctrl_unit := ""
@@ -48163,7 +48163,7 @@ end on
 on ui_control($filter_bypass3)
   call update_fx_active_labels
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_bypass3
   $ctrl_id := get_ui_id($filter_bypass3)
   @ctrl_unit := ""
@@ -48177,17 +48177,17 @@ on ui_control($filter_type_menu0)
   set_control_par(get_ui_id($filter_type_label_left0), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[6 + $filter_type_menu0])
   set_control_par(get_ui_id($filter_type_label_right0), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[12 + $filter_type_menu0])
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_type_menu0)
   $ctrl_label := get_ui_id($filter_type_menu0)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := "Hz"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_cut0)
   $ctrl_label := get_ui_id($filter_cut_value_label)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_reso0
   $ctrl_id := get_ui_id($filter_reso0)
   @ctrl_unit := ""
@@ -48201,17 +48201,17 @@ on ui_control($filter_type_menu1)
   set_control_par(get_ui_id($filter_type_label_left1), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[6 + $filter_type_menu1])
   set_control_par(get_ui_id($filter_type_label_right1), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[12 + $filter_type_menu1])
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_type_menu1)
   $ctrl_label := get_ui_id($filter_type_menu1)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := "Hz"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_cut1)
   $ctrl_label := get_ui_id($filter_cut_value_label)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_reso1
   $ctrl_id := get_ui_id($filter_reso1)
   @ctrl_unit := ""
@@ -48225,17 +48225,17 @@ on ui_control($filter_type_menu2)
   set_control_par(get_ui_id($filter_type_label_left2), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[6 + $filter_type_menu2])
   set_control_par(get_ui_id($filter_type_label_right2), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[12 + $filter_type_menu2])
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_type_menu2)
   $ctrl_label := get_ui_id($filter_type_menu2)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := "Hz"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_cut2)
   $ctrl_label := get_ui_id($filter_cut_value_label)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_reso2
   $ctrl_id := get_ui_id($filter_reso2)
   @ctrl_unit := ""
@@ -48249,17 +48249,17 @@ on ui_control($filter_type_menu3)
   set_control_par(get_ui_id($filter_type_label_left3), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[6 + $filter_type_menu3])
   set_control_par(get_ui_id($filter_type_label_right3), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[12 + $filter_type_menu3])
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_type_menu3)
   $ctrl_label := get_ui_id($filter_type_menu3)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := "Hz"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_cut3)
   $ctrl_label := get_ui_id($filter_cut_value_label)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_reso3
   $ctrl_id := get_ui_id($filter_reso3)
   @ctrl_unit := ""
@@ -48282,18 +48282,18 @@ on ui_control($filter_type_button_left0)
   set_control_par(get_ui_id($filter_type_label_left0), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[6 + $filter_type_menu0])
   set_control_par(get_ui_id($filter_type_label_right0), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[12 + $filter_type_menu0])
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_type_menu0)
   $ctrl_label := get_ui_id($filter_type_menu0)
   call handle_control_change
   $filter_type_button_left0 := 0
   !unit1[$NI_CALLBACK_ID mod 100] := "Hz"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_cut0)
   $ctrl_label := get_ui_id($filter_cut_value_label)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_reso0
   $ctrl_id := get_ui_id($filter_reso0)
   @ctrl_unit := ""
@@ -48316,18 +48316,18 @@ on ui_control($filter_type_button_right0)
   set_control_par(get_ui_id($filter_type_label_left0), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[6 + $filter_type_menu0])
   set_control_par(get_ui_id($filter_type_label_right0), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[12 + $filter_type_menu0])
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_type_menu0)
   $ctrl_label := get_ui_id($filter_type_menu0)
   call handle_control_change
   $filter_type_button_right0 := 0
   !unit1[$NI_CALLBACK_ID mod 100] := "Hz"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_cut0)
   $ctrl_label := get_ui_id($filter_cut_value_label)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_reso0
   $ctrl_id := get_ui_id($filter_reso0)
   @ctrl_unit := ""
@@ -48350,18 +48350,18 @@ on ui_control($filter_type_button_left1)
   set_control_par(get_ui_id($filter_type_label_left1), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[6 + $filter_type_menu1])
   set_control_par(get_ui_id($filter_type_label_right1), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[12 + $filter_type_menu1])
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_type_menu1)
   $ctrl_label := get_ui_id($filter_type_menu1)
   call handle_control_change
   $filter_type_button_left1 := 0
   !unit1[$NI_CALLBACK_ID mod 100] := "Hz"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_cut1)
   $ctrl_label := get_ui_id($filter_cut_value_label)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_reso1
   $ctrl_id := get_ui_id($filter_reso1)
   @ctrl_unit := ""
@@ -48384,18 +48384,18 @@ on ui_control($filter_type_button_right1)
   set_control_par(get_ui_id($filter_type_label_left1), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[6 + $filter_type_menu1])
   set_control_par(get_ui_id($filter_type_label_right1), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[12 + $filter_type_menu1])
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_type_menu1)
   $ctrl_label := get_ui_id($filter_type_menu1)
   call handle_control_change
   $filter_type_button_right1 := 0
   !unit1[$NI_CALLBACK_ID mod 100] := "Hz"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_cut1)
   $ctrl_label := get_ui_id($filter_cut_value_label)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_reso1
   $ctrl_id := get_ui_id($filter_reso1)
   @ctrl_unit := ""
@@ -48418,18 +48418,18 @@ on ui_control($filter_type_button_left2)
   set_control_par(get_ui_id($filter_type_label_left2), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[6 + $filter_type_menu2])
   set_control_par(get_ui_id($filter_type_label_right2), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[12 + $filter_type_menu2])
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_type_menu2)
   $ctrl_label := get_ui_id($filter_type_menu2)
   call handle_control_change
   $filter_type_button_left2 := 0
   !unit1[$NI_CALLBACK_ID mod 100] := "Hz"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_cut2)
   $ctrl_label := get_ui_id($filter_cut_value_label)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_reso2
   $ctrl_id := get_ui_id($filter_reso2)
   @ctrl_unit := ""
@@ -48452,18 +48452,18 @@ on ui_control($filter_type_button_right2)
   set_control_par(get_ui_id($filter_type_label_left2), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[6 + $filter_type_menu2])
   set_control_par(get_ui_id($filter_type_label_right2), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[12 + $filter_type_menu2])
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_type_menu2)
   $ctrl_label := get_ui_id($filter_type_menu2)
   call handle_control_change
   $filter_type_button_right2 := 0
   !unit1[$NI_CALLBACK_ID mod 100] := "Hz"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_cut2)
   $ctrl_label := get_ui_id($filter_cut_value_label)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_reso2
   $ctrl_id := get_ui_id($filter_reso2)
   @ctrl_unit := ""
@@ -48486,18 +48486,18 @@ on ui_control($filter_type_button_left3)
   set_control_par(get_ui_id($filter_type_label_left3), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[6 + $filter_type_menu3])
   set_control_par(get_ui_id($filter_type_label_right3), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[12 + $filter_type_menu3])
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_type_menu3)
   $ctrl_label := get_ui_id($filter_type_menu3)
   call handle_control_change
   $filter_type_button_left3 := 0
   !unit1[$NI_CALLBACK_ID mod 100] := "Hz"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_cut3)
   $ctrl_label := get_ui_id($filter_cut_value_label)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_reso3
   $ctrl_id := get_ui_id($filter_reso3)
   @ctrl_unit := ""
@@ -48520,18 +48520,18 @@ on ui_control($filter_type_button_right3)
   set_control_par(get_ui_id($filter_type_label_left3), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[6 + $filter_type_menu3])
   set_control_par(get_ui_id($filter_type_label_right3), $CONTROL_PAR_PICTURE_STATE, %_filter_picture_list[12 + $filter_type_menu3])
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_type_menu3)
   $ctrl_label := get_ui_id($filter_type_menu3)
   call handle_control_change
   $filter_type_button_right3 := 0
   !unit1[$NI_CALLBACK_ID mod 100] := "Hz"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl_id := get_ui_id($filter_cut3)
   $ctrl_label := get_ui_id($filter_cut_value_label)
   call handle_control_change
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_reso3
   $ctrl_id := get_ui_id($filter_reso3)
   @ctrl_unit := ""
@@ -48541,7 +48541,7 @@ on ui_control($filter_type_button_right3)
 end on
 on ui_control($filter_cut0)
   !unit1[$NI_CALLBACK_ID mod 100] := "Hz"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_cut0
   $ctrl_id := get_ui_id($filter_cut0)
   @ctrl_unit := "Hz"
@@ -48551,7 +48551,7 @@ on ui_control($filter_cut0)
 end on
 on ui_control($filter_cut1)
   !unit1[$NI_CALLBACK_ID mod 100] := "Hz"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_cut1
   $ctrl_id := get_ui_id($filter_cut1)
   @ctrl_unit := "Hz"
@@ -48561,7 +48561,7 @@ on ui_control($filter_cut1)
 end on
 on ui_control($filter_cut2)
   !unit1[$NI_CALLBACK_ID mod 100] := "Hz"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_cut2
   $ctrl_id := get_ui_id($filter_cut2)
   @ctrl_unit := "Hz"
@@ -48571,7 +48571,7 @@ on ui_control($filter_cut2)
 end on
 on ui_control($filter_cut3)
   !unit1[$NI_CALLBACK_ID mod 100] := "Hz"
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_cut3
   $ctrl_id := get_ui_id($filter_cut3)
   @ctrl_unit := "Hz"
@@ -48581,7 +48581,7 @@ on ui_control($filter_cut3)
 end on
 on ui_control($filter_reso0)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_reso0
   $ctrl_id := get_ui_id($filter_reso0)
   @ctrl_unit := ""
@@ -48591,7 +48591,7 @@ on ui_control($filter_reso0)
 end on
 on ui_control($filter_reso1)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_reso1
   $ctrl_id := get_ui_id($filter_reso1)
   @ctrl_unit := ""
@@ -48601,7 +48601,7 @@ on ui_control($filter_reso1)
 end on
 on ui_control($filter_reso2)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_reso2
   $ctrl_id := get_ui_id($filter_reso2)
   @ctrl_unit := ""
@@ -48611,7 +48611,7 @@ on ui_control($filter_reso2)
 end on
 on ui_control($filter_reso3)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $filter_reso3
   $ctrl_id := get_ui_id($filter_reso3)
   @ctrl_unit := ""
@@ -48622,7 +48622,7 @@ end on
 on ui_control($amp_bypass0)
   call update_fx_active_labels
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $amp_bypass0
   $ctrl_id := get_ui_id($amp_bypass0)
   @ctrl_unit := ""
@@ -48633,7 +48633,7 @@ end on
 on ui_control($amp_bypass1)
   call update_fx_active_labels
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $amp_bypass1
   $ctrl_id := get_ui_id($amp_bypass1)
   @ctrl_unit := ""
@@ -48644,7 +48644,7 @@ end on
 on ui_control($amp_bypass2)
   call update_fx_active_labels
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $amp_bypass2
   $ctrl_id := get_ui_id($amp_bypass2)
   @ctrl_unit := ""
@@ -48655,7 +48655,7 @@ end on
 on ui_control($amp_bypass3)
   call update_fx_active_labels
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $amp_bypass3
   $ctrl_id := get_ui_id($amp_bypass3)
   @ctrl_unit := ""
@@ -48758,7 +48758,7 @@ on ui_control($amp_menu0)
   end if
   call update_visibility
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $amp_bypass0
   $ctrl_id := get_ui_id($amp_bypass0)
   @ctrl_unit := ""
@@ -48861,7 +48861,7 @@ on ui_control($amp_menu1)
   end if
   call update_visibility
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $amp_bypass1
   $ctrl_id := get_ui_id($amp_bypass1)
   @ctrl_unit := ""
@@ -48964,7 +48964,7 @@ on ui_control($amp_menu2)
   end if
   call update_visibility
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $amp_bypass2
   $ctrl_id := get_ui_id($amp_bypass2)
   @ctrl_unit := ""
@@ -49067,7 +49067,7 @@ on ui_control($amp_menu3)
   end if
   call update_visibility
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := ""
+  !label_text1[$NI_CALLBACK_ID mod 100] := ""
   $ctrl := $amp_bypass3
   $ctrl_id := get_ui_id($amp_bypass3)
   @ctrl_unit := ""
@@ -49077,282 +49077,282 @@ on ui_control($amp_menu3)
 end on
 on ui_control($amp_knob00)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[get_control_par(%amp_menu[0], $CONTROL_PAR_VALUE) * 7]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[get_control_par(%amp_menu[0], $CONTROL_PAR_VALUE) * 7]
   $ctrl := $amp_knob00
   $ctrl_id := get_ui_id($amp_knob00)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob0_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob01)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[get_control_par(%amp_menu[1], $CONTROL_PAR_VALUE) * 7]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[get_control_par(%amp_menu[1], $CONTROL_PAR_VALUE) * 7]
   $ctrl := $amp_knob01
   $ctrl_id := get_ui_id($amp_knob01)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob0_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob02)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[get_control_par(%amp_menu[2], $CONTROL_PAR_VALUE) * 7]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[get_control_par(%amp_menu[2], $CONTROL_PAR_VALUE) * 7]
   $ctrl := $amp_knob02
   $ctrl_id := get_ui_id($amp_knob02)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob0_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob03)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[get_control_par(%amp_menu[3], $CONTROL_PAR_VALUE) * 7]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[get_control_par(%amp_menu[3], $CONTROL_PAR_VALUE) * 7]
   $ctrl := $amp_knob03
   $ctrl_id := get_ui_id($amp_knob03)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob0_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob10)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[0], $CONTROL_PAR_VALUE) * 7) + 1]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[0], $CONTROL_PAR_VALUE) * 7) + 1]
   $ctrl := $amp_knob10
   $ctrl_id := get_ui_id($amp_knob10)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob1_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob11)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[1], $CONTROL_PAR_VALUE) * 7) + 1]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[1], $CONTROL_PAR_VALUE) * 7) + 1]
   $ctrl := $amp_knob11
   $ctrl_id := get_ui_id($amp_knob11)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob1_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob12)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[2], $CONTROL_PAR_VALUE) * 7) + 1]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[2], $CONTROL_PAR_VALUE) * 7) + 1]
   $ctrl := $amp_knob12
   $ctrl_id := get_ui_id($amp_knob12)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob1_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob13)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[3], $CONTROL_PAR_VALUE) * 7) + 1]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[3], $CONTROL_PAR_VALUE) * 7) + 1]
   $ctrl := $amp_knob13
   $ctrl_id := get_ui_id($amp_knob13)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob1_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob20)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[0], $CONTROL_PAR_VALUE) * 7) + 2]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[0], $CONTROL_PAR_VALUE) * 7) + 2]
   $ctrl := $amp_knob20
   $ctrl_id := get_ui_id($amp_knob20)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob2_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob21)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[1], $CONTROL_PAR_VALUE) * 7) + 2]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[1], $CONTROL_PAR_VALUE) * 7) + 2]
   $ctrl := $amp_knob21
   $ctrl_id := get_ui_id($amp_knob21)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob2_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob22)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[2], $CONTROL_PAR_VALUE) * 7) + 2]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[2], $CONTROL_PAR_VALUE) * 7) + 2]
   $ctrl := $amp_knob22
   $ctrl_id := get_ui_id($amp_knob22)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob2_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob23)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[3], $CONTROL_PAR_VALUE) * 7) + 2]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[3], $CONTROL_PAR_VALUE) * 7) + 2]
   $ctrl := $amp_knob23
   $ctrl_id := get_ui_id($amp_knob23)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob2_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob30)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[0], $CONTROL_PAR_VALUE) * 7) + 3]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[0], $CONTROL_PAR_VALUE) * 7) + 3]
   $ctrl := $amp_knob30
   $ctrl_id := get_ui_id($amp_knob30)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob3_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob31)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[1], $CONTROL_PAR_VALUE) * 7) + 3]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[1], $CONTROL_PAR_VALUE) * 7) + 3]
   $ctrl := $amp_knob31
   $ctrl_id := get_ui_id($amp_knob31)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob3_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob32)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[2], $CONTROL_PAR_VALUE) * 7) + 3]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[2], $CONTROL_PAR_VALUE) * 7) + 3]
   $ctrl := $amp_knob32
   $ctrl_id := get_ui_id($amp_knob32)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob3_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob33)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[3], $CONTROL_PAR_VALUE) * 7) + 3]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[3], $CONTROL_PAR_VALUE) * 7) + 3]
   $ctrl := $amp_knob33
   $ctrl_id := get_ui_id($amp_knob33)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob3_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob40)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[0], $CONTROL_PAR_VALUE) * 7) + 4]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[0], $CONTROL_PAR_VALUE) * 7) + 4]
   $ctrl := $amp_knob40
   $ctrl_id := get_ui_id($amp_knob40)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob4_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob41)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[1], $CONTROL_PAR_VALUE) * 7) + 4]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[1], $CONTROL_PAR_VALUE) * 7) + 4]
   $ctrl := $amp_knob41
   $ctrl_id := get_ui_id($amp_knob41)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob4_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob42)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[2], $CONTROL_PAR_VALUE) * 7) + 4]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[2], $CONTROL_PAR_VALUE) * 7) + 4]
   $ctrl := $amp_knob42
   $ctrl_id := get_ui_id($amp_knob42)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob4_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob43)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[3], $CONTROL_PAR_VALUE) * 7) + 4]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[3], $CONTROL_PAR_VALUE) * 7) + 4]
   $ctrl := $amp_knob43
   $ctrl_id := get_ui_id($amp_knob43)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob4_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob50)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[0], $CONTROL_PAR_VALUE) * 7) + 5]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[0], $CONTROL_PAR_VALUE) * 7) + 5]
   $ctrl := $amp_knob50
   $ctrl_id := get_ui_id($amp_knob50)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob5_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob51)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[1], $CONTROL_PAR_VALUE) * 7) + 5]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[1], $CONTROL_PAR_VALUE) * 7) + 5]
   $ctrl := $amp_knob51
   $ctrl_id := get_ui_id($amp_knob51)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob5_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob52)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[2], $CONTROL_PAR_VALUE) * 7) + 5]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[2], $CONTROL_PAR_VALUE) * 7) + 5]
   $ctrl := $amp_knob52
   $ctrl_id := get_ui_id($amp_knob52)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob5_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob53)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[3], $CONTROL_PAR_VALUE) * 7) + 5]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[3], $CONTROL_PAR_VALUE) * 7) + 5]
   $ctrl := $amp_knob53
   $ctrl_id := get_ui_id($amp_knob53)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob5_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob60)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[0], $CONTROL_PAR_VALUE) * 7) + 6]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[0], $CONTROL_PAR_VALUE) * 7) + 6]
   $ctrl := $amp_knob60
   $ctrl_id := get_ui_id($amp_knob60)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob6_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob61)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[1], $CONTROL_PAR_VALUE) * 7) + 6]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[1], $CONTROL_PAR_VALUE) * 7) + 6]
   $ctrl := $amp_knob61
   $ctrl_id := get_ui_id($amp_knob61)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob6_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob62)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[2], $CONTROL_PAR_VALUE) * 7) + 6]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[2], $CONTROL_PAR_VALUE) * 7) + 6]
   $ctrl := $amp_knob62
   $ctrl_id := get_ui_id($amp_knob62)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob6_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_knob63)
   !unit1[$NI_CALLBACK_ID mod 100] := ""
-  !label_text0[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[3], $CONTROL_PAR_VALUE) * 7) + 6]
+  !label_text1[$NI_CALLBACK_ID mod 100] := !_amp_type_link_names[(get_control_par(%amp_menu[3], $CONTROL_PAR_VALUE) * 7) + 6]
   $ctrl := $amp_knob63
   $ctrl_id := get_ui_id($amp_knob63)
   @ctrl_unit := ""
   $ctrl_label := get_ui_id($amp_knob6_value_label)
-  @ctrl_label_text := !label_text0[$NI_CALLBACK_ID mod 100]
+  @ctrl_label_text := !label_text1[$NI_CALLBACK_ID mod 100]
   call handle_control_change
 end on
 on ui_control($amp_cab_type_menu0)

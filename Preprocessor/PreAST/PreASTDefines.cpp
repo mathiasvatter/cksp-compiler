@@ -11,7 +11,7 @@
 PreNodeAST *PreASTDefines::visit(PreNodeProgram &node) {
 	m_program = &node;
 	for(const auto & def : node.define_statements) {
-		m_define_lookup.insert({def->header->name->tok.val, def.get()});
+		m_define_lookup.insert({def->header->get_name(), def.get()});
 	}
 
 	m_builtin_defines = get_builtin_defines();
@@ -88,10 +88,11 @@ PreNodeAST *PreASTDefines::visit(PreNodeDefineStatement &node) {
 	node.body->accept(*this);
 
 	auto node_body = clone_as<PreNodeChunk>(node.body.get());
-	SimpleExprInterpreter eval("", 0);
+	SimpleExprInterpreter eval(node.body->tok);
 	auto eval_result = eval.parse_and_evaluate(std::move(node_body->chunk));
 	if(!eval_result.is_error()) {
-		auto tok = Token(token::INT, std::to_string(eval_result.unwrap()), 0, 0,"");
+		auto tok = node.body->tok;
+		tok.set_type(token::INT); tok.set_val(std::to_string(eval_result.unwrap()));
 		auto int_token = std::make_unique<PreNodeInt>(eval_result.unwrap(), tok, nullptr);
 		auto node_statement = std::make_unique<PreNodeStatement>(std::move(int_token), Token(), nullptr);
 		node.body->chunk.clear();
