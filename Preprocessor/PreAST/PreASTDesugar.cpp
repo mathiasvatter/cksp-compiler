@@ -64,6 +64,7 @@ PreNodeAST *PreASTDesugar::visit(PreNodeStatement &node) {
 }
 
 PreNodeAST *PreASTDesugar::visit(PreNodeChunk &node) {
+	node.flatten();
 	visit_all(node.chunk, *this);
 	node.flatten();
 	return &node;
@@ -150,11 +151,6 @@ PreNodeAST *PreASTDesugar::visit(PreNodeIterateMacro &node) {
     	error.exit();
     }
 
-	if (StringUtils::starts_with(node.macro_call->get_element(0)->get_string(), "PanEn.setup_control_functions")) {
-
-	}
-	// node.macro_call->accept(*this);
-
 	auto linebreak_tok = node.tok; linebreak_tok.set_type(token::LINEBRK); linebreak_tok.set_val("\n");
     node.macro_call->get_element(0)->add_chunk(std::make_unique<PreNodeOther>(linebreak_tok,nullptr));
 
@@ -177,12 +173,13 @@ PreNodeAST *PreASTDesugar::visit(PreNodeIterateMacro &node) {
     int step = step_result.unwrap();
 
     auto node_new_chunk = std::make_unique<PreNodeChunk>(node.tok, node.parent);
-    int i = from;
+    int32_t i = from;
     while(node.to.type == token::DOWNTO ? i >= to : i <= to) {
         auto node_number_chunk = std::make_unique<PreNodeChunk>(node.tok, node.parent);
     	auto number_tok = node.tok; number_tok.set_type(token::INT); number_tok.set_val(std::to_string(i));
         auto node_statement = std::make_unique<PreNodeStatement>(
-			std::make_unique<PreNodeNumber>(
+			std::make_unique<PreNodeInt>(
+				i,
 				number_tok,
 				nullptr
 			),
