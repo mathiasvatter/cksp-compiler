@@ -1772,6 +1772,7 @@ Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST*
             return Result<std::unique_ptr<NodeUIControl>>(parsed_arr.get_error());
         }
         auto array = std::move(parsed_arr.unwrap());
+
         // is ui_control array
         if(peek().type == token::OPEN_BRACKET) {
             consume(); // consume [
@@ -2172,8 +2173,9 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_family_statement(NodeAST* parent)
 	if(l.is_error())
 		return Result<std::unique_ptr<NodeAST>>(l.get_error());
 	auto node_block = std::make_unique<NodeBlock>(start_token);
-	while(peek().type != token::END_FAMILY) {
+	while(peek().type != end_construct) {
 		_skip_linebreaks();
+		if(peek().type == end_construct) break;
 		auto declare_stmt = parse_statement(nullptr);
 		if(declare_stmt.is_error()) {
 			return Result<std::unique_ptr<NodeAST>>(declare_stmt.get_error());
@@ -2206,6 +2208,7 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 	std::vector<std::shared_ptr<NodeFunctionDefinition>> node_methods;
 	while(peek().type != end_construct) {
 		_skip_linebreaks();
+		if(peek().type == end_construct) break;
 		if(peek().type == token::DECLARE) {
 			auto declare_stmt = parse_declare_statement(node_member_block.get());
 			if(declare_stmt.is_error()) {

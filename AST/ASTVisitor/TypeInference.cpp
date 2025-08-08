@@ -748,6 +748,7 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 			definition->accept(*this);
 			m_program->function_call_stack.pop();
 			definition->visited = true;
+
 			// apply references to function params
 			for (auto &param : definition->header->params) {
 				for(auto & ref : param->variable->references) {
