@@ -176,11 +176,11 @@ PreNodeAST *PreASTDesugar::visit(PreNodeIterateMacro &node) {
     int32_t i = from;
     while(node.to.type == token::DOWNTO ? i >= to : i <= to) {
         auto node_number_chunk = std::make_unique<PreNodeChunk>(node.tok, node.parent);
-    	auto number_tok = node.tok; number_tok.set_type(token::INT); number_tok.set_val(std::to_string(i));
+    	auto int_tok = node.tok; int_tok.set_type(token::INT); int_tok.set_val(std::to_string(i));
         auto node_statement = std::make_unique<PreNodeStatement>(
 			std::make_unique<PreNodeInt>(
 				i,
-				number_tok,
+				int_tok,
 				nullptr
 			),
 			node.tok,
@@ -247,8 +247,8 @@ PreNodeAST *PreASTDesugar::visit(PreNodeLiterateMacro &node) {
     auto node_new_chunk = std::make_unique<PreNodeChunk>(node.tok, node.parent);
     for (int i = 0; i<node.literate_tokens->chunk.size(); i++) {
         auto node_number_chunk = std::make_unique<PreNodeChunk>(node.tok, node.parent);
-    	auto number_tok = node.tok; number_tok.set_type(token::INT); number_tok.set_val(std::to_string(i));
-        auto node_number_statement = std::make_unique<PreNodeStatement>(std::make_unique<PreNodeNumber>(number_tok,nullptr), node.tok, nullptr);
+    	auto int_tok = node.tok; int_tok.set_type(token::INT); int_tok.set_val(std::to_string(i));
+        auto node_number_statement = std::make_unique<PreNodeStatement>(std::make_unique<PreNodeInt>(i, int_tok,nullptr), node.tok, nullptr);
         node_number_chunk->chunk.push_back(std::move(node_number_statement));
 
         auto literate_token = node.literate_tokens->chunk[i]->clone();

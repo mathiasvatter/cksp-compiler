@@ -166,37 +166,106 @@ public:
 	/// returns data structure declaration searching all scopes
 	std::shared_ptr<NodeDataStructure> get_declared_data_structure(const std::string& data);
 	/// only returns data structure declaration in current scope or global_scope
-	std::shared_ptr<NodeDataStructure> get_scoped_data_structure(const std::string& data, bool global_scope) const;
+	[[nodiscard]] std::shared_ptr<NodeDataStructure> get_scoped_data_structure(const std::string& data, bool global_scope) const;
 
 	/// variable error handling
-	static CompileError throw_declaration_error(const NodeReference &node, const std::string& add_msg="") {
+	static CompileError throw_declaration_error(NodeReference &node, const std::string& add_msg="", const DefinitionProvider* ctx = nullptr) {
 		auto compile_error = CompileError(ErrorType::VariableError, "", "", node.tok);
 		std::string type = "<Variable>";
-		if(node.get_node_type() == NodeType::ArrayRef) type = "<Array>";
-		if(node.get_node_type() == NodeType::NDArrayRef) type = "<NDArray>";
-		if(node.get_node_type() == NodeType::PointerRef) type = "<Pointer>";
-		if(node.get_node_type() == NodeType::ListRef) type = "<List>";
-		if (node.get_node_type() == NodeType::FunctionHeaderRef) type = "<Function> Variable of this name";
+		if(node.cast<NodeArrayRef>()) type = "<Array>";
+		if(node.cast<NodeNDArrayRef>()) type = "<NDArray>";
+		if(node.cast<NodePointerRef>()) type = "<Pointer>";
+		if(node.cast<NodeListRef>()) type = "<List>";
+		if (node.cast<NodeFunctionHeaderRef>()) type = "<Function> Variable of this name";
 		compile_error.m_message = type+" has not been declared: " + node.tok.val+". "+add_msg;
 		compile_error.m_expected = "Valid declaration";
+
+		// check if reference is assignment in declaration of global variable
+		// like : declare global ctrl := control <- where control is a lokal variable
+		if (auto single_decl = node.parent->cast<NodeSingleDeclaration>()) {
+			if (single_decl->variable->is_global) {
+				compile_error.m_message += "This <Reference> is assigned in a global declaration. Local variables should "
+							   "not be assigned in global declarations. \nTry splitting this into a declaration and an assignment.";
+			}
+		}
+
+		if (ctx) {
+			auto suggestions = ctx->misspelled_suggestions(node.name);
+			if (!suggestions.empty()) {
+				compile_error.m_message += " Did you mean: "
+					+ StringUtils::join(suggestions, ',') + "?";
+			}
+		}
+
 		return compile_error;
 	};
 
-	[[nodiscard]] std::vector<std::string> misspelled_suggestions(const std::string& name) const {
-		std::vector<std::string> suggestions;
-		size_t max_levenshtein_distance = 1; // maximum distance for suggestions
-		std::pair<int, int> word_length = {name.length()-1, name.length()+1}; // range of word length for suggestions
-		for (const auto & m_declared_data_structure : std::ranges::reverse_view(m_declared_data_structures)) {
-			for (const auto &key : m_declared_data_structure | std::views::keys) {
-				if (key.length() < word_length.first || key.length() > word_length.second) continue;
-				int distance = StringUtils::get_levenshtein_distance(name, key);
-				if (distance > 0 && distance <= max_levenshtein_distance) {
-					suggestions.push_back(key);
-				}
-			}
-		}
-		return suggestions;
+	[[nodiscard]] std::vector<std::string> misspelled_suggestions(const std::string& name, size_t max_results = 4) const {
+	    // Heuristik: dynamische Distanz-Schranke relativ zur Länge
+	    const size_t L = name.size();
+	    const size_t max_dist = std::clamp<size_t>((L <= 4 ? 1 : (L <= 8 ? 2 : 3)), 1, 4);
+
+	    // Wenn nur die Groß-/Kleinschreibung falsch ist → genau diesen Kandidaten vorschlagen und fertig
+	    {
+	        const auto lname = StringUtils::to_lower(name);
+	        for (const auto& scope : std::ranges::reverse_view(m_declared_data_structures)) {
+	            if (auto it = std::ranges::find_if(scope, [&](auto& kv){
+	                return StringUtils::to_lower(kv.first) == lname;
+	            }); it != scope.end()) {
+	                return { it->first };
+	            }
+	        }
+	    }
+
+	    struct Cand { std::string key; int score; };
+	    std::vector<Cand> cands;
+	    cands.reserve(32);
+
+	    // Scopes von innen nach außen: kleinere Boni durch Score wirken implizit
+	    for (const auto& scope : std::ranges::reverse_view(m_declared_data_structures)) {
+	        for (const auto& key : scope | std::views::keys) {
+	            // Grobfilter: Längendifferenz > (max_dist+1) überspringen
+	            if (key.size() + (max_dist + 1) < L || L + (max_dist + 1) < key.size()) continue;
+
+	            size_t d = levenshtein_ci(name, key);
+	            if (d == 0) continue; // wäre „gleich“ – dann gäbe es keinen Fehler
+	            if (d <= max_dist) {
+	                int score = suggestion_score(name, key, d);
+	                cands.push_back({key, score});
+	            }
+	        }
+	    }
+
+	    // Optional: Builtins & externals auch vorschlagen (kostenfrei dranhängen)
+	    auto consider_map = [&](const auto& mp) {
+	        for (const auto& [key, _] : mp) {
+	            if (key.size() + (max_dist + 1) < L || L + (max_dist + 1) < key.size()) continue;
+	            size_t d = levenshtein_ci(name, key);
+	            if (d > 0 && d <= max_dist) {
+	                int score = suggestion_score(name, key, d) + 2; // leichter Malus ggü. lokalen Scopes
+	                cands.push_back({key, score});
+	            }
+	        }
+	    };
+	    consider_map(builtin_variables);
+	    consider_map(builtin_arrays);
+	    consider_map(builtin_widgets);
+	    // property_functions / builtin_functions haben Signaturen – fürs Var-Suggest meist weglassen
+
+	    // Deduplizieren und sortieren
+	    std::sort(cands.begin(), cands.end(), [](const Cand& a, const Cand& b){
+	        if (a.score != b.score) return a.score < b.score;
+	        return a.key < b.key;
+	    });
+	    cands.erase(std::ranges::unique(cands, [](const Cand& a, const Cand& b){ return a.key == b.key; }).begin(), cands.end());
+
+	    std::vector<std::string> out;
+	    out.reserve(std::min(max_results, cands.size()));
+	    for (size_t i = 0; i < cands.size() && out.size() < max_results; ++i)
+	        out.push_back(cands[i].key);
+	    return out;
 	}
+
 
 	// static CompileError throw_declaration_type_error(NodeReference* node) {
 	// 	auto compile_error = CompileError(ErrorType::VariableError, "", "", node->tok);
@@ -374,6 +443,38 @@ public:
 		func_call->kind = NodeFunctionCall::Kind::Builtin;
 		return std::move(func_call);
 	}
+
+	// Case-insensitive Distance
+	static size_t levenshtein_ci(std::string a, std::string b) {
+		a = StringUtils::to_lower(std::move(a));
+		b = StringUtils::to_lower(std::move(b));
+		return StringUtils::get_levenshtein_distance(a, b);
+	}
+
+	// Einfaches Score-Ranking: Levenshtein + kleine Boni/Mali
+	static int suggestion_score(std::string_view needle, std::string_view cand, size_t dist_ci) {
+		int score = static_cast<int>(dist_ci) * 10; // Basis: Distanz zählt am meisten
+
+		// Bonus: gleicher erster Buchstabe (case-insensitive)
+		if (!needle.empty() && !cand.empty()
+			&& std::tolower((unsigned char)needle.front()) == std::tolower((unsigned char)cand.front()))
+			score -= 2;
+
+		// Bonus: gemeinsames Präfix >=2 (case-insensitive)
+		size_t pref = 0;
+		const size_t n = std::min(needle.size(), cand.size());
+		for (; pref < n; ++pref) {
+			if (std::tolower((unsigned char)needle[pref]) != std::tolower((unsigned char)cand[pref])) break;
+		}
+		if (pref >= 2) score -= 2;
+
+		// Leichter Malus bei stark unterschiedlicher Länge
+		const auto len_diff = (int)std::abs((int)needle.size() - (int)cand.size());
+		score += std::max(0, len_diff - 1);
+
+		return score;
+	}
+
 
 };
 
