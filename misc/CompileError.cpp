@@ -57,8 +57,8 @@ void CompileError::print(const ErrorType err) {
     std::cout << "]\n";
 
     // ---- sauber formatierte Message
-    std::string msg = StringUtils::normalize_sentence(m_message);
-    std::cout << msg << "\n";
+    // std::string msg = StringUtils::normalize_sentence(m_message);
+    std::cout << m_message << "\n";
 
     // ---- optionale Felder, immer in neuer Zeile
     if (!m_expected.empty()) {

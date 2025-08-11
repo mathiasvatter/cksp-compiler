@@ -14,7 +14,7 @@ public:
     PreNodeAST *visit(PreNodeKeyword &node) override;
 	PreNodeAST *visit(PreNodeIncrementer &node) override;
 	/// move to macro_defitions vector
-	PreNodeAST *visit(PreNodeMacroDefinition &node) override;
+	// PreNodeAST *visit(PreNodeMacroDefinition &node) override;
 
 
 private:

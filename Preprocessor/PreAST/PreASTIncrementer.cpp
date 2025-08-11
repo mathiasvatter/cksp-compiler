@@ -3,6 +3,8 @@
 //
 
 #include "PreASTIncrementer.h"
+
+#include <ranges>
 #include "../../Interpreter/SimpleExprInterpreter.h"
 
 PreNodeAST *PreASTIncrementer::visit(PreNodeProgram &node) {
@@ -101,33 +103,33 @@ PreNodeAST *PreASTIncrementer::visit(PreNodeIncrementer &node) {
 }
 
 PreNodeInt* PreASTIncrementer::get_substitute(const std::string& name) {
-	for (auto rit = m_incrementer_stack.rbegin(); rit != m_incrementer_stack.rend(); ++rit) {
-		if (std::get<std::string>(*rit) == name) {
-			return std::get<2>(*rit).get();
+	for (auto & rit : std::ranges::reverse_view(m_incrementer_stack)) {
+		if (std::get<std::string>(rit) == name) {
+			return std::get<2>(rit).get();
 		}
 	}
 	return nullptr;
 }
 
 int32_t PreASTIncrementer::get_step_value(const std::string& name) {
-	for (auto rit = m_incrementer_stack.rbegin(); rit != m_incrementer_stack.rend(); ++rit) {
-		if (std::get<std::string>(*rit) == name) {
-			return std::get<int32_t>(*rit);
+	for (auto & rit : std::ranges::reverse_view(m_incrementer_stack)) {
+		if (std::get<std::string>(rit) == name) {
+			return std::get<int32_t>(rit);
 		}
 	}
 	return 0;
 }
 
-PreNodeAST *PreASTIncrementer::visit(PreNodeMacroDefinition &node) {
-	node.header->accept(*this);
-	node.body->accept(*this);
-
-	if(m_program) {
-		auto node_macro_definition = clone_as<PreNodeMacroDefinition>(&node);
-		// auto node_macro_definition = std::unique_ptr<PreNodeMacroDefinition>(static_cast<PreNodeMacroDefinition *>(node.clone().release()));
-		m_program->macro_definitions.push_back(std::move(node_macro_definition));
-	}
-	// replace node with dead code after incrementation
-	return node.replace_with(std::make_unique<PreNodeDeadCode>(node.header->name->tok, node.parent));
-}
+// PreNodeAST *PreASTIncrementer::visit(PreNodeMacroDefinition &node) {
+// 	node.header->accept(*this);
+// 	node.body->accept(*this);
+//
+// 	if(m_program) {
+// 		auto node_macro_definition = clone_as<PreNodeMacroDefinition>(&node);
+// 		// auto node_macro_definition = std::unique_ptr<PreNodeMacroDefinition>(static_cast<PreNodeMacroDefinition *>(node.clone().release()));
+// 		m_program->macro_definitions.push_back(std::move(node_macro_definition));
+// 	}
+// 	// replace node with dead code after incrementation
+// 	return node.replace_with(std::make_unique<PreNodeDeadCode>(node.header->name->tok, node.parent));
+// }
 

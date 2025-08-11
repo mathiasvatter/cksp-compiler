@@ -84,7 +84,7 @@ public:
 		// input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
 		// input_filename = "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp";
 		input_filename = "/Users/mathias/Scripting/preset-system/main.ksp";
-		input_filename = "/Users/mathias/Scripting/sonu-northern-spheres/Nordic Spheres.ksp";
+		// input_filename = "/Users/mathias/Scripting/sonu-northern-spheres/Nordic Spheres.ksp";
 		// input_filename = "/Users/mathias/Scripting/fragments-modern-percussion/Fragments.ksp";
 		// input_filename = "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp";
 		// input_filename = "/Users/Mathias/Scripting/action-strings-2/action_strings2_V0.1.ksp";

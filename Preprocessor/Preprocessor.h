@@ -53,12 +53,12 @@ public:
     	pre_ast->accept(defines);
     	pre_ast->debug_print();
 
-    	PreASTIncrementer incrementer;
-    	pre_ast->accept(incrementer);
-    	pre_ast->debug_print();
-
     	PreASTDesugar desugar;
     	pre_ast->accept(desugar);
+    	pre_ast->debug_print();
+
+    	PreASTIncrementer incrementer;
+    	pre_ast->accept(incrementer);
     	pre_ast->debug_print();
 
     	PreASTCombine combine;
