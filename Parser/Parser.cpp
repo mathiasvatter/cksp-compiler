@@ -741,7 +741,7 @@ Result<std::unique_ptr<NodeCompoundAssignment>> Parser::parse_compound_assign_st
 		std::vector<std::string> valid_tokens{};
 		valid_tokens.reserve(valid_operator_tokens.size());
 		for (auto& tok : valid_operator_tokens) {
-			valid_tokens.push_back(std::string("<") + tokenStrings[static_cast<int>(tok)] + ">");
+			valid_tokens.push_back(std::string("<") + get_token_string(tok) + ">");
 		}
 		error.m_expected = StringUtils::join(valid_tokens, ',');
 		return Result<std::unique_ptr<NodeCompoundAssignment>>(error);
@@ -773,14 +773,16 @@ Result<std::unique_ptr<NodeReturn>> Parser::parse_return_statement(NodeAST* pare
 		error.set_message( "The <return> keyword is reserved for <Return> Statement within function definitions. Consider using a different name.");
 		return Result<std::unique_ptr<NodeReturn>>(error);
 	}
-	auto return_params = parse_multiple_values(node_return_statement.get());
-	if(return_params.is_error()) {
-		return Result<std::unique_ptr<NodeReturn>>(return_params.get_error());
-	}
-	node_return_statement->return_variables = std::move(return_params.unwrap()->params);
-	if(!m_current_function_def) {
-		error.set_message( "Found <Return> Statement outside of function definition.");
-		return Result<std::unique_ptr<NodeReturn>>(error);
+	if (peek().type != token::LINEBRK) {
+		auto return_params = parse_multiple_values(node_return_statement.get());
+		if(return_params.is_error()) {
+			return Result<std::unique_ptr<NodeReturn>>(return_params.get_error());
+		}
+		node_return_statement->return_variables = std::move(return_params.unwrap()->params);
+		if(!m_current_function_def) {
+			error.set_message( "Found <Return> Statement outside of function definition.");
+			return Result<std::unique_ptr<NodeReturn>>(error);
+		}
 	}
 	m_current_function_def->num_return_params = node_return_statement->return_variables.size();
 	node_return_statement->definition = m_current_function_def;
@@ -1772,6 +1774,7 @@ Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST*
             return Result<std::unique_ptr<NodeUIControl>>(parsed_arr.get_error());
         }
         auto array = std::move(parsed_arr.unwrap());
+
         // is ui_control array
         if(peek().type == token::OPEN_BRACKET) {
             consume(); // consume [
@@ -2172,8 +2175,9 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_family_statement(NodeAST* parent)
 	if(l.is_error())
 		return Result<std::unique_ptr<NodeAST>>(l.get_error());
 	auto node_block = std::make_unique<NodeBlock>(start_token);
-	while(peek().type != token::END_FAMILY) {
+	while(peek().type != end_construct) {
 		_skip_linebreaks();
+		if(peek().type == end_construct) break;
 		auto declare_stmt = parse_statement(nullptr);
 		if(declare_stmt.is_error()) {
 			return Result<std::unique_ptr<NodeAST>>(declare_stmt.get_error());
@@ -2206,6 +2210,7 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 	std::vector<std::shared_ptr<NodeFunctionDefinition>> node_methods;
 	while(peek().type != end_construct) {
 		_skip_linebreaks();
+		if(peek().type == end_construct) break;
 		if(peek().type == token::DECLARE) {
 			auto declare_stmt = parse_declare_statement(node_member_block.get());
 			if(declare_stmt.is_error()) {

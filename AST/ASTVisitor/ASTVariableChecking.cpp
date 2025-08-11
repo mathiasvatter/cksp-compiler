@@ -220,10 +220,10 @@ NodeAST* ASTVariableChecking::visit(NodeArrayRef& node) {
 		}
 		if(m_current_struct) {
 			auto msg = "When referencing a struct member, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
-			DefinitionProvider::throw_declaration_error(node, msg).exit();
+			DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
 		}
         if(!fail) return &node;
-	    DefinitionProvider::throw_declaration_error(node).exit();
+	    DefinitionProvider::throw_declaration_error(node, "", m_def_provider).exit();
     }
 
     node.match_data_structure(node_declaration);
@@ -250,9 +250,9 @@ NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 		}
 		if(m_current_struct) {
 			const auto msg = "When referencing a struct member, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
-			DefinitionProvider::throw_declaration_error(node, msg).exit();
+			DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
 		}
-		DefinitionProvider::throw_declaration_error(node).exit();
+		DefinitionProvider::throw_declaration_error(node, "", m_def_provider).exit();
 		return &node;
 	}
 	node.match_data_structure(node_declaration);
@@ -279,9 +279,9 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 		// if (!fail) return &node;
 		if(m_current_struct) {
 			const auto msg = "When referencing a struct method, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
-			DefinitionProvider::throw_declaration_error(node, msg).exit();
+			DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
 		}
-		DefinitionProvider::throw_declaration_error(node).exit();
+		DefinitionProvider::throw_declaration_error(node, "", m_def_provider).exit();
 		return &node;
 	}
 	node.match_data_structure(node_declaration);
@@ -317,13 +317,20 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 
 			if(m_current_struct) {
 				const auto msg = "When referencing a struct member, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
-				DefinitionProvider::throw_declaration_error(node, msg).exit();
+				DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
 			}
 
+			// if is assigned to a const variable, it should be known in frontend
+			if (auto single_decl = node.parent->cast<NodeSingleDeclaration>()) {
+				if (single_decl->variable->data_type == DataType::Const) {
+					auto msg = "<Variable> was assigned to a constant variable and therefore has to be constant itself.";
+					DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
+				}
+			}
 			// could still fail on ui control array values or raw list subarrays
 			if(!fail)
 				return &node;
-			DefinitionProvider::throw_declaration_error(node).exit();
+			DefinitionProvider::throw_declaration_error(node, "", m_def_provider).exit();
 		}
     }
 
@@ -347,7 +354,7 @@ NodeAST* ASTVariableChecking::visit(NodePointerRef& node) {
 			return node.replace_with(std::move(access_chain));
 		}
 		// if fail is set to false, return early. the rest is determined after lowering
-		DefinitionProvider::throw_declaration_error(node).exit();
+		DefinitionProvider::throw_declaration_error(node, "", m_def_provider).exit();
 	}
 
 	node.match_data_structure(node_declaration);

@@ -292,8 +292,16 @@ NodeAST *NodeUIControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST
 
 bool NodeUIControl::is_ui_control_array() const {
 	if(!get_declaration()) return false;
-	if(get_declaration()->control_var->get_node_type() == control_var->get_node_type()) return false;
-	return control_var->cast<NodeArray>() or control_var->cast<NodeNDArray>();
+	// if declaration node type is not the same as control_var node type, then it is probably a ui control array
+	if (get_declaration()->control_var->get_node_type() != control_var->get_node_type()) {
+		return control_var->cast<NodeArray>() or control_var->cast<NodeNDArray>();
+	}
+	// is declaration type is the same as control_var type, then check if sizes is not empty
+	if (sizes) return !sizes->empty();
+
+	// if declaration type is the same as control_var type but has no sizes, then it is not an ui control array
+	return false;
+	// return control_var->cast<NodeArray>() or control_var->cast<NodeNDArray>();
 }
 
 std::shared_ptr<NodeUIControl> NodeUIControl::get_builtin_widget(const NodeProgram *program) const {

@@ -5,74 +5,76 @@
 #include "PreASTDesugar.h"
 #include "../../Interpreter/SimpleExprInterpreter.h"
 
-void PreASTDesugar::visit(PreNodeProgram& node) {
+PreNodeAST *PreASTDesugar::visit(PreNodeProgram &node) {
     m_program = &node;
 
     for(auto & def : node.macro_definitions) {
-        m_macro_lookup.insert({{def->header->name->value.val, (int)def->header->args->params.size()}, def.get()});
-		m_macro_string_lookup.insert({def->header->name->value.val, def.get()});
+        m_macro_lookup.insert({{def->header->get_name(), (int)def->header->num_args()}, def.get()});
+		m_macro_string_lookup.insert({def->header->get_name(), def.get()});
     }
-    for(const auto & n : node.program) {
-        n->accept(*this);
-    }
+	visit_all(node.program, *this);
+	return &node;
 }
 
-void PreASTDesugar::do_substitution(PreNodeLiteral& node) {
+PreNodeAST *PreASTDesugar::do_substitution(PreNodeLiteral &node) {
 	if (!m_substitution_stack.empty()) {
-		if (auto substitute = get_substitute(node.value.val)) {
-			node.replace_with(std::move(substitute));
+		if (auto substitute = get_substitute(node.tok.val)) {
+			return node.replace_with(std::move(substitute));
 		} else if(node.cast<PreNodeKeyword>()) {
 			// in case there are more # substitutions in one word
-			if (StringUtils::count_char(node.value.val, '#') >= 2) {
-				node.value.val = get_text_replacement(node.value);
+			if (StringUtils::count_char(node.tok.val, '#') >= 2) {
+				node.tok.val = get_text_replacement(node.tok);
 			}
 		}
 	}
+	return &node;
 }
 
-void PreASTDesugar::visit(PreNodeNumber& node) {
-//	m_debug_token = node.get_string();
+PreNodeAST *PreASTDesugar::visit(PreNodeNumber &node) {
+	m_debug_token = node.get_string();
     // substitution
-	do_substitution(node);
+	return do_substitution(node);
 }
 
-void PreASTDesugar::visit(PreNodeInt& node) {
-//	m_debug_token = node.get_string();
+PreNodeAST *PreASTDesugar::visit(PreNodeInt &node) {
+	m_debug_token = node.get_string();
     // substitution
-	do_substitution(node);
+	return do_substitution(node);
 }
 
-void PreASTDesugar::visit(PreNodeKeyword& node) {
-//	m_debug_token = node.get_string();
+PreNodeAST *PreASTDesugar::visit(PreNodeKeyword &node) {
+	m_debug_token = node.get_string();
     // substitution
-	do_substitution(node);
+	return do_substitution(node);
 }
 
-void PreASTDesugar::visit(PreNodeIncrementer& node) {
-	for(auto &b : node.body) {
-		b->accept(*this);
-	}
+PreNodeAST *PreASTDesugar::visit(PreNodeIncrementer &node) {
+	visit_all(node.body, *this);
+	return &node;
 }
 
-void PreASTDesugar::visit(PreNodeOther& node) {
-//	m_debug_token = node.get_string();
+PreNodeAST *PreASTDesugar::visit(PreNodeOther &node) {
+	m_debug_token = node.get_string();
+	return &node;
 }
 
-void PreASTDesugar::visit(PreNodeStatement& node) {
+PreNodeAST *PreASTDesugar::visit(PreNodeStatement &node) {
     node.statement->accept(*this);
+	return &node;
 }
 
-void PreASTDesugar::visit(PreNodeChunk& node) {
-    for(auto &c : node.chunk) {
-        c->accept(*this);
-    }
+PreNodeAST *PreASTDesugar::visit(PreNodeChunk &node) {
 	node.flatten();
+	visit_all(node.chunk, *this);
+	node.flatten();
+	return &node;
 }
 
-void PreASTDesugar::visit(PreNodeList& node) {
+PreNodeAST *PreASTDesugar::visit(PreNodeList &node) {
     for(auto &p : node.params){
         if(p) p->accept(*this);
     }
+	return &node;
 }
 
 void PreASTDesugar::check_recursion(const Token &tok) const {
@@ -85,16 +87,16 @@ void PreASTDesugar::check_recursion(const Token &tok) const {
 	}
 }
 
-void PreASTDesugar::visit(PreNodeMacroCall& node) {
-//	m_debug_token = node.get_string();
+PreNodeAST *PreASTDesugar::visit(PreNodeMacroCall &node) {
+	m_debug_token = node.get_string();
 
 	m_program->macro_call_stack.push(&node);
     node.macro->accept(*this);
 
-    const Token token_name = node.macro->name->value;
+    const Token token_name = node.macro->name->tok;
 	check_recursion(token_name);
     // substitution
-    auto node_new_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
+    auto node_new_chunk = std::make_unique<PreNodeChunk>(node.tok, node.parent);
 
 	// see if parent is iterate or literate -> ignore amount of parameters then
     if(const auto def = get_macro_definition(*node.macro)) {
@@ -129,30 +131,34 @@ void PreASTDesugar::visit(PreNodeMacroCall& node) {
 			m_substitution_stack.pop();
 		}
         m_macros_used.erase(token_name.val);
-    	node.replace_with(std::move(node_new_chunk));
+		m_program->macro_call_stack.pop();
+    	return node.replace_with(std::move(node_new_chunk));
     }
 	m_program->macro_call_stack.pop();
+	return &node;
 }
 
-void PreASTDesugar::visit(PreNodeMacroHeader& node) {
+PreNodeAST *PreASTDesugar::visit(PreNodeMacroHeader &node) {
 	node.name->accept(*this);
 	node.args->accept(*this);
+	return &node;
 }
 
-void PreASTDesugar::visit(PreNodeIterateMacro& node) {
+PreNodeAST *PreASTDesugar::visit(PreNodeIterateMacro &node) {
     if(node.macro_call->params.size()>1) {
-    	auto error = CompileError(ErrorType::PreprocessorError,"",  "", node.to);
+    	auto error = CompileError(ErrorType::PreprocessorError,"",  "", node.tok);
     	error.m_message = "Found incorrect <iterate_macro> syntax.";
     	error.exit();
     }
 
-    node.macro_call->get_element(0)->add_chunk(std::make_unique<PreNodeOther>(Token(token::LINEBRK, "\n", 0, 0,""),nullptr));
+	auto linebreak_tok = node.tok; linebreak_tok.set_type(token::LINEBRK); linebreak_tok.set_val("\n");
+    node.macro_call->get_element(0)->add_chunk(std::make_unique<PreNodeOther>(linebreak_tok,nullptr));
 
     node.iterator_start->accept(*this);
     node.iterator_end->accept(*this);
     node.step->accept(*this);
 
-    SimpleExprInterpreter eval(node.to.file, node.to.line);
+    SimpleExprInterpreter eval(node.tok);
     auto from_result = eval.parse_and_evaluate(std::move(node.iterator_start->chunk));
     if(from_result.is_error()) from_result.get_error().exit();
 
@@ -166,17 +172,19 @@ void PreASTDesugar::visit(PreNodeIterateMacro& node) {
     int to = to_result.unwrap();
     int step = step_result.unwrap();
 
-    auto node_new_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
-    int i = from;
+    auto node_new_chunk = std::make_unique<PreNodeChunk>(node.tok, node.parent);
+    int32_t i = from;
     while(node.to.type == token::DOWNTO ? i >= to : i <= to) {
-        auto node_number_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
+        auto node_number_chunk = std::make_unique<PreNodeChunk>(node.tok, node.parent);
+    	auto int_tok = node.tok; int_tok.set_type(token::INT); int_tok.set_val(std::to_string(i));
         auto node_statement = std::make_unique<PreNodeStatement>(
-			std::make_unique<PreNodeNumber>(
-				Token(token::INT, std::to_string(i), 0, 0, ""
-				),
-				 nullptr
-			 ),
-		 	nullptr
+			std::make_unique<PreNodeInt>(
+				i,
+				int_tok,
+				nullptr
+			),
+			node.tok,
+			nullptr
 		);
         node_number_chunk->add_chunk(std::move(node_statement));
 		auto node_number_chunk_macro_arg = clone_as<PreNodeChunk>(node_number_chunk.get());
@@ -216,19 +224,19 @@ void PreASTDesugar::visit(PreNodeIterateMacro& node) {
         if(node.to.type == token::DOWNTO) i-=step; else i+=step;
     }
 	node_new_chunk->accept(*this);
-    node.replace_with(std::move(node_new_chunk));
+    return node.replace_with(std::move(node_new_chunk));
 }
 
-void PreASTDesugar::visit(PreNodeLiterateMacro& node) {
+PreNodeAST *PreASTDesugar::visit(PreNodeLiterateMacro &node) {
     if(node.macro_call->params.size()>1) {
         CompileError(ErrorType::PreprocessorError,"Found incorrect <literate_macro> syntax.", -1, "", "", "").exit();
     }
-
-    node.macro_call->get_element(0)->add_chunk(std::make_unique<PreNodeOther>(Token(token::LINEBRK, "\n", 0, 0, ""),nullptr));
+	auto linebreak_tok = node.tok; linebreak_tok.set_type(token::LINEBRK); linebreak_tok.set_val("\n");
+    node.macro_call->get_element(0)->add_chunk(std::make_unique<PreNodeOther>(linebreak_tok,nullptr));
 
 	node.literate_tokens->accept(*this);
 	// if literate_tokens was define call then there are still comma (PreNodeOther) in there. Filter out!
-	auto node_new_literate_tokens = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, &node);
+	auto node_new_literate_tokens = std::make_unique<PreNodeChunk>(node.tok, &node);
 	for(auto &keyword : node.literate_tokens->chunk) {
 		if(safe_cast<PreNodeStatement>(keyword.get(), PreNodeType::STATEMENT)) {
 			node_new_literate_tokens->chunk.push_back(std::move(keyword));
@@ -236,15 +244,16 @@ void PreASTDesugar::visit(PreNodeLiterateMacro& node) {
 	}
 	node.literate_tokens->chunk = std::move(node_new_literate_tokens->chunk);
 
-    auto node_new_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
+    auto node_new_chunk = std::make_unique<PreNodeChunk>(node.tok, node.parent);
     for (int i = 0; i<node.literate_tokens->chunk.size(); i++) {
-        auto node_number_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
-        auto node_number_statement = std::make_unique<PreNodeStatement>(std::make_unique<PreNodeNumber>(Token(token::INT, std::to_string(i), 0, 0,""),nullptr), nullptr);
+        auto node_number_chunk = std::make_unique<PreNodeChunk>(node.tok, node.parent);
+    	auto int_tok = node.tok; int_tok.set_type(token::INT); int_tok.set_val(std::to_string(i));
+        auto node_number_statement = std::make_unique<PreNodeStatement>(std::make_unique<PreNodeInt>(i, int_tok,nullptr), node.tok, nullptr);
         node_number_chunk->chunk.push_back(std::move(node_number_statement));
 
         auto literate_token = node.literate_tokens->chunk[i]->clone();
-        auto node_literate_statement = std::make_unique<PreNodeStatement>(std::move(literate_token), nullptr);
-        auto node_literate_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{}, node.parent);
+        auto node_literate_statement = std::make_unique<PreNodeStatement>(std::move(literate_token), node.tok, nullptr);
+        auto node_literate_chunk = std::make_unique<PreNodeChunk>(node.tok, node.parent);
         node_literate_chunk->chunk.push_back(std::move(node_literate_statement));
 
         std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> subst_map;
@@ -258,7 +267,7 @@ void PreASTDesugar::visit(PreNodeLiterateMacro& node) {
         m_substitution_stack.pop();
 
     }
-    node.replace_with(std::move(node_new_chunk));
+    return node.replace_with(std::move(node_new_chunk));
 }
 
 std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> PreASTDesugar::get_substitution_map(PreNodeMacroHeader& definition, const PreNodeMacroHeader& call) {
@@ -267,7 +276,7 @@ std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> PreASTDesugar::ge
 	for(int i= 0; i<definition.num_args(); i++) {
 		const auto &var = definition.args->params[i]->chunk[0];
 		if(definition.args->params[i]->chunk.size() > 1) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", definition.name->value);
+			auto error = CompileError(ErrorType::SyntaxError, "", "", definition.name->tok);
 			error.m_message = "Unable to substitute <macro> arguments. Found wrong number of substitution tokens in <macro-header>. Only <keywords> or <numbers> can be substituted.";
 			error.m_expected = "<keyword> or <number>";
 			error.m_got = definition.get_string();
@@ -279,12 +288,12 @@ std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> PreASTDesugar::ge
 }
 
 PreNodeMacroDefinition* PreASTDesugar::get_macro_definition(const PreNodeMacroHeader& macro_header) {
-    const auto it = m_macro_lookup.find({macro_header.name->value.val, (int)macro_header.args->params.size()});
+    const auto it = m_macro_lookup.find({macro_header.get_name(), (int)macro_header.num_args()});
     if(it != m_macro_lookup.end()) {
         return it->second;
     }
 	// if macro call has no arguments (literate or iterate) and therefore does not match its original definition
-	const auto it2 = m_macro_string_lookup.find(macro_header.name->value.val);
+	const auto it2 = m_macro_string_lookup.find(macro_header.get_name());
 	if(it2 != m_macro_string_lookup.end()) {
 		return it2->second;
 	}
