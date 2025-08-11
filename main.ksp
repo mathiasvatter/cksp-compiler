@@ -1,77 +1,92 @@
 
 #pragma output_path("test.txt")
 
-import "/Users/mathias/Scripting/preset-system/dev/ksp/Preset.cksp"
+// import "/Users/mathias/Scripting/preset-system/dev/ksp/Preset.cksp"
 
 
-struct MyStruct
-	declare const static PUPU: string
-	declare my_int: int
-	declare my_real: real
+// struct MyStruct
+// 	declare const static PUPU: string
+// 	declare my_int: int
+// 	declare my_real: real
 
-	function __init__(self, my_int: int, my_real: real)
-		self.my_int := my_int
-		self.my_real := my_real
-		self.PUPU := "pupu"
-	end function
+// 	function __init__(self, my_int: int, my_real: real)
+// 		self.my_int := my_int
+// 		self.my_real := my_real
+// 		self.PUPU := "pupu"
+// 	end function
 
-	function multiply(self, factor: number, factor2: number)
-		return factor * factor2
-	end function
-end struct
+// 	function multiply(self, factor: number, factor2: number)
+// 		return factor * factor2
+// 	end function
+// end struct
 
-namespace Browser
-	declare const pupu: string := "pupu"
+// namespace Browser
+// 	declare const pupu: string := "pupu"
 
-	function do_sth(param2: int)
-		return "Doing something with " & param2 & pupu
-	end function
+// 	function do_sth(param2: int)
+// 		return "Doing something with " & param2 & pupu
+// 	end function
 
-	declare ckjkj: int := 5
-end namespace
+// 	declare ckjkj: int := 5
+// end namespace
 
 on init
-	message(Browser.do_sth(4))
-	declare b := Bitlist()
-	b.set(3, 1)
-	message(b.get(3), use_count(b))
-	message(b.search())
+	// message(Browser.do_sth(4))
+	// declare b := Bitlist()
+	// b.set(3, 1)
+	// message(b.get(3), use_count(b))
+	// message(b.search())
 
-	// message(Browser::pupu)
-	declare strct := MyStruct(10, 2.5)
-	message(strct.my_int, strct.my_real)
-	message(strct.multiply(4, 4))
-	message(strct.multiply(4.4, 4.3))
-	message(strct.PUPU)
+	// // message(Browser::pupu)
+	// declare strct := MyStruct(10, 2.5)
+	// message(strct.my_int, strct.my_real)
+	// message(strct.multiply(4, 4))
+	// message(strct.multiply(4.4, 4.3))
+	// message(strct.PUPU)
+
+	declare ui_label lbl_bd_DnD (1,1)
+	lbl_bd_DnD -> picture := "btn_custom-samples-import"
+	declare arr: int[] := [1,2,3,4,5]
+	func_return(arr)
 end on
 
-if((current_filtermethod{int} {current_filtermethod}  = filter.SUBTRACTIVE{int} {filter.SUBTRACTIVE} ) or (current_filtermethod{int} {current_filtermethod}  = filter.TOGGLE{int} {filter.TOGGLE} ))
-	declare local flipped : Floatmask := Floatmask::__invert__(Categories::tags[Browser::categories[self23{Browser} {self23} ]{Categories} {Browser::categories} ]{Floatmask} {Categories::tags} ){UserDefined, None, Floatmask::__invert__} {Reuses: 0}
-	Floatmask::__incr__(flipped{Floatmask} {flipped} , 1){UserDefined, None, Floatmask::__incr__}
-	Floatmask::__incr__(flipped{Floatmask} {flipped} , 1){UserDefined, None, Floatmask::__incr__}
-	Floatmask::__decr__(preset{Floatmask} {preset} , 1){UserDefined, None, Floatmask::__decr__}
-	Floatmask::__decr__(preset{Floatmask} {preset} , 1){UserDefined, None, Floatmask::__decr__}
-	preset{Floatmask} {preset}  := Floatmask::__or__(flipped{Floatmask} {flipped} , preset{Floatmask} {preset} ){UserDefined, None, Floatmask::__or__}
-	Floatmask::__incr__(preset{Floatmask} {preset} , 1){UserDefined, None, Floatmask::__incr__}
-	Floatmask::__incr__(preset{Floatmask} {preset} , 1){UserDefined, None, Floatmask::__incr__}
-	declare local bit_count : int := Floatmask::count(Floatmask::get_range(preset{Floatmask} {preset} , Categories::get_tags_until(Browser::categories[self23{Browser} {self23} ]{Categories} {Browser::categories} , v{int} {v} ){UserDefined, None, Categories::get_tags_until}, Categories::get_tags_until(Browser::categories[self23{Browser} {self23} ]{Categories} {Browser::categories} , v{int} {v}  + 1){UserDefined, None, Categories::get_tags_until}){UserDefined, None, Floatmask::get_range}, 1){UserDefined, None, Floatmask::count} {Reuses: 0}
-	allowed{int} {allowed}  := allowed{int} {allowed}  + bit_count{int} {bit_count} 
-	Floatmask::__decr__(flipped{Floatmask} {flipped} , 1){UserDefined, None, Floatmask::__decr__}
-end if
+function func_return(array: int[])
+	
+	declare idx := search(array, 6)
+	if (idx # -1)
+		message("hello")
+	end if
+	return 
 
-if((current_filtermethod{int} {current_filtermethod}  = filter.SUBTRACTIVE{int} {filter.SUBTRACTIVE} ) or (current_filtermethod{int} {current_filtermethod}  = filter.TOGGLE{int} {filter.TOGGLE} ))
-	Floatmask::__decr__(preset{int} {preset} , 1){UserDefined, None, Floatmask::__decr__}
-	Floatmask::__decr__(preset{int} {preset} , 1){UserDefined, None, Floatmask::__decr__}
-		declare local _ret5 : int {Reuses: 0}
-		Floatmask::__invert__(_ret5{int} {_ret5} , Categories::tags[Browser::categories[self4{int} {self4} ]{int} {Browser::categories} ]{int} {Categories::tags} ){UserDefined, None, Floatmask::__invert__}
-		Floatmask::__or__(preset{int} {preset} , _ret5{int} {_ret5} , preset{int} {preset} ){UserDefined, None, Floatmask::__or__}
+end function
 
-	Floatmask::__incr__(preset{int} {preset} , 1){UserDefined, None, Floatmask::__incr__}
-	Floatmask::__incr__(preset{int} {preset} , 1){UserDefined, None, Floatmask::__incr__}
-	declare local bit_count : int {Reuses: 0}
-		declare local _ret6 : int {Reuses: 0}
-		Floatmask::get_range(_ret6{int} {_ret6} , preset{int} {preset} , Categories::get_tags_until(Browser::categories[self4{int} {self4} ]{int} {Browser::categories} , v{int} {v} ){UserDefined, None, Categories::get_tags_until}, Categories::get_tags_until(Browser::categories[self4{int} {self4} ]{int} {Browser::categories} , v{int} {v}  + 1){UserDefined, None, Categories::get_tags_until}){UserDefined, None, Floatmask::get_range}
-		bit_count{int} {bit_count}  := Floatmask::count(_ret6{int} {_ret6} , 1){UserDefined, None, Floatmask::count}
+// if((current_filtermethod{int} {current_filtermethod}  = filter.SUBTRACTIVE{int} {filter.SUBTRACTIVE} ) or (current_filtermethod{int} {current_filtermethod}  = filter.TOGGLE{int} {filter.TOGGLE} ))
+// 	declare local flipped : Floatmask := Floatmask::__invert__(Categories::tags[Browser::categories[self23{Browser} {self23} ]{Categories} {Browser::categories} ]{Floatmask} {Categories::tags} ){UserDefined, None, Floatmask::__invert__} {Reuses: 0}
+// 	Floatmask::__incr__(flipped{Floatmask} {flipped} , 1){UserDefined, None, Floatmask::__incr__}
+// 	Floatmask::__incr__(flipped{Floatmask} {flipped} , 1){UserDefined, None, Floatmask::__incr__}
+// 	Floatmask::__decr__(preset{Floatmask} {preset} , 1){UserDefined, None, Floatmask::__decr__}
+// 	Floatmask::__decr__(preset{Floatmask} {preset} , 1){UserDefined, None, Floatmask::__decr__}
+// 	preset{Floatmask} {preset}  := Floatmask::__or__(flipped{Floatmask} {flipped} , preset{Floatmask} {preset} ){UserDefined, None, Floatmask::__or__}
+// 	Floatmask::__incr__(preset{Floatmask} {preset} , 1){UserDefined, None, Floatmask::__incr__}
+// 	Floatmask::__incr__(preset{Floatmask} {preset} , 1){UserDefined, None, Floatmask::__incr__}
+// 	declare local bit_count : int := Floatmask::count(Floatmask::get_range(preset{Floatmask} {preset} , Categories::get_tags_until(Browser::categories[self23{Browser} {self23} ]{Categories} {Browser::categories} , v{int} {v} ){UserDefined, None, Categories::get_tags_until}, Categories::get_tags_until(Browser::categories[self23{Browser} {self23} ]{Categories} {Browser::categories} , v{int} {v}  + 1){UserDefined, None, Categories::get_tags_until}){UserDefined, None, Floatmask::get_range}, 1){UserDefined, None, Floatmask::count} {Reuses: 0}
+// 	allowed{int} {allowed}  := allowed{int} {allowed}  + bit_count{int} {bit_count} 
+// 	Floatmask::__decr__(flipped{Floatmask} {flipped} , 1){UserDefined, None, Floatmask::__decr__}
+// end if
 
-	allowed{int} {allowed}  := allowed{int} {allowed}  + bit_count{int} {bit_count} 
-end if
+// if((current_filtermethod{int} {current_filtermethod}  = filter.SUBTRACTIVE{int} {filter.SUBTRACTIVE} ) or (current_filtermethod{int} {current_filtermethod}  = filter.TOGGLE{int} {filter.TOGGLE} ))
+// 	Floatmask::__decr__(preset{int} {preset} , 1){UserDefined, None, Floatmask::__decr__}
+// 	Floatmask::__decr__(preset{int} {preset} , 1){UserDefined, None, Floatmask::__decr__}
+// 		declare local _ret5 : int {Reuses: 0}
+// 		Floatmask::__invert__(_ret5{int} {_ret5} , Categories::tags[Browser::categories[self4{int} {self4} ]{int} {Browser::categories} ]{int} {Categories::tags} ){UserDefined, None, Floatmask::__invert__}
+// 		Floatmask::__or__(preset{int} {preset} , _ret5{int} {_ret5} , preset{int} {preset} ){UserDefined, None, Floatmask::__or__}
+
+// 	Floatmask::__incr__(preset{int} {preset} , 1){UserDefined, None, Floatmask::__incr__}
+// 	Floatmask::__incr__(preset{int} {preset} , 1){UserDefined, None, Floatmask::__incr__}
+// 	declare local bit_count : int {Reuses: 0}
+// 		declare local _ret6 : int {Reuses: 0}
+// 		Floatmask::get_range(_ret6{int} {_ret6} , preset{int} {preset} , Categories::get_tags_until(Browser::categories[self4{int} {self4} ]{int} {Browser::categories} , v{int} {v} ){UserDefined, None, Categories::get_tags_until}, Categories::get_tags_until(Browser::categories[self4{int} {self4} ]{int} {Browser::categories} , v{int} {v}  + 1){UserDefined, None, Categories::get_tags_until}){UserDefined, None, Floatmask::get_range}
+// 		bit_count{int} {bit_count}  := Floatmask::count(_ret6{int} {_ret6} , 1){UserDefined, None, Floatmask::count}
+
+// 	allowed{int} {allowed}  := allowed{int} {allowed}  + bit_count{int} {bit_count} 
+// end if

@@ -15,26 +15,26 @@ class PreASTPragma final : public PreASTVisitor {
 	std::unordered_map<std::string, std::function<void(const std::string&, const Token&)>> pragma_handlers{};
 
 public:
-	explicit PreASTPragma(PreNodeProgram* program, CompilerConfig* config) : PreASTVisitor(program), m_config(config) {
+	explicit PreASTPragma(CompilerConfig* config) : m_config(config) {
 		register_pragma_handlers();
 	}
 
-	void visit(PreNodePragma& node) override {
+	PreNodeAST *visit(PreNodePragma &node) override {
 		const std::string& option = node.option->get_string();
-		const Token& token = node.argument->value;
+		const Token& token = node.argument->tok;
 
 		auto it = pragma_handlers.find(option);
 		if (it == pragma_handlers.end()) {
 			get_pragma_error(token, option, "valid <#pragma> option.").exit();
 		}
-		it->second(node.argument->value.val, token);
+		it->second(node.argument->tok.val, token);
+		return &node;
 	}
 
-	void visit(PreNodeProgram &node) override {
+	PreNodeAST *visit(PreNodeProgram &node) override {
 		m_program = &node;
-		for(auto & n : node.program) {
-			n->accept(*this);
-		}
+		visit_all(node.program, *this);
+		return &node;
 	}
 
 private:
@@ -44,7 +44,7 @@ private:
 			auto path = StringUtils::remove_quotes(arg);
 
 			std::string error_message = "Found unknown <output_path> option in <#pragma>. ";
-			static PathHandler path_handler(token, token.file);
+			static PathHandler path_handler(token, token.file, "");
 			auto output_path = path_handler.resolve_path(path);
 			if (output_path.is_error()) {
 				auto error = output_path.get_error();

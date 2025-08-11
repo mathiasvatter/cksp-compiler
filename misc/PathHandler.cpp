@@ -5,14 +5,20 @@
 #include "PathHandler.h"
 #include "CompileError.h"
 
-PathHandler::PathHandler(Token current_token, std::string current_file)
-	: m_current_token(std::move(current_token)), m_current_file(std::move(current_file)) {}
+PathHandler::PathHandler(Token current_token, std::string current_file, std::string root_directory)
+	: m_current_token(std::move(current_token)), m_current_file(std::move(current_file)),
+	m_root_directory(std::move(root_directory)) {}
 
 Result<std::string> PathHandler::check_valid_path(const std::string &path) {
-	std::filesystem::path absPath = std::filesystem::absolute(path);
-	if (std::filesystem::exists(absPath)) {
-		return Result<std::string>(absPath.string());
+	const std::filesystem::path fs_path(path);
+	m_error.m_got = fs_path.string();
+
+	// std::filesystem::absolute ist nicht nötig, da resolve_path bereits absolute Pfade liefert
+	if (std::filesystem::exists(fs_path)) {
+		return Result<std::string>(fs_path.string());
 	} else {
+		m_error.m_message = "File does not exist at resolved path.";
+		m_error.m_expected = "A valid file path.";
 		return Result<std::string>(m_error);
 	}
 }
@@ -52,37 +58,51 @@ Result<std::string> PathHandler::generate_output_file(const std::string &absolut
 	return Result<std::string>(absolute_path);
 }
 
+// Combines standard overlap resolve with 'resolve_overlap' as fallback for sksp path stuff.
 Result<std::string> PathHandler::resolve_path(const std::string &import_path) {
-	std::filesystem::path current_file(m_current_file);
-	std::filesystem::path current_base = current_file.parent_path();
 	std::filesystem::path rel(import_path);
+	m_error.m_got = rel.string();
 
-    m_error.m_got = rel.string();
-	// Wenn der Pfad bereits absolut ist gib ihn zurück ohne zu checken ob valid
 	if (rel.is_absolute()) {
 		return Result<std::string>(rel.string());
 	}
 
-	// Andernfalls mache den Pfad absolut in Bezug auf den Basispfad. Lexically normal removes ../
-	std::filesystem::path combined = (current_base / rel).lexically_normal();
-	std::filesystem::path absPath = std::filesystem::absolute(combined);
-
-	// Überprüfe, ob der OrdnerPfad existiert
-	if (is_directory(absPath) and std::filesystem::exists(absPath)) {
-		return Result<std::string>(absPath.string());
-	} else if(std::filesystem::exists(absPath.parent_path())) {
-		return Result<std::string>(absPath.string());
+	std::filesystem::path base_path;
+	// check if import_path starts with "./" to determine the base path
+	if (!import_path.empty() && import_path.rfind("./", 0) == 0) {
+		base_path = m_root_directory;
 	} else {
-		auto new_absPath = resolve_overlap(current_base.string(), rel.string());
-		if(new_absPath.is_error()) {
-			m_error.m_message = "Could not resolve paths.";
-			m_error.m_got = current_base.string() + ", " + rel.string();
-			return Result<std::string>(m_error);
-		}
-		return Result<std::string>(new_absPath.unwrap());
+		std::filesystem::path current_file(m_current_file);
+		base_path = current_file.parent_path();
 	}
+
+	// 1. try standard path resolution
+	std::filesystem::path combined_path = (base_path / rel).lexically_normal();
+	if (std::filesystem::exists(combined_path)) {
+		return Result<std::string>(std::filesystem::absolute(combined_path).string());
+	}
+
+	// 2. try fallback 'resolve_overlap' for special cases
+	auto overlap_result = resolve_overlap(base_path.string(), rel.string());
+	if (!overlap_result.is_error()) {
+		std::filesystem::path overlapped_path(overlap_result.unwrap());
+		if (std::filesystem::exists(overlapped_path)) {
+			return Result<std::string>(std::filesystem::absolute(overlapped_path).string());
+		}
+	}
+
+	// Wenn beides fehlschlägt, gib einen Fehler zurück.
+	// Der Fehlertext sollte den zuerst versuchten Pfad anzeigen.
+	m_error.m_message = "Could not resolve path. File not found.";
+	m_error.m_got = "Tried path: " + combined_path.string();
+	return Result<std::string>(m_error);
 }
 
+
+// Resolves the overlap between a base path and a relative path.
+// It compares the components of both paths from the end and the beginning, looking for a common segment.
+// If a common segment is found, it merges the remaining components of both paths to form the resolved path.
+// If no common segment is found, it returns an error.
 Result<std::string> PathHandler::resolve_overlap(const std::string &base_path, const std::string &relative_path) {
 	std::filesystem::path base(base_path);
 	std::filesystem::path relative(relative_path);
@@ -95,14 +115,14 @@ Result<std::string> PathHandler::resolve_overlap(const std::string &base_path, c
 	for (const auto& part : relative) {
 		relativeParts.push_back(part);
 	}
-	// do as long as its
+
 	while (!baseParts.empty() && !relativeParts.empty() && baseParts.back() != relativeParts.front()) {
 		baseParts.pop_back();
 	}
 
-	// Überprüfen, ob keine Übereinstimmung gefunden wurde
 	if (baseParts.empty() || relativeParts.empty() || baseParts.back() != relativeParts.front()) {
 		m_error.m_got = base.string() + ", " + relative.string();
+		m_error.m_message = "Could not find a common path segment to resolve overlap.";
 		return Result<std::string>(m_error);
 	}
 
@@ -118,15 +138,13 @@ Result<std::string> PathHandler::resolve_overlap(const std::string &base_path, c
 }
 
 Result<std::string> PathHandler::resolve_import_path(const std::string &import_path) {
-	auto absolute_path = resolve_path(import_path);
-	if(absolute_path.is_error()) {
-		return Result<std::string>(absolute_path.get_error());
+	auto absolute_path_result = resolve_path(import_path);
+	if(absolute_path_result.is_error()) {
+		return absolute_path_result;
 	}
-	auto valid_path = check_valid_path(absolute_path.unwrap());
-	if(valid_path.is_error()) {
-		return Result<std::string>(valid_path.get_error());
-	}
-	return Result<std::string>(valid_path.unwrap());
+
+	// check_valid_path prüft, ob die aufgelöste Datei tatsächlich existiert.
+	return check_valid_path(absolute_path_result.unwrap());
 }
 
 Result<std::vector<std::string>> PathHandler::get_directory_files(const std::string &directory_path) {

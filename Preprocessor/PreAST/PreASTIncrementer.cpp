@@ -3,41 +3,40 @@
 //
 
 #include "PreASTIncrementer.h"
+
+#include <ranges>
 #include "../../Interpreter/SimpleExprInterpreter.h"
 
-void PreASTIncrementer::visit(PreNodeProgram &node) {
+PreNodeAST *PreASTIncrementer::visit(PreNodeProgram &node) {
 	m_program = &node;
-
-	for(const auto & n : node.program) {
-		n->accept(*this);
-	}
+	visit_all(node.program, *this);
+	return &node;
 }
 
-void PreASTIncrementer::visit(PreNodeNumber& node) {
+PreNodeAST *PreASTIncrementer::visit(PreNodeNumber &node) {
     // substitution
-	substitute_with_incremented_value(node.value.val, node.value.line, &node);
+	return substitute_with_incremented_value(node.tok.val, node.tok.line, &node);
 }
 
-void PreASTIncrementer::visit(PreNodeInt& node) {
+PreNodeAST *PreASTIncrementer::visit(PreNodeInt &node) {
     // substitution
-	substitute_with_incremented_value(node.value.val, node.value.line, &node);
+	return substitute_with_incremented_value(node.tok.val, node.tok.line, &node);
 }
 
-void PreASTIncrementer::visit(PreNodeKeyword& node) {
+PreNodeAST *PreASTIncrementer::visit(PreNodeKeyword &node) {
     // substitution
-	substitute_with_incremented_value(node.value.val, node.value.line, &node);
+	return substitute_with_incremented_value(node.tok.val, node.tok.line, &node);
 }
 
-bool PreASTIncrementer::substitute_with_incremented_value(const std::string& name, size_t line, PreNodeAST* node) {
+PreNodeAST *PreASTIncrementer::substitute_with_incremented_value(const std::string &name, size_t line, PreNodeAST *node) {
 	// substitution
 	if (!m_incrementer_stack.empty()) {
 		if (auto substitute = get_substitute(name)) {
 			update_last_incrementer_var(node, substitute, name, line);
-			node->replace_with(substitute->clone());
-			return true;
+			return node->replace_with(substitute->clone());
 		}
 	}
-	return false;
+	return nullptr;
 }
 
 
@@ -49,7 +48,7 @@ bool PreASTIncrementer::update_last_incrementer_var(const PreNodeAST* node, PreN
 				auto step_val = get_step_value(node_val);
 				// increase for next time
 				substitute->integer = substitute->integer+step_val;
-				substitute->value.val = std::to_string(substitute->integer);
+				substitute->tok.val = std::to_string(substitute->integer);
 			}
 			var.first = std::move(node->clone());
 			var.second = node_line;
@@ -60,17 +59,22 @@ bool PreASTIncrementer::update_last_incrementer_var(const PreNodeAST* node, PreN
 	return false;
 }
 
-void PreASTIncrementer::visit(PreNodeIncrementer& node) {
-	auto node_chunk = safe_cast<PreNodeChunk>(node.counter.get(), PreNodeType::CHUNK);
+PreNodeAST *PreASTIncrementer::visit(PreNodeIncrementer &node) {
+	auto node_chunk = node.counter->cast<PreNodeChunk>();
+	auto error = CompileError(ErrorType::PreprocessorError, "", "", node.tok);
     if(!node_chunk) {
-        CompileError(ErrorType::PreprocessorError,"Found unknown syntax in <START_INC> arguments.", node.tok.line, "<name>, <start>, <step>", node_chunk->get_string(), node.tok.file).exit();
+    	error.set_message("Found unknown syntax in <START_INC> arguments.");
+		error.set_expected("<name>, <start>, <step>");
+    	error.exit();
     }
     // check if <name> argument only consists of one token
-    if(node_chunk->chunk.size() != 1) {
-        CompileError(ErrorType::PreprocessorError,"Found too many tokens in <START_INC> <name> argument.", node.tok.line, "<name>", node_chunk->get_string(), node.tok.file).exit();
+    if(node_chunk->num_chunks() != 1) {
+    	error.set_message("Found too many tokens in <START_INC> <name> argument.");
+    	error.set_expected("<name>");
+    	error.exit();
     }
 
-    SimpleExprInterpreter eval(node.tok.file, node.tok.line);
+    SimpleExprInterpreter eval(node.tok);
     auto from_result = eval.parse_and_evaluate(std::move(node.iterator_start->chunk));
     if(from_result.is_error()) {
         from_result.get_error().exit();
@@ -85,49 +89,47 @@ void PreASTIncrementer::visit(PreNodeIncrementer& node) {
 
     std::string counter_var = node.counter->get_string();
 
-//    auto node_new_chunk = std::make_unique<PreNodeChunk>(std::vector<std::unique_ptr<PreNodeAST>>{},&node);
-    auto node_int = std::make_unique<PreNodeInt>((int32_t) from,
-                                                 Token(token::INT, std::to_string(from), node.tok.line,node.tok.pos,node.tok.file), &node);
-//    node_new_chunk->chunk.push_back(std::move(node_int));
+	auto from_tok = node.tok;
+	from_tok.set_val(std::to_string(from)); from_tok.set_type(token::INT);
+    auto node_int = std::make_unique<PreNodeInt>((int32_t) from, from_tok, &node);
+
     std::tuple<std::string, int32_t, std::unique_ptr<PreNodeInt>> subst_tuple(counter_var, step, std::move(node_int));
     m_incrementer_stack.push_back(std::move(subst_tuple));
 
-    for(auto &c : node.body) {
-        c->accept(*this);
-    }
+	visit_all(node.body, *this);
 	if(!m_last_incrementer_var.empty()) m_last_incrementer_var.pop_back();
 	if(!m_incrementer_stack.empty()) m_incrementer_stack.pop_back();
-
+	return &node;
 }
 
 PreNodeInt* PreASTIncrementer::get_substitute(const std::string& name) {
-	for (auto rit = m_incrementer_stack.rbegin(); rit != m_incrementer_stack.rend(); ++rit) {
-		if (std::get<std::string>(*rit) == name) {
-			return std::get<2>(*rit).get();
+	for (auto & rit : std::ranges::reverse_view(m_incrementer_stack)) {
+		if (std::get<std::string>(rit) == name) {
+			return std::get<2>(rit).get();
 		}
 	}
 	return nullptr;
 }
 
 int32_t PreASTIncrementer::get_step_value(const std::string& name) {
-	for (auto rit = m_incrementer_stack.rbegin(); rit != m_incrementer_stack.rend(); ++rit) {
-		if (std::get<std::string>(*rit) == name) {
-			return std::get<int32_t>(*rit);
+	for (auto & rit : std::ranges::reverse_view(m_incrementer_stack)) {
+		if (std::get<std::string>(rit) == name) {
+			return std::get<int32_t>(rit);
 		}
 	}
 	return 0;
 }
 
-
-void PreASTIncrementer::visit(PreNodeMacroDefinition &node) {
-	node.header->accept(*this);
-	node.body->accept(*this);
-
-	if(m_program) {
-		auto node_macro_definition = std::unique_ptr<PreNodeMacroDefinition>(static_cast<PreNodeMacroDefinition *>(node.clone().release()));
-		m_program->macro_definitions.push_back(std::move(node_macro_definition));
-	}
-	// replace node with dead code after incrementation
-	node.replace_with(std::make_unique<PreNodeDeadCode>(node.header->name->value, node.parent));
-}
+// PreNodeAST *PreASTIncrementer::visit(PreNodeMacroDefinition &node) {
+// 	node.header->accept(*this);
+// 	node.body->accept(*this);
+//
+// 	if(m_program) {
+// 		auto node_macro_definition = clone_as<PreNodeMacroDefinition>(&node);
+// 		// auto node_macro_definition = std::unique_ptr<PreNodeMacroDefinition>(static_cast<PreNodeMacroDefinition *>(node.clone().release()));
+// 		m_program->macro_definitions.push_back(std::move(node_macro_definition));
+// 	}
+// 	// replace node with dead code after incrementation
+// 	return node.replace_with(std::make_unique<PreNodeDeadCode>(node.header->name->tok, node.parent));
+// }
 

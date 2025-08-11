@@ -8,26 +8,25 @@
 
 class PreASTDefines final : public PreASTVisitor {
 public:
-	explicit PreASTDefines(PreNodeProgram* program) : PreASTVisitor(program) {}
 	// void visit(PreNodePragma& node) override;
-	void visit(PreNodeNumber& node) override;
-	void visit(PreNodeInt& node) override;
-	void visit(PreNodeKeyword& node) override;
-	void visit(PreNodeOther& node) override;
-	void visit(PreNodeChunk& node) override;
-	void visit(PreNodeDefineHeader& node) override;
-	void visit(PreNodeList& node) override;
-	void visit(PreNodeDefineStatement& node) override;
-	void visit(PreNodeDefineCall& node) override;
-
-	void visit(PreNodeProgram& node) override;
+	PreNodeAST *visit(PreNodeNumber &node) override;
+	PreNodeAST *visit(PreNodeInt &node) override;
+	PreNodeAST *visit(PreNodeKeyword &node) override;
+	PreNodeAST *visit(PreNodeOther &node) override;
+	PreNodeAST *visit(PreNodeChunk &node) override;
+	PreNodeAST *visit(PreNodeDefineHeader &node) override;
+	PreNodeAST *visit(PreNodeList &node) override;
+	PreNodeAST *visit(PreNodeDefineStatement &node) override;
+	PreNodeAST *visit(PreNodeDefineCall &node) override;
+	PreNodeAST *visit(PreNodeProgram &node) override;
+	PreNodeAST *visit(PreNodeMacroDefinition &node) override;
 
 private:
 	std::string m_debug_token;
 
 	std::unordered_map<std::string, PreNodeDefineStatement*> m_define_lookup;
 
-	void do_substitution(PreNodeLiteral& node);
+	PreNodeAST *do_substitution(PreNodeLiteral &node);
 	std::unique_ptr<PreNodeAST> get_substitute(const std::string& name);
 	std::unique_ptr<PreNodeDefineStatement> get_define_definition(const PreNodeDefineHeader& define_header);
 	static std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> get_substitution_map(PreNodeDefineHeader& definition, const PreNodeDefineHeader& call);
