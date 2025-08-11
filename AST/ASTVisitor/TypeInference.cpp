@@ -748,6 +748,7 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 			definition->accept(*this);
 			m_program->function_call_stack.pop();
 			definition->visited = true;
+
 			// apply references to function params
 			for (auto &param : definition->header->params) {
 				for(auto & ref : param->variable->references) {
@@ -954,7 +955,7 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	}
 
 	if (is_object) {
-		error.m_message += " Operator <"+std::string(tokenStrings[(int)node.op]) +"> has not been overloaded for type "+node.left->ty->to_string()+".";
+		error.m_message += " Operator <"+ get_token_string(node.op) +"> has not been overloaded for type "+node.left->ty->to_string()+".";
 	}
 
 	if(!is_compatible) {
@@ -1017,7 +1018,7 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 	}
 
 	if (is_object) {
-		error.m_message += " Operator <"+std::string(tokenStrings[(int)node.op]) +"> has not been overloaded for type "+node.operand->ty->to_string()+".";
+		error.m_message += " Operator <"+get_token_string(node.op) +"> has not been overloaded for type "+node.operand->ty->to_string()+".";
 	}
 
 	if(!is_compatible)

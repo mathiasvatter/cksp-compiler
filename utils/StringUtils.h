@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <regex>
 
 namespace StringUtils {
 
@@ -46,6 +47,11 @@ template <typename StringType, typename... OtherReplacements>
         return replace (replace (std::move (text_to_search), first_substring_to_replace, first_replacement),
                         std::forward<OtherReplacements> (other_pairs_of_strings_to_replace)...);
     }
+}
+
+
+inline std::string escape_spaces(const std::string& path) {
+    return StringUtils::replace(path, " ", "\\ ");
 }
 
 /// Returns a string with any whitespace trimmed from its start.
@@ -152,6 +158,39 @@ inline std::string remove_quotes(std::string text) {
 [[nodiscard]] inline std::string add_single_quotes (std::string text) { return "'" + std::move (text) + "'"; }
 
 
+// Normalisiert Leerzeichen und Interpunktion in Fließtext
+inline std::string normalize_sentence(std::string s) {
+    // trim
+    s = StringUtils::trim(std::move(s));
+
+    // Mehrfache Whitespaces -> ein Space
+    s = std::regex_replace(s, std::regex(R"(\s{2,})"), " ");
+
+    // Keine Spaces vor Interpunktionszeichen
+    s = std::regex_replace(s, std::regex(R"(\s+([,.:;!?]))"), "$1");
+
+    // Sicherstellen: Space nach . : ; ! ?  (außer am Zeilenende oder vor schließendem Anführungszeichen/Klammer)
+    s = std::regex_replace(s, std::regex(R"(([.:;!?])(?!\s|$|['")\]]))"), "$1 ");
+
+    // Doppelte Satzzeichen aufräumen (.., !!, :: -> jeweils einmal)
+    s = std::regex_replace(s, std::regex(R"((\.){2,})"), ".");
+    s = std::regex_replace(s, std::regex(R"((!){2,})"), "!");
+    s = std::regex_replace(s, std::regex(R"((:){2,})"), ":");
+
+    // Optional: Ein einzelner Punkt ans Ende, falls keines vorhanden und nicht leer
+    if (!s.empty() && std::string(".!?").find(s.back()) == std::string::npos)
+        s.push_back('.');
+
+    return s;
+}
+
+// Hilfsfunktion für einzeilige Felder (Expected/Got)
+inline std::string normalize_field(std::string s) {
+    s = StringUtils::trim(std::move(s));
+    s = std::regex_replace(s, std::regex(R"(\s{2,})"), " ");
+    return s;
+}
+
 /// Splits a string into a vector of substrings based on a delimiter character.
 inline std::vector<std::string> split(const std::string& s, char delimiter) {
     std::vector<std::string> tokens;
@@ -250,6 +289,35 @@ inline std::string percent_encode_uri (std::string_view text) {
         }
     }
     return result;
+}
+
+inline std::string percent_encode_uri_path(std::string_view path) {
+    std::string result;
+    result.reserve(path.length());
+
+    for (auto c : path) {
+        // Slash bleibt unencoded
+        if (c == '/' || std::string_view("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-.~").find(c) != std::string_view::npos) {
+            result += c;
+        } else {
+            result += '%';
+            result += "0123456789abcdef"[static_cast<uint8_t>(c) >> 4];
+            result += "0123456789abcdef"[static_cast<uint8_t>(c) & 15u];
+        }
+    }
+    return result;
+}
+
+// OSC-8 Hyperlink: ESC ] 8 ; ; <url> ESC \ <text> ESC ] 8 ; ; ESC
+inline std::string osc8_link(const std::string& url, const std::string& text) {
+    static constexpr const char* OSC = "\x1b]8;;";
+    static constexpr const char* ST  = "\x1b\\";
+    std::string out;
+    out.reserve(url.size() + text.size() + 16);
+    out += OSC; out += url; out += ST;
+    out += text;
+    out += OSC; out += ST;
+    return out;
 }
 
 /// Returns a truncated, easy-to-read version of a time as hours, seconds or milliseconds,

@@ -46,19 +46,22 @@ public:
     		error.exit();
     	}
     	auto pre_ast = std::move(result_parse.unwrap());
-    	PreASTPragma pragma(pre_ast.get(), config);
+    	PreASTPragma pragma(config);
     	pre_ast->accept(pragma);
 
-    	PreASTDefines defines(pre_ast.get());
+    	PreASTDefines defines;
     	pre_ast->accept(defines);
+    	pre_ast->debug_print();
 
-    	PreASTIncrementer incrementer(pre_ast.get());
-    	pre_ast->accept(incrementer);
-
-    	PreASTDesugar desugar(pre_ast.get());
+    	PreASTDesugar desugar;
     	pre_ast->accept(desugar);
+    	pre_ast->debug_print();
 
-    	PreASTCombine combine(pre_ast.get());
+    	PreASTIncrementer incrementer;
+    	pre_ast->accept(incrementer);
+    	pre_ast->debug_print();
+
+    	PreASTCombine combine;
     	pre_ast->accept(combine);
 
     	m_tokens = std::move(combine.m_tokens);

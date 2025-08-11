@@ -9,18 +9,17 @@
 class PreASTCombine final : public PreASTVisitor {
 public:
     std::vector<Token> m_tokens;
-    explicit PreASTCombine(PreNodeProgram* program) : PreASTVisitor(program) {}
-	void visit(PreNodeChunk& node) override;
-    void visit(PreNodeNumber& node) override;
-    void visit(PreNodeInt& node) override;
-    void visit(PreNodeKeyword& node) override;
-    void visit(PreNodeOther& node) override;
-    void visit(PreNodeProgram& node) override;
-    void visit(PreNodeUnaryExpr& node) override;
-    void visit(PreNodeBinaryExpr& node) override;
-    void visit(PreNodeIncrementer& node) override;
-	void visit(PreNodeList& node) override;
-	void visit(PreNodeMacroHeader& node) override;
+    PreNodeAST *visit(PreNodeChunk &node) override;
+    PreNodeAST *visit(PreNodeNumber &node) override;
+    PreNodeAST *visit(PreNodeInt &node) override;
+    PreNodeAST *visit(PreNodeKeyword &node) override;
+    PreNodeAST *visit(PreNodeOther &node) override;
+    PreNodeAST *visit(PreNodeProgram &node) override;
+    PreNodeAST *visit(PreNodeUnaryExpr &node) override;
+    PreNodeAST *visit(PreNodeBinaryExpr &node) override;
+    PreNodeAST *visit(PreNodeIncrementer &node) override;
+    PreNodeAST *visit(PreNodeList &node) override;
+    PreNodeAST *visit(PreNodeMacroHeader &node) override;
 
 };
 

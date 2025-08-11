@@ -46,7 +46,19 @@ on init
 
 	declare ui_label lbl_bd_DnD (1,1)
 	lbl_bd_DnD -> picture := "btn_custom-samples-import"
+	declare arr: int[] := [1,2,3,4,5]
+	func_return(arr)
 end on
+
+function func_return(array: int[])
+	
+	declare idx := search(array, 6)
+	if (idx # -1)
+		message("hello")
+	end if
+	return 
+
+end function
 
 // if((current_filtermethod{int} {current_filtermethod}  = filter.SUBTRACTIVE{int} {filter.SUBTRACTIVE} ) or (current_filtermethod{int} {current_filtermethod}  = filter.TOGGLE{int} {filter.TOGGLE} ))
 // 	declare local flipped : Floatmask := Floatmask::__invert__(Categories::tags[Browser::categories[self23{Browser} {self23} ]{Categories} {Browser::categories} ]{Floatmask} {Categories::tags} ){UserDefined, None, Floatmask::__invert__} {Reuses: 0}
