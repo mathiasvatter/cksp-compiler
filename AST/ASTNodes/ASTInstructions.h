@@ -644,7 +644,7 @@ struct NodeFunctionParam final : NodeInstruction {
 };
 
 struct NodeReturn final : NodeInstruction {
-    std::vector<std::unique_ptr<NodeAST>> return_variables;
+    std::vector<std::unique_ptr<NodeAST>> return_variables{};
 	std::weak_ptr<NodeFunctionDefinition> definition;
     explicit NodeReturn(Token tok) : NodeInstruction(NodeType::Return, std::move(tok)) {}
     NodeReturn(std::vector<std::unique_ptr<NodeAST>> return_variables, Token tok)

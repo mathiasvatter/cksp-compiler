@@ -155,6 +155,10 @@ Result<std::unique_ptr<NodeImport>> ImportProcessor::parse_import(std::vector<To
         std::string filepath = StringUtils::remove_quotes(path.val);
         std::string alias;
         if(peek(tokens).type == token::AS) {
+            auto error = CompileError(ErrorType::ParseError, "", "", peek(tokens));
+            error.set_message("Importing file with alias is not supported in as of version " + COMPILER_VERSION + ". "+
+                              "Please remove the 'as <alias>' part from the import statement.");
+            error.exit();
             // consume as token
             consume(tokens);
             if(peek(tokens).type == token::KEYWORD) {

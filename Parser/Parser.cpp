@@ -773,14 +773,16 @@ Result<std::unique_ptr<NodeReturn>> Parser::parse_return_statement(NodeAST* pare
 		error.set_message( "The <return> keyword is reserved for <Return> Statement within function definitions. Consider using a different name.");
 		return Result<std::unique_ptr<NodeReturn>>(error);
 	}
-	auto return_params = parse_multiple_values(node_return_statement.get());
-	if(return_params.is_error()) {
-		return Result<std::unique_ptr<NodeReturn>>(return_params.get_error());
-	}
-	node_return_statement->return_variables = std::move(return_params.unwrap()->params);
-	if(!m_current_function_def) {
-		error.set_message( "Found <Return> Statement outside of function definition.");
-		return Result<std::unique_ptr<NodeReturn>>(error);
+	if (peek().type != token::LINEBRK) {
+		auto return_params = parse_multiple_values(node_return_statement.get());
+		if(return_params.is_error()) {
+			return Result<std::unique_ptr<NodeReturn>>(return_params.get_error());
+		}
+		node_return_statement->return_variables = std::move(return_params.unwrap()->params);
+		if(!m_current_function_def) {
+			error.set_message( "Found <Return> Statement outside of function definition.");
+			return Result<std::unique_ptr<NodeReturn>>(error);
+		}
 	}
 	m_current_function_def->num_return_params = node_return_statement->return_variables.size();
 	node_return_statement->definition = m_current_function_def;

@@ -19,6 +19,7 @@ public:
 	PreNodeAST *visit(PreNodeDefineStatement &node) override;
 	PreNodeAST *visit(PreNodeDefineCall &node) override;
 	PreNodeAST *visit(PreNodeProgram &node) override;
+	PreNodeAST *visit(PreNodeMacroDefinition &node) override;
 
 private:
 	std::string m_debug_token;
