@@ -1,0 +1,32 @@
+//
+// Created by Mathias Vatter on 02.08.25.
+//
+
+#pragma once
+
+#include "../../../Tokenizer/Tokenizer.h"
+
+enum class PreNodeType {
+	NUMBER,
+	INT,
+	UNARY_EXPR,
+	BINARY_EXPR,
+	KEYWORD,
+	OTHER,
+	DEAD_CODE,
+	PRAGMA,
+	STATEMENT,
+	CHUNK,
+	DEFINE_HEADER,
+	LIST,
+	DEFINE_STATEMENT,
+	DEFINE_CALL,
+	MACRO_DEFINITION,
+	MACRO_HEADER,
+	MACRO_CALL,
+	FUNCTION_CALL,
+	ITERATE_MACRO,
+	LITERATE_MACRO,
+	INCREMENTER,
+	PROGRAM
+};

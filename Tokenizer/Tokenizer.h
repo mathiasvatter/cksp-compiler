@@ -28,6 +28,9 @@ struct Token {
 
     Token() : type(token::INVALID), val(""), line(-1), pos(0), file("") {}
     Token(token type, std::string val, size_t line, size_t pos, const std::string &file);
+	Token(const Token& other) = default;
+	void set_val(const std::string& val) {this->val = val;}
+	void set_type(const token type) { this->type = type; }
     friend std::ostream& operator<<(std::ostream& os, const Token& tok);
 	bool operator==(const Token &other) const {
 		return type == other.type && val == other.val;

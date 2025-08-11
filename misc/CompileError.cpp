@@ -41,17 +41,32 @@ void CompileError::print(const ErrorType err) {
         error_code = ColorCode::Yellow;
     std::cout << error_code << ColorCode::Bold << error_type_to_string(err) << ColorCode::Reset;
     std::cout << error_code << " [Type: " << ColorCode::Bold << error_type_to_string(m_type) << ColorCode::Reset;
-    std::cout << error_code << ", " << "Position: " << m_file_name;
-    if(m_line_number != -1)
-        std::cout << ":" << m_line_number;
-    if(m_line_position > 0)
-        std::cout << ":" << m_line_position;
-    std::cout << "]" << std::endl;
-    std::cout << m_message << " ";
-    if(!m_expected.empty())
-        std::cout << "Expected: '" << m_expected << "', ";
-    if(!m_got.empty())
-        std::cout << "got: '" << m_got << "'";
+    std::cout << error_code << ", " << "Position: ";
+
+    std::string pos_text = m_file_name;
+    if (m_line_number != -1) pos_text += ":" + std::to_string(m_line_number);
+    if (m_line_position > 0) pos_text += ":" + std::to_string(m_line_position);
+
+    // std::string uri = "file://" + StringUtils::percent_encode_uri_path(m_file_name);
+    // if (m_line_number != -1) {
+    //     uri += ":" + std::to_string(m_line_number);
+    //     if (m_line_position > 0) uri += ":" + std::to_string(m_line_position);
+    // }
+
+    std::cout << pos_text;
+    std::cout << "]\n";
+
+    // ---- sauber formatierte Message
+    // std::string msg = StringUtils::normalize_sentence(m_message);
+    std::cout << m_message << "\n";
+
+    // ---- optionale Felder, immer in neuer Zeile
+    if (!m_expected.empty()) {
+        std::cout << "Expected: '" << StringUtils::normalize_field(m_expected) << "'; ";
+    }
+    if (!m_got.empty()) {
+        std::cout << "Got: '" << StringUtils::normalize_field(m_got) << "'";
+    }
     std::cout << ColorCode::Reset << std::endl;
 
     // Zeige die entsprechende Zeile aus der Datei

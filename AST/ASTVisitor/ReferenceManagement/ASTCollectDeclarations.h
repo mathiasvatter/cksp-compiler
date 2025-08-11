@@ -89,9 +89,9 @@ public:
 
 	NodeAST *visit(NodeSingleDeclaration &node) override {
 		node.variable->determine_locality(m_program, get_current_block());
+		if(node.value) node.value->accept(*this);
 		node.variable->accept(*this);
 		m_def_provider->set_declaration(node.variable, !node.variable->is_local);
-		if(node.value) node.value->accept(*this);
 		return &node;
 	}
 

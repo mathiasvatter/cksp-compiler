@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 project(CKSP_Compiler VERSION 0.0.7)
-set(PRE_RELEASE_VERSION "-alpha.5")
+set(PRE_RELEASE_VERSION "-alpha.6")
 
 set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
 configure_file(
@@ -59,8 +59,8 @@ add_executable(cksp main.cpp
         Preprocessor/ImportProcessor.cpp
         Preprocessor/PreprocessorConditions.h
         Preprocessor/PreprocessorConditions.cpp
-        Preprocessor/PreAST/PreAST.h
-        Preprocessor/PreAST/PreAST.cpp
+        Preprocessor/PreAST/PreASTNodes/PreAST.h
+        Preprocessor/PreAST/PreASTNodes/PreAST.cpp
         Preprocessor/PreAST/PreASTVisitor.h
         Preprocessor/PreAST/PreASTVisitor.cpp
         Preprocessor/PreprocessorParser.h
@@ -223,6 +223,8 @@ add_executable(cksp main.cpp
         Optimization/PreConstantPropagation.h
         AST/ASTVisitor/FunctionHandling/FunctionShortCircuit.h
         Desugaring/DesugarFormatString.h
+        Preprocessor/PreAST/PreASTNodes/PreASTHelper.h
+        Preprocessor/PreAST/PreASTPrinter.h
 )
 add_dependencies(cksp generate_headers)
 

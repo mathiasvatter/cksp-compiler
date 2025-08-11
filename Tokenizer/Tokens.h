@@ -140,14 +140,18 @@ enum class token {
 
 
 #define STRING(name, str) str,
-inline const char *tokenStrings[] = {
-        ENUM_LIST(STRING)
+inline const char *token_strings[] = {
+    ENUM_LIST(STRING)
 };
 #undef STRING
 
+static std::string get_token_string(token tok) {
+	return token_strings[static_cast<int>(tok)];
+}
+
 /// overwrite the << operator to make debugging easier
 inline std::ostream &operator<<(std::ostream &os, const token &tok) {
-    os << tokenStrings[static_cast<int>(tok)];
+    os << token_strings[static_cast<int>(tok)];
     return os;
 }
 

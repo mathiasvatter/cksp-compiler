@@ -429,8 +429,8 @@ NodeAST * ASTPrinter::visit(NodeNamespace &node) {
 }
 
 NodeAST * ASTPrinter::visit(NodeStatement &node) {
-    if(node.statement->get_node_type() != NodeType::DeadCode) {
-        if(node.statement->get_node_type() != NodeType::Block) os << get_indent();
+    if(!node.statement->cast<NodeDeadCode>()) {
+        if(!node.statement->cast<NodeBlock>()) os << get_indent();
         node.statement->accept(*this);
         os << std::endl;
     }

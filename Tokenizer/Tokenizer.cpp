@@ -7,6 +7,8 @@
 #include <utility>
 #include <vector>
 
+#include "../utils/StringUtils.h"
+
 /*
  * TOKEN STRUCT
  */
@@ -151,7 +153,10 @@ void Tokenizer::get_invalid() {
 	flush_buffer();
 	consume();
 	add_token(token::INVALID, m_buffer);
-	CompileError(ErrorType::TokenError, "Found invalid token.", m_line, "valid token", m_buffer, m_current_file).exit();
+	auto got = !m_buffer.empty() ? m_buffer : std::string(1, m_current_char);
+	auto error = CompileError(ErrorType::TokenError, "", m_line, "valid token", got, m_current_file);
+	error.exit();
+	error.add_message("Found invalid token: " + got);
 	skip_whitespace();
 }
 
@@ -408,6 +413,16 @@ void Tokenizer::get_keyword_or_num() {
 		} else if (auto type = get_token_type(OBJECT_SYNTAX, m_buffer)) {
 			add_token(*type, m_buffer);
         } else {
+
+        	// try to fix #keyword into # keyword (two tokens)
+        	const auto not_equal = GENERATE_COMPARISON_OPERATORS[token::NOT_EQUAL];
+        	if (StringUtils::starts_with(m_buffer, not_equal)) {
+        		if (StringUtils::count_char(m_buffer, not_equal[0]) % 2 == 1) {
+        			add_token(token::NOT_EQUAL, not_equal);
+        			m_buffer.erase(0, not_equal.length());
+        		}
+        	}
+
             add_token(token::KEYWORD, m_buffer);
         }
         // see if char after keyword is dot

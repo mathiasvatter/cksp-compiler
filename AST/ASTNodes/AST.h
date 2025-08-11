@@ -385,6 +385,45 @@ struct NodeString final : NodeAST {
     std::string get_string() override {
         return value;
     }
+	/**
+	 * @brief Überprüft die Korrektheit eines geparsten Strings.
+	 *
+	 * Diese Funktion validiert einen String anhand der folgenden Regeln:
+	 * 1. Das erste und das letzte Zeichen müssen übereinstimmende Anführungszeichen
+	 * sein (entweder beide ' oder beide ").
+	 * 2. Dasselbe Anführungszeichen darf nicht innerhalb des Strings vorkommen.
+	 *
+	 * @param str Der zu überprüfende String.
+	 * @return true, wenn der String gültig ist, andernfalls false.
+	 */
+	bool is_valid_string() const {
+    	// 1. Überprüfen, ob der String lang genug ist.
+    	if (value.length() < 2) {
+    		return false;
+    	}
+    	// 2. Das umschließende Anführungszeichen bestimmen.
+    	char quoteType = value.front();
+    	if (quoteType != '"' && quoteType != '\'') {
+    		return false; // Muss mit einem Anführungszeichen beginnen.
+    	}
+    	// 3. Überprüfen, ob das letzte Zeichen dem ersten entspricht.
+    	if (value.back() != quoteType) {
+    		return false;
+    	}
+    	// 4. Den inneren Teil des Strings überprüfen.
+    	// Die Schleife beginnt bei Index 1 und endet vor dem letzten Zeichen.
+    	for (size_t i = 1; i < value.length() - 1; ++i) {
+    		// Prüfe nur, wenn das Zeichen dem umschließenden Anführungszeichen entspricht.
+    		if (value[i] == quoteType) {
+    			// Wenn das Zeichen davor KEIN Backslash ist, ist es ein Fehler.
+    			if (value[i - 1] != '\\') {
+    				return false; // Ungültig, da nicht maskiert.
+    			}
+    		}
+    	}
+    	return true;
+    }
+
 };
 
 struct NodeFormatString final : NodeAST {
@@ -669,7 +708,7 @@ struct NodeUnaryExpr final : NodeAST {
 		if(operand) operand->parent = this;
 	}
     std::string get_string() override {
-        return tokenStrings[static_cast<int>(op)] + operand->get_string();
+        return get_token_string(op) + operand->get_string();
     }
     void update_token_data(const Token& token) override {
         operand -> update_token_data(token);
@@ -704,7 +743,7 @@ struct NodeBinaryExpr final : NodeAST {
 		if(right) right->parent = this;
 	}
     std::string get_string() override {
-        return left->get_string() + tokenStrings[static_cast<int>(op)] + right->get_string();
+        return left->get_string() + get_token_string(op) + right->get_string();
     }
     void update_token_data(const Token& token) override {
         left -> update_token_data(token);
