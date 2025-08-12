@@ -7,6 +7,12 @@
 #include "ASTVisitor.h"
 #include "../../BuiltinsProcessing/DefinitionProvider.h"
 
+/*
+ * Assumes that the AST has now global scope. Collects all references and variables and (in a final step)
+ * relinks references to variables by name using the DefinitionProvider.
+ * This is necessary to ensure that all references are correctly linked to their corresponding data structures.
+ * Will also refill the lists of all data structures with their references.
+ */
 class ASTRelinkGlobalScope final : public ASTVisitor {
 	DefinitionProvider* m_def_provider = nullptr;
 public:
@@ -40,13 +46,21 @@ public:
 
 	void relink_global_scope() const {
 		for(auto & data_struct : m_def_provider->get_all_data_structures()) {
-			m_def_provider->set_declaration(data_struct.lock(), true);
+			if (auto data = data_struct.lock()) {
+				data->clear_references();
+				m_def_provider->set_declaration(data, true);
+			} else {
+				auto error = CompileError(ErrorType::InternalError, "", "", Token());
+				error.m_message = "Data structure has been deleted during relinking.";
+				error.exit();
+			}
 		}
 		for(auto & reference : m_def_provider->get_all_references()) {
 			auto new_declaration = m_def_provider->get_declaration(*reference);
 			if(!new_declaration) {
 				DefinitionProvider::throw_declaration_error(*reference).exit();
 			}
+			new_declaration->add_reference(reference);
 			reference->match_data_structure(new_declaration);
 		}
 	}

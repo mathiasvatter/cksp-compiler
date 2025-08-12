@@ -37,6 +37,23 @@ public:
 		return &node;
 	}
 
+	PreNodeAST *visit(PreNodeMacroDefinition &node) override {
+		node.header->accept(*this);
+		node.body->accept(*this);
+
+		if(m_program) {
+			auto node_macro_definition = std::make_unique<PreNodeMacroDefinition>(
+				std::move(node.header),
+				std::move(node.body),
+				node.tok,
+				node.parent
+			);
+			m_program->macro_definitions.push_back(std::move(node_macro_definition));
+		}
+		// replace node with dead code after incrementation
+		return node.replace_with(std::make_unique<PreNodeDeadCode>(node.tok, node.parent));
+	}
+
 private:
 
 	void register_pragma_handlers() {

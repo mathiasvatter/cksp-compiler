@@ -36,7 +36,7 @@ class LoweringFunctionDef final : public ASTLowering {
 public:
 	explicit LoweringFunctionDef(NodeProgram *program) : ASTLowering(program) {}
 
-	inline NodeAST* visit(NodeFunctionDefinition& node) override {
+	NodeAST* visit(NodeFunctionDefinition& node) override {
 		if(!needs_rewrite(node)) return &node;
 		m_exit_flag_name = m_program->def_provider->get_fresh_name("RETURN_FLAG");
 		auto return_flag_decl = get_exit_flag_declaration(node.tok, m_exit_flag_name);
@@ -76,7 +76,7 @@ public:
 		return &node;
 	}
 
-	inline NodeAST* visit(NodeWhile& node) override {
+	NodeAST* visit(NodeWhile& node) override {
 		m_num_nested_loops++;
 		node.body->accept(*this);
 		node.condition = add_return_condition(std::move(node.condition), m_exit_flag_var);
@@ -99,14 +99,14 @@ public:
 //		return &node;
 	}
 
-	inline NodeAST* visit(NodeBlock& node) override {
+	NodeAST* visit(NodeBlock& node) override {
 		for(auto & stmt : node.statements) {
 			stmt->accept(*this);
 		}
 		return &node;
 	}
 
-	inline NodeAST* visit(NodeReturn &node) override {
+	NodeAST* visit(NodeReturn &node) override {
 		auto return_flag_ref = m_exit_flag_var->to_reference();
 //		return_flag_ref->match_data_structure(m_exit_flag_var);
 		auto return_flag_assignment = std::make_unique<NodeSingleAssignment>(
@@ -114,13 +114,15 @@ public:
 			std::make_unique<NodeInt>(1, node.tok),
 			node.tok
 		);
-		auto new_return = std::make_unique<NodeStatement>(
-			std::make_unique<NodeReturn>(std::move(node.return_variables), node.tok),
-			node.tok
-			);
+		auto new_return = std::make_unique<NodeReturn>(std::move(node.return_variables), node.tok);
+		new_return->definition = node.definition;
+
 		return node.replace_with(std::make_unique<NodeBlock>(
 			node.tok,
-			std::move(new_return),
+			std::make_unique<NodeStatement>(
+				std::move(new_return),
+				node.tok
+			),
 			std::make_unique<NodeStatement>(
 				std::move(return_flag_assignment),
 				node.tok

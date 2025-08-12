@@ -17,25 +17,26 @@ PreNodeAST *PreASTDefines::visit(PreNodeProgram &node) {
 	m_builtin_defines = get_builtin_defines();
 	visit_all(node.define_statements, *this);
 	visit_all(node.program, *this);
+	visit_all(node.macro_definitions, *this);
 	return &node;
 }
 
-PreNodeAST *PreASTDefines::visit(PreNodeMacroDefinition &node) {
-	node.header->accept(*this);
-	node.body->accept(*this);
-
-	if(m_program) {
-		auto node_macro_definition = std::make_unique<PreNodeMacroDefinition>(
-			std::move(node.header),
-			std::move(node.body),
-			node.tok,
-			node.parent
-		);
-		m_program->macro_definitions.push_back(std::move(node_macro_definition));
-	}
-	// replace node with dead code after incrementation
-	return node.replace_with(std::make_unique<PreNodeDeadCode>(node.tok, node.parent));
-}
+// PreNodeAST *PreASTDefines::visit(PreNodeMacroDefinition &node) {
+// 	node.header->accept(*this);
+// 	node.body->accept(*this);
+//
+// 	if(m_program) {
+// 		auto node_macro_definition = std::make_unique<PreNodeMacroDefinition>(
+// 			std::move(node.header),
+// 			std::move(node.body),
+// 			node.tok,
+// 			node.parent
+// 		);
+// 		m_program->macro_definitions.push_back(std::move(node_macro_definition));
+// 	}
+// 	// replace node with dead code after incrementation
+// 	return node.replace_with(std::make_unique<PreNodeDeadCode>(node.tok, node.parent));
+// }
 
 // void PreASTDefines::visit(PreNodePragma &node) {
 // 	static PreASTPragma pragma(m_program);
