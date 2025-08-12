@@ -91,7 +91,7 @@ private:
 		return &call;
 	}
 
-	NodeAST * wrap_in_repr_call(NodeReference& ref) {
+	NodeAST * wrap_in_repr_call(NodeReference& ref) const {
 		if(ref.ty->get_type_kind() != TypeKind::Object and ref.ty->get_type_kind() != TypeKind::Composite)
 			return nullptr;
 
@@ -115,7 +115,7 @@ private:
 		return &ref;
 	}
 
-	static Type* is_repr_header(NodeFunctionHeader& header) {
+	static Type* is_repr_header(const NodeFunctionHeader& header) {
 		if(StringUtils::contains(header.name, OBJ_DELIMITER+"__repr__")) {
 			if(header.params.size() == 1) {
 				return header.get_param(0)->ty;
@@ -126,7 +126,7 @@ private:
 
 	/// generate __repr__ function for ArrayRef and add it to the program
 	/// if return is false, the function already exists
-	bool generate_array_repr_method(NodeArrayRef& node) {
+	bool generate_array_repr_method(NodeArrayRef& node) const {
 		if(!node.get_declaration()) {
 			auto error = get_raw_compile_error(ErrorType::InternalError, node);
 			error.m_message = "ArrayRef has no declaration";
@@ -176,7 +176,7 @@ private:
 
 	/// generate __repr__ function for NDArrayRef and add it to the program
 	/// if return is false, the function already exists
-	bool generate_ndarray_repr_method(NodeNDArrayRef& node) {
+	bool generate_ndarray_repr_method(NodeNDArrayRef& node) const {
 		if(!node.get_declaration()) {
 			auto error = get_raw_compile_error(ErrorType::InternalError, node);
 			error.m_message = "NDArrayRef has no declaration";
