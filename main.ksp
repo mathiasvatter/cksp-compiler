@@ -44,6 +44,9 @@ on init
 	// message(strct.multiply(4.4, 4.3))
 	// message(strct.PUPU)
 
+	declare lbl_bd_dnd := 4
+	lbl_bd_dnd += 1
+	message(lbl_bd_dnd)
 	declare ui_label lbl_bd_DnD (1,1)
 	lbl_bd_DnD -> picture := "btn_custom-samples-import"
 	declare arr: int[] := [1,2,3,4,5]
