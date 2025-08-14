@@ -83,7 +83,7 @@ public:
 		// input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
 		// input_filename = "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp";
-		input_filename = "/Users/mathias/Scripting/preset-system/main.ksp";
+		// input_filename = "/Users/mathias/Scripting/preset-system/main.ksp";
 		// input_filename = "/Users/mathias/Scripting/sonu-northern-spheres/Nordic Spheres.ksp";
 		// input_filename = "/Users/mathias/Scripting/fragments-modern-percussion/Fragments.ksp";
 		// input_filename = "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp";
@@ -91,6 +91,7 @@ public:
 		// input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp";
 		// input_filename = "/Users/mathias/Scripting/sonu-libraries/try.ksp";
+		// input_filename = "/Users/mathias/Scripting/trinity-drums-2/main.ksp";
 	#endif
 
 		static Timer compile_time;

@@ -7,6 +7,12 @@
 #include "ASTVisitor.h"
 #include "../../BuiltinsProcessing/DefinitionProvider.h"
 
+/*
+ * Assumes that the AST has now global scope. Collects all references and variables and (in a final step)
+ * relinks references to variables by name using the DefinitionProvider.
+ * This is necessary to ensure that all references are correctly linked to their corresponding data structures.
+ * Will also refill the lists of all data structures with their references.
+ */
 class ASTRelinkGlobalScope final : public ASTVisitor {
 	DefinitionProvider* m_def_provider = nullptr;
 public:
@@ -34,20 +40,56 @@ public:
 		node.reset_function_visited_flag();
 
 		relink_global_scope();
+		resolve_case_collisions();
 
 		return &node;
 	}
 
 	void relink_global_scope() const {
 		for(auto & data_struct : m_def_provider->get_all_data_structures()) {
-			m_def_provider->set_declaration(data_struct.lock(), true);
+			if (auto data = data_struct.lock()) {
+				data->clear_references();
+				m_def_provider->set_declaration(data, true);
+			} else {
+				auto error = CompileError(ErrorType::InternalError, "", "", Token());
+				error.m_message = "Data structure has been deleted during relinking.";
+				error.exit();
+			}
 		}
 		for(auto & reference : m_def_provider->get_all_references()) {
 			auto new_declaration = m_def_provider->get_declaration(*reference);
 			if(!new_declaration) {
 				DefinitionProvider::throw_declaration_error(*reference).exit();
 			}
+			new_declaration->add_reference(reference);
 			reference->match_data_structure(new_declaration);
+		}
+	}
+
+	void resolve_case_collisions() const {
+		std::unordered_set<std::string> lower_case_names;
+		std::vector<NodeDataStructure*> data_structures_to_rename;
+		for (auto & data_struct : m_def_provider->get_all_data_structures()) {
+			if (auto data = data_struct.lock()) {
+				std::string lower_case_name = StringUtils::to_lower(data->name);
+				if (lower_case_names.contains(lower_case_name)) {
+					data_structures_to_rename.emplace_back(data.get());
+				} else {
+					lower_case_names.insert(lower_case_name);
+				}
+			} else {
+				auto error = CompileError(ErrorType::InternalError, "", "", Token());
+				error.m_message = "Data structure has been deleted during relinking.";
+				error.exit();
+			}
+		}
+
+		for (auto & data_struct : data_structures_to_rename) {
+			std::string new_name = m_def_provider->get_fresh_name(data_struct->name);
+			data_struct->name = new_name;
+			for (auto & ref : data_struct->references) {
+				ref->name = new_name;
+			}
 		}
 	}
 

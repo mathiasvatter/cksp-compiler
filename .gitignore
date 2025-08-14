@@ -39,6 +39,6 @@ build/*
 *.json
 
 *.zip
-test_logs/
+tests/logs/
 
 
