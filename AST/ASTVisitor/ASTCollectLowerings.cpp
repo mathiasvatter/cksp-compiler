@@ -3,16 +3,19 @@
 //
 
 #include "ASTCollectLowerings.h"
-#include "ASTHandleStringRepresentations.h"
 #include "../../Lowering/LoweringStruct.h"
 #include "../../Lowering/PreLoweringStruct.h"
 #include "FunctionHandling/UIControlParamHandling.h"
 
 NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	m_program = &node;
-	m_program->global_declarations->accept(*this);
-	visit_all(node.namespaces, *this);
+
+	// move all namespaces into global declarations block before inlining them in visitor
+	for (auto& ns : node.namespaces) {
+		m_program->global_declarations->add_as_stmt(std::move(ns));
+	}
 	node.namespaces.clear();
+	m_program->global_declarations->accept(*this);
 
 	for(const auto & struct_def : node.struct_definitions) {
 		static PreLoweringStruct pre_lowering_struct(m_program);
@@ -41,8 +44,6 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	node.reset_function_visited_flag();
 
 	node.debug_print();
-	ASTHandleStringRepresentations handle_string_representations(m_def_provider);
-	node.accept(handle_string_representations);
 
 	return &node;
 }
@@ -219,8 +220,13 @@ NodeAST * ASTCollectLowerings::visit(NodeConst &node) {
 NodeAST * ASTCollectLowerings::visit(NodeNamespace &node) {
 	//TRACE();
 	ASTVisitor::visit(node);
-	node.inline_namespace(m_program);
-	return &node;
+	for(auto & func: node.function_definitions) {
+		m_program->add_function_definition(func);
+		// func->parent = m_program;
+		// m_program->function_definitions.push_back(func);
+	}
+	node.function_definitions.clear();
+	return node.replace_with(std::move(node.members));
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeWhile& node) {

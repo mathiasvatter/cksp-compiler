@@ -9,14 +9,22 @@
 NodeAST* ASTDesugar::visit(NodeProgram& node) {
     m_program = &node;
 
+	// first desugar namespaces to assign correct prefixes
+	static DesugarNamespace ns_desugar(m_program);
+	visit_all(node.namespaces, ns_desugar);
+	// move all namespaces into global declarations block
+	for (auto & ns : node.namespaces) {
+		m_program->global_declarations->add_as_stmt(std::move(ns));
+	}
+	node.namespaces.clear();
+
+	is_global_declaration = true;
 	m_program->global_declarations->accept(*this);
+	is_global_declaration = false;
 	m_program->global_declarations->prepend_body(NodeStruct::declare_struct_constants());
 	m_program->add_global_iterator();
-	for (auto& ns : m_program->namespaces) {
-		static UnnestNamespaces unns(m_program);
-		unns.unnest(*ns);
-	}
-	visit_all(node.namespaces, *this);
+
+
 	// m_program->global_declarations->prepend_as_stmt(m_program->declare_global_iterators());
 	visit_all(node.struct_definitions, *this);
 	visit_all(node.callbacks, *this);
@@ -58,7 +66,7 @@ NodeAST* ASTDesugar::visit(NodeSingleDeclaration& node) {
     if(node.value) node.value->accept(*this);
 
 	// if var is global -> make assignment and move declaration to global declarations
-    if(node.variable->is_global) {
+    if(node.variable->is_global and !is_global_declaration) {
     	node.variable->is_global = true;
         m_global_variable_declarations->add_as_stmt(
 			std::make_unique<NodeSingleDeclaration>(node.variable, std::move(node.value), node.tok)
@@ -82,17 +90,6 @@ NodeAST * ASTDesugar::visit(NodeCompoundAssignment &node) {
 	return node.desugar(m_program)->accept(*this);
 }
 
-//NodeAST* ASTDesugar::visit(NodeForEach& node) {
-//    node.body->accept(*this);
-//	// accept again to desugar resulting for loops
-//	return node.desugar(m_program)->accept(*this);
-//}
-//
-//NodeAST* ASTDesugar::visit(NodeFor& node) {
-//    node.body->accept(*this);
-//	return node.desugar(m_program)->accept(*this);
-//}
-
 NodeAST* ASTDesugar::visit(NodeFamily &node) {
     // node.members->accept(*this);
 	return node.desugar(m_program)->accept(*this);
@@ -105,10 +102,11 @@ NodeAST* ASTDesugar::visit(NodeConst &node) {
 
 NodeAST * ASTDesugar::visit(NodeNamespace &node) {
 	node.members->accept(*this);
-	for(const auto & m: node.function_definitions) {
-		m->accept(*this);
+	for(const auto & fun: node.function_definitions) {
+		fun->accept(*this);
+		m_program->function_lookup[{fun->header->name, (int)fun->get_num_params()}].push_back(fun);
 	}
-	return node.desugar(m_program);
+	return &node;
 }
 
 NodeAST* ASTDesugar::visit(NodeDelete &node) {

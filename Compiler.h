@@ -26,6 +26,7 @@
 #include "AST/ASTVisitor/ASTKSPSyntaxCheck.h"
 #include "AST/ASTVisitor/ASTPointerScope.h"
 #include "AST/ASTVisitor/ASTCollectPostLowerings.h"
+#include "AST/ASTVisitor/ASTHandleStringRepresentations.h"
 #include "AST/ASTVisitor/ASTTypeAnnotations.h"
 #include "AST/ASTVisitor/FunctionHandling/ASTPreemptiveFunctionInlining.h"
 #include "AST/ASTVisitor/GlobalScope/ASTDimensionExpansion.h"
@@ -74,7 +75,7 @@ public:
 		// input_filename = "/Users/mathias/Scripting/legato-dev/one-shot.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score-essentials/the-score-essentials.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
-		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
+		input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/toc-single-instruments/legato.ksp";
 		// input_filename = "/Users/mathias/Scripting/toc-single-instruments/keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/the-orchestra-complete-4/the_orchestra_ens_V1.2.ksp";
@@ -213,6 +214,8 @@ public:
 
 		static ASTCollectLowerings lowering(m_program);
 		ast->accept(lowering);
+		static ASTHandleStringRepresentations hsr(&m_definition_provider);
+		ast->accept(hsr);
 		ast->debug_print();
 
 		static ASTLowerTypes lowering_types(m_program);
