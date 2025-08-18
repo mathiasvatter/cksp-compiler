@@ -5,7 +5,6 @@
 #pragma once
 
 #include "ASTVisitor.h"
-#include "../../Desugaring/ASTDesugaring.h"
 
 /**
  * @brief Desugar into simpler constructs
@@ -18,6 +17,10 @@
  * Additionally, it desugars NodeFamily into single declare statements.
  */
 class ASTDesugar final : public ASTVisitor {
+	std::unique_ptr<NodeBlock> m_global_variable_declarations = std::make_unique<NodeBlock>(Token());
+	bool is_global_declaration = false;
+public:
+
     NodeAST * visit(NodeProgram& node) override;
 	NodeAST * visit(NodeFunctionDefinition& node) override;
     /// desugar into single declare statements
@@ -32,11 +35,6 @@ class ASTDesugar final : public ASTVisitor {
 
 	/// desugar certain binary operators into builtin functions
 	NodeAST * visit(NodeBinaryExpr& node) override;
-//    /// desugar for each loops to for loops
-//	NodeAST * visit(NodeForEach& node) override;
-//    /// alter for loops to while loops
-//	NodeAST * visit(NodeFor& node) override;
-
     NodeAST * visit(NodeBlock& node) override;
 
 	/// desugar into single declare statements
@@ -55,10 +53,5 @@ class ASTDesugar final : public ASTVisitor {
 
 	NodeAST * visit(NodeFormatString& node) override;
 
-private:
-
-    std::unique_ptr<NodeBlock> m_global_variable_declarations = std::make_unique<NodeBlock>(Token());
-    /// declare necessary compiler variables for iterating etc.
-//    std::unique_ptr<NodeBlock> declare_compiler_variables();
 };
 
