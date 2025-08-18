@@ -47,8 +47,15 @@ public:
 		// node.reset_function_visited_flag();
 		// node.remove_references();
 		// node.collect_references();
-		// node.debug_print();
-
+		node.debug_print();
+		// for (auto& fun : node.function_definitions) {
+		// 	if (fun->header->name == "cc_on_controller") {
+		// 		auto& set = m_subcalls_per_function[fun.get()];
+		// 		for (auto & subcall : set) {
+		// 			std::cout << subcall->header->name << std::endl;
+		// 		}
+		// 	}
+		// }
 
 		static ParameterReuse reuse(&node);
 		reuse.do_parameter_reuse(
@@ -132,12 +139,24 @@ private:
 			definition->accept(*this);
 
 			m_function_call_stack.pop_back();
-		} else if (!m_function_call_stack.empty()) {
-			// add all subcalls per function to this definition (since it will not be visited)
-			auto current_func =  m_function_call_stack.back()->get_definition().get();
-			auto it = m_subcalls_per_function.find(definition.get());
-			if (it != m_subcalls_per_function.end()) {
-				m_subcalls_per_function[current_func].insert(it->second.begin(), it->second.end());
+		}
+		if (!m_function_call_stack.empty()) {
+			// // add all subcalls per function to this definition (since it will not be visited)
+			// auto current_func =  m_function_call_stack.back()->get_definition().get();
+			// auto it = m_subcalls_per_function.find(definition.get());
+			// if (it != m_subcalls_per_function.end()) {
+			// 	m_subcalls_per_function[current_func].insert(it->second.begin(), it->second.end());
+			// }
+
+			// insert all function definitions currently on the call stack to subcalls per function
+			// add all definitions on the callstack to all other functions as subcalls
+			for (const auto& call : m_function_call_stack) {
+				auto existing_def = call->get_definition().get();
+				auto current_def = definition.get();
+				if (existing_def) {
+					m_subcalls_per_function[current_def].insert(existing_def);
+					m_subcalls_per_function[existing_def].insert(current_def);
+				}
 			}
 		}
 
@@ -232,17 +251,6 @@ private:
 		return &node;
 	}
 
-	// /// IMPORTANT: all parameters of type array are automatically passed by reference
-	// NodeAST* visit(NodeFunctionParam& node) override {
-	// 	if (node.variable->is_function_param()) {
-	// 		if (node.variable->ty->cast<CompositeType>()) {
-	// 			// if the param is an array, it is passed by reference
-	// 			node.is_pass_by_ref = true;
-	// 		}
-	// 	}
-	// 	return &node;
-	// }
-
 	NodeAST* visit(NodeFunctionDefinition& node) override {
 		node.header ->accept(*this);
 		if (node.return_variable.has_value())
@@ -251,14 +259,14 @@ private:
 
 		// insert all function definitions currently on the call stack to subcalls per function
 		// add all definitions on the callstack to all other functions as subcalls
-		for (const auto& call : m_function_call_stack) {
-			auto existing_def = call->get_definition().get();
-			auto current_def = &node;
-			if (existing_def) {
-				m_subcalls_per_function[current_def].insert(existing_def);
-				m_subcalls_per_function[existing_def].insert(current_def);
-			}
-		}
+		// for (const auto& call : m_function_call_stack) {
+		// 	auto existing_def = call->get_definition().get();
+		// 	auto current_def = &node;
+		// 	if (existing_def) {
+		// 		m_subcalls_per_function[current_def].insert(existing_def);
+		// 		m_subcalls_per_function[existing_def].insert(current_def);
+		// 	}
+		// }
 
 		m_subcalls_per_function[&node].insert(&node);
 

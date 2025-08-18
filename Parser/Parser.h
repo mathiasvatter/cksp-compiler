@@ -63,7 +63,9 @@ static int _get_binop_precedence(const token tok) {
 
 
 class Parser: public Processor {
-
+	bool is_variable_declaration();
+	bool is_array_declaration();
+	NodeProgram* m_program = nullptr;
 public:
     explicit Parser(std::vector<Token> tokens);
     Result<std::unique_ptr<NodeProgram>> parse();
@@ -153,9 +155,5 @@ public:
 	std::vector<NodeDataStructure*> m_all_data_structures;
 
 	Result<SuccessTag> consume_linebreak(const std::string& construct);
-
-private:
-    bool is_variable_declaration();
-    bool is_array_declaration();
 };
 

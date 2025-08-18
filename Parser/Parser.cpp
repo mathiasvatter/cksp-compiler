@@ -1063,6 +1063,7 @@ Result<std::unique_ptr<NodeNamespace>> Parser::parse_namespace(NodeAST *parent) 
 
 Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
     auto node_program = std::make_unique<NodeProgram>(get_tok());
+	m_program = node_program.get();
 	// int init_callback_idx = 0;
     while (peek().type != token::END_TOKEN) {
         _skip_linebreaks();
