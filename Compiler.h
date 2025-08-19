@@ -4,20 +4,30 @@
 
 #pragma once
 
+
+// Preprocessor
+#include "Preprocessor/PreprocessorConditions.h"
+#include "Preprocessor/PreprocessorParser.h"
+#include "Preprocessor/PreAST/PreASTCombine.h"
+#include "Preprocessor/PreAST/PreASTDefines.h"
+#include "Preprocessor/PreAST/PreASTDesugar.h"
+#include "Preprocessor/PreAST/PreASTIncrementer.h"
+#include "Preprocessor/PreAST/PreASTPragma.h"
+// misc
+#include "misc/Timer.h"
+#include "misc/CommandLineOptions.h"
+#include "BuiltinsProcessing/DefinitionProvider.h"
+// AST
 #include "Parser/Parser.h"
-#include "Preprocessor/Preprocessor.h"
 #include "AST/ASTVisitor/FunctionHandling/ASTFunctionInlining.h"
 #include "BuiltinsProcessing/BuiltinsProcessor.h"
 #include "Generator/ASTGenerator.h"
 #include "AST/ASTVisitor/ASTDesugar.h"
 #include "Preprocessor/ImportProcessor.h"
-#include "misc/CommandLineOptions.h"
-#include "BuiltinsProcessing/DefinitionProvider.h"
 #include "AST/ASTVisitor/ASTCollectLowerings.h"
 #include "AST/ASTVisitor/ASTSemanticAnalysis.h"
 #include "AST/ASTVisitor/ASTVariableChecking.h"
 #include "AST/ASTVisitor/ASTOptimizations.h"
-#include "misc/Timer.h"
 #include "AST/ASTVisitor/TypeInference.h"
 #include "AST/ASTVisitor/ASTReturnFunctionRewriting.h"
 #include "AST/ASTVisitor/ASTDataStructureLowering.h"
@@ -31,7 +41,6 @@
 #include "AST/ASTVisitor/FunctionHandling/ASTPreemptiveFunctionInlining.h"
 #include "AST/ASTVisitor/GlobalScope/ASTDimensionExpansion.h"
 #include "AST/ASTVisitor/ASTLowerTypes.h"
-#include "AST/ASTVisitor/ASTParameterQualifier.h"
 #include "AST/ASTVisitor/UniqueParameterNamesProvider.h"
 #include "AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
 #include "AST/ASTVisitor/FunctionHandling/ParameterAssignmentTransformation.h"
@@ -40,16 +49,60 @@
 #include "AST/ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 #include "Optimization/ArrayInitializationRaising.h"
 
+
+
 class Compiler {
 	CompilerConfig* m_config;
 	DefinitionProvider m_definition_provider;
 	NodeProgram* m_program = nullptr;
+	std::vector<Token> m_tokens{};
 
 //	bool tokenize();
 //	bool preprocess();
 //	bool parse();
 //	bool process_ast();
 //	bool generate();
+
+	void preprocess() {
+		auto result = Result<SuccessTag>(SuccessTag{});
+
+		PreprocessorConditions conditions(m_tokens);
+		result = conditions.process_conditions();
+		if(result.is_error()) {
+			auto error = result.get_error();
+			error.m_message += " Preprocessor failed while processing conditions.";
+			error.exit();
+		}
+		m_tokens = std::move(conditions.get_token_vector());
+
+		PreprocessorParser parser(m_tokens);
+		auto result_parse = parser.parse_program(nullptr);
+		if(result_parse.is_error()) {
+			auto error = result_parse.get_error();
+			error.m_message += " Preprocessor parsing failed.";
+			error.exit();
+		}
+		auto pre_ast = std::move(result_parse.unwrap());
+		PreASTPragma pragma(m_config);
+		pre_ast->accept(pragma);
+
+		PreASTDefines defines;
+		pre_ast->accept(defines);
+		pre_ast->debug_print();
+
+		PreASTDesugar desugar;
+		pre_ast->accept(desugar);
+		pre_ast->debug_print();
+
+		PreASTIncrementer incrementer;
+		pre_ast->accept(incrementer);
+		pre_ast->debug_print();
+
+		PreASTCombine combine;
+		pre_ast->accept(combine);
+
+		m_tokens = std::move(combine.m_tokens);
+	}
 
 public:
 	explicit Compiler(CompilerConfig* config) : m_config(config) {
@@ -101,24 +154,25 @@ public:
 
 		static FileHandler file_handler(input_filename);
 		static Tokenizer tokenizer(file_handler.get_output(), input_filename);
-		auto tokens = tokenizer.tokenize();
+		m_tokens = tokenizer.tokenize();
 
-		static ImportProcessor imports(tokens, input_filename, &m_definition_provider);
+		static ImportProcessor imports(m_tokens, input_filename, &m_definition_provider);
 		if(auto import_result = imports.process_imports(); import_result.is_error()) {
 			auto error = import_result.get_error();
 	        error.m_message += " Preprocessor failed while processing import statements.";
 	        error.exit();
 		}
-		tokens = std::move(imports.get_token_vector());
+		m_tokens = std::move(imports.get_token_vector());
 
 		compile_time.stop("Import");
 		compile_time.start("Preprocessor");
 
 		std::string output_filename = m_config->output_filename;
 
-		static Preprocessor preprocessor(tokens);
-		preprocessor.process(m_config);
-		auto preprocessed_tokens = preprocessor.get_token_vector();
+		preprocess();
+		// static Preprocessor preprocessor(m_tokens);
+		// preprocessor.process(m_config);
+		// auto preprocessed_tokens = preprocessor.get_token_vector();
 
 		// ---------- output path -----------
    		std::string standard_output_path = m_config->standard_output_file;
@@ -151,7 +205,7 @@ public:
 		compile_time.start("Parsing");
 
 
-		static Parser parser(std::move(preprocessed_tokens));
+		static Parser parser(m_tokens);
 		auto ast_result = parser.parse();
 		if (ast_result.is_error()) {
 			ast_result.get_error().exit();
