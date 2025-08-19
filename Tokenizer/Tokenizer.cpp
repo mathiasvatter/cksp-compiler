@@ -26,8 +26,6 @@ std::ostream &operator<<(std::ostream &os, const Token &tok) {
 Tokenizer::Tokenizer(const std::string& input, const std::string& file, FileType file_type)
     : m_pos(0), m_line(1), m_line_pos(1) {
     m_current_file = file;
-    m_is_json = false;
-    if(file_type == FileType::nckp) m_is_json = true;
 
     m_input = input;
     m_input += '\n';
@@ -55,7 +53,7 @@ void Tokenizer::token_loop() {
 			consume();
 			consume();
 		}
-		else if (peek() == '/' && (peek(1) == '*' || peek(1) == '/') || (peek() == '{' && !m_is_json)) {
+		else if (peek() == '/' && (peek(1) == '*' || peek(1) == '/') || peek() == '{') {
 			get_comment();
 		} else if (peek() == '\n') {
 			get_linebreak();
@@ -98,8 +96,6 @@ void Tokenizer::token_loop() {
 			get_type();
 		} else if (peek() == '?') {
 			get_ternary_operator();
-		} else if(m_is_json and (peek() == '}' || peek() == '{')) {
-			get_curly_brackets();
 		} else {
 			get_invalid();
 		}
@@ -302,19 +298,6 @@ void Tokenizer::get_parenth() {
     add_token(PARENTH.at(p), m_buffer);
     skip_whitespace();
 }
-
-void Tokenizer::get_curly_brackets() {
-    flush_buffer();
-    token tok;
-    if (peek() == '{')
-        tok = token::OPEN_CURLY;
-    else if (peek() == '}')
-        tok = token::CLOSED_CURLY;
-    consume();
-    add_token(tok, m_buffer);
-    skip_whitespace();
-}
-
 
 void Tokenizer::get_assignment() {
 	consume();

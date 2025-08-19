@@ -2,7 +2,7 @@
 // Created by Mathias Vatter on 02.01.24.
 //
 
-#include "JSONVisitor.h"
+#include "NCKPTranslator.h"
 
 NCKPTranslator::NCKPTranslator(DefinitionProvider* definition_provider)
 	: m_def_provider(definition_provider) {}
@@ -13,7 +13,7 @@ void NCKPTranslator::visit(JSONBool &boolean) {
 
 void NCKPTranslator::visit(JSONString &str) {
 
-    if(m_current_property == "\"id\"") {
+    if(m_current_property == "id") {
 		std::string var_name = StringUtils::remove_quotes(str.value);
 		if(!m_panel_prefixes.empty()) {
 			var_name = m_panel_prefixes.top().first + "_" + var_name;
@@ -26,7 +26,7 @@ void NCKPTranslator::visit(JSONString &str) {
 }
 
 void NCKPTranslator::visit(JSONInt &num) {
-    if(m_current_property == "\"index\"") {
+    if(m_current_property == "index") {
         m_current_control_idx = num.value;
 		if(m_current_control_idx == 0) {
 			m_current_panel_object = m_current_object;

@@ -4,20 +4,8 @@
 
 #pragma once
 
-#include "JSONParser.h"
+#include "visitor/JSONVisitor.h"
 #include "../BuiltinsProcessing/DefinitionProvider.h"
-
-class JSONVisitor {
-public:
-	virtual ~JSONVisitor() = default;
-	virtual void visit(JSONObject& object) = 0;
-    virtual void visit(JSONArray& array) = 0;
-    virtual void visit(JSONString& str) = 0;
-    virtual void visit(JSONInt& num) = 0;
-    virtual void visit(JSONFloat& num) = 0;
-    virtual void visit(JSONBool& boolean) = 0;
-
-};
 
 inline std::map<int, std::string> UI_CONTROL_INDEX = {
         {0, "ui_panel"},

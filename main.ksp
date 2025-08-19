@@ -94,7 +94,6 @@ end namespace
 on init
 
 	Browser.do_sth(1)
-	message(?sdflkj ? )
 	// message(Browser.do_sth(4))
 	// declare b := Bitlist()
 	// b.set(3, 1)

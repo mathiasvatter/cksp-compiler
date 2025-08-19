@@ -56,6 +56,7 @@ class Compiler {
 	DefinitionProvider m_definition_provider;
 	NodeProgram* m_program = nullptr;
 	std::vector<Token> m_tokens{};
+	Timer m_timer;
 
 //	bool tokenize();
 //	bool preprocess();
@@ -141,16 +142,15 @@ public:
 		// input_filename = "/Users/mathias/Scripting/sonu-northern-spheres/Nordic Spheres.ksp";
 		// input_filename = "/Users/mathias/Scripting/fragments-modern-percussion/Fragments.ksp";
 		// input_filename = "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp";
-		// input_filename = "/Users/Mathias/Scripting/action-strings-2/action_strings2_V0.1.ksp";
+		input_filename = "/Users/Mathias/Scripting/action-strings-2/action_strings2_V0.1.ksp";
 		// input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp";
 		// input_filename = "/Users/mathias/Scripting/sonu-libraries/try.ksp";
 		// input_filename = "/Users/mathias/Scripting/trinity-drums-2/main.ksp";
 	#endif
 
-		static Timer compile_time;
-		compile_time.start("Total Time");
-		compile_time.start("Import");
+		m_timer.start("Total Time");
+		m_timer.start("Import");
 
 		static FileHandler file_handler(input_filename);
 		static Tokenizer tokenizer(file_handler.get_output(), input_filename);
@@ -164,8 +164,8 @@ public:
 		}
 		m_tokens = std::move(imports.get_token_vector());
 
-		compile_time.stop("Import");
-		compile_time.start("Preprocessor");
+		m_timer.stop("Import");
+		m_timer.start("Preprocessor");
 
 		std::string output_filename = m_config->output_filename;
 
@@ -199,10 +199,10 @@ public:
 		std::cout << std::endl;
 		std::filesystem::path curr_path = __FILE__;
 
-		compile_time.stop("Preprocessor");
-		std::cout << compile_time.print_timer("Import") << "\n";
-		std::cout << compile_time.print_timer("Preprocessor") << "\n";
-		compile_time.start("Parsing");
+		m_timer.stop("Preprocessor");
+		std::cout << m_timer.print_timer("Import") << "\n";
+		std::cout << m_timer.print_timer("Preprocessor") << "\n";
+		m_timer.start("Parsing");
 
 
 		static Parser parser(m_tokens);
@@ -215,17 +215,17 @@ public:
 		ast->compiler_config = m_config;
 		m_program = ast.get();
 
-		compile_time.stop("Parsing");
-		std::cout << compile_time.print_timer("Parsing") << "\n";
-		compile_time.start("Desugaring");
+		m_timer.stop("Parsing");
+		std::cout << m_timer.print_timer("Parsing") << "\n";
+		m_timer.start("Desugaring");
 
 		static ASTDesugar desugar;
 		ast->accept(desugar);
 		ast->debug_print();
 
-		compile_time.stop("Desugaring");
-		std::cout << compile_time.print_timer("Desugaring") << "\n";
-		compile_time.start("Lexical Scope");
+		m_timer.stop("Desugaring");
+		std::cout << m_timer.print_timer("Desugaring") << "\n";
+		m_timer.start("Lexical Scope");
 
 		static ASTTypeAnnotations type_annotations(m_program);
 		ast->accept(type_annotations);
@@ -236,17 +236,17 @@ public:
 		ast->debug_print();
 
 
-		compile_time.stop("Lexical Scope");
-		std::cout << compile_time.print_timer("Lexical Scope") << "\n";
-		compile_time.start("Semantic Analysis");
+		m_timer.stop("Lexical Scope");
+		std::cout << m_timer.print_timer("Lexical Scope") << "\n";
+		m_timer.start("Semantic Analysis");
 
 		static ASTSemanticAnalysis data_structures(ast.get());
 		ast->accept(data_structures);
 		ast->debug_print();
 
-		compile_time.stop("Semantic Analysis");
-		std::cout << compile_time.print_timer("Semantic Analysis") << "\n";
-		compile_time.start("Type Checking");
+		m_timer.stop("Semantic Analysis");
+		std::cout << m_timer.print_timer("Semantic Analysis") << "\n";
+		m_timer.start("Type Checking");
 
 		static TypeInference infer_types(ast.get());
 		infer_types.do_complete_traversal(*ast);
@@ -257,9 +257,9 @@ public:
 		unique_names_provider.do_renaming(*m_program);
 		ast->debug_print();
 
-		compile_time.stop("Type Checking");
-		std::cout << compile_time.print_timer("Type Checking") << "\n";
-		compile_time.start("Lowering");
+		m_timer.stop("Type Checking");
+		std::cout << m_timer.print_timer("Type Checking") << "\n";
+		m_timer.start("Lowering");
 
 		static ASTPointerScope pointer_scope(m_program);
 		ast->accept(pointer_scope);
@@ -279,9 +279,9 @@ public:
 		// inline here so inlined struct vars get their declaration for register reuse later on
 		ast->inline_structs();
 
-		compile_time.stop("Lowering");
-		std::cout << compile_time.print_timer("Lowering") << "\n";
-		compile_time.start("Return Function Rewriting");
+		m_timer.stop("Lowering");
+		std::cout << m_timer.print_timer("Lowering") << "\n";
+		m_timer.start("Return Function Rewriting");
 
 		ASTReturnFunctionRewriting return_function_rewriting(m_program);
 		return_function_rewriting.do_rewriting(*ast);
@@ -325,9 +325,9 @@ public:
 		ASTPreemptiveFunctionInlining pre_inlining(m_program);
 		ast->accept(pre_inlining);
 
-		compile_time.stop("Return Function Rewriting");
-		std::cout << compile_time.print_timer("Return Function Rewriting") << "\n";
-		compile_time.start("Data Structure Lowering");
+		m_timer.stop("Return Function Rewriting");
+		std::cout << m_timer.print_timer("Return Function Rewriting") << "\n";
+		m_timer.start("Data Structure Lowering");
 
 
 		NormalizeNDArrayAssign nd_array_assign(m_program);
@@ -342,9 +342,9 @@ public:
 		ast->accept(data_structure_lowering);
 		ast->debug_print();
 
-		compile_time.stop("Data Structure Lowering");
-		std::cout << compile_time.print_timer("Data Structure Lowering") << "\n";
-		compile_time.start("Variable Reuse");
+		m_timer.stop("Data Structure Lowering");
+		std::cout << m_timer.print_timer("Data Structure Lowering") << "\n";
+		m_timer.start("Variable Reuse");
 
 		// second pass to analyze dynamic extend within callbacks and replace with passive_vars
 		ASTVariableReuse variable_reuse(m_program);
@@ -359,18 +359,18 @@ public:
 		ast->accept(normalize_array_assign);
 		ast->debug_print();
 
-		compile_time.stop("Variable Reuse");
-		std::cout << compile_time.print_timer("Variable Reuse") << "\n";
-	    compile_time.start("Function Inlining");
+		m_timer.stop("Variable Reuse");
+		std::cout << m_timer.print_timer("Variable Reuse") << "\n";
+	    m_timer.start("Function Inlining");
 
 		ASTFunctionInlining func_inlining(m_program);
 		ast->accept(func_inlining);
 		ast->order_function_definitions();
 		ast->debug_print();
 
-	    compile_time.stop("Function Inlining");
-		std::cout << compile_time.print_timer("Function Inlining") << "\n";
-		compile_time.start("Post Lowering");
+	    m_timer.stop("Function Inlining");
+		std::cout << m_timer.print_timer("Function Inlining") << "\n";
+		m_timer.start("Post Lowering");
 
 		ASTCollectPostLowerings post_lowering(m_program);
 		ast->accept(post_lowering);
@@ -379,9 +379,9 @@ public:
 		ASTRelinkGlobalScope relink_global_scope(m_program);
 		ast->accept(relink_global_scope);
 
-		compile_time.stop("Post Lowering");
-		std::cout << compile_time.print_timer("Post Lowering") << "\n";
-		compile_time.start("Optimization");
+		m_timer.stop("Post Lowering");
+		std::cout << m_timer.print_timer("Post Lowering") << "\n";
+		m_timer.start("Optimization");
 
 		ast->inline_global_variables();
 		ast->debug_print();
@@ -390,9 +390,9 @@ public:
 		ASTOptimizations::optimize(*ast, m_config->optimization_level);
 		ast->debug_print();
 
-		compile_time.stop("Optimization");
-		std::cout << compile_time.print_timer("Optimization") << "\n";
-		compile_time.start("Generator");
+		m_timer.stop("Optimization");
+		std::cout << m_timer.print_timer("Optimization") << "\n";
+		m_timer.start("Generator");
 
 		ASTKSPSyntaxCheck syntax_check(m_program);
 		ast->accept(syntax_check);
@@ -404,13 +404,13 @@ public:
 		ast->accept(generator);
 		generator.generate(output_filename);
 
-		compile_time.stop("Generator");
-		std::cout << compile_time.print_timer("Generator") << "\n";
-		compile_time.stop("Total Time");
+		m_timer.stop("Generator");
+		std::cout << m_timer.print_timer("Generator") << "\n";
+		m_timer.stop("Total Time");
 
 		// std::cout << compile_time.report() << std::endl;
 		std::cout << "---------------------------" << "\n";
-		std::cout << ColorCode::Bold << compile_time.print_timer("Total Time") << ColorCode::Reset << "\n";
+		std::cout << ColorCode::Bold << m_timer.print_timer("Total Time") << ColorCode::Reset << "\n";
 
 		std::cout << ColorCode::Green << ColorCode::Bold << "Saved compiled file to: " << ColorCode::Reset << output_filename << std::endl;
 	}
