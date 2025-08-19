@@ -6,13 +6,13 @@
 
 #include <utility>
 #include <filesystem>
-#include "../JSON/JSONParser.h"
-#include "../JSON/JSONVisitor.h"
+#include "../JSON/parser/JSONParser.h"
+#include "../JSON/NCKPTranslator.h"
 #include "../misc/FileHandler.h"
 #include "../misc/PathHandler.h"
 
 ImportProcessor::ImportProcessor(std::vector<Token> tokens, std::string current_file, DefinitionProvider* definition_provider)
-        : Processor(std::move(tokens)), m_current_file(std::move(current_file)), m_def_provider(definition_provider) {
+        : Processor(std::move(tokens)), m_def_provider(definition_provider), m_current_file(std::move(current_file)) {
     m_pos = 0;
 	m_curr_token_type = m_tokens.at(0).type;
     m_root_directory = std::filesystem::path(m_current_file).parent_path().string();
@@ -107,10 +107,8 @@ Result<SuccessTag> ImportProcessor::evaluate_import_nckp(std::vector<Token>& tok
 		return Result<SuccessTag>(path.get_error());
 	}
 	FileHandler file_handler(path.unwrap());
-	Tokenizer tokenizer(file_handler.get_output(), path.unwrap(), file_handler.get_file_type());
-	auto nckp_tokens = tokenizer.tokenize();
-	JSONParser parser(std::move(nckp_tokens));
-	auto ast = parser.parse_json();
+	JSONParser parser;
+	auto ast = parser.parse(file_handler.get_output(), path.unwrap());
 	NCKPTranslator translator(m_def_provider);
 	ast->accept(translator);
 	auto ui_variables = translator.collect_ui_variables();

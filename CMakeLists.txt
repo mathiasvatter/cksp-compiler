@@ -99,10 +99,6 @@ add_executable(cksp main.cpp
         Generator/ASTGenerator.cpp
         ${GENERATED_HEADERS}
         generated/version.h
-        JSON/JSONParser.h
-        JSON/JSONParser.cpp
-        JSON/JSONVisitor.h
-        JSON/JSONVisitor.cpp
         Preprocessor/PreAST/PreASTDefines.h
         Preprocessor/PreAST/PreASTDefines.cpp
         Preprocessor/PreAST/PreASTPragma.h
@@ -224,6 +220,16 @@ add_executable(cksp main.cpp
         Desugaring/DesugarFormatString.h
         Preprocessor/PreAST/PreASTNodes/PreASTHelper.h
         Preprocessor/PreAST/PreASTPrinter.h
+        JSON/NCKPTranslator.cpp
+        JSON/NCKPTranslator.h
+        JSON/ast/JSONValue.cpp
+        JSON/ast/JSONValue.h
+        JSON/error/JSONError.h
+        JSON/parser/JSONParser.h
+        JSON/parser/JSONTokenizer.h
+        JSON/parser/JSONTokens.h
+        JSON/visitor/JSONVisitor.h
+        JSON/visitor/JSONPrintVisitor.h
 )
 add_dependencies(cksp generate_headers)
 
