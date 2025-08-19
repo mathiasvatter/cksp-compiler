@@ -71,6 +71,7 @@
     XX(WHILE, "while") \
     XX(BREAK, "break") \
     XX(IF, "if") \
+    XX(TERNARY, "?") \
     XX(SELECT, "select") \
     XX(DEFAULT, "default") \
     XX(LIST, "list") \
