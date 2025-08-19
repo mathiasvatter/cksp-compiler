@@ -48,7 +48,7 @@ public:
     void visit(JSONFloat& num) override;
     void visit(JSONBool& boolean) override;
 
-    std::vector<std::shared_ptr<NodeDataStructure>> collect_ui_variables();
+    [[nodiscard]] std::vector<std::shared_ptr<NodeDataStructure>> collect_ui_variables() const;
 private:
 	DefinitionProvider* m_def_provider;
 

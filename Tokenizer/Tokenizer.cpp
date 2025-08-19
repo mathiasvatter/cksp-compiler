@@ -96,10 +96,13 @@ void Tokenizer::token_loop() {
 			skip_whitespace();
 		} else if(peek() == ':') {
 			get_type();
+		} else if (peek() == '?') {
+			get_ternary_operator();
 		} else if(m_is_json and (peek() == '}' || peek() == '{')) {
 			get_curly_brackets();
-		} else
+		} else {
 			get_invalid();
+		}
 	}
 }
 
@@ -256,6 +259,13 @@ void Tokenizer::get_format_string() {
 	skip_whitespace();
 }
 
+void Tokenizer::get_ternary_operator() {
+	flush_buffer();
+	consume();
+	add_token(token::TERNARY, m_buffer);
+	skip_whitespace();
+}
+
 void Tokenizer::get_binary_operators() {
     flush_buffer();
     token tok;
@@ -345,8 +355,7 @@ void Tokenizer::get_keyword_or_num() {
             add_token(token::FLOAT, m_buffer);
         } else {
 			auto err_msg = "Found unknown keyword.";
-			CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).print();
-			exit(EXIT_FAILURE);
+			CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).exit();
 		}
     // check if next char is _ or text
     } else if (is_keyword_or_num()) {
@@ -355,13 +364,21 @@ void Tokenizer::get_keyword_or_num() {
         while (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
             consume();
         }
-        // catch var identifier in the middle of keyword
-        if (VAR_IDENT.contains(peek()) || ARRAY_IDENT.contains(peek())) {
-            consume();
-            auto err_msg = "Incorrect placement of variable/array identifier";
-            CompileError(ErrorType::TokenError, err_msg, m_line, "valid variable", m_buffer, m_current_file).print();
-            exit(EXIT_FAILURE);
-        }
+    	// // ternary operator in reference chain -> browser?.current
+    	// if (peek() == '?' and peek(1) == '.') {
+    	// 	add_token(token::KEYWORD, m_buffer);
+    	// 	flush_buffer();
+    	// 	consume(); // consume ?
+    	// 	add_token(token::TERNARY, m_buffer);
+    	// 	flush_buffer();
+    	// } else {
+	    //     // catch var identifier in the middle of keyword
+	    //     if (VAR_IDENT.contains(peek()) || ARRAY_IDENT.contains(peek())) {
+	    //         consume();
+	    //         auto err_msg = "Incorrect placement of variable/array identifier";
+	    //         CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).exit();
+	    //     }
+    	// }
 		while (peek() == '.') {
 			consume();
 			if (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
@@ -370,8 +387,7 @@ void Tokenizer::get_keyword_or_num() {
 				}
 			} else {
 				auto err_msg = "Found unknown keyword.";
-				CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).print();
-				exit(EXIT_FAILURE);
+				CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).exit();
 			}
 		}
         if (is_hexadecimal(m_buffer)) {

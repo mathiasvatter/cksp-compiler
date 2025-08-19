@@ -55,7 +55,7 @@ void NCKPTranslator::visit(JSONObject &object) {
 	}
 }
 
-std::vector<std::shared_ptr<NodeDataStructure>> NCKPTranslator::collect_ui_variables() {
+std::vector<std::shared_ptr<NodeDataStructure>> NCKPTranslator::collect_ui_variables() const {
 	std::vector<std::shared_ptr<NodeDataStructure>> ui_variables;
 	for(auto &ui_pair : m_ui_controls) {
 		auto it = UI_CONTROL_INDEX.find(ui_pair.second);
@@ -65,7 +65,7 @@ std::vector<std::shared_ptr<NodeDataStructure>> NCKPTranslator::collect_ui_varia
 		std::string ui_control = it->second;
 		std::string ui_var = ui_pair.first;
 		auto node_ast = m_def_provider->builtin_widgets.find(ui_control)->second->clone();
-		auto node_ui_control = std::unique_ptr<NodeUIControl>(static_cast<NodeUIControl*>(node_ast.release()));
+		auto node_ui_control = unique_ptr_cast<NodeUIControl>(std::move(node_ast));
 		if(auto node_variable = cast_node<NodeVariable>(node_ui_control->control_var.get())) {
 			node_variable->name = ui_var;
             node_variable->data_type = DataType::UIControl;

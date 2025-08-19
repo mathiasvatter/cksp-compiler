@@ -105,5 +105,6 @@ protected:
     void get_keyword_or_num();
     void get_curly_brackets();
 	void get_format_string();
+	void get_ternary_operator();
 
 };
