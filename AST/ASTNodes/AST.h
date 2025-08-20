@@ -4,6 +4,7 @@
 
 #pragma once
 #include <string>
+#include <utility>
 #include <vector>
 #include <optional>
 
@@ -17,25 +18,6 @@ class ASTLowering;
 struct NodeProgram;
 struct NodeFunctionHeaderRef;
 struct NodeReference;
-
-struct SourcePosition {
-	size_t line;
-	size_t column;
-};
-
-struct SourceRange {
-	SourcePosition start{};
-	SourcePosition end{};
-
-	explicit SourceRange(const Token &tok) {
-		start ={tok.line, tok.pos};
-		end={tok.line, tok.pos + tok.val.length()};
-	}
-	SourceRange(const Token &start_tok, const Token &end_tok) {
-		start = {start_tok.line, start_tok.pos};
-		end = {end_tok.line, end_tok.pos + end_tok.val.length()};
-	}
-};
 
 struct NodeAST {
 	SourceRange range;
@@ -55,7 +37,18 @@ struct NodeAST {
 	void set_range(const Token& start, const Token& end) {
 		range = {start, end};
 	}
-	NodeAST* replace_with(std::unique_ptr<NodeAST> newNode);
+	void set_range(const Token& token) {
+		range = SourceRange{token};
+	}
+	void set_range(const SourceRange& start, const SourceRange& end) {
+		range = SourceRange{start, end};
+	}
+	void set_range(const NodeAST& start, const NodeAST& end) {
+		range = SourceRange{start.range, end.range};
+	}
+	// Methode zum Ersetzen des aktuellen Knotens durch einen neuen Knoten
+	// Gibt den alten Knoten zurück, um die Referenzierung zu aktualisieren
+	virtual NodeAST* replace_with(std::unique_ptr<NodeAST> newNode);
     // Hinzugefügte Methode zum Aktualisieren der Parent-Pointer
     virtual void update_parents(NodeAST* new_parent) {
         parent = new_parent;
@@ -336,7 +329,7 @@ struct NodeExpression final : NodeAST {
 
 struct NodeWildcard final : NodeAST {
 	std::string value;
-	explicit NodeWildcard(std::string v, Token tok) : NodeAST(std::move(tok), NodeType::Wildcard), value(v) {}
+	explicit NodeWildcard(std::string v, Token tok) : NodeAST(std::move(tok), NodeType::Wildcard), value(std::move(v)) {}
 	NodeAST* accept(ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeWildcard(const NodeWildcard& other) : NodeAST(other), value(other.value) {}
@@ -345,7 +338,7 @@ struct NodeWildcard final : NodeAST {
 	std::string get_string() override {
 		return value;
 	}
-	bool check_semantic() const;
+	[[nodiscard]] bool check_semantic() const;
 };
 
 struct NodeInt final : NodeAST {

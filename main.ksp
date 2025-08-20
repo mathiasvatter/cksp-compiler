@@ -144,7 +144,7 @@ function swi_keyswitch_ui_controls(idx: int)
 	// 	message("sdlfkj")
 	// 	return
 	// end if
-	return
+	// return
 end function    
 
 // if((current_filtermethod{int} {current_filtermethod}  = filter.SUBTRACTIVE{int} {filter.SUBTRACTIVE} ) or (current_filtermethod{int} {current_filtermethod}  = filter.TOGGLE{int} {filter.TOGGLE} ))

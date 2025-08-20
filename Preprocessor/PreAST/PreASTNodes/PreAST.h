@@ -11,15 +11,13 @@
 #include "../../../misc/HashFunctions.h"
 #include "../../../utils/StringUtils.h"
 
-
-
-
 struct PreNodeAST {
+	SourceRange range;
 	Token tok;
 	PreNodeType type;
 	PreNodeAST* parent = nullptr;
 	explicit PreNodeAST(Token tok, PreNodeAST* parent=nullptr, PreNodeType type=PreNodeType::DEAD_CODE)
-		: tok(std::move(tok)), parent(parent), type(type) {}
+		: range(tok), tok(std::move(tok)), type(type), parent(parent) {}
     virtual ~PreNodeAST() = default;
 	PreNodeAST(const PreNodeAST& other) = default;
     virtual PreNodeAST *accept(class PreASTVisitor &visitor) {return nullptr;}
@@ -38,6 +36,18 @@ struct PreNodeAST {
     }
     virtual void update_token_data(const Token &token) {
     	tok.line = token.line; tok.file = token.file;
+    }
+	void set_range(const Token& start, const Token& end) {
+    	range = {start, end};
+    }
+	void set_range(const Token& token) {
+    	range = SourceRange{token};
+    }
+	void set_range(const SourceRange& start, const SourceRange& end) {
+    	range = SourceRange{start, end};
+    }
+	void set_range(const PreNodeAST& start, const PreNodeAST& end) {
+    	range = SourceRange{start.range, end.range};
     }
 	virtual std::string get_string() = 0;
 	[[nodiscard]] PreNodeType get_node_type() const { return type; }
