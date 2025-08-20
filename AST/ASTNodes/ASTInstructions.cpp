@@ -285,6 +285,10 @@ void NodeFunctionCall::determine_function_strategy(NodeProgram *program, NodeCal
 	function_strategy.determine_function_strategy(*this, current_callback);
 }
 
+bool NodeFunctionCall::is_in_access_chain() const {
+	return parent and parent->cast<NodeAccessChain>();
+}
+
 // ************* NodeSortSearch ***************
 NodeAST *NodeSortSearch::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);

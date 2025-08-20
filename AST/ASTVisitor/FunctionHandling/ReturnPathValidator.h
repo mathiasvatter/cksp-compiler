@@ -34,19 +34,35 @@ public:
 		def.accept(*this);
 		if (!m_return_path[def.body.get()]) {
 			auto error = ASTVisitor::get_raw_compile_error(ErrorType::CompileError, *def.body);
-			error.m_message = "Function <"+def.header->name+"> does not return a value on all code paths. This might lead to an infinite loop. "
-					 "Check if:\n- All if/else branches have return statements\n- The function has a return statement after loops or conditionals\n- All possible cases in switch statements return a value.";
+			error.m_message = "Function <"+def.header->name+"> does not terminate on all code paths. This might lead to an infinite loop. "
+					 "Checked the following code paths:\n";
 
-			error.m_message += "\n Possible missing return statements in lines: ";
+			// error.m_message += "\n Possible missing return statements in lines: ";
 			std::vector<size_t> lines{};
+			std::string message{};
 			for (auto& [block, boolean] : m_return_path) {
 				if (!boolean and !block->empty()) {
-					lines.push_back(block->range.end.line);
+					auto line = block->get_last_statement()->range.end.line;
+					lines.push_back(line);
+
+					if (auto node_if = block->parent->cast<NodeIf>()) {
+						message += "- Not all branches of if-statement at position " + node_if->range.to_string() + " have a return statement.\n";
+					} else if (auto node_select = block->parent->cast<NodeSelect>()) {
+						message += "- Not all cases of select statement at position " + node_select->range.to_string() + " have a return statement.\n";
+					} else if (auto node_func = block->parent->cast<NodeFunctionDefinition>()) {
+						message += "- The function body at position " + node_func->range.to_string() + " does not terminate with a return statement.\n";
+					} else {
+						message += "- Block at position " + block->range.to_string() + " does not have a return statement.\n";
+					}
+
+
 				}
 			}
-			error.m_message += StringUtils::join_apply(lines, [](size_t line) {
-				return std::to_string(line);
-			}, ", ");
+			// error.m_message += StringUtils::join_apply(lines, [](size_t line) {
+			// 	return std::to_string(line);
+			// }, ", ");
+			error.m_message += message;
+			error.m_message += "Adding a return statement to some/all of these code paths might fix this error.";
 
 			error.exit();
 		}
@@ -101,12 +117,12 @@ private:
 
 	NodeAST* visit(NodeSelect &node) override {
 		bool all_return = !node.cases.empty();
-		for(const auto &cas: node.cases) {
-			m_return_path[cas.second.get()] = !cas.second->empty();
-			cas.second->accept(*this);
+		for(const auto &val : node.cases | std::views::values) {
+			m_return_path[val.get()] = !val->empty();
+			val->accept(*this);
 			// all_return &= m_return_path[cas.second.get()];
 			// If any case does not return, the whole select statement doesn't guarantee a return.
-			if (!m_return_path[cas.second.get()]) {
+			if (!m_return_path[val.get()]) {
 				all_return = false;
 			}
 		}

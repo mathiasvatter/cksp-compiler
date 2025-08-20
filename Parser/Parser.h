@@ -93,7 +93,7 @@ public:
 
 	Result<std::unique_ptr<NodeParamList>> parse_multiple_values(NodeAST* parent);
     Result<std::unique_ptr<NodeParamList>> parse_param_list(NodeAST* parent);
-	Result<SuccessTag> _parse_into_param_list(std::vector<std::unique_ptr<NodeAST>>& params, NodeAST* parent);
+	// Result<SuccessTag> _parse_into_param_list(std::vector<std::unique_ptr<NodeAST>>& params, NodeAST* parent);
 	Result<std::unique_ptr<NodeAST>> parse_init_list(NodeAST* parent);
     /// parses every expression from binary, string, unary to number and variable
     Result<std::unique_ptr<NodeAST>> parse_expression(NodeAST* parent);
