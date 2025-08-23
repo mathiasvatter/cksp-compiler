@@ -89,6 +89,7 @@ struct NodeAST {
 	void collect_references();
 	/// performs ASTVariableChecking class on provided node and removes vars and refs from datastrucs
 	void remove_references();
+	std::unordered_set<std::string> collect_free_vars();
 	// Template-Methode für den Cast
 	template <typename TargetType>
 	TargetType* cast() {
@@ -897,6 +898,9 @@ struct NodeProgram final : NodeAST {
 	}
 	void remove_unused_functions();
 	void order_function_definitions();
+
+	std::shared_ptr<NodeVariable> get_tmp_var(Type* ty, DataType data=DataType::Mutable);
+	std::shared_ptr<NodePointer> get_tmp_ptr(Type* ty, DataType data=DataType::Mutable);
 };
 
 

@@ -48,14 +48,6 @@ public:
 		// node.remove_references();
 		// node.collect_references();
 		node.debug_print();
-		// for (auto& fun : node.function_definitions) {
-		// 	if (fun->header->name == "cc_on_controller") {
-		// 		auto& set = m_subcalls_per_function[fun.get()];
-		// 		for (auto & subcall : set) {
-		// 			std::cout << subcall->header->name << std::endl;
-		// 		}
-		// 	}
-		// }
 
 		static ParameterReuse reuse(&node);
 		reuse.do_parameter_reuse(
