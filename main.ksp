@@ -177,3 +177,61 @@ end function
 
 // 	allowed{int} {allowed}  := allowed{int} {allowed}  + bit_count{int} {bit_count} 
 // end if
+
+
+
+
+// ohne lokale variable:
+Floatmask::__decr__(preset{int} {preset} , 1){UserDefined, None, Floatmask::__decr__}
+	declare local _ret10 : int {Reuses: 0}
+	Floatmask::__invert__(_ret10{int} {_ret10} , Categories::tags[Browser::categories[self46{int} {self46} ]{int} {Browser::categories} ]{int} {Categories::tags} ){UserDefined, None, Floatmask::__invert__}
+	Floatmask::__or__(preset{int} {preset} , _ret10{int} {_ret10} , preset{int} {preset} ){UserDefined, None, Floatmask::__or__}
+
+Floatmask::__incr__(preset{int} {preset} , 1){UserDefined, None, Floatmask::__incr__}
+
+
+// ohne lokale variable new:
+declare local tmp1 : int {Reuses: 0}
+	declare local _ret10 : int {Reuses: 0}
+	Floatmask::__invert__(_ret10{int} {_ret10} , Categories::tags[Browser::categories[self64{int} {self64} ]{int} {Browser::categories} ]{int} {Categories::tags} ){UserDefined, None, Floatmask::__invert__}
+	Floatmask::__or__(tmp1{int} {tmp1} , _ret10{int} {_ret10} , preset{int} {preset} ){UserDefined, None, Floatmask::__or__}
+
+preset{int} {preset}  := tmp1{int} {tmp1} 
+
+
+
+declare local flipped : int {Reuses: 0}
+Floatmask::__invert__(flipped{int} {flipped} , Categories::tags[Browser::categories[self50{int} {self50} ]{int} {Browser::categories} ]{int} {Categories::tags} ){UserDefined, None, Floatmask::__invert__}
+Floatmask::__or__(preset{int} {preset} , flipped{int} {flipped} , preset{int} {preset} ){UserDefined, None, Floatmask::__or__}
+
+
+
+
+
+// not working
+	declare local tmp1{Ptr} : Floatmask := Floatmask::__or__(Floatmask::__invert__(self54{Ptr}{Browser} {self54} .categories{Ptr}{Categories} {Browser::categories} .tags{Ptr}{Floatmask} {Categories::tags} ){UserDefined, None, Floatmask::__invert__}, preset{Ptr}{Floatmask} {preset} ){UserDefined, None, Floatmask::__or__} {Reuses: 0}
+								retain(tmp1{Ptr}{Floatmask} {tmp1} , 1)
+	delete preset{Ptr}{Floatmask} {preset} 
+	preset{Ptr}{Floatmask} {preset}  := tmp1{Ptr}{Floatmask} {tmp1} 
+								retain(preset{Ptr}{Floatmask} {preset} , 1)
+	delete tmp1{Ptr}{Floatmask} {tmp1} 
+
+message("no local var" & ", " & preset{Ptr}{Floatmask} {preset} ){Builtin, None, message}
+declare local bit_count : int := preset{Ptr}{Floatmask} {preset} .get_range(self54{Ptr}{Browser} {self54} .categories{Ptr}{Categories} {Browser::categories} .get_tags_until(v{int} {v} ){UserDefined, None, Categories::get_tags_until}, self54{Ptr}{Browser} {self54} .categories{Ptr}{Categories} {Browser::categories} .get_tags_until(v{int} {v}  + 1){UserDefined, None, Categories::get_tags_until}){UserDefined, None, Floatmask::get_range}.count(1){UserDefined, None, Floatmask::count} {Reuses: 0}
+allowed{int} {allowed}  := allowed{int} {allowed}  + bit_count{int} {bit_count} 
+
+
+
+// working???????
+declare local flipped{Ptr} : Floatmask := Floatmask::__invert__(self47{Ptr}{Browser} {self47} .categories{Ptr}{Categories} {Browser::categories} .tags{Ptr}{Floatmask} {Categories::tags} ){UserDefined, None, Floatmask::__invert__} {Reuses: 0}
+						retain(flipped{Ptr}{Floatmask} {flipped} , 1)
+declare local tmp{Ptr} : Floatmask := Floatmask::__or__(flipped{Ptr}{Floatmask} {flipped} , preset{Ptr}{Floatmask} {preset} ){UserDefined, None, Floatmask::__or__} {Reuses: 0}
+						retain(tmp{Ptr}{Floatmask} {tmp} , 1)
+delete preset{Ptr}{Floatmask} {preset} 
+preset{Ptr}{Floatmask} {preset}  := tmp{Ptr}{Floatmask} {tmp} 
+						retain(preset{Ptr}{Floatmask} {preset} , 1)
+message("with local var" & ", " & preset{Ptr}{Floatmask} {preset} ){Builtin, None, message}
+declare local bit_count : int := preset{Ptr}{Floatmask} {preset} .get_range(self47{Ptr}{Browser} {self47} .categories{Ptr}{Categories} {Browser::categories} .get_tags_until(v{int} {v} ){UserDefined, None, Categories::get_tags_until}, self47{Ptr}{Browser} {self47} .categories{Ptr}{Categories} {Browser::categories} .get_tags_until(v{int} {v}  + 1){UserDefined, None, Categories::get_tags_until}){UserDefined, None, Floatmask::get_range}.count(1){UserDefined, None, Floatmask::count} {Reuses: 0}
+allowed{int} {allowed}  := allowed{int} {allowed}  + bit_count{int} {bit_count} 
+delete tmp{Ptr}{Floatmask} {tmp} 
+delete flipped{Ptr}{Floatmask} {flipped} 

@@ -230,6 +230,7 @@ add_executable(cksp main.cpp
         JSON/parser/JSONTokens.h
         JSON/visitor/JSONVisitor.h
         JSON/visitor/JSONPrintVisitor.h
+        Optimization/FreeVarCollector.h
 )
 add_dependencies(cksp generate_headers)
 

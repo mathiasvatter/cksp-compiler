@@ -98,6 +98,13 @@ public:
 	}
 
 	NodeAST* visit(NodeSingleAssignment& node) override {
+		// if (node.l_value->name == "i3600") {
+		// 	if (auto ref = node.r_value->is_reference()) {
+		// 		if (ref->name == "trigger_clear010") {
+		//
+		// 		}
+		// 	}
+		// }
 		// important to do r_value first to remove last assignment if necessary
 		node.r_value->accept(*this);
 		node.l_value->accept(*this);
@@ -144,14 +151,15 @@ public:
 			return false;
 		}
 
-		if(auto const it = m_last_reference.find(get_hash_value(*node)); it != m_last_reference.end()) {
+		auto const it = m_last_reference.find(get_hash_value(*node));
+		if(it != m_last_reference.end()) {
 			// check if reference is also somewhere on the right side of the assignment
 			if (node->is_r_value()) return false;
-			if(const auto assignment = it->second->is_l_value()) {
-				if (assignment->r_value->cast<NodeFunctionCall>()) return false;
-				// if (assignment->kind == NodeInstruction::ParameterStack) return false;
-				// if (assignment->kind == NodeInstruction::ReturnVar) return false;
-				assignment->remove_node();
+			if(const auto last_assignment = it->second->is_l_value()) {
+				if (last_assignment->r_value->cast<NodeFunctionCall>()) return false;
+				if (last_assignment->kind == NodeInstruction::ParameterStack) return false;
+				if (last_assignment->kind == NodeInstruction::ReturnVar) return false;
+				last_assignment->remove_node();
 				m_last_reference.erase(it);
 				return true;
 			}
