@@ -1,0 +1,71 @@
+
+
+struct List
+    declare value: int
+    declare next: List := nil
+
+    function __init__(self, value: int, next: List)
+        self.value := value
+        self.next := next
+    end function
+
+end struct
+
+
+/// Post Lowering
+
+declare const MAX_STRUCTS := 1000000 // allgemeine constante für structs
+declare const List::MAX_STRUCTS := MAX_STRUCTS
+
+declare List::allocation[List::MAX_STRUCTS] := (0)
+declare List::value[List::MAX_STRUCTS] // default values if given := 10 
+declare List::next[List::MAX_STRUCTS] // default values if given := 10
+declare List::free_idx := 0 // Zeiger auf den nächsten freien index
+
+
+function List::__init__(value: int, next: List)
+    List::free_idx := search(List::allocation, 0, List::free_idx, List::MAX_STRUCTS-1)
+    if List::free_idx = nil
+        message("Error: No more free space available to allocate objects of type 'List'") 
+    end if
+    List::allocation[List::free_idx] := 1
+    List::value[List::free_idx] := value
+    List::next[List::free_idx] := next
+    return List::free_idx
+end function
+
+function List::__incr__(self: List, num_refs: int)
+    if self # nil
+        List::allocation[self] := List::allocation[self] + num_refs
+    end if
+end function
+
+function List::__decr__(self: List, num_refs: int)
+    declare current: List := self
+    // Solange es Objekte gibt, die freigegeben werden sollen, weiter durch die Struktur iterieren
+    while current # nil
+
+        List::allocation[current] := List::allocation[current] + num_refs
+        if(List::allocation[current] > 0) 
+            current := nil
+        	continue
+        end if
+        List::allocation[current] := 0
+
+        self := current // <- immer da
+        current := nil // <- immer da (für nicht rekursive structs)
+
+        current := List::next[current] // <- für rekursive structs
+        
+        // actual delete
+        List::__del__(self)
+    end while
+end function  
+
+function List::__del__(self: List)
+    if(List::allocation[self] <= 0)
+        List::next[self] := nil
+        List::value[self] := 0
+        List::free_idx := min(List::free_idx, self)
+    end if 
+end function

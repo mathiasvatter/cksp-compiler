@@ -61,7 +61,7 @@ class DesugarStruct final : public ASTDesugaring {
 		}
 		return name;
 	}
-	std::unique_ptr<NodeAccessChain> try_access_chain_transform(const std::string& name, NodeAST* node) {
+	std::unique_ptr<NodeAccessChain> try_access_chain_transform(const std::string& name, NodeAST* node) const {
 		if (!m_structs.empty() && name.find("self.") == 0) {
 			return node->to_method_chain();
 		}

@@ -47,6 +47,17 @@ namespace UI
    
 end namespace
 
+struct List
+    declare value: int
+    declare next: List := nil
+
+    function __init__(self, value: int, next: List)
+        self.value := value
+        self.next := next
+    end function
+
+end struct
+
 // struct MyStruct
 // 	declare const static PUPU: string
 // 	declare my_int: int
@@ -144,94 +155,5 @@ function swi_keyswitch_ui_controls(idx: int)
 	// 	message("sdlfkj")
 	// 	return
 	// end if
-	// return
+	return
 end function    
-
-// if((current_filtermethod{int} {current_filtermethod}  = filter.SUBTRACTIVE{int} {filter.SUBTRACTIVE} ) or (current_filtermethod{int} {current_filtermethod}  = filter.TOGGLE{int} {filter.TOGGLE} ))
-// 	declare local flipped : Floatmask := Floatmask::__invert__(Categories::tags[Browser::categories[self23{Browser} {self23} ]{Categories} {Browser::categories} ]{Floatmask} {Categories::tags} ){UserDefined, None, Floatmask::__invert__} {Reuses: 0}
-// 	Floatmask::__incr__(flipped{Floatmask} {flipped} , 1){UserDefined, None, Floatmask::__incr__}
-// 	Floatmask::__incr__(flipped{Floatmask} {flipped} , 1){UserDefined, None, Floatmask::__incr__}
-// 	Floatmask::__decr__(preset{Floatmask} {preset} , 1){UserDefined, None, Floatmask::__decr__}
-// 	Floatmask::__decr__(preset{Floatmask} {preset} , 1){UserDefined, None, Floatmask::__decr__}
-// 	preset{Floatmask} {preset}  := Floatmask::__or__(flipped{Floatmask} {flipped} , preset{Floatmask} {preset} ){UserDefined, None, Floatmask::__or__}
-// 	Floatmask::__incr__(preset{Floatmask} {preset} , 1){UserDefined, None, Floatmask::__incr__}
-// 	Floatmask::__incr__(preset{Floatmask} {preset} , 1){UserDefined, None, Floatmask::__incr__}
-// 	declare local bit_count : int := Floatmask::count(Floatmask::get_range(preset{Floatmask} {preset} , Categories::get_tags_until(Browser::categories[self23{Browser} {self23} ]{Categories} {Browser::categories} , v{int} {v} ){UserDefined, None, Categories::get_tags_until}, Categories::get_tags_until(Browser::categories[self23{Browser} {self23} ]{Categories} {Browser::categories} , v{int} {v}  + 1){UserDefined, None, Categories::get_tags_until}){UserDefined, None, Floatmask::get_range}, 1){UserDefined, None, Floatmask::count} {Reuses: 0}
-// 	allowed{int} {allowed}  := allowed{int} {allowed}  + bit_count{int} {bit_count} 
-// 	Floatmask::__decr__(flipped{Floatmask} {flipped} , 1){UserDefined, None, Floatmask::__decr__}
-// end if
-
-// if((current_filtermethod{int} {current_filtermethod}  = filter.SUBTRACTIVE{int} {filter.SUBTRACTIVE} ) or (current_filtermethod{int} {current_filtermethod}  = filter.TOGGLE{int} {filter.TOGGLE} ))
-// 	Floatmask::__decr__(preset{int} {preset} , 1){UserDefined, None, Floatmask::__decr__}
-// 	Floatmask::__decr__(preset{int} {preset} , 1){UserDefined, None, Floatmask::__decr__}
-// 		declare local _ret5 : int {Reuses: 0}
-// 		Floatmask::__invert__(_ret5{int} {_ret5} , Categories::tags[Browser::categories[self4{int} {self4} ]{int} {Browser::categories} ]{int} {Categories::tags} ){UserDefined, None, Floatmask::__invert__}
-// 		Floatmask::__or__(preset{int} {preset} , _ret5{int} {_ret5} , preset{int} {preset} ){UserDefined, None, Floatmask::__or__}
-
-// 	Floatmask::__incr__(preset{int} {preset} , 1){UserDefined, None, Floatmask::__incr__}
-// 	Floatmask::__incr__(preset{int} {preset} , 1){UserDefined, None, Floatmask::__incr__}
-// 	declare local bit_count : int {Reuses: 0}
-// 		declare local _ret6 : int {Reuses: 0}
-// 		Floatmask::get_range(_ret6{int} {_ret6} , preset{int} {preset} , Categories::get_tags_until(Browser::categories[self4{int} {self4} ]{int} {Browser::categories} , v{int} {v} ){UserDefined, None, Categories::get_tags_until}, Categories::get_tags_until(Browser::categories[self4{int} {self4} ]{int} {Browser::categories} , v{int} {v}  + 1){UserDefined, None, Categories::get_tags_until}){UserDefined, None, Floatmask::get_range}
-// 		bit_count{int} {bit_count}  := Floatmask::count(_ret6{int} {_ret6} , 1){UserDefined, None, Floatmask::count}
-
-// 	allowed{int} {allowed}  := allowed{int} {allowed}  + bit_count{int} {bit_count} 
-// end if
-
-
-
-
-// ohne lokale variable:
-Floatmask::__decr__(preset{int} {preset} , 1){UserDefined, None, Floatmask::__decr__}
-	declare local _ret10 : int {Reuses: 0}
-	Floatmask::__invert__(_ret10{int} {_ret10} , Categories::tags[Browser::categories[self46{int} {self46} ]{int} {Browser::categories} ]{int} {Categories::tags} ){UserDefined, None, Floatmask::__invert__}
-	Floatmask::__or__(preset{int} {preset} , _ret10{int} {_ret10} , preset{int} {preset} ){UserDefined, None, Floatmask::__or__}
-
-Floatmask::__incr__(preset{int} {preset} , 1){UserDefined, None, Floatmask::__incr__}
-
-
-// ohne lokale variable new:
-declare local tmp1 : int {Reuses: 0}
-	declare local _ret10 : int {Reuses: 0}
-	Floatmask::__invert__(_ret10{int} {_ret10} , Categories::tags[Browser::categories[self64{int} {self64} ]{int} {Browser::categories} ]{int} {Categories::tags} ){UserDefined, None, Floatmask::__invert__}
-	Floatmask::__or__(tmp1{int} {tmp1} , _ret10{int} {_ret10} , preset{int} {preset} ){UserDefined, None, Floatmask::__or__}
-
-preset{int} {preset}  := tmp1{int} {tmp1} 
-
-
-
-declare local flipped : int {Reuses: 0}
-Floatmask::__invert__(flipped{int} {flipped} , Categories::tags[Browser::categories[self50{int} {self50} ]{int} {Browser::categories} ]{int} {Categories::tags} ){UserDefined, None, Floatmask::__invert__}
-Floatmask::__or__(preset{int} {preset} , flipped{int} {flipped} , preset{int} {preset} ){UserDefined, None, Floatmask::__or__}
-
-
-
-
-
-// not working
-	declare local tmp1{Ptr} : Floatmask := Floatmask::__or__(Floatmask::__invert__(self54{Ptr}{Browser} {self54} .categories{Ptr}{Categories} {Browser::categories} .tags{Ptr}{Floatmask} {Categories::tags} ){UserDefined, None, Floatmask::__invert__}, preset{Ptr}{Floatmask} {preset} ){UserDefined, None, Floatmask::__or__} {Reuses: 0}
-								retain(tmp1{Ptr}{Floatmask} {tmp1} , 1)
-	delete preset{Ptr}{Floatmask} {preset} 
-	preset{Ptr}{Floatmask} {preset}  := tmp1{Ptr}{Floatmask} {tmp1} 
-								retain(preset{Ptr}{Floatmask} {preset} , 1)
-	delete tmp1{Ptr}{Floatmask} {tmp1} 
-
-message("no local var" & ", " & preset{Ptr}{Floatmask} {preset} ){Builtin, None, message}
-declare local bit_count : int := preset{Ptr}{Floatmask} {preset} .get_range(self54{Ptr}{Browser} {self54} .categories{Ptr}{Categories} {Browser::categories} .get_tags_until(v{int} {v} ){UserDefined, None, Categories::get_tags_until}, self54{Ptr}{Browser} {self54} .categories{Ptr}{Categories} {Browser::categories} .get_tags_until(v{int} {v}  + 1){UserDefined, None, Categories::get_tags_until}){UserDefined, None, Floatmask::get_range}.count(1){UserDefined, None, Floatmask::count} {Reuses: 0}
-allowed{int} {allowed}  := allowed{int} {allowed}  + bit_count{int} {bit_count} 
-
-
-
-// working???????
-declare local flipped{Ptr} : Floatmask := Floatmask::__invert__(self47{Ptr}{Browser} {self47} .categories{Ptr}{Categories} {Browser::categories} .tags{Ptr}{Floatmask} {Categories::tags} ){UserDefined, None, Floatmask::__invert__} {Reuses: 0}
-						retain(flipped{Ptr}{Floatmask} {flipped} , 1)
-declare local tmp{Ptr} : Floatmask := Floatmask::__or__(flipped{Ptr}{Floatmask} {flipped} , preset{Ptr}{Floatmask} {preset} ){UserDefined, None, Floatmask::__or__} {Reuses: 0}
-						retain(tmp{Ptr}{Floatmask} {tmp} , 1)
-delete preset{Ptr}{Floatmask} {preset} 
-preset{Ptr}{Floatmask} {preset}  := tmp{Ptr}{Floatmask} {tmp} 
-						retain(preset{Ptr}{Floatmask} {preset} , 1)
-message("with local var" & ", " & preset{Ptr}{Floatmask} {preset} ){Builtin, None, message}
-declare local bit_count : int := preset{Ptr}{Floatmask} {preset} .get_range(self47{Ptr}{Browser} {self47} .categories{Ptr}{Categories} {Browser::categories} .get_tags_until(v{int} {v} ){UserDefined, None, Categories::get_tags_until}, self47{Ptr}{Browser} {self47} .categories{Ptr}{Categories} {Browser::categories} .get_tags_until(v{int} {v}  + 1){UserDefined, None, Categories::get_tags_until}){UserDefined, None, Floatmask::get_range}.count(1){UserDefined, None, Floatmask::count} {Reuses: 0}
-allowed{int} {allowed}  := allowed{int} {allowed}  + bit_count{int} {bit_count} 
-delete tmp{Ptr}{Floatmask} {tmp} 
-delete flipped{Ptr}{Floatmask} {flipped} 

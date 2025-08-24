@@ -98,13 +98,6 @@ public:
 	}
 
 	NodeAST* visit(NodeSingleAssignment& node) override {
-		// if (node.l_value->name == "i3600") {
-		// 	if (auto ref = node.r_value->is_reference()) {
-		// 		if (ref->name == "trigger_clear010") {
-		//
-		// 		}
-		// 	}
-		// }
 		// important to do r_value first to remove last assignment if necessary
 		node.r_value->accept(*this);
 		node.l_value->accept(*this);
