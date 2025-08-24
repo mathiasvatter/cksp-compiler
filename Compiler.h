@@ -129,7 +129,7 @@ public:
 		// input_filename = "/Users/mathias/Scripting/legato-dev/one-shot.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score-essentials/the-score-essentials.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
-		input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
+		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Ensemble.ksp";
 		// input_filename = "/Users/mathias/Scripting/toc-single-instruments/legato.ksp";
 		// input_filename = "/Users/mathias/Scripting/toc-single-instruments/keyswitch.ksp";
@@ -185,7 +185,7 @@ public:
 		// output_filename = "/Users/mathias/Scripting/fragments-modern-percussion/Samples/Resources/scripts/Fragments.txt";
 	//    output_filename = "/Users/mathias/Scripting/action-woodwinds/Samples/Resources/scripts/action_woodwinds_cksp.txt";
 	//	output_filename = "/Users/Mathias/Scripting/time-textures/Samples/resources/scripts/time-textures-2.txt";
-		output_filename = "/Users/mathias/Scripting/lux-strings/Samples/Resources/scripts/lux-orchestral-strings-ks.txt";
+		// output_filename = "/Users/mathias/Scripting/lux-strings/Samples/Resources/scripts/lux-orchestral-strings-ks.txt";
 		// output_filename = "/Users/mathias/Scripting/toc-single-instruments/samples/resources/scripts/legato.txt";
 		// output_filename = "/Users/mathias/Scripting/toc-single-instruments/samples/resources/scripts/keyswitch.txt";
 		// output_filename = "/Users/mathias/Scripting/the-orchestra-complete-4/Samples/Resources/scripts/sonu_orchestra_ensemble.txt";
