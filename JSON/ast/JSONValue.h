@@ -8,6 +8,8 @@
 #include <sstream>
 #include <string>
 #include <utility>
+#include <vector>
+#include <memory>
 
 class JSONVisitor;
 
