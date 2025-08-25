@@ -37,7 +37,10 @@ namespace UI
 		declare types: int[] := [CONTROL_PAR_FONT_TYPE, CONTROL_PAR_FONT_TYPE_ON, CONTROL_PAR_FONT_TYPE_OFF_PRESSED, CONTROL_PAR_FONT_TYPE_ON_PRESSED, CONTROL_PAR_FONT_TYPE_OFF_HOVER, CONTROL_PAR_FONT_TYPE_ON_HOVER]
 		declare button: string[] := ["off", "on", "off_pressed", "on_pressed", "off_hover", "on_hover"]
 
-		function apply(ref ui_control, font_array: int[])
+		function apply(
+			ref ui_control, 
+			font_array: int[]
+			)
 			for u in range(num_elements(types))
 				set_control_par(ui_control, types[u], font_array[u])
 			end for
@@ -57,22 +60,6 @@ struct List
     end function
 
 end struct
-
-// struct MyStruct
-// 	declare const static PUPU: string
-// 	declare my_int: int
-// 	declare my_real: real
-
-// 	function __init__(self, my_int: int, my_real: real)
-// 		self.my_int := my_int
-// 		self.my_real := my_real
-// 		self.PUPU := "pupu"
-// 	end function
-
-// 	function multiply(self, factor: number, factor2: number)
-// 		return factor * factor2
-// 	end function
-// end struct
 
 namespace Browser
 	declare const pupu: string := "pupu"
@@ -104,7 +91,9 @@ end namespace
 
 on init
 
-	Browser.do_sth(1)
+	Browser.do_sth(
+		1
+		)
 	// message(Browser.do_sth(4))
 	// declare b := Bitlist()
 	// b.set(3, 1)
@@ -123,7 +112,18 @@ on init
 	message(lbl_bd_dnd)
 	declare ui_label lbl_bd_DnD (1,1)
 	lbl_bd_DnD -> picture := "btn_custom-samples-import"
-	declare arr: int[] := [1,2,3,4,5]
+	declare arr: int[] := [
+		1,
+		2,
+		3,
+		4,
+		5,
+	]
+	declare matrix: int[][] := [
+		[1,2,3],
+		[4,5,6],
+		[7,8,9]
+	]
 	func_return(arr)
 	swi_keyswitch_ui_controls(1)
 end on

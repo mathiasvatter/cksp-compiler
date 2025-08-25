@@ -410,11 +410,18 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_reference_chain(NodeAST *parent) 
 			}
 		}
 		chain->add_method(std::move(stmt));
-		if(peek().type == token::DOT) {
-			consume();
+		// --- Transactional newline skip: only keep it if a DOT follows ---
+		size_t save_pos = m_pos;
+		_skip_linebreaks();                    // tentatively skip linebreaks
+		if (peek().type == token::DOT) {
+			consume();                         // consume '.'
+			// Intentionally do NOT skip linebreaks after the dot:
+			// 'foo\n  .bar' valid (newline before dot), 'foo.\nbar' invalid.
 		} else {
-			break;
+			m_pos = save_pos;                  // restore -> preserve trailing newline
+			break;                             // no further access chain
 		}
+		// ----
 	}
 	chain->set_range(chain->tok, peek(-1));
 	if(chain->chain.size() == 1) {
@@ -476,7 +483,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_unary_expr(NodeAST* parent) {
 
 Result<std::unique_ptr<NodeAST>> Parser::_parse_binary_expr_rhs(const int precedence, std::unique_ptr<NodeAST> lhs, NodeAST* parent) {
     while(true) {
-        int prec = _get_binop_precedence(peek().type);
+        int prec = Parser::get_binop_precedence(peek().type);
         if(prec < precedence)
             return Result<std::unique_ptr<NodeAST>>(std::move(lhs));
         // its not -1 so it is a binop
@@ -486,7 +493,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_binary_expr_rhs(const int preced
         if (rhs.is_error()) {
             return Result<std::unique_ptr<NodeAST>>(rhs.get_error());
         }
-        if (const int next_precedence = _get_binop_precedence(peek().type); prec < next_precedence) {
+        if (const int next_precedence = Parser::get_binop_precedence(peek().type); prec < next_precedence) {
             rhs = _parse_binary_expr_rhs(prec + 1, std::move(rhs.unwrap()), parent);
             if (rhs.is_error()) {
                 return Result<std::unique_ptr<NodeAST>>(rhs.get_error());
@@ -1215,18 +1222,19 @@ Result<std::unique_ptr<NodeParamList>> Parser::parse_multiple_values(NodeAST* pa
 	return Result<std::unique_ptr<NodeParamList>>(std::move(mult_values));
 }
 
-Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(NodeAST* parent) {
-    // auto param_list = std::make_unique<NodeParamList>(get_tok());
-    // param_list->parent = parent;
-    // auto result = _parse_into_param_list(param_list->params, param_list.get());
-    // if (result.is_error()) {
-    //     return Result<std::unique_ptr<NodeParamList>>(result.get_error());
-    // }
-    // return Result<std::unique_ptr<NodeParamList>>(std::move(param_list));
-
+Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(NodeAST* parent, bool allow_linebreaks) {
 	auto param_list = std::make_unique<NodeParamList>(get_tok());
 	if (peek().type == token::OPEN_PARENTH) consume(); // consume (
+	if (allow_linebreaks) _skip_linebreaks();
 	while (true) {
+		if (peek().type == token::CLOSED_PARENTH) break;
+		// Guard against unexpected EOF inside a list
+		if (peek().type == token::END_TOKEN) {
+			auto err = CompileError(ErrorType::SyntaxError,
+				"Unexpected end of input in parameter list.", ")", peek());
+			return Result<std::unique_ptr<NodeParamList>>(err);
+		}
+
 		if (auto exprResult = parse_expression(parent); !exprResult.is_error()) {
 			param_list->add_param(std::move(exprResult.unwrap()));
 		} else {
@@ -1234,8 +1242,12 @@ Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(NodeAST* parent)
             error.m_message += " Found possible nested <ParameterList> Syntax. To denote <Array> initializers inside <ParameterLists>, use '[' and ']'.";
 			return Result<std::unique_ptr<NodeParamList>>(error);
 		}
+		if (allow_linebreaks) _skip_linebreaks();
 		if (peek().type != token::COMMA) break;
 		consume(); // consume comma
+		if (allow_linebreaks) _skip_linebreaks();
+		// Allow trailing comma before ')': e.g., f(a, b, )
+		if (peek().type == token::CLOSED_PARENTH) break;
 	}
 	if (peek().type == token::CLOSED_PARENTH) consume(); // consume )
 
@@ -1244,67 +1256,34 @@ Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(NodeAST* parent)
 	return Result<std::unique_ptr<NodeParamList>>(std::move(param_list));
 }
 
-// Result<SuccessTag> Parser::_parse_into_param_list(std::vector<std::unique_ptr<NodeAST>>& params, NodeAST* parent) {
-//     size_t end_backup_pos; // in case of declaration list and ui_slider sliddd(0,1), <-
-//     while (true) {
-// //		_skip_linebreaks();
-//         if (peek().type == token::OPEN_PARENTH) {
-//             size_t backup_pos = m_pos; // backup token index
-//             if (auto exprResult = parse_expression(parent); !exprResult.is_error()) {
-// 				// if(peek(-1).type == token::CLOSED_PARENTH) {
-// 				// 	auto expr_result = std::move(exprResult.unwrap());
-// 				// 	params.push_back(std::make_unique<NodeParamList>(expr_result->tok, std::move(expr_result)));
-// 				// 	params.back()->parent = parent;
-// 				// } else {
-//                 	params.push_back(std::move(exprResult.unwrap()));
-// 				// }
-//             } else {
-//                 m_pos = backup_pos; // set back token index
-//                 consume(); // consume (
-//                 auto nested_param_list = std::make_unique<NodeParamList>(get_tok());
-//                 nested_param_list->parent = parent;
-//                 auto nestedResult = _parse_into_param_list(nested_param_list->params, nested_param_list.get());
-//                 if (nestedResult.is_error()) {
-//                     return nestedResult;
-//                 }
-//                 params.push_back(std::move(nested_param_list));
-//                 if (peek().type == token::CLOSED_PARENTH) consume(); // consume )
-//             	// auto error = exprResult.get_error();
-//             	// error.m_message += " Found nested <ParameterList> Syntax. To denote <Array> initializers inside <ParameterList>, use '[' and ']'.";
-//             	// return Result<SuccessTag>(error);
-//             }
-//         } else {
-//             auto exprResult = parse_expression(parent);
-//             if (!exprResult.is_error()) {
-//                 params.push_back(std::move(exprResult.unwrap()));
-//             } else {
-//                 // eg case declare ui_slider sli_bum(0,100), ui_button btn_buuuuu
-//                 if(peek(end_backup_pos-m_pos).type == token::COMMA) {
-//                     m_pos = end_backup_pos;
-//                     break;
-//                 }
-//                 return Result<SuccessTag>(exprResult.get_error());
-//             }
-//         }
-// //		_skip_linebreaks();
-//         if (peek().type != token::COMMA) break;
-//         end_backup_pos = m_pos;
-//         consume(); // consume comma
-// //		_skip_linebreaks();
-//     }
-//     return Result<SuccessTag>(SuccessTag{});
-// }
-
-Result<std::unique_ptr<NodeAST>> Parser::parse_init_list(NodeAST* parent) {
+Result<std::unique_ptr<NodeAST>> Parser::parse_init_list(NodeAST* parent, bool allow_linebreaks) {
 	auto start_tok = consume(); // consume [
 	auto init_list = std::make_unique<NodeInitializerList>(get_tok());
+	if (allow_linebreaks) _skip_linebreaks();
 	while (peek().type != token::CLOSED_BRACKET) {
+		// Allow empty list: [] or linebreaks before first element
+		if (allow_linebreaks) _skip_linebreaks();
+		if (peek().type == token::CLOSED_BRACKET) break;
+		// Guard against unexpected EOF inside list
+		if (peek().type == token::END_TOKEN) {
+			return Result<std::unique_ptr<NodeAST>>(CompileError(
+				ErrorType::SyntaxError,
+				"Unexpected end of input in initializer list.", "]", peek()));
+		}
 		if (auto exprResult = parse_expression(parent); !exprResult.is_error()) {
 			init_list->add_element(std::move(exprResult.unwrap()));
 		} else {
 			return Result<std::unique_ptr<NodeAST>>(exprResult.get_error());
 		}
-		if (peek().type == token::COMMA) consume();
+		if (allow_linebreaks) _skip_linebreaks();
+		// Optional comma between elements
+		if (peek().type == token::COMMA) {
+			consume(); // consume ','
+			if (allow_linebreaks) _skip_linebreaks();
+
+			// Allow trailing comma before ']': e.g., [a, b, ]
+			if (peek().type == token::CLOSED_BRACKET) break;
+		}
 	}
 	auto end_tok = consume(); // consume ]
 	init_list->set_range(start_tok, end_tok);
@@ -1318,9 +1297,13 @@ Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header(NodeAS
     func_name = start_token.val;
     auto node_function_header = std::make_unique<NodeFunctionHeader>(func_name, start_token);
 	if (peek().type == token::OPEN_PARENTH) {
+		// Allow line breaks between the function name and '('
+		_skip_linebreaks();
 		consume(); // consume (
+		_skip_linebreaks();
 		if (peek().type != token::CLOSED_PARENTH) {
 			while (peek().type != token::CLOSED_PARENTH) {
+				_skip_linebreaks();
 				if (peek().type != token::KEYWORD and peek().type != token::REF) {
 					auto error = CompileError(ErrorType::SyntaxError, "Found invalid <FunctionHeader> Syntax.", "", peek());
 					error.m_message += " Only valid <Variables> can be parameters in a function definition.";
@@ -1331,17 +1314,27 @@ Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header(NodeAS
 					return Result<std::unique_ptr<NodeFunctionHeader>>(result.get_error());
 				}
 				node_function_header->add_param(std::move(result.unwrap()));
-				if (peek().type == token::COMMA) consume();
+				_skip_linebreaks();
+				if (peek().type == token::COMMA) {
+					consume();        // consume ','
+					_skip_linebreaks(); // allow line breaks after comma
+				}
+
 			}
 		}
+		// Allow line breaks before ')'
+		_skip_linebreaks();
 		if (peek().type == token::CLOSED_PARENTH) {
 			consume();
 		}
 	}
-
 	// parse function type if definition
 	Type* ty = TypeRegistry::Unknown;
 
+	if(peek().type == token::TYPE) {
+		// Allow line breaks between ')' and the return type annotation but only if it is annotated
+		_skip_linebreaks();
+	}
 	auto type = parse_type_annotation();
 	if(type.is_error()) {
 		return Result<std::unique_ptr<NodeFunctionHeader>>(type.get_error());
@@ -1383,17 +1376,19 @@ Result<std::unique_ptr<NodeParamList>> Parser::parse_function_args(NodeAST* pare
     auto error = CompileError(ErrorType::ParseError,"", "", peek());
     auto func_args = std::make_unique<NodeParamList>(get_tok());
     if (peek().type == token::OPEN_PARENTH) {
-    	if (peek(1).type == token::CLOSED_PARENTH) {
-    		consume(); // consume (
-    		consume(); // consume )
-    	} else {
+		_skip_linebreaks();
+    	// if (peek(1).type == token::CLOSED_PARENTH) {
+    	// 	consume(); // consume (
+    	// 	_skip_linebreaks();
+    	// 	consume(); // consume )
+    	// } else {
 			auto param_list = parse_param_list(parent);
 			if (param_list.is_error()) {
 				return Result<std::unique_ptr<NodeParamList>>(param_list.get_error());
 			}
 			func_args = std::move(param_list.unwrap());
 			func_args->set_child_parents();
-    	}
+    	// }
     }
     return Result<std::unique_ptr<NodeParamList>>(std::move(func_args));
 }
@@ -2328,7 +2323,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 	while(peek().type != token::END_LIST) {
 		_skip_linebreaks();
 		if(peek().type == token::END_LIST) break;
-		auto param_list = parse_param_list(node_list_block.get());
+		auto param_list = parse_param_list(node_list_block.get(), false);
 		if(param_list.is_error()) {
 			return Result<std::unique_ptr<NodeAST>>(param_list.get_error());
 		}

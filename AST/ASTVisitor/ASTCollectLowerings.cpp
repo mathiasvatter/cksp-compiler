@@ -33,6 +33,7 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 		struct_def->lower(m_program);
 	}
 	node.debug_print();
+
 	visit_all(node.struct_definitions, *this);
 	for(const auto & callback : node.callbacks) {
 		callback->accept(*this);
@@ -89,10 +90,16 @@ NodeAST * ASTCollectLowerings::visit(NodeStruct& node) {
 
 NodeAST * ASTCollectLowerings::visit(NodeFunctionDefinition& node) {
 	//TRACE();
+
+	static UIControlParamHandling ui_control_param_handling;
+	ui_control_param_handling.handle_ui_params(node);
+	node.visited = true;
+
 	node.header ->accept(*this);
 	if (node.return_variable.has_value())
 		node.return_variable.value()->accept(*this);
 	node.body->accept(*this);
+
 	return node.lower(m_program);
 }
 
@@ -133,8 +140,6 @@ NodeAST * ASTCollectLowerings::visit(NodeFunctionCall& node) {
 	node.bind_definition(m_program, true);
 	if (const auto& definition = node.get_definition()) {
 		if(!definition->visited) {
-			static UIControlParamHandling ui_control_param_handling;
-			ui_control_param_handling.handle_ui_params(*definition);
 			definition->accept(*this);
 		}
 		definition->visited = true;
