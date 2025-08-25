@@ -107,14 +107,15 @@ bool PreprocessorParser::is_macro_call(const Token &tok) {
 		is_macro_call &= peek(-1).type == token::LINEBRK and (peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK);
 	}
 
+    int num_hashes = StringUtils::count_char(tok.val, '#');
 	if(is_iterator_macro_call) {
-		is_iterator_macro_call &= m_macro_iterate_strings.contains(tok.val) or StringUtils::count_char(tok.val, '#') % 2 == 0;
+		is_iterator_macro_call &= m_macro_iterate_strings.contains(tok.val) or (num_hashes > 0 and num_hashes % 2 == 0);
 		return is_iterator_macro_call;
 	}
 	if(is_macro_call) {
 		int num_args = get_num_params_in_definition();
 		//search in m_define_strings
-		is_macro_call &= m_macro_strings.contains({tok.val, num_args}) or StringUtils::count_char(tok.val, '#') % 2 == 0;
+		is_macro_call &= m_macro_strings.contains({tok.val, num_args}) or (num_hashes > 0 and num_hashes % 2 == 0);
 		return is_macro_call;
 	}
 	return false;
@@ -123,31 +124,42 @@ bool PreprocessorParser::is_macro_call(const Token &tok) {
 int PreprocessorParser::get_num_params_in_definition() {
     size_t begin = m_pos;
     consume(); // consume name
+    _skip_linebreaks();
     int num_params = 0;
 
     if(peek().type == token::OPEN_PARENTH) {
         consume(); // consume (
+        _skip_linebreaks();
         if (peek().type != token::CLOSED_PARENTH) {
             int parenth_depth = 1; // Start with 1 because we've already consumed the first OPEN_PARENTH
             while (parenth_depth > 0) {
                 if (peek().type == token::OPEN_PARENTH || peek().type == token::OPEN_BRACKET) {
                     parenth_depth++;
                 } else if (peek().type == token::CLOSED_PARENTH || peek().type == token::CLOSED_BRACKET) {
+                    _skip_linebreaks();
                     parenth_depth--;
                 } else if (peek().type == token::LINEBRK) {
-                    break;
+                    _skip_linebreaks();
+                    continue;
+                } else if (peek().type == token::END_TOKEN) {
+                    auto error = CompileError(ErrorType::PreprocessorError,
+                "",")", peek());
+                    error.add_message("Unexpected end of file. Missing closing parenthesis.");
+                    error.exit();
                 }
                 if (peek().type == token::COMMA && parenth_depth == 1) {
                     num_params++;
                     consume(); // consume COMMA
+                    _skip_linebreaks();
                 } else if (parenth_depth > 0) {
                     consume();
                 }
             }
-            if(num_params>0)
+            if(num_params>0) {
                 num_params += 2;
-            else
+            } else {
                 num_params = 1;
+            }
         }
     }
 
@@ -275,10 +287,16 @@ Result<std::unique_ptr<PreNodeList>> PreprocessorParser::parse_list(PreNodeAST *
         return Result<std::unique_ptr<PreNodeList>>(error);
     }
     auto start_token = consume(); // consume (
+    _skip_linebreaks();
     if (peek().type != token::CLOSED_PARENTH) {
         int parenth_depth = 1; // Start with 1 because we've already consumed the first OPEN_PARENTH
         auto node_chunk = std::make_unique<PreNodeChunk>(peek(), node_list.get());
         while (parenth_depth > 0) {
+            // Swallow any number of line breaks while inside parentheses
+            if (peek().type == token::LINEBRK) {
+                _skip_linebreaks();
+                continue;
+            }
             if (peek().type == token::OPEN_PARENTH or peek().type == token::OPEN_BRACKET) {
                 parenth_depth++;
             } else if (peek().type == token::CLOSED_PARENTH or peek().type == token::CLOSED_BRACKET) {
@@ -286,14 +304,15 @@ Result<std::unique_ptr<PreNodeList>> PreprocessorParser::parse_list(PreNodeAST *
             } else if (peek().type == token::END_TOKEN) {
                 return Result<std::unique_ptr<PreNodeList>>(CompileError(ErrorType::PreprocessorError,
             "Unexpected end of file. Missing closing parenthesis.",")", peek()));
-            } else if (peek().type == token::LINEBRK) {
-				return Result<std::unique_ptr<PreNodeList>>(CompileError(ErrorType::SyntaxError,
-				 "Unexpected linebreak. Missing closing parenthesis.",")", peek()));
+    //         } else if (peek().type == token::LINEBRK) {
+				// return Result<std::unique_ptr<PreNodeList>>(CompileError(ErrorType::SyntaxError,
+				//  "Unexpected linebreak. Missing closing parenthesis.",")", peek()));
 			}
             if (peek().type == token::COMMA && parenth_depth == 1) {
                 node_list->add_element(std::move(node_chunk));
                 node_chunk = std::make_unique<PreNodeChunk>(peek(), node_list.get());
                 consume(); // consume COMMA
+                _skip_linebreaks();
             } else if(parenth_depth > 0) {
                 auto result_token = parse_token(node_chunk.get());
                 if(result_token.is_error())
@@ -305,6 +324,7 @@ Result<std::unique_ptr<PreNodeList>> PreprocessorParser::parse_list(PreNodeAST *
             node_list->add_element(std::move(node_chunk));
         }
     }
+    _skip_linebreaks();
     auto end_token = consume(); //consume )
     node_list->set_range(start_token, end_token);
     return Result<std::unique_ptr<PreNodeList>>(std::move(node_list));

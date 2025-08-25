@@ -37,6 +37,10 @@ public:
 	explicit LoweringFunctionDef(NodeProgram *program) : ASTLowering(program) {}
 
 	NodeAST* visit(NodeFunctionDefinition& node) override {
+		if (node.header->name == "Browser::matches_all_categories_except") {
+
+		}
+
 		if(!needs_rewrite(node)) return &node;
 		m_exit_flag_name = m_program->def_provider->get_fresh_name("RETURN_FLAG");
 		auto return_flag_decl = get_exit_flag_declaration(node.tok, m_exit_flag_name);

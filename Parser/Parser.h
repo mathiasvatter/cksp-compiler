@@ -53,13 +53,6 @@ static const std::unordered_set<token> persistence_keywords = {
 	token::READ, token::PERS, token::INSTPERS
 };
 
-static int _get_binop_precedence(const token tok) {
-	const int precedence = operator_precedence[tok];
-	if (precedence <= 0) {
-		return -1;
-	}
-	return precedence;
-}
 
 
 class Parser: public Processor {
@@ -67,6 +60,14 @@ class Parser: public Processor {
 	bool is_array_declaration();
 	NodeProgram* m_program = nullptr;
 public:
+
+	static int get_binop_precedence(const token tok) {
+		const int precedence = operator_precedence[tok];
+		if (precedence <= 0) {
+			return -1;
+		}
+		return precedence;
+	}
     explicit Parser(std::vector<Token> tokens);
     Result<std::unique_ptr<NodeProgram>> parse();
 
@@ -92,9 +93,8 @@ public:
 	Result<std::unique_ptr<NodeAST>> parse_reference_chain(NodeAST *parent);
 
 	Result<std::unique_ptr<NodeParamList>> parse_multiple_values(NodeAST* parent);
-    Result<std::unique_ptr<NodeParamList>> parse_param_list(NodeAST* parent);
-	// Result<SuccessTag> _parse_into_param_list(std::vector<std::unique_ptr<NodeAST>>& params, NodeAST* parent);
-	Result<std::unique_ptr<NodeAST>> parse_init_list(NodeAST* parent);
+    Result<std::unique_ptr<NodeParamList>> parse_param_list(NodeAST* parent, bool allow_linebreaks = true);
+	Result<std::unique_ptr<NodeAST>> parse_init_list(NodeAST* parent, bool allow_linebreaks = true);
     /// parses every expression from binary, string, unary to number and variable
     Result<std::unique_ptr<NodeAST>> parse_expression(NodeAST* parent);
     Result<std::unique_ptr<NodeAST>> parse_string_expr(NodeAST* parent);
