@@ -8,16 +8,8 @@
 #include "../BuiltinsProcessing/DefinitionProvider.h"
 #include <unordered_set>
 
-Result<std::string> resolve_path(const std::string& import_path, const Token& token, const std::string& curr_file);
-static Result<std::string> resolve_overlap(const std::string& base_path, const std::string& relative_path);
 
-class ImportProcessor : public Processor {
-public:
-    ImportProcessor(std::vector<Token> tokens, std::string current_file, DefinitionProvider* definition_provider);
-
-	Result<SuccessTag> process_imports();
-
-private:
+class ImportProcessor final : public Processor {
 	DefinitionProvider* m_def_provider;
 	std::string m_current_file;
 	std::string m_root_directory;
@@ -33,6 +25,12 @@ private:
     Result<std::unique_ptr<NodeImport>> parse_import_nckp(std::vector<Token>& tokens);
 	Result<SuccessTag> evaluate_import(std::vector<Token>& tokens, std::unique_ptr<NodeImport>& import_stmt, const std::string& current_file);
     Result<SuccessTag> evaluate_import_nckp(std::vector<Token>& tokens, std::unique_ptr<NodeImport>& import_stmt, const std::string& current_file);
+
+public:
+    ImportProcessor(std::vector<Token> tokens, std::string current_file, DefinitionProvider* definition_provider);
+
+	Result<SuccessTag> process_imports();
+
 
 };
 

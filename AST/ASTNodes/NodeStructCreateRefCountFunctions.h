@@ -5,6 +5,7 @@
 #pragma once
 
 #include "ASTDataStructures.h"
+#include "../../Lowering/PreLoweringStruct.h"
 #include "../ASTVisitor/ASTVisitor.h"
 #include "../ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h"
 
@@ -165,6 +166,13 @@ public:
 			// no need to wrap in loop since array to initializer list assignment
 			// wrap_in_loop(nil_check->if_body->statements.back(), member, iter_decl->variable);
 		}
+		// List::free_idx := min(List::free_idx, self)
+		auto assignment = std::make_unique<NodeSingleAssignment>(
+			m_struct.free_idx_var->to_reference(),
+			PreLoweringStruct::create_min_max_call(m_struct.free_idx_var->to_reference(),m_self_ref->clone(), true),
+			tok
+		);
+		nil_check->if_body->add_as_stmt(std::move(assignment));
 		m_del_func = get_base_func(
 			m_struct.name+OBJ_DELIMITER+"__del__",
 			std::move(self)
@@ -192,7 +200,7 @@ public:
 	}
 
 	/// returns true if struct has more than one recursive member and these members are itself
-	bool is_non_linear_direct_recursion() {
+	bool is_non_linear_direct_recursion() const {
 		if(is_linear_recursive()) return false;
 		for(const auto &mem : m_recursive_member_structs) {
 			if(mem->ty->get_element_type() != m_struct.ty) return false;

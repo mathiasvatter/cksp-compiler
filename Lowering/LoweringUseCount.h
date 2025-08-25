@@ -14,8 +14,7 @@
  * Post Lowering:
  * message(List::allocation[Struct::max(0,pointer)])
  */
-class LoweringUseCount : public ASTLowering {
-private:
+class LoweringUseCount final : public ASTLowering {
 
 public:
 	explicit LoweringUseCount(NodeProgram *program) : ASTLowering(program) {}
@@ -32,8 +31,8 @@ public:
 		}
 
 		std::string prefix = node.ref->ty->to_string();
-		PreLoweringStruct::add_max_function_def(m_program);
-		auto node_call = PreLoweringStruct::create_max_call(std::make_unique<NodeInt>(0, node.tok), std::move(node.ref));
+		PreLoweringStruct::add_max_min_function_defs(m_program, false);
+		auto node_call = PreLoweringStruct::create_min_max_call(std::make_unique<NodeInt>(0, node.tok), std::move(node.ref), false);
 		auto node_arr_ref = std::make_unique<NodeArrayRef>(
 			prefix+OBJ_DELIMITER+"allocation", std::move(node_call), node.tok
 		);

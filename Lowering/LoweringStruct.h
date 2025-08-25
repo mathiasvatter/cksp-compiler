@@ -264,7 +264,7 @@ private:
 
 	/**
 	 * Lower init function by adding:
-	 *  struct.free_idx := search(struct.allocation, 0)
+	 *  struct.free_idx := search(struct.allocation, 0, struct.free_idx, struct.MAX_STRUCTS)
 	 * 	if struct.free_idx = -1
 	 * 		message("Error: No more free space available to allocate objects of type 'note'")
 	 * 	end if
@@ -281,7 +281,14 @@ private:
 				std::make_unique<NodeParamList>(
 					init->tok,
 					m_current_struct->allocation_var->to_reference(),
-					std::make_unique<NodeInt>(0, init->tok)
+					std::make_unique<NodeInt>(0, init->tok),
+					m_current_struct->free_idx_var->to_reference(),
+					std::make_unique<NodeBinaryExpr>(
+						token::SUB,
+						m_current_struct->max_individual_structs_var->to_reference(),
+						std::make_unique<NodeInt>(1, init->tok),
+						init->tok
+					)
 				),
 				init->tok
 			),
@@ -324,7 +331,7 @@ private:
 		node_block->add_as_stmt(std::move(node_if_stmt));
 
 		auto node_allocation = m_current_struct->allocation_var->to_reference();
-		static_cast<NodeArrayRef *>(node_allocation.get())->index = m_current_struct->free_idx_var->to_reference();
+		node_allocation->cast<NodeArrayRef>()->index = m_current_struct->free_idx_var->to_reference();
 		auto node_assign_allocation = std::make_unique<NodeSingleAssignment>(
 			std::move(node_allocation),
 			std::make_unique<NodeInt>(1, init->tok),

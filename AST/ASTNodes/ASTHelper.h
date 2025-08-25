@@ -8,6 +8,33 @@
 
 static const std::string PRINTER_OUTPUT = (std::filesystem::path(PRINTER_OUTPUT_PATH) / "printed.txt").string();
 
+struct SourcePosition {
+	size_t line;
+	size_t column;
+};
+
+struct SourceRange {
+	SourcePosition start{};
+	SourcePosition end{};
+
+	explicit SourceRange(const Token &tok) {
+		start ={tok.line, tok.pos};
+		end={tok.line, tok.pos + tok.val.length()};
+	}
+	SourceRange(const Token &start_tok, const Token &end_tok) {
+		start = {start_tok.line, start_tok.pos};
+		end = {end_tok.line, end_tok.pos + end_tok.val.length()};
+	}
+	SourceRange(const SourceRange& start, const SourceRange& end) {
+		this->start = start.start;
+		this->end = end.end;
+	}
+	std::string to_string() const {
+		return std::to_string(start.line) + ":" + std::to_string(start.column) + " - " +
+			   std::to_string(end.line) + ":" + std::to_string(end.column);
+	}
+};
+
 enum class DataType {
 	Const,
 	Polyphonic,

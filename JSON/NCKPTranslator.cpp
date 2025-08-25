@@ -2,7 +2,7 @@
 // Created by Mathias Vatter on 02.01.24.
 //
 
-#include "JSONVisitor.h"
+#include "NCKPTranslator.h"
 
 NCKPTranslator::NCKPTranslator(DefinitionProvider* definition_provider)
 	: m_def_provider(definition_provider) {}
@@ -13,7 +13,7 @@ void NCKPTranslator::visit(JSONBool &boolean) {
 
 void NCKPTranslator::visit(JSONString &str) {
 
-    if(m_current_property == "\"id\"") {
+    if(m_current_property == "id") {
 		std::string var_name = StringUtils::remove_quotes(str.value);
 		if(!m_panel_prefixes.empty()) {
 			var_name = m_panel_prefixes.top().first + "_" + var_name;
@@ -26,7 +26,7 @@ void NCKPTranslator::visit(JSONString &str) {
 }
 
 void NCKPTranslator::visit(JSONInt &num) {
-    if(m_current_property == "\"index\"") {
+    if(m_current_property == "index") {
         m_current_control_idx = num.value;
 		if(m_current_control_idx == 0) {
 			m_current_panel_object = m_current_object;
@@ -55,7 +55,7 @@ void NCKPTranslator::visit(JSONObject &object) {
 	}
 }
 
-std::vector<std::shared_ptr<NodeDataStructure>> NCKPTranslator::collect_ui_variables() {
+std::vector<std::shared_ptr<NodeDataStructure>> NCKPTranslator::collect_ui_variables() const {
 	std::vector<std::shared_ptr<NodeDataStructure>> ui_variables;
 	for(auto &ui_pair : m_ui_controls) {
 		auto it = UI_CONTROL_INDEX.find(ui_pair.second);
@@ -65,7 +65,7 @@ std::vector<std::shared_ptr<NodeDataStructure>> NCKPTranslator::collect_ui_varia
 		std::string ui_control = it->second;
 		std::string ui_var = ui_pair.first;
 		auto node_ast = m_def_provider->builtin_widgets.find(ui_control)->second->clone();
-		auto node_ui_control = std::unique_ptr<NodeUIControl>(static_cast<NodeUIControl*>(node_ast.release()));
+		auto node_ui_control = unique_ptr_cast<NodeUIControl>(std::move(node_ast));
 		if(auto node_variable = cast_node<NodeVariable>(node_ui_control->control_var.get())) {
 			node_variable->name = ui_var;
             node_variable->data_type = DataType::UIControl;

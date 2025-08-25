@@ -37,7 +37,10 @@ namespace UI
 		declare types: int[] := [CONTROL_PAR_FONT_TYPE, CONTROL_PAR_FONT_TYPE_ON, CONTROL_PAR_FONT_TYPE_OFF_PRESSED, CONTROL_PAR_FONT_TYPE_ON_PRESSED, CONTROL_PAR_FONT_TYPE_OFF_HOVER, CONTROL_PAR_FONT_TYPE_ON_HOVER]
 		declare button: string[] := ["off", "on", "off_pressed", "on_pressed", "off_hover", "on_hover"]
 
-		function apply(ref ui_control, font_array: int[])
+		function apply(
+			ref ui_control, 
+			font_array: int[]
+			)
 			for u in range(num_elements(types))
 				set_control_par(ui_control, types[u], font_array[u])
 			end for
@@ -47,21 +50,16 @@ namespace UI
    
 end namespace
 
-// struct MyStruct
-// 	declare const static PUPU: string
-// 	declare my_int: int
-// 	declare my_real: real
+struct List
+    declare value: int
+    declare next: List := nil
 
-// 	function __init__(self, my_int: int, my_real: real)
-// 		self.my_int := my_int
-// 		self.my_real := my_real
-// 		self.PUPU := "pupu"
-// 	end function
+    function __init__(self, value: int, next: List)
+        self.value := value
+        self.next := next
+    end function
 
-// 	function multiply(self, factor: number, factor2: number)
-// 		return factor * factor2
-// 	end function
-// end struct
+end struct
 
 namespace Browser
 	declare const pupu: string := "pupu"
@@ -93,7 +91,9 @@ end namespace
 
 on init
 
-	Browser.do_sth(1)
+	Browser.do_sth(
+		1
+		)
 	// message(Browser.do_sth(4))
 	// declare b := Bitlist()
 	// b.set(3, 1)
@@ -112,8 +112,20 @@ on init
 	message(lbl_bd_dnd)
 	declare ui_label lbl_bd_DnD (1,1)
 	lbl_bd_DnD -> picture := "btn_custom-samples-import"
-	declare arr: int[] := [1,2,3,4,5]
+	declare arr: int[] := [
+		1,
+		2,
+		3,
+		4,
+		5,
+	]
+	declare matrix: int[][] := [
+		[1,2,3],
+		[4,5,6],
+		[7,8,9]
+	]
 	func_return(arr)
+	swi_keyswitch_ui_controls(1)
 end on
 
 function func_return(array: int[])
@@ -126,33 +138,22 @@ function func_return(array: int[])
 
 end function
 
-// if((current_filtermethod{int} {current_filtermethod}  = filter.SUBTRACTIVE{int} {filter.SUBTRACTIVE} ) or (current_filtermethod{int} {current_filtermethod}  = filter.TOGGLE{int} {filter.TOGGLE} ))
-// 	declare local flipped : Floatmask := Floatmask::__invert__(Categories::tags[Browser::categories[self23{Browser} {self23} ]{Categories} {Browser::categories} ]{Floatmask} {Categories::tags} ){UserDefined, None, Floatmask::__invert__} {Reuses: 0}
-// 	Floatmask::__incr__(flipped{Floatmask} {flipped} , 1){UserDefined, None, Floatmask::__incr__}
-// 	Floatmask::__incr__(flipped{Floatmask} {flipped} , 1){UserDefined, None, Floatmask::__incr__}
-// 	Floatmask::__decr__(preset{Floatmask} {preset} , 1){UserDefined, None, Floatmask::__decr__}
-// 	Floatmask::__decr__(preset{Floatmask} {preset} , 1){UserDefined, None, Floatmask::__decr__}
-// 	preset{Floatmask} {preset}  := Floatmask::__or__(flipped{Floatmask} {flipped} , preset{Floatmask} {preset} ){UserDefined, None, Floatmask::__or__}
-// 	Floatmask::__incr__(preset{Floatmask} {preset} , 1){UserDefined, None, Floatmask::__incr__}
-// 	Floatmask::__incr__(preset{Floatmask} {preset} , 1){UserDefined, None, Floatmask::__incr__}
-// 	declare local bit_count : int := Floatmask::count(Floatmask::get_range(preset{Floatmask} {preset} , Categories::get_tags_until(Browser::categories[self23{Browser} {self23} ]{Categories} {Browser::categories} , v{int} {v} ){UserDefined, None, Categories::get_tags_until}, Categories::get_tags_until(Browser::categories[self23{Browser} {self23} ]{Categories} {Browser::categories} , v{int} {v}  + 1){UserDefined, None, Categories::get_tags_until}){UserDefined, None, Floatmask::get_range}, 1){UserDefined, None, Floatmask::count} {Reuses: 0}
-// 	allowed{int} {allowed}  := allowed{int} {allowed}  + bit_count{int} {bit_count} 
-// 	Floatmask::__decr__(flipped{Floatmask} {flipped} , 1){UserDefined, None, Floatmask::__decr__}
-// end if
+function swi_keyswitch_ui_controls(idx: int)
+	if idx # -1
+		message("henlo")
+		return
+	else 
+		message("sdlfkj")
+	end if
 
-// if((current_filtermethod{int} {current_filtermethod}  = filter.SUBTRACTIVE{int} {filter.SUBTRACTIVE} ) or (current_filtermethod{int} {current_filtermethod}  = filter.TOGGLE{int} {filter.TOGGLE} ))
-// 	Floatmask::__decr__(preset{int} {preset} , 1){UserDefined, None, Floatmask::__decr__}
-// 	Floatmask::__decr__(preset{int} {preset} , 1){UserDefined, None, Floatmask::__decr__}
-// 		declare local _ret5 : int {Reuses: 0}
-// 		Floatmask::__invert__(_ret5{int} {_ret5} , Categories::tags[Browser::categories[self4{int} {self4} ]{int} {Browser::categories} ]{int} {Categories::tags} ){UserDefined, None, Floatmask::__invert__}
-// 		Floatmask::__or__(preset{int} {preset} , _ret5{int} {_ret5} , preset{int} {preset} ){UserDefined, None, Floatmask::__or__}
+	// if idx # -1
+	// 	message("sdflkj")
+	// 	return
+	// end if
 
-// 	Floatmask::__incr__(preset{int} {preset} , 1){UserDefined, None, Floatmask::__incr__}
-// 	Floatmask::__incr__(preset{int} {preset} , 1){UserDefined, None, Floatmask::__incr__}
-// 	declare local bit_count : int {Reuses: 0}
-// 		declare local _ret6 : int {Reuses: 0}
-// 		Floatmask::get_range(_ret6{int} {_ret6} , preset{int} {preset} , Categories::get_tags_until(Browser::categories[self4{int} {self4} ]{int} {Browser::categories} , v{int} {v} ){UserDefined, None, Categories::get_tags_until}, Categories::get_tags_until(Browser::categories[self4{int} {self4} ]{int} {Browser::categories} , v{int} {v}  + 1){UserDefined, None, Categories::get_tags_until}){UserDefined, None, Floatmask::get_range}
-// 		bit_count{int} {bit_count}  := Floatmask::count(_ret6{int} {_ret6} , 1){UserDefined, None, Floatmask::count}
-
-// 	allowed{int} {allowed}  := allowed{int} {allowed}  + bit_count{int} {bit_count} 
-// end if
+	// if idx # -1
+	// 	message("sdlfkj")
+	// 	return
+	// end if
+	return
+end function    

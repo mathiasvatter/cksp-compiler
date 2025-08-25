@@ -37,7 +37,7 @@ public:
 	explicit DefinitionProvider();
 
 	bool add_external_variables_to_global_scope() {
-		if (m_declared_data_structures.size() < 1) {
+		if (m_declared_data_structures.empty()) {
 			auto compile_error = CompileError(ErrorType::InternalError, "", -1, "", "", "");
 			compile_error.m_message = "Tried to add external variables to global scope, but there is no global scope.";
 			compile_error.exit();

@@ -30,6 +30,9 @@ public:
 			node.member_node_types.insert(member->get_node_type());
 		}
 
+		add_max_min_function_defs(m_program, false);
+		add_max_min_function_defs(m_program, true);
+
 		// add compiler struct vars
 		prepend_compiler_struct_vars(&node);
 		node.rebuild_member_table();
@@ -141,7 +144,6 @@ public:
 		if(sizes.empty()) {
 			return max_structs;
 		}
-		add_max_function_def(m_program);
 		//wrap everything in max call again to ensure at least size of 1
 		auto bin_expr = std::make_unique<NodeBinaryExpr>(
 			token::DIV,
@@ -149,14 +151,15 @@ public:
 			find_max_array_size(sizes),
 			Token()
 		);
-		return create_max_call(
+		return create_min_max_call(
 			std::make_unique<NodeInt>(1, Token()),
-			std::move(bin_expr)
+			std::move(bin_expr),
+			false
 		);
 	}
 
-	static std::unique_ptr<NodeFunctionCall> create_max_call(const std::unique_ptr<NodeAST>& left, const std::unique_ptr<NodeAST>& right) {
-		std::string func_name = "Struct"+OBJ_DELIMITER+"max";
+	static std::unique_ptr<NodeFunctionCall> create_min_max_call(const std::unique_ptr<NodeAST>& left, const std::unique_ptr<NodeAST>& right, bool min) {
+		std::string func_name = "Struct"+OBJ_DELIMITER+(min? "min" : "max");
 		return std::make_unique<NodeFunctionCall>(
 			false,
 			std::make_unique<NodeFunctionHeaderRef>(
@@ -181,18 +184,21 @@ public:
 		}
 		std::unique_ptr<NodeAST> max_call = sizes[0]->clone();
 		for (size_t i = 1; i < sizes.size(); ++i) {
-			max_call = create_max_call(max_call, sizes[i]);
+			max_call = create_min_max_call(max_call, sizes[i], false);
 		}
 		return unique_ptr_cast<NodeFunctionCall>(std::move(max_call));
 	}
 
 	/**
-	 * function _max(a: int, b: int) -> result
+	 * function Struct::max(a: int, b: int) -> result
 	 * 	result := (a + b + abs(a - b)) / 2
 	 * end function
+	 * function Struct::min(a: int, b: int) -> result
+	 * 	result := (a + b - abs(a - b)) / 2
+	 * end function
 	 */
-	static bool add_max_function_def(NodeProgram* program) {
-		std::string func_name = "Struct"+OBJ_DELIMITER+"max";
+	static bool add_max_min_function_defs(NodeProgram* program, const bool min) {
+		std::string func_name = "Struct"+OBJ_DELIMITER + (min? "min" : "max");
 
 		// Prüfen, ob die Funktion bereits existiert
 		auto it = program->function_lookup.find({func_name, 2});
@@ -236,10 +242,10 @@ public:
 			),Token());
 		node_abs_func->kind = NodeFunctionCall::Kind::Builtin;
 		// (a + b + abs(a - b)) // 2
-		auto max_expression = std::make_unique<NodeBinaryExpr>(
+		auto expression = std::make_unique<NodeBinaryExpr>(
 			token::DIV,
 			std::make_unique<NodeBinaryExpr>(
-				token::ADD,
+				min ? token::SUB : token::ADD,
 				std::make_unique<NodeBinaryExpr>(
 					token::ADD,
 					node_a_ref->clone(),
@@ -253,17 +259,17 @@ public:
 			Token()
 		);
 
-		// Fügen Sie den Ausdruck in den Funktionskörper ein
 		// result := (a + b + abs(a - b)) // 2
 		node_function_def->body->add_stmt(
 			std::make_unique<NodeStatement>(
 				std::make_unique<NodeReturn>(
 					Token(),
-					std::move(max_expression)
+					std::move(expression)
 				),
 				Token()
 			));
 
+		node_function_def->collect_references();
 		// Fügen Sie die neue Funktionsdefinition zum Programm hinzu
 		program->add_function_definition(std::move(node_function_def));
 		return true;

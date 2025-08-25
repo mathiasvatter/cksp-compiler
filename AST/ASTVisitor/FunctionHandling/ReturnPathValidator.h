@@ -20,12 +20,13 @@
  * - Missing return statements in conditional branches
  * - Incomplete switch statement return coverage
  */
-class ReturnPathValidator: public ASTVisitor {
+class ReturnPathValidator final : public ASTVisitor {
 	std::stack<NodeBlock*> m_block_stack;
 	std::unordered_map<NodeBlock*, bool> m_return_path;
 public:
 
 	bool do_return_path_validation(NodeFunctionDefinition& def) {
+		m_return_path.clear();
 		// no need for validation if no return statements
 		if (def.return_stmts.empty()) {
 			return true;
@@ -33,30 +34,63 @@ public:
 		def.accept(*this);
 		if (!m_return_path[def.body.get()]) {
 			auto error = ASTVisitor::get_raw_compile_error(ErrorType::CompileError, *def.body);
-			error.m_message = "Function <"+def.header->name+"> does not return a value on all code paths. This might lead to an infinite loop. "
-					 "Check if:\n- All if/else branches have return statements\n- The function has a return statement after loops or conditionals\n- All possible cases in switch statements return a value.";
-			error.print();
+			error.m_message = "Function <"+def.header->name+"> does not terminate on all code paths. This might lead to an infinite loop. "
+					 "Checked the following code paths:\n";
+
+			// error.m_message += "\n Possible missing return statements in lines: ";
+			std::vector<size_t> lines{};
+			std::string message{};
+			for (auto& [block, boolean] : m_return_path) {
+				if (!boolean and !block->empty()) {
+					auto line = block->get_last_statement()->range.end.line;
+					lines.push_back(line);
+
+					if (auto node_if = block->parent->cast<NodeIf>()) {
+						message += "- Not all branches of if-statement at position " + node_if->range.to_string() + " have a return statement.\n";
+					} else if (auto node_select = block->parent->cast<NodeSelect>()) {
+						message += "- Not all cases of select statement at position " + node_select->range.to_string() + " have a return statement.\n";
+					} else if (auto node_func = block->parent->cast<NodeFunctionDefinition>()) {
+						message += "- The function body at position " + node_func->range.to_string() + " does not terminate with a return statement.\n";
+					} else {
+						message += "- Block at position " + block->range.to_string() + " does not have a return statement.\n";
+					}
+
+
+				}
+			}
+			// error.m_message += StringUtils::join_apply(lines, [](size_t line) {
+			// 	return std::to_string(line);
+			// }, ", ");
+			error.m_message += message;
+			error.m_message += "Adding a return statement to some/all of these code paths might fix this error.";
+
+			error.exit();
 		}
+
 		return m_return_path[def.body.get()];
 	}
 
 private:
 
 	NodeAST* visit(NodeFunctionDefinition &node) override {
-		m_return_path[node.body.get()] = true;
+		// m_return_path[node.body.get()] = true;
 		node.body->accept(*this);
 		return &node;
 	}
 
 	NodeAST* visit(NodeBlock& node) override {
+		m_return_path[&node] = false;
 		m_block_stack.push(&node);
 		for (const auto &stmt : node.statements) {
 			stmt->accept(*this);
+			if (m_return_path[&node]) {
+				break;
+			}
 		}
 		m_block_stack.pop();
-		if (!m_block_stack.empty()) {
-			m_return_path[m_block_stack.top()] &= m_return_path[&node];
-		}
+		// if (!m_block_stack.empty()) {
+		// 	m_return_path[m_block_stack.top()] &= m_return_path[&node];
+		// }
 		return &node;
 	}
 
@@ -68,24 +102,46 @@ private:
 		m_return_path[node.else_body.get()] = !node.else_body->empty();
 		node.else_body->accept(*this);
 		// if both branches are true, the current block stays true
-		m_return_path[m_block_stack.top()] &= (m_return_path[node.if_body.get()] and m_return_path[node.else_body.get()]);
+		const bool if_returns = m_return_path[node.if_body.get()];
+		const bool else_returns = m_return_path[node.else_body.get()];
+		// m_return_path[m_block_stack.top()] &= if_return and else_return;
+		// If BOTH branches guarantee a return, then this entire if-statement
+		// guarantees a return for its parent block.
+		if (if_returns && else_returns) {
+			if (!m_block_stack.empty()) {
+				m_return_path[m_block_stack.top()] = true; // Set, do not AND
+			}
+		}
 		return &node;
 	}
 
 	NodeAST* visit(NodeSelect &node) override {
-		bool all_return = true;
-		for(const auto &cas: node.cases) {
-			m_return_path[cas.second.get()] = !cas.second->empty();
-			cas.second->accept(*this);
-			all_return &= m_return_path[cas.second.get()];
+		bool all_return = !node.cases.empty();
+		for(const auto &val : node.cases | std::views::values) {
+			m_return_path[val.get()] = !val->empty();
+			val->accept(*this);
+			// all_return &= m_return_path[cas.second.get()];
+			// If any case does not return, the whole select statement doesn't guarantee a return.
+			if (!m_return_path[val.get()]) {
+				all_return = false;
+			}
 		}
-		m_return_path[m_block_stack.top()] &= all_return;
+		// m_return_path[m_block_stack.top()] &= all_return;
+		if (all_return) {
+			if (!m_block_stack.empty()) {
+				m_return_path[m_block_stack.top()] = true; // Set, do not AND
+			}
+		}
 
 		return &node;
 	}
 
 	NodeAST* visit(NodeReturn &node) override {
-		m_return_path[m_block_stack.top()] = true;
+		// m_return_path[m_block_stack.top()] = true;
+		// A return statement guarantees a return path for the current block.
+		if (!m_block_stack.empty()) {
+			m_return_path[m_block_stack.top()] = true;
+		}
 		return &node;
 	}
 

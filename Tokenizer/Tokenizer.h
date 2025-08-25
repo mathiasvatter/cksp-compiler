@@ -69,7 +69,7 @@ protected:
 	bool is_in_fstring = false;
 	std::stack<char> fstring_starting_char;
 
-    bool m_is_json = false;
+    // bool m_is_json = false;
     [[nodiscard]] char peek(int ahead = 0) const;
     char consume();
     void flush_buffer();
@@ -103,7 +103,7 @@ protected:
     void get_assignment();
     void get_arrow();
     void get_keyword_or_num();
-    void get_curly_brackets();
 	void get_format_string();
+	void get_ternary_operator();
 
 };

@@ -14,6 +14,10 @@
  * 1. The pointer is the r_value in an assignment.
  * 2. The pointer is the r_value in a declaration.
  *
+ * However, if the pointer is l_value in assignment AND in the r_value expression,
+ * the expression gets moved to a temporary variable, which is then assigned to the l_value.
+ * This prevents deallocating the object before it is assigned again.
+ *
  * If the allocation array is <= 0, the object is considered deleted.
  * The reference counter is decreased using the __del__ method when:
  * 1. The pointer is the l_value in an assignment.
@@ -154,8 +158,44 @@ public:
 		return &node;
 	}
 
+	// check if l_value is also in r_value
+	static bool is_self_ptr_assignment(const NodeSingleAssignment& node) {
+		if (!node.l_value->ty->cast<ObjectType>()) return false;
+		if (node.l_value->is_r_value()) return true;
+		// if r_value is function and l_value is not in args, check
+		// if l_value gets is referenced in the function body
+		//  -> if yes, then self assignment
+		if (node.r_value->cast<NodeFunctionCall>()) {
+			auto free_vars = node.r_value->collect_free_vars();
+			return free_vars.contains(node.l_value->name);
+		}
+		return false;
+	}
+
 	NodeAST* visit(NodeSingleAssignment &node) override {
 //		if(node.l_value->is_member_ref()) return &node;
+
+		// move r_value expression to temporary if l_value is also in r_value expression
+		if (is_self_ptr_assignment(node)) {
+			auto tmp_var = m_program->get_tmp_ptr(node.r_value->ty);
+			auto tmp_var_ref = tmp_var->to_reference();
+			auto tmp_decl = std::make_unique<NodeSingleDeclaration>(
+				std::move(tmp_var),
+				std::move(node.r_value),
+				node.tok
+			);
+			auto new_assignment = std::make_unique<NodeSingleAssignment>(
+				std::move(node.l_value),
+				std::move(tmp_var_ref),
+				node.tok
+			);
+			new_assignment->l_value->remove_references();
+			new_assignment->l_value->collect_references();
+			auto block = std::make_unique<NodeBlock>(node.tok, true);
+			block->add_as_stmt(std::move(tmp_decl));
+			block->add_as_stmt(std::move(new_assignment));
+			return node.replace_with(std::move(block))->accept(*this);
+		}
 
 		node.l_value->accept(*this);
 		node.r_value->accept(*this);
