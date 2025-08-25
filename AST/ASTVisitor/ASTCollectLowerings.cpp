@@ -90,7 +90,6 @@ NodeAST * ASTCollectLowerings::visit(NodeStruct& node) {
 
 NodeAST * ASTCollectLowerings::visit(NodeFunctionDefinition& node) {
 	//TRACE();
-
 	static UIControlParamHandling ui_control_param_handling;
 	ui_control_param_handling.handle_ui_params(node);
 	node.visited = true;

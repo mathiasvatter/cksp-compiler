@@ -23,8 +23,17 @@
  * for _ := 0 to num_elements(array) - 1
  *     message(array[_])
  * end for
+ *
+ *
+ * IMPORTANT:
+ * Also lowers continue statements in for loops to
+ * inc(incrementer)
+ * continue
+ * Otherwise the loop would become infinite!
+ * This is only done for range loops because all others are lowered to for-loops which tackle this already.
+ *
  */
-class LoweringForEach : public ASTLowering {
+class LoweringForEach final : public ASTLowering {
 public:
 	explicit LoweringForEach(NodeProgram* program) : ASTLowering(program) {
 		m_def_provider = program->def_provider;
@@ -46,9 +55,13 @@ private:
 	std::shared_ptr<NodeDataStructure> m_key = nullptr;
 	std::shared_ptr<NodeDataStructure> m_value = nullptr;
 
+	std::vector<NodeLoop*> m_loop_stack; // to determine whether we are in a while loop of a for loop
+	std::unique_ptr<NodeAST> m_compound_assignment;
+
 public:
 
 	NodeAST* visit(NodeForEach& node) override {
+		m_loop_stack.push_back(&node);
 		node.remove_references();
         // check if keys are variable references
 		m_key = node.key ? node.key->variable : nullptr;
@@ -75,6 +88,7 @@ public:
 			}
 			auto block = tackle_for_each_pairs(node);
 			block->collect_references();
+			m_loop_stack.pop_back();
 			return node.replace_with(std::move(block));
 		// normal for each loop over array with one key
 		} else {
@@ -87,9 +101,11 @@ public:
 			}
 			auto block = tackle_for_each(node);
 			block->collect_references();
+			m_loop_stack.pop_back();
 			return node.replace_with(std::move(block));
 		}
 
+		m_loop_stack.pop_back();
 		return &node;
     }
 
@@ -161,17 +177,22 @@ public:
 			node_scope->add_as_stmt(std::make_unique<NodeSingleDeclaration>(key, nullptr, range->tok));
 		}
 		node_scope->add_as_stmt(std::make_unique<NodeSingleDeclaration>(value, std::move(range->start), range->tok));
-		auto node_while = std::make_unique<NodeWhile>(
-			get_range_condition(value, *range),
-			std::move(node.body),
-			node.tok
-		);
 		// i += step
 		auto compound_assignment = std::make_unique<NodeCompoundAssignment>(
 			value->to_reference(),
 			range->step->clone(),
 			token::ADD,
 			range->tok
+		);
+
+		m_compound_assignment = compound_assignment->clone();
+		node.body->accept(*this);
+		m_compound_assignment = nullptr;
+
+		auto node_while = std::make_unique<NodeWhile>(
+			get_range_condition(value, *range),
+			std::move(node.body),
+			node.tok
 		);
 		node_while->body->add_as_stmt(std::move(compound_assignment));
 		node_while->body->get_last_statement()->desugar(m_program);
@@ -273,6 +294,36 @@ private:
 			}
 		}
 
+		return &node;
+	}
+
+	// inside while loops no lowering of continue statements
+	NodeAST * visit(NodeWhile& node) override {
+		m_loop_stack.push_back(&node);
+		ASTVisitor::visit(node);
+		m_loop_stack.pop_back();
+		return &node;
+	}
+
+	NodeAST * visit(NodeFor& node) override {
+		m_loop_stack.push_back(&node);
+		ASTVisitor::visit(node);
+		m_loop_stack.pop_back();
+		return &node;
+	}
+
+	NodeAST * visit(NodeFunctionCall& node) override {
+		node.function->accept(*this);
+
+		if (node.kind != NodeFunctionCall::Kind::Builtin) return &node;
+		if (m_loop_stack.back() != m_loop_stack.front()) return &node;
+		if(node.function->name == "continue" and m_compound_assignment) {
+			auto block = std::make_unique<NodeBlock>(node.tok, false);
+			block->add_as_stmt(m_compound_assignment->clone());
+			block->get_last_statement()->desugar(m_program);
+			block->add_as_stmt(DefinitionProvider::continu(node.tok));
+			return node.replace_with(std::move(block));
+		}
 		return &node;
 	}
 

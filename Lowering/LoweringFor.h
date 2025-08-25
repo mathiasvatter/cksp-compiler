@@ -24,8 +24,18 @@
  *     message(9)
  *     dec($o)
  * end while
+ *
+ * IMPORTANT:
+ * Also lowers continue statements in for loops to
+ * inc(incrementer)
+ * continue
+ * Otherwise the loop would become infinite!
+ *
  */
 class LoweringFor final : public ASTLowering {
+	std::unique_ptr<NodeAST> m_compound_assignment;
+	std::vector<NodeLoop*> m_loop_stack; // to determine whether we are in a while loop of a for loop
+
 public:
 	explicit LoweringFor(NodeProgram *program) : ASTLowering(program) {
 		m_program = program;
@@ -55,6 +65,13 @@ public:
 			token::ADD,
 			node.tok
 		);
+
+		m_loop_stack.push_back(&node);
+		m_compound_assignment = compound_assignment->clone();
+		node.body->accept(*this);
+		m_compound_assignment = nullptr;
+		m_loop_stack.pop_back();
+
 		node.body->add_as_stmt(std::move(compound_assignment));
 		node.body->get_last_statement()->desugar(m_program);
 
@@ -69,6 +86,7 @@ public:
 			node.tok
 		);
 		comparison->ty = TypeRegistry::Comparison;
+
 
 		auto node_while_statement = std::make_unique<NodeWhile>(
 			std::move(comparison),
@@ -88,4 +106,35 @@ public:
 		node_body->collect_references();
 		return node.replace_with(std::move(node_body));
 	}
+
+	// inside while loops no lowering of continue statements
+	NodeAST * visit(NodeWhile& node) override {
+		m_loop_stack.push_back(&node);
+		ASTVisitor::visit(node);
+		m_loop_stack.pop_back();
+		return &node;
+	}
+
+	NodeAST * visit(NodeForEach& node) override {
+		m_loop_stack.push_back(&node);
+		ASTVisitor::visit(node);
+		m_loop_stack.pop_back();
+		return &node;
+	}
+
+	NodeAST * visit(NodeFunctionCall& node) override {
+		node.function->accept(*this);
+
+		if (node.kind != NodeFunctionCall::Kind::Builtin) return &node;
+		if (m_loop_stack.back() != m_loop_stack.front()) return &node;
+		if(node.function->name == "continue" and m_compound_assignment) {
+			auto block = std::make_unique<NodeBlock>(node.tok, false);
+			block->add_as_stmt(m_compound_assignment->clone());
+			block->get_last_statement()->desugar(m_program);
+			block->add_as_stmt(DefinitionProvider::continu(node.tok));
+			return node.replace_with(std::move(block));
+		}
+		return &node;
+	}
+
 };
