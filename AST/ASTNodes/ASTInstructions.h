@@ -108,9 +108,7 @@ struct NodeFunctionCall final : NodeInstruction {
 	bool is_destructive_builtin_func() const;
 	bool check_restricted_environment(NodeCallback *current_callback) const;
 	void determine_function_strategy(NodeProgram* program, NodeCallback* current_callback);
-	bool is_in_access_chain() const {
-		return parent and parent->cast<NodeAccessChain>();
-	}
+	bool is_in_access_chain() const;
 };
 
 struct NodeSortSearch final : NodeInstruction {
@@ -549,15 +547,15 @@ struct NodeSingleDeclaration final : NodeInstruction {
     std::shared_ptr<NodeDataStructure> variable;
     std::unique_ptr<NodeAST> value = nullptr;
     explicit NodeSingleDeclaration(Token tok) : NodeInstruction(NodeType::SingleDeclaration, std::move(tok)) {}
-	NodeSingleDeclaration(std::shared_ptr<NodeDataStructure> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
+	NodeSingleDeclaration(std::shared_ptr<NodeDataStructure> variable, std::unique_ptr<NodeAST> value, Token tok)
 		: NodeInstruction(NodeType::SingleDeclaration, std::move(tok)),
-		  variable(std::move(arrayVariable)),
-		  value(std::move(assignee)) {
+		  variable(std::move(variable)),
+		  value(std::move(value)) {
 		NodeSingleDeclaration::set_child_parents();
 	}
-	NodeSingleDeclaration(std::unique_ptr<NodeDataStructure> arrayVariable, Token tok)
+	NodeSingleDeclaration(std::unique_ptr<NodeDataStructure> variable, Token tok)
 		: NodeInstruction(NodeType::SingleDeclaration, std::move(tok)),
-		  variable(std::move(arrayVariable)) {
+		  variable(std::move(variable)) {
 		set_child_parents();
 	}
     NodeAST * accept(ASTVisitor &visitor) override;

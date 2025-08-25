@@ -131,7 +131,7 @@ Result<std::unique_ptr<PreNodeAST>> SimpleExprInterpreter::_parse_binary_expr_rh
 		auto node_other = current_node->cast<PreNodeOther>();
 		// auto node_other = dynamic_cast<PreNodeOther*>(peek(nodes));
 		int prec = -1;
-		if(node_other) prec = _get_binop_precedence(node_other->tok.type);
+		if(node_other) prec = Parser::get_binop_precedence(node_other->tok.type);
 		if(prec < precedence or !node_other)
 			return Result<std::unique_ptr<PreNodeAST>>(std::move(lhs));
 		// its not -1 so it is a binop
@@ -143,7 +143,7 @@ Result<std::unique_ptr<PreNodeAST>> SimpleExprInterpreter::_parse_binary_expr_rh
 		}
 		node_other = dynamic_cast<PreNodeOther*>(peek(nodes));
 		int next_precedence = -1;
-		if(node_other) next_precedence = _get_binop_precedence(node_other->tok.type);
+		if(node_other) next_precedence = Parser::get_binop_precedence(node_other->tok.type);
 		if (prec < next_precedence or !node_other) {
 			rhs = _parse_binary_expr_rhs(prec + 1, std::move(rhs.unwrap()), nodes, parent);
 			if (rhs.is_error()) {

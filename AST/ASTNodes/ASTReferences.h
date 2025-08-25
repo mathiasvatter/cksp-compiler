@@ -11,11 +11,13 @@
 struct NodeNumElements;
 
 struct NodeVariableRef final : NodeReference {
-	NodeVariableRef(std::string name, Token tok, DataType data_type=DataType::Mutable)
-		: NodeReference(std::move(name), NodeType::VariableRef, std::move(tok), data_type) {
+	NodeVariableRef(std::string name, const Token& tok, DataType data_type=DataType::Mutable)
+		: NodeReference(std::move(name), NodeType::VariableRef, tok, data_type) {
+		set_range(tok);
 	}
-	NodeVariableRef(std::string name, Type* ty, Token tok, DataType data_type=DataType::Mutable)
-		: NodeReference(std::move(name), NodeType::VariableRef, std::move(tok), data_type) {
+	NodeVariableRef(std::string name, Type* ty, const Token& tok, DataType data_type=DataType::Mutable)
+		: NodeReference(std::move(name), NodeType::VariableRef, tok, data_type) {
+		set_range(tok);
 		this->ty = ty;
 	}
 	NodeAST * accept(ASTVisitor &visitor) override;

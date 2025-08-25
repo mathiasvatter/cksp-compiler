@@ -25,6 +25,7 @@
 #include "../ASTVisitor/ReturnFunctionRewriting/ReturnParamPromotion.h"
 #include "../../Optimization/ConstantFolding.h"
 #include "../../Lowering/LoweringInitializerList.h"
+#include "../../Optimization/FreeVarCollector.h"
 #include "../../Optimization/ReferenceValidator.h"
 #include "../ASTVisitor/ASTVariableChecking.h"
 #include "../ASTVisitor/TypeInference.h"
@@ -152,6 +153,11 @@ void NodeAST::collect_references() {
 void NodeAST::remove_references() {
 	static ASTRemoveReferences remove_ref;
 	accept(remove_ref);
+}
+
+std::unordered_set<std::string> NodeAST::collect_free_vars() {
+	FreeVarCollector free_var;
+	return free_var.collect(*this);
 }
 
 NodeAST *NodeAST::remove_node() {
@@ -412,7 +418,7 @@ NodeSingleAssignment* NodeReference::is_l_value() const {
 NodeSingleAssignment *NodeReference::is_r_value() const {
 	if(const auto assignment = parent->cast<NodeSingleAssignment>()) {
 		static VarExistsValidator var_exists_validator;
-		if (var_exists_validator.var_exists(*assignment->r_value, name)) {
+		if (var_exists_validator.check(*assignment->r_value, name)) {
 			return assignment;
 		}
 	}
@@ -1493,6 +1499,32 @@ void NodeProgram::remove_unused_functions() {
 void NodeProgram::order_function_definitions() {
 	static FunctionDefinitionOrdering ordering;
 	ordering.order_functions(*this);
+}
+
+std::shared_ptr<NodeVariable> NodeProgram::get_tmp_var(Type *ty, DataType data) {
+	auto tmp = std::make_shared<NodeVariable>(
+		std::nullopt,
+		def_provider->get_fresh_name("tmp"),
+		ty,
+		tok,
+		data
+	);
+	tmp->is_local = true;
+	// tmp->is_engine = true;
+	return tmp;
+}
+
+std::shared_ptr<NodePointer> NodeProgram::get_tmp_ptr(Type *ty, DataType data) {
+	auto tmp = std::make_shared<NodePointer>(
+		std::nullopt,
+		def_provider->get_fresh_name("tmp"),
+		ty,
+		tok,
+		data
+	);
+	tmp->is_local = true;
+	// tmp->is_engine = true;
+	return tmp;
 }
 
 
