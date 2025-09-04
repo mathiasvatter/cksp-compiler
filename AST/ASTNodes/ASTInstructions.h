@@ -883,6 +883,38 @@ struct NodeIf final : NodeInstruction {
 	NodeAST* do_short_circuit_transform(NodeProgram* program);
 };
 
+struct NodeTernary final : NodeInstruction {
+    std::unique_ptr<NodeAST> condition;
+    std::unique_ptr<NodeAST> if_branch;
+    std::unique_ptr<NodeAST> else_branch;
+    explicit NodeTernary(Token tok) : NodeInstruction(NodeType::Ternary, std::move(tok)) {}
+    NodeTernary(std::unique_ptr<NodeAST> condition, std::unique_ptr<NodeAST> if_branch, std::unique_ptr<NodeAST> else_branch, Token tok)
+            : NodeInstruction(NodeType::If, std::move(tok)), condition(std::move(condition)), if_branch(std::move(if_branch)), else_branch(std::move(else_branch)) {
+            NodeTernary::set_child_parents();
+    }
+    NodeAST * accept(ASTVisitor &visitor) override;
+    NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+    NodeTernary(const NodeTernary& other);
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+    void update_parents(NodeAST* new_parent) override {
+        parent = new_parent;
+        condition->update_parents(this);
+        if_branch->update_parents(this);
+        else_branch->update_parents(this);
+    }
+    void set_child_parents() override {
+        condition->parent = this;
+        if_branch->parent = this;
+        else_branch->parent = this;
+    }
+    std::string get_string() override { return ""; }
+    void update_token_data(const Token& token) override {
+        condition -> update_token_data(token);
+        if_branch->update_token_data(token);
+        else_branch->update_token_data(token);
+    }
+};
+
 struct NodeLoop : NodeInstruction {
 	bool is_linear = false;
 	explicit NodeLoop(const NodeType node_type, Token tok) : NodeInstruction(node_type, std::move(tok)) {};

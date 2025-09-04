@@ -682,28 +682,32 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 }
 
 NodeAST * TypeInference::visit(NodeFunctionCall& node) {
+	node.function->accept(*this);
+
 	node.bind_definition(m_program);
 	auto definition = node.get_definition();
 	if (definition) {
-		// do not do this with property functions because of ui_text_edit being string and throwing error then
+		// do not do this with property functions/ui controls because of ui_text_edit being string and throwing error then
 		// example of error snippet:
 		// declare ui_text_edit txt_keyswitch_name
 		// set_text_edit_properties(txt_keyswitch_name, "-/-", "alpha")
-		if (node.kind != NodeFunctionCall::Kind::Property) {
-			// add method_idx because at this point method definitions have 1 more parameter than the call (self)
-			int method_idx = node.is_in_access_chain() ? 1 : 0;
-			for (int i = 0; i < node.function->get_num_args(); i++) {
-				auto &func_arg = node.function->get_arg(i);
-				auto &param = definition->get_param(i+method_idx);
-				const std::string error_message =
-					"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
-						+ param->ty->to_string() + " as argument type.";
-				// if (!param->ty->is_string_int_assignment(func_arg->ty))
-				// this is needed for string -> int stuff -> needs better solution
-				if (param->ty->get_element_type() != TypeRegistry::String)
-					match_type(*func_arg, *param, error_message);
-
+		// add method_idx because at this point method definitions have 1 more parameter than the call (self)
+		int method_idx = node.is_in_access_chain() ? 1 : 0;
+		for (int i = 0; i < node.function->get_num_args(); i++) {
+			auto &func_arg = node.function->get_arg(i);
+			if (auto reference = func_arg->is_reference()) {
+				// ignore ui control variables
+				if (reference->data_type == DataType::UIControl) continue;
 			}
+			auto &param = definition->get_param(i+method_idx);
+			const std::string error_message =
+				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
+					+ param->ty->to_string() + " as argument type.";
+			// if (!param->ty->is_string_int_assignment(func_arg->ty))
+			// this is needed for string -> int stuff -> needs better solution
+			if (param->ty->get_element_type() != TypeRegistry::String)
+				match_type(*func_arg, *param, error_message);
+
 		}
 		// sh_right(abs(a{number} - b{number}), 1)
 		// we are abs right now and want to specialize the args to int
@@ -715,7 +719,6 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 		}
 	}
 
-	node.function->accept(*this);
 
 	if(node.is_destructive_builtin_func()) {
 		if(node.function->get_arg(0)->is_constant()) {
@@ -765,6 +768,10 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
 					+ param->ty->to_string() + " as argument type.";
 
+			if (auto reference = func_arg->is_reference()) {
+				// ignore ui control variables
+				if (reference->data_type == DataType::UIControl) continue;
+			}
 			// if (!param->ty->is_string_int_assignment(func_arg->ty))
 			if (param->ty->get_element_type() != TypeRegistry::String)
 				match_type(*func_arg, *param, error_message);

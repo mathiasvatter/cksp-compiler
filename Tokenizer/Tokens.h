@@ -194,7 +194,7 @@ inline std::unordered_map<std::string, token> STATEMENT_SYNTAX = {{"to", token::
 																  {"case", token::CASE}, {"in", token::IN}, {"default", token::DEFAULT}, {"break", token::BREAK}};
 inline std::unordered_map<std::string, token> FUNCTION_SYNTAX = {{"override", token::OVERRIDE}, {"call", token::CALL}, {"return", token::RETURN}, {"ref", token::REF}};
 inline std::unordered_map<std::string, token> OBJECT_SYNTAX = {{"new", token::NEW}, {"delete", token::DELETE}, {"nil", token::NIL}, {"static", token::STATIC}};
-inline std::unordered_map<std::string, token> BOOLEAN_SYNTAX = {{"false", token::FALSE}, {"true", token::TRUE}};
+inline std::unordered_map<std::string, token> BOOLEAN_SYNTAX = {{"false", token::FALSE}, {"true", token::TRUE}, {"?", token::TERNARY}};
 
 
 // control statements that also have an end
