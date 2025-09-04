@@ -4,95 +4,95 @@
 // import "/Users/mathias/Scripting/preset-system/dev/ksp/Preset.cksp"
 
 
-namespace UI
+// namespace UI
 
-	declare const HEIGHT := 100
-	declare const WIDTH := 500
+// 	declare const HEIGHT := 100
+// 	declare const WIDTH := 500
 
-	function set_bg_frame(frame: int)
-		set_skin_offset(frame * HEIGHT)
-	end function
+// 	function set_bg_frame(frame: int)
+// 		set_skin_offset(frame * HEIGHT)
+// 	end function
 
-	namespace Layout
-		function content_height(): int
-            return HEIGHT-68        // unqualified access to outer member
-        end function
-	end namespace
+// 	namespace Layout
+// 		function content_height(): int
+//             return HEIGHT-68        // unqualified access to outer member
+//         end function
+// 	end namespace
 
-	namespace Color
-		declare const RED := 0xFF0000
-		declare const GREEN := 0x00FF00
-		declare const BLUE := 0x0000FF
-		declare const WHITE := 0xFFFFFF
-		declare const BLACK := 0x000000
+// 	namespace Color
+// 		declare const RED := 0xFF0000
+// 		declare const GREEN := 0x00FF00
+// 		declare const BLUE := 0x0000FF
+// 		declare const WHITE := 0xFFFFFF
+// 		declare const BLACK := 0x000000
 
-		function set_background_color(hex: int)
-			set_ui_color(hex)
-		end function
+// 		function set_background_color(hex: int)
+// 			set_ui_color(hex)
+// 		end function
 
-	end namespace
+// 	end namespace
 
-	namespace Fonts
+// 	namespace Fonts
 
-		declare types: int[] := [CONTROL_PAR_FONT_TYPE, CONTROL_PAR_FONT_TYPE_ON, CONTROL_PAR_FONT_TYPE_OFF_PRESSED, CONTROL_PAR_FONT_TYPE_ON_PRESSED, CONTROL_PAR_FONT_TYPE_OFF_HOVER, CONTROL_PAR_FONT_TYPE_ON_HOVER]
-		declare button: string[] := ["off", "on", "off_pressed", "on_pressed", "off_hover", "on_hover"]
+// 		declare types: int[] := [CONTROL_PAR_FONT_TYPE, CONTROL_PAR_FONT_TYPE_ON, CONTROL_PAR_FONT_TYPE_OFF_PRESSED, CONTROL_PAR_FONT_TYPE_ON_PRESSED, CONTROL_PAR_FONT_TYPE_OFF_HOVER, CONTROL_PAR_FONT_TYPE_ON_HOVER]
+// 		declare button: string[] := ["off", "on", "off_pressed", "on_pressed", "off_hover", "on_hover"]
 
-		function apply(
-			ref ui_control, 
-			font_array: int[]
-			)
-			for u in range(num_elements(types))
-				set_control_par(ui_control, types[u], font_array[u])
-			end for
-		end function
+// 		function apply(
+// 			ref ui_control, 
+// 			font_array: int[]
+// 			)
+// 			for u in range(num_elements(types))
+// 				set_control_par(ui_control, types[u], font_array[u])
+// 			end for
+// 		end function
 	   
-	end namespace
+// 	end namespace
    
-end namespace
+// end namespace
 
-struct List
-    declare value: int
-    declare next: List := nil
+// struct List
+//     declare value: int
+//     declare next: List := nil
 
-    function __init__(self, value: int, next: List)
-        self.value := value
-        self.next := next
-    end function
+//     function __init__(self, value: int, next: List)
+//         self.value := value
+//         self.next := next
+//     end function
 
-end struct
+// end struct
 
-namespace Browser
-	declare const pupu: string := "pupu"
+// namespace Browser
+// 	declare const pupu: string := "pupu"
 
-	namespace SecondBrowser
-		declare const pipi: string  := pupu
-	end namespace
+// 	namespace SecondBrowser
+// 		declare const pipi: string  := pupu
+// 	end namespace
 
-	function do_sth(param2: int)
-		return "Doing something with " & param2 & CONSTANT
-	end function
+// 	function do_sth(param2: int)
+// 		return "Doing something with " & param2 & CONSTANT
+// 	end function
 
-	declare const CONSTANT := 1
+// 	declare const CONSTANT := 1
 
-	// const colors
-	// 	RED, BLUE, GREEN
-	// end const
+// 	// const colors
+// 	// 	RED, BLUE, GREEN
+// 	// end const
 
-	function do_sth3(param2: int)
-		return "Doing something with " & param2 & pupu
-	end function
+// 	function do_sth3(param2: int)
+// 		return "Doing something with " & param2 & pupu
+// 	end function
 
-	namespace ThirdBrowser
-		declare third_pupu: string := SecondBrowser.pipi
-	end namespace
+// 	namespace ThirdBrowser
+// 		declare third_pupu: string := SecondBrowser.pipi
+// 	end namespace
 
-	declare ckjkj: int := 5
-end namespace
+// 	declare ckjkj: int := 5
+// end namespace
 
 on init
 
 	Browser.do_sth(
-		1
+		1 > 2 ? 0 : 1
 		)
 	// message(Browser.do_sth(4))
 	// declare b := Bitlist()

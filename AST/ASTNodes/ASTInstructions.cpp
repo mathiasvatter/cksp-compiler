@@ -968,7 +968,7 @@ ASTDesugaring * NodeFamily::get_desugaring(NodeProgram *program) const {
 }
 
 // ************* NodeIf ***************
-NodeAST *NodeIf::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeIf::accept(ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeIf::NodeIf(const NodeIf& other)
@@ -1005,8 +1005,30 @@ NodeAST *NodeIf::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newCh
     return nullptr;
 }
 
+// ************* NodeTernary ***************
+NodeAST *NodeTernary::accept(ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeTernary::NodeTernary(const NodeTernary& other)
+		: NodeInstruction(other), condition(clone_unique(other.condition)),
+		  if_branch(clone_unique(other.if_branch)),
+		  else_branch(clone_unique(other.else_branch)) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeTernary::clone() const {
+	return std::make_unique<NodeTernary>(*this);
+}
+
+NodeAST *NodeTernary::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (condition.get() == oldChild) {
+		condition = std::move(newChild);
+		return condition.get();
+	}
+	return nullptr;
+}
+
 // ************* NodeFor ***************
-NodeAST *NodeFor::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeFor::accept(ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeFor::NodeFor(const NodeFor& other)

@@ -56,6 +56,7 @@ public:
     NodeAST * visit(NodeStatement& node) override;
     NodeAST * visit(NodeBlock& node) override;
 	NodeAST * visit(NodeIf& node) override;
+	NodeAST * visit(NodeTernary& node) override;
 	NodeAST * visit(NodeWhile& node) override;
 	NodeAST * visit(NodeFor& node) override;
 	NodeAST * visit(NodeForEach& node) override;
@@ -75,7 +76,7 @@ public:
             out_file << os.str();
         } else {
             // Fehlerbehandlung, falls die Datei nicht geöffnet werden kann
-            std::cerr << "Fehler beim Öffnen der Datei: " << path << std::endl;
+            std::cerr << "Unable to open file: " << path << std::endl;
         }
     	os.str("");
     }

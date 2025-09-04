@@ -41,7 +41,7 @@ public:
 		node.ui_id->accept(*this);
 		node.value->accept(*this);
 		return node.lower(m_program)->accept(*this);
-	};
+	}
 
 	NodeAST * visit(NodeGetControl &node) override {
 		node.ui_id->accept(*this);
@@ -50,13 +50,6 @@ public:
 
 
     NodeAST * visit(NodeVariableRef &node) override {
-		if (node.name == "btn_preset_button0") {
-			if (auto header = node.is_func_arg()) {
-				if (header->name == "doubleclick_start0") {
-
-				}
-			}
-		}
 		if(needs_get_ui_id(node)) {
 			return node.replace_with(std::move(wrap_in_get_ui_id(node)));
 		}
