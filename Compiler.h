@@ -47,6 +47,7 @@
 #include "AST/ASTVisitor/GlobalScope/ASTParameterPromotion.h"
 #include "AST/ASTVisitor/GlobalScope/MarkThreadSafe.h"
 #include "AST/ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
+#include "Lowering/LoweringTernaryOperator.h"
 #include "Optimization/ArrayInitializationRaising.h"
 
 
@@ -266,6 +267,9 @@ public:
 		ast->accept(pointer_scope);
 		ast->collect_references();
 		ast->debug_print();
+
+		static LoweringTernaryOperator ternary(m_program);
+		ternary.lower_ternaries(*ast);
 
 		static ASTCollectLowerings lowering(m_program);
 		ast->accept(lowering);

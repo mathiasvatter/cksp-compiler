@@ -52,9 +52,11 @@ public:
 		// do hoisting and return parameter promotion
 		node.accept(*this);
 		node.reset_function_visited_flag();
+		node.debug_print();
 
 		static ReturnFunctionIsolation isolation(m_program);
 		isolation.do_return_function_isolation(node);
+		node.debug_print();
 
 		static ASTTemporaryPointerScope temp_scope(m_program);
 		temp_scope.visit(node);

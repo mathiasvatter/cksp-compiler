@@ -5,9 +5,19 @@
 
 message( 1 < 2 ? 1 : 2)
 
+message(1 < 2 ? "hello world" : "Goodbye world")
+
 
 {-------------------------------------------------------------------------------------------
                                         Post Lowering
 --------------------------------------------------------------------------------------------}
 
 message(::__lt__(1, 2) * 1 + (1-::__lt__(1, 2)) * 2)
+
+declare local tmp
+if 1 < 2
+    tmp := "hello world"
+else
+    tmp := "Goodbye world"
+end if
+message(tmp)

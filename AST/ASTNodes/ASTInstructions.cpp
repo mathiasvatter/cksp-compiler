@@ -29,6 +29,7 @@
 #include "../../Lowering/LoweringSortSearch.h"
 #include "../../Lowering/PostLowering/PostLoweringSortSearch.h"
 #include "../../misc/CommandLineOptions.h"
+#include "../../Optimization/FreeVarCollector.h"
 #include "../ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
 #include "../ASTVisitor/FunctionHandling/BuiltinRestrictionValidator.h"
 #include "../ASTVisitor/FunctionHandling/FunctionShortCircuit.h"
@@ -288,6 +289,27 @@ void NodeFunctionCall::determine_function_strategy(NodeProgram *program, NodeCal
 bool NodeFunctionCall::is_in_access_chain() const {
 	return parent and parent->cast<NodeAccessChain>();
 }
+
+bool NodeFunctionCall::has_side_effects(const std::unordered_set<std::string> &free_vars) {
+	if (BuiltinRestrictionValidator::is_builtin_with_side_effects(this->function->name)) {
+		return true;
+	}
+	static FreeVarCollector free_var;
+	auto vars = free_var.collect(*this);
+	for (const auto &var : vars) {
+		if (free_vars.contains(var)) {
+			return true;
+		}
+	}
+	const auto visited_functions = free_var.get_visited_functions();
+	for (auto &func : visited_functions) {
+		if (BuiltinRestrictionValidator::is_builtin_with_side_effects(func->header->name)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 
 // ************* NodeSortSearch ***************
 NodeAST *NodeSortSearch::accept(ASTVisitor &visitor) {

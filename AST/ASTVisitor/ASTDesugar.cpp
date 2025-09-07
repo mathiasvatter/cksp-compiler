@@ -9,6 +9,11 @@
 NodeAST* ASTDesugar::visit(NodeProgram& node) {
     m_program = &node;
 
+	// add boolean funcs to program to ensure correct var and type checking
+	for (auto val : m_program->def_provider->boolean_functions | std::views::values) {
+		m_program->add_function_definition(val);
+	}
+
 	// first desugar namespaces to assign correct prefixes
 	static DesugarNamespace ns_desugar(m_program);
 	visit_all(node.namespaces, ns_desugar);

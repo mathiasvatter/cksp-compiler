@@ -281,10 +281,10 @@ public:
         // all types in param list are the same -> set new param list node type
         if(types.size() == 1) {
             auto ty = *types.begin();
-            if(ty->get_type_kind() == TypeKind::Composite) {
-                error.m_message = "Composite types are not allowed in an initialization.";
-                error.exit();
-            }
+            // if(ty->get_type_kind() == TypeKind::Composite) {
+            //     error.m_message = "Composite types are not allowed in an initialization.";
+            //     error.exit();
+            // }
             return ty;
         // two types in param list -> only allowed if types are int|real and string
         } else if (types.size() == 2) {

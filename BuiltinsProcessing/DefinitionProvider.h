@@ -30,6 +30,7 @@ public:
     DefinitionProvider(
 			std::unordered_map<std::string, std::shared_ptr<NodeVariable>> m_builtin_variables,
 			std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_builtin_functions,
+			std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_boolean_functions,
 			std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> m_property_functions,
 			std::unordered_map<std::string, std::shared_ptr<NodeArray>> m_builtin_arrays,
 			std::unordered_map<std::string, std::shared_ptr<NodeUIControl>> m_builtin_widgets,
@@ -306,6 +307,10 @@ public:
     std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions{};
     std::shared_ptr<NodeFunctionDefinition> get_builtin_function(NodeFunctionHeaderRef* function);
     void set_builtin_functions(std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions);
+	/// boolean functions like and, or, not
+	std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> boolean_functions{};
+	std::shared_ptr<NodeFunctionDefinition> get_boolean_function(const std::string &name, int arg_count);
+	// void set_boolean_functions(std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions);
     /// predefined property functions like set_label_properties etc
     std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> property_functions{};
     std::shared_ptr<NodeFunctionDefinition> get_property_function(NodeFunctionHeaderRef* function);

@@ -799,7 +799,7 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	int num_return_params = 0;
 	int num_return_stmts = 0;
 	std::vector<NodeReturn*> return_stmts;
-    std::unordered_set<struct NodeFunctionCall*> call_sites = {};
+    std::unordered_set<NodeFunctionCall*> call_sites = {};
     std::shared_ptr<NodeFunctionHeader> header;
     std::optional<std::shared_ptr<NodeDataStructure>> return_variable;
     bool override = false;

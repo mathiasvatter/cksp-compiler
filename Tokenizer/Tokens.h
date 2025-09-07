@@ -158,7 +158,7 @@ inline std::ostream &operator<<(std::ostream &os, const token &tok) {
 
 /// combines the token type and the actual Keyword that should be searched for by lexer
 struct Keyword {
-	inline Keyword(token type, std::string keyword) : type(type), value(std::move(keyword)) {};
+	Keyword(const token type, std::string keyword) : type(type), value(std::move(keyword)) {};
 	token type;
 	std::string value;
 };
@@ -231,6 +231,15 @@ inline std::unordered_map<token, std::pair<std::string, int>> OPERATOR_OVERWRITE
 			{token::BIT_OR, {"__or__", 2}},           // .or.
 			{token::BIT_XOR, {"__xor__", 2}},         // .xor.
 		}};
+
+inline std::unordered_map<token, std::pair<std::string, int>> BOOLEAN_FUNCTIONS = {
+	{token::GREATER_THAN, {"CKSP::__gt__", 2}},
+	{token::GREATER_EQUAL, {"CKSP::__ge__", 2}},
+	{token::EQUAL, {"CKSP::__eq__", 2}},
+	{token::LESS_THAN, {"CKSP::__lt__", 2}},
+	{token::LESS_EQUAL, {"CKSP::__le__", 2}},
+	{token::NOT_EQUAL, {"CKSP::__ne__", 2}},
+};
 
 /// string->Token operator maps
 inline std::unordered_map<std::string, token> BITWISE_OPERATORS = {{".and.", token::BIT_AND}, {".or.", token::BIT_OR}, {".not.", token::BIT_NOT}, {".xor.", token::BIT_XOR}, {"<<", token::SHIFT_LEFT}, {">>", token::SHIFT_RIGHT}};
