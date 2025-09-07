@@ -109,6 +109,10 @@ struct NodeFunctionCall final : NodeInstruction {
 	bool check_restricted_environment(NodeCallback *current_callback) const;
 	void determine_function_strategy(NodeProgram* program, NodeCallback* current_callback);
 	bool is_in_access_chain() const;
+	/// Checks if the function call or any of its arguments has side effects
+	/// this gets checked by giving a set of free variables that are being modified inside
+	/// or checking for builtin functions with side effects (message etc)
+	bool has_side_effects(const std::unordered_set<std::string>& free_vars);
 };
 
 struct NodeSortSearch final : NodeInstruction {

@@ -4,96 +4,120 @@
 // import "/Users/mathias/Scripting/preset-system/dev/ksp/Preset.cksp"
 
 
-// namespace UI
+namespace BrowserFont
+	declare types: int[] := [
+		CONTROL_PAR_FONT_TYPE, 
+		CONTROL_PAR_FONT_TYPE_ON, 
+		CONTROL_PAR_FONT_TYPE_OFF_PRESSED, 
+		CONTROL_PAR_FONT_TYPE_ON_PRESSED, 
+		CONTROL_PAR_FONT_TYPE_OFF_HOVER, 
+		CONTROL_PAR_FONT_TYPE_ON_HOVER
+	]
+	declare ty: int[] := (0)
+end namespace
 
-// 	declare const HEIGHT := 100
-// 	declare const WIDTH := 500
+namespace UI
 
-// 	function set_bg_frame(frame: int)
-// 		set_skin_offset(frame * HEIGHT)
-// 	end function
+	declare const HEIGHT := 100
+	declare const WIDTH := 500
 
-// 	namespace Layout
-// 		function content_height(): int
-//             return HEIGHT-68        // unqualified access to outer member
-//         end function
-// 	end namespace
+	function set_bg_frame(frame: int)
+		set_skin_offset(frame * HEIGHT)
+	end function
 
-// 	namespace Color
-// 		declare const RED := 0xFF0000
-// 		declare const GREEN := 0x00FF00
-// 		declare const BLUE := 0x0000FF
-// 		declare const WHITE := 0xFFFFFF
-// 		declare const BLACK := 0x000000
+	namespace Layout
+		function content_height(): int
+            return HEIGHT-68        // unqualified access to outer member
+        end function
+	end namespace
 
-// 		function set_background_color(hex: int)
-// 			set_ui_color(hex)
-// 		end function
+	namespace Color
+		declare const RED := 0xFF0000
+		declare const GREEN := 0x00FF00
+		declare const BLUE := 0x0000FF
+		declare const WHITE := 0xFFFFFF
+		declare const BLACK := 0x000000
 
-// 	end namespace
+		function set_background_color(hex: int)
+			set_ui_color(hex)
+		end function
 
-// 	namespace Fonts
+	end namespace
 
-// 		declare types: int[] := [CONTROL_PAR_FONT_TYPE, CONTROL_PAR_FONT_TYPE_ON, CONTROL_PAR_FONT_TYPE_OFF_PRESSED, CONTROL_PAR_FONT_TYPE_ON_PRESSED, CONTROL_PAR_FONT_TYPE_OFF_HOVER, CONTROL_PAR_FONT_TYPE_ON_HOVER]
-// 		declare button: string[] := ["off", "on", "off_pressed", "on_pressed", "off_hover", "on_hover"]
+	namespace Fonts
 
-// 		function apply(
-// 			ref ui_control, 
-// 			font_array: int[]
-// 			)
-// 			for u in range(num_elements(types))
-// 				set_control_par(ui_control, types[u], font_array[u])
-// 			end for
-// 		end function
+		declare types: int[] := [CONTROL_PAR_FONT_TYPE, CONTROL_PAR_FONT_TYPE_ON, CONTROL_PAR_FONT_TYPE_OFF_PRESSED, CONTROL_PAR_FONT_TYPE_ON_PRESSED, CONTROL_PAR_FONT_TYPE_OFF_HOVER, CONTROL_PAR_FONT_TYPE_ON_HOVER]
+		declare button: string[] := ["off", "on", "off_pressed", "on_pressed", "off_hover", "on_hover"]
+
+		function apply(
+			ref ui_control, 
+			font_array: int[]
+			)
+			for u in range(num_elements(types))
+				set_control_par(ui_control, types[u], font_array[u])
+			end for
+		end function
 	   
-// 	end namespace
+	end namespace
    
-// end namespace
+end namespace
 
-// struct List
-//     declare value: int
-//     declare next: List := nil
+struct List
+    declare value: int
+    declare next: List := nil
 
-//     function __init__(self, value: int, next: List)
-//         self.value := value
-//         self.next := next
-//     end function
+    function __init__(self, value: int, next: List)
+        self.value := value
+        self.next := next
+    end function
 
-// end struct
+end struct
 
-// namespace Browser
-// 	declare const pupu: string := "pupu"
+namespace Browser
+	declare const pupu: string := "pupu"
 
-// 	namespace SecondBrowser
-// 		declare const pipi: string  := pupu
-// 	end namespace
+	namespace SecondBrowser
+		declare const pipi: string  := pupu
+	end namespace
 
-// 	function do_sth(param2: int)
-// 		return "Doing something with " & param2 & CONSTANT
-// 	end function
+	function do_sth(param2: int)
+		return "Doing something with " & param2 & CONSTANT
+	end function
 
-// 	declare const CONSTANT := 1
+	declare const CONSTANT := 1
 
-// 	// const colors
-// 	// 	RED, BLUE, GREEN
-// 	// end const
+	// const colors
+	// 	RED, BLUE, GREEN
+	// end const
 
-// 	function do_sth3(param2: int)
-// 		return "Doing something with " & param2 & pupu
-// 	end function
+	function do_sth3(param2: int)
+		return "Doing something with " & param2 & pupu
+	end function
 
-// 	namespace ThirdBrowser
-// 		declare third_pupu: string := SecondBrowser.pipi
-// 	end namespace
+	namespace ThirdBrowser
+		declare third_pupu: string := SecondBrowser.pipi
+	end namespace
 
-// 	declare ckjkj: int := 5
-// end namespace
+	declare ckjkj: int := 5
+end namespace
+
+function side_effects(arg: int): int
+	message("side effects")
+	return arg
+end function
 
 on init
 
 	Browser.do_sth(
-		1 > 2 ? 0 : 1
+		1 > 2 and 4 < 5 ? 4 < 5 ? 4: 5 : 1
 		)
+
+
+	for i in range(side_effects(3))
+		message(i)
+	end for
+
+	message(BrowserFont.ty[0])
 	// message(Browser.do_sth(4))
 	// declare b := Bitlist()
 	// b.set(3, 1)

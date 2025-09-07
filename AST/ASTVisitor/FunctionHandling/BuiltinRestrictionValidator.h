@@ -75,6 +75,10 @@ public:
 	   })() }
 	};
 
+	static bool is_builtin_with_side_effects(const std::string& func_name) {
+		return func_name == "message" || m_restricted_functions.contains(func_name) || m_thread_unsafe_functions.contains(func_name);
+	}
+
 	static bool check_function_callability(const NodeFunctionCall& node, NodeCallback* callback) {
 		if (node.kind != NodeFunctionCall::Builtin) return true;
 		if (!callback) return true;

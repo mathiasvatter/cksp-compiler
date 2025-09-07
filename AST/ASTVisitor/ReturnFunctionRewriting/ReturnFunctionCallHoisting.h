@@ -118,13 +118,17 @@ public:
 
 			// check for while condition.
 			// in case of while conditions, a function call assignments needs to be prepended to the while loop body
+			// assignment in while body only needs to be added if function has side effects
 			if (const auto node_while = last_stmt->statement->cast<NodeWhile>()) {
-				auto assignment = std::make_unique<NodeSingleAssignment>(
-					clone_as<NodeReference>(ref.get()),
-					node.clone(),
-					node.tok
-				);
-				node_while->body->add_as_stmt(std::move(assignment));
+				auto vars_in_while_body = node_while->body->collect_free_vars();
+				if (node.has_side_effects(vars_in_while_body)) {
+					auto assignment = std::make_unique<NodeSingleAssignment>(
+						clone_as<NodeReference>(ref.get()),
+						node.clone(),
+						node.tok
+					);
+					node_while->body->add_as_stmt(std::move(assignment));
+				}
 			}
 
 			return node.replace_with(std::move(ref));

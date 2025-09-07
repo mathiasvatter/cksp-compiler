@@ -9,16 +9,18 @@
 DefinitionProvider::DefinitionProvider(
 		std::unordered_map<std::string, std::shared_ptr<NodeVariable>> m_builtin_variables,
 		std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_builtin_functions,
+		std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_boolean_functions,
 		std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> m_property_functions,
 		std::unordered_map<std::string, std::shared_ptr<NodeArray>> m_builtin_arrays,
 		std::unordered_map<std::string, std::shared_ptr<NodeUIControl>> m_builtin_widgets,
 		std::vector<std::shared_ptr<NodeDataStructure>> m_external_variables)
         : external_variables(std::move(m_external_variables)),
-		  builtin_variables(std::move(m_builtin_variables)),
-		  builtin_arrays(std::move(m_builtin_arrays)), // property functions
-		  builtin_widgets(std::move(m_builtin_widgets)),
-		  builtin_functions(std::move(m_builtin_functions)),
-		  property_functions(std::move(m_property_functions)) {
+		builtin_variables(std::move(m_builtin_variables)),
+		builtin_arrays(std::move(m_builtin_arrays)), // property functions
+		builtin_widgets(std::move(m_builtin_widgets)),
+		builtin_functions(std::move(m_builtin_functions)),
+		boolean_functions(std::move(m_boolean_functions)),
+		property_functions(std::move(m_property_functions)) {
 	// add default scope to work as global scope
 	this->add_scope();
     add_external_variables_to_global_scope();
@@ -191,6 +193,14 @@ std::shared_ptr<NodeUIControl> DefinitionProvider::get_builtin_widget(const std:
 std::shared_ptr<NodeFunctionDefinition> DefinitionProvider::get_builtin_function(NodeFunctionHeaderRef *function) {
 	const auto it = builtin_functions.find({function->name, (int)function->args->size()});
 	if(it != builtin_functions.end()) {
+		return it->second;
+	}
+	return nullptr;
+}
+
+std::shared_ptr<NodeFunctionDefinition> DefinitionProvider::get_boolean_function(const std::string &name, const int arg_count) {
+	const auto it = boolean_functions.find({name, arg_count});
+	if(it != boolean_functions.end()) {
 		return it->second;
 	}
 	return nullptr;
