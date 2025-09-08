@@ -108,9 +108,14 @@ end function
 
 on init
 
-	Browser.do_sth(
-		1 > 2 and 4 < 5 ? 4 < 5 ? 4: 5 : 1
-		)
+	declare ptr : List
+	message(int(ptr))
+
+	// Browser.do_sth(
+	// 	1 > 2 and 4 < 5 ? 4 < 5 ? 4: 5 : 1
+	// )
+
+	message(int(4))
 
 
 	for i in range(side_effects(3))
