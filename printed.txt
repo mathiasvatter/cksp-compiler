@@ -1,182 +1,52 @@
-// Global Declarations:
-	declare _iter0 : int {Reuses: 0}
-	declare const MAX::STRUCTS : int := 1000000 {Reuses: 0}
-	declare const MEM::WARNING : string := "Memory Error: No more free space available to allocate objects of type" {Reuses: 0}
-	declare BrowserFont.types[6] : int[] := [CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , CONTROL_PAR_FONT_TYPE_ON{int} {CONTROL_PAR_FONT_TYPE_ON} , CONTROL_PAR_FONT_TYPE_OFF_PRESSED{int} {CONTROL_PAR_FONT_TYPE_OFF_PRESSED} , CONTROL_PAR_FONT_TYPE_ON_PRESSED{int} {CONTROL_PAR_FONT_TYPE_ON_PRESSED} , CONTROL_PAR_FONT_TYPE_OFF_HOVER{int} {CONTROL_PAR_FONT_TYPE_OFF_HOVER} , CONTROL_PAR_FONT_TYPE_ON_HOVER{int} {CONTROL_PAR_FONT_TYPE_ON_HOVER} ] {Reuses: 0}
-	declare BrowserFont.ty[1] : int[] := [0] {Reuses: 0}
-	declare const UI.HEIGHT : int := 100 {Reuses: 0}
-	declare const UI.WIDTH : int := 500 {Reuses: 0}
-	declare const UI.Color.RED : int := 16711680 {Reuses: 0}
-	declare const UI.Color.GREEN : int := 65280 {Reuses: 0}
-	declare const UI.Color.BLUE : int := 255 {Reuses: 0}
-	declare const UI.Color.WHITE : int := 16777215 {Reuses: 0}
-	declare const UI.Color.BLACK : int := 0 {Reuses: 0}
-	declare UI.Fonts.types[6] : int[] := [CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , CONTROL_PAR_FONT_TYPE_ON{int} {CONTROL_PAR_FONT_TYPE_ON} , CONTROL_PAR_FONT_TYPE_OFF_PRESSED{int} {CONTROL_PAR_FONT_TYPE_OFF_PRESSED} , CONTROL_PAR_FONT_TYPE_ON_PRESSED{int} {CONTROL_PAR_FONT_TYPE_ON_PRESSED} , CONTROL_PAR_FONT_TYPE_OFF_HOVER{int} {CONTROL_PAR_FONT_TYPE_OFF_HOVER} , CONTROL_PAR_FONT_TYPE_ON_HOVER{int} {CONTROL_PAR_FONT_TYPE_ON_HOVER} ] {Reuses: 0}
-	declare UI.Fonts.button[6] : string[] := ["off", "on", "off_pressed", "on_pressed", "off_hover", "on_hover"] {Reuses: 0}
-	declare const Browser.pupu : string := "pupu" {Reuses: 0}
-	declare const Browser.SecondBrowser.pipi : string := Browser.pupu{string} {Browser.pupu}  {Reuses: 0}
-	declare const Browser.CONSTANT : int := 1 {Reuses: 0}
-	declare Browser.ThirdBrowser.third_pupu : string := Browser.SecondBrowser.pipi{string} {Browser.SecondBrowser.pipi}  {Reuses: 0}
-	declare Browser.ckjkj : int := 5 {Reuses: 0}
-struct List
-declare const List::MAX_STRUCTS : int := MAX::STRUCTS{unknown} {no declaration}  {Reuses: 0}
-declare List::free_idx : int {Reuses: 0}
-declare List::allocation[List::MAX_STRUCTS{int} {List::MAX_STRUCTS} ] : int[] {Reuses: 0}
-declare List::stack[List::MAX_STRUCTS{int} {List::MAX_STRUCTS} ] : int[] {Reuses: 0}
-declare List::stack_top : int {Reuses: 0}
-declare local self : List := - 1 {Reuses: 0}
-declare List::value[List::MAX_STRUCTS{int} {List::MAX_STRUCTS} ] : int[] {Reuses: 0}
-declare List::next[List::MAX_STRUCTS{int} {List::MAX_STRUCTS} ] : List[] := [- 1] {Reuses: 0}
-
-	function List::__init__(value0 : int, next0 : List)
-		List::free_idx{int} {List::free_idx}  := search(List::allocation{int[]} {List::allocation} , 0, List::free_idx{int} {List::free_idx} , List::MAX_STRUCTS{int} {List::MAX_STRUCTS}  - 1){Builtin, None, search}
-		if(List::free_idx{int} {List::free_idx}  = -1)
-			message("Error: No more free space available to allocate objects of type 'List'"){Builtin, None, message}
-		end if
-		List::allocation[List::free_idx{int} {List::free_idx} ]{int[]} {List::allocation}  := 1
-		List::value[List::free_idx{int} {List::free_idx} ]{int} {List::value}  := value0{int} {value0} 
-		List::next[List::free_idx{int} {List::free_idx} ]{List} {List::next}  := next0{List} {next0} 
-		return (List::free_idx{int} {List::free_idx} )
-	end function
-
-	function List::__repr__(self0 : List)
-		return ("<List> Object: " & self0{List} {self0} )
-	end function
-
-	function List::__del__(self1 : List)
-		declare local _iter : int {Reuses: 0}
-		if(self1{List} {self1}  # - 1)
-			List::next[self1{List} {self1} ]{List} {List::next}  := - 1
-			List::value[self1{List} {self1} ]{int} {List::value}  := 0
-			List::free_idx{int} {List::free_idx}  := Struct::min(List::free_idx{int} {List::free_idx} , self1{List} {self1} ){UserDefined, None, Struct::min}
-		end if
-	end function
-
-	function List::__decr__(self2 : List, num_refs0 : int)
-		declare local current : List := self2{List} {self2}  {Reuses: 0}
-		while(current{List} {current}  # - 1) 
-			declare local _iter : int {Reuses: 0}
-			List::allocation[current{List} {current} ]{int} {List::allocation}  := List::allocation[current{List} {current} ]{int} {List::allocation}  - num_refs0{int} {num_refs0} 
-			if(List::allocation[current{List} {current} ]{int} {List::allocation}  > 0)
-				current{List} {current}  := - 1
-				continue{Builtin, None, continue}
-			else
-				List::allocation[current{List} {current} ]{int} {List::allocation}  := 0
-			end if
-			self2{List} {self2}  := current{List} {current} 
-			current{List} {current}  := - 1
-			current{List} {current}  := List::next[self2{List} {self2} ]{List} {List::next} 
-			List::__del__(self2{List} {self2} ){UserDefined, None, List::__del__}
-		end while
-	end function
-
-	function List::__incr__(self3 : List, num_refs1 : int)
-		if(self3{List} {self3}  # - 1)
-			List::allocation[self3{List} {self3} ]{int} {List::allocation}  := List::allocation[self3{List} {self3} ]{int} {List::allocation}  + num_refs1{int} {num_refs1} 
-		end if
-	end function
-
-end struct
-
 on init
-		declare local tmp0 : unknown {Reuses: 0}
-		if((1 > 2) and (4 < 5))
-				declare local tmp1 : int {Reuses: 0}
-				if(4 < 5)
-					tmp1{int} {tmp1}  := 4
-				else
-					tmp1{int} {tmp1}  := 5
-				end if
-				tmp0{unknown} {tmp0}  := tmp1{int} {tmp1} 
-
-		else
-			tmp0{unknown} {tmp0}  := 1
-		end if
-		Browser.do_sth(tmp0{unknown} {tmp0} ){UserDefined, None, Browser.do_sth}
-
-		declare local i : int := 0 {Reuses: 0}
-		while(((i{int} {i}  < side_effects(3){UserDefined, None, side_effects}) and (1 > 0)) or ((i{int} {i}  > side_effects(3){UserDefined, None, side_effects}) and (1 < 0))) 
-			message(i{int} {i} ){Builtin, None, message}
-			inc(i{int} {i} ){Builtin, None, inc}
-		end while
-
+	declare BrowserFont.ty[1] : int[] := [0] {Reuses: 0}
+	declare ret0 : int {Reuses: 1}
+	declare arg0 : int {Reuses: 2}
+	declare local i0 : int {Reuses: 2}
+	declare local _ret00 : int {Reuses: 0}
+	message(-1){Builtin, None, message}
+	message(4){Builtin, None, message}
+	i0{int} {i0}  := 0
+	arg0{int} {arg0}  := 3
+	message("side effects"){Builtin, None, message}
+	_ret00{int} {_ret00}  := ret0{int} {ret0} 
+	arg0{int} {arg0}  := 3
+	message("side effects"){Builtin, None, message}
+	ret0{int} {ret0}  := 3
+	while(i0{int} {i0}  < _ret00{int} {_ret00} ) 
+		message(i0{int} {i0} ){Builtin, None, message}
+		inc(i0{int} {i0} ){Builtin, None, inc}
+		arg0{int} {arg0}  := 3
+		message("side effects"){Builtin, None, message}
+		_ret00{int} {_ret00}  := ret0{int} {ret0} 
+		arg0{int} {arg0}  := 3
+		message("side effects"){Builtin, None, message}
+		ret0{int} {ret0}  := 3
+	end while
 	message(BrowserFont.ty[0]{int} {BrowserFont.ty} ){Builtin, None, message}
 	declare lbl_bd_dnd : int := 4 {Reuses: 0}
 	inc(lbl_bd_dnd{int} {lbl_bd_dnd} ){Builtin, None, inc}
 	message(lbl_bd_dnd{int} {lbl_bd_dnd} ){Builtin, None, message}
-	declare ui_label lbl_bd_DnD : int (1, 1) {Reuses: 0}
-	set_control_par_str(get_ui_id(lbl_bd_DnD{int} {lbl_bd_DnD} ){Builtin, None}, CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "btn_custom-samples-import"){Builtin, None, set_control_par_str}
+	declare ui_label lbl_bd_DnD0 : int (1, 1) {Reuses: 0}
+	set_control_par_str(get_ui_id(lbl_bd_DnD0{int} {lbl_bd_DnD0} ){Builtin, None, get_ui_id}, CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "btn_custom-samples-import"){Builtin, None, set_control_par_str}
 	declare arr[5] : int[] := [1, 2, 3, 4, 5] {Reuses: 0}
-	declare matrix : int[][] := [1, 2, 3, 4, 5, 6, 7, 8, 9] {Reuses: 0}
-	func_return(arr{int[]} {arr} ){UserDefined, None, func_return}
-	swi_keyswitch_ui_controls(1){UserDefined, None, swi_keyswitch_ui_controls}
-end on
-
-function side_effects(arg0 : int)
-	message("side effects"){Builtin, None, message}
-	return (arg0{int} {arg0} )
-end function
-
-function func_return(array0 : int[])
-	declare local idx : int := search[array0{int[]} {array0} , 6] {Reuses: 0}
-	if(idx{int} {idx}  # - 1)
+	arg0{int} {arg0}  := search(arr{int[]} {arr} , 6){Builtin, None, search}
+	if(arg0{int} {arg0}  # -1)
 		message("hello"){Builtin, None, message}
 	end if
-	return ()
-end function
-
-function swi_keyswitch_ui_controls(idx0 : int)
-	declare local RETURN_FLAG0 : int {Reuses: 0}
-	while(RETURN_FLAG0{int} {RETURN_FLAG0}  = 0) 
-		if(idx0{int} {idx0}  # - 1)
+	arg0{int} {arg0}  := 1
+	ret0{int} {ret0}  := 0
+	while(ret0{int} {ret0}  = 0) 
+		if(arg0{int} {arg0}  # -1)
 			message("henlo"){Builtin, None, message}
-			return ()
-			RETURN_FLAG0{int} {RETURN_FLAG0}  := 1
-			continue{Builtin, None}
+			ret0{int} {ret0}  := 1
+			continue{Builtin, None, continue}
 		else
 			message("sdlfkj"){Builtin, None, message}
 		end if
-		return ()
-		RETURN_FLAG0{int} {RETURN_FLAG0}  := 1
-		continue{Builtin, None}
+		ret0{int} {ret0}  := 1
+		continue{Builtin, None, continue}
 	end while
-end function
-
-function UI.Layout.content_height
-	return (UI.HEIGHT{int} {UI.HEIGHT}  - 68)
-end function
-
-function UI.Color.set_background_color(hex : int)
-	set_ui_color(hex{int} {hex} ){Builtin, None, set_ui_color}
-end function
-
-function UI.Fonts.apply(ref ui_control : any, font_array : int[])
-		declare local u : int := 0 {Reuses: 0}
-		while(((u{int} {u}  < num_elements[UI.Fonts.types{int[]} {UI.Fonts.types} ]) and (1 > 0)) or ((u{int} {u}  > num_elements[UI.Fonts.types{int[]} {UI.Fonts.types} ]) and (1 < 0))) 
-			set_control_par(ui_control{any} {ui_control} , UI.Fonts.types[u{int} {u} ]{int} {UI.Fonts.types} , font_array[u{int} {u} ]{int} {font_array} ){Builtin, None, set_control_par}
-			inc(u{int} {u} ){Builtin, None, inc}
-		end while
-
-end function
-
-function UI.set_bg_frame(frame : int)
-	set_skin_offset(frame{int} {frame}  * UI.HEIGHT{int} {UI.HEIGHT} ){Builtin, None, set_skin_offset}
-end function
-
-function Browser.do_sth(param2 : int)
-	return ("Doing something with " & param2{int} {param2}  & Browser.CONSTANT{int} {Browser.CONSTANT} )
-end function
-
-function Browser.do_sth3(param2 : int)
-	return ("Doing something with " & param2{int} {param2}  & Browser.pupu{string} {Browser.pupu} )
-end function
-
-function Struct::max(a : int, b : int)
-	return (((a{int} {a}  + b{int} {b} ) + abs(a{int} {a}  - b{int} {b} ){Builtin, None}) / 2)
-end function
-
-function Struct::min(a : int, b : int)
-	return (((a{int} {a}  + b{int} {b} ) - abs(a{int} {a}  - b{int} {b} ){Builtin, None, abs}) / 2)
-end function
+end on
 
 

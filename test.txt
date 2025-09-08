@@ -1,26 +1,25 @@
-{ Compiled with cksp version 0.0.7-alpha.8 on Sun Sep 07 16:13:06 2025 }
+{ Compiled with cksp version 0.0.7-alpha.8 on Mon Sep 08 15:40:28 2025 }
 on init
   declare %BrowserFont__ty[1] := (0)
   declare $ret0
   declare $arg0
-  declare $tmp00
-  declare $tmp10
-  $tmp00 := 0
-  $tmp00 := 1
-  "Doing something with " & $tmp00 & 1
-  $tmp00 := 0
+  declare $i0
+  declare $_ret00
+  message(-1)
+  message(4)
+  $i0 := 0
   $arg0 := 3
   message("side effects")
-  $tmp10 := $ret0
+  $_ret00 := $ret0
   $arg0 := 3
   message("side effects")
   $ret0 := 3
-  while($tmp00 < $tmp10) 
-    message($tmp00)
-    inc($tmp00)
+  while($i0 < $_ret00) 
+    message($i0)
+    inc($i0)
     $arg0 := 3
     message("side effects")
-    $tmp10 := $ret0
+    $_ret00 := $ret0
     $arg0 := 3
     message("side effects")
     $ret0 := 3

@@ -142,7 +142,7 @@ ignore_midi
 import_nckp(filepath: string): string
 in_range(value: number, value: number, value: number): bool
 inc(variable: int)
-int(value: real): int
+int(value: any): int
 int_to_real(value: int): real
 is_zone_empty(zone_id: int): int
 load_array(array: any[], int): int
@@ -221,7 +221,7 @@ pow(value: real, value: real): real
 purge_group(group_idx: int, mode: int): int
 random(min: int, max: int): int
 read_persistent_var(variable: any)
-real(value: int): real
+real(value: any): real
 real_to_int(value: real): int
 redirect_midi(event_id: int, instr_slot_idx: int, instr_bank_slot_idx: int)
 redirect_output(event_id: int, output_type: int, output_idx: int)
@@ -311,10 +311,6 @@ zone_slice_idx_loop_start(zone_id: int, loop_idx: int): int
 zone_slice_length(zone_id: int, slice_idx: int): int
 zone_slice_loop_count(zone_id: int, loop_idx: int): int
 zone_slice_start(zone_id: int, slice_idx: int): int
-int_to_real(value: int): real
-real(value: int): real
-real_to_int(value: real): int
-int(value: real): int
 continue
 
 // nks 2 builtin functions
