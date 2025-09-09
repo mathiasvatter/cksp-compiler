@@ -26,8 +26,24 @@ class LoweringFunctionDef final : public ASTLowering {
 		if(def.num_return_stmts == 0) return false;
 		/// function has one return stmt and its the last one
 		if(def.num_return_stmts == 1) {
-			if(def.body->statements.back()->statement->get_node_type() == NodeType::Return) {
+			if(def.body->get_last_statement()->cast<NodeReturn>()) {
 				return false;
+			}
+		}
+		// check if function has only one if statement with a return in each branch
+		if (def.body->size() == 1) {
+			auto stmt = def.body->get_last_statement().get();
+			if (auto node_if = stmt->cast<NodeIf>()) {
+				auto if_body = node_if->if_body.get();
+				auto else_body = node_if->else_body.get();
+				if (!if_body->empty() and if_body->get_last_statement()->cast<NodeReturn>()) {
+					if (!else_body->empty() and else_body->get_last_statement()->cast<NodeReturn>()) {
+						return false;
+					}
+					if (else_body->empty()) {
+						return false;
+					}
+				}
 			}
 		}
 		/// function has multiple return stmts

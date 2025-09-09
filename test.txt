@@ -1,28 +1,36 @@
-{ Compiled with cksp version 0.0.7-alpha.8 on Mon Sep 08 15:40:28 2025 }
+{ Compiled with cksp version 0.0.7-alpha.8 on Tue Sep 09 23:45:00 2025 }
 on init
   declare %BrowserFont__ty[1] := (0)
-  declare $ret0
+  declare $ret3
   declare $arg0
-  declare $i0
   declare $_ret00
+  declare $_ret10
+  declare $i0
+  declare $_ret20
   message(-1)
+  $arg0 := 1
+  $_ret00 := $arg0
+  "Doing something with " & $_ret00 & 1
+  $ret3 := 1
+  $_ret10 := $ret3
+  message($_ret10)
   message(4)
   $i0 := 0
   $arg0 := 3
   message("side effects")
-  $_ret00 := $ret0
+  $_ret20 := $ret3
   $arg0 := 3
   message("side effects")
-  $ret0 := 3
-  while($i0 < $_ret00) 
+  $ret3 := 3
+  while($i0 < $_ret20) 
     message($i0)
     inc($i0)
     $arg0 := 3
     message("side effects")
-    $_ret00 := $ret0
+    $_ret20 := $ret3
     $arg0 := 3
     message("side effects")
-    $ret0 := 3
+    $ret3 := 3
   end while
   message(%BrowserFont__ty[0])
   declare $lbl_bd_dnd := 4
@@ -36,16 +44,16 @@ on init
     message("hello")
   end if
   $arg0 := 1
-  $ret0 := 0
-  while($ret0 = 0) 
+  $ret3 := 0
+  while($ret3 = 0) 
     if($arg0 # -1)
       message("henlo")
-      $ret0 := 1
+      $ret3 := 1
       continue
     else
       message("sdlfkj")
     end if
-    $ret0 := 1
+    $ret3 := 1
     continue
   end while
 end on

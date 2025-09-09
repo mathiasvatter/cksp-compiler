@@ -4,6 +4,7 @@
 
 #include "ASTCollectLowerings.h"
 #include "../../Lowering/LoweringStruct.h"
+#include "../../Lowering/LoweringTernaryOperator.h"
 #include "../../Lowering/PreLoweringStruct.h"
 #include "FunctionHandling/UIControlParamHandling.h"
 
@@ -242,6 +243,12 @@ NodeAST * ASTCollectLowerings::visit(NodeIf &node) {
 	//TRACE();
 	ASTVisitor::visit(node);
 	return node.do_short_circuit_transform(m_program);
+}
+
+NodeAST * ASTCollectLowerings::visit(NodeTernary &node) {
+	ASTVisitor::visit(node);
+	static LoweringTernaryOperator ternary(m_program);
+	return node.accept(ternary);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeBreak& node) {

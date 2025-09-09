@@ -1,27 +1,35 @@
 on init
 	declare BrowserFont.ty[1] : int[] := [0] {Reuses: 0}
-	declare ret0 : int {Reuses: 1}
-	declare arg0 : int {Reuses: 2}
-	declare local i0 : int {Reuses: 2}
+	declare ret3 : int {Reuses: 3}
+	declare arg0 : int {Reuses: 3}
 	declare local _ret00 : int {Reuses: 0}
+	declare local _ret10 : int {Reuses: 0}
+	declare local i0 : int {Reuses: 2}
+	declare local _ret20 : int {Reuses: 0}
 	message(-1){Builtin, None, message}
+	arg0{int} {arg0}  := 1
+	_ret00{int} {_ret00}  := arg0{int} {arg0} 
+	"Doing something with " & _ret00{int} {_ret00}  & 1
+	ret3{int} {ret3}  := 1
+	_ret10{int} {_ret10}  := ret3{int} {ret3} 
+	message(_ret10{int} {_ret10} ){Builtin, None, message}
 	message(4){Builtin, None, message}
 	i0{int} {i0}  := 0
 	arg0{int} {arg0}  := 3
 	message("side effects"){Builtin, None, message}
-	_ret00{int} {_ret00}  := ret0{int} {ret0} 
+	_ret20{int} {_ret20}  := ret3{int} {ret3} 
 	arg0{int} {arg0}  := 3
 	message("side effects"){Builtin, None, message}
-	ret0{int} {ret0}  := 3
-	while(i0{int} {i0}  < _ret00{int} {_ret00} ) 
+	ret3{int} {ret3}  := 3
+	while(i0{int} {i0}  < _ret20{int} {_ret20} ) 
 		message(i0{int} {i0} ){Builtin, None, message}
 		inc(i0{int} {i0} ){Builtin, None, inc}
 		arg0{int} {arg0}  := 3
 		message("side effects"){Builtin, None, message}
-		_ret00{int} {_ret00}  := ret0{int} {ret0} 
+		_ret20{int} {_ret20}  := ret3{int} {ret3} 
 		arg0{int} {arg0}  := 3
 		message("side effects"){Builtin, None, message}
-		ret0{int} {ret0}  := 3
+		ret3{int} {ret3}  := 3
 	end while
 	message(BrowserFont.ty[0]{int} {BrowserFont.ty} ){Builtin, None, message}
 	declare lbl_bd_dnd : int := 4 {Reuses: 0}
@@ -35,16 +43,16 @@ on init
 		message("hello"){Builtin, None, message}
 	end if
 	arg0{int} {arg0}  := 1
-	ret0{int} {ret0}  := 0
-	while(ret0{int} {ret0}  = 0) 
+	ret3{int} {ret3}  := 0
+	while(ret3{int} {ret3}  = 0) 
 		if(arg0{int} {arg0}  # -1)
 			message("henlo"){Builtin, None, message}
-			ret0{int} {ret0}  := 1
+			ret3{int} {ret3}  := 1
 			continue{Builtin, None, continue}
 		else
 			message("sdlfkj"){Builtin, None, message}
 		end if
-		ret0{int} {ret0}  := 1
+		ret3{int} {ret3}  := 1
 		continue{Builtin, None, continue}
 	end while
 end on

@@ -268,9 +268,6 @@ public:
 		ast->collect_references();
 		ast->debug_print();
 
-		static LoweringTernaryOperator ternary(m_program);
-		ternary.lower_ternaries(*ast);
-
 		static ASTCollectLowerings lowering(m_program);
 		ast->accept(lowering);
 		static ASTHandleStringRepresentations hsr(&m_definition_provider);
