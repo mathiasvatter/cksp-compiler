@@ -1045,6 +1045,12 @@ NodeAST *NodeTernary::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> 
 	if (condition.get() == oldChild) {
 		condition = std::move(newChild);
 		return condition.get();
+	} else if (if_branch.get() == oldChild) {
+		if_branch = std::move(newChild);
+		return if_branch.get();
+	} else if (else_branch.get() == oldChild) {
+		else_branch = std::move(newChild);
+		return else_branch.get();
 	}
 	return nullptr;
 }

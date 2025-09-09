@@ -769,6 +769,9 @@ struct NodeBlock final : NodeInstruction {
     [[nodiscard]] bool empty() const {
 	    return statements.empty();
     }
+	size_t size() const {
+	    return statements.size();
+    }
     void append_body(std::unique_ptr<NodeBlock> new_body);
     void prepend_body(std::unique_ptr<NodeBlock> new_body);
     /// adds a node statement to internal vector and sets parent pointer, returns pointer to moved object
@@ -808,6 +811,9 @@ struct NodeBlock final : NodeInstruction {
 	}
 	[[nodiscard]] std::unique_ptr<NodeAST>& get_last_statement() const {
 		return statements.back()->statement;
+	}
+	std::unique_ptr<NodeAST>& get_first_statement() const {
+		return statements.front()->statement;
 	}
 };
 
@@ -893,7 +899,7 @@ struct NodeTernary final : NodeInstruction {
     std::unique_ptr<NodeAST> else_branch;
     explicit NodeTernary(Token tok) : NodeInstruction(NodeType::Ternary, std::move(tok)) {}
     NodeTernary(std::unique_ptr<NodeAST> condition, std::unique_ptr<NodeAST> if_branch, std::unique_ptr<NodeAST> else_branch, Token tok)
-            : NodeInstruction(NodeType::If, std::move(tok)), condition(std::move(condition)), if_branch(std::move(if_branch)), else_branch(std::move(else_branch)) {
+            : NodeInstruction(NodeType::Ternary, std::move(tok)), condition(std::move(condition)), if_branch(std::move(if_branch)), else_branch(std::move(else_branch)) {
             NodeTernary::set_child_parents();
     }
     NodeAST * accept(ASTVisitor &visitor) override;
@@ -917,6 +923,7 @@ struct NodeTernary final : NodeInstruction {
         if_branch->update_token_data(token);
         else_branch->update_token_data(token);
     }
+
 };
 
 struct NodeLoop : NodeInstruction {
