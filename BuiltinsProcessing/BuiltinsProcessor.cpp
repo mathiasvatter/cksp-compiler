@@ -175,7 +175,7 @@ Result<SuccessTag> BuiltinsProcessor::parse_boolean_functions(const std::string 
 	for (const auto& def : bool_program->function_definitions) {
 		auto node_function = std::move(def);
 		node_function->header->name = "CKSP"+OBJ_DELIMITER+node_function->header->name;
-		m_builtin_functions[{node_function->header->name, (int)node_function->header->params.size()}] = std::move(node_function);
+		m_boolean_functions[{node_function->header->name, (int)node_function->header->params.size()}] = std::move(node_function);
 	}
 	return Result<SuccessTag>(SuccessTag{});
 }

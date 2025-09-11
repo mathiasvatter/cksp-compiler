@@ -158,7 +158,7 @@ inline std::ostream &operator<<(std::ostream &os, const token &tok) {
 
 /// combines the token type and the actual Keyword that should be searched for by lexer
 struct Keyword {
-	inline Keyword(token type, std::string keyword) : type(type), value(std::move(keyword)) {};
+	Keyword(const token type, std::string keyword) : type(type), value(std::move(keyword)) {};
 	token type;
 	std::string value;
 };
@@ -194,7 +194,7 @@ inline std::unordered_map<std::string, token> STATEMENT_SYNTAX = {{"to", token::
 																  {"case", token::CASE}, {"in", token::IN}, {"default", token::DEFAULT}, {"break", token::BREAK}};
 inline std::unordered_map<std::string, token> FUNCTION_SYNTAX = {{"override", token::OVERRIDE}, {"call", token::CALL}, {"return", token::RETURN}, {"ref", token::REF}};
 inline std::unordered_map<std::string, token> OBJECT_SYNTAX = {{"new", token::NEW}, {"delete", token::DELETE}, {"nil", token::NIL}, {"static", token::STATIC}};
-inline std::unordered_map<std::string, token> BOOLEAN_SYNTAX = {{"false", token::FALSE}, {"true", token::TRUE}};
+inline std::unordered_map<std::string, token> BOOLEAN_SYNTAX = {{"false", token::FALSE}, {"true", token::TRUE}, {"?", token::TERNARY}};
 
 
 // control statements that also have an end
@@ -231,6 +231,15 @@ inline std::unordered_map<token, std::pair<std::string, int>> OPERATOR_OVERWRITE
 			{token::BIT_OR, {"__or__", 2}},           // .or.
 			{token::BIT_XOR, {"__xor__", 2}},         // .xor.
 		}};
+
+inline std::unordered_map<token, std::pair<std::string, int>> BOOLEAN_FUNCTIONS = {
+	{token::GREATER_THAN, {"CKSP::__gt__", 2}},
+	{token::GREATER_EQUAL, {"CKSP::__ge__", 2}},
+	{token::EQUAL, {"CKSP::__eq__", 2}},
+	{token::LESS_THAN, {"CKSP::__lt__", 2}},
+	{token::LESS_EQUAL, {"CKSP::__le__", 2}},
+	{token::NOT_EQUAL, {"CKSP::__ne__", 2}},
+};
 
 /// string->Token operator maps
 inline std::unordered_map<std::string, token> BITWISE_OPERATORS = {{".and.", token::BIT_AND}, {".or.", token::BIT_OR}, {".not.", token::BIT_NOT}, {".xor.", token::BIT_XOR}, {"<<", token::SHIFT_LEFT}, {">>", token::SHIFT_RIGHT}};

@@ -75,10 +75,15 @@ public:
 				if (int_functions.contains(node.function->name)) {
 					int32_t result = int_functions[node.function->name](int_node->value);
 					auto new_node = std::make_unique<NodeInt>(result, node.tok);
+					new_node->ty = TypeRegistry::Integer;
 					return node.replace_with(std::move(new_node));
 				} else if(node.function->name == "real" or node.function->name == "int_to_real") {
 					auto new_node = std::make_unique<NodeReal>(static_cast<double>(int_node->value), node.tok);
+					new_node->ty = TypeRegistry::Real;
 					return node.replace_with(std::move(new_node));
+				// int(4) -> 4
+				} else if (node.function->name == "int") {
+					return node.replace_with(std::move(node.function->get_arg(0)));
 				}
 			} else if (all_params_are_type(node, NodeType::Real)) {
 				const auto real_node = node.function->get_arg(0)->cast<NodeReal>();
@@ -99,6 +104,9 @@ public:
 				} else if (node.function->name == "int" or node.function->name == "real_to_int") {
 					auto new_node = std::make_unique<NodeInt>(static_cast<int32_t>(real_node->value), node.tok);
 					return node.replace_with(std::move(new_node));
+				// real(4.0) -> 4.0
+				} else if (node.function->name == "real") {
+					return node.replace_with(std::move(node.function->get_arg(0)));
 				}
 			}
 		} else if(node.function->get_num_args() == 3) {
@@ -141,14 +149,17 @@ public:
 		if (const auto int_node = node.operand->cast<NodeInt>()) {
 			if (node.op == token::SUB) {
 				auto new_node = std::make_unique<NodeInt>(-int_node->value, node.tok);
+				new_node->ty = TypeRegistry::Integer;
 				return node.replace_with(std::move(new_node));
 			} else if (node.op == token::BOOL_NOT) {
 				auto new_node = std::make_unique<NodeInt>(int_node->value == 0 ? 1 : 0, node.tok);
+				new_node->ty = TypeRegistry::Integer;
 				return node.replace_with(std::move(new_node));
 			}
 		} else if (const auto real_node = node.operand->cast<NodeReal>()) {
 			if (node.op == token::SUB) {
 				auto new_node = std::make_unique<NodeReal>(-real_node->value, node.tok);
+				new_node->ty = TypeRegistry::Real;
 				return node.replace_with(std::move(new_node));
 			}
 		}
@@ -182,6 +193,7 @@ public:
 					if (int_operations.contains(node.op)) {
 						int32_t result = int_operations[node.op](left_int->value, right_int->value);
 						auto new_node = std::make_unique<NodeInt>(result, node.tok);
+						new_node->ty = TypeRegistry::Integer;
 						return node.replace_with(std::move(new_node));
 					}
 				// division by zero
@@ -276,6 +288,7 @@ public:
 							break;
 						default: break;
 					}
+					result->ty = TypeRegistry::Integer;
 					return node.replace_with(std::move(result));
 				}
 			} else if (COMPARISON_TOKENS.contains(node.op)) {
@@ -316,6 +329,7 @@ public:
 					if (real_operations.contains(node.op)) {
 						double result = real_operations[node.op](left_real->value, right_real->value);
 						auto new_node = std::make_unique<NodeReal>(result, node.tok);
+						new_node->ty = TypeRegistry::Real;
 						return node.replace_with(std::move(new_node));
 					}
 				}

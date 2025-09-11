@@ -30,6 +30,7 @@ public:
     DefinitionProvider(
 			std::unordered_map<std::string, std::shared_ptr<NodeVariable>> m_builtin_variables,
 			std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_builtin_functions,
+			std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_boolean_functions,
 			std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> m_property_functions,
 			std::unordered_map<std::string, std::shared_ptr<NodeArray>> m_builtin_arrays,
 			std::unordered_map<std::string, std::shared_ptr<NodeUIControl>> m_builtin_widgets,
@@ -88,36 +89,39 @@ public:
 		}
 		if(var.kind != NodeReference::Kind::Throwaway)
 			return nullptr;
-		return std::make_shared<NodeVariable>(
+		static auto node_var = std::make_shared<NodeVariable>(
 			std::nullopt,
 			"_",
 			TypeRegistry::Unknown,
 			Token(),
 			DataType::Mutable
 		);
+		return node_var;
 	}
 	/// returns a static global dummy datastructure that can be used for declarations of compiler vars
 	static std::shared_ptr<NodeDataStructure> get_compiler_declaration(const NodeReference& var) {
 		if(var.kind != NodeReference::Kind::Compiler)
 			return nullptr;
-		return std::make_shared<NodeVariable>(
+		static auto node_var = std::make_shared<NodeVariable>(
 			std::nullopt,
 			"compiler$dummy",
 			TypeRegistry::Unknown,
 			Token(),
 			DataType::Mutable
 		);
+		return node_var;
 	}
 	/// returns a static global dummy datastructure that can be used for declarations of pgs vars
 	static std::shared_ptr<NodeDataStructure> get_pgs_declaration(const NodeReference& var) {
 		if(var.ty != TypeRegistry::PGS) return nullptr;
-		return std::make_shared<NodeVariable>(
+		static auto node_var = std::make_shared<NodeVariable>(
 			std::nullopt,
 			"pgs$dummy",
 			TypeRegistry::PGS,
 			Token(),
 			DataType::Mutable
 		);
+		return node_var;
 	}
 
 	/// All references to variables, arrays, data structures and controls can be saved here
@@ -306,6 +310,10 @@ public:
     std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions{};
     std::shared_ptr<NodeFunctionDefinition> get_builtin_function(NodeFunctionHeaderRef* function);
     void set_builtin_functions(std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions);
+	/// boolean functions like and, or, not
+	std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> boolean_functions{};
+	std::shared_ptr<NodeFunctionDefinition> get_boolean_function(const std::string &name, int arg_count);
+	// void set_boolean_functions(std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions);
     /// predefined property functions like set_label_properties etc
     std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> property_functions{};
     std::shared_ptr<NodeFunctionDefinition> get_property_function(NodeFunctionHeaderRef* function);

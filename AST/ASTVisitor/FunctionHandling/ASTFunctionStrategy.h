@@ -71,7 +71,7 @@ private:
 				node.strategy = NodeFunctionCall::Strategy::ExpressionFunc;
 			} else if (is_initializer_function(node) or is_wildcard_function(node)) {
 				node.strategy = NodeFunctionCall::Strategy::PreemptiveInlining;
-			} else if (is_callable_env and node.function->has_no_args()) {
+			} else if (is_callable_env and node.function->has_no_args() and definition->call_sites.size() > 1) {
 				node.strategy = NodeFunctionCall::Strategy::Call;
 			} else if (is_callable_env and is_parameterstack_candidate(*definition)) {
 				node.strategy = NodeFunctionCall::Strategy::ParameterStack;
@@ -102,6 +102,7 @@ private:
 
 public:
 	static bool is_parameterstack_candidate(const NodeFunctionDefinition& def) {
+		if (def.call_sites.size() <= 1) return false;
 		for(const auto &param : def.header->params) {
 			if (param->variable->ty->is_union_type() ||
 				param->is_pass_by_ref) {

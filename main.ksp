@@ -4,6 +4,18 @@
 // import "/Users/mathias/Scripting/preset-system/dev/ksp/Preset.cksp"
 
 
+namespace BrowserFont
+	declare types: int[] := [
+		CONTROL_PAR_FONT_TYPE, 
+		CONTROL_PAR_FONT_TYPE_ON, 
+		CONTROL_PAR_FONT_TYPE_OFF_PRESSED, 
+		CONTROL_PAR_FONT_TYPE_ON_PRESSED, 
+		CONTROL_PAR_FONT_TYPE_OFF_HOVER, 
+		CONTROL_PAR_FONT_TYPE_ON_HOVER
+	]
+	declare ty: int[] := (0)
+end namespace
+
 namespace UI
 
 	declare const HEIGHT := 100
@@ -89,11 +101,32 @@ namespace Browser
 	declare ckjkj: int := 5
 end namespace
 
+function side_effects(arg: int): int
+	message("side effects")
+	return arg
+end function
+
 on init
 
+	pgs_create_key(PRESET_NAME, 3)
+
+	declare ptr : List
+	message(int(ptr))
+
 	Browser.do_sth(
-		1
-		)
+		1 > side_effects(5) and 4 < 5 ? 4 < 5 ? 4: 5 : 1
+	)
+
+	message(ternary1())
+
+	message(int(4))
+
+
+	for i in range(side_effects(3))
+		message(i)
+	end for
+
+	message(BrowserFont.ty[0])
 	// message(Browser.do_sth(4))
 	// declare b := Bitlist()
 	// b.set(3, 1)
@@ -157,3 +190,11 @@ function swi_keyswitch_ui_controls(idx: int)
 	// end if
 	return
 end function    
+
+function ternary1() : int
+    if 1 < 2
+        return 1
+    else
+        return 2
+    end if
+end function

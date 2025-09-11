@@ -39,6 +39,10 @@ public:
 		return std::move(m_free_var_names);
 	}
 
+	std::unordered_set<NodeFunctionDefinition*> get_visited_functions() {
+		return std::move(m_visited_functions);
+	}
+
 private:
 	NodeAST *visit(NodeBlock &node) override {
 		if (node.scope) {
@@ -54,7 +58,7 @@ private:
 	NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		auto definition = node.get_definition();
-		if (definition and !node.is_builtin_kind()) {
+		if (definition) {
 			if (!m_visited_functions.contains(definition.get())) {
 				definition->accept(*this);
 				m_visited_functions.insert(definition.get());

@@ -169,6 +169,13 @@ public:
 		return nullptr;
 	}
 
+	// declare local value := start
+	// declare local _step = step
+	// declare local _stop = stop
+	// while (_step > 0 and value < _stop) or (_step < 0 and value > _stop)
+	// 	message(value)
+	// 	value += _step
+	// end while
 	std::unique_ptr<NodeBlock> lower_foreach_range(std::shared_ptr<NodeDataStructure>& key, std::shared_ptr<NodeDataStructure>& value, NodeForEach& node) {
 		auto node_scope = std::make_unique<NodeBlock>(node.tok, true);
 		auto range = node.range->cast<NodeRange>();
@@ -176,11 +183,30 @@ public:
 		if(key) {
 			node_scope->add_as_stmt(std::make_unique<NodeSingleDeclaration>(key, nullptr, range->tok));
 		}
-		node_scope->add_as_stmt(std::make_unique<NodeSingleDeclaration>(value, std::move(range->start), range->tok));
+		node_scope->add_as_stmt(
+			std::make_unique<NodeSingleDeclaration>(
+				value, std::move(range->start), range->tok
+			)
+		);
+		// declare _step and _stop
+		auto _step_var = m_program->get_tmp_var(range->step->ty);
+		_step_var->name = m_def_provider->get_fresh_name("_step");
+		auto _stop_var = m_program->get_tmp_var(range->stop->ty);
+		_stop_var->name = m_def_provider->get_fresh_name("_stop");
+		auto _step = std::make_unique<NodeSingleDeclaration>(
+			std::move(_step_var),
+			std::move(range->step),
+			range->tok
+		);
+		auto _stop = std::make_unique<NodeSingleDeclaration>(
+			std::move(_stop_var),
+			std::move(range->stop),
+			range->tok
+		);
 		// i += step
 		auto compound_assignment = std::make_unique<NodeCompoundAssignment>(
 			value->to_reference(),
-			range->step->clone(),
+			_step->variable->to_reference(),
 			token::ADD,
 			range->tok
 		);
@@ -190,16 +216,20 @@ public:
 		m_compound_assignment = nullptr;
 
 		auto node_while = std::make_unique<NodeWhile>(
-			get_range_condition(value, *range),
+			get_range_condition(value, _step->variable, _stop->variable, *range),
 			std::move(node.body),
 			node.tok
 		);
+		node_scope->add_as_stmt(std::move(_step));
+		node_scope->add_as_stmt(std::move(_stop));
 		node_while->body->add_as_stmt(std::move(compound_assignment));
 		node_while->body->get_last_statement()->desugar(m_program);
 		if(key) {
 			node_while->body->add_as_stmt(DefinitionProvider::inc(key->to_reference()));
 		}
 		node_scope->add_as_stmt(std::move(node_while));
+
+
 		node_scope->collect_references();
 		return std::move(node_scope);
 	}
@@ -244,7 +274,13 @@ public:
 	}
 
 private:
-	static std::unique_ptr<NodeBinaryExpr> get_range_condition(std::shared_ptr<NodeDataStructure>& iterator, NodeRange& node) {
+
+	static std::unique_ptr<NodeBinaryExpr> get_range_condition(
+		const std::shared_ptr<NodeDataStructure>& iterator,
+		const std::shared_ptr<NodeDataStructure>& step,
+		const std::shared_ptr<NodeDataStructure>& stop,
+		NodeRange& node
+	) {
 		// (step > 0 and _iter < stop) or (step < 0 and _iter > stop)
 		return std::make_unique<NodeBinaryExpr>(
 			token::BOOL_OR,
@@ -253,12 +289,12 @@ private:
 				std::make_unique<NodeBinaryExpr>(
 					token::LESS_THAN,
 					iterator->to_reference(),
-					node.stop->clone(),
+					stop->to_reference(),
 					node.tok
 				),
 				std::make_unique<NodeBinaryExpr>(
 					token::GREATER_THAN,
-					node.step->clone(),
+					step->to_reference(),
 					std::make_unique<NodeInt>(0, node.tok),
 					node.tok
 				),
@@ -269,12 +305,12 @@ private:
 				std::make_unique<NodeBinaryExpr>(
 					token::GREATER_THAN,
 					iterator->to_reference(),
-					node.stop->clone(),
+					stop->to_reference(),
 					node.tok
 				),
 				std::make_unique<NodeBinaryExpr>(
 					token::LESS_THAN,
-					node.step->clone(),
+					step->to_reference(),
 					std::make_unique<NodeInt>(0, node.tok),
 					node.tok
 				),

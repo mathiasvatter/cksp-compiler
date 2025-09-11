@@ -62,7 +62,16 @@ public:
 	void insert_calls_in_statements() {
 		for(auto &[fst, snd] : m_declares_per_stmt) {
 			auto node_body = std::make_unique<NodeBlock>(fst->tok);
-			node_body->scope = true;
+			// only make the scope if the statement is not a declaration because then the
+			// hoisted function was in an expression r_value context of a declaration that might be used later
+			// leading to a undeclared var issue
+			// declare a := some_func() + 1
+			// ->
+			//		declare ret0 := some_func()
+			//		declare a := ret0 + 1
+			// if a > 0
+			// issue because a is declared in local scope but used later
+			node_body->scope = fst->statement->cast<NodeSingleDeclaration>() ? false : true;
 			for(auto &decl : snd) {
 				decl->kind = NodeSingleDeclaration::Kind::ReturnVar;
 				node_body->add_as_stmt(std::move(decl));
@@ -118,13 +127,17 @@ public:
 
 			// check for while condition.
 			// in case of while conditions, a function call assignments needs to be prepended to the while loop body
+			// assignment in while body only needs to be added if function has side effects
 			if (const auto node_while = last_stmt->statement->cast<NodeWhile>()) {
-				auto assignment = std::make_unique<NodeSingleAssignment>(
-					clone_as<NodeReference>(ref.get()),
-					node.clone(),
-					node.tok
-				);
-				node_while->body->add_as_stmt(std::move(assignment));
+				auto vars_in_while_body = node_while->body->collect_free_vars();
+				if (node.has_side_effects(vars_in_while_body)) {
+					auto assignment = std::make_unique<NodeSingleAssignment>(
+						clone_as<NodeReference>(ref.get()),
+						node.clone(),
+						node.tok
+					);
+					node_while->body->add_as_stmt(std::move(assignment));
+				}
 			}
 
 			return node.replace_with(std::move(ref));
