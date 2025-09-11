@@ -29,6 +29,7 @@
 #include "../../Lowering/LoweringSortSearch.h"
 #include "../../Lowering/PostLowering/PostLoweringSortSearch.h"
 #include "../../misc/CommandLineOptions.h"
+#include "../../Optimization/FreeVarCollector.h"
 #include "../ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
 #include "../ASTVisitor/FunctionHandling/BuiltinRestrictionValidator.h"
 #include "../ASTVisitor/FunctionHandling/FunctionShortCircuit.h"
@@ -288,6 +289,27 @@ void NodeFunctionCall::determine_function_strategy(NodeProgram *program, NodeCal
 bool NodeFunctionCall::is_in_access_chain() const {
 	return parent and parent->cast<NodeAccessChain>();
 }
+
+bool NodeFunctionCall::has_side_effects(const std::unordered_set<std::string> &free_vars) {
+	if (BuiltinRestrictionValidator::is_builtin_with_side_effects(this->function->name)) {
+		return true;
+	}
+	static FreeVarCollector free_var;
+	auto vars = free_var.collect(*this);
+	for (const auto &var : vars) {
+		if (free_vars.contains(var)) {
+			return true;
+		}
+	}
+	const auto visited_functions = free_var.get_visited_functions();
+	for (auto &func : visited_functions) {
+		if (BuiltinRestrictionValidator::is_builtin_with_side_effects(func->header->name)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 
 // ************* NodeSortSearch ***************
 NodeAST *NodeSortSearch::accept(ASTVisitor &visitor) {
@@ -968,7 +990,7 @@ ASTDesugaring * NodeFamily::get_desugaring(NodeProgram *program) const {
 }
 
 // ************* NodeIf ***************
-NodeAST *NodeIf::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeIf::accept(ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeIf::NodeIf(const NodeIf& other)
@@ -1005,8 +1027,36 @@ NodeAST *NodeIf::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newCh
     return nullptr;
 }
 
+// ************* NodeTernary ***************
+NodeAST *NodeTernary::accept(ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeTernary::NodeTernary(const NodeTernary& other)
+		: NodeInstruction(other), condition(clone_unique(other.condition)),
+		  if_branch(clone_unique(other.if_branch)),
+		  else_branch(clone_unique(other.else_branch)) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeTernary::clone() const {
+	return std::make_unique<NodeTernary>(*this);
+}
+
+NodeAST *NodeTernary::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (condition.get() == oldChild) {
+		condition = std::move(newChild);
+		return condition.get();
+	} else if (if_branch.get() == oldChild) {
+		if_branch = std::move(newChild);
+		return if_branch.get();
+	} else if (else_branch.get() == oldChild) {
+		else_branch = std::move(newChild);
+		return else_branch.get();
+	}
+	return nullptr;
+}
+
 // ************* NodeFor ***************
-NodeAST *NodeFor::accept(struct ASTVisitor &visitor) {
+NodeAST *NodeFor::accept(ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeFor::NodeFor(const NodeFor& other)

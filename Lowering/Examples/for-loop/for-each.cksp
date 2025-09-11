@@ -76,11 +76,15 @@ for value in range(start, stop, step)
 	message(value)
 end for
 
+// Post Lowering
 declare local value := start
-while (step > 0 and value < stop) or (step < 0 and value > stop)
+declare local _step = step
+declare local _stop = stop
+while (_step > 0 and value < _stop) or (_step < 0 and value > _stop)
     message(value)
-    value += step
+    value += _step
 end while
+
 
 
 for key, value in pairs(range(3, 10, 1))

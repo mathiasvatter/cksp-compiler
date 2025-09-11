@@ -109,6 +109,10 @@ struct NodeFunctionCall final : NodeInstruction {
 	bool check_restricted_environment(NodeCallback *current_callback) const;
 	void determine_function_strategy(NodeProgram* program, NodeCallback* current_callback);
 	bool is_in_access_chain() const;
+	/// Checks if the function call or any of its arguments has side effects
+	/// this gets checked by giving a set of free variables that are being modified inside
+	/// or checking for builtin functions with side effects (message etc)
+	bool has_side_effects(const std::unordered_set<std::string>& free_vars);
 };
 
 struct NodeSortSearch final : NodeInstruction {
@@ -765,6 +769,9 @@ struct NodeBlock final : NodeInstruction {
     [[nodiscard]] bool empty() const {
 	    return statements.empty();
     }
+	size_t size() const {
+	    return statements.size();
+    }
     void append_body(std::unique_ptr<NodeBlock> new_body);
     void prepend_body(std::unique_ptr<NodeBlock> new_body);
     /// adds a node statement to internal vector and sets parent pointer, returns pointer to moved object
@@ -804,6 +811,9 @@ struct NodeBlock final : NodeInstruction {
 	}
 	[[nodiscard]] std::unique_ptr<NodeAST>& get_last_statement() const {
 		return statements.back()->statement;
+	}
+	std::unique_ptr<NodeAST>& get_first_statement() const {
+		return statements.front()->statement;
 	}
 };
 
@@ -881,6 +891,39 @@ struct NodeIf final : NodeInstruction {
 		condition->parent = this;
 	}
 	NodeAST* do_short_circuit_transform(NodeProgram* program);
+};
+
+struct NodeTernary final : NodeInstruction {
+    std::unique_ptr<NodeAST> condition;
+    std::unique_ptr<NodeAST> if_branch;
+    std::unique_ptr<NodeAST> else_branch;
+    explicit NodeTernary(Token tok) : NodeInstruction(NodeType::Ternary, std::move(tok)) {}
+    NodeTernary(std::unique_ptr<NodeAST> condition, std::unique_ptr<NodeAST> if_branch, std::unique_ptr<NodeAST> else_branch, Token tok)
+            : NodeInstruction(NodeType::Ternary, std::move(tok)), condition(std::move(condition)), if_branch(std::move(if_branch)), else_branch(std::move(else_branch)) {
+            NodeTernary::set_child_parents();
+    }
+    NodeAST * accept(ASTVisitor &visitor) override;
+    NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+    NodeTernary(const NodeTernary& other);
+    [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+    void update_parents(NodeAST* new_parent) override {
+        parent = new_parent;
+        condition->update_parents(this);
+        if_branch->update_parents(this);
+        else_branch->update_parents(this);
+    }
+    void set_child_parents() override {
+        condition->parent = this;
+        if_branch->parent = this;
+        else_branch->parent = this;
+    }
+    std::string get_string() override { return ""; }
+    void update_token_data(const Token& token) override {
+        condition -> update_token_data(token);
+        if_branch->update_token_data(token);
+        else_branch->update_token_data(token);
+    }
+
 };
 
 struct NodeLoop : NodeInstruction {

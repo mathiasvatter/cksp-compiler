@@ -222,7 +222,9 @@ struct NodeNDArrayRef final : NodeCompositeRef {
 struct NodeFunctionHeaderRef final : NodeReference {
 	bool has_forced_parenth = false;
 	std::unique_ptr<NodeParamList> args;
-	NodeFunctionHeaderRef(std::string name, Token tok) : NodeReference(std::move(name), NodeType::FunctionHeaderRef, std::move(tok), DataType::Mutable) {}
+	NodeFunctionHeaderRef(std::string name, Token tok) : NodeReference(std::move(name), NodeType::FunctionHeaderRef, std::move(tok), DataType::Mutable) {
+		set_args(std::make_unique<NodeParamList>(tok));
+	}
 	NodeFunctionHeaderRef(std::string name, std::unique_ptr<NodeParamList> args, Token tok, DataType data_type=DataType::Mutable) :
 	NodeReference(std::move(name), NodeType::FunctionHeaderRef, std::move(tok), data_type), args(std::move(args)) {
 		set_child_parents();

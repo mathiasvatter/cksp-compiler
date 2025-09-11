@@ -4,6 +4,7 @@
 
 #include "ASTCollectLowerings.h"
 #include "../../Lowering/LoweringStruct.h"
+#include "../../Lowering/LoweringTernaryOperator.h"
 #include "../../Lowering/PreLoweringStruct.h"
 #include "FunctionHandling/UIControlParamHandling.h"
 
@@ -38,10 +39,12 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	for(const auto & callback : node.callbacks) {
 		callback->accept(*this);
 	}
+	// Merge function here before visiting them again so that newly added functions (to additional_functions)
+	// are also visited and lowered -> ternary functions -> short-circuiting
+	node.merge_function_definitions();
 	for(const auto & func_def : node.function_definitions) {
 		if(!func_def->visited) func_def->accept(*this);
 	}
-	node.merge_function_definitions();
 	node.reset_function_visited_flag();
 
 	node.debug_print();
@@ -242,6 +245,12 @@ NodeAST * ASTCollectLowerings::visit(NodeIf &node) {
 	//TRACE();
 	ASTVisitor::visit(node);
 	return node.do_short_circuit_transform(m_program);
+}
+
+NodeAST * ASTCollectLowerings::visit(NodeTernary &node) {
+	ASTVisitor::visit(node);
+	static LoweringTernaryOperator ternary(m_program);
+	return node.accept(ternary);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeBreak& node) {

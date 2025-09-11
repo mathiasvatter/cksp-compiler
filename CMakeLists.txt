@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 project(CKSP_Compiler VERSION 0.0.7)
-set(PRE_RELEASE_VERSION "-alpha.8")
+set(PRE_RELEASE_VERSION "-alpha.9")
 
 set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
 configure_file(
@@ -231,6 +231,8 @@ add_executable(cksp main.cpp
         JSON/visitor/JSONVisitor.h
         JSON/visitor/JSONPrintVisitor.h
         Optimization/FreeVarCollector.h
+        Lowering/LoweringBooleanExpression.h
+        Lowering/LoweringTernaryOperator.h
 )
 add_dependencies(cksp generate_headers)
 

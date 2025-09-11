@@ -118,6 +118,7 @@ enum class NodeType {
 	List,
 	ListRef,
 	If,
+	Ternary,
 	For,
 	ForEach,
 	Pairs,

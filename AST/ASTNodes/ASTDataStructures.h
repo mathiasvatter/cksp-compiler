@@ -188,7 +188,7 @@ struct NodeNDArray final : NodeComposite {
 
 struct NodeFunctionHeader final : NodeDataStructure {
 	bool has_forced_parenth = false;
-	std::vector<std::unique_ptr<NodeFunctionParam>> params;
+	std::vector<std::unique_ptr<NodeFunctionParam>> params{};
 	explicit NodeFunctionHeader(std::string name, Token tok) : NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionHeader, DataType::Mutable) {}
 	NodeFunctionHeader(std::string name, std::vector<std::unique_ptr<NodeFunctionParam>> params, Token tok)
 		: NodeDataStructure(std::move(name), TypeRegistry::Unknown, std::move(tok), NodeType::FunctionHeader, DataType::Mutable), params(std::move(params)) {

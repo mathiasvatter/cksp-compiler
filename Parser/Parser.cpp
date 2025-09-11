@@ -318,7 +318,11 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_expression(NodeAST* parent) {
     if(lhs.is_error()) {
         return Result<std::unique_ptr<NodeAST>>(lhs.get_error());
     }
-    return _parse_string_expr_rhs(std::move(lhs.unwrap()), parent);
+	auto concat_done = _parse_string_expr_rhs(std::move(lhs.unwrap()), parent);
+	if (concat_done.is_error()) return Result<std::unique_ptr<NodeAST>>(concat_done.get_error());
+
+	// NEW: attach ternary tail with lowest precedence
+	return _parse_ternary_rhs(std::move(concat_done.unwrap()), parent);
 }
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_string_expr(NodeAST* parent) {
@@ -519,9 +523,53 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_binary_expr_rhs(const int preced
     }
 }
 
+// Expect tokens: token::TERNARY for '?' and token::TYPE for ':'
+// Right-associative: a ? b : c ? d : e  ==  a ? b : (c ? d : e)
+
+Result<std::unique_ptr<NodeAST>>
+Parser::_parse_ternary_rhs(std::unique_ptr<NodeAST> condition, NodeAST* parent) {
+    while (peek().type == token::TERNARY) {
+        Token qmark = consume();                  // consume '?'
+        _skip_linebreaks();                       // allow line breaks after '?'
+
+        // Parse 'then' branch with full expression power (may contain further ternaries)
+        auto thenRes = parse_expression(parent);
+        if (thenRes.is_error()) return Result<std::unique_ptr<NodeAST>>(thenRes.get_error());
+        auto thenExpr = std::move(thenRes.unwrap());
+
+        _skip_linebreaks();
+        if (peek().type != token::TYPE) {
+            return Result<std::unique_ptr<NodeAST>>(CompileError(
+                ErrorType::SyntaxError, "Expected ':' in ternary expression.", "':'", peek()));
+        }
+        consume();                                // consume ':'
+        _skip_linebreaks();
+
+        // For right-associativity we must parse the else-branch as another ternary layer
+        auto elseRes = parse_expression(parent);
+
+        if (elseRes.is_error()) return Result<std::unique_ptr<NodeAST>>(elseRes.get_error());
+        auto elseExpr = std::move(elseRes.unwrap());
+
+        // Build node
+        auto node = std::make_unique<NodeTernary>(
+        	std::move(condition),
+        	std::move(thenExpr),
+        	std::move(elseExpr),
+        	qmark
+        );
+        node->parent = parent;
+        node->set_range(node->condition->range, node->else_branch->range);
+
+        condition = std::move(node);
+        // loop continues to chain multiple '? :' at same precedence
+    }
+    return Result<std::unique_ptr<NodeAST>>(std::move(condition));
+}
+
 Result<std::unique_ptr<NodeAST>> Parser::_parse_parenth_expr(NodeAST* parent) {
     auto start_tok = consume(); // eat (
-    auto expr = parse_binary_expr(parent);
+    auto expr = parse_expression(parent);
     if (peek().type != token::CLOSED_PARENTH) {
 		return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::ParseError,
 		 "Missing parenthesis.",  ")", peek()));

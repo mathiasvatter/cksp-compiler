@@ -5,9 +5,39 @@
 
 message( 1 < 2 ? 1 : 2)
 
+message(1 < 2 ? "hello world" : "Goodbye world")
+
 
 {-------------------------------------------------------------------------------------------
                                         Post Lowering
 --------------------------------------------------------------------------------------------}
 
 message(::__lt__(1, 2) * 1 + (1-::__lt__(1, 2)) * 2)
+
+declare local tmp
+if 1 < 2
+    tmp := "hello world"
+else
+    tmp := "Goodbye world"
+end if
+message(tmp)
+
+
+{-------------------------------------------------------------------------------------------
+                                        CURRENT APPROACH
+--------------------------------------------------------------------------------------------}
+/// intermediate approach -> do transform into real if statements
+
+message( 1 < 2 ? 1 : 2)
+
+// -----------
+
+message(ternary1())
+
+function ternary1() : int
+    if 1 < 2
+        return 1
+    else
+        return 2
+    end if
+end function

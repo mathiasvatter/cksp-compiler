@@ -264,6 +264,12 @@ public:
 		node.else_body->accept(*this);
 		return &node;
 	}
+	virtual NodeAST* visit(NodeTernary& node) {
+		node.condition->accept(*this);
+		node.if_branch->accept(*this);
+		node.else_branch->accept(*this);
+		return &node;
+	}
     virtual NodeAST* visit(NodeFor& node) {
 		node.iterator->accept(*this);
 		node.iterator_end->accept(*this);

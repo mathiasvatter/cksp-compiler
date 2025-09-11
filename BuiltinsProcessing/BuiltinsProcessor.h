@@ -32,7 +32,7 @@ private:
     std::unordered_map<std::string, std::shared_ptr<NodeVariable>> m_builtin_variables;
     std::unordered_map<std::string, std::shared_ptr<NodeArray>> m_builtin_arrays;
     std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_builtin_functions;
-	// std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_boolean_functions;
+	std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_boolean_functions;
 
     std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> m_property_functions;
     std::unordered_map<std::string, std::shared_ptr<NodeUIControl>> m_builtin_widgets;

@@ -450,6 +450,17 @@ NodeAST * ASTPrinter::visit(NodeIf &node) {
 	return &node;
 }
 
+NodeAST * ASTPrinter::visit(NodeTernary &node) {
+	os << "(" ;
+	node.condition->accept(*this);
+	os << ") ? ";
+	node.if_branch->accept(*this);
+	os << " : ";
+	node.else_branch->accept(*this);
+	os << " ";
+	return &node;
+}
+
 NodeAST * ASTPrinter::visit(NodeWhile &node) {
     os << "while(" ;
     node.condition->accept(*this);

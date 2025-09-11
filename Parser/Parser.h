@@ -105,6 +105,8 @@ public:
     Result<std::unique_ptr<NodeAST>> parse_unary_expr(NodeAST* parent);
 	    /// Helper function for parsing binary expressions recursion
 		Result<std::unique_ptr<NodeAST>> _parse_binary_expr_rhs(int precedence, std::unique_ptr<NodeAST> lhs, NodeAST* parent);
+		/// Helper function for parsing ternary tail
+		Result<std::unique_ptr<NodeAST>> _parse_ternary_rhs(std::unique_ptr<NodeAST> condition, NodeAST* parent);
 		/// ( expression )
 		Result<std::unique_ptr<NodeAST>> _parse_parenth_expr(NodeAST* parent);
 		/// parse identifierexpr, numberexpr, parenthexpr, functionheader
