@@ -39,10 +39,12 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	for(const auto & callback : node.callbacks) {
 		callback->accept(*this);
 	}
+	// Merge function here before visiting them again so that newly added functions (to additional_functions)
+	// are also visited and lowered -> ternary functions -> short-circuiting
+	node.merge_function_definitions();
 	for(const auto & func_def : node.function_definitions) {
 		if(!func_def->visited) func_def->accept(*this);
 	}
-	node.merge_function_definitions();
 	node.reset_function_visited_flag();
 
 	node.debug_print();

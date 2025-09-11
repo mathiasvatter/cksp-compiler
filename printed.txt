@@ -1,35 +1,55 @@
 on init
 	declare BrowserFont.ty[1] : int[] := [0] {Reuses: 0}
-	declare ret3 : int {Reuses: 3}
-	declare arg0 : int {Reuses: 3}
-	declare local _ret00 : int {Reuses: 0}
+	declare ret1 : int {Reuses: 2}
+	declare arg0 : int {Reuses: 2}
+	declare ret2 : int {Reuses: 0}
+	declare ret0 : int {Reuses: 0}
+	declare RETURN_FLAG10 : int {Reuses: 0}
+	declare _short_circuit00 : int {Reuses: 0}
+	declare _ret00 : int {Reuses: 0}
 	declare local _ret10 : int {Reuses: 0}
-	declare local i0 : int {Reuses: 2}
-	declare local _ret20 : int {Reuses: 0}
+	declare local RETURN_FLAG100 : int {Reuses: 2}
+	declare local _short_circuit000 : int {Reuses: 3}
+	declare local _stop10 : int {Reuses: 0}
+	pgs_create_key(PRESET_NAME{pgs} {pgs$dummy} , 3){Builtin, None, pgs_create_key}
 	message(-1){Builtin, None, message}
-	arg0{int} {arg0}  := 1
-	_ret00{int} {_ret00}  := arg0{int} {arg0} 
-	"Doing something with " & _ret00{int} {_ret00}  & 1
-	ret3{int} {ret3}  := 1
-	_ret10{int} {_ret10}  := ret3{int} {ret3} 
-	message(_ret10{int} {_ret10} ){Builtin, None, message}
+	RETURN_FLAG10{int} {RETURN_FLAG10}  := 0
+	while(RETURN_FLAG10{int} {RETURN_FLAG10}  = 0) 
+		_short_circuit00{int} {_short_circuit00}  := 0
+		arg0{int} {arg0}  := 5
+		message("side effects"){Builtin, None, message}
+		ret1{int} {ret1}  := 5
+		_ret00{int} {_ret00}  := ret1{int} {ret1} 
+		if(1 > _ret00{int} {_ret00} )
+			_short_circuit00{int} {_short_circuit00}  := 1
+		end if
+		if(_short_circuit00{int} {_short_circuit00}  = 1)
+			ret2{int} {ret2}  := 4
+			ret0{int} {ret0}  := ret2{int} {ret2} 
+			RETURN_FLAG10{int} {RETURN_FLAG10}  := 1
+			continue{Builtin, None, continue}
+		else
+			ret0{int} {ret0}  := 1
+			RETURN_FLAG10{int} {RETURN_FLAG10}  := 1
+			continue{Builtin, None, continue}
+		end if
+	end while
+	_ret10{int} {_ret10}  := ret0{int} {ret0} 
+	"Doing something with " & _ret10{int} {_ret10}  & 1
+	ret1{int} {ret1}  := 1
+	RETURN_FLAG100{int} {RETURN_FLAG100}  := ret1{int} {ret1} 
+	message(RETURN_FLAG100{int} {RETURN_FLAG100} ){Builtin, None, message}
 	message(4){Builtin, None, message}
-	i0{int} {i0}  := 0
+	RETURN_FLAG100{int} {RETURN_FLAG100}  := 0
+	_short_circuit000{int} {_short_circuit000}  := 1
+	_stop10{int} {_stop10}  := 0
 	arg0{int} {arg0}  := 3
 	message("side effects"){Builtin, None, message}
-	_ret20{int} {_ret20}  := ret3{int} {ret3} 
-	arg0{int} {arg0}  := 3
-	message("side effects"){Builtin, None, message}
-	ret3{int} {ret3}  := 3
-	while(i0{int} {i0}  < _ret20{int} {_ret20} ) 
-		message(i0{int} {i0} ){Builtin, None, message}
-		inc(i0{int} {i0} ){Builtin, None, inc}
-		arg0{int} {arg0}  := 3
-		message("side effects"){Builtin, None, message}
-		_ret20{int} {_ret20}  := ret3{int} {ret3} 
-		arg0{int} {arg0}  := 3
-		message("side effects"){Builtin, None, message}
-		ret3{int} {ret3}  := 3
+	ret1{int} {ret1}  := 3
+	_stop10{int} {_stop10}  := ret1{int} {ret1} 
+	while(((RETURN_FLAG100{int} {RETURN_FLAG100}  < _stop10{int} {_stop10} ) and (_short_circuit000{int} {_short_circuit000}  > 0)) or ((RETURN_FLAG100{int} {RETURN_FLAG100}  > _stop10{int} {_stop10} ) and (_short_circuit000{int} {_short_circuit000}  < 0))) 
+		message(RETURN_FLAG100{int} {RETURN_FLAG100} ){Builtin, None, message}
+		RETURN_FLAG100{int} {RETURN_FLAG100}  := RETURN_FLAG100{int} {RETURN_FLAG100}  + _short_circuit000{int} {_short_circuit000} 
 	end while
 	message(BrowserFont.ty[0]{int} {BrowserFont.ty} ){Builtin, None, message}
 	declare lbl_bd_dnd : int := 4 {Reuses: 0}
@@ -43,16 +63,16 @@ on init
 		message("hello"){Builtin, None, message}
 	end if
 	arg0{int} {arg0}  := 1
-	ret3{int} {ret3}  := 0
-	while(ret3{int} {ret3}  = 0) 
+	ret1{int} {ret1}  := 0
+	while(ret1{int} {ret1}  = 0) 
 		if(arg0{int} {arg0}  # -1)
 			message("henlo"){Builtin, None, message}
-			ret3{int} {ret3}  := 1
+			ret1{int} {ret1}  := 1
 			continue{Builtin, None, continue}
 		else
 			message("sdlfkj"){Builtin, None, message}
 		end if
-		ret3{int} {ret3}  := 1
+		ret1{int} {ret1}  := 1
 		continue{Builtin, None, continue}
 	end while
 end on

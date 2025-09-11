@@ -113,6 +113,7 @@ NodeAST * TypeInference::visit(NodeVariableRef& node) {
 	// if (node.needs_get_ui_id()) {
 	// 	return node.replace_reference(node.wrap_in_get_ui_id())->accept(*this);
 	// }
+
     match_reference_declaration(node, decl);
 	if(m_def_provider) m_def_provider->add_to_references(&node);
 	return &node;
