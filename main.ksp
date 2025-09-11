@@ -108,11 +108,13 @@ end function
 
 on init
 
+	pgs_create_key(PRESET_NAME, 3)
+
 	declare ptr : List
 	message(int(ptr))
 
 	Browser.do_sth(
-		1 > 2 and 4 < 5 ? 4 < 5 ? 4: 5 : 1
+		1 > side_effects(5) and 4 < 5 ? 4 < 5 ? 4: 5 : 1
 	)
 
 	message(ternary1())

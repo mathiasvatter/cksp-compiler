@@ -62,7 +62,16 @@ public:
 	void insert_calls_in_statements() {
 		for(auto &[fst, snd] : m_declares_per_stmt) {
 			auto node_body = std::make_unique<NodeBlock>(fst->tok);
-			node_body->scope = true;
+			// only make the scope if the statement is not a declaration because then the
+			// hoisted function was in an expression r_value context of a declaration that might be used later
+			// leading to a undeclared var issue
+			// declare a := some_func() + 1
+			// ->
+			//		declare ret0 := some_func()
+			//		declare a := ret0 + 1
+			// if a > 0
+			// issue because a is declared in local scope but used later
+			node_body->scope = fst->statement->cast<NodeSingleDeclaration>() ? false : true;
 			for(auto &decl : snd) {
 				decl->kind = NodeSingleDeclaration::Kind::ReturnVar;
 				node_body->add_as_stmt(std::move(decl));

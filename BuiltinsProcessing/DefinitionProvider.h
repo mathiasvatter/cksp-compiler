@@ -89,36 +89,39 @@ public:
 		}
 		if(var.kind != NodeReference::Kind::Throwaway)
 			return nullptr;
-		return std::make_shared<NodeVariable>(
+		static auto node_var = std::make_shared<NodeVariable>(
 			std::nullopt,
 			"_",
 			TypeRegistry::Unknown,
 			Token(),
 			DataType::Mutable
 		);
+		return node_var;
 	}
 	/// returns a static global dummy datastructure that can be used for declarations of compiler vars
 	static std::shared_ptr<NodeDataStructure> get_compiler_declaration(const NodeReference& var) {
 		if(var.kind != NodeReference::Kind::Compiler)
 			return nullptr;
-		return std::make_shared<NodeVariable>(
+		static auto node_var = std::make_shared<NodeVariable>(
 			std::nullopt,
 			"compiler$dummy",
 			TypeRegistry::Unknown,
 			Token(),
 			DataType::Mutable
 		);
+		return node_var;
 	}
 	/// returns a static global dummy datastructure that can be used for declarations of pgs vars
 	static std::shared_ptr<NodeDataStructure> get_pgs_declaration(const NodeReference& var) {
 		if(var.ty != TypeRegistry::PGS) return nullptr;
-		return std::make_shared<NodeVariable>(
+		static auto node_var = std::make_shared<NodeVariable>(
 			std::nullopt,
 			"pgs$dummy",
 			TypeRegistry::PGS,
 			Token(),
 			DataType::Mutable
 		);
+		return node_var;
 	}
 
 	/// All references to variables, arrays, data structures and controls can be saved here
