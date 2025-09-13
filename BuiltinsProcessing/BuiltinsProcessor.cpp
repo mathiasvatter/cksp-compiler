@@ -47,6 +47,7 @@ void BuiltinsProcessor::process() {
 	m_def_provider->set_builtin_functions(std::move(m_builtin_functions));
 	m_def_provider->set_builtin_widgets(std::move(m_builtin_widgets));
 	m_def_provider->set_property_functions(std::move(m_property_functions));
+	m_def_provider->set_boolean_functions(std::move(m_boolean_functions));
 }
 
 Result<SuccessTag> BuiltinsProcessor::parse_builtin_variables(const std::string &file) {

@@ -98,6 +98,7 @@ enum class NodeType {
 	Wildcard,
 	Int,
 	Real,
+	Boolean,
 	String,
 	FormatString,
 	Nil,

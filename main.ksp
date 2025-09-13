@@ -106,14 +106,25 @@ function side_effects(arg: int): int
 	return arg
 end function
 
+function is_open (): bool
+	return true
+end function
+
 on init
+
+	declare is_true: bool := is_open() and not (true and 1<3 or true)
+
+	while (is_true)
+		message("This is true")
+	end while
+
 	declare string: string := "Hello, World!"
 	string &= "!!!"
 	message(string)
 
 	pgs_create_key(PRESET_NAME, 3)
 
-	declare ptr : List
+	declare ptr : List := new List(10, nil)
 	message(int(ptr))
 
 	Browser.do_sth(

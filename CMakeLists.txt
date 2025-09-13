@@ -233,6 +233,8 @@ add_executable(cksp main.cpp
         Optimization/FreeVarCollector.h
         Lowering/LoweringBooleanExpression.h
         Lowering/LoweringTernaryOperator.h
+        Lowering/LoweringBoolean.h
+        SyntaxChecks/KSPConditions.h
 )
 add_dependencies(cksp generate_headers)
 

@@ -9,6 +9,7 @@
 #include "../../SyntaxChecks/KSPDeclarations.h"
 #include "../../Optimization/MemoryExhaustedNesting.h"
 #include "../../Lowering/LoweringFunctionCall.h"
+#include "../../SyntaxChecks/KSPConditions.h"
 
 /**
  * Adds persistence functions to variables that are declared with a persistence keyword.
@@ -59,6 +60,16 @@ public:
 		return node.accept(memory_exhausted_nesting);
 	}
 
+	NodeAST* visit(NodeIf& node) override {
+		ASTVisitor::visit(node);
+		return KSPConditions::sanitize_condition(node);
+	}
+
+	NodeAST* visit(NodeWhile& node) override {
+		ASTVisitor::visit(node);
+		return KSPConditions::sanitize_condition(node);
+	}
+
 	NodeAST* visit(NodeSingleDeclaration& node) override {
 		node.variable->accept(*this);
 		if (TypeRegistry::get_identifier_from_type(node.variable->ty) == ' ') {
@@ -87,7 +98,7 @@ public:
 		}
 		node.flatten(true);
 		return &node;
-	};
+	}
 
 	NodeAST* visit(NodeArray& node) override {
 		node.size->accept(*this);

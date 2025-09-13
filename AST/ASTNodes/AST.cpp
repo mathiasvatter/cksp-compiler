@@ -208,6 +208,21 @@ NodeFunctionHeaderRef* NodeAST::is_func_arg() const {
 	return this->parent->parent->cast<NodeFunctionHeaderRef>();
 }
 
+bool NodeAST::is_string_env() const {
+	bool is_string = false;
+	// is within string environment
+	if (auto binary_expr = parent->cast<NodeBinaryExpr>()) {
+		is_string |= binary_expr->ty == TypeRegistry::String;
+	}
+	// is within message call
+	if (auto header = is_func_arg()) {
+		is_string |= header->name == "message";
+	}
+	// is within return statement
+	is_string |= parent->get_node_type() == NodeType::Return and parent->cast<NodeReturn>()->get_definition()->ty == TypeRegistry::String;
+	return is_string;
+}
+
 NodeReference * NodeAST::is_reference() {
 	static ReferenceValidator ref_validator;
 	return ref_validator.cast_reference(*this);
@@ -304,7 +319,9 @@ NodeStruct* NodeDataStructure::is_member() const {
 }
 
 NodeDataStructure* NodeDataStructure::lower_type() {
-	if(ty->get_element_type()->get_type_kind() == TypeKind::Object) {
+	if (ty -> get_element_type() == TypeRegistry::Boolean) {
+		set_element_type(TypeRegistry::Integer);
+	} else if(ty->get_element_type()->get_type_kind() == TypeKind::Object) {
 		set_element_type(TypeRegistry::Integer);
 	}
 	return this;
@@ -384,7 +401,9 @@ NodeStruct *NodeReference::get_object_ptr(NodeProgram* program, const std::strin
 }
 
 NodeReference* NodeReference::lower_type() {
-	if(ty->get_element_type()->get_type_kind() == TypeKind::Object) {
+	if (ty -> get_element_type() == TypeRegistry::Boolean) {
+		set_element_type(TypeRegistry::Integer);
+	} else if(ty->get_element_type()->get_type_kind() == TypeKind::Object) {
 		set_element_type(TypeRegistry::Integer);
 	}
 	return this;
@@ -436,21 +455,6 @@ NodeReference *NodeReference::replace_reference(std::unique_ptr<NodeReference> n
 	decl->references.erase(old_ref);
 	decl->references.insert(new_ref);
 	return new_ref;
-}
-
-bool NodeReference::is_string_env() const {
-	bool is_string = false;
-	// is within string environment
-	if (auto binary_expr = parent->cast<NodeBinaryExpr>()) {
-		is_string |= binary_expr->ty == TypeRegistry::String;
-	}
-	// is within message call
-	if (auto header = is_func_arg()) {
-		is_string |= header->name == "message";
-	}
-	// is within return statement
-	is_string |= parent->get_node_type() == NodeType::Return and parent->cast<NodeReturn>()->get_definition()->ty == TypeRegistry::String;
-	return is_string;
 }
 
 std::shared_ptr<NodeDataStructure> NodeReference::get_declaration() const {
@@ -523,6 +527,14 @@ NodeAST *NodeReal::accept(ASTVisitor &visitor) {
 }
 std::unique_ptr<NodeAST> NodeReal::clone() const {
     return std::make_unique<NodeReal>(*this);
+}
+
+// ************* NodeBoolean ***************
+NodeAST *NodeBoolean::accept(ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+std::unique_ptr<NodeAST> NodeBoolean::clone() const {
+	return std::make_unique<NodeBoolean>(*this);
 }
 
 // ************* NodeString ***************

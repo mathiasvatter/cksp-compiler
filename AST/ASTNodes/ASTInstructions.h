@@ -93,7 +93,6 @@ struct NodeFunctionCall final : NodeInstruction {
 	[[nodiscard]] bool is_builtin_kind() const;
 	[[nodiscard]] std::string get_object_name() const;
 	[[nodiscard]] std::string get_method_name() const;
-	[[nodiscard]] bool is_string_env() const;
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
 	[[nodiscard]] std::shared_ptr<NodeFunctionDefinition> get_definition() const {
 		return definition.lock();
