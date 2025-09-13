@@ -11,6 +11,7 @@ on init
 	declare local RETURN_FLAG100 : int {Reuses: 2}
 	declare local _short_circuit000 : int {Reuses: 3}
 	declare local _stop10 : int {Reuses: 0}
+	message("Hello, World!" & "!!!"){Builtin, None, message}
 	pgs_create_key(PRESET_NAME{pgs} {pgs$dummy} , 3){Builtin, None, pgs_create_key}
 	message(-1){Builtin, None, message}
 	RETURN_FLAG10{int} {RETURN_FLAG10}  := 0

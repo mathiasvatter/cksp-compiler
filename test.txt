@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.7-alpha.8 on Thu Sep 11 17:34:53 2025 }
+{ Compiled with cksp version 0.0.7-alpha.9 on Sat Sep 13 14:21:39 2025 }
 on init
   declare %BrowserFont__ty[1] := (0)
   declare $ret1
@@ -12,6 +12,7 @@ on init
   declare $RETURN_FLAG100
   declare $_short_circuit000
   declare $_stop10
+  message("Hello, World!" & "!!!")
   pgs_create_key( PRESET_NAME, 3)
   message(-1)
   $RETURN_FLAG10 := 0
