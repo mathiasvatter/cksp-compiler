@@ -815,7 +815,7 @@ Result<std::unique_ptr<NodeCompoundAssignment>> Parser::parse_compound_assign_st
 	auto error = CompileError(ErrorType::SyntaxError, "", "", peek());
 
 	auto node_compound_assign_statement = std::make_unique<NodeCompoundAssignment>(get_tok());
-	auto valid_operator_tokens = extract_tokens_from_map(ALL_OPERATORS);
+	auto static valid_operator_tokens = extract_tokens_from_map(ALL_OPERATORS);
 	if (!valid_operator_tokens.contains(peek().type)) {
 		error.set_message( "Invalid Operator Syntax for <Compound Assignment>.");
 		std::vector<std::string> valid_tokens{};
@@ -833,7 +833,7 @@ Result<std::unique_ptr<NodeCompoundAssignment>> Parser::parse_compound_assign_st
 		return Result<std::unique_ptr<NodeCompoundAssignment>>(error);
 	}
 	consume(); // consume equal token
-	auto r_value = parse_binary_expr(node_compound_assign_statement.get());
+	auto r_value = parse_string_expr(node_compound_assign_statement.get());
 	if (r_value.is_error()) {
 		return Result<std::unique_ptr<NodeCompoundAssignment>>(r_value.get_error());
 	}

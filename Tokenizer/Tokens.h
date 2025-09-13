@@ -252,6 +252,7 @@ inline const std::unordered_map<std::string, token> ALL_OPERATORS = []{
     std::unordered_map<std::string, token> ops = BITWISE_OPERATORS;
     ops.insert(MATH_OPERATORS.begin(), MATH_OPERATORS.end());
     ops.insert(BOOL_OPERATORS.begin(), BOOL_OPERATORS.end());
+	ops.insert(STRING_OPERATOR.begin(), STRING_OPERATOR.end());
     return ops;
 }();
 

@@ -107,6 +107,9 @@ function side_effects(arg: int): int
 end function
 
 on init
+	declare string: string := "Hello, World!"
+	string &= "!!!"
+	message(string)
 
 	pgs_create_key(PRESET_NAME, 3)
 
