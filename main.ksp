@@ -106,17 +106,19 @@ function side_effects(arg: int): int
 	return arg
 end function
 
-function is_open (): bool
-	return true
+function is_hidden (ui_id: int): bool
+	return ui_id -> hide = HIDE_WHOLE_CONTROL
 end function
 
 on init
 
-	declare is_true: bool := is_open() and not (true and 1<3 or true)
-
-	while (is_true)
+	declare is_true: bool := is_hidden(1) and not (true and 1<3 or true)
+	declare var: real := 2.5
+	while (is_true and bool(var))
 		message("This is true")
 	end while
+
+	message(bool(3) * 2)
 
 	declare string: string := "Hello, World!"
 	string &= "!!!"
@@ -127,9 +129,9 @@ on init
 	declare ptr : List := new List(10, nil)
 	message(int(ptr))
 
-	Browser.do_sth(
+	message(Browser.do_sth(
 		1 > side_effects(5) and 4 < 5 ? 4 < 5 ? 4: 5 : 1
-	)
+	))
 
 	message(ternary1())
 

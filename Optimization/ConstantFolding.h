@@ -108,7 +108,17 @@ public:
 				} else if (node.function->name == "real") {
 					return node.replace_with(std::move(node.function->get_arg(0)));
 				}
+			// check types -> real(~var) -> ~var; int($var) -> $var
+			} else if (node.function->get_arg(0)->ty == TypeRegistry::Integer) {
+				if (node.function->name == "int") {
+					return node.replace_with(std::move(node.function->get_arg(0)));
+				}
+			} else if (node.function->get_arg(0)->ty == TypeRegistry::Real) {
+				if (node.function->name == "real") {
+					return node.replace_with(std::move(node.function->get_arg(0)));
+				}
 			}
+
 		} else if(node.function->get_num_args() == 3) {
 			if(node.function->name == "in_range") {
 				if(all_params_are_type(node, NodeType::Int)) {

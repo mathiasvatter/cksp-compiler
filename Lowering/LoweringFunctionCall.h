@@ -15,6 +15,7 @@ public:
     /// Determining if function is property function -> inline property function
 	/// Determining if function parameter needs to be wrapped in get_ui_id because of ui control
 	/// Determining if function call is method constructor -> rename
+	/// Lowering and re-connecting the builtin bool typecast to CKSP::__bool__()
 	NodeAST * visit(NodeFunctionCall &node) override {
 		node.bind_definition(m_program);
 
@@ -27,6 +28,21 @@ public:
         if(node.kind == NodeFunctionCall::Kind::Builtin) {
             // get_ui_id lowering
             node.function->accept(*this);
+
+			if (node.function->get_num_args() == 1) {
+				if (node.function->name == "bool") {
+					auto& arg = node.function->get_arg(0);
+					if (arg->ty == TypeRegistry::Real) {
+						auto int_call = DefinitionProvider::create_builtin_call("int", std::move(arg));
+						int_call->bind_definition(m_program);
+						node.function->set_arg(0, std::move(int_call));
+					}
+					node.function->name = "CKSP::__bool__";
+					node.kind = NodeFunctionCall::Kind::UserDefined;
+					node.collect_references();
+					node.definition = m_program->def_provider->get_boolean_function(node.function->name, 1);
+				}
+			}
 
         	return &node;
 			// return replace_get_ui_id(&node);
