@@ -716,6 +716,10 @@ struct NodeUnaryExpr final : NodeAST {
     void update_token_data(const Token& token) override {
         operand -> update_token_data(token);
     }
+	void set_operand(std::unique_ptr<NodeAST> opr) {
+		opr->parent = this;
+		operand = std::move(opr);
+	}
 	bool needs_short_circuiting();
 	bool has_return_func() const;
 	bool has_return_func_and_bool() const;
@@ -752,6 +756,14 @@ struct NodeBinaryExpr final : NodeAST {
         left -> update_token_data(token);
         right -> update_token_data(token);
     }
+	void set_left(std::unique_ptr<NodeAST> l) {
+    	l->parent = this;
+	    left = std::move(l);
+    }
+	void set_right(std::unique_ptr<NodeAST> r) {
+		r->parent = this;
+	    right = std::move(r);
+	}
 	/// declare ndarray3[10,10,10,10] -> declare _ndarray3[10 * (10 * (10 * 10))]
 	static std::unique_ptr<NodeAST> create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, token op);
 	/// ndarray3[4,5, 6, 7] -> _ndarray3[(4 * ((10 * 10) * 10)) + ((5 * (10 * 10)) + ((6 * 10) + 7))]
