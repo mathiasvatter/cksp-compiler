@@ -66,6 +66,14 @@ Result<std::unique_ptr<NodeString>> Parser::parse_string(NodeAST* parent) {
     return Result<std::unique_ptr<NodeString>>(std::move(node_string));
 }
 
+Result<std::unique_ptr<NodeAST> > Parser::parse_boolean(NodeAST *parent) {
+	auto boolean = consume(); // consume 'true'/'false'
+	auto node_boolean = std::make_unique<NodeBoolean>(boolean.type == token::TRUE, boolean);
+	node_boolean->set_range(boolean);
+	node_boolean->parent = parent;
+	return Result<std::unique_ptr<NodeAST>>(std::move(node_boolean));
+}
+
 Result<std::unique_ptr<NodeFormatString>> Parser::parse_fstring(NodeAST *parent) {
 	auto start_tok = consume(); // consume 'f"'
 
@@ -452,7 +460,9 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr(NodeAST* parent) {
     } else if (UNARY_TOKENS.contains(peek().type)) {
 	    return parse_unary_expr(parent);
     } else if (peek().type == token::OPEN_BRACKET) {
-    	return parse_init_list(parent);
+	    return parse_init_list(parent);
+    } else if (peek().type == token::TRUE || peek().type == token::FALSE) {
+		return parse_boolean(parent);
 	} else if (peek().type == token::NIL) {
 		return parse_nil(parent);
 	} else if (peek().type == token::NEW) {
@@ -2149,10 +2159,10 @@ Result<std::unique_ptr<NodeWhile>> Parser::parse_while_statement(NodeAST* parent
         return Result<std::unique_ptr<NodeWhile>>(condition_result.get_error());
     }
     auto condition = std::move(condition_result.unwrap());
-    if(not(condition->ty == TypeRegistry::Boolean || condition->ty == TypeRegistry::Comparison)) {
-        return Result<std::unique_ptr<NodeWhile>>(CompileError(ErrorType::SyntaxError,
-                                                               "While Statement needs condition.", peek().line, "condition", condition->get_string(), peek().file));
-    }
+    // if(not(condition->ty == TypeRegistry::Boolean || condition->ty == TypeRegistry::Comparison)) {
+    //     return Result<std::unique_ptr<NodeWhile>>(CompileError(ErrorType::SyntaxError,
+    //                                                            "While Statement needs condition.", peek().line, "condition", condition->get_string(), peek().file));
+    // }
     if(peek().type != token::LINEBRK) {
         return Result<std::unique_ptr<NodeWhile>>(CompileError(ErrorType::ParseError,
                                                                "Expected linebreak after while-condition.", "linebreak", peek()));

@@ -13,6 +13,7 @@ NodeAST* ASTDesugar::visit(NodeProgram& node) {
 	for (auto val : m_program->def_provider->boolean_functions | std::views::values) {
 		m_program->add_function_definition(val);
 	}
+	m_program->merge_function_definitions();
 
 	// first desugar namespaces to assign correct prefixes
 	static DesugarNamespace ns_desugar(m_program);

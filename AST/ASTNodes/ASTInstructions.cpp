@@ -248,21 +248,6 @@ bool NodeFunctionCall::is_builtin_kind() const {
 	return false;
 }
 
-bool NodeFunctionCall::is_string_env() const {
-	bool is_string = false;
-	// is within string environment
-	is_string |= parent->ty == TypeRegistry::String;
-	// is within message call
-	if(auto header_ref = parent->parent->cast<NodeFunctionHeaderRef>()) {
-		is_string |= header_ref->name == "message";
-	}
-	// is within return statement
-	if(auto ret = parent->cast<NodeReturn>()) {
-		is_string |= ret->get_definition()->ty == TypeRegistry::String;
-	}
-	return is_string;
-}
-
 NodeAST *NodeFunctionCall::do_function_call_hoisting(NodeProgram *program) {
 	static ReturnFunctionCallHoisting hoisting;
 	return hoisting.do_function_call_hoisting(*this, program);

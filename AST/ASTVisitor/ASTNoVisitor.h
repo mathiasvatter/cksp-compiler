@@ -26,6 +26,9 @@ public:
     NodeAST* visit(NodeString& node) override {
 		return &node;
 	}
+	NodeAST* visit(NodeBoolean& node) override {
+    	return &node;
+    }
 	NodeAST* visit(NodeFormatString& node) override {
     	return &node;
     }

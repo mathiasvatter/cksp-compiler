@@ -24,6 +24,11 @@ NodeAST * ASTPrinter::visit(NodeFormatString &node) {
 	return &node;
 }
 
+NodeAST * ASTPrinter::visit(NodeBoolean &node) {
+	node.value ? os << "true" : os << "false";
+	return &node;
+}
+
 NodeAST * ASTPrinter::visit(NodeNil &node) {
 	os << node.name;
 	return &node;

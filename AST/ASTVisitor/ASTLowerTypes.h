@@ -7,7 +7,7 @@
 #include "ASTVisitor.h"
 #include "../ASTNodes/AST.h"
 
-class ASTLowerTypes: public ASTVisitor {
+class ASTLowerTypes final : public ASTVisitor {
 public:
 	explicit ASTLowerTypes(NodeProgram *main): m_def_provider(main->def_provider) {
 		m_program = main;
@@ -26,7 +26,7 @@ public:
 		}
 		node.reset_function_visited_flag();
 		return &node;
-	};
+	}
 
 	NodeAST * visit(NodeVariable& node) override {
 		return node.lower_type();
@@ -64,7 +64,9 @@ public:
 		return node.lower_type();
 	}
 	NodeAST * visit(NodeFunctionDefinition& node) override {
-		if(node.ty->get_element_type()->cast<ObjectType>()) {
+		if (node.ty->get_element_type() == TypeRegistry::Boolean) {
+			node.set_element_type(TypeRegistry::Integer);
+		} else if(node.ty->get_element_type()->cast<ObjectType>()) {
 			node.set_element_type(TypeRegistry::Integer);
 		}
 
@@ -81,7 +83,9 @@ public:
 			node.get_definition()->visited = true;
 		}
 		node.function->accept(*this);
-		if(node.ty->get_element_type()->get_type_kind() == TypeKind::Object) {
+		if (node.ty->get_element_type() == TypeRegistry::Boolean) {
+			node.set_element_type(TypeRegistry::Integer);
+		} else if(node.ty->get_element_type()->get_type_kind() == TypeKind::Object) {
 			node.set_element_type(TypeRegistry::Integer);
 		}
 		return &node;
@@ -90,7 +94,9 @@ public:
 		for(auto &param : node.params) param->accept(*this);
 		if(auto func_type = node.ty->cast<FunctionType>()) {
 			auto return_type = func_type->get_return_type();
-			if (return_type->cast<ObjectType>()) {
+			if (return_type == TypeRegistry::Boolean) {
+				return_type = TypeRegistry::Integer;
+			} else if (return_type->cast<ObjectType>()) {
 				return_type = TypeRegistry::Integer;
 			}
 			node.create_function_type(return_type);

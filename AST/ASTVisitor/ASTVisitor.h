@@ -57,6 +57,9 @@ public:
     virtual NodeAST* visit(NodeString& node) {
 		return &node;
 	}
+	virtual NodeAST* visit(NodeBoolean& node) {
+		return &node;
+	}
 	virtual NodeAST* visit(NodeFormatString& node) {
 		visit_all(node.elements, *this);
 		return &node;
