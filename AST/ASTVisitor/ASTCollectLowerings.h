@@ -85,12 +85,16 @@ public:
 	NodeAST * visit(NodeAccessChain& node) override;
 	/// lower nil to -1
 	NodeAST * visit(NodeNil& node) override;
+	/// lower booleans to 1 or 0
+	NodeAST * visit(NodeBoolean& node) override;
 	/// lower num elements node
 	NodeAST * visit(NodeNumElements& node) override;
 	NodeAST * visit(NodeUseCount& node) override;
 	/// flatten nested lists
 	NodeAST * visit(NodeInitializerList& node) override;
 	NodeAST * visit(NodeRange& node) override;
+	NodeAST * visit(NodeBinaryExpr& node) override;
+	NodeAST * visit(NodeUnaryExpr& node) override;
 private:
     DefinitionProvider* m_def_provider;
 };

@@ -112,6 +112,8 @@ struct NodeAST {
 	NodeAST* collect_call_sites(NodeProgram* program);
 	/// Determines if current Node is function argument
 	[[nodiscard]] NodeFunctionHeaderRef* is_func_arg() const;
+	/// checks if reference is in a string representation (printing or string assignment)
+	[[nodiscard]] bool is_string_env() const;
 	NodeReference* is_reference();
     [[nodiscard]] bool is_literal();
 };
@@ -200,15 +202,13 @@ struct NodeReference : NodeAST {
 		return ptr_chain;
 	}
 
-	static struct NodeStruct* get_object_ptr(NodeProgram* program, const std::string& obj);
+	static NodeStruct* get_object_ptr(NodeProgram* program, const std::string& obj);
 	/// lower type from object to int if applicable
 	NodeReference* lower_type();
 	/// checks if reference is l_value in an assignment
     [[nodiscard]] struct NodeSingleAssignment* is_l_value() const;
 	/// checks if reference is somewhere in the r_value expresssion
     [[nodiscard]] NodeSingleAssignment *is_r_value() const;
-	/// checks if reference is in a string representation (printing or string assignment)
-	[[nodiscard]] bool is_string_env() const;
 	virtual std::unique_ptr<NodeReference> expand_dimension(std::unique_ptr<NodeAST> new_index) {
 		return nullptr;
 	}
@@ -359,13 +359,22 @@ struct NodeReal final : NodeAST {
     double value;
     explicit NodeReal(const double value, Token tok) : NodeAST(std::move(tok), NodeType::Real), value(value) {}
     NodeAST* accept(ASTVisitor &visitor) override;
-    // Kopierkonstruktor
-    NodeReal(const NodeReal& other) : NodeAST(other), value(other.value) {}
-    // Clone Methode
+    NodeReal(const NodeReal& other) = default;
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     std::string get_string() override {
         return std::to_string(value);
     }
+};
+
+struct NodeBoolean final : NodeAST {
+	bool value;
+	explicit NodeBoolean(const bool value, Token tok) : NodeAST(std::move(tok), NodeType::Boolean), value(value) {}
+	NodeAST* accept(ASTVisitor &visitor) override;
+	NodeBoolean(const NodeBoolean& other) = default;
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	std::string get_string() override {
+		return std::to_string(value);
+	}
 };
 
 struct NodeString final : NodeAST {
@@ -707,6 +716,10 @@ struct NodeUnaryExpr final : NodeAST {
     void update_token_data(const Token& token) override {
         operand -> update_token_data(token);
     }
+	void set_operand(std::unique_ptr<NodeAST> opr) {
+		opr->parent = this;
+		operand = std::move(opr);
+	}
 	bool needs_short_circuiting();
 	bool has_return_func() const;
 	bool has_return_func_and_bool() const;
@@ -743,6 +756,14 @@ struct NodeBinaryExpr final : NodeAST {
         left -> update_token_data(token);
         right -> update_token_data(token);
     }
+	void set_left(std::unique_ptr<NodeAST> l) {
+    	l->parent = this;
+	    left = std::move(l);
+    }
+	void set_right(std::unique_ptr<NodeAST> r) {
+		r->parent = this;
+	    right = std::move(r);
+	}
 	/// declare ndarray3[10,10,10,10] -> declare _ndarray3[10 * (10 * (10 * 10))]
 	static std::unique_ptr<NodeAST> create_right_nested_binary_expr(const std::vector<std::unique_ptr<NodeAST>>& nodes, size_t index, token op);
 	/// ndarray3[4,5, 6, 7] -> _ndarray3[(4 * ((10 * 10) * 10)) + ((5 * (10 * 10)) + ((6 * 10) + 7))]

@@ -45,18 +45,18 @@ function __le__(a: int, b: int): int
 end function
 
 {doc:-----------------------------------------------
-*	Negates input boolean. Returns TRUE if x = FALSE, returns FALSE if x = TRUE
+*	NOT EQUAL. Returns TRUE if a # b and FALSE if a == b
 *	@param	x		input <int>		
 ---------------------------------------------------}
 function __ne__(x: int): int
-	return abs(sh_right(abs(x)-1,31))
+	return 1-(-sh_right(abs(a-b)-1,31))
 end function
 
 {doc:-----------------------------------------------
 *	Turns input into boolean. Returns 1/TRUE if x # 0 and 0/FALSE if x = 0
 *	@param	x		input <int>		
 ---------------------------------------------------}
-function bool(x: int): int
+function __bool__(x: int): int
   return 1+sh_right(abs(x)-1,31)
 end function
 
