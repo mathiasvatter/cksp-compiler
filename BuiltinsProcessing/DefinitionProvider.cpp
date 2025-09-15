@@ -169,33 +169,71 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::set_declaration(const std
 // ******************* getter and setter *******************
 
 
+std::shared_ptr<NodeDataStructure> DefinitionProvider::get_declared_data_structure(const std::string& data) {
+	// then search in all other scopes
+	for (auto rit = m_declared_data_structures.rbegin(); rit != m_declared_data_structures.rend(); ++rit) {
+		if (auto it = rit->find(data); it != rit->end()) {
+			return it->second;
+		}
+	}
+	return nullptr;
+}
+
+std::shared_ptr<NodeDataStructure> DefinitionProvider::get_scoped_data_structure(const std::string& data, const bool global_scope) const {
+	const auto& map = global_scope ? m_declared_data_structures.at(0) : m_declared_data_structures.back();
+	if (const auto it = map.find(data); it != map.end()) {
+		return it->second;
+	}
+	return nullptr;
+}
+
+void DefinitionProvider::set_external_variables(std::vector<std::shared_ptr<NodeDataStructure>> external_variables) {
+	DefinitionProvider::external_variables = std::move(external_variables);
+}
+
 std::shared_ptr<NodeVariable> DefinitionProvider::get_builtin_variable(const std::string& var) {
 	if(const auto it = builtin_variables.find(var); it != builtin_variables.end()) {
-        return it->second;
-    }
-    return nullptr;
+		return it->second;
+	}
+	return nullptr;
+}
+
+void DefinitionProvider::set_builtin_variables(std::unordered_map<std::string, std::shared_ptr<NodeVariable>> builtin_variables) {
+	DefinitionProvider::builtin_variables = std::move(builtin_variables);
 }
 
 std::shared_ptr<NodeArray> DefinitionProvider::get_builtin_array(const std::string& arr) {
 	if(const auto it = builtin_arrays.find(arr); it != builtin_arrays.end()) {
-        return it->second;
-    }
-    return nullptr;
+		return it->second;
+	}
+	return nullptr;
+}
+
+void DefinitionProvider::set_builtin_arrays(std::unordered_map<std::string, std::shared_ptr<NodeArray>> builtin_arrays) {
+	DefinitionProvider::builtin_arrays = std::move(builtin_arrays);
 }
 
 std::shared_ptr<NodeUIControl> DefinitionProvider::get_builtin_widget(const std::string &ui_control) {
 	if(const auto it = builtin_widgets.find(ui_control); it != builtin_widgets.end()) {
-        return it->second;
-    }
-    return nullptr;
+		return it->second;
+	}
+	return nullptr;
 }
 
-std::shared_ptr<NodeFunctionDefinition> DefinitionProvider::get_builtin_function(NodeFunctionHeaderRef *function) {
+void DefinitionProvider::set_builtin_widgets(std::unordered_map<std::string, std::shared_ptr<NodeUIControl>> builtin_widgets) {
+	DefinitionProvider::builtin_widgets = std::move(builtin_widgets);
+}
+
+std::shared_ptr<NodeFunctionDefinition> DefinitionProvider::get_builtin_function(const NodeFunctionHeaderRef *function) {
 	const auto it = builtin_functions.find({function->name, (int)function->args->size()});
 	if(it != builtin_functions.end()) {
 		return it->second;
 	}
 	return nullptr;
+}
+
+void DefinitionProvider::set_builtin_functions(std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions) {
+	DefinitionProvider::builtin_functions = std::move(builtin_functions);
 }
 
 std::shared_ptr<NodeFunctionDefinition> DefinitionProvider::get_boolean_function(const std::string &name, const int arg_count) {
@@ -206,49 +244,16 @@ std::shared_ptr<NodeFunctionDefinition> DefinitionProvider::get_boolean_function
 	return nullptr;
 }
 
-std::shared_ptr<NodeFunctionDefinition> DefinitionProvider::get_property_function(NodeFunctionHeaderRef *function) {
+void DefinitionProvider::set_boolean_functions(
+	std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> boolean_functions) {
+	DefinitionProvider::boolean_functions = std::move(boolean_functions);
+}
+
+std::shared_ptr<NodeFunctionDefinition> DefinitionProvider::get_property_function(const NodeFunctionHeaderRef *function) {
 	if(auto it = property_functions.find(function->name); it != property_functions.end()) {
 		return it->second;
 	}
 	return nullptr;
-}
-
-std::shared_ptr<NodeDataStructure> DefinitionProvider::get_declared_data_structure(const std::string& data) {
-	// then search in all other scopes
-    for (auto rit = m_declared_data_structures.rbegin(); rit != m_declared_data_structures.rend(); ++rit) {
-	    if (auto it = rit->find(data); it != rit->end()) {
-            return it->second;
-        }
-    }
-    return nullptr;
-}
-
-std::shared_ptr<NodeDataStructure> DefinitionProvider::get_scoped_data_structure(const std::string& data, const bool global_scope) const {
-    const auto& map = global_scope ? m_declared_data_structures.at(0) : m_declared_data_structures.back();
-    if (const auto it = map.find(data); it != map.end()) {
-		return it->second;
-	}
-	return nullptr;
-}
-
-void DefinitionProvider::set_external_variables(std::vector<std::shared_ptr<NodeDataStructure>> external_variables) {
-	DefinitionProvider::external_variables = std::move(external_variables);
-}
-
-void DefinitionProvider::set_builtin_variables(std::unordered_map<std::string, std::shared_ptr<NodeVariable>> builtin_variables) {
-	DefinitionProvider::builtin_variables = std::move(builtin_variables);
-}
-
-void DefinitionProvider::set_builtin_arrays(std::unordered_map<std::string, std::shared_ptr<NodeArray>> builtin_arrays) {
-	DefinitionProvider::builtin_arrays = std::move(builtin_arrays);
-}
-
-void DefinitionProvider::set_builtin_widgets(std::unordered_map<std::string, std::shared_ptr<NodeUIControl>> builtin_widgets) {
-	DefinitionProvider::builtin_widgets = std::move(builtin_widgets);
-}
-
-void DefinitionProvider::set_builtin_functions(std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions) {
-	DefinitionProvider::builtin_functions = std::move(builtin_functions);
 }
 
 void DefinitionProvider::set_property_functions(std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> property_functions) {

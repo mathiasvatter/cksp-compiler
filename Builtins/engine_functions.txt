@@ -14,6 +14,13 @@ set_waveform_properties(waveform: int, bar_color: int, zero_line_color: int, bg_
 set_wavetable2d_properties(wavetable: int, wt_zone: int, bg_color: int, bg_alpha: int, wave_color: int, wave_alpha: int, wave_end_color: int, wave_end_alpha: int)
 set_wavetable3d_properties(wavetable: int, wt_zone: int, bg_color: int, bg_alpha: int, wt_color: int, wt_alpha: int, wt_end_color: int, wt_end_alpha: int, parallax_x: int, parallax_y: int)
 
+// typecasting
+bool(value: any): any
+int(value: any): int
+real(value: any): real
+real_to_int(value: real): int
+int_to_real(value: int): real
+
 // builtin functions
 END_USE_CODE
 RESET_CONDITION(condition)
@@ -142,8 +149,6 @@ ignore_midi
 import_nckp(filepath: string): string
 in_range(value: number, value: number, value: number): bool
 inc(variable: int)
-int(value: any): int
-int_to_real(value: int): real
 is_zone_empty(zone_id: int): int
 load_array(array: any[], int): int
 load_array_str(array: any[], path: string): int
@@ -221,8 +226,6 @@ pow(value: real, value: real): real
 purge_group(group_idx: int, mode: int): int
 random(min: int, max: int): int
 read_persistent_var(variable: any)
-real(value: any): real
-real_to_int(value: real): int
 redirect_midi(event_id: int, instr_slot_idx: int, instr_bank_slot_idx: int)
 redirect_output(event_id: int, output_type: int, output_idx: int)
 remove_keyrange(key_number: int)

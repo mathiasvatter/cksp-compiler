@@ -6,6 +6,8 @@
 #include "../../Lowering/LoweringStruct.h"
 #include "../../Lowering/LoweringTernaryOperator.h"
 #include "../../Lowering/PreLoweringStruct.h"
+#include "../../Lowering/LoweringBoolean.h"
+#include "../../Lowering/LoweringBooleanExpression.h"
 #include "FunctionHandling/UIControlParamHandling.h"
 
 NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
@@ -83,6 +85,10 @@ NodeAST * ASTCollectLowerings::visit(NodeNil& node) {
 	return node.lower(m_program);
 }
 
+NodeAST * ASTCollectLowerings::visit(NodeBoolean &node) {
+	static LoweringBoolean bool_lowering(m_program);
+	return node.accept(bool_lowering);
+}
 
 NodeAST * ASTCollectLowerings::visit(NodeStruct& node) {
 	//TRACE();
@@ -278,6 +284,18 @@ NodeAST * ASTCollectLowerings::visit(NodeInitializerList &node) {
 NodeAST * ASTCollectLowerings::visit(NodeRange &node) {
 	//TRACE();
 	return ASTVisitor::visit(node)->lower(m_program);
+}
+
+NodeAST * ASTCollectLowerings::visit(NodeBinaryExpr &node) {
+	ASTVisitor::visit(node);
+	static LoweringBooleanExpression bool_expr_lowering(m_program);
+	return bool_expr_lowering.lower_expression(node);
+}
+
+NodeAST * ASTCollectLowerings::visit(NodeUnaryExpr &node) {
+	ASTVisitor::visit(node);
+	static LoweringBooleanExpression bool_expr_lowering(m_program);
+	return bool_expr_lowering.lower_expression(node);
 }
 
 

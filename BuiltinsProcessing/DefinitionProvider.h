@@ -308,15 +308,15 @@ public:
     void set_builtin_widgets(std::unordered_map<std::string, std::shared_ptr<NodeUIControl>> builtin_widgets);
     /// builtin engine functions
     std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions{};
-    std::shared_ptr<NodeFunctionDefinition> get_builtin_function(NodeFunctionHeaderRef* function);
+    std::shared_ptr<NodeFunctionDefinition> get_builtin_function(const NodeFunctionHeaderRef* function);
     void set_builtin_functions(std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions);
 	/// boolean functions like and, or, not
 	std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> boolean_functions{};
 	std::shared_ptr<NodeFunctionDefinition> get_boolean_function(const std::string &name, int arg_count);
-	// void set_boolean_functions(std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions);
+	void set_boolean_functions(std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> boolean_functions);
     /// predefined property functions like set_label_properties etc
     std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> property_functions{};
-    std::shared_ptr<NodeFunctionDefinition> get_property_function(NodeFunctionHeaderRef* function);
+    std::shared_ptr<NodeFunctionDefinition> get_property_function(const NodeFunctionHeaderRef* function);
     void set_property_functions(std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> property_functions);
 
 	template<typename... Args>
