@@ -6,7 +6,7 @@
 
 #include "ASTLowering.h"
 
-class LoweringList : public ASTLowering {
+class LoweringList final : public ASTLowering {
 public:
 	explicit LoweringList(NodeProgram* program) : ASTLowering(program) {}
 

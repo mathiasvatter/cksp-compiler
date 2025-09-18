@@ -48,7 +48,7 @@ end function
 *	NOT EQUAL. Returns TRUE if a # b and FALSE if a == b
 *	@param	x		input <int>		
 ---------------------------------------------------}
-function __ne__(x: int): int
+function __ne__(a: int, b: int): int
 	return 1-(-sh_right(abs(a-b)-1,31))
 end function
 
