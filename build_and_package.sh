@@ -39,7 +39,7 @@ mkdir -p "$RELEASE_DIR"
 
 # Kopieren von README.md und CHANGELOG.md in den Release-Ordner
 cp README.md "$RELEASE_DIR/README.md"
-cp CHANGELOG.md "$RELEASE_DIR/CHANGELOG.md"
+# cp CHANGELOG.md "$RELEASE_DIR/CHANGELOG.md"
 
 mkdir -p "$RELEASE_DIR/$ARM_DIR"
 mkdir -p "$RELEASE_DIR/$INTEL_DIR"
