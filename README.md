@@ -1,5 +1,14 @@
 # CKSP Compiler
 
+```
+      _              
+  ___| | _____ _ __  
+ / __| |/ / __| '_ \ 
+| (__|   <\__ \ |_) |
+ \___|_|\_\___/ .__/ 
+              |_|    
+```
+
 ## Overview
 
 The **CKSP Compiler** is a compiler for the CKSP language, an extension of KSP (Kontakt Script Processor) for **Native Instruments Kontakt**. CKSP adds new features such as local variables, functions, recursive data structures, and a new type system, enabling the compilation of both the CKSP dialect and the vanilla KSP dialect. To learn more about the CKSP dialect, visit the [online documentation](https://mathiasvatter.github.io/cksp-compiler/).
