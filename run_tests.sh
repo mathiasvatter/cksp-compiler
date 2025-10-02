@@ -33,6 +33,7 @@ FILES=(
   "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp"
   "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp"
   "/Users/mathias/Scripting/time-textures/time-textures.ksp"
+  "/Users/mathias/Scripting/the-orchestra-complete-4/the_orchestra_ens_V1.2.ksp"
   "/Users/mathias/Scripting/legato-dev/legato.ksp"
   "/Users/mathias/Scripting/legato-dev/keyswitch.ksp"
   "/Users/mathias/Scripting/ro-ki/rho_des.ksp"

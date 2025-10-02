@@ -51,7 +51,7 @@ public:
 		node.function->args->accept(*this);
 
 		if(node.function->get_num_args() == 1) {
-			if(all_params_are_type(node, NodeType::ArrayRef)) {
+			// if(all_params_are_type(node, NodeType::ArrayRef)) {
 //				if(node.function->name == "num_elements") {
 //					auto array_ref = static_cast<NodeArrayRef*>(node.function->get_param(0).get());
 //					// array only has SIZE constant if user defined
@@ -64,7 +64,7 @@ public:
 //					node_size_const->data_type = DataType::Const;
 //					return node.replace_with(std::move(node_size_const));
 //				}
-			} else if (all_params_are_type(node, NodeType::Int)) {
+			if (all_params_are_type(node, NodeType::Int)) {
 				const auto int_node = node.function->get_arg(0)->cast<NodeInt>();
 				// Definition der Funktions-Map für Integer-Operationen
 				static std::unordered_map<std::string, std::function<int32_t(int32_t)>> int_functions = {
@@ -109,11 +109,11 @@ public:
 					return node.replace_with(std::move(node.function->get_arg(0)));
 				}
 			// check types -> real(~var) -> ~var; int($var) -> $var
-			} else if (node.function->get_arg(0)->ty == TypeRegistry::Integer) {
+			} else if (node.function->get_arg(0)->ty->get_element_type() == TypeRegistry::Integer) {
 				if (node.function->name == "int") {
 					return node.replace_with(std::move(node.function->get_arg(0)));
 				}
-			} else if (node.function->get_arg(0)->ty == TypeRegistry::Real) {
+			} else if (node.function->get_arg(0)->ty->get_element_type() == TypeRegistry::Real) {
 				if (node.function->name == "real") {
 					return node.replace_with(std::move(node.function->get_arg(0)));
 				}
@@ -152,7 +152,7 @@ public:
 			}
 		}
 		return &node;
-	};
+	}
 
     NodeAST* visit(NodeUnaryExpr& node) override {
         node.operand->accept(*this);
