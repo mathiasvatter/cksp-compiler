@@ -1,6 +1,3 @@
 [submodule "cksp-compiler-issues"]
 	path = cksp-compiler-issues
 	url = git@github.com:mathiasvatter/cksp-compiler-issues.git
-[submodule "cksp-compiler.wiki"]
-	path = cksp-compiler.wiki
-	url = git@github.com:mathiasvatter/cksp-compiler.wiki.git
