@@ -21,13 +21,15 @@ class LoweringComparisons final : public ASTLowering {
 public:
 	explicit LoweringComparisons(NodeProgram *program) : ASTLowering(program) {}
 
-	NodeAST* lower_comparison(NodeAST& condition) {
-		if (condition.cast<NodeBinaryExpr>() or condition.cast<NodeUnaryExpr>()) {
-			condition.accept(*this);
-			return &condition;
-		}
-		// condition is not a binary or unary expression -> must be a single literal or reference or function call
 
+	NodeAST* lower_comparison(std::unique_ptr<NodeAST>& condition) {
+		if (condition->cast<NodeBinaryExpr>() or condition->cast<NodeUnaryExpr>()) {
+			condition->accept(*this);
+		} else {
+		// condition is not a binary or unary expression -> must be a single literal or reference or function call
+			KSPConditions::sanitize(condition, condition->parent);
+		}
+		return condition.get();
 	}
 
 

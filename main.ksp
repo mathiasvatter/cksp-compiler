@@ -52,12 +52,25 @@ end function
 function is_hidden (ui_id: int): bool
 	return ui_id -> hide = HIDE_WHOLE_CONTROL
 end function
+struct Obj
+	declare val: int
 
+	function __eq__(self, other: Obj): bool
+		return self.val = other.val
+	end function
 
+end struct
 
 on init
 
-	if not bool(0)
+	declare object := Obj(1)
+	declare object2 := Obj(1)
+
+	if(object = object2)
+		message(true)
+	end if
+
+	if is_hidden(1)
 		message("This is true")
 	end if
 

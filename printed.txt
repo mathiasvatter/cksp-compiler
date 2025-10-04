@@ -1,20 +1,48 @@
 on init
-	declare self1 : int {Reuses: 0}
-	declare self2 : int {Reuses: 0}
+	declare self3 : int {Reuses: 0}
+	declare self4 : int {Reuses: 0}
 	declare num_refs0 : int {Reuses: 0}
 	declare current0 : int {Reuses: 0}
-	declare self3 : int {Reuses: 0}
-	declare num_refs1 : int {Reuses: 0}
+	declare self5 : int {Reuses: 1}
+	declare num_refs1 : int {Reuses: 1}
 	declare next0 : int {Reuses: 0}
-	declare ret1 : int {Reuses: 2}
+	declare ret2 : int {Reuses: 2}
 	declare arg0 : int {Reuses: 3}
 	declare local current000 : int {Reuses: 1}
 	declare local _iter200 : int {Reuses: 1}
 	declare local _iter1000 : int {Reuses: 3}
+	declare Obj::free_idx : int {Reuses: 0}
+	declare Obj::allocation[2] : int[] {Reuses: 0}
+	declare Obj::val[2] : int[] {Reuses: 0}
 	declare List::free_idx : int {Reuses: 0}
 	declare List::allocation[1] : int[] {Reuses: 0}
 	declare List::next[1] : int[] := [-1] {Reuses: 0}
-	message("This is true"){Builtin, None, message}
+	declare object : int {Reuses: 0}
+	self5{int} {self5}  := 1
+	Obj::free_idx{int} {Obj::free_idx}  := search(Obj::allocation{int[]} {Obj::allocation} , 0, Obj::free_idx{int} {Obj::free_idx} , 1){Builtin, None, search}
+	if(Obj::free_idx{int} {Obj::free_idx}  = -1)
+		message("Error: No more free space available to allocate objects of type 'Obj'"){Builtin, None, message}
+	end if
+	Obj::allocation[Obj::free_idx{int} {Obj::free_idx} ]{int} {Obj::allocation}  := 1
+	Obj::val[Obj::free_idx{int} {Obj::free_idx} ]{int} {Obj::val}  := self5{int} {self5} 
+	num_refs1{int} {num_refs1}  := Obj::free_idx{int} {Obj::free_idx} 
+	object{int} {object}  := num_refs1{int} {num_refs1} 
+	declare object2 : int {Reuses: 0}
+	self5{int} {self5}  := 1
+	Obj::free_idx{int} {Obj::free_idx}  := search(Obj::allocation{int[]} {Obj::allocation} , 0, Obj::free_idx{int} {Obj::free_idx} , 1){Builtin, None, search}
+	if(Obj::free_idx{int} {Obj::free_idx}  = -1)
+		message("Error: No more free space available to allocate objects of type 'Obj'"){Builtin, None, message}
+	end if
+	Obj::allocation[Obj::free_idx{int} {Obj::free_idx} ]{int} {Obj::allocation}  := 1
+	Obj::val[Obj::free_idx{int} {Obj::free_idx} ]{int} {Obj::val}  := self5{int} {self5} 
+	num_refs1{int} {num_refs1}  := Obj::free_idx{int} {Obj::free_idx} 
+	object2{int} {object2}  := num_refs1{int} {num_refs1} 
+	if(- sh_right(abs(Obj::val[object{int} {object} ]{int} {Obj::val}  - Obj::val[object2{int} {object2} ]{int} {Obj::val} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right} # 0)
+		message("true"){Builtin, None, message}
+	end if
+	if(- sh_right(abs(get_control_par(1, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} ){Builtin, None, get_control_par} - HIDE_WHOLE_CONTROL{int} {HIDE_WHOLE_CONTROL} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right} # 0)
+		message("This is true"){Builtin, None, message}
+	end if
 	declare is_true : int {Reuses: 0}
 	is_true{int} {is_true}  := - sh_right(abs(get_control_par(1, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} ){Builtin, None, get_control_par} - HIDE_WHOLE_CONTROL{int} {HIDE_WHOLE_CONTROL} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right} .and. 0
 	declare var : real := 2.5 {Reuses: 0}
@@ -31,9 +59,9 @@ on init
 		message("Error: No more free space available to allocate objects of type 'List'"){Builtin, None, message}
 	end if
 	List::allocation[List::free_idx{int} {List::free_idx} ]{int} {List::allocation}  := 1
-	self2{int} {self2}  := List::next[List::free_idx{int} {List::free_idx} ]{int} {List::next} 
+	self4{int} {self4}  := List::next[List::free_idx{int} {List::free_idx} ]{int} {List::next} 
 	num_refs0{int} {num_refs0}  := 1
-	current0{int} {current0}  := self2{int} {self2} 
+	current0{int} {current0}  := self4{int} {self4} 
 	while(current0{int} {current0}  # -1) 
 		List::allocation[current0{int} {current0} ]{int} {List::allocation}  := List::allocation[current0{int} {current0} ]{int} {List::allocation}  - num_refs0{int} {num_refs0} 
 		if(List::allocation[current0{int} {current0} ]{int} {List::allocation}  > 0)
@@ -42,21 +70,21 @@ on init
 		else
 			List::allocation[current0{int} {current0} ]{int} {List::allocation}  := 0
 		end if
-		self2{int} {self2}  := current0{int} {current0} 
-		current0{int} {current0}  := List::next[self2{int} {self2} ]{int} {List::next} 
-		self1{int} {self1}  := self2{int} {self2} 
-		if(self1{int} {self1}  # -1)
-			List::next[self1{int} {self1} ]{int} {List::next}  := -1
-			List::free_idx{int} {List::free_idx}  := ((List::free_idx{int} {List::free_idx}  + self1{int} {self1} ) - abs(List::free_idx{int} {List::free_idx}  - self1{int} {self1} ){Builtin, None, abs}) / 2
+		self4{int} {self4}  := current0{int} {current0} 
+		current0{int} {current0}  := List::next[self4{int} {self4} ]{int} {List::next} 
+		self3{int} {self3}  := self4{int} {self4} 
+		if(self3{int} {self3}  # -1)
+			List::next[self3{int} {self3} ]{int} {List::next}  := -1
+			List::free_idx{int} {List::free_idx}  := ((List::free_idx{int} {List::free_idx}  + self3{int} {self3} ) - abs(List::free_idx{int} {List::free_idx}  - self3{int} {self3} ){Builtin, None, abs}) / 2
 		end if
 	end while
 	List::next[List::free_idx{int} {List::free_idx} ]{int} {List::next}  := next0{int} {next0} 
-	self3{int} {self3}  := List::next[List::free_idx{int} {List::free_idx} ]{int} {List::next} 
+	self5{int} {self5}  := List::next[List::free_idx{int} {List::free_idx} ]{int} {List::next} 
 	num_refs1{int} {num_refs1}  := 1
-	if(self3{int} {self3}  # -1)
-		List::allocation[self3{int} {self3} ]{int} {List::allocation}  := List::allocation[self3{int} {self3} ]{int} {List::allocation}  + num_refs1{int} {num_refs1} 
+	if(self5{int} {self5}  # -1)
+		List::allocation[self5{int} {self5} ]{int} {List::allocation}  := List::allocation[self5{int} {self5} ]{int} {List::allocation}  + num_refs1{int} {num_refs1} 
 	end if
-	ptr{int} {ptr}  := ret1{int} {ret1} 
+	ptr{int} {ptr}  := ret2{int} {ret2} 
 	message(ptr{int} {ptr} ){Builtin, None, message}
 	message(4){Builtin, None, message}
 	current000{int} {current000}  := 0
@@ -64,8 +92,8 @@ on init
 	_iter1000{int} {_iter1000}  := 0
 	arg0{int} {arg0}  := 3
 	message("side effects"){Builtin, None, message}
-	ret1{int} {ret1}  := 3
-	_iter1000{int} {_iter1000}  := ret1{int} {ret1} 
+	ret2{int} {ret2}  := 3
+	_iter1000{int} {_iter1000}  := ret2{int} {ret2} 
 	while(((current000{int} {current000}  < _iter1000{int} {_iter1000} ) and (_iter200{int} {_iter200}  > 0)) or ((current000{int} {current000}  > _iter1000{int} {_iter1000} ) and (_iter200{int} {_iter200}  < 0))) 
 		message(current000{int} {current000} ){Builtin, None, message}
 		current000{int} {current000}  := current000{int} {current000}  + _iter200{int} {_iter200} 
@@ -81,16 +109,16 @@ on init
 		message("hello"){Builtin, None, message}
 	end if
 	arg0{int} {arg0}  := 1
-	ret1{int} {ret1}  := 0
-	while(ret1{int} {ret1}  = 0) 
+	ret2{int} {ret2}  := 0
+	while(ret2{int} {ret2}  = 0) 
 		if(arg0{int} {arg0}  # -1)
 			message("henlo"){Builtin, None, message}
-			ret1{int} {ret1}  := 1
+			ret2{int} {ret2}  := 1
 			continue{Builtin, None, continue}
 		else
 			message("sdlfkj"){Builtin, None, message}
 		end if
-		ret1{int} {ret1}  := 1
+		ret2{int} {ret2}  := 1
 		continue{Builtin, None, continue}
 	end while
 end on
