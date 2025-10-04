@@ -32,14 +32,14 @@ public:
 	NodeAST *visit(NodeIf &node) override {
 		ASTVisitor::visit(node);
 		static LoweringComparisons lowering(m_program);
-		lowering.lower_comparison(*node.condition);
+		lowering.lower_comparison(node.condition);
 		return &node;
 	}
 
 	NodeAST* visit(NodeWhile& node) override {
 		ASTVisitor::visit(node);
 		static LoweringComparisons lowering(m_program);
-		lowering.lower_comparison(*node.condition);
+		lowering.lower_comparison(node.condition);
 		return &node;
 	}
 
