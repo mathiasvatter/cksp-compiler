@@ -1,24 +1,21 @@
-{ Compiled with cksp version 0.0.7 on Wed Sep 24 22:15:45 2025 }
+{ Compiled with cksp version 0.0.8-alpha.1 on Sat Oct 04 15:18:42 2025 }
 on init
-  declare %BrowserFont__ty[1] := (0)
+  declare $self1
   declare $self2
   declare $num_refs0
   declare $current0
   declare $self3
   declare $num_refs1
-  declare $ret2
-  declare $arg0
-  declare $ret3
+  declare $next0
   declare $ret1
-  declare $RETURN_FLAG10
-  declare $_short_circuit00
-  declare $_ret00
+  declare $arg0
   declare $current000
   declare $_iter200
   declare $_iter1000
   declare $List____free_idx
   declare %List____allocation[1]
   declare %List____next[1] := (-1)
+  message("This is true")
   declare $is_true
   $is_true := - sh_right(abs(get_control_par(1, $CONTROL_PAR_HIDE) - $HIDE_WHOLE_CONTROL) - 1, 31) .and. 0
   declare ~var := 2.5
@@ -26,11 +23,10 @@ on init
     message("This is true")
   end while
   message(2)
-  message("Hello, World!" & "!!!")
   pgs_create_key( PRESET_NAME, 3)
   declare $ptr
-  $_short_circuit00 := 10
-  $RETURN_FLAG10 := -1
+  $arg0 := 10
+  $next0 := -1
   $List____free_idx := search(%List____allocation, 0, $List____free_idx, 0)
   if($List____free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'List'")
@@ -49,60 +45,32 @@ on init
     end if
     $self2 := $current0
     $current0 := %List____next[$self2]
-    $arg0 := $self2
-    if($arg0 # -1)
-      %List____next[$arg0] := -1
-      $List____free_idx := (($List____free_idx + $arg0) - abs($List____free_idx - $arg0)) / 2
+    $self1 := $self2
+    if($self1 # -1)
+      %List____next[$self1] := -1
+      $List____free_idx := (($List____free_idx + $self1) - abs($List____free_idx - $self1)) / 2
     end if
   end while
-  %List____next[$List____free_idx] := $RETURN_FLAG10
+  %List____next[$List____free_idx] := $next0
   $self3 := %List____next[$List____free_idx]
   $num_refs1 := 1
   if($self3 # -1)
     %List____allocation[$self3] := %List____allocation[$self3] + $num_refs1
   end if
-  $_ret00 := $List____free_idx
-  $ptr := $_ret00
+  $ptr := $ret1
   message($ptr)
-  $RETURN_FLAG10 := 0
-  while($RETURN_FLAG10 = 0) 
-    $_short_circuit00 := 0
-    $arg0 := 5
-    message("side effects")
-    $ret2 := 5
-    $_ret00 := $ret2
-    if(1 > $_ret00)
-      $_short_circuit00 := 1
-    end if
-    if($_short_circuit00 = 1)
-      $ret3 := 4
-      $ret1 := $ret3
-      $RETURN_FLAG10 := 1
-      continue
-    else
-      $ret1 := 1
-      $RETURN_FLAG10 := 1
-      continue
-    end if
-  end while
-  $current000 := $ret1
-  message("Doing something with " & $current000 & 1)
-  $ret2 := 1
-  $current000 := $ret2
-  message($current000)
   message(4)
   $current000 := 0
-  $_iter1000 := 1
-  $_iter200 := 0
+  $_iter200 := 1
+  $_iter1000 := 0
   $arg0 := 3
   message("side effects")
-  $ret2 := 3
-  $_iter200 := $ret2
-  while((($current000 < $_iter200) and ($_iter1000 > 0)) or (($current000 > $_iter200) and ($_iter1000 < 0))) 
+  $ret1 := 3
+  $_iter1000 := $ret1
+  while((($current000 < $_iter1000) and ($_iter200 > 0)) or (($current000 > $_iter1000) and ($_iter200 < 0))) 
     message($current000)
-    $current000 := $current000 + $_iter1000
+    $current000 := $current000 + $_iter200
   end while
-  message(%BrowserFont__ty[0])
   declare $lbl_bd_dnd := 4
   inc($lbl_bd_dnd)
   message($lbl_bd_dnd)
@@ -114,16 +82,16 @@ on init
     message("hello")
   end if
   $arg0 := 1
-  $ret2 := 0
-  while($ret2 = 0) 
+  $ret1 := 0
+  while($ret1 = 0) 
     if($arg0 # -1)
       message("henlo")
-      $ret2 := 1
+      $ret1 := 1
       continue
     else
       message("sdlfkj")
     end if
-    $ret2 := 1
+    $ret1 := 1
     continue
   end while
 end on

@@ -769,9 +769,10 @@ struct NodeBinaryExpr final : NodeAST {
 	/// ndarray3[4,5, 6, 7] -> _ndarray3[(4 * ((10 * 10) * 10)) + ((5 * (10 * 10)) + ((6 * 10) + 7))]
 	static std::unique_ptr<NodeAST> calculate_index_expression(const std::vector<std::unique_ptr<NodeAST>>& sizes, const std::vector<std::unique_ptr<NodeAST>>& indices, size_t dimension, const Token& tok);
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
+	/// returns true if one of the operands is a user-defined (non-expression) return function and the operator is a logical operator
+	[[nodiscard]] bool has_return_func() const;
 	/// returns true if one of the operands is a user-defined return function and the operator is a logical operator
-	bool has_return_func() const;
-	bool has_return_func_and_bool() const;
+	[[nodiscard]] bool has_return_func_and_bool() const;
 	bool needs_short_circuiting();
 };
 
