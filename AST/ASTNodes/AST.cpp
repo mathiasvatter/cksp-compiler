@@ -895,7 +895,8 @@ bool NodeUnaryExpr::needs_short_circuiting() {
 bool NodeUnaryExpr::has_return_func() const {
 	// func_call > 0 or func_call == 0
 	if (auto call = operand->cast<NodeFunctionCall>()) {
-		if (call and !call->is_builtin_kind()) {
+		auto is_eligible = call and !call->is_builtin_kind() and (call->get_definition() ? !call->get_definition()->is_expression_function() : true);
+		if (is_eligible) {
 			return true;
 		}
 	}
@@ -948,10 +949,14 @@ ASTDesugaring *NodeBinaryExpr::get_desugaring(NodeProgram *program) const {
 
 bool NodeBinaryExpr::has_return_func() const {
 	// func_call > 0 or func_call == 0
-	if (left->cast<NodeFunctionCall>() or right->cast<NodeFunctionCall>()) {
-		auto left_func = left->cast<NodeFunctionCall>();
-		auto right_func = right->cast<NodeFunctionCall>();
-		if (left_func and !left_func->is_builtin_kind() or right_func and !right_func->is_builtin_kind()) {
+	auto left_func = left->cast<NodeFunctionCall>();
+	auto left_func_def = left_func->get_definition();
+	auto right_func = right->cast<NodeFunctionCall>();
+	auto right_func_def = right_func->get_definition();
+	if (left_func or right_func) {
+		auto left_side_eligible = left_func and !left_func->is_builtin_kind() and (left_func_def ? !left_func_def->is_expression_function() : true);
+		auto right_side_eligible = right_func and !right_func->is_builtin_kind() and (right_func_def ? !right_func_def->is_expression_function() : true);
+		if (left_side_eligible or right_side_eligible) {
 			// func_call() > 0 or func_call() == 0
 			return true;
 		}

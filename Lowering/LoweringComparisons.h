@@ -22,7 +22,12 @@ public:
 	explicit LoweringComparisons(NodeProgram *program) : ASTLowering(program) {}
 
 	NodeAST* lower_comparison(NodeAST& condition) {
-		return condition.accept(*this);
+		if (condition.cast<NodeBinaryExpr>() or condition.cast<NodeUnaryExpr>()) {
+			condition.accept(*this);
+			return &condition;
+		}
+		// condition is not a binary or unary expression -> must be a single literal or reference or function call
+
 	}
 
 
