@@ -8,7 +8,8 @@
 #include "../AST/ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 
 /**
- * Sanitizes conditions in if and while statements to be valid KSP expressions.
+ * Sanitizes conditions in if and while statements that are NOT unary or binary expressions to be valid KSP expressions.
+ * (so conditions that are only literals or var references or non-builtin function calls)
  * Normally, conditions that are not comparisons or boolean expressions are not valid in KSP.
  * This class ensures that such conditions (only consisting of var references or literals) are lowered
  * into comparisons against zero.
@@ -30,13 +31,19 @@ public:
 		return &node;
 	}
 
-private:
-
 	static void sanitize(std::unique_ptr<NodeAST>& condition, NodeAST* parent) {
 		auto tok = condition->tok;
-		if (not(condition->is_literal() || condition->is_reference())) {
+		if (condition->cast<NodeBinaryExpr>() or condition->cast<NodeUnaryExpr>()) {
+			// condition is already a binary or unary expression -> do nothing
 			return;
 		}
+		if (auto call = condition->cast<NodeFunctionCall>()) {
+			// condition is a builtin function call -> do nothing
+			if (call->is_builtin_kind()) return;
+		}
+		// if (not(condition->is_literal() || condition->is_reference())) {
+		// 	return;
+		// }
 
 		auto condition_type = condition->ty;
 		if (condition_type == TypeRegistry::Unknown) {
