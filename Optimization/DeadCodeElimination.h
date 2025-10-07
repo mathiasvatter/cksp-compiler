@@ -130,7 +130,7 @@ public:
 		if(m_last_reference.empty()) return false;
 		// if current reference is arg in a function, make sure to not delete the last assignment
 		// remove ref out of last reference map
-		if (node->is_func_arg()) {
+		if (node->is_func_arg() or node->is_r_value()) {
 			m_last_reference.erase(get_hash_value(*node));
             return false;
 		}

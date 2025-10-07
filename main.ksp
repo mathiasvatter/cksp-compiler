@@ -4,63 +4,6 @@
 // import "/Users/mathias/Scripting/preset-system/dev/ksp/Preset.cksp"
 
 
-namespace BrowserFont
-	declare types: int[] := [
-		CONTROL_PAR_FONT_TYPE, 
-		CONTROL_PAR_FONT_TYPE_ON, 
-		CONTROL_PAR_FONT_TYPE_OFF_PRESSED, 
-		CONTROL_PAR_FONT_TYPE_ON_PRESSED, 
-		CONTROL_PAR_FONT_TYPE_OFF_HOVER, 
-		CONTROL_PAR_FONT_TYPE_ON_HOVER
-	]
-	declare ty: int[] := (0)
-end namespace
-
-namespace UI
-
-	declare const HEIGHT := 100
-	declare const WIDTH := 500
-
-	function set_bg_frame(frame: int)
-		set_skin_offset(frame * HEIGHT)
-	end function
-
-	namespace Layout
-		function content_height(): int
-            return HEIGHT-68        // unqualified access to outer member
-        end function
-	end namespace
-
-	namespace Color
-		declare const RED := 0xFF0000
-		declare const GREEN := 0x00FF00
-		declare const BLUE := 0x0000FF
-		declare const WHITE := 0xFFFFFF
-		declare const BLACK := 0x000000
-
-		function set_background_color(hex: int)
-			set_ui_color(hex)
-		end function
-
-	end namespace
-
-	namespace Fonts
-
-		declare types: int[] := [CONTROL_PAR_FONT_TYPE, CONTROL_PAR_FONT_TYPE_ON, CONTROL_PAR_FONT_TYPE_OFF_PRESSED, CONTROL_PAR_FONT_TYPE_ON_PRESSED, CONTROL_PAR_FONT_TYPE_OFF_HOVER, CONTROL_PAR_FONT_TYPE_ON_HOVER]
-		declare button: string[] := ["off", "on", "off_pressed", "on_pressed", "off_hover", "on_hover"]
-
-		function apply(
-			ref ui_control, 
-			font_array: int[]
-			)
-			for u in range(num_elements(types))
-				set_control_par(ui_control, types[u], font_array[u])
-			end for
-		end function
-	   
-	end namespace
-   
-end namespace
 
 struct List
     declare value: int
@@ -109,8 +52,27 @@ end function
 function is_hidden (ui_id: int): bool
 	return ui_id -> hide = HIDE_WHOLE_CONTROL
 end function
+struct Obj
+	declare val: int
+
+	function __eq__(self, other: Obj): bool
+		return self.val = other.val
+	end function
+
+end struct
 
 on init
+
+	declare object := Obj(1)
+	declare object2 := Obj(1)
+
+	if(object = object2)
+		message(true)
+	end if
+
+	if is_hidden(1)
+		message("This is true")
+	end if
 
 	declare is_true: bool := is_hidden(1) and not (true and 1<3 or true)
 	declare var: real := 2.5
@@ -120,20 +82,13 @@ on init
 
 	message(bool(3) * 2)
 
-	declare string: string := "Hello, World!"
-	string &= "!!!"
-	message(string)
 
 	pgs_create_key(PRESET_NAME, 3)
 
 	declare ptr : List := new List(10, nil)
 	message(int(ptr))
 
-	message(Browser.do_sth(
-		1 > side_effects(5) and 4 < 5 ? 4 < 5 ? 4: 5 : 1
-	))
 
-	message(ternary1())
 
 	message(int(4))
 
@@ -142,7 +97,6 @@ on init
 		message(i)
 	end for
 
-	message(BrowserFont.ty[0])
 	// message(Browser.do_sth(4))
 	// declare b := Bitlist()
 	// b.set(3, 1)
@@ -207,10 +161,3 @@ function swi_keyswitch_ui_controls(idx: int)
 	return
 end function    
 
-function ternary1() : int
-    if 1 < 2
-        return 1
-    else
-        return 2
-    end if
-end function

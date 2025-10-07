@@ -31,17 +31,22 @@ bool ASTOptimizations::optimize(NodeProgram &node, const OptimizationLevel optim
 	for(int i = 0; i<iterations; i++) {
 		static ConstantPropagation constant_propagation;
 		node.accept(constant_propagation);
+		node.debug_print();
 		if(do_const_expr_propagation) {
 			static ConstExprPropagation const_expr_propagation;
 			node.accept(const_expr_propagation);
+			node.debug_print();
 		}
 		static ConstantFolding constant_folding;
 		node.accept(constant_folding);
+		node.debug_print();
 	}
 	static VariablePruning variable_pruning;
 	node.accept(variable_pruning);
+	node.debug_print();
 	static DeadCodeElimination dead_code_elimination;
 	node.accept(dead_code_elimination);
+	node.debug_print();
 
 	return true;
 }

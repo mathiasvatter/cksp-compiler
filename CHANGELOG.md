@@ -1,13 +1,21 @@
 # Changelog
 
-## \[0.0.7] – 2025-09-24
+## \[0.0.8-alpha.1] – 2025-10-07
 
 ### Added
 
-- **Advanced Memory Management**: Implemented advanced reference counting and destructor functions, including recursive structure analysis and enhanced deletion algorithms.
-- **Wildcard Syntax and Search Features**: Added support for wildcard syntax in function arguments and improved array search logic with `NodeSearch`.
-- **Inflation Logic**: Integrated dimension inflation for arrays, enhancing the flexibility of `NodeDataStruct` and related AST transformations.
+* Added **TOC4** to the testing pipeline for enhanced compatibility testing.
 
 ### Changed
-- **Desugaring Problems**: Addressed problems in handling `for-each` statements, struct member access, and reference substitution.
 
+* Improved **short-circuit evaluation transformation**: now only applied when user-defined functions (that are not expression functions) are used in conditions.
+
+### Fixed
+
+* Fixed **issue #40**: overloaded boolean operators and single-function calls now work correctly in conditional expressions.
+* Fixed an issue in **Dead Code Elimination**, where too many assignments were incorrectly removed.
+* Fixed a bug where `int()` was not removed during compilation if the argument was already an integer array.
+
+### Removed
+
+* Removed the obsolete `wiki` submodule from the project.
