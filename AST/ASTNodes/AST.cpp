@@ -950,9 +950,9 @@ ASTDesugaring *NodeBinaryExpr::get_desugaring(NodeProgram *program) const {
 bool NodeBinaryExpr::has_return_func() const {
 	// func_call > 0 or func_call == 0
 	auto left_func = left->cast<NodeFunctionCall>();
-	auto left_func_def = left_func->get_definition();
+	auto left_func_def = left_func? left_func->get_definition() : nullptr;
 	auto right_func = right->cast<NodeFunctionCall>();
-	auto right_func_def = right_func->get_definition();
+	auto right_func_def = right_func? right_func->get_definition(): nullptr;
 	if (left_func or right_func) {
 		auto left_side_eligible = left_func and !left_func->is_builtin_kind() and (left_func_def ? !left_func_def->is_expression_function() : true);
 		auto right_side_eligible = right_func and !right_func->is_builtin_kind() and (right_func_def ? !right_func_def->is_expression_function() : true);
