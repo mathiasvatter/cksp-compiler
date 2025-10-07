@@ -182,7 +182,7 @@ jobs:
             git fetch --tags
             TAG="${{ needs.build-macos.outputs.tag }}"
       
-            if git tag -l | grep -q "$TAG"; then
+            if git tag -l | grep -qx "$TAG"; then
                 git tag -d "$TAG"
                 git push --delete origin "$TAG" || echo "Tag $TAG does not exist remotely, skipping deletion"
             else
