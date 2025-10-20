@@ -1,6 +1,6 @@
 
 #pragma output_path("test.txt")
-// #pragma combine_callbacks(true)
+#pragma combine_callbacks(true)
 // import "/Users/mathias/Scripting/preset-system/dev/ksp/Preset.cksp"
 
 
@@ -62,6 +62,7 @@ struct Obj
 end struct
 
 on init
+	declare ui_button btn(1,1)
 
 	declare object := Obj(1)
 	declare object2 := Obj(1)
@@ -130,7 +131,6 @@ on init
 	func_return(arr)
 	swi_keyswitch_ui_controls(1)
 
-	declare ui_button btn
 end on
 
 on ui_control(btn)
