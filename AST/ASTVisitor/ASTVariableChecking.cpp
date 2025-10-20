@@ -62,7 +62,7 @@ NodeAST* ASTVariableChecking::visit(NodeUIControl& node) {
 	node.params->accept(*this);
 
 	// if fail is set to false, return early. the rest is determined after lowering
-	if(!fail) return &node;
+	// if(!fail) return &node;
 
 	//check param size
 	const auto engine_widget = node.get_declaration()->cast<NodeUIControl>();

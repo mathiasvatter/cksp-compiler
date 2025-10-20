@@ -1,6 +1,6 @@
 
 #pragma output_path("test.txt")
-
+#pragma combine_callbacks(true)
 // import "/Users/mathias/Scripting/preset-system/dev/ksp/Preset.cksp"
 
 
@@ -59,16 +59,22 @@ struct Obj
 		return self.val = other.val
 	end function
 
+	function __ne__(self, other: Obj): bool
+		return self.val # other.val
+	end function
+
 end struct
 
 on init
-
-	declare object := Obj(1)
-	declare object2 := Obj(1)
-
+	declare ui_button btn
+	
+	declare object := new Obj(1)
+	declare object2 := new Obj(1)
+	
 	if(object = object2)
 		message(true)
 	end if
+message(object # object2)
 
 	if is_hidden(1)
 		message("This is true")
@@ -129,6 +135,17 @@ on init
 	]
 	func_return(arr)
 	swi_keyswitch_ui_controls(1)
+
+end on
+
+on ui_control(btn)
+	message("button pressed")
+end on
+
+on ui_control(btn)
+	message("another button pressed")
+	message(1=1)
+
 end on
 
 function func_return(array: int[])
@@ -161,3 +178,11 @@ function swi_keyswitch_ui_controls(idx: int)
 	return
 end function    
 
+
+on init
+	
+message("pupoupupupupupup")
+
+	message(1=1)
+
+end on

@@ -108,6 +108,7 @@ struct NodeAST {
 	[[nodiscard]] struct NodeFunctionDefinition* get_current_function() const;
 	void do_constant_folding();
 	void do_type_inference(NodeProgram *program);
+	NodeAST* do_lowering(NodeProgram* program);
 	NodeAST* collect_declarations(NodeProgram* program);
 	NodeAST* collect_call_sites(NodeProgram* program);
 	/// Determines if current Node is function argument
@@ -903,7 +904,9 @@ struct NodeProgram final : NodeAST {
 	std::shared_ptr<NodeFunctionDefinition> look_up_exact(const StringIntKey &hash, const Type* ty);
 	std::shared_ptr<NodeFunctionDefinition> look_up_compatible(const StringIntKey &hash, const Type* ty);
 	/// Checks for uniqueness of all callbacks except "on ui_control"
+	[[nodiscard]] std::unordered_map<std::string, std::vector<NodeCallback*>> get_callback_counts() const;
 	bool check_unique_callbacks() const;
+	bool combine_callbacks();
 	/// Checks for existence and uniqueness of "on init" callback
 	/// If found, returns pointer to the callback node
 	NodeCallback* move_on_init_callback();
