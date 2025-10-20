@@ -1,21 +1,37 @@
 
 
-ui_component Popup
-    declare ui_button btn_confirm
-    declare ui_button btn_cancel
-    declare ui_button btn_close
-    declare ui_label lbl_message(1,1)
-    declare ui_label lbl_title(1,1)
+component Popup
+	ui_button btn_confirm
+	ui_button btn_cancel
+	ui_button btn_close
+	ui_label lbl_message(1,1)
+	ui_label lbl_title(1,1)
 
 
-    function __init__(self, title: string, message: string)
-        self.lbl_title->text := title
-        self.lbl_message->text := message
-        self.btn_confirm->pos_x := 3
-    end function
+	function __init__(self, title: string, message: string)
+		self.lbl_title->text := title
+		self.lbl_message->text := message
+		self.btn_confirm->pos_x := 3
 
-    function __on_ui__(self)
-        self->hide := true
-    end function
+		self.btn_confirm.setEventHandler(self.on_confirm)
+		self.btn_cancel.setEventHandler(self.on_cancel)
+		self.btn_close.setEventHandler(function(self, ui_id: int)
+			self->hide := true
+		end function)
 
-end ui_component
+	end function
+
+
+
+
+	function on_confirm(self, ui_id: int)
+		message("Confirmed")
+		self->hide := true
+	end function
+
+	function on_cancel(self, ui_id: int)
+		message("Cancelled")
+		self->hide := true
+	end function
+
+end component

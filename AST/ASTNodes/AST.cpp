@@ -27,6 +27,7 @@
 #include "../../Lowering/LoweringInitializerList.h"
 #include "../../Optimization/FreeVarCollector.h"
 #include "../../Optimization/ReferenceValidator.h"
+#include "../ASTVisitor/ASTCollectLowerings.h"
 #include "../ASTVisitor/ASTVariableChecking.h"
 #include "../ASTVisitor/TypeInference.h"
 #include "../ASTVisitor/FunctionHandling/BuiltinRestrictionValidator.h"
@@ -237,6 +238,10 @@ void NodeAST::do_type_inference(NodeProgram *program) {
 	accept(inference);
 }
 
+NodeAST * NodeAST::do_lowering(NodeProgram *program) {
+	static ASTCollectLowerings collect_lowerings(program);
+	return accept(collect_lowerings);
+}
 
 NodeAST * NodeAST::collect_declarations(NodeProgram *program) {
 	static ASTCollectDeclarations collect(program);
@@ -1398,25 +1403,81 @@ std::shared_ptr<NodeFunctionDefinition> NodeProgram::look_up_compatible(const St
 	return nullptr;
 }
 
-bool NodeProgram::check_unique_callbacks() const {
-	auto error = CompileError(ErrorType::SyntaxError, "", -1, "", "", tok.file);
-	std::unordered_map<std::string, int> callback_counts;
-	// Zähle jede Callback-Bezeichnung, außer "on ui_control"
-	for (const auto& callback : callbacks) {
-		if (callback->begin_callback != "on ui_control") {
-			callback_counts[callback->begin_callback]++;
+std::unordered_map<std::string, std::vector<NodeCallback *>> NodeProgram::get_callback_counts() const {
+	std::unordered_map<std::string, std::vector<NodeCallback*>> callback_counts;
+	std::mutex map_mutex;
+	parallel_for_each(callbacks.begin(), callbacks.end(), [&](const auto& cb) {
+		std::string hash = cb->begin_callback;
+		if (cb->callback_id) {
+			hash += "_" + cb->callback_id->get_string();
 		}
-	}
+		{
+			std::lock_guard<std::mutex> lock(map_mutex);
+			callback_counts[hash].push_back(cb.get());
+		}
+	});
+	return callback_counts;
+}
+
+bool NodeProgram::check_unique_callbacks() const {
+	auto callback_counts = get_callback_counts();
 	// Überprüfe die Anzahl jeder Bezeichnung, sollte genau 1 sein
 	for (const auto& count : callback_counts) {
-		if (count.second > 1) {
-			error.m_message = "Unable to compile. Multiple <" + count.first + "> callbacks found.";
-			error.m_expected = '1';
-			error.m_got = std::to_string(count.second);
-			error.exit();
-			return false;
+		size_t size = count.second.size();
+		auto& callback_list = count.second;
+		if (size > 1) {
+			if (StringUtils::starts_with(count.first, "on ui_control_")) {
+				auto error = CompileError(ErrorType::CompileWarning, "", "", callback_list.back()->tok);
+				error.m_message = "Multiple <on ui_control> callbacks of the same variable found. Kontakt will only execute the last one.";
+				error.print();
+			} else {
+				auto error = CompileError(ErrorType::SyntaxError, "", "", callback_list.back()->tok);
+				error.m_expected = '1';
+				error.m_got = std::to_string(size);
+				error.m_message = "Multiple <" + count.first + "> callbacks found."
+						" Unable to compile, this callback type must be unique. Use <pragma> option"
+						" <combine_callbacks> to merge them automatically.";
+				error.exit();
+				return false;
+			}
 		}
 	}
+	return true;
+}
+
+bool NodeProgram::combine_callbacks() {
+
+	auto callback_counts = get_callback_counts();
+	parallel_for_each(callback_counts.begin(), callback_counts.end(), [](auto &el) {
+		auto& callback_list = el.second;
+		if (callback_list.size() > 1) {
+			auto& first_occurrence = callback_list[0];
+			for (size_t i = 1; i < callback_list.size(); i++) {
+				auto & curr_cb = callback_list[i];
+				first_occurrence->statements->append_body(
+					std::move(curr_cb->statements)
+				);
+			}
+		}
+	});
+	// for (auto& el : callback_counts) {
+	// 	auto& callback_list = el.second;
+	// 	if (callback_list.size() > 1) {
+	// 		auto& first_occurrence = callback_list[0];
+	// 		for (size_t i = 1; i < callback_list.size(); i++) {
+	// 			auto & curr_cb = callback_list[i];
+	// 			first_occurrence->statements->append_body(
+	// 				std::move(curr_cb->statements)
+	// 			);
+	// 		}
+	// 	}
+	// }
+
+	// remove merged callbacks from the program's callback list
+	std::erase_if(callbacks,
+	[&](const std::unique_ptr<NodeCallback>& cb) {
+		return !cb->statements;
+	});
 	return true;
 }
 

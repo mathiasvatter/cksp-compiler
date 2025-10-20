@@ -413,7 +413,11 @@ NodeAST * TypeInference::visit(NodeForEach& node) {
 	node.range->accept(*this);
 
 	return &node;
-};
+}
+
+NodeAST * TypeInference::visit(NodeTernary &node) {
+	return ASTVisitor::visit(node);
+}
 
 NodeAST * TypeInference::visit(NodeAccessChain& node) {
 

@@ -96,6 +96,18 @@ private:
 			}
 			m_config->parameter_passing = it->second;
 		};
+
+		pragma_handlers["combine_callbacks"] = [this](const std::string& arg, const Token& token) {
+			std::string combine = StringUtils::remove_quotes(arg);
+
+			if (combine == "true") {
+				m_config->combine_callbacks = true;
+			} else if (combine == "false") {
+				m_config->combine_callbacks = false;
+			} else {
+				get_pragma_error(token, combine, "'true' or 'false'").exit();
+			}
+		};
 	}
 
 	static CompileError get_pragma_error(const Token& tok, const std::string& got, const std::string& expected) {
