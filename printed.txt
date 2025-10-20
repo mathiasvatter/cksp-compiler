@@ -1,159 +1,168 @@
 // Global Declarations:
-declare _iter0 : int {Reuses: 0}
-declare const MAX::STRUCTS : int := 1000000 {Reuses: 0}
-declare const MEM::WARNING : string := "Memory Error: No more free space available to allocate objects of type" {Reuses: 0}
-namespace Browser
-declare const Browser.pupu : string := "pupu" {Reuses: 0}
-namespace SecondBrowser
-declare const Browser.SecondBrowser.pipi : string := Browser.pupu{unknown} {no declaration}  {Reuses: 0}
+	declare _iter0 : int {Reuses: 0}
+	declare const MAX::STRUCTS : int := 1000000 {Reuses: 0}
+	declare const MEM::WARNING : string := "Memory Error: No more free space available to allocate objects of type" {Reuses: 0}
+	namespace Browser
+	declare const Browser.pupu : string := "pupu" {Reuses: 0}
+	namespace SecondBrowser
+	declare const Browser.SecondBrowser.pipi : string := Browser.pupu{string} {Browser.pupu}  {Reuses: 0}
 
 end namespace
 
-declare const Browser.CONSTANT : unknown := 1 {Reuses: 0}
-namespace ThirdBrowser
-declare Browser.ThirdBrowser.third_pupu : string := Browser.SecondBrowser.pipi{unknown} {no declaration}  {Reuses: 0}
+	declare const Browser.CONSTANT : int := 1 {Reuses: 0}
+	namespace ThirdBrowser
+	declare Browser.ThirdBrowser.third_pupu : string := Browser.SecondBrowser.pipi{string} {Browser.SecondBrowser.pipi}  {Reuses: 0}
 
 end namespace
 
-declare Browser.ckjkj : int := 5 {Reuses: 0}
+	declare Browser.ckjkj : int := 5 {Reuses: 0}
 
-	function Browser.do_sth(param2 : int)
-		return ("Doing something with " & param2{unknown} {no declaration}  & Browser.CONSTANT{unknown} {no declaration} )
-	end function
+		function Browser.do_sth(param2 : int)
+			return ("Doing something with " & param2{int} {param2}  & Browser.CONSTANT{int} {Browser.CONSTANT} )
+		end function
 
-	function Browser.do_sth3(param2 : int)
-		return ("Doing something with " & param2{unknown} {no declaration}  & Browser.pupu{unknown} {no declaration} )
-	end function
+		function Browser.do_sth3(param2 : int)
+			return ("Doing something with " & param2{int} {param2}  & Browser.pupu{string} {Browser.pupu} )
+		end function
 
 end namespace
 
-struct List
-declare self{Ptr} : List {Reuses: 0}
-declare List::value : int {Reuses: 0}
-declare List::next : List := nil {Reuses: 0}
+struct List[1]
+declare local self{Ptr} : List := nil {Reuses: 0}
+declare local List::value : int {Reuses: 0}
+declare local List::next{Ptr} : List := nil {Reuses: 0}
 
-	function List::__init__(value : int, next : List)
-		List::value{unknown} {no declaration}  := value{unknown} {no declaration} 
-		List::next{unknown} {no declaration}  := next{unknown} {no declaration} 
+	function List::__init__(value0 : int, next0{Ptr} : List)
+		List::value{int} {List::value}  := value0{int} {value0} 
+		delete List::next{Ptr}{List} {List::next} 
+		List::next{Ptr}{List} {List::next}  := next0{Ptr}{List} {next0} 
+				retain(List::next{Ptr}{List} {List::next} , 1)
 	end function
 
-	function List::__repr__(self{Ptr} : List)
-		return ("<List> Object: " & self{Ptr}{List} {self} )
+	function List::__repr__(self2{Ptr} : List)
+		return ("<List> Object: " & self2{Ptr}{List} {self2} )
 	end function
 
 end struct
 
-struct Obj
-declare self{Ptr} : Obj {Reuses: 0}
-declare Obj::val : int {Reuses: 0}
+struct Obj[1 + 1]
+declare local self{Ptr} : Obj := nil {Reuses: 0}
+declare local Obj::val : int {Reuses: 0}
 
-	function Obj::__eq__(self : Obj, other : Obj)
-		return (Obj::val{unknown} {no declaration}  = other.val{unknown} {no declaration} )
+	function Obj::__eq__(self3{Ptr} : Obj, other1{Ptr} : Obj)
+		return (Obj::val{int} {Obj::val}  = other1{Ptr}{Obj} {other1} .val{int} {Obj::val} )
 	end function
 
-	function Obj::__init__(val : int)
-		Obj::val{int} {Obj::val}  := val{int} {val} 
+	function Obj::__ne__(self1{Ptr} : Obj, other0{Ptr} : Obj)
+		return (Obj::val{int} {Obj::val}  # other0{Ptr}{Obj} {other0} .val{int} {Obj::val} )
 	end function
 
-	function Obj::__repr__(self{Ptr} : Obj)
-		return ("<Obj> Object: " & self{Ptr}{Obj} {self} )
+	function Obj::__init__(val0 : int)
+		Obj::val{int} {Obj::val}  := val0{int} {val0} 
+	end function
+
+	function Obj::__repr__(self0{Ptr} : Obj)
+		return ("<Obj> Object: " & self0{Ptr}{Obj} {self0} )
 	end function
 
 end struct
 
 on init
-declare ui_button btn : unknown (1, 1) {Reuses: 0}
-declare object : unknown := Obj::__init__(1){Constructor, None, Obj::__init__} {Reuses: 0}
-declare object2 : unknown := Obj::__init__(1){Constructor, None, Obj::__init__} {Reuses: 0}
-if(object{unknown} {no declaration}  = object2{unknown} {no declaration} )
-message(true){Builtin, None, message}
-end if
-if(is_hidden(1){UserDefined, None, is_hidden})
-message("This is true"){Builtin, None, message}
-end if
-declare is_true : bool := is_hidden(1){UserDefined, None, is_hidden} and not ((true and (1 < 3)) or true) {Reuses: 0}
-declare var : real := 2.5 {Reuses: 0}
-while(is_true{unknown} {no declaration}  and bool(var{unknown} {no declaration} ){Builtin, None, bool}) 
-message("This is true"){Builtin, None, message}
-end while
-message(bool(3){Builtin, None, bool} * 2){Builtin, None, message}
-pgs_create_key(PRESET_NAME{unknown} {no declaration} , 3){Builtin, None, pgs_create_key}
-declare ptr : List := List::__init__(10, nil){Constructor, None, List::__init__} {Reuses: 0}
-message(int(ptr{unknown} {no declaration} ){Builtin, None, int}){Builtin, None, message}
-message(int(4){Builtin, None, int}){Builtin, None, message}
-for i : unknown in range(0, side_effects(3){UserDefined, None, side_effects}, 1)
-message(i{unknown} {no declaration} ){Builtin, None, message}
-end for
-declare lbl_bd_dnd : unknown := 4 {Reuses: 0}
-inc(lbl_bd_dnd{unknown} {no declaration} ){Builtin, None, inc}
-message(lbl_bd_dnd{unknown} {no declaration} ){Builtin, None, message}
-declare ui_label lbl_bd_DnD : unknown (1, 1) {Reuses: 0}
-lbl_bd_DnD{unknown} {no declaration}  -> picture := "btn_custom-samples-import"
-declare arr : int[] := [1, 2, 3, 4, 5] {Reuses: 0}
-declare matrix : int[][] := [[1, 2, 3], [4, 5, 6], [7, 8, 9]] {Reuses: 0}
-func_return(arr{unknown} {no declaration} ){UserDefined, None, func_return}
-swi_keyswitch_ui_controls(1){UserDefined, None, swi_keyswitch_ui_controls}
-message("pupoupupupupupup"){Builtin, None, message}
+	declare ui_button btn : int  {Reuses: 0}
+	declare object{Ptr} : Obj := Obj::__init__(1){Constructor, None, Obj::__init__} {Reuses: 0}
+	declare object2{Ptr} : Obj := Obj::__init__(1){Constructor, None, Obj::__init__} {Reuses: 0}
+	if(Obj::__eq__(object{Ptr}{Obj} {object} , object2{Ptr}{Obj} {object2} ){UserDefined, None, Obj::__eq__})
+		message(true){Builtin, None, message}
+	end if
+	message(Obj::__ne__(object{Ptr}{Obj} {object} , object2{Ptr}{Obj} {object2} ){UserDefined, None, Obj::__ne__}){Builtin, None, message}
+	if(is_hidden(1){UserDefined, None, is_hidden})
+		message("This is true"){Builtin, None, message}
+	end if
+	declare is_true : bool := is_hidden(1){UserDefined, None, is_hidden} and not ((true and (1 < 3)) or true) {Reuses: 0}
+	declare var : real := 2.5 {Reuses: 0}
+	while(is_true{bool} {is_true}  and bool(var{real} {var} ){Builtin, None, bool}) 
+		message("This is true"){Builtin, None, message}
+	end while
+	message(bool(3){Builtin, None, bool} * 2){Builtin, None, message}
+	pgs_create_key(PRESET_NAME{pgs} {no declaration} , 3){Builtin, None, pgs_create_key}
+	declare ptr{Ptr} : List := List::__init__(10, nil){Constructor, None, List::__init__} {Reuses: 0}
+	message(int(ptr{Ptr}{List} {ptr} ){Builtin, None, int}){Builtin, None, message}
+	message(int(4){Builtin, None, int}){Builtin, None, message}
+	for i : int in range(0, side_effects(3){UserDefined, None, side_effects}, 1)
+		message(i{int} {i} ){Builtin, None, message}
+	end for
+	declare lbl_bd_dnd : int := 4 {Reuses: 0}
+	inc(lbl_bd_dnd{int} {lbl_bd_dnd} ){Builtin, None, inc}
+	message(lbl_bd_dnd{int} {lbl_bd_dnd} ){Builtin, None, message}
+	declare ui_label lbl_bd_DnD : int (1, 1) {Reuses: 0}
+	lbl_bd_DnD{int} {lbl_bd_DnD}  -> picture := "btn_custom-samples-import"
+	declare arr : int[] := [1, 2, 3, 4, 5] {Reuses: 0}
+	declare matrix : int[][] := [[1, 2, 3], [4, 5, 6], [7, 8, 9]] {Reuses: 0}
+	func_return(arr{int[]} {arr} ){UserDefined, None, func_return}
+	swi_keyswitch_ui_controls(1){UserDefined, None, swi_keyswitch_ui_controls}
+	message("pupoupupupupupup"){Builtin, None, message}
+	message(1 = 1){Builtin, None, message}
 end on
 
-on ui_control(btn{unknown} {no declaration} )
-message("button pressed"){Builtin, None, message}
-message("another button pressed"){Builtin, None, message}
+on ui_control(btn{int} {btn} )
+	message("button pressed"){Builtin, None, message}
+	message("another button pressed"){Builtin, None, message}
+	message(1 = 1){Builtin, None, message}
 end on
 
-function side_effects(arg : int)
+function side_effects(arg0 : int)
 	message("side effects"){Builtin, None, message}
-	return (arg{unknown} {no declaration} )
+	return (arg0{int} {arg0} )
 end function
 
-function is_hidden(ui_id : int)
-	return (ui_id{unknown} {no declaration}  -> hide = HIDE_WHOLE_CONTROL{unknown} {no declaration} )
+function is_hidden(ui_id0 : int)
+	return (ui_id0{int} {ui_id0}  -> hide = HIDE_WHOLE_CONTROL{int} {HIDE_WHOLE_CONTROL} )
 end function
 
-function func_return(array : int[])
-	declare idx : unknown := search[array{unknown} {no declaration} , 6] {Reuses: 0}
-	if(idx{unknown} {no declaration}  # - 1)
-	message("hello"){Builtin, None, message}
+function func_return(array0 : int[])
+	declare local idx : int := search[array0{int[]} {array0} , 6] {Reuses: 0}
+	if(idx{int} {idx}  # - 1)
+		message("hello"){Builtin, None, message}
 	end if
 	return ()
 end function
 
-function swi_keyswitch_ui_controls(idx : int)
-	if(idx{unknown} {no declaration}  # - 1)
-	message("henlo"){Builtin, None, message}
-	return ()
+function swi_keyswitch_ui_controls(idx0 : int)
+	if(idx0{int} {idx0}  # - 1)
+		message("henlo"){Builtin, None, message}
+		return ()
 	else
-	message("sdlfkj"){Builtin, None, message}
+		message("sdlfkj"){Builtin, None, message}
 	end if
 	return ()
 end function
 
-function CKSP::__bool__(x : int)
-	return (1 + sh_right(abs(x{unknown} {no declaration} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
+function CKSP::__bool__(x0 : int)
+	return (1 + sh_right(abs(x0{int} {x0} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
 end function
 
-function CKSP::__ge__(a : int, b : int)
-	return (sh_right(a{unknown} {no declaration}  - b{unknown} {no declaration} , 31){Builtin, None, sh_right} + 1)
+function CKSP::__ge__(a1 : int, b1 : int)
+	return (sh_right(a1{int} {a1}  - b1{int} {b1} , 31){Builtin, None, sh_right} + 1)
 end function
 
-function CKSP::__lt__(a : int, b : int)
-	return (- sh_right(a{unknown} {no declaration}  - b{unknown} {no declaration} , 31){Builtin, None, sh_right})
+function CKSP::__lt__(a4 : int, b4 : int)
+	return (- sh_right(a4{int} {a4}  - b4{int} {b4} , 31){Builtin, None, sh_right})
 end function
 
-function CKSP::__ne__(a : int, b : int)
-	return (1 - - sh_right(abs(a{unknown} {no declaration}  - b{unknown} {no declaration} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
+function CKSP::__ne__(a3 : int, b3 : int)
+	return (1 - - sh_right(abs(a3{int} {a3}  - b3{int} {b3} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
 end function
 
-function CKSP::__eq__(a : int, b : int)
-	return (- sh_right(abs(a{unknown} {no declaration}  - b{unknown} {no declaration} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
+function CKSP::__eq__(a5 : int, b5 : int)
+	return (- sh_right(abs(a5{int} {a5}  - b5{int} {b5} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
 end function
 
-function CKSP::__le__(a : int, b : int)
-	return (1 + sh_right(b{unknown} {no declaration}  - a{unknown} {no declaration} , 31){Builtin, None, sh_right})
+function CKSP::__le__(a2 : int, b2 : int)
+	return (1 + sh_right(b2{int} {b2}  - a2{int} {a2} , 31){Builtin, None, sh_right})
 end function
 
-function CKSP::__gt__(a : int, b : int)
-	return (- sh_right(b{unknown} {no declaration}  - a{unknown} {no declaration} , 31){Builtin, None, sh_right})
+function CKSP::__gt__(a0 : int, b0 : int)
+	return (- sh_right(b0{int} {b0}  - a0{int} {a0} , 31){Builtin, None, sh_right})
 end function
 
 

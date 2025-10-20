@@ -1,46 +1,58 @@
-{ Compiled with cksp version 0.0.8-alpha.1 on Mon Oct 20 12:27:14 2025 }
+{ Compiled with cksp version 0.0.8-alpha.2 on Mon Oct 20 18:16:14 2025 }
 on init
-  declare $self3
+  declare @ret1
   declare $self4
+  declare $self5
   declare $num_refs0
   declare $current0
-  declare $self5
+  declare $self6
   declare $num_refs1
   declare $next0
-  declare $ret2
+  declare $ret3
   declare $arg0
+  declare @_ret00
   declare $current000
   declare $_iter200
   declare $_iter1000
+  declare @_ret10
+  declare @_ret20
   declare $Obj____free_idx
   declare %Obj____allocation[2]
   declare %Obj____val[2]
   declare $List____free_idx
   declare %List____allocation[1]
   declare %List____next[1] := (-1)
+  declare ui_button $btn 
   declare $object
-  $self5 := 1
+  $self6 := 1
   $Obj____free_idx := search(%Obj____allocation, 0, $Obj____free_idx, 1)
   if($Obj____free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'Obj'")
   end if
   %Obj____allocation[$Obj____free_idx] := 1
-  %Obj____val[$Obj____free_idx] := $self5
+  %Obj____val[$Obj____free_idx] := $self6
   $num_refs1 := $Obj____free_idx
   $object := $num_refs1
   declare $object2
-  $self5 := 1
+  $self6 := 1
   $Obj____free_idx := search(%Obj____allocation, 0, $Obj____free_idx, 1)
   if($Obj____free_idx = -1)
     message("Error: No more free space available to allocate objects of type 'Obj'")
   end if
   %Obj____allocation[$Obj____free_idx] := 1
-  %Obj____val[$Obj____free_idx] := $self5
+  %Obj____val[$Obj____free_idx] := $self6
   $num_refs1 := $Obj____free_idx
   $object2 := $num_refs1
   if(- sh_right(abs(%Obj____val[$object] - %Obj____val[$object2]) - 1, 31) # 0)
     message("true")
   end if
+  if($object # $object2)
+    @ret1 := "true"
+  else
+    @ret1 := "false"
+  end if
+  @_ret00 := @ret1
+  message(@_ret00)
   if(- sh_right(abs(get_control_par(1, $CONTROL_PAR_HIDE) - $HIDE_WHOLE_CONTROL) - 1, 31) # 0)
     message("This is true")
   end if
@@ -60,9 +72,9 @@ on init
     message("Error: No more free space available to allocate objects of type 'List'")
   end if
   %List____allocation[$List____free_idx] := 1
-  $self4 := %List____next[$List____free_idx]
+  $self5 := %List____next[$List____free_idx]
   $num_refs0 := 1
-  $current0 := $self4
+  $current0 := $self5
   while($current0 # -1) 
     %List____allocation[$current0] := %List____allocation[$current0] - $num_refs0
     if(%List____allocation[$current0] > 0)
@@ -71,22 +83,22 @@ on init
     else
       %List____allocation[$current0] := 0
     end if
-    $self4 := $current0
-    $current0 := %List____next[$self4]
-    $self3 := $self4
-    if($self3 # -1)
-      %List____next[$self3] := -1
-      $List____free_idx := (($List____free_idx + $self3) - abs($List____free_idx - $self3)) / 2
+    $self5 := $current0
+    $current0 := %List____next[$self5]
+    $self4 := $self5
+    if($self4 # -1)
+      %List____next[$self4] := -1
+      $List____free_idx := (($List____free_idx + $self4) - abs($List____free_idx - $self4)) / 2
     end if
   end while
   %List____next[$List____free_idx] := $next0
-  $self5 := %List____next[$List____free_idx]
+  $self6 := %List____next[$List____free_idx]
   $num_refs1 := 1
-  if($self5 # -1)
-    %List____allocation[$self5] := %List____allocation[$self5] + $num_refs1
+  if($self6 # -1)
+    %List____allocation[$self6] := %List____allocation[$self6] + $num_refs1
   end if
-  $ret2 := $List____free_idx
-  $ptr := $ret2
+  $ret3 := $List____free_idx
+  $ptr := $ret3
   message($ptr)
   message(4)
   $current000 := 0
@@ -94,8 +106,8 @@ on init
   $_iter1000 := 0
   $arg0 := 3
   message("side effects")
-  $ret2 := 3
-  $_iter1000 := $ret2
+  $ret3 := 3
+  $_iter1000 := $ret3
   while((($current000 < $_iter1000) and ($_iter200 > 0)) or (($current000 > $_iter1000) and ($_iter200 < 0))) 
     message($current000)
     $current000 := $current000 + $_iter200
@@ -111,23 +123,28 @@ on init
     message("hello")
   end if
   $arg0 := 1
-  $ret2 := 0
-  while($ret2 = 0) 
+  $ret3 := 0
+  while($ret3 = 0) 
     if($arg0 # -1)
       message("henlo")
-      $ret2 := 1
+      $ret3 := 1
       continue
     else
       message("sdlfkj")
     end if
-    $ret2 := 1
+    $ret3 := 1
     continue
   end while
-  declare ui_button $btn 
   message("pupoupupupupupup")
+  @ret1 := "true"
+  @_ret10 := @ret1
+  message(@_ret10)
 end on
 on ui_control($btn)
   message("button pressed")
   message("another button pressed")
+  @ret1 := "true"
+  @_ret20 := @ret1
+  message(@_ret20)
 end on
 
