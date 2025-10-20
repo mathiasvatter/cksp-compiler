@@ -1251,10 +1251,7 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 		node_program->init_callback = node_program->callbacks.back().get();
 	}
 	node_program->merge_function_definitions();
-	// node_program->update_function_lookup();
 	node_program->update_struct_lookup();
-	node_program->check_unique_callbacks();
-	node_program->init_callback = node_program->move_on_init_callback();
     return Result<std::unique_ptr<NodeProgram>>(std::move(node_program));
 }
 

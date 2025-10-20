@@ -132,7 +132,7 @@ public:
 		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Ensemble.ksp";
-		input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Single.ksp";
+		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Single.ksp";
 		// input_filename = "/Users/mathias/Scripting/toc-single-instruments/legato.ksp";
 		// input_filename = "/Users/mathias/Scripting/toc-single-instruments/keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/the-orchestra-complete-4/the_orchestra_ens_V1.2.ksp";
@@ -214,9 +214,16 @@ public:
 			ast_result.get_error().exit();
 		}
 		auto ast = std::move(ast_result.unwrap());
-		ast->def_provider = &m_definition_provider;
-		ast->compiler_config = m_config;
-		m_program = ast.get();
+		{
+			m_program = ast.get();
+			m_program->def_provider = &m_definition_provider;
+			m_program->compiler_config = m_config;
+			if (m_config->combine_callbacks) {
+				m_program->combine_callbacks();
+			}
+			m_program->check_unique_callbacks();
+			m_program->init_callback = m_program->move_on_init_callback();
+		}
 
 		m_timer.stop("Parsing");
 		std::cout << m_timer.print_timer("Parsing") << "\n";

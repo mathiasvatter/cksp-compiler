@@ -903,7 +903,9 @@ struct NodeProgram final : NodeAST {
 	std::shared_ptr<NodeFunctionDefinition> look_up_exact(const StringIntKey &hash, const Type* ty);
 	std::shared_ptr<NodeFunctionDefinition> look_up_compatible(const StringIntKey &hash, const Type* ty);
 	/// Checks for uniqueness of all callbacks except "on ui_control"
+	[[nodiscard]] std::unordered_map<std::string, std::vector<NodeCallback*>> get_callback_counts() const;
 	bool check_unique_callbacks() const;
+	bool combine_callbacks();
 	/// Checks for existence and uniqueness of "on init" callback
 	/// If found, returns pointer to the callback node
 	NodeCallback* move_on_init_callback();
