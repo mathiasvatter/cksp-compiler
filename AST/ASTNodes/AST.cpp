@@ -27,6 +27,7 @@
 #include "../../Lowering/LoweringInitializerList.h"
 #include "../../Optimization/FreeVarCollector.h"
 #include "../../Optimization/ReferenceValidator.h"
+#include "../ASTVisitor/ASTCollectLowerings.h"
 #include "../ASTVisitor/ASTVariableChecking.h"
 #include "../ASTVisitor/TypeInference.h"
 #include "../ASTVisitor/FunctionHandling/BuiltinRestrictionValidator.h"
@@ -237,6 +238,10 @@ void NodeAST::do_type_inference(NodeProgram *program) {
 	accept(inference);
 }
 
+NodeAST * NodeAST::do_lowering(NodeProgram *program) {
+	static ASTCollectLowerings collect_lowerings(program);
+	return accept(collect_lowerings);
+}
 
 NodeAST * NodeAST::collect_declarations(NodeProgram *program) {
 	static ASTCollectDeclarations collect(program);

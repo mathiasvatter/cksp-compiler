@@ -108,6 +108,7 @@ struct NodeAST {
 	[[nodiscard]] struct NodeFunctionDefinition* get_current_function() const;
 	void do_constant_folding();
 	void do_type_inference(NodeProgram *program);
+	NodeAST* do_lowering(NodeProgram* program);
 	NodeAST* collect_declarations(NodeProgram* program);
 	NodeAST* collect_call_sites(NodeProgram* program);
 	/// Determines if current Node is function argument

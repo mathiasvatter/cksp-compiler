@@ -46,6 +46,22 @@ public:
 			return &node;
 		}
 
+		if (node.is_string_env()) {
+			auto ternary = std::make_unique<NodeTernary>(
+				std::make_unique<NodeUnaryExpr>(
+					node.op,
+					std::move(node.operand),
+					node.tok
+				),
+				std::make_unique<NodeString>("\"true\"", node.tok),
+				std::make_unique<NodeString>("\"false\"", node.tok),
+				node.tok
+			);
+			ternary->if_branch->do_type_inference(m_program);
+			ternary->else_branch->do_type_inference(m_program);
+			return node.replace_with(std::move(ternary))->do_lowering(m_program);
+		}
+
 		// if boolean operator, replace operand with 1-operand
 		// e.g. not a --> 1 - a
 		// only NOT is supported as unary boolean operator
@@ -75,6 +91,23 @@ public:
 		// check if it is a boolean operator
 		if (not(BOOL_TOKENS.contains(node.op) || COMPARISON_TOKENS.contains(node.op))) {
 			return &node;
+		}
+
+		if (node.is_string_env()) {
+			auto ternary = std::make_unique<NodeTernary>(
+				std::make_unique<NodeBinaryExpr>(
+					node.op,
+					std::move(node.left),
+					std::move(node.right),
+					node.tok
+				),
+				std::make_unique<NodeString>("\"true\"", node.tok),
+				std::make_unique<NodeString>("\"false\"", node.tok),
+				node.tok
+			);
+			ternary->if_branch->do_type_inference(m_program);
+			ternary->else_branch->do_type_inference(m_program);
+			return node.replace_with(std::move(ternary))->do_lowering(m_program);
 		}
 
 		// if boolean operator, replace with bitwise operator
