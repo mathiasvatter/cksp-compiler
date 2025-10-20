@@ -1,6 +1,6 @@
 
 #pragma output_path("test.txt")
-
+// #pragma combine_callbacks(true)
 // import "/Users/mathias/Scripting/preset-system/dev/ksp/Preset.cksp"
 
 
@@ -129,6 +129,16 @@ on init
 	]
 	func_return(arr)
 	swi_keyswitch_ui_controls(1)
+
+	declare ui_button btn
+end on
+
+on ui_control(btn)
+	message("button pressed")
+end on
+
+on ui_control(btn)
+	message("another button pressed")
 end on
 
 function func_return(array: int[])
@@ -161,3 +171,10 @@ function swi_keyswitch_ui_controls(idx: int)
 	return
 end function    
 
+
+on init
+	
+message("pupoupupupupupup")
+
+
+end on

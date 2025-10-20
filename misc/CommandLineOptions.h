@@ -55,6 +55,7 @@ struct CompilerConfig {
 	OptimizationLevel optimization_level = OptimizationLevel::None;
 	DebugMode debug_mode = DebugMode::Off;
 	ParameterPassing parameter_passing = ParameterPassing::ByValue;
+	bool combine_callbacks = false;
 
 	CompilerConfig(std::string  input, std::string  output, const OptimizationLevel optLevel, const DebugMode debug)
 		: input_filename(std::move(input)), output_filename(std::move(output)), optimization_level(optLevel), debug_mode(debug) {

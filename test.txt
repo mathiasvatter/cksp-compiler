@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.8-alpha.1 on Sat Oct 04 15:37:28 2025 }
+{ Compiled with cksp version 0.0.8-alpha.1 on Mon Oct 20 12:27:14 2025 }
 on init
   declare $self3
   declare $self4
@@ -85,6 +85,7 @@ on init
   if($self5 # -1)
     %List____allocation[$self5] := %List____allocation[$self5] + $num_refs1
   end if
+  $ret2 := $List____free_idx
   $ptr := $ret2
   message($ptr)
   message(4)
@@ -122,5 +123,11 @@ on init
     $ret2 := 1
     continue
   end while
+  declare ui_button $btn 
+  message("pupoupupupupupup")
+end on
+on ui_control($btn)
+  message("button pressed")
+  message("another button pressed")
 end on
 
