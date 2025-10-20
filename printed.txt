@@ -1,168 +1,144 @@
-// Global Declarations:
-	declare _iter0 : int {Reuses: 0}
-	declare const MAX::STRUCTS : int := 1000000 {Reuses: 0}
-	declare const MEM::WARNING : string := "Memory Error: No more free space available to allocate objects of type" {Reuses: 0}
-	namespace Browser
-	declare const Browser.pupu : string := "pupu" {Reuses: 0}
-	namespace SecondBrowser
-	declare const Browser.SecondBrowser.pipi : string := Browser.pupu{string} {Browser.pupu}  {Reuses: 0}
-
-end namespace
-
-	declare const Browser.CONSTANT : int := 1 {Reuses: 0}
-	namespace ThirdBrowser
-	declare Browser.ThirdBrowser.third_pupu : string := Browser.SecondBrowser.pipi{string} {Browser.SecondBrowser.pipi}  {Reuses: 0}
-
-end namespace
-
-	declare Browser.ckjkj : int := 5 {Reuses: 0}
-
-		function Browser.do_sth(param2 : int)
-			return ("Doing something with " & param2{int} {param2}  & Browser.CONSTANT{int} {Browser.CONSTANT} )
-		end function
-
-		function Browser.do_sth3(param2 : int)
-			return ("Doing something with " & param2{int} {param2}  & Browser.pupu{string} {Browser.pupu} )
-		end function
-
-end namespace
-
-struct List[1]
-declare local self{Ptr} : List := nil {Reuses: 0}
-declare local List::value : int {Reuses: 0}
-declare local List::next{Ptr} : List := nil {Reuses: 0}
-
-	function List::__init__(value0 : int, next0{Ptr} : List)
-		List::value{int} {List::value}  := value0{int} {value0} 
-		delete List::next{Ptr}{List} {List::next} 
-		List::next{Ptr}{List} {List::next}  := next0{Ptr}{List} {next0} 
-				retain(List::next{Ptr}{List} {List::next} , 1)
-	end function
-
-	function List::__repr__(self2{Ptr} : List)
-		return ("<List> Object: " & self2{Ptr}{List} {self2} )
-	end function
-
-end struct
-
-struct Obj[1 + 1]
-declare local self{Ptr} : Obj := nil {Reuses: 0}
-declare local Obj::val : int {Reuses: 0}
-
-	function Obj::__eq__(self3{Ptr} : Obj, other1{Ptr} : Obj)
-		return (Obj::val{int} {Obj::val}  = other1{Ptr}{Obj} {other1} .val{int} {Obj::val} )
-	end function
-
-	function Obj::__ne__(self1{Ptr} : Obj, other0{Ptr} : Obj)
-		return (Obj::val{int} {Obj::val}  # other0{Ptr}{Obj} {other0} .val{int} {Obj::val} )
-	end function
-
-	function Obj::__init__(val0 : int)
-		Obj::val{int} {Obj::val}  := val0{int} {val0} 
-	end function
-
-	function Obj::__repr__(self0{Ptr} : Obj)
-		return ("<Obj> Object: " & self0{Ptr}{Obj} {self0} )
-	end function
-
-end struct
-
 on init
+	declare self4 : int {Reuses: 0}
+	declare self5 : int {Reuses: 0}
+	declare num_refs0 : int {Reuses: 0}
+	declare current0 : int {Reuses: 0}
+	declare self6 : int {Reuses: 1}
+	declare num_refs1 : int {Reuses: 1}
+	declare next0 : int {Reuses: 0}
+	declare ret2 : int {Reuses: 2}
+	declare arg0 : int {Reuses: 3}
+	declare ret3 : string {Reuses: 1}
+	declare local current000 : int {Reuses: 1}
+	declare local _iter200 : int {Reuses: 1}
+	declare local _iter1000 : int {Reuses: 3}
+	declare local _ret00 : string {Reuses: 0}
+	declare _ret10 : string {Reuses: 0}
+	declare Obj::free_idx : int {Reuses: 0}
+	declare Obj::allocation[2] : int[] {Reuses: 0}
+	declare Obj::val[2] : int[] {Reuses: 0}
+	declare List::free_idx : int {Reuses: 0}
+	declare List::allocation[1] : int[] {Reuses: 0}
+	declare List::next[1] : int[] := [-1] {Reuses: 0}
 	declare ui_button btn : int  {Reuses: 0}
-	declare object{Ptr} : Obj := Obj::__init__(1){Constructor, None, Obj::__init__} {Reuses: 0}
-	declare object2{Ptr} : Obj := Obj::__init__(1){Constructor, None, Obj::__init__} {Reuses: 0}
-	if(Obj::__eq__(object{Ptr}{Obj} {object} , object2{Ptr}{Obj} {object2} ){UserDefined, None, Obj::__eq__})
-		message(true){Builtin, None, message}
+	declare object : int {Reuses: 0}
+	self6{int} {self6}  := 1
+	Obj::free_idx{int} {Obj::free_idx}  := search(Obj::allocation{int[]} {Obj::allocation} , 0, Obj::free_idx{int} {Obj::free_idx} , 1){Builtin, None, search}
+	if(Obj::free_idx{int} {Obj::free_idx}  = -1)
+		message("Error: No more free space available to allocate objects of type 'Obj'"){Builtin, None, message}
 	end if
-	message(Obj::__ne__(object{Ptr}{Obj} {object} , object2{Ptr}{Obj} {object2} ){UserDefined, None, Obj::__ne__}){Builtin, None, message}
-	if(is_hidden(1){UserDefined, None, is_hidden})
+	Obj::allocation[Obj::free_idx{int} {Obj::free_idx} ]{int} {Obj::allocation}  := 1
+	Obj::val[Obj::free_idx{int} {Obj::free_idx} ]{int} {Obj::val}  := self6{int} {self6} 
+	num_refs1{int} {num_refs1}  := Obj::free_idx{int} {Obj::free_idx} 
+	object{int} {object}  := num_refs1{int} {num_refs1} 
+	declare object2 : int {Reuses: 0}
+	self6{int} {self6}  := 1
+	Obj::free_idx{int} {Obj::free_idx}  := search(Obj::allocation{int[]} {Obj::allocation} , 0, Obj::free_idx{int} {Obj::free_idx} , 1){Builtin, None, search}
+	if(Obj::free_idx{int} {Obj::free_idx}  = -1)
+		message("Error: No more free space available to allocate objects of type 'Obj'"){Builtin, None, message}
+	end if
+	Obj::allocation[Obj::free_idx{int} {Obj::free_idx} ]{int} {Obj::allocation}  := 1
+	Obj::val[Obj::free_idx{int} {Obj::free_idx} ]{int} {Obj::val}  := self6{int} {self6} 
+	num_refs1{int} {num_refs1}  := Obj::free_idx{int} {Obj::free_idx} 
+	object2{int} {object2}  := num_refs1{int} {num_refs1} 
+	if(- sh_right(abs(Obj::val[object{int} {object} ]{int} {Obj::val}  - Obj::val[object2{int} {object2} ]{int} {Obj::val} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right} # 0)
+		message("true"){Builtin, None, message}
+	end if
+	message(1 - - sh_right(abs(Obj::val[object{int} {object} ]{int} {Obj::val}  - Obj::val[object2{int} {object2} ]{int} {Obj::val} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right}){Builtin, None, message}
+	if(- sh_right(abs(get_control_par(1, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} ){Builtin, None, get_control_par} - HIDE_WHOLE_CONTROL{int} {HIDE_WHOLE_CONTROL} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right} # 0)
 		message("This is true"){Builtin, None, message}
 	end if
-	declare is_true : bool := is_hidden(1){UserDefined, None, is_hidden} and not ((true and (1 < 3)) or true) {Reuses: 0}
+	declare is_true : int {Reuses: 0}
+	is_true{int} {is_true}  := - sh_right(abs(get_control_par(1, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} ){Builtin, None, get_control_par} - HIDE_WHOLE_CONTROL{int} {HIDE_WHOLE_CONTROL} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right} .and. 0
 	declare var : real := 2.5 {Reuses: 0}
-	while(is_true{bool} {is_true}  and bool(var{real} {var} ){Builtin, None, bool}) 
+	while((is_true{int} {is_true}  # 0) and ((1 + sh_right(abs(int(var{real} {var} ){Builtin, None, int}){Builtin, None, abs} - 1, 31){Builtin, None, sh_right}) # 0)) 
 		message("This is true"){Builtin, None, message}
 	end while
-	message(bool(3){Builtin, None, bool} * 2){Builtin, None, message}
-	pgs_create_key(PRESET_NAME{pgs} {no declaration} , 3){Builtin, None, pgs_create_key}
-	declare ptr{Ptr} : List := List::__init__(10, nil){Constructor, None, List::__init__} {Reuses: 0}
-	message(int(ptr{Ptr}{List} {ptr} ){Builtin, None, int}){Builtin, None, message}
-	message(int(4){Builtin, None, int}){Builtin, None, message}
-	for i : int in range(0, side_effects(3){UserDefined, None, side_effects}, 1)
-		message(i{int} {i} ){Builtin, None, message}
-	end for
+	message(2){Builtin, None, message}
+	pgs_create_key(PRESET_NAME{pgs} {pgs$dummy} , 3){Builtin, None, pgs_create_key}
+	declare ptr : int {Reuses: 0}
+	arg0{int} {arg0}  := 10
+	next0{int} {next0}  := -1
+	List::free_idx{int} {List::free_idx}  := search(List::allocation{int[]} {List::allocation} , 0, List::free_idx{int} {List::free_idx} , 0){Builtin, None, search}
+	if(List::free_idx{int} {List::free_idx}  = -1)
+		message("Error: No more free space available to allocate objects of type 'List'"){Builtin, None, message}
+	end if
+	List::allocation[List::free_idx{int} {List::free_idx} ]{int} {List::allocation}  := 1
+	self5{int} {self5}  := List::next[List::free_idx{int} {List::free_idx} ]{int} {List::next} 
+	num_refs0{int} {num_refs0}  := 1
+	current0{int} {current0}  := self5{int} {self5} 
+	while(current0{int} {current0}  # -1) 
+		List::allocation[current0{int} {current0} ]{int} {List::allocation}  := List::allocation[current0{int} {current0} ]{int} {List::allocation}  - num_refs0{int} {num_refs0} 
+		if(List::allocation[current0{int} {current0} ]{int} {List::allocation}  > 0)
+			current0{int} {current0}  := -1
+			continue{Builtin, None, continue}
+		else
+			List::allocation[current0{int} {current0} ]{int} {List::allocation}  := 0
+		end if
+		self5{int} {self5}  := current0{int} {current0} 
+		current0{int} {current0}  := List::next[self5{int} {self5} ]{int} {List::next} 
+		self4{int} {self4}  := self5{int} {self5} 
+		if(self4{int} {self4}  # -1)
+			List::next[self4{int} {self4} ]{int} {List::next}  := -1
+			List::free_idx{int} {List::free_idx}  := ((List::free_idx{int} {List::free_idx}  + self4{int} {self4} ) - abs(List::free_idx{int} {List::free_idx}  - self4{int} {self4} ){Builtin, None, abs}) / 2
+		end if
+	end while
+	List::next[List::free_idx{int} {List::free_idx} ]{int} {List::next}  := next0{int} {next0} 
+	self6{int} {self6}  := List::next[List::free_idx{int} {List::free_idx} ]{int} {List::next} 
+	num_refs1{int} {num_refs1}  := 1
+	if(self6{int} {self6}  # -1)
+		List::allocation[self6{int} {self6} ]{int} {List::allocation}  := List::allocation[self6{int} {self6} ]{int} {List::allocation}  + num_refs1{int} {num_refs1} 
+	end if
+	ret2{int} {ret2}  := List::free_idx{int} {List::free_idx} 
+	ptr{int} {ptr}  := ret2{int} {ret2} 
+	message(ptr{int} {ptr} ){Builtin, None, message}
+	message(4){Builtin, None, message}
+	current000{int} {current000}  := 0
+	_iter200{int} {_iter200}  := 1
+	_iter1000{int} {_iter1000}  := 0
+	arg0{int} {arg0}  := 3
+	message("side effects"){Builtin, None, message}
+	ret2{int} {ret2}  := 3
+	_iter1000{int} {_iter1000}  := ret2{int} {ret2} 
+	while(((current000{int} {current000}  < _iter1000{int} {_iter1000} ) and (_iter200{int} {_iter200}  > 0)) or ((current000{int} {current000}  > _iter1000{int} {_iter1000} ) and (_iter200{int} {_iter200}  < 0))) 
+		message(current000{int} {current000} ){Builtin, None, message}
+		current000{int} {current000}  := current000{int} {current000}  + _iter200{int} {_iter200} 
+	end while
 	declare lbl_bd_dnd : int := 4 {Reuses: 0}
 	inc(lbl_bd_dnd{int} {lbl_bd_dnd} ){Builtin, None, inc}
 	message(lbl_bd_dnd{int} {lbl_bd_dnd} ){Builtin, None, message}
-	declare ui_label lbl_bd_DnD : int (1, 1) {Reuses: 0}
-	lbl_bd_DnD{int} {lbl_bd_DnD}  -> picture := "btn_custom-samples-import"
-	declare arr : int[] := [1, 2, 3, 4, 5] {Reuses: 0}
-	declare matrix : int[][] := [[1, 2, 3], [4, 5, 6], [7, 8, 9]] {Reuses: 0}
-	func_return(arr{int[]} {arr} ){UserDefined, None, func_return}
-	swi_keyswitch_ui_controls(1){UserDefined, None, swi_keyswitch_ui_controls}
+	declare ui_label lbl_bd_DnD0 : int (1, 1) {Reuses: 0}
+	set_control_par_str(get_ui_id(lbl_bd_DnD0{int} {lbl_bd_DnD0} ){Builtin, None, get_ui_id}, CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "btn_custom-samples-import"){Builtin, None, set_control_par_str}
+	declare arr[5] : int[] := [1, 2, 3, 4, 5] {Reuses: 0}
+	arg0{int} {arg0}  := search(arr{int[]} {arr} , 6){Builtin, None, search}
+	if(arg0{int} {arg0}  # -1)
+		message("hello"){Builtin, None, message}
+	end if
+	arg0{int} {arg0}  := 1
+	ret2{int} {ret2}  := 0
+	while(ret2{int} {ret2}  = 0) 
+		if(arg0{int} {arg0}  # -1)
+			message("henlo"){Builtin, None, message}
+			ret2{int} {ret2}  := 1
+			continue{Builtin, None, continue}
+		else
+			message("sdlfkj"){Builtin, None, message}
+		end if
+		ret2{int} {ret2}  := 1
+		continue{Builtin, None, continue}
+	end while
 	message("pupoupupupupupup"){Builtin, None, message}
-	message(1 = 1){Builtin, None, message}
+	ret3{string} {ret3}  := "true"
+	_ret00{string} {_ret00}  := ret3{string} {ret3} 
+	message(_ret00{string} {_ret00} ){Builtin, None, message}
 end on
 
 on ui_control(btn{int} {btn} )
 	message("button pressed"){Builtin, None, message}
 	message("another button pressed"){Builtin, None, message}
-	message(1 = 1){Builtin, None, message}
+	ret3{string} {ret3}  := "true"
+	_ret10{string} {_ret10}  := ret3{string} {ret3} 
+	message(_ret10{string} {_ret10} ){Builtin, None, message}
 end on
-
-function side_effects(arg0 : int)
-	message("side effects"){Builtin, None, message}
-	return (arg0{int} {arg0} )
-end function
-
-function is_hidden(ui_id0 : int)
-	return (ui_id0{int} {ui_id0}  -> hide = HIDE_WHOLE_CONTROL{int} {HIDE_WHOLE_CONTROL} )
-end function
-
-function func_return(array0 : int[])
-	declare local idx : int := search[array0{int[]} {array0} , 6] {Reuses: 0}
-	if(idx{int} {idx}  # - 1)
-		message("hello"){Builtin, None, message}
-	end if
-	return ()
-end function
-
-function swi_keyswitch_ui_controls(idx0 : int)
-	if(idx0{int} {idx0}  # - 1)
-		message("henlo"){Builtin, None, message}
-		return ()
-	else
-		message("sdlfkj"){Builtin, None, message}
-	end if
-	return ()
-end function
-
-function CKSP::__bool__(x0 : int)
-	return (1 + sh_right(abs(x0{int} {x0} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__ge__(a1 : int, b1 : int)
-	return (sh_right(a1{int} {a1}  - b1{int} {b1} , 31){Builtin, None, sh_right} + 1)
-end function
-
-function CKSP::__lt__(a4 : int, b4 : int)
-	return (- sh_right(a4{int} {a4}  - b4{int} {b4} , 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__ne__(a3 : int, b3 : int)
-	return (1 - - sh_right(abs(a3{int} {a3}  - b3{int} {b3} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__eq__(a5 : int, b5 : int)
-	return (- sh_right(abs(a5{int} {a5}  - b5{int} {b5} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__le__(a2 : int, b2 : int)
-	return (1 + sh_right(b2{int} {b2}  - a2{int} {a2} , 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__gt__(a0 : int, b0 : int)
-	return (- sh_right(b0{int} {b0}  - a0{int} {a0} , 31){Builtin, None, sh_right})
-end function
 
 

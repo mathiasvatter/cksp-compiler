@@ -6,8 +6,8 @@
 
 
 struct List
-    declare value: int
-    declare next: List := nil
+    value: int
+    next: List := nil
 
     function __init__(self, value: int, next: List)
         self.value := value

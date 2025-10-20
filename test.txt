@@ -1,6 +1,5 @@
-{ Compiled with cksp version 0.0.8-alpha.2 on Mon Oct 20 18:16:14 2025 }
+{ Compiled with cksp version 0.0.8-alpha.2 on Mon Oct 20 22:53:19 2025 }
 on init
-  declare @ret1
   declare $self4
   declare $self5
   declare $num_refs0
@@ -8,14 +7,14 @@ on init
   declare $self6
   declare $num_refs1
   declare $next0
-  declare $ret3
+  declare $ret2
   declare $arg0
-  declare @_ret00
+  declare @ret3
   declare $current000
   declare $_iter200
   declare $_iter1000
+  declare @_ret00
   declare @_ret10
-  declare @_ret20
   declare $Obj____free_idx
   declare %Obj____allocation[2]
   declare %Obj____val[2]
@@ -46,13 +45,7 @@ on init
   if(- sh_right(abs(%Obj____val[$object] - %Obj____val[$object2]) - 1, 31) # 0)
     message("true")
   end if
-  if($object # $object2)
-    @ret1 := "true"
-  else
-    @ret1 := "false"
-  end if
-  @_ret00 := @ret1
-  message(@_ret00)
+  message(1 - - sh_right(abs(%Obj____val[$object] - %Obj____val[$object2]) - 1, 31))
   if(- sh_right(abs(get_control_par(1, $CONTROL_PAR_HIDE) - $HIDE_WHOLE_CONTROL) - 1, 31) # 0)
     message("This is true")
   end if
@@ -97,8 +90,8 @@ on init
   if($self6 # -1)
     %List____allocation[$self6] := %List____allocation[$self6] + $num_refs1
   end if
-  $ret3 := $List____free_idx
-  $ptr := $ret3
+  $ret2 := $List____free_idx
+  $ptr := $ret2
   message($ptr)
   message(4)
   $current000 := 0
@@ -106,8 +99,8 @@ on init
   $_iter1000 := 0
   $arg0 := 3
   message("side effects")
-  $ret3 := 3
-  $_iter1000 := $ret3
+  $ret2 := 3
+  $_iter1000 := $ret2
   while((($current000 < $_iter1000) and ($_iter200 > 0)) or (($current000 > $_iter1000) and ($_iter200 < 0))) 
     message($current000)
     $current000 := $current000 + $_iter200
@@ -123,28 +116,28 @@ on init
     message("hello")
   end if
   $arg0 := 1
-  $ret3 := 0
-  while($ret3 = 0) 
+  $ret2 := 0
+  while($ret2 = 0) 
     if($arg0 # -1)
       message("henlo")
-      $ret3 := 1
+      $ret2 := 1
       continue
     else
       message("sdlfkj")
     end if
-    $ret3 := 1
+    $ret2 := 1
     continue
   end while
   message("pupoupupupupupup")
-  @ret1 := "true"
-  @_ret10 := @ret1
-  message(@_ret10)
+  @ret3 := "true"
+  @_ret00 := @ret3
+  message(@_ret00)
 end on
 on ui_control($btn)
   message("button pressed")
   message("another button pressed")
-  @ret1 := "true"
-  @_ret20 := @ret1
-  message(@_ret20)
+  @ret3 := "true"
+  @_ret10 := @ret3
+  message(@_ret10)
 end on
 
