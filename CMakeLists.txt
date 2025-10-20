@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 project(CKSP_Compiler VERSION 0.0.8)
-set(PRE_RELEASE_VERSION "-alpha.2")
+set(PRE_RELEASE_VERSION "-alpha.3")
 
 set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
 configure_file(

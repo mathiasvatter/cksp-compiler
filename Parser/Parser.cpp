@@ -2302,7 +2302,7 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 	while(peek().type != end_construct) {
 		_skip_linebreaks();
 		if(peek().type == end_construct) break;
-		if(peek().type == token::DECLARE) {
+		if(peek().type == token::DECLARE || peek().type == token::KEYWORD) {
 			auto declare_stmt = parse_declare_statement(node_member_block.get());
 			if(declare_stmt.is_error()) {
 				return Result<std::unique_ptr<NodeStruct>>(declare_stmt.get_error());

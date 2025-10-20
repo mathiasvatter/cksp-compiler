@@ -13,15 +13,10 @@ component Popup
 		self.lbl_message->text := message
 		self.btn_confirm->pos_x := 3
 
-		self.btn_confirm.setEventHandler(self.on_confirm)
-		self.btn_cancel.setEventHandler(self.on_cancel)
-		self.btn_close.setEventHandler(function(self, ui_id: int)
-			self->hide := true
-		end function)
+		self.btn_confirm.set_callback(self.on_confirm)
+		self.btn_cancel.set_callback(self.on_cancel)
 
 	end function
-
-
 
 
 	function on_confirm(self, ui_id: int)
@@ -35,3 +30,13 @@ component Popup
 	end function
 
 end component
+
+{-------------------------------------------------------------------------------------------
+                                        Post Lowering
+--------------------------------------------------------------------------------------------}
+
+ui_button btn_confirm
+ui_button btn_cancel
+ui_button btn_close
+ui_label lbl_message(1,1)
+ui_label lbl_title(1,1)
