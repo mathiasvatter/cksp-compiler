@@ -229,8 +229,14 @@ jobs:
             if [[ "${{ needs.build-macos.outputs.tag }}" == *-* ]]; then
             IS_PRERELEASE="true"
             fi
+            CHANGELOG_PATH="CHANGELOG.md"
+            if [ -f "$CHANGELOG_PATH" ]; then
+              BODY=$(<"$CHANGELOG_PATH")
+            else
+              BODY="Automatically generated release for ${{ needs.build-macos.outputs.tag }}"
+            fi
             gh release create "${{ needs.build-macos.outputs.tag }}" \
             _Releases/${{ needs.build-macos.outputs.version_dir }}.zip \
             --title "${{ needs.build-macos.outputs.tag }}" \
-            --notes "Automatically generated release for ${{ needs.build-macos.outputs.tag }}" \
+            --notes "$BODY" \
             --prerelease=$IS_PRERELEASE
