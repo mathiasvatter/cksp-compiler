@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.8-alpha.3 on Tue Oct 21 17:25:27 2025 }
+{ Compiled with cksp version 0.0.8-alpha.3 on Tue Oct 21 17:43:11 2025 }
 on init
   declare $_iter15
   declare $self19
@@ -13,7 +13,7 @@ on init
   declare $ret2
   declare $slot_idx0
   declare $group_idx0
-  declare $bus_idx1
+  declare $bus_idx0
   declare $self21
   declare $num_refs9
   declare $ret1
@@ -38,7 +38,7 @@ on init
   declare $current3
   declare $_iter14
   declare $ret4
-  declare $bus_idx0
+  declare $bus_idx1
   declare $idx1
   declare $_iter40
   declare $self15
@@ -156,7 +156,7 @@ on init
       end while
       $slot_idx0 := $id0
       $group_idx0 := $group_idx1
-      $bus_idx1 := -1
+      $bus_idx0 := -1
       $Slot____free_idx := search(%Slot____allocation, 0, $Slot____free_idx, 999999)
       if($Slot____free_idx = -1)
         message("Error: No more free space available to allocate objects of type 'Slot'")
@@ -164,7 +164,7 @@ on init
       %Slot____allocation[$Slot____free_idx] := 1
       %Slot____slot_idx[$Slot____free_idx] := $slot_idx0
       %Slot____group_idx[$Slot____free_idx] := $group_idx0
-      %Slot____bus_idx[$Slot____free_idx] := $bus_idx1
+      %Slot____bus_idx[$Slot____free_idx] := $bus_idx0
       $ret2 := $Slot____free_idx
       %_Group____slot[($Group____free_idx * 8) + $_iter10] := $ret2
       $self21 := %_Group____slot[($Group____free_idx * 8) + $_iter10]
@@ -265,7 +265,7 @@ on init
     end while
     $slot_idx0 := $idx0
     $group_idx0 := -1
-    $bus_idx1 := $NI_SEND_BUS
+    $bus_idx0 := $NI_SEND_BUS
     $Slot____free_idx := search(%Slot____allocation, 0, $Slot____free_idx, 999999)
     if($Slot____free_idx = -1)
       message("Error: No more free space available to allocate objects of type 'Slot'")
@@ -273,7 +273,7 @@ on init
     %Slot____allocation[$Slot____free_idx] := 1
     %Slot____slot_idx[$Slot____free_idx] := $slot_idx0
     %Slot____group_idx[$Slot____free_idx] := $group_idx0
-    %Slot____bus_idx[$Slot____free_idx] := $bus_idx1
+    %Slot____bus_idx[$Slot____free_idx] := $bus_idx0
     $ret2 := $Slot____free_idx
     %_Send____slot[($Send____free_idx * 8) + $_iter30] := $ret2
     $self21 := %_Send____slot[($Send____free_idx * 8) + $_iter30]
@@ -343,7 +343,7 @@ on init
         $Bus____free_idx := (($Bus____free_idx + $self13) - abs($Bus____free_idx - $self13)) / 2
       end if
     end while
-    $bus_idx0 := $id1
+    $bus_idx1 := $id1
     $Bus____free_idx := search(%Bus____allocation, 0, $Bus____free_idx, 124999)
     if($Bus____free_idx = -1)
       message("Error: No more free space available to allocate objects of type 'Bus'")
@@ -375,7 +375,7 @@ on init
       end while
       $slot_idx0 := $idx1
       $group_idx0 := -1
-      $bus_idx1 := $NI_BUS_OFFSET + $bus_idx0
+      $bus_idx0 := $NI_BUS_OFFSET + $bus_idx1
       $Slot____free_idx := search(%Slot____allocation, 0, $Slot____free_idx, 999999)
       if($Slot____free_idx = -1)
         message("Error: No more free space available to allocate objects of type 'Slot'")
@@ -383,7 +383,7 @@ on init
       %Slot____allocation[$Slot____free_idx] := 1
       %Slot____slot_idx[$Slot____free_idx] := $slot_idx0
       %Slot____group_idx[$Slot____free_idx] := $group_idx0
-      %Slot____bus_idx[$Slot____free_idx] := $bus_idx1
+      %Slot____bus_idx[$Slot____free_idx] := $bus_idx0
       $ret2 := $Slot____free_idx
       %_Bus____slot[($Bus____free_idx * 8) + $_iter40] := $ret2
       $self21 := %_Bus____slot[($Bus____free_idx * 8) + $_iter40]
@@ -406,11 +406,11 @@ on init
   end while
   $ret0 := $Engine____free_idx
   $Engine := $ret0
-  $bus_idx1 := %_Group____slot[(%_Engine____group[($Engine * 100) + 2] * 8) + 3]
+  $bus_idx0 := %_Group____slot[(%_Engine____group[($Engine * 100) + 2] * 8) + 3]
   $group_idx0 := 10000
-  set_engine_par($ENGINE_PAR_VOLUME, 10000, %Slot____group_idx[$bus_idx1], %Slot____slot_idx[$bus_idx1], %Slot____bus_idx[$bus_idx1])
-  $bus_idx1 := %_Bus____slot[%_Engine____bus[($Engine * 16) + 1] * 8]
+  set_engine_par($ENGINE_PAR_VOLUME, 10000, %Slot____group_idx[$bus_idx0], %Slot____slot_idx[$bus_idx0], %Slot____bus_idx[$bus_idx0])
+  $bus_idx0 := %_Bus____slot[%_Engine____bus[($Engine * 16) + 1] * 8]
   $group_idx0 := 8000
-  set_engine_par($ENGINE_PAR_VOLUME, 8000, %Slot____group_idx[$bus_idx1], %Slot____slot_idx[$bus_idx1], %Slot____bus_idx[$bus_idx1])
+  set_engine_par($ENGINE_PAR_VOLUME, 8000, %Slot____group_idx[$bus_idx0], %Slot____slot_idx[$bus_idx0], %Slot____bus_idx[$bus_idx0])
 end on
 

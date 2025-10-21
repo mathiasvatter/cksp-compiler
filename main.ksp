@@ -1,8 +1,3 @@
-#pragma output_path("test.txt")
-// #pragma combine_callbacks(false)
-// import "/Users/mathias/Scripting/preset-system/dev/ksp/Preset.cksp"
-
-
 struct Engine
 	declare group[100]: Group[]
 	declare send: Send
@@ -72,7 +67,7 @@ end struct
 
 // declare Slot := new Slot(0, 2, -1)
 on init
-	message(.3e)
+	message(.3)
 	declare Engine := new Engine()
 	Engine.group[2].slot[3].set_volume(10000)
 	Engine.bus[1].slot[0].set_volume(8000)
