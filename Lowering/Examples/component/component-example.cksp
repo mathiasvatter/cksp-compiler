@@ -21,22 +21,27 @@ component Popup
 
 	function on_confirm(self, ui_id: int)
 		message("Confirmed")
-		self->hide := true
+		self->hide := HIDE_WHOLE_CONTROL
 	end function
 
 	function on_cancel(self, ui_id: int)
 		message("Cancelled")
-		self->hide := true
+		self->hide := HIDE_WHOLE_CONTROL
 	end function
 
 end component
+
+on init
+	declare comp: Popup := new Popup("Title here", "This is the message body.")
+	comp->hide := HIDE_PART_NOTHING
+end on
 
 {-------------------------------------------------------------------------------------------
                                         Post Lowering
 --------------------------------------------------------------------------------------------}
 
-ui_button btn_confirm
-ui_button btn_cancel
-ui_button btn_close
-ui_label lbl_message(1,1)
-ui_label lbl_title(1,1)
+declare ui_button btn_confirm
+declare ui_button btn_cancel
+declare ui_button btn_close
+declare ui_label lbl_message(1,1)
+declare ui_label lbl_title(1,1)
