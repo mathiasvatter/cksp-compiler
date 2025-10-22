@@ -68,6 +68,10 @@ private:
 				error.m_message.insert(0, error_message);
 				error.exit();
 			}
+			// only generate file if cli option -o is not already set
+			if ( !m_config->output_filename.empty() ) {
+				return;
+			}
 			auto valid_output_path = path_handler.generate_output_file(output_path.unwrap());
 			if (valid_output_path.is_error()) {
 				auto error = valid_output_path.get_error();

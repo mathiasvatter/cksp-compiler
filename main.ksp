@@ -1,3 +1,8 @@
+#pragma output_path("test.txt")
+// #pragma combine_callbacks(false)
+// import "/Users/mathias/Scripting/preset-system/dev/ksp/Preset.cksp"
+
+
 struct Engine
 	declare group[100]: Group[]
 	declare send: Send
