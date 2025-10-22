@@ -80,6 +80,9 @@ Result<std::string> PathHandler::resolve_path(const std::string &import_path) {
 	std::filesystem::path combined_path = (base_path / rel).lexically_normal();
 	if (std::filesystem::exists(combined_path)) {
 		return Result<std::string>(std::filesystem::absolute(combined_path).string());
+	// if not, try parent path, maybe .txt file does not yet exist but is valid
+	} else if(std::filesystem::exists(combined_path.parent_path())) {
+		return Result<std::string>(combined_path.string());
 	}
 
 	// 2. try fallback 'resolve_overlap' for special cases
