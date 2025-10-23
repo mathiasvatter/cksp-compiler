@@ -10,7 +10,7 @@ void ASTGenerator::generate(const std::string& path) const {
 		outFile << os.str();
 	} else {
 		// Fehlerbehandlung, falls die Datei nicht geöffnet werden kann
-		std::cerr << "Fehler beim Öffnen der Datei: " << path << std::endl;
+		std::cerr << "Could not open file. " << path << std::endl;
 	}
 }
 

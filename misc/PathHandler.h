@@ -22,18 +22,16 @@ public:
 	/**
 	 * @brief Checks if given file path exists
 	 * @param path
-	 * @param token
-	 * @param curr_file
 	 * @return
 	 */
 	Result<std::string> check_valid_path(const std::string& path);
 
 	/**
-	 * @brief Generates an output file with the given path if the path is valid.
-	 * @param path
+	 * @brief Checks if given output file path is valid, file does not need to exist yet
+	 * @param absolute_path
 	 * @return
 	 */
-	Result<std::string> generate_output_file(const std::string& absolute_path);;
+	Result<std::string> check_valid_output_file(const std::string& absolute_path);;
 
 	/**
 	 * @brief Resolves the import path to an absolute path.
@@ -48,8 +46,6 @@ public:
 	 * Does not check if the path exists.
 	 *
 	 * @param import_path The path provided in the import statement.
-	 * @param token The token representing the import statement.
-	 * @param curr_file The current file that contains the import statement.
 	 * @return A Result object containing the resolved path as a string if successful, or a CompileError if unsuccessful.
 	 */
 	Result<std::string> resolve_path(const std::string& import_path);

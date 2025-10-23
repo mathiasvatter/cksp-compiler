@@ -1,5 +1,7 @@
 #pragma output_path("test.txt")
-// #pragma combine_callbacks(false)
+#pragma output_path("test1.txt")
+#pragma combine_callbacks(true)
+#pragma optimize('none')
 // import "/Users/mathias/Scripting/preset-system/dev/ksp/Preset.cksp"
 
 
@@ -78,3 +80,6 @@ on init
 	Engine.bus[1].slot[0].set_volume(8000)
 end on
 
+on init
+	message("Initialization complete.")
+end on
