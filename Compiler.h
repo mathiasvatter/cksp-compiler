@@ -53,7 +53,9 @@
 
 
 class Compiler {
-	CompilerConfig* m_config;
+	std::unique_ptr<CompilerConfig> m_pragma_config;
+	std::unique_ptr<CompilerConfig> m_cli_config;
+	std::unique_ptr<CompilerConfig> m_final_config;
 	DefinitionProvider m_definition_provider;
 	NodeProgram* m_program = nullptr;
 	std::vector<Token> m_tokens{};
@@ -85,7 +87,7 @@ class Compiler {
 			error.exit();
 		}
 		auto pre_ast = std::move(result_parse.unwrap());
-		PreASTPragma pragma(m_config);
+		PreASTPragma pragma(m_pragma_config.get());
 		pre_ast->accept(pragma);
 
 		PreASTDefines defines;
@@ -107,10 +109,10 @@ class Compiler {
 	}
 
 public:
-	explicit Compiler(CompilerConfig* config) : m_config(config) {
+	explicit Compiler(std::unique_ptr<CompilerConfig> config) : m_cli_config(std::move(config)) {
+		m_pragma_config = std::make_unique<CompilerConfig>();
 		// initialize standard types and registry
 		TypeRegistry::initialize();
-
 		// process builtins and save them in the definition provider class
 		BuiltinsProcessor builtins(&m_definition_provider);
 		builtins.process();
@@ -118,10 +120,8 @@ public:
 
 	/// Compile the input file
 	void compile() {
-		std::string input_filename = m_config->input_filename;
-		// input_filename = R"(C:\Users\mathi\Documents\Scripting\preset-system\main.ksp)";
-
-	#ifndef NDEBUG
+#ifndef NDEBUG
+		std::string input_filename{};
 		//	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 		//    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 		//    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
@@ -150,55 +150,51 @@ public:
 		// input_filename = "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp";
 		// input_filename = "/Users/mathias/Scripting/sonu-libraries/try.ksp";
 		// input_filename = "/Users/mathias/Scripting/trinity-drums-2/main.ksp";
-	#endif
+		if (!input_filename.empty()) m_cli_config->input_filename = input_filename;
+#endif
 
 		m_timer.start("Total Time");
 		m_timer.start("Import");
 
-		static FileHandler file_handler(input_filename);
-		static Tokenizer tokenizer(file_handler.get_output(), input_filename);
+		static FileHandler file_handler(m_cli_config->input_filename.value());
+		static Tokenizer tokenizer(file_handler.get_output(), m_cli_config->input_filename.value());
 		m_tokens = tokenizer.tokenize();
 
-		static ImportProcessor imports(m_tokens, input_filename, &m_definition_provider);
+		static ImportProcessor imports(m_tokens, m_cli_config->input_filename.value(), &m_definition_provider);
 		if(auto import_result = imports.process_imports(); import_result.is_error()) {
 			auto error = import_result.get_error();
-	        error.m_message += " Preprocessor failed while processing import statements.";
-	        error.exit();
+			error.m_message += " Preprocessor failed while processing import statements.";
+			error.exit();
 		}
 		m_tokens = std::move(imports.get_token_vector());
 
 		m_timer.stop("Import");
 		m_timer.start("Preprocessor");
 
-		std::string output_filename = m_config->output_filename;
-
 		preprocess();
-		// static Preprocessor preprocessor(m_tokens);
-		// preprocessor.process(m_config);
-		// auto preprocessed_tokens = preprocessor.get_token_vector();
 
-		// ---------- output path -----------
-   		std::string standard_output_path = m_config->standard_output_file;
-
-	#ifndef NDEBUG
-	//    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
-	    // output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
-	// output_filename = "/Users/mathias/Scripting/preset-system/samples/resources/scripts/preset-system.txt";
+#ifndef NDEBUG
+		//    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
+		// output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
+		// output_filename = "/Users/mathias/Scripting/preset-system/samples/resources/scripts/preset-system.txt";
 		// output_filename = "/Users/mathias/Scripting/fragments-modern-percussion/Samples/Resources/scripts/Fragments.txt";
-	//    output_filename = "/Users/mathias/Scripting/action-woodwinds/Samples/Resources/scripts/action_woodwinds_cksp.txt";
-	//	output_filename = "/Users/Mathias/Scripting/time-textures/Samples/resources/scripts/time-textures-2.txt";
+		//    output_filename = "/Users/mathias/Scripting/action-woodwinds/Samples/Resources/scripts/action_woodwinds_cksp.txt";
+		//	output_filename = "/Users/Mathias/Scripting/time-textures/Samples/resources/scripts/time-textures-2.txt";
 		// output_filename = "/Users/mathias/Scripting/lux-strings/Samples/Resources/scripts/lux-orchestral-strings-ks.txt";
 		// output_filename = "/Users/mathias/Scripting/toc-single-instruments/samples/resources/scripts/legato.txt";
 		// output_filename = "/Users/mathias/Scripting/toc-single-instruments/samples/resources/scripts/keyswitch.txt";
 		// output_filename = "/Users/mathias/Scripting/the-orchestra-complete-4/Samples/Resources/scripts/sonu_orchestra_ensemble.txt";
 		// output_filename = "/Users/mathias/Scripting/sonu-libraries/resources/scripts/main.txt";
-	#endif
-		if(output_filename.empty() && !m_config->output_filename.empty())
-			output_filename = m_config->output_filename;
-	    if(output_filename.empty()) output_filename = standard_output_path;
+#endif
+
+		m_final_config = combine_configs(m_cli_config, m_pragma_config);
 		std::cout << "\n";
-		std::cout << "Input File: " << input_filename << "\n";
-		std::cout << ColorCode::Bold << "Output File: " << ColorCode::Reset << output_filename << "\n";
+		std::cout << "Input File: " << m_final_config->input_filename.value() << "\n";
+		if (m_final_config->outputs.size() == 1) {
+			std::cout << ColorCode::Bold << "Output File: " << ColorCode::Reset << m_final_config->outputs.front() << "\n";
+		} else {
+			std::cout << ColorCode::Bold << "Output Files: " << ColorCode::Reset << StringUtils::join(m_final_config->outputs, ' ') << "\n";
+		}
 		std::cout << std::endl;
 		std::filesystem::path curr_path = __FILE__;
 
@@ -217,8 +213,8 @@ public:
 		{
 			m_program = ast.get();
 			m_program->def_provider = &m_definition_provider;
-			m_program->compiler_config = m_config;
-			if (m_config->combine_callbacks) {
+			m_program->compiler_config = m_final_config.get();
+			if (m_pragma_config->combine_callbacks) {
 				m_program->combine_callbacks();
 			}
 			m_program->check_unique_callbacks();
@@ -319,7 +315,7 @@ public:
 			// static ASTParameterQualifier parameter_qualifier(m_program);
 			// ast->accept(parameter_qualifier);
 			ast->debug_print();
-			ASTFunctionStrategy function_strategy(m_program, m_config->parameter_passing);
+			ASTFunctionStrategy function_strategy(m_program, m_pragma_config->parameter_passing);
 			function_strategy.determine_function_strategies(*m_program);
 
 			static ParameterAssignmentTransformation assignment_transformation(m_program);
@@ -371,14 +367,14 @@ public:
 
 		m_timer.stop("Variable Reuse");
 		std::cout << m_timer.print_timer("Variable Reuse") << "\n";
-	    m_timer.start("Function Inlining");
+		m_timer.start("Function Inlining");
 
 		ASTFunctionInlining func_inlining(m_program);
 		ast->accept(func_inlining);
 		ast->order_function_definitions();
 		ast->debug_print();
 
-	    m_timer.stop("Function Inlining");
+		m_timer.stop("Function Inlining");
 		std::cout << m_timer.print_timer("Function Inlining") << "\n";
 		m_timer.start("Post Lowering");
 
@@ -397,7 +393,7 @@ public:
 		ast->debug_print();
 
 		ASTOptimizations optimizations;
-		ASTOptimizations::optimize(*ast, m_config->optimization_level);
+		ASTOptimizations::optimize(*ast, m_final_config->optimization_level);
 		ast->debug_print();
 
 		m_timer.stop("Optimization");
@@ -412,7 +408,9 @@ public:
 
 		ASTGenerator generator;
 		ast->accept(generator);
-		generator.generate(output_filename);
+		for (auto & output_filename : m_final_config->outputs) {
+			generator.generate(output_filename);
+		}
 
 		m_timer.stop("Generator");
 		std::cout << m_timer.print_timer("Generator") << "\n";
@@ -422,6 +420,10 @@ public:
 		std::cout << "---------------------------" << "\n";
 		std::cout << ColorCode::Bold << m_timer.print_timer("Total Time") << ColorCode::Reset << "\n";
 
-		std::cout << ColorCode::Green << ColorCode::Bold << "Saved compiled file to: " << ColorCode::Reset << output_filename << std::endl;
+		if (m_final_config->outputs.size() == 1)
+			std::cout << ColorCode::Green << ColorCode::Bold << "Saved compiled file to: " << ColorCode::Reset << m_final_config->outputs.front() << std::endl;
+		else {
+			std::cout << ColorCode::Green << ColorCode::Bold << "Saved compiled file to: " << ColorCode::Reset << StringUtils::join(m_final_config->outputs, ' ') << std::endl;
+		}
 	}
 };
