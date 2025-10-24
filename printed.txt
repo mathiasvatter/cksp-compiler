@@ -1,168 +1,508 @@
-// Global Declarations:
+on init
+	declare _iter15 : int {Reuses: 0}
+	declare const MAX::CB::STACK : int := 100 {Reuses: 0}
 	declare _iter0 : int {Reuses: 0}
 	declare const MAX::STRUCTS : int := 1000000 {Reuses: 0}
-	declare const MEM::WARNING : string := "Memory Error: No more free space available to allocate objects of type" {Reuses: 0}
-	namespace Browser
-	declare const Browser.pupu : string := "pupu" {Reuses: 0}
-	namespace SecondBrowser
-	declare const Browser.SecondBrowser.pipi : string := Browser.pupu{string} {Browser.pupu}  {Reuses: 0}
-
-end namespace
-
-	declare const Browser.CONSTANT : int := 1 {Reuses: 0}
-	namespace ThirdBrowser
-	declare Browser.ThirdBrowser.third_pupu : string := Browser.SecondBrowser.pipi{string} {Browser.SecondBrowser.pipi}  {Reuses: 0}
-
-end namespace
-
-	declare Browser.ckjkj : int := 5 {Reuses: 0}
-
-		function Browser.do_sth(param2 : int)
-			return ("Doing something with " & param2{int} {param2}  & Browser.CONSTANT{int} {Browser.CONSTANT} )
-		end function
-
-		function Browser.do_sth3(param2 : int)
-			return ("Doing something with " & param2{int} {param2}  & Browser.pupu{string} {Browser.pupu} )
-		end function
-
-end namespace
-
-struct List[1]
-declare local self{Ptr} : List := nil {Reuses: 0}
-declare local List::value : int {Reuses: 0}
-declare local List::next{Ptr} : List := nil {Reuses: 0}
-
-	function List::__init__(value0 : int, next0{Ptr} : List)
-		List::value{int} {List::value}  := value0{int} {value0} 
-		delete List::next{Ptr}{List} {List::next} 
-		List::next{Ptr}{List} {List::next}  := next0{Ptr}{List} {next0} 
-				retain(List::next{Ptr}{List} {List::next} , 1)
-	end function
-
-	function List::__repr__(self2{Ptr} : List)
-		return ("<List> Object: " & self2{Ptr}{List} {self2} )
-	end function
-
-end struct
-
-struct Obj[1 + 1]
-declare local self{Ptr} : Obj := nil {Reuses: 0}
-declare local Obj::val : int {Reuses: 0}
-
-	function Obj::__eq__(self3{Ptr} : Obj, other1{Ptr} : Obj)
-		return (Obj::val{int} {Obj::val}  = other1{Ptr}{Obj} {other1} .val{int} {Obj::val} )
-	end function
-
-	function Obj::__ne__(self1{Ptr} : Obj, other0{Ptr} : Obj)
-		return (Obj::val{int} {Obj::val}  # other0{Ptr}{Obj} {other0} .val{int} {Obj::val} )
-	end function
-
-	function Obj::__init__(val0 : int)
-		Obj::val{int} {Obj::val}  := val0{int} {val0} 
-	end function
-
-	function Obj::__repr__(self0{Ptr} : Obj)
-		return ("<Obj> Object: " & self0{Ptr}{Obj} {self0} )
-	end function
-
-end struct
-
-on init
-	declare ui_button btn : int  {Reuses: 0}
-	declare object{Ptr} : Obj := Obj::__init__(1){Constructor, None, Obj::__init__} {Reuses: 0}
-	declare object2{Ptr} : Obj := Obj::__init__(1){Constructor, None, Obj::__init__} {Reuses: 0}
-	if(Obj::__eq__(object{Ptr}{Obj} {object} , object2{Ptr}{Obj} {object2} ){UserDefined, None, Obj::__eq__})
-		message(true){Builtin, None, message}
+	declare MEM::WARNING : string {Reuses: 0}
+	MEM::WARNING{string} {MEM::WARNING}  := "Memory Error: No more free space available to allocate objects of type"
+	declare self19 : int {Reuses: 0}
+	declare _iter6 : int {Reuses: 0}
+	declare self20 : int {Reuses: 0}
+	declare num_refs8 : int {Reuses: 0}
+	declare current0 : int {Reuses: 0}
+	declare _iter7 : int {Reuses: 0}
+	declare _iter60 : int {Reuses: 0}
+	declare self10 : int {Reuses: 0}
+	declare _iter8 : int {Reuses: 0}
+	declare self11 : int {Reuses: 0}
+	declare num_refs2 : int {Reuses: 0}
+	declare current1 : int {Reuses: 0}
+	declare _iter9 : int {Reuses: 0}
+	declare current00 : int {Reuses: 1}
+	declare _iter70 : int {Reuses: 0}
+	declare _iter600 : int {Reuses: 0}
+	declare ret2 : int {Reuses: 0}
+	declare slot_idx0 : int {Reuses: 0}
+	declare group_idx0 : int {Reuses: 1}
+	declare bus_idx0 : int {Reuses: 1}
+	declare self21 : int {Reuses: 0}
+	declare num_refs9 : int {Reuses: 0}
+	declare ret1 : int {Reuses: 0}
+	declare group_idx1 : int {Reuses: 0}
+	declare id0 : int {Reuses: 0}
+	declare _iter10 : int {Reuses: 0}
+	declare current01 : int {Reuses: 0}
+	declare _iter71 : int {Reuses: 0}
+	declare _iter601 : int {Reuses: 0}
+	declare self12 : int {Reuses: 0}
+	declare num_refs3 : int {Reuses: 0}
+	declare self16 : int {Reuses: 0}
+	declare _iter11 : int {Reuses: 0}
+	declare self17 : int {Reuses: 0}
+	declare num_refs6 : int {Reuses: 0}
+	declare current2 : int {Reuses: 0}
+	declare _iter12 : int {Reuses: 0}
+	declare current02 : int {Reuses: 1}
+	declare _iter72 : int {Reuses: 0}
+	declare _iter602 : int {Reuses: 0}
+	declare ret3 : int {Reuses: 0}
+	declare idx0 : int {Reuses: 0}
+	declare _iter30 : int {Reuses: 0}
+	declare current03 : int {Reuses: 0}
+	declare _iter73 : int {Reuses: 0}
+	declare _iter603 : int {Reuses: 0}
+	declare self18 : int {Reuses: 0}
+	declare num_refs7 : int {Reuses: 0}
+	declare self13 : int {Reuses: 0}
+	declare _iter13 : int {Reuses: 0}
+	declare self14 : int {Reuses: 0}
+	declare num_refs4 : int {Reuses: 0}
+	declare current3 : int {Reuses: 0}
+	declare _iter14 : int {Reuses: 0}
+	declare current04 : int {Reuses: 1}
+	declare _iter74 : int {Reuses: 0}
+	declare _iter604 : int {Reuses: 0}
+	declare ret4 : int {Reuses: 0}
+	declare bus_idx1 : int {Reuses: 0}
+	declare idx1 : int {Reuses: 0}
+	declare _iter40 : int {Reuses: 0}
+	declare current05 : int {Reuses: 0}
+	declare _iter75 : int {Reuses: 0}
+	declare _iter605 : int {Reuses: 0}
+	declare self15 : int {Reuses: 0}
+	declare num_refs5 : int {Reuses: 0}
+	declare ret0 : int {Reuses: 0}
+	declare id1 : int {Reuses: 3}
+	declare _iter20 : int {Reuses: 3}
+	declare current10 : int {Reuses: 3}
+	declare _iter90 : int {Reuses: 6}
+	declare current000 : int {Reuses: 4}
+	declare _iter700 : int {Reuses: 6}
+	declare _iter6000 : int {Reuses: 5}
+	declare local id10 : int {Reuses: 3}
+	declare local _iter200 : int {Reuses: 3}
+	declare local current100 : int {Reuses: 3}
+	declare local _iter900 : int {Reuses: 6}
+	declare local current0000 : int {Reuses: 4}
+	declare local _iter7000 : int {Reuses: 6}
+	declare local _iter60000 : int {Reuses: 5}
+	declare const Slot::MAX_STRUCTS : int := MAX::STRUCTS{int} {MAX::STRUCTS}  {Reuses: 0}
+	declare Slot::free_idx : int {Reuses: 0}
+	declare Slot::allocation[Slot::MAX_STRUCTS{int} {Slot::MAX_STRUCTS} ] : int[] {Reuses: 0}
+	declare Slot::stack[Slot::MAX_STRUCTS{int} {Slot::MAX_STRUCTS} ] : int[] {Reuses: 0}
+	declare Slot::stack_top : int {Reuses: 0}
+	declare Slot::slot_idx[Slot::MAX_STRUCTS{int} {Slot::MAX_STRUCTS} ] : int[] {Reuses: 0}
+	declare Slot::group_idx[Slot::MAX_STRUCTS{int} {Slot::MAX_STRUCTS} ] : int[] {Reuses: 0}
+	declare Slot::bus_idx[Slot::MAX_STRUCTS{int} {Slot::MAX_STRUCTS} ] : int[] {Reuses: 0}
+	declare const Send::MAX_STRUCTS : int := ((1 + (MAX::STRUCTS{int} {MAX::STRUCTS}  / 8)) + abs(1 - (MAX::STRUCTS{int} {MAX::STRUCTS}  / 8)){Builtin, None, abs}) / 2 {Reuses: 0}
+	declare Send::free_idx : int {Reuses: 0}
+	declare Send::allocation[Send::MAX_STRUCTS{int} {Send::MAX_STRUCTS} ] : int[] {Reuses: 0}
+	declare Send::stack[Send::MAX_STRUCTS{int} {Send::MAX_STRUCTS} ] : int[] {Reuses: 0}
+	declare Send::stack_top : int {Reuses: 0}
+	declare const _Send::slot::num_elements0 : int := Send::MAX_STRUCTS{int} {Send::MAX_STRUCTS}  * 8 {Reuses: 0}
+	declare const _Send::slot::num_elements1 : int := Send::MAX_STRUCTS{int} {Send::MAX_STRUCTS}  {Reuses: 0}
+	declare const _Send::slot::num_elements2 : int := 8 {Reuses: 0}
+	declare _Send::slot[Send::MAX_STRUCTS{int} {Send::MAX_STRUCTS}  * 8] : int[] := [- 1] {Reuses: 0}
+	declare const Bus::MAX_STRUCTS : int := ((1 + (MAX::STRUCTS{int} {MAX::STRUCTS}  / 8)) + abs(1 - (MAX::STRUCTS{int} {MAX::STRUCTS}  / 8)){Builtin, None, abs}) / 2 {Reuses: 0}
+	declare Bus::free_idx : int {Reuses: 0}
+	declare Bus::allocation[Bus::MAX_STRUCTS{int} {Bus::MAX_STRUCTS} ] : int[] {Reuses: 0}
+	declare Bus::stack[Bus::MAX_STRUCTS{int} {Bus::MAX_STRUCTS} ] : int[] {Reuses: 0}
+	declare Bus::stack_top : int {Reuses: 0}
+	declare const _Bus::slot::num_elements0 : int := Bus::MAX_STRUCTS{int} {Bus::MAX_STRUCTS}  * 8 {Reuses: 0}
+	declare const _Bus::slot::num_elements1 : int := Bus::MAX_STRUCTS{int} {Bus::MAX_STRUCTS}  {Reuses: 0}
+	declare const _Bus::slot::num_elements2 : int := 8 {Reuses: 0}
+	declare _Bus::slot[Bus::MAX_STRUCTS{int} {Bus::MAX_STRUCTS}  * 8] : int[] := [- 1] {Reuses: 0}
+	declare const Group::MAX_STRUCTS : int := ((1 + (MAX::STRUCTS{int} {MAX::STRUCTS}  / 8)) + abs(1 - (MAX::STRUCTS{int} {MAX::STRUCTS}  / 8)){Builtin, None, abs}) / 2 {Reuses: 0}
+	declare Group::free_idx : int {Reuses: 0}
+	declare Group::allocation[Group::MAX_STRUCTS{int} {Group::MAX_STRUCTS} ] : int[] {Reuses: 0}
+	declare Group::stack[Group::MAX_STRUCTS{int} {Group::MAX_STRUCTS} ] : int[] {Reuses: 0}
+	declare Group::stack_top : int {Reuses: 0}
+	declare const _Group::slot::num_elements0 : int := Group::MAX_STRUCTS{int} {Group::MAX_STRUCTS}  * 8 {Reuses: 0}
+	declare const _Group::slot::num_elements1 : int := Group::MAX_STRUCTS{int} {Group::MAX_STRUCTS}  {Reuses: 0}
+	declare const _Group::slot::num_elements2 : int := 8 {Reuses: 0}
+	declare _Group::slot[Group::MAX_STRUCTS{int} {Group::MAX_STRUCTS}  * 8] : int[] := [- 1] {Reuses: 0}
+	declare const Engine::MAX_STRUCTS : int := ((1 + (1 / (((100 + 16) + abs(100 - 16){Builtin, None, abs}) / 2))) + abs(1 - (1 / (((100 + 16) + abs(100 - 16){Builtin, None, abs}) / 2))){Builtin, None, abs}) / 2 {Reuses: 0}
+	declare Engine::free_idx : int {Reuses: 0}
+	declare Engine::allocation[Engine::MAX_STRUCTS{int} {Engine::MAX_STRUCTS} ] : int[] {Reuses: 0}
+	declare Engine::stack[Engine::MAX_STRUCTS{int} {Engine::MAX_STRUCTS} ] : int[] {Reuses: 0}
+	declare Engine::stack_top : int {Reuses: 0}
+	declare const _Engine::group::num_elements0 : int := Engine::MAX_STRUCTS{int} {Engine::MAX_STRUCTS}  * 100 {Reuses: 0}
+	declare const _Engine::group::num_elements1 : int := Engine::MAX_STRUCTS{int} {Engine::MAX_STRUCTS}  {Reuses: 0}
+	declare const _Engine::group::num_elements2 : int := 100 {Reuses: 0}
+	declare _Engine::group[Engine::MAX_STRUCTS{int} {Engine::MAX_STRUCTS}  * 100] : int[] := [- 1] {Reuses: 0}
+	declare Engine::send[Engine::MAX_STRUCTS{int} {Engine::MAX_STRUCTS} ] : int[] := [- 1] {Reuses: 0}
+	declare const _Engine::bus::num_elements0 : int := Engine::MAX_STRUCTS{int} {Engine::MAX_STRUCTS}  * 16 {Reuses: 0}
+	declare const _Engine::bus::num_elements1 : int := Engine::MAX_STRUCTS{int} {Engine::MAX_STRUCTS}  {Reuses: 0}
+	declare const _Engine::bus::num_elements2 : int := 16 {Reuses: 0}
+	declare _Engine::bus[Engine::MAX_STRUCTS{int} {Engine::MAX_STRUCTS}  * 16] : int[] := [- 1] {Reuses: 0}
+	message(0.3){Builtin, None, message}
+	declare Engine : int {Reuses: 0}
+	Engine::free_idx{int} {Engine::free_idx}  := search(Engine::allocation{int[]} {Engine::allocation} , 0, Engine::free_idx{int} {Engine::free_idx} , Engine::MAX_STRUCTS{int} {Engine::MAX_STRUCTS}  - 1){Builtin, None, search}
+	if(Engine::free_idx{int} {Engine::free_idx}  = -1)
+		message("Error: No more free space available to allocate objects of type 'Engine'"){Builtin, None, message}
 	end if
-	message(Obj::__ne__(object{Ptr}{Obj} {object} , object2{Ptr}{Obj} {object2} ){UserDefined, None, Obj::__ne__}){Builtin, None, message}
-	if(is_hidden(1){UserDefined, None, is_hidden})
-		message("This is true"){Builtin, None, message}
-	end if
-	declare is_true : bool := is_hidden(1){UserDefined, None, is_hidden} and not ((true and (1 < 3)) or true) {Reuses: 0}
-	declare var : real := 2.5 {Reuses: 0}
-	while(is_true{bool} {is_true}  and bool(var{real} {var} ){Builtin, None, bool}) 
-		message("This is true"){Builtin, None, message}
+	Engine::allocation[Engine::free_idx{int} {Engine::free_idx} ]{int} {Engine::allocation}  := 1
+	id1{int} {id1}  := 0
+	_iter20{int} {_iter20}  := 0
+	_iter20{int} {_iter20}  := 0
+	while(_iter20{int} {_iter20}  <= (_Engine::group::num_elements2{int} {_Engine::group::num_elements2}  - 1)) 
+		self11{int} {self11}  := _Engine::group[(Engine::free_idx{int} {Engine::free_idx}  * 100) + _iter20{int} {_iter20} ]{int} {_Engine::group} 
+		num_refs2{int} {num_refs2}  := 1
+		current1{int} {current1}  := self11{int} {self11} 
+		while(current1{int} {current1}  # - 1) 
+			_iter9{int} {_iter9}  := 0
+			Group::allocation[current1{int} {current1} ]{int} {Group::allocation}  := Group::allocation[current1{int} {current1} ]{int} {Group::allocation}  - num_refs2{int} {num_refs2} 
+			if(Group::allocation[current1{int} {current1} ]{int} {Group::allocation}  > 0)
+				current1{int} {current1}  := - 1
+				continue{Builtin, None, continue}
+			else
+				Group::allocation[current1{int} {current1} ]{int} {Group::allocation}  := 0
+			end if
+			self11{int} {self11}  := current1{int} {current1} 
+			current1{int} {current1}  := - 1
+			_iter9{int} {_iter9}  := 0
+			while(_iter9{int} {_iter9}  <= (8 - 1)) 
+				self20{int} {self20}  := _Group::slot[(self11{int} {self11}  * 8) + _iter9{int} {_iter9} ]{int} {_Group::slot} 
+				num_refs8{int} {num_refs8}  := 1
+				current0{int} {current0}  := self20{int} {self20} 
+				while(current0{int} {current0}  # - 1) 
+					_iter7{int} {_iter7}  := 0
+					Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  - num_refs8{int} {num_refs8} 
+					if(Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  > 0)
+						current0{int} {current0}  := - 1
+						continue{Builtin, None, continue}
+					else
+						Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := 0
+					end if
+					self20{int} {self20}  := current0{int} {current0} 
+					current0{int} {current0}  := - 1
+					self19{int} {self19}  := self20{int} {self20} 
+					_iter6{int} {_iter6}  := 0
+					if(self19{int} {self19}  # - 1)
+						Slot::bus_idx[self19{int} {self19} ]{int} {Slot::bus_idx}  := 0
+						Slot::group_idx[self19{int} {self19} ]{int} {Slot::group_idx}  := 0
+						Slot::slot_idx[self19{int} {self19} ]{int} {Slot::slot_idx}  := 0
+						Slot::free_idx{int} {Slot::free_idx}  := ((Slot::free_idx{int} {Slot::free_idx}  + self19{int} {self19} ) - abs(Slot::free_idx{int} {Slot::free_idx}  - self19{int} {self19} ){Builtin, None, abs}) / 2
+					end if
+				end while
+				inc(_iter9{int} {_iter9} ){Builtin, None, inc}
+			end while
+			self10{int} {self10}  := self11{int} {self11} 
+			_iter8{int} {_iter8}  := 0
+			if(self10{int} {self10}  # - 1)
+				_iter15{int} {_iter15}  := 0
+				while(_iter15{int} {_iter15}  <= (_Group::slot::num_elements2{int} {_Group::slot::num_elements2}  - 1)) 
+					_Group::slot[(self10{int} {self10}  * 8) + _iter15{int} {_iter15} ]{int} {_Group::slot}  := - 1
+					inc(_iter15{int} {_iter15} ){Builtin, None, inc}
+				end while
+				Group::free_idx{int} {Group::free_idx}  := ((Group::free_idx{int} {Group::free_idx}  + self10{int} {self10} ) - abs(Group::free_idx{int} {Group::free_idx}  - self10{int} {self10} ){Builtin, None, abs}) / 2
+			end if
+		end while
+		group_idx1{int} {group_idx1}  := id1{int} {id1} 
+		Group::free_idx{int} {Group::free_idx}  := search(Group::allocation{int[]} {Group::allocation} , 0, Group::free_idx{int} {Group::free_idx} , Group::MAX_STRUCTS{int} {Group::MAX_STRUCTS}  - 1){Builtin, None, search}
+		if(Group::free_idx{int} {Group::free_idx}  = -1)
+			message("Error: No more free space available to allocate objects of type 'Group'"){Builtin, None, message}
+		end if
+		Group::allocation[Group::free_idx{int} {Group::free_idx} ]{int} {Group::allocation}  := 1
+		id0{int} {id0}  := 0
+		_iter10{int} {_iter10}  := 0
+		_iter10{int} {_iter10}  := 0
+		while(_iter10{int} {_iter10}  <= (_Group::slot::num_elements2{int} {_Group::slot::num_elements2}  - 1)) 
+			self20{int} {self20}  := _Group::slot[(Group::free_idx{int} {Group::free_idx}  * 8) + _iter10{int} {_iter10} ]{int} {_Group::slot} 
+			num_refs8{int} {num_refs8}  := 1
+			current0{int} {current0}  := self20{int} {self20} 
+			while(current0{int} {current0}  # - 1) 
+				_iter7{int} {_iter7}  := 0
+				Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  - num_refs8{int} {num_refs8} 
+				if(Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  > 0)
+					current0{int} {current0}  := - 1
+					continue{Builtin, None, continue}
+				else
+					Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := 0
+				end if
+				self20{int} {self20}  := current0{int} {current0} 
+				current0{int} {current0}  := - 1
+				self19{int} {self19}  := self20{int} {self20} 
+				_iter6{int} {_iter6}  := 0
+				if(self19{int} {self19}  # - 1)
+					Slot::bus_idx[self19{int} {self19} ]{int} {Slot::bus_idx}  := 0
+					Slot::group_idx[self19{int} {self19} ]{int} {Slot::group_idx}  := 0
+					Slot::slot_idx[self19{int} {self19} ]{int} {Slot::slot_idx}  := 0
+					Slot::free_idx{int} {Slot::free_idx}  := ((Slot::free_idx{int} {Slot::free_idx}  + self19{int} {self19} ) - abs(Slot::free_idx{int} {Slot::free_idx}  - self19{int} {self19} ){Builtin, None, abs}) / 2
+				end if
+			end while
+			slot_idx0{int} {slot_idx0}  := id0{int} {id0} 
+			group_idx0{int} {group_idx0}  := group_idx1{int} {group_idx1} 
+			bus_idx0{int} {bus_idx0}  := - 1
+			Slot::free_idx{int} {Slot::free_idx}  := search(Slot::allocation{int[]} {Slot::allocation} , 0, Slot::free_idx{int} {Slot::free_idx} , Slot::MAX_STRUCTS{int} {Slot::MAX_STRUCTS}  - 1){Builtin, None, search}
+			if(Slot::free_idx{int} {Slot::free_idx}  = -1)
+				message("Error: No more free space available to allocate objects of type 'Slot'"){Builtin, None, message}
+			end if
+			Slot::allocation[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::allocation}  := 1
+			Slot::slot_idx[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::slot_idx}  := slot_idx0{int} {slot_idx0} 
+			Slot::group_idx[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::group_idx}  := group_idx0{int} {group_idx0} 
+			Slot::bus_idx[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::bus_idx}  := bus_idx0{int} {bus_idx0} 
+			ret2{int} {ret2}  := Slot::free_idx{int} {Slot::free_idx} 
+			_Group::slot[(Group::free_idx{int} {Group::free_idx}  * 8) + _iter10{int} {_iter10} ]{int} {_Group::slot}  := ret2{int} {ret2} 
+			self21{int} {self21}  := _Group::slot[(Group::free_idx{int} {Group::free_idx}  * 8) + _iter10{int} {_iter10} ]{int} {_Group::slot} 
+			num_refs9{int} {num_refs9}  := 1
+			if(self21{int} {self21}  # - 1)
+				Slot::allocation[self21{int} {self21} ]{int} {Slot::allocation}  := Slot::allocation[self21{int} {self21} ]{int} {Slot::allocation}  + num_refs9{int} {num_refs9} 
+			end if
+			inc(_iter10{int} {_iter10} ){Builtin, None, inc}
+			inc(id0{int} {id0} ){Builtin, None, inc}
+		end while
+		ret1{int} {ret1}  := Group::free_idx{int} {Group::free_idx} 
+		_Engine::group[(Engine::free_idx{int} {Engine::free_idx}  * 100) + _iter20{int} {_iter20} ]{int} {_Engine::group}  := ret1{int} {ret1} 
+		self12{int} {self12}  := _Engine::group[(Engine::free_idx{int} {Engine::free_idx}  * 100) + _iter20{int} {_iter20} ]{int} {_Engine::group} 
+		num_refs3{int} {num_refs3}  := 1
+		if(self12{int} {self12}  # - 1)
+			Group::allocation[self12{int} {self12} ]{int} {Group::allocation}  := Group::allocation[self12{int} {self12} ]{int} {Group::allocation}  + num_refs3{int} {num_refs3} 
+		end if
+		inc(_iter20{int} {_iter20} ){Builtin, None, inc}
+		inc(id1{int} {id1} ){Builtin, None, inc}
 	end while
-	message(bool(3){Builtin, None, bool} * 2){Builtin, None, message}
-	pgs_create_key(PRESET_NAME{pgs} {no declaration} , 3){Builtin, None, pgs_create_key}
-	declare ptr{Ptr} : List := List::__init__(10, nil){Constructor, None, List::__init__} {Reuses: 0}
-	message(int(ptr{Ptr}{List} {ptr} ){Builtin, None, int}){Builtin, None, message}
-	message(int(4){Builtin, None, int}){Builtin, None, message}
-	for i : int in range(0, side_effects(3){UserDefined, None, side_effects}, 1)
-		message(i{int} {i} ){Builtin, None, message}
-	end for
-	declare lbl_bd_dnd : int := 4 {Reuses: 0}
-	inc(lbl_bd_dnd{int} {lbl_bd_dnd} ){Builtin, None, inc}
-	message(lbl_bd_dnd{int} {lbl_bd_dnd} ){Builtin, None, message}
-	declare ui_label lbl_bd_DnD : int (1, 1) {Reuses: 0}
-	lbl_bd_DnD{int} {lbl_bd_DnD}  -> picture := "btn_custom-samples-import"
-	declare arr : int[] := [1, 2, 3, 4, 5] {Reuses: 0}
-	declare matrix : int[][] := [[1, 2, 3], [4, 5, 6], [7, 8, 9]] {Reuses: 0}
-	func_return(arr{int[]} {arr} ){UserDefined, None, func_return}
-	swi_keyswitch_ui_controls(1){UserDefined, None, swi_keyswitch_ui_controls}
-	message("pupoupupupupupup"){Builtin, None, message}
-	message(1 = 1){Builtin, None, message}
-end on
-
-on ui_control(btn{int} {btn} )
-	message("button pressed"){Builtin, None, message}
-	message("another button pressed"){Builtin, None, message}
-	message(1 = 1){Builtin, None, message}
-end on
-
-function side_effects(arg0 : int)
-	message("side effects"){Builtin, None, message}
-	return (arg0{int} {arg0} )
-end function
-
-function is_hidden(ui_id0 : int)
-	return (ui_id0{int} {ui_id0}  -> hide = HIDE_WHOLE_CONTROL{int} {HIDE_WHOLE_CONTROL} )
-end function
-
-function func_return(array0 : int[])
-	declare local idx : int := search[array0{int[]} {array0} , 6] {Reuses: 0}
-	if(idx{int} {idx}  # - 1)
-		message("hello"){Builtin, None, message}
+	self17{int} {self17}  := Engine::send[Engine::free_idx{int} {Engine::free_idx} ]{int} {Engine::send} 
+	num_refs6{int} {num_refs6}  := 1
+	current2{int} {current2}  := self17{int} {self17} 
+	while(current2{int} {current2}  # - 1) 
+		_iter12{int} {_iter12}  := 0
+		Send::allocation[current2{int} {current2} ]{int} {Send::allocation}  := Send::allocation[current2{int} {current2} ]{int} {Send::allocation}  - num_refs6{int} {num_refs6} 
+		if(Send::allocation[current2{int} {current2} ]{int} {Send::allocation}  > 0)
+			current2{int} {current2}  := - 1
+			continue{Builtin, None, continue}
+		else
+			Send::allocation[current2{int} {current2} ]{int} {Send::allocation}  := 0
+		end if
+		self17{int} {self17}  := current2{int} {current2} 
+		current2{int} {current2}  := - 1
+		_iter12{int} {_iter12}  := 0
+		while(_iter12{int} {_iter12}  <= (8 - 1)) 
+			self20{int} {self20}  := _Send::slot[(self17{int} {self17}  * 8) + _iter12{int} {_iter12} ]{int} {_Send::slot} 
+			num_refs8{int} {num_refs8}  := 1
+			current0{int} {current0}  := self20{int} {self20} 
+			while(current0{int} {current0}  # - 1) 
+				_iter7{int} {_iter7}  := 0
+				Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  - num_refs8{int} {num_refs8} 
+				if(Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  > 0)
+					current0{int} {current0}  := - 1
+					continue{Builtin, None, continue}
+				else
+					Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := 0
+				end if
+				self20{int} {self20}  := current0{int} {current0} 
+				current0{int} {current0}  := - 1
+				self19{int} {self19}  := self20{int} {self20} 
+				_iter6{int} {_iter6}  := 0
+				if(self19{int} {self19}  # - 1)
+					Slot::bus_idx[self19{int} {self19} ]{int} {Slot::bus_idx}  := 0
+					Slot::group_idx[self19{int} {self19} ]{int} {Slot::group_idx}  := 0
+					Slot::slot_idx[self19{int} {self19} ]{int} {Slot::slot_idx}  := 0
+					Slot::free_idx{int} {Slot::free_idx}  := ((Slot::free_idx{int} {Slot::free_idx}  + self19{int} {self19} ) - abs(Slot::free_idx{int} {Slot::free_idx}  - self19{int} {self19} ){Builtin, None, abs}) / 2
+				end if
+			end while
+			inc(_iter12{int} {_iter12} ){Builtin, None, inc}
+		end while
+		self16{int} {self16}  := self17{int} {self17} 
+		_iter11{int} {_iter11}  := 0
+		if(self16{int} {self16}  # - 1)
+			_iter15{int} {_iter15}  := 0
+			while(_iter15{int} {_iter15}  <= (_Send::slot::num_elements2{int} {_Send::slot::num_elements2}  - 1)) 
+				_Send::slot[(self16{int} {self16}  * 8) + _iter15{int} {_iter15} ]{int} {_Send::slot}  := - 1
+				inc(_iter15{int} {_iter15} ){Builtin, None, inc}
+			end while
+			Send::free_idx{int} {Send::free_idx}  := ((Send::free_idx{int} {Send::free_idx}  + self16{int} {self16} ) - abs(Send::free_idx{int} {Send::free_idx}  - self16{int} {self16} ){Builtin, None, abs}) / 2
+		end if
+	end while
+	Send::free_idx{int} {Send::free_idx}  := search(Send::allocation{int[]} {Send::allocation} , 0, Send::free_idx{int} {Send::free_idx} , Send::MAX_STRUCTS{int} {Send::MAX_STRUCTS}  - 1){Builtin, None, search}
+	if(Send::free_idx{int} {Send::free_idx}  = -1)
+		message("Error: No more free space available to allocate objects of type 'Send'"){Builtin, None, message}
 	end if
-	return ()
-end function
-
-function swi_keyswitch_ui_controls(idx0 : int)
-	if(idx0{int} {idx0}  # - 1)
-		message("henlo"){Builtin, None, message}
-		return ()
-	else
-		message("sdlfkj"){Builtin, None, message}
+	Send::allocation[Send::free_idx{int} {Send::free_idx} ]{int} {Send::allocation}  := 1
+	idx0{int} {idx0}  := 0
+	_iter30{int} {_iter30}  := 0
+	_iter30{int} {_iter30}  := 0
+	while(_iter30{int} {_iter30}  <= (_Send::slot::num_elements2{int} {_Send::slot::num_elements2}  - 1)) 
+		self20{int} {self20}  := _Send::slot[(Send::free_idx{int} {Send::free_idx}  * 8) + _iter30{int} {_iter30} ]{int} {_Send::slot} 
+		num_refs8{int} {num_refs8}  := 1
+		current0{int} {current0}  := self20{int} {self20} 
+		while(current0{int} {current0}  # - 1) 
+			_iter7{int} {_iter7}  := 0
+			Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  - num_refs8{int} {num_refs8} 
+			if(Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  > 0)
+				current0{int} {current0}  := - 1
+				continue{Builtin, None, continue}
+			else
+				Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := 0
+			end if
+			self20{int} {self20}  := current0{int} {current0} 
+			current0{int} {current0}  := - 1
+			self19{int} {self19}  := self20{int} {self20} 
+			_iter6{int} {_iter6}  := 0
+			if(self19{int} {self19}  # - 1)
+				Slot::bus_idx[self19{int} {self19} ]{int} {Slot::bus_idx}  := 0
+				Slot::group_idx[self19{int} {self19} ]{int} {Slot::group_idx}  := 0
+				Slot::slot_idx[self19{int} {self19} ]{int} {Slot::slot_idx}  := 0
+				Slot::free_idx{int} {Slot::free_idx}  := ((Slot::free_idx{int} {Slot::free_idx}  + self19{int} {self19} ) - abs(Slot::free_idx{int} {Slot::free_idx}  - self19{int} {self19} ){Builtin, None, abs}) / 2
+			end if
+		end while
+		slot_idx0{int} {slot_idx0}  := idx0{int} {idx0} 
+		group_idx0{int} {group_idx0}  := - 1
+		bus_idx0{int} {bus_idx0}  := NI_SEND_BUS{int} {NI_SEND_BUS} 
+		Slot::free_idx{int} {Slot::free_idx}  := search(Slot::allocation{int[]} {Slot::allocation} , 0, Slot::free_idx{int} {Slot::free_idx} , Slot::MAX_STRUCTS{int} {Slot::MAX_STRUCTS}  - 1){Builtin, None, search}
+		if(Slot::free_idx{int} {Slot::free_idx}  = -1)
+			message("Error: No more free space available to allocate objects of type 'Slot'"){Builtin, None, message}
+		end if
+		Slot::allocation[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::allocation}  := 1
+		Slot::slot_idx[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::slot_idx}  := slot_idx0{int} {slot_idx0} 
+		Slot::group_idx[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::group_idx}  := group_idx0{int} {group_idx0} 
+		Slot::bus_idx[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::bus_idx}  := bus_idx0{int} {bus_idx0} 
+		ret2{int} {ret2}  := Slot::free_idx{int} {Slot::free_idx} 
+		_Send::slot[(Send::free_idx{int} {Send::free_idx}  * 8) + _iter30{int} {_iter30} ]{int} {_Send::slot}  := ret2{int} {ret2} 
+		self21{int} {self21}  := _Send::slot[(Send::free_idx{int} {Send::free_idx}  * 8) + _iter30{int} {_iter30} ]{int} {_Send::slot} 
+		num_refs9{int} {num_refs9}  := 1
+		if(self21{int} {self21}  # - 1)
+			Slot::allocation[self21{int} {self21} ]{int} {Slot::allocation}  := Slot::allocation[self21{int} {self21} ]{int} {Slot::allocation}  + num_refs9{int} {num_refs9} 
+		end if
+		inc(_iter30{int} {_iter30} ){Builtin, None, inc}
+		inc(idx0{int} {idx0} ){Builtin, None, inc}
+	end while
+	ret3{int} {ret3}  := Send::free_idx{int} {Send::free_idx} 
+	Engine::send[Engine::free_idx{int} {Engine::free_idx} ]{int} {Engine::send}  := ret3{int} {ret3} 
+	self18{int} {self18}  := Engine::send[Engine::free_idx{int} {Engine::free_idx} ]{int} {Engine::send} 
+	num_refs7{int} {num_refs7}  := 1
+	if(self18{int} {self18}  # - 1)
+		Send::allocation[self18{int} {self18} ]{int} {Send::allocation}  := Send::allocation[self18{int} {self18} ]{int} {Send::allocation}  + num_refs7{int} {num_refs7} 
 	end if
-	return ()
-end function
-
-function CKSP::__bool__(x0 : int)
-	return (1 + sh_right(abs(x0{int} {x0} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__ge__(a1 : int, b1 : int)
-	return (sh_right(a1{int} {a1}  - b1{int} {b1} , 31){Builtin, None, sh_right} + 1)
-end function
-
-function CKSP::__lt__(a4 : int, b4 : int)
-	return (- sh_right(a4{int} {a4}  - b4{int} {b4} , 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__ne__(a3 : int, b3 : int)
-	return (1 - - sh_right(abs(a3{int} {a3}  - b3{int} {b3} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__eq__(a5 : int, b5 : int)
-	return (- sh_right(abs(a5{int} {a5}  - b5{int} {b5} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__le__(a2 : int, b2 : int)
-	return (1 + sh_right(b2{int} {b2}  - a2{int} {a2} , 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__gt__(a0 : int, b0 : int)
-	return (- sh_right(b0{int} {b0}  - a0{int} {a0} , 31){Builtin, None, sh_right})
-end function
+	id1{int} {id1}  := 0
+	_iter20{int} {_iter20}  := 0
+	_iter20{int} {_iter20}  := 0
+	while(_iter20{int} {_iter20}  <= (_Engine::bus::num_elements2{int} {_Engine::bus::num_elements2}  - 1)) 
+		self14{int} {self14}  := _Engine::bus[(Engine::free_idx{int} {Engine::free_idx}  * 16) + _iter20{int} {_iter20} ]{int} {_Engine::bus} 
+		num_refs4{int} {num_refs4}  := 1
+		current3{int} {current3}  := self14{int} {self14} 
+		while(current3{int} {current3}  # - 1) 
+			_iter14{int} {_iter14}  := 0
+			Bus::allocation[current3{int} {current3} ]{int} {Bus::allocation}  := Bus::allocation[current3{int} {current3} ]{int} {Bus::allocation}  - num_refs4{int} {num_refs4} 
+			if(Bus::allocation[current3{int} {current3} ]{int} {Bus::allocation}  > 0)
+				current3{int} {current3}  := - 1
+				continue{Builtin, None, continue}
+			else
+				Bus::allocation[current3{int} {current3} ]{int} {Bus::allocation}  := 0
+			end if
+			self14{int} {self14}  := current3{int} {current3} 
+			current3{int} {current3}  := - 1
+			_iter14{int} {_iter14}  := 0
+			while(_iter14{int} {_iter14}  <= (8 - 1)) 
+				self20{int} {self20}  := _Bus::slot[(self14{int} {self14}  * 8) + _iter14{int} {_iter14} ]{int} {_Bus::slot} 
+				num_refs8{int} {num_refs8}  := 1
+				current0{int} {current0}  := self20{int} {self20} 
+				while(current0{int} {current0}  # - 1) 
+					_iter7{int} {_iter7}  := 0
+					Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  - num_refs8{int} {num_refs8} 
+					if(Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  > 0)
+						current0{int} {current0}  := - 1
+						continue{Builtin, None, continue}
+					else
+						Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := 0
+					end if
+					self20{int} {self20}  := current0{int} {current0} 
+					current0{int} {current0}  := - 1
+					self19{int} {self19}  := self20{int} {self20} 
+					_iter6{int} {_iter6}  := 0
+					if(self19{int} {self19}  # - 1)
+						Slot::bus_idx[self19{int} {self19} ]{int} {Slot::bus_idx}  := 0
+						Slot::group_idx[self19{int} {self19} ]{int} {Slot::group_idx}  := 0
+						Slot::slot_idx[self19{int} {self19} ]{int} {Slot::slot_idx}  := 0
+						Slot::free_idx{int} {Slot::free_idx}  := ((Slot::free_idx{int} {Slot::free_idx}  + self19{int} {self19} ) - abs(Slot::free_idx{int} {Slot::free_idx}  - self19{int} {self19} ){Builtin, None, abs}) / 2
+					end if
+				end while
+				inc(_iter14{int} {_iter14} ){Builtin, None, inc}
+			end while
+			self13{int} {self13}  := self14{int} {self14} 
+			_iter13{int} {_iter13}  := 0
+			if(self13{int} {self13}  # - 1)
+				_iter15{int} {_iter15}  := 0
+				while(_iter15{int} {_iter15}  <= (_Bus::slot::num_elements2{int} {_Bus::slot::num_elements2}  - 1)) 
+					_Bus::slot[(self13{int} {self13}  * 8) + _iter15{int} {_iter15} ]{int} {_Bus::slot}  := - 1
+					inc(_iter15{int} {_iter15} ){Builtin, None, inc}
+				end while
+				Bus::free_idx{int} {Bus::free_idx}  := ((Bus::free_idx{int} {Bus::free_idx}  + self13{int} {self13} ) - abs(Bus::free_idx{int} {Bus::free_idx}  - self13{int} {self13} ){Builtin, None, abs}) / 2
+			end if
+		end while
+		bus_idx1{int} {bus_idx1}  := id1{int} {id1} 
+		Bus::free_idx{int} {Bus::free_idx}  := search(Bus::allocation{int[]} {Bus::allocation} , 0, Bus::free_idx{int} {Bus::free_idx} , Bus::MAX_STRUCTS{int} {Bus::MAX_STRUCTS}  - 1){Builtin, None, search}
+		if(Bus::free_idx{int} {Bus::free_idx}  = -1)
+			message("Error: No more free space available to allocate objects of type 'Bus'"){Builtin, None, message}
+		end if
+		Bus::allocation[Bus::free_idx{int} {Bus::free_idx} ]{int} {Bus::allocation}  := 1
+		idx1{int} {idx1}  := 0
+		_iter40{int} {_iter40}  := 0
+		_iter40{int} {_iter40}  := 0
+		while(_iter40{int} {_iter40}  <= (_Bus::slot::num_elements2{int} {_Bus::slot::num_elements2}  - 1)) 
+			self20{int} {self20}  := _Bus::slot[(Bus::free_idx{int} {Bus::free_idx}  * 8) + _iter40{int} {_iter40} ]{int} {_Bus::slot} 
+			num_refs8{int} {num_refs8}  := 1
+			current0{int} {current0}  := self20{int} {self20} 
+			while(current0{int} {current0}  # - 1) 
+				_iter7{int} {_iter7}  := 0
+				Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  - num_refs8{int} {num_refs8} 
+				if(Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  > 0)
+					current0{int} {current0}  := - 1
+					continue{Builtin, None, continue}
+				else
+					Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := 0
+				end if
+				self20{int} {self20}  := current0{int} {current0} 
+				current0{int} {current0}  := - 1
+				self19{int} {self19}  := self20{int} {self20} 
+				_iter6{int} {_iter6}  := 0
+				if(self19{int} {self19}  # - 1)
+					Slot::bus_idx[self19{int} {self19} ]{int} {Slot::bus_idx}  := 0
+					Slot::group_idx[self19{int} {self19} ]{int} {Slot::group_idx}  := 0
+					Slot::slot_idx[self19{int} {self19} ]{int} {Slot::slot_idx}  := 0
+					Slot::free_idx{int} {Slot::free_idx}  := ((Slot::free_idx{int} {Slot::free_idx}  + self19{int} {self19} ) - abs(Slot::free_idx{int} {Slot::free_idx}  - self19{int} {self19} ){Builtin, None, abs}) / 2
+				end if
+			end while
+			slot_idx0{int} {slot_idx0}  := idx1{int} {idx1} 
+			group_idx0{int} {group_idx0}  := - 1
+			bus_idx0{int} {bus_idx0}  := NI_BUS_OFFSET{int} {NI_BUS_OFFSET}  + bus_idx1{int} {bus_idx1} 
+			Slot::free_idx{int} {Slot::free_idx}  := search(Slot::allocation{int[]} {Slot::allocation} , 0, Slot::free_idx{int} {Slot::free_idx} , Slot::MAX_STRUCTS{int} {Slot::MAX_STRUCTS}  - 1){Builtin, None, search}
+			if(Slot::free_idx{int} {Slot::free_idx}  = -1)
+				message("Error: No more free space available to allocate objects of type 'Slot'"){Builtin, None, message}
+			end if
+			Slot::allocation[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::allocation}  := 1
+			Slot::slot_idx[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::slot_idx}  := slot_idx0{int} {slot_idx0} 
+			Slot::group_idx[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::group_idx}  := group_idx0{int} {group_idx0} 
+			Slot::bus_idx[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::bus_idx}  := bus_idx0{int} {bus_idx0} 
+			ret2{int} {ret2}  := Slot::free_idx{int} {Slot::free_idx} 
+			_Bus::slot[(Bus::free_idx{int} {Bus::free_idx}  * 8) + _iter40{int} {_iter40} ]{int} {_Bus::slot}  := ret2{int} {ret2} 
+			self21{int} {self21}  := _Bus::slot[(Bus::free_idx{int} {Bus::free_idx}  * 8) + _iter40{int} {_iter40} ]{int} {_Bus::slot} 
+			num_refs9{int} {num_refs9}  := 1
+			if(self21{int} {self21}  # - 1)
+				Slot::allocation[self21{int} {self21} ]{int} {Slot::allocation}  := Slot::allocation[self21{int} {self21} ]{int} {Slot::allocation}  + num_refs9{int} {num_refs9} 
+			end if
+			inc(_iter40{int} {_iter40} ){Builtin, None, inc}
+			inc(idx1{int} {idx1} ){Builtin, None, inc}
+		end while
+		ret4{int} {ret4}  := Bus::free_idx{int} {Bus::free_idx} 
+		_Engine::bus[(Engine::free_idx{int} {Engine::free_idx}  * 16) + _iter20{int} {_iter20} ]{int} {_Engine::bus}  := ret4{int} {ret4} 
+		self15{int} {self15}  := _Engine::bus[(Engine::free_idx{int} {Engine::free_idx}  * 16) + _iter20{int} {_iter20} ]{int} {_Engine::bus} 
+		num_refs5{int} {num_refs5}  := 1
+		if(self15{int} {self15}  # - 1)
+			Bus::allocation[self15{int} {self15} ]{int} {Bus::allocation}  := Bus::allocation[self15{int} {self15} ]{int} {Bus::allocation}  + num_refs5{int} {num_refs5} 
+		end if
+		inc(_iter20{int} {_iter20} ){Builtin, None, inc}
+		inc(id1{int} {id1} ){Builtin, None, inc}
+	end while
+	ret0{int} {ret0}  := Engine::free_idx{int} {Engine::free_idx} 
+	Engine{int} {Engine}  := ret0{int} {ret0} 
+	bus_idx0{int} {bus_idx0}  := _Group::slot[(_Engine::group[(Engine{int} {Engine}  * 100) + 2]{int} {_Engine::group}  * 8) + 3]{int} {_Group::slot} 
+	group_idx0{int} {group_idx0}  := 10000
+	set_engine_par(ENGINE_PAR_VOLUME{int} {ENGINE_PAR_VOLUME} , group_idx0{int} {group_idx0} , Slot::group_idx[bus_idx0{int} {bus_idx0} ]{int} {Slot::group_idx} , Slot::slot_idx[bus_idx0{int} {bus_idx0} ]{int} {Slot::slot_idx} , Slot::bus_idx[bus_idx0{int} {bus_idx0} ]{int} {Slot::bus_idx} ){Builtin, None, set_engine_par}
+	bus_idx0{int} {bus_idx0}  := _Bus::slot[_Engine::bus[(Engine{int} {Engine}  * 16) + 1]{int} {_Engine::bus}  * 8]{int} {_Bus::slot} 
+	group_idx0{int} {group_idx0}  := 8000
+	set_engine_par(ENGINE_PAR_VOLUME{int} {ENGINE_PAR_VOLUME} , group_idx0{int} {group_idx0} , Slot::group_idx[bus_idx0{int} {bus_idx0} ]{int} {Slot::group_idx} , Slot::slot_idx[bus_idx0{int} {bus_idx0} ]{int} {Slot::slot_idx} , Slot::bus_idx[bus_idx0{int} {bus_idx0} ]{int} {Slot::bus_idx} ){Builtin, None, set_engine_par}
+	message("Initialization complete."){Builtin, None, message}
+end on
 
 

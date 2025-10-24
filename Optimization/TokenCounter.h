@@ -10,8 +10,7 @@
  * @class TokenCounter
  * counts the amount of tokens in a given AST (bison tokens)
  */
-class TokenCounter : public ASTVisitor {
-private:
+class TokenCounter final : public ASTVisitor {
 	int m_tokens = 0;
 public:
 
@@ -35,6 +34,32 @@ protected:
 		m_tokens += 1;
 		return &node;
 	}
+
+	NodeAST * visit(NodeVariable& node) override {
+		if (node.data_type == DataType::Const) m_tokens += 1;
+		// m_tokens += 1;
+		return &node;
+	}
+	//
+	// NodeAST *visit(NodeVariableRef &node) override {
+	// 	m_tokens += 1;
+	// 	return &node;
+	// }
+	//
+	// NodeAST* visit(NodeInt& node) override {
+	// 	m_tokens += 1;
+	// 	return &node;
+	// }
+	//
+	// NodeAST* visit(NodeReal& node) override {
+	// 	m_tokens += 1;
+	// 	return &node;
+	// }
+	//
+	// NodeAST* visit(NodeString& node) override {
+	// 	m_tokens += 1;
+	// 	return &node;
+	// }
 
 	NodeAST* visit(NodeBinaryExpr& node) override {
 		// if its the first binary expression, add 2 token

@@ -94,8 +94,8 @@ bool PreprocessorParser::is_macro_call(const Token &tok) {
 	bool is_macro_call = peek().type == token::KEYWORD;
 	bool is_iterator_macro_call = peek().type == token::KEYWORD;
 
-	if(m_pos<=0) {
-		// iterator macro call cannot be at first position in fil
+	if(m_pos<2) {
+		// iterator macro call cannot be at first position in file
 		is_iterator_macro_call = false;
 		// macro call has to have linebreak or open parenth after it
 		is_macro_call &= peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK;

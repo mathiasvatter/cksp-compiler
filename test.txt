@@ -1,150 +1,508 @@
-{ Compiled with cksp version 0.0.8-alpha.2 on Mon Oct 20 18:16:14 2025 }
+{ Compiled with cksp version 0.0.8-alpha.3 on Thu Oct 23 19:34:01 2025 }
 on init
-  declare @ret1
-  declare $self4
-  declare $self5
-  declare $num_refs0
+  declare $_iter15
+  declare const $MAX____CB____STACK := 100
+  declare $_iter0
+  declare const $MAX____STRUCTS := 1000000
+  declare @MEM____WARNING
+  @MEM____WARNING := "Memory Error: No more free space available to allocate objects of type"
+  declare $self19
+  declare $_iter6
+  declare $self20
+  declare $num_refs8
   declare $current0
-  declare $self6
-  declare $num_refs1
-  declare $next0
+  declare $_iter7
+  declare $_iter60
+  declare $self10
+  declare $_iter8
+  declare $self11
+  declare $num_refs2
+  declare $current1
+  declare $_iter9
+  declare $current00
+  declare $_iter70
+  declare $_iter600
+  declare $ret2
+  declare $slot_idx0
+  declare $group_idx0
+  declare $bus_idx0
+  declare $self21
+  declare $num_refs9
+  declare $ret1
+  declare $group_idx1
+  declare $id0
+  declare $_iter10
+  declare $current01
+  declare $_iter71
+  declare $_iter601
+  declare $self12
+  declare $num_refs3
+  declare $self16
+  declare $_iter11
+  declare $self17
+  declare $num_refs6
+  declare $current2
+  declare $_iter12
+  declare $current02
+  declare $_iter72
+  declare $_iter602
   declare $ret3
-  declare $arg0
-  declare @_ret00
+  declare $idx0
+  declare $_iter30
+  declare $current03
+  declare $_iter73
+  declare $_iter603
+  declare $self18
+  declare $num_refs7
+  declare $self13
+  declare $_iter13
+  declare $self14
+  declare $num_refs4
+  declare $current3
+  declare $_iter14
+  declare $current04
+  declare $_iter74
+  declare $_iter604
+  declare $ret4
+  declare $bus_idx1
+  declare $idx1
+  declare $_iter40
+  declare $current05
+  declare $_iter75
+  declare $_iter605
+  declare $self15
+  declare $num_refs5
+  declare $ret0
+  declare $id1
+  declare $_iter20
+  declare $current10
+  declare $_iter90
   declare $current000
+  declare $_iter700
+  declare $_iter6000
+  declare $id10
   declare $_iter200
-  declare $_iter1000
-  declare @_ret10
-  declare @_ret20
-  declare $Obj____free_idx
-  declare %Obj____allocation[2]
-  declare %Obj____val[2]
-  declare $List____free_idx
-  declare %List____allocation[1]
-  declare %List____next[1] := (-1)
-  declare ui_button $btn 
-  declare $object
-  $self6 := 1
-  $Obj____free_idx := search(%Obj____allocation, 0, $Obj____free_idx, 1)
-  if($Obj____free_idx = -1)
-    message("Error: No more free space available to allocate objects of type 'Obj'")
+  declare $current100
+  declare $_iter900
+  declare $current0000
+  declare $_iter7000
+  declare $_iter60000
+  declare const $Slot____MAX_STRUCTS := $MAX____STRUCTS
+  declare $Slot____free_idx
+  declare %Slot____allocation[$Slot____MAX_STRUCTS]
+  declare %Slot____stack[$Slot____MAX_STRUCTS]
+  declare $Slot____stack_top
+  declare %Slot____slot_idx[$Slot____MAX_STRUCTS]
+  declare %Slot____group_idx[$Slot____MAX_STRUCTS]
+  declare %Slot____bus_idx[$Slot____MAX_STRUCTS]
+  declare const $Send____MAX_STRUCTS := ((1 + ($MAX____STRUCTS / 8)) + abs(1 - ($MAX____STRUCTS / 8))) / 2
+  declare $Send____free_idx
+  declare %Send____allocation[$Send____MAX_STRUCTS]
+  declare %Send____stack[$Send____MAX_STRUCTS]
+  declare $Send____stack_top
+  declare const $_Send____slot____num_elements0 := $Send____MAX_STRUCTS * 8
+  declare const $_Send____slot____num_elements1 := $Send____MAX_STRUCTS
+  declare const $_Send____slot____num_elements2 := 8
+  declare %_Send____slot[$Send____MAX_STRUCTS * 8] := (- 1)
+  declare const $Bus____MAX_STRUCTS := ((1 + ($MAX____STRUCTS / 8)) + abs(1 - ($MAX____STRUCTS / 8))) / 2
+  declare $Bus____free_idx
+  declare %Bus____allocation[$Bus____MAX_STRUCTS]
+  declare %Bus____stack[$Bus____MAX_STRUCTS]
+  declare $Bus____stack_top
+  declare const $_Bus____slot____num_elements0 := $Bus____MAX_STRUCTS * 8
+  declare const $_Bus____slot____num_elements1 := $Bus____MAX_STRUCTS
+  declare const $_Bus____slot____num_elements2 := 8
+  declare %_Bus____slot[$Bus____MAX_STRUCTS * 8] := (- 1)
+  declare const $Group____MAX_STRUCTS := ((1 + ($MAX____STRUCTS / 8)) + abs(1 - ($MAX____STRUCTS / 8))) / 2
+  declare $Group____free_idx
+  declare %Group____allocation[$Group____MAX_STRUCTS]
+  declare %Group____stack[$Group____MAX_STRUCTS]
+  declare $Group____stack_top
+  declare const $_Group____slot____num_elements0 := $Group____MAX_STRUCTS * 8
+  declare const $_Group____slot____num_elements1 := $Group____MAX_STRUCTS
+  declare const $_Group____slot____num_elements2 := 8
+  declare %_Group____slot[$Group____MAX_STRUCTS * 8] := (- 1)
+  declare const $Engine____MAX_STRUCTS := ((1 + (1 / (((100 + 16) + abs(100 - 16)) / 2))) + abs(1 - (1 / (((100 + 16) + abs(100 - 16)) / 2)))) / 2
+  declare $Engine____free_idx
+  declare %Engine____allocation[$Engine____MAX_STRUCTS]
+  declare %Engine____stack[$Engine____MAX_STRUCTS]
+  declare $Engine____stack_top
+  declare const $_Engine____group____num_elements0 := $Engine____MAX_STRUCTS * 100
+  declare const $_Engine____group____num_elements1 := $Engine____MAX_STRUCTS
+  declare const $_Engine____group____num_elements2 := 100
+  declare %_Engine____group[$Engine____MAX_STRUCTS * 100] := (- 1)
+  declare %Engine____send[$Engine____MAX_STRUCTS] := (- 1)
+  declare const $_Engine____bus____num_elements0 := $Engine____MAX_STRUCTS * 16
+  declare const $_Engine____bus____num_elements1 := $Engine____MAX_STRUCTS
+  declare const $_Engine____bus____num_elements2 := 16
+  declare %_Engine____bus[$Engine____MAX_STRUCTS * 16] := (- 1)
+  message(0.3)
+  declare $Engine
+  $Engine____free_idx := search(%Engine____allocation, 0, $Engine____free_idx, $Engine____MAX_STRUCTS - 1)
+  if($Engine____free_idx = -1)
+    message("Error: No more free space available to allocate objects of type 'Engine'")
   end if
-  %Obj____allocation[$Obj____free_idx] := 1
-  %Obj____val[$Obj____free_idx] := $self6
-  $num_refs1 := $Obj____free_idx
-  $object := $num_refs1
-  declare $object2
-  $self6 := 1
-  $Obj____free_idx := search(%Obj____allocation, 0, $Obj____free_idx, 1)
-  if($Obj____free_idx = -1)
-    message("Error: No more free space available to allocate objects of type 'Obj'")
-  end if
-  %Obj____allocation[$Obj____free_idx] := 1
-  %Obj____val[$Obj____free_idx] := $self6
-  $num_refs1 := $Obj____free_idx
-  $object2 := $num_refs1
-  if(- sh_right(abs(%Obj____val[$object] - %Obj____val[$object2]) - 1, 31) # 0)
-    message("true")
-  end if
-  if($object # $object2)
-    @ret1 := "true"
-  else
-    @ret1 := "false"
-  end if
-  @_ret00 := @ret1
-  message(@_ret00)
-  if(- sh_right(abs(get_control_par(1, $CONTROL_PAR_HIDE) - $HIDE_WHOLE_CONTROL) - 1, 31) # 0)
-    message("This is true")
-  end if
-  declare $is_true
-  $is_true := - sh_right(abs(get_control_par(1, $CONTROL_PAR_HIDE) - $HIDE_WHOLE_CONTROL) - 1, 31) .and. 0
-  declare ~var := 2.5
-  while(($is_true # 0) and ((1 + sh_right(abs(int(~var)) - 1, 31)) # 0)) 
-    message("This is true")
+  %Engine____allocation[$Engine____free_idx] := 1
+  $id1 := 0
+  $_iter20 := 0
+  $_iter20 := 0
+  while($_iter20 <= ($_Engine____group____num_elements2 - 1)) 
+    $self11 := %_Engine____group[($Engine____free_idx * 100) + $_iter20]
+    $num_refs2 := 1
+    $current1 := $self11
+    while($current1 # - 1) 
+      $_iter9 := 0
+      %Group____allocation[$current1] := %Group____allocation[$current1] - $num_refs2
+      if(%Group____allocation[$current1] > 0)
+        $current1 := - 1
+        continue
+      else
+        %Group____allocation[$current1] := 0
+      end if
+      $self11 := $current1
+      $current1 := - 1
+      $_iter9 := 0
+      while($_iter9 <= (8 - 1)) 
+        $self20 := %_Group____slot[($self11 * 8) + $_iter9]
+        $num_refs8 := 1
+        $current0 := $self20
+        while($current0 # - 1) 
+          $_iter7 := 0
+          %Slot____allocation[$current0] := %Slot____allocation[$current0] - $num_refs8
+          if(%Slot____allocation[$current0] > 0)
+            $current0 := - 1
+            continue
+          else
+            %Slot____allocation[$current0] := 0
+          end if
+          $self20 := $current0
+          $current0 := - 1
+          $self19 := $self20
+          $_iter6 := 0
+          if($self19 # - 1)
+            %Slot____bus_idx[$self19] := 0
+            %Slot____group_idx[$self19] := 0
+            %Slot____slot_idx[$self19] := 0
+            $Slot____free_idx := (($Slot____free_idx + $self19) - abs($Slot____free_idx - $self19)) / 2
+          end if
+        end while
+        inc($_iter9)
+      end while
+      $self10 := $self11
+      $_iter8 := 0
+      if($self10 # - 1)
+        $_iter15 := 0
+        while($_iter15 <= ($_Group____slot____num_elements2 - 1)) 
+          %_Group____slot[($self10 * 8) + $_iter15] := - 1
+          inc($_iter15)
+        end while
+        $Group____free_idx := (($Group____free_idx + $self10) - abs($Group____free_idx - $self10)) / 2
+      end if
+    end while
+    $group_idx1 := $id1
+    $Group____free_idx := search(%Group____allocation, 0, $Group____free_idx, $Group____MAX_STRUCTS - 1)
+    if($Group____free_idx = -1)
+      message("Error: No more free space available to allocate objects of type 'Group'")
+    end if
+    %Group____allocation[$Group____free_idx] := 1
+    $id0 := 0
+    $_iter10 := 0
+    $_iter10 := 0
+    while($_iter10 <= ($_Group____slot____num_elements2 - 1)) 
+      $self20 := %_Group____slot[($Group____free_idx * 8) + $_iter10]
+      $num_refs8 := 1
+      $current0 := $self20
+      while($current0 # - 1) 
+        $_iter7 := 0
+        %Slot____allocation[$current0] := %Slot____allocation[$current0] - $num_refs8
+        if(%Slot____allocation[$current0] > 0)
+          $current0 := - 1
+          continue
+        else
+          %Slot____allocation[$current0] := 0
+        end if
+        $self20 := $current0
+        $current0 := - 1
+        $self19 := $self20
+        $_iter6 := 0
+        if($self19 # - 1)
+          %Slot____bus_idx[$self19] := 0
+          %Slot____group_idx[$self19] := 0
+          %Slot____slot_idx[$self19] := 0
+          $Slot____free_idx := (($Slot____free_idx + $self19) - abs($Slot____free_idx - $self19)) / 2
+        end if
+      end while
+      $slot_idx0 := $id0
+      $group_idx0 := $group_idx1
+      $bus_idx0 := - 1
+      $Slot____free_idx := search(%Slot____allocation, 0, $Slot____free_idx, $Slot____MAX_STRUCTS - 1)
+      if($Slot____free_idx = -1)
+        message("Error: No more free space available to allocate objects of type 'Slot'")
+      end if
+      %Slot____allocation[$Slot____free_idx] := 1
+      %Slot____slot_idx[$Slot____free_idx] := $slot_idx0
+      %Slot____group_idx[$Slot____free_idx] := $group_idx0
+      %Slot____bus_idx[$Slot____free_idx] := $bus_idx0
+      $ret2 := $Slot____free_idx
+      %_Group____slot[($Group____free_idx * 8) + $_iter10] := $ret2
+      $self21 := %_Group____slot[($Group____free_idx * 8) + $_iter10]
+      $num_refs9 := 1
+      if($self21 # - 1)
+        %Slot____allocation[$self21] := %Slot____allocation[$self21] + $num_refs9
+      end if
+      inc($_iter10)
+      inc($id0)
+    end while
+    $ret1 := $Group____free_idx
+    %_Engine____group[($Engine____free_idx * 100) + $_iter20] := $ret1
+    $self12 := %_Engine____group[($Engine____free_idx * 100) + $_iter20]
+    $num_refs3 := 1
+    if($self12 # - 1)
+      %Group____allocation[$self12] := %Group____allocation[$self12] + $num_refs3
+    end if
+    inc($_iter20)
+    inc($id1)
   end while
-  message(2)
-  pgs_create_key( PRESET_NAME, 3)
-  declare $ptr
-  $arg0 := 10
-  $next0 := -1
-  $List____free_idx := search(%List____allocation, 0, $List____free_idx, 0)
-  if($List____free_idx = -1)
-    message("Error: No more free space available to allocate objects of type 'List'")
-  end if
-  %List____allocation[$List____free_idx] := 1
-  $self5 := %List____next[$List____free_idx]
-  $num_refs0 := 1
-  $current0 := $self5
-  while($current0 # -1) 
-    %List____allocation[$current0] := %List____allocation[$current0] - $num_refs0
-    if(%List____allocation[$current0] > 0)
-      $current0 := -1
+  $self17 := %Engine____send[$Engine____free_idx]
+  $num_refs6 := 1
+  $current2 := $self17
+  while($current2 # - 1) 
+    $_iter12 := 0
+    %Send____allocation[$current2] := %Send____allocation[$current2] - $num_refs6
+    if(%Send____allocation[$current2] > 0)
+      $current2 := - 1
       continue
     else
-      %List____allocation[$current0] := 0
+      %Send____allocation[$current2] := 0
     end if
-    $self5 := $current0
-    $current0 := %List____next[$self5]
-    $self4 := $self5
-    if($self4 # -1)
-      %List____next[$self4] := -1
-      $List____free_idx := (($List____free_idx + $self4) - abs($List____free_idx - $self4)) / 2
+    $self17 := $current2
+    $current2 := - 1
+    $_iter12 := 0
+    while($_iter12 <= (8 - 1)) 
+      $self20 := %_Send____slot[($self17 * 8) + $_iter12]
+      $num_refs8 := 1
+      $current0 := $self20
+      while($current0 # - 1) 
+        $_iter7 := 0
+        %Slot____allocation[$current0] := %Slot____allocation[$current0] - $num_refs8
+        if(%Slot____allocation[$current0] > 0)
+          $current0 := - 1
+          continue
+        else
+          %Slot____allocation[$current0] := 0
+        end if
+        $self20 := $current0
+        $current0 := - 1
+        $self19 := $self20
+        $_iter6 := 0
+        if($self19 # - 1)
+          %Slot____bus_idx[$self19] := 0
+          %Slot____group_idx[$self19] := 0
+          %Slot____slot_idx[$self19] := 0
+          $Slot____free_idx := (($Slot____free_idx + $self19) - abs($Slot____free_idx - $self19)) / 2
+        end if
+      end while
+      inc($_iter12)
+    end while
+    $self16 := $self17
+    $_iter11 := 0
+    if($self16 # - 1)
+      $_iter15 := 0
+      while($_iter15 <= ($_Send____slot____num_elements2 - 1)) 
+        %_Send____slot[($self16 * 8) + $_iter15] := - 1
+        inc($_iter15)
+      end while
+      $Send____free_idx := (($Send____free_idx + $self16) - abs($Send____free_idx - $self16)) / 2
     end if
   end while
-  %List____next[$List____free_idx] := $next0
-  $self6 := %List____next[$List____free_idx]
-  $num_refs1 := 1
-  if($self6 # -1)
-    %List____allocation[$self6] := %List____allocation[$self6] + $num_refs1
+  $Send____free_idx := search(%Send____allocation, 0, $Send____free_idx, $Send____MAX_STRUCTS - 1)
+  if($Send____free_idx = -1)
+    message("Error: No more free space available to allocate objects of type 'Send'")
   end if
-  $ret3 := $List____free_idx
-  $ptr := $ret3
-  message($ptr)
-  message(4)
-  $current000 := 0
-  $_iter200 := 1
-  $_iter1000 := 0
-  $arg0 := 3
-  message("side effects")
-  $ret3 := 3
-  $_iter1000 := $ret3
-  while((($current000 < $_iter1000) and ($_iter200 > 0)) or (($current000 > $_iter1000) and ($_iter200 < 0))) 
-    message($current000)
-    $current000 := $current000 + $_iter200
-  end while
-  declare $lbl_bd_dnd := 4
-  inc($lbl_bd_dnd)
-  message($lbl_bd_dnd)
-  declare ui_label $lbl_bd_DnD0 (1, 1)
-  set_control_par_str(get_ui_id($lbl_bd_DnD0), $CONTROL_PAR_PICTURE, "btn_custom-samples-import")
-  declare %arr[5] := (1, 2, 3, 4, 5)
-  $arg0 := search(%arr, 6)
-  if($arg0 # -1)
-    message("hello")
-  end if
-  $arg0 := 1
-  $ret3 := 0
-  while($ret3 = 0) 
-    if($arg0 # -1)
-      message("henlo")
-      $ret3 := 1
-      continue
-    else
-      message("sdlfkj")
+  %Send____allocation[$Send____free_idx] := 1
+  $idx0 := 0
+  $_iter30 := 0
+  $_iter30 := 0
+  while($_iter30 <= ($_Send____slot____num_elements2 - 1)) 
+    $self20 := %_Send____slot[($Send____free_idx * 8) + $_iter30]
+    $num_refs8 := 1
+    $current0 := $self20
+    while($current0 # - 1) 
+      $_iter7 := 0
+      %Slot____allocation[$current0] := %Slot____allocation[$current0] - $num_refs8
+      if(%Slot____allocation[$current0] > 0)
+        $current0 := - 1
+        continue
+      else
+        %Slot____allocation[$current0] := 0
+      end if
+      $self20 := $current0
+      $current0 := - 1
+      $self19 := $self20
+      $_iter6 := 0
+      if($self19 # - 1)
+        %Slot____bus_idx[$self19] := 0
+        %Slot____group_idx[$self19] := 0
+        %Slot____slot_idx[$self19] := 0
+        $Slot____free_idx := (($Slot____free_idx + $self19) - abs($Slot____free_idx - $self19)) / 2
+      end if
+    end while
+    $slot_idx0 := $idx0
+    $group_idx0 := - 1
+    $bus_idx0 := $NI_SEND_BUS
+    $Slot____free_idx := search(%Slot____allocation, 0, $Slot____free_idx, $Slot____MAX_STRUCTS - 1)
+    if($Slot____free_idx = -1)
+      message("Error: No more free space available to allocate objects of type 'Slot'")
     end if
-    $ret3 := 1
-    continue
+    %Slot____allocation[$Slot____free_idx] := 1
+    %Slot____slot_idx[$Slot____free_idx] := $slot_idx0
+    %Slot____group_idx[$Slot____free_idx] := $group_idx0
+    %Slot____bus_idx[$Slot____free_idx] := $bus_idx0
+    $ret2 := $Slot____free_idx
+    %_Send____slot[($Send____free_idx * 8) + $_iter30] := $ret2
+    $self21 := %_Send____slot[($Send____free_idx * 8) + $_iter30]
+    $num_refs9 := 1
+    if($self21 # - 1)
+      %Slot____allocation[$self21] := %Slot____allocation[$self21] + $num_refs9
+    end if
+    inc($_iter30)
+    inc($idx0)
   end while
-  message("pupoupupupupupup")
-  @ret1 := "true"
-  @_ret10 := @ret1
-  message(@_ret10)
-end on
-on ui_control($btn)
-  message("button pressed")
-  message("another button pressed")
-  @ret1 := "true"
-  @_ret20 := @ret1
-  message(@_ret20)
+  $ret3 := $Send____free_idx
+  %Engine____send[$Engine____free_idx] := $ret3
+  $self18 := %Engine____send[$Engine____free_idx]
+  $num_refs7 := 1
+  if($self18 # - 1)
+    %Send____allocation[$self18] := %Send____allocation[$self18] + $num_refs7
+  end if
+  $id1 := 0
+  $_iter20 := 0
+  $_iter20 := 0
+  while($_iter20 <= ($_Engine____bus____num_elements2 - 1)) 
+    $self14 := %_Engine____bus[($Engine____free_idx * 16) + $_iter20]
+    $num_refs4 := 1
+    $current3 := $self14
+    while($current3 # - 1) 
+      $_iter14 := 0
+      %Bus____allocation[$current3] := %Bus____allocation[$current3] - $num_refs4
+      if(%Bus____allocation[$current3] > 0)
+        $current3 := - 1
+        continue
+      else
+        %Bus____allocation[$current3] := 0
+      end if
+      $self14 := $current3
+      $current3 := - 1
+      $_iter14 := 0
+      while($_iter14 <= (8 - 1)) 
+        $self20 := %_Bus____slot[($self14 * 8) + $_iter14]
+        $num_refs8 := 1
+        $current0 := $self20
+        while($current0 # - 1) 
+          $_iter7 := 0
+          %Slot____allocation[$current0] := %Slot____allocation[$current0] - $num_refs8
+          if(%Slot____allocation[$current0] > 0)
+            $current0 := - 1
+            continue
+          else
+            %Slot____allocation[$current0] := 0
+          end if
+          $self20 := $current0
+          $current0 := - 1
+          $self19 := $self20
+          $_iter6 := 0
+          if($self19 # - 1)
+            %Slot____bus_idx[$self19] := 0
+            %Slot____group_idx[$self19] := 0
+            %Slot____slot_idx[$self19] := 0
+            $Slot____free_idx := (($Slot____free_idx + $self19) - abs($Slot____free_idx - $self19)) / 2
+          end if
+        end while
+        inc($_iter14)
+      end while
+      $self13 := $self14
+      $_iter13 := 0
+      if($self13 # - 1)
+        $_iter15 := 0
+        while($_iter15 <= ($_Bus____slot____num_elements2 - 1)) 
+          %_Bus____slot[($self13 * 8) + $_iter15] := - 1
+          inc($_iter15)
+        end while
+        $Bus____free_idx := (($Bus____free_idx + $self13) - abs($Bus____free_idx - $self13)) / 2
+      end if
+    end while
+    $bus_idx1 := $id1
+    $Bus____free_idx := search(%Bus____allocation, 0, $Bus____free_idx, $Bus____MAX_STRUCTS - 1)
+    if($Bus____free_idx = -1)
+      message("Error: No more free space available to allocate objects of type 'Bus'")
+    end if
+    %Bus____allocation[$Bus____free_idx] := 1
+    $idx1 := 0
+    $_iter40 := 0
+    $_iter40 := 0
+    while($_iter40 <= ($_Bus____slot____num_elements2 - 1)) 
+      $self20 := %_Bus____slot[($Bus____free_idx * 8) + $_iter40]
+      $num_refs8 := 1
+      $current0 := $self20
+      while($current0 # - 1) 
+        $_iter7 := 0
+        %Slot____allocation[$current0] := %Slot____allocation[$current0] - $num_refs8
+        if(%Slot____allocation[$current0] > 0)
+          $current0 := - 1
+          continue
+        else
+          %Slot____allocation[$current0] := 0
+        end if
+        $self20 := $current0
+        $current0 := - 1
+        $self19 := $self20
+        $_iter6 := 0
+        if($self19 # - 1)
+          %Slot____bus_idx[$self19] := 0
+          %Slot____group_idx[$self19] := 0
+          %Slot____slot_idx[$self19] := 0
+          $Slot____free_idx := (($Slot____free_idx + $self19) - abs($Slot____free_idx - $self19)) / 2
+        end if
+      end while
+      $slot_idx0 := $idx1
+      $group_idx0 := - 1
+      $bus_idx0 := $NI_BUS_OFFSET + $bus_idx1
+      $Slot____free_idx := search(%Slot____allocation, 0, $Slot____free_idx, $Slot____MAX_STRUCTS - 1)
+      if($Slot____free_idx = -1)
+        message("Error: No more free space available to allocate objects of type 'Slot'")
+      end if
+      %Slot____allocation[$Slot____free_idx] := 1
+      %Slot____slot_idx[$Slot____free_idx] := $slot_idx0
+      %Slot____group_idx[$Slot____free_idx] := $group_idx0
+      %Slot____bus_idx[$Slot____free_idx] := $bus_idx0
+      $ret2 := $Slot____free_idx
+      %_Bus____slot[($Bus____free_idx * 8) + $_iter40] := $ret2
+      $self21 := %_Bus____slot[($Bus____free_idx * 8) + $_iter40]
+      $num_refs9 := 1
+      if($self21 # - 1)
+        %Slot____allocation[$self21] := %Slot____allocation[$self21] + $num_refs9
+      end if
+      inc($_iter40)
+      inc($idx1)
+    end while
+    $ret4 := $Bus____free_idx
+    %_Engine____bus[($Engine____free_idx * 16) + $_iter20] := $ret4
+    $self15 := %_Engine____bus[($Engine____free_idx * 16) + $_iter20]
+    $num_refs5 := 1
+    if($self15 # - 1)
+      %Bus____allocation[$self15] := %Bus____allocation[$self15] + $num_refs5
+    end if
+    inc($_iter20)
+    inc($id1)
+  end while
+  $ret0 := $Engine____free_idx
+  $Engine := $ret0
+  $bus_idx0 := %_Group____slot[(%_Engine____group[($Engine * 100) + 2] * 8) + 3]
+  $group_idx0 := 10000
+  set_engine_par($ENGINE_PAR_VOLUME, $group_idx0, %Slot____group_idx[$bus_idx0], %Slot____slot_idx[$bus_idx0], %Slot____bus_idx[$bus_idx0])
+  $bus_idx0 := %_Bus____slot[%_Engine____bus[($Engine * 16) + 1] * 8]
+  $group_idx0 := 8000
+  set_engine_par($ENGINE_PAR_VOLUME, $group_idx0, %Slot____group_idx[$bus_idx0], %Slot____slot_idx[$bus_idx0], %Slot____bus_idx[$bus_idx0])
+  message("Initialization complete.")
 end on
 

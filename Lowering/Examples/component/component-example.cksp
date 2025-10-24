@@ -13,25 +13,92 @@ component Popup
 		self.lbl_message->text := message
 		self.btn_confirm->pos_x := 3
 
-		self.btn_confirm.setEventHandler(self.on_confirm)
-		self.btn_cancel.setEventHandler(self.on_cancel)
-		self.btn_close.setEventHandler(function(self, ui_id: int)
-			self->hide := true
-		end function)
+		self.btn_confirm.set_callback(self.on_confirm)
+		self.btn_cancel.set_callback(self.on_cancel)
 
 	end function
-
-
 
 
 	function on_confirm(self, ui_id: int)
 		message("Confirmed")
-		self->hide := true
+		self->hide := HIDE_WHOLE_CONTROL
 	end function
 
 	function on_cancel(self, ui_id: int)
 		message("Cancelled")
-		self->hide := true
+		self->hide := HIDE_WHOLE_CONTROL
 	end function
 
 end component
+
+on init
+	declare comp: Popup := new Popup("Title here", "This is the message body.")
+	comp->hide := HIDE_PART_NOTHING
+end on
+
+{-------------------------------------------------------------------------------------------
+                                        Post Lowering
+--------------------------------------------------------------------------------------------}
+
+declare ui_button btn_confirm
+declare ui_button btn_cancel
+declare ui_button btn_close
+declare ui_label lbl_message(1,1)
+declare ui_label lbl_title(1,1)
+
+
+
+
+
+#pragma output_path("test.txt")
+// #pragma combine_callbacks(false)
+// import "/Users/mathias/Scripting/preset-system/dev/ksp/Preset.cksp"
+
+
+struct Engine
+	declare group[100]: Group[]
+	declare send: Send
+	declare bus[16]: Bus[]
+	// ... constructor
+end struct 
+
+struct Group
+	declare slot[8]: Slot[]
+	// ... constructor
+end struct
+
+struct Bus
+	declare slot[8]: Slot[]
+	// ... constructor
+end struct
+
+struct Send
+	declare slot[8]: Slot[]
+	// ... constructor
+end struct
+
+struct Slot
+	declare slot_idx: int
+	declare group_idx: int
+	declare bus_idx: int
+
+	// ... constructor
+
+	add_engine_par_method(volume, VOLUME)
+	// .... your other engine par methods here
+	macro add_engine_par_method(#short_name#, #param#)
+		function set_#short_name#(self, value: int)
+			set_engine_par(ENGINE_PAR_#param#, value, self.group_idx, self.slot_idx, self.bus_idx)
+		end function
+		function get_#short_name#(self): int
+			return get_engine_par(ENGINE_PAR_#param#, self.group_idx, self.slot_idx, self.bus_idx)
+		end function
+	end macro
+end struct
+
+on init
+	declare Engine := new Engine() // Engine singleton
+	Engine.group[2].slot[3].set_volume(1000000)
+	Engine.bus[1].slot[0].set_volume(750000)
+end on
+

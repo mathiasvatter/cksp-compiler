@@ -90,6 +90,10 @@ protected:
     bool is_callback_start() const;
     static bool is_hexadecimal(const std::string& str);
     static bool is_binary(const std::string& str);
+	bool is_scientific(const std::string& str);
+	static bool is_integer(const std::string& str);
+	bool is_scientific_exponent_start() const;
+	void consume_exponent();
     void get_comma();
     void get_type();
     void get_linebreak();

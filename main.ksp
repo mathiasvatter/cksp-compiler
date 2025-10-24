@@ -1,188 +1,85 @@
-
 #pragma output_path("test.txt")
+#pragma output_path("test1.txt")
 #pragma combine_callbacks(true)
+#pragma optimize('none')
 // import "/Users/mathias/Scripting/preset-system/dev/ksp/Preset.cksp"
 
 
+struct Engine
+	declare group[100]: Group[]
+	declare send: Send
+	declare bus[16]: Bus[]
 
-struct List
-    declare value: int
-    declare next: List := nil
+	function __init__(self)
+		for id, gr in pairs(self.group)
+			gr := new Group(id)
+		end for
+		self.send := new Send()
+		for id, bs in pairs(self.bus)
+			bs := new Bus(id)
+		end for
+	end function
+end struct 
 
-    function __init__(self, value: int, next: List)
-        self.value := value
-        self.next := next
-    end function
-
+struct Group
+	declare slot[8]: Slot[]
+	function __init__(self, group_idx: int)
+		for id, sl in pairs(self.slot)
+			sl := new Slot(id, group_idx, -1)
+		end for
+	end function
 end struct
 
-namespace Browser
-	declare const pupu: string := "pupu"
-
-	namespace SecondBrowser
-		declare const pipi: string  := pupu
-	end namespace
-
-	function do_sth(param2: int)
-		return "Doing something with " & param2 & CONSTANT
+struct Bus
+	declare slot[8]: Slot[]
+	function __init__(self, bus_idx: int)
+		for idx, sl in pairs(self.slot)
+			sl := new Slot(idx, -1, NI_BUS_OFFSET + bus_idx)
+		end for
 	end function
-
-	declare const CONSTANT := 1
-
-	// const colors
-	// 	RED, BLUE, GREEN
-	// end const
-
-	function do_sth3(param2: int)
-		return "Doing something with " & param2 & pupu
-	end function
-
-	namespace ThirdBrowser
-		declare third_pupu: string := SecondBrowser.pipi
-	end namespace
-
-	declare ckjkj: int := 5
-end namespace
-
-function side_effects(arg: int): int
-	message("side effects")
-	return arg
-end function
-
-function is_hidden (ui_id: int): bool
-	return ui_id -> hide = HIDE_WHOLE_CONTROL
-end function
-struct Obj
-	declare val: int
-
-	function __eq__(self, other: Obj): bool
-		return self.val = other.val
-	end function
-
-	function __ne__(self, other: Obj): bool
-		return self.val # other.val
-	end function
-
 end struct
 
+struct Send
+	declare slot[8]: Slot[]
+	function __init__(self)
+		for idx, sl in pairs(self.slot)
+			sl := new Slot(idx, -1, NI_SEND_BUS)
+		end for
+	end function
+end struct
+
+struct Slot
+	declare slot_idx: int
+	declare group_idx: int
+	declare bus_idx: int
+
+	function __init__(self, slot_idx: int, group_idx: int, bus_idx: int)
+		self.slot_idx := slot_idx
+		self.group_idx := group_idx
+		self.bus_idx := bus_idx
+	end function
+
+	add_engine_par_method(volume, VOLUME)
+	// .... your other engine par methods here
+	macro add_engine_par_method(#short_name#, #param#)
+		function set_#short_name#(self, value: int)
+			set_engine_par(ENGINE_PAR_#param#, value, self.group_idx, self.slot_idx, self.bus_idx)
+		end function
+		function get_#short_name#(self): int
+			return get_engine_par(ENGINE_PAR_#param#, self.group_idx, self.slot_idx, self.bus_idx)
+		end function
+	end macro
+end struct
+
+
+// declare Slot := new Slot(0, 2, -1)
 on init
-	declare ui_button btn
-	
-	declare object := new Obj(1)
-	declare object2 := new Obj(1)
-	
-	if(object = object2)
-		message(true)
-	end if
-message(object # object2)
-
-	if is_hidden(1)
-		message("This is true")
-	end if
-
-	declare is_true: bool := is_hidden(1) and not (true and 1<3 or true)
-	declare var: real := 2.5
-	while (is_true and bool(var))
-		message("This is true")
-	end while
-
-	message(bool(3) * 2)
-
-
-	pgs_create_key(PRESET_NAME, 3)
-
-	declare ptr : List := new List(10, nil)
-	message(int(ptr))
-
-
-
-	message(int(4))
-
-
-	for i in range(side_effects(3))
-		message(i)
-	end for
-
-	// message(Browser.do_sth(4))
-	// declare b := Bitlist()
-	// b.set(3, 1)
-	// message(b.get(3), use_count(b))
-	// message(b.search())
-
-	// // message(Browser::pupu)
-	// declare strct := MyStruct(10, 2.5)
-	// message(strct.my_int, strct.my_real)
-	// message(strct.multiply(4, 4))
-	// message(strct.multiply(4.4, 4.3))
-	// message(strct.PUPU)
-
-	declare lbl_bd_dnd := 4
-	lbl_bd_dnd += 1
-	message(lbl_bd_dnd)
-	declare ui_label lbl_bd_DnD (1,1)
-	lbl_bd_DnD -> picture := "btn_custom-samples-import"
-	declare arr: int[] := [
-		1,
-		2,
-		3,
-		4,
-		5,
-	]
-	declare matrix: int[][] := [
-		[1,2,3],
-		[4,5,6],
-		[7,8,9]
-	]
-	func_return(arr)
-	swi_keyswitch_ui_controls(1)
-
+	message(.3)
+	declare Engine := new Engine()
+	Engine.group[2].slot[3].set_volume(10000)
+	Engine.bus[1].slot[0].set_volume(8000)
 end on
-
-on ui_control(btn)
-	message("button pressed")
-end on
-
-on ui_control(btn)
-	message("another button pressed")
-	message(1=1)
-
-end on
-
-function func_return(array: int[])
-	
-	declare idx := search(array, 6)
-	if (idx # -1)
-		message("hello")
-	end if
-	return 
-
-end function
-
-function swi_keyswitch_ui_controls(idx: int)
-	if idx # -1
-		message("henlo")
-		return
-	else 
-		message("sdlfkj")
-	end if
-
-	// if idx # -1
-	// 	message("sdflkj")
-	// 	return
-	// end if
-
-	// if idx # -1
-	// 	message("sdlfkj")
-	// 	return
-	// end if
-	return
-end function    
-
 
 on init
-	
-message("pupoupupupupupup")
-
-	message(1=1)
-
+	message("Initialization complete.")
 end on

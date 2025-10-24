@@ -19,6 +19,12 @@ public:
 		register_pragma_handlers();
 	}
 
+	PreNodeAST *visit(PreNodeProgram &node) override {
+		m_program = &node;
+		visit_all(node.program, *this);
+		return &node;
+	}
+
 	PreNodeAST *visit(PreNodePragma &node) override {
 		const std::string& option = node.option->get_string();
 		const Token& token = node.argument->tok;
@@ -31,11 +37,6 @@ public:
 		return &node;
 	}
 
-	PreNodeAST *visit(PreNodeProgram &node) override {
-		m_program = &node;
-		visit_all(node.program, *this);
-		return &node;
-	}
 
 	PreNodeAST *visit(PreNodeMacroDefinition &node) override {
 		node.header->accept(*this);
@@ -61,20 +62,20 @@ private:
 			auto path = StringUtils::remove_quotes(arg);
 
 			std::string error_message = "Found unknown <output_path> option in <#pragma>. ";
-			static PathHandler path_handler(token, token.file, "");
+			PathHandler path_handler(token, token.file, "");
 			auto output_path = path_handler.resolve_path(path);
 			if (output_path.is_error()) {
 				auto error = output_path.get_error();
 				error.m_message.insert(0, error_message);
 				error.exit();
 			}
-			auto valid_output_path = path_handler.generate_output_file(output_path.unwrap());
+			auto valid_output_path = path_handler.check_valid_output_file(output_path.unwrap());
 			if (valid_output_path.is_error()) {
 				auto error = valid_output_path.get_error();
 				error.m_message.insert(0, error_message);
 				error.exit();
 			}
-			m_config->output_filename = valid_output_path.unwrap();
+			m_config->outputs.push_back(valid_output_path.unwrap());
 		};
 
 		pragma_handlers["optimize"] = [this](const std::string& arg, const Token& token) {
