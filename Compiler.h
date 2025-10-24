@@ -126,7 +126,7 @@ public:
 		//    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 		//    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
 		// input_filename = R"(C:\Users\mathi\Documents\Scripting\preset-system\main.ksp)";
-		// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+		input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 		// input_filename = "/Users/mathias/Scripting/legato-dev/one-shot.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score-essentials/the-score-essentials.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
@@ -151,6 +151,7 @@ public:
 		// input_filename = "/Users/mathias/Scripting/sonu-libraries/try.ksp";
 		// input_filename = "/Users/mathias/Scripting/trinity-drums-2/main.ksp";
 		if (!input_filename.empty()) m_cli_config->input_filename = input_filename;
+		// m_cli_config->optimization_level = OptimizationLevel::None;
 #endif
 
 		m_timer.start("Total Time");

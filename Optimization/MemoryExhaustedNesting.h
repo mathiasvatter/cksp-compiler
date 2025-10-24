@@ -30,7 +30,7 @@ private:
      * @param token_limit The token limit.
      * @return The calculated points.
      */
-	static inline double points(int token_limit) {
+	static double points(int token_limit) {
 		return ONE_TOKEN_LIMIT/static_cast<double>(token_limit);
 	}
 
@@ -39,7 +39,7 @@ private:
      * @param tokens The number of tokens.
      * @return The calculated points.
      */
-	static inline double get_points(int tokens) {
+	static double get_points(int tokens) {
 		if(tokens < TOKEN_LIMITS.size())
 			return points(TOKEN_LIMITS[tokens]);
 		return points(NKS_TOKEN_LIMIT);
