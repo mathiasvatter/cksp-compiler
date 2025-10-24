@@ -8,6 +8,7 @@
 #include <vector>
 #include <filesystem>
 #include <unordered_map>
+#include <optional>
 
 
 enum class CmdOptions {
