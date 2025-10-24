@@ -85,7 +85,8 @@ public:
 			"real",
 			"int",
 			"real_to_int",
-			"int_to_real"
+			"int_to_real",
+			"abs",
 		};
 		node.function->accept(*this);
 		// check if func is 'num_elements' which returns constant and can be used as array size

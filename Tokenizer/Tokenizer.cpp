@@ -318,115 +318,119 @@ bool Tokenizer::is_keyword_or_num() const {
             ARRAY_IDENT.contains(peek());
     bool is_macro = peek() == '#' and (std::isalnum(peek(1)) || peek(1) == '_' || VAR_IDENT.contains(peek(1)) ||
             ARRAY_IDENT.contains(peek(1)));
+	bool is_float_start = peek() == '.' and std::isdigit(peek(1));
 //	bool is_method_chain = peek() == '.' and (std::isalnum(peek(1)) || peek(1) == '_');
-    return is_keyword_or_num or is_macro;
+    return is_keyword_or_num or is_macro or is_float_start;
 }
 
 void Tokenizer::get_keyword_or_num() {
     flush_buffer();
-    while(std::isdigit(peek())) {
+	bool found_leading_digits = false;
+	// Leading digits: parse number literal path
+	while(std::isdigit(peek())) {
 		consume();
-    }
+		found_leading_digits = true;
+	}
+
+	// for 1e-3 style floats
+	bool is_float = false;
+	if (found_leading_digits and is_scientific_exponent_start()) {
+		consume_exponent();
+		is_float = true;
+	}
+
     // check if is float or bitwise operator
-    if (peek() == '.') {
+	if (peek() == '.') {
 		consume();
-        // is float
-        if (std::isdigit(peek())) {
-            while (std::isdigit(peek())) {
+		if (std::isdigit(peek())) {
+			while (std::isdigit(peek())) {
 				consume();
-            }
-            add_token(token::FLOAT, m_buffer);
-        } else {
+			}
+			// also allow an exponent after a leading-dot float like .5e2
+			if (is_scientific_exponent_start()) {
+				consume_exponent();
+			}
+			add_token(token::FLOAT, m_buffer);
+		} else {
 			auto err_msg = "Found unknown keyword.";
 			CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).exit();
 		}
     // check if next char is _ or text
     } else if (is_keyword_or_num()) {
-//        if(peek() =='#') consume(); //consume # for macro iteration
-        consume(); //consume possible identifier
-        while (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
-            consume();
-        }
-    	// // ternary operator in reference chain -> browser?.current
-    	// if (peek() == '?' and peek(1) == '.') {
-    	// 	add_token(token::KEYWORD, m_buffer);
-    	// 	flush_buffer();
-    	// 	consume(); // consume ?
-    	// 	add_token(token::TERNARY, m_buffer);
-    	// 	flush_buffer();
-    	// } else {
-	    //     // catch var identifier in the middle of keyword
-	    //     if (VAR_IDENT.contains(peek()) || ARRAY_IDENT.contains(peek())) {
-	    //         consume();
-	    //         auto err_msg = "Incorrect placement of variable/array identifier";
-	    //         CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).exit();
-	    //     }
-    	// }
-		while (peek() == '.') {
-			consume();
-			if (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
-				while(std::isalnum(peek()) || peek() == '_' || peek() == '#') {
-					consume();
-				}
-			} else {
-				auto err_msg = "Found unknown keyword.";
-				CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).exit();
-			}
-		}
-        if (is_hexadecimal(m_buffer)) {
-            add_token(token::HEXADECIMAL, m_buffer);
-        } else if (is_binary(m_buffer)) {
-            add_token(token::BINARY, m_buffer);
-        } else if (is_callback_start()) {
-            m_tokens.pop_back();
-            add_token(token::BEGIN_CALLBACK, "on "+m_buffer);
-        } else if (is_callback_end()) {
-            m_tokens.pop_back();
-            add_token(token::END_CALLBACK, "end "+m_buffer);
-        } else if (m_buffer == "mod") {
-            add_token(token::MODULO, m_buffer);
-        } else if (auto type = get_token_type(BOOL_OPERATORS, m_buffer)) {
-            add_token(*type, m_buffer);
-        } else if (auto type = get_token_type(STATEMENTS, m_buffer)) {
-            // get end statements
-            if (!m_tokens.empty()) {
-                if (m_tokens.back().val == "end") {
-                    m_tokens.pop_back();
-                    m_buffer = "end " + m_buffer;
-                    type = get_token_type(END_STATEMENTS, m_buffer);
-                }
-            }
-            add_token(*type, m_buffer);
-        } else if (auto type = get_token_type(STATEMENT_SYNTAX, m_buffer)) {
-            add_token(*type, m_buffer);
-        } else if (UI_CONTROLS.contains(m_buffer)) {
-			add_token(token::UI_CONTROL, m_buffer);
-		} else if (auto type = get_token_type(PREPROCESSOR_SYNTAX, m_buffer)) {
-			add_token(*type, m_buffer);
-		} else if (auto type = get_token_type(DECLARATION_SYNTAX, m_buffer)) {
-			add_token(*type, m_buffer);
-        } else if (auto type = get_token_type(FUNCTION_SYNTAX, m_buffer)) {
-			add_token(*type, m_buffer);
-		} else if (auto type = get_token_type(BOOLEAN_SYNTAX, m_buffer)) {
-			add_token(*type, m_buffer);
-		} else if (auto type = get_token_type(OBJECT_SYNTAX, m_buffer)) {
-			add_token(*type, m_buffer);
-        } else {
+	    //        if(peek() =='#') consume(); //consume # for macro iteration
+    	consume(); //consume possible identifier
+    	while (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
+    		consume();
+    	}
+    	while (peek() == '.') {
+    		consume();
+    		if (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
+    			while(std::isalnum(peek()) || peek() == '_' || peek() == '#') {
+    				consume();
+    			}
+    		} else {
+    			auto err_msg = "Found unknown keyword.";
+    			CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).exit();
+    		}
+    	}
+    	if (is_hexadecimal(m_buffer)) {
+    		add_token(token::HEXADECIMAL, m_buffer);
+    	} else if (is_binary(m_buffer)) {
+    		add_token(token::BINARY, m_buffer);
+    	} else if (is_callback_start()) {
+    		m_tokens.pop_back();
+    		add_token(token::BEGIN_CALLBACK, "on "+m_buffer);
+    	} else if (is_callback_end()) {
+    		m_tokens.pop_back();
+    		add_token(token::END_CALLBACK, "end "+m_buffer);
+    	} else if (m_buffer == "mod") {
+    		add_token(token::MODULO, m_buffer);
+    	} else if (auto type = get_token_type(BOOL_OPERATORS, m_buffer)) {
+    		add_token(*type, m_buffer);
+    	} else if (auto type = get_token_type(STATEMENTS, m_buffer)) {
+    		// get end statements
+    		if (!m_tokens.empty()) {
+    			if (m_tokens.back().val == "end") {
+    				m_tokens.pop_back();
+    				m_buffer = "end " + m_buffer;
+    				type = get_token_type(END_STATEMENTS, m_buffer);
+    			}
+    		}
+    		add_token(*type, m_buffer);
+    	} else if (auto type = get_token_type(STATEMENT_SYNTAX, m_buffer)) {
+    		add_token(*type, m_buffer);
+    	} else if (UI_CONTROLS.contains(m_buffer)) {
+    		add_token(token::UI_CONTROL, m_buffer);
+    	} else if (auto type = get_token_type(PREPROCESSOR_SYNTAX, m_buffer)) {
+    		add_token(*type, m_buffer);
+    	} else if (auto type = get_token_type(DECLARATION_SYNTAX, m_buffer)) {
+    		add_token(*type, m_buffer);
+    	} else if (auto type = get_token_type(FUNCTION_SYNTAX, m_buffer)) {
+    		add_token(*type, m_buffer);
+    	} else if (auto type = get_token_type(BOOLEAN_SYNTAX, m_buffer)) {
+    		add_token(*type, m_buffer);
+    	} else if (auto type = get_token_type(OBJECT_SYNTAX, m_buffer)) {
+    		add_token(*type, m_buffer);
+    	} else {
 
-        	// try to fix #keyword into # keyword (two tokens)
-        	const auto not_equal = GENERATE_COMPARISON_OPERATORS[token::NOT_EQUAL];
-        	if (StringUtils::starts_with(m_buffer, not_equal)) {
-        		if (StringUtils::count_char(m_buffer, not_equal[0]) % 2 == 1) {
-        			add_token(token::NOT_EQUAL, not_equal);
-        			m_buffer.erase(0, not_equal.length());
-        		}
-        	}
+    		// try to fix #keyword into # keyword (two tokens)
+    		const auto not_equal = GENERATE_COMPARISON_OPERATORS[token::NOT_EQUAL];
+    		if (StringUtils::starts_with(m_buffer, not_equal)) {
+    			if (StringUtils::count_char(m_buffer, not_equal[0]) % 2 == 1) {
+    				add_token(token::NOT_EQUAL, not_equal);
+    				m_buffer.erase(0, not_equal.length());
+    			}
+    		}
 
-            add_token(token::KEYWORD, m_buffer);
-        }
-        // see if char after keyword is dot
-    } else // is probably int
-        add_token(token::INT, m_buffer);
+    		add_token(token::KEYWORD, m_buffer);
+    	}
+    	// see if char after keyword is dot
+    } else if (is_float) {
+		add_token(token::FLOAT, m_buffer);
+    } else {
+	    // is probably int
+    	add_token(token::INT, m_buffer);
+    }
     skip_whitespace();
 }
 
@@ -530,8 +534,6 @@ void Tokenizer::get_bitwise_operator() {
 		m_tokens.emplace_back(token::DOT, ".", m_line, m_line_pos-m_buffer.length(), m_current_file);
         // add_token(token::KEYWORD, m_buffer.erase(0,1));
 		m_tokens.emplace_back(token::KEYWORD, m_buffer.erase(0,1), m_line, m_line_pos-m_buffer.length()+1, m_current_file);
-
-
     }
     skip_whitespace();
 }
@@ -559,6 +561,94 @@ bool Tokenizer::is_binary(const std::string& str) {
 bool Tokenizer::is_hexadecimal(const std::string& str) {
     // Überprüfen, ob der String mit "0x" beginnt xor mit einer ziffer beginnt und mit h endet
     return (str.substr(0, 2) == "0x") xor (str.size() > 1 && std::tolower(str.back()) == 'h' && isdigit(str[0]));
+}
+
+// Returns true if the next chars form a valid exponent start like
+// 'e' or 'E' followed by either digits or (+|-) and then digits.
+bool Tokenizer::is_scientific_exponent_start() const {
+	if (peek() != 'e' && peek() != 'E') return false;
+	// e<digit>
+	if (std::isdigit(peek(1))) return true;
+	// e(+|-)<digit>
+	if ((peek(1) == '+' || peek(1) == '-') && std::isdigit(peek(2))) return true;
+	return false;
+}
+
+// Consumes the exponent part:  (e|E)(+|-)?<digits>
+// Precondition: is_scientific_exponent_start() already returned true.
+void Tokenizer::consume_exponent() {
+	// consume 'e' or 'E'
+	consume();
+	// optional sign
+	if (peek() == '+' || peek() == '-') {
+		consume();
+	}
+	// must have at least one digit
+	if (!std::isdigit(peek())) {
+		auto err_msg = "Malformed scientific literal exponent (missing digits after e/E).";
+		CompileError(ErrorType::TokenError, err_msg, m_line, "digits", m_buffer, m_current_file).exit();
+	}
+	while (std::isdigit(peek())) {
+		consume();
+	}
+}
+
+bool Tokenizer::is_scientific(const std::string& str) {
+	// Trim whitespace just in case
+	if (str.empty()) return false;
+
+	size_t i = 0;
+	bool has_digits = false;
+	bool has_dot = false;
+
+	// optional leading sign
+	if (str[i] == '+' || str[i] == '-') {
+		i++;
+		if (i >= str.size()) return false;
+	}
+
+	// integer and fractional part
+	for (; i < str.size(); ++i) {
+		char c = str[i];
+		if (std::isdigit(c)) {
+			has_digits = true;
+			continue;
+		} else if (c == '.') {
+			if (has_dot) return false; // multiple dots not allowed
+			has_dot = true;
+			continue;
+		}
+		break;
+	}
+
+	// must have at least one digit before exponent
+	if (!has_digits) return false;
+
+	// exponent part required for "scientific"
+	if (i >= str.size() || (str[i] != 'e' && str[i] != 'E'))
+		return false;
+	i++;
+
+	// optional sign after e/E
+	if (i < str.size() && (str[i] == '+' || str[i] == '-')) {
+		i++;
+	}
+
+	// must have at least one digit in exponent
+	if (i >= str.size() || !std::isdigit(str[i]))
+		return false;
+
+	for (; i < str.size(); ++i) {
+		if (!std::isdigit(str[i]))
+			return false;
+	}
+
+	// all checks passed
+	return true;
+}
+
+bool Tokenizer::is_integer(const std::string &str) {
+	return !str.empty() && std::ranges::all_of(str, ::isdigit);
 }
 
 bool Tokenizer::is_callback_start() const {

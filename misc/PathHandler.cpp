@@ -23,7 +23,7 @@ Result<std::string> PathHandler::check_valid_path(const std::string &path) {
 	}
 }
 
-Result<std::string> PathHandler::generate_output_file(const std::string &absolute_path) {
+Result<std::string> PathHandler::check_valid_output_file(const std::string &absolute_path) {
 	std::filesystem::path path(absolute_path);
     m_error.m_got = path.string();
 
@@ -47,13 +47,13 @@ Result<std::string> PathHandler::generate_output_file(const std::string &absolut
 		return Result<std::string>(m_error);
 	}
 
-	// Datei öffnen und schließen, um sicherzustellen, dass sie existiert
-	std::ofstream outfile(absolute_path, std::ios::app); // Öffnen im Append-Modus, um keine Daten zu überschreiben
-	if (!outfile) {
-		m_error.m_message = "Could not open file.";
-		return Result<std::string>(m_error);
-	}
-	outfile.close();
+	// // Datei öffnen und schließen, um sicherzustellen, dass sie existiert
+	// std::ofstream outfile(absolute_path, std::ios::app); // Öffnen im Append-Modus, um keine Daten zu überschreiben
+	// if (!outfile) {
+	// 	m_error.m_message = "Could not open file.";
+	// 	return Result<std::string>(m_error);
+	// }
+	// outfile.close();
 
 	return Result<std::string>(absolute_path);
 }
@@ -80,6 +80,9 @@ Result<std::string> PathHandler::resolve_path(const std::string &import_path) {
 	std::filesystem::path combined_path = (base_path / rel).lexically_normal();
 	if (std::filesystem::exists(combined_path)) {
 		return Result<std::string>(std::filesystem::absolute(combined_path).string());
+	// if not, try parent path, maybe .txt file does not yet exist but is valid
+	} else if(std::filesystem::exists(combined_path.parent_path())) {
+		return Result<std::string>(combined_path.string());
 	}
 
 	// 2. try fallback 'resolve_overlap' for special cases
