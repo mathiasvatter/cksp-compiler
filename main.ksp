@@ -1,85 +1,86 @@
-#pragma output_path("test.txt")
-#pragma output_path("test1.txt")
+// #pragma output_path("test.txt")
+// #pragma output_path("test1.txt")
 #pragma combine_callbacks(true)
 #pragma optimize('none')
 // import "/Users/mathias/Scripting/preset-system/dev/ksp/Preset.cksp"
 
 
-struct Engine
-	declare group[100]: Group[]
-	declare send: Send
-	declare bus[16]: Bus[]
+// struct Engine
+// 	group[100]: Group[]
+// 	const send: Send
+// 	bus[16]: Bus[]
 
-	function __init__(self)
-		for id, gr in pairs(self.group)
-			gr := new Group(id)
-		end for
-		self.send := new Send()
-		for id, bs in pairs(self.bus)
-			bs := new Bus(id)
-		end for
-	end function
-end struct 
+// 	function __init__(self)
+// 		for id, gr in pairs(self.group)
+// 			gr := new Group(id)
+// 		end for
+// 		self.send := new Send()
+// 		for id, bs in pairs(self.bus)
+// 			bs := new Bus(id)
+// 		end for
+// 	end function
+// end struct 
 
-struct Group
-	declare slot[8]: Slot[]
-	function __init__(self, group_idx: int)
-		for id, sl in pairs(self.slot)
-			sl := new Slot(id, group_idx, -1)
-		end for
-	end function
-end struct
+// struct Group
+// 	declare slot[8]: Slot[]
+// 	function __init__(self, group_idx: int)
+// 		for id, sl in pairs(self.slot)
+// 			sl := new Slot(id, group_idx, -1)
+// 		end for
+// 	end function
+// end struct
 
-struct Bus
-	declare slot[8]: Slot[]
-	function __init__(self, bus_idx: int)
-		for idx, sl in pairs(self.slot)
-			sl := new Slot(idx, -1, NI_BUS_OFFSET + bus_idx)
-		end for
-	end function
-end struct
+// struct Bus
+// 	declare slot[8]: Slot[]
+// 	function __init__(self, bus_idx: int)
+// 		for idx, sl in pairs(self.slot)
+// 			sl := new Slot(idx, -1, NI_BUS_OFFSET + bus_idx)
+// 		end for
+// 	end function
+// end struct
 
-struct Send
-	declare slot[8]: Slot[]
-	function __init__(self)
-		for idx, sl in pairs(self.slot)
-			sl := new Slot(idx, -1, NI_SEND_BUS)
-		end for
-	end function
-end struct
+// struct Send
+// 	declare slot[8]: Slot[]
+// 	function __init__(self)
+// 		for idx, sl in pairs(self.slot)
+// 			sl := new Slot(idx, -1, NI_SEND_BUS)
+// 		end for
+// 	end function
+// end struct
 
-struct Slot
-	declare slot_idx: int
-	declare group_idx: int
-	declare bus_idx: int
+// struct Slot
+// 	declare slot_idx: int
+// 	declare group_idx: int
+// 	declare bus_idx: int
 
-	function __init__(self, slot_idx: int, group_idx: int, bus_idx: int)
-		self.slot_idx := slot_idx
-		self.group_idx := group_idx
-		self.bus_idx := bus_idx
-	end function
+// 	function __init__(self, slot_idx: int, group_idx: int, bus_idx: int)
+// 		self.slot_idx := slot_idx
+// 		self.group_idx := group_idx
+// 		self.bus_idx := bus_idx
+// 	end function
 
-	add_engine_par_method(volume, VOLUME)
-	// .... your other engine par methods here
-	macro add_engine_par_method(#short_name#, #param#)
-		function set_#short_name#(self, value: int)
-			set_engine_par(ENGINE_PAR_#param#, value, self.group_idx, self.slot_idx, self.bus_idx)
-		end function
-		function get_#short_name#(self): int
-			return get_engine_par(ENGINE_PAR_#param#, self.group_idx, self.slot_idx, self.bus_idx)
-		end function
-	end macro
-end struct
+// 	add_engine_par_method(volume, VOLUME)
+// 	// .... your other engine par methods here
+// 	macro add_engine_par_method(#short_name#, #param#)
+// 		function set_#short_name#(self, value: int)
+// 			set_engine_par(ENGINE_PAR_#param#, value, self.group_idx, self.slot_idx, self.bus_idx)
+// 		end function
+// 		function get_#short_name#(self): int
+// 			return get_engine_par(ENGINE_PAR_#param#, self.group_idx, self.slot_idx, self.bus_idx)
+// 		end function
+// 	end macro
+// end struct
 
 
-// declare Slot := new Slot(0, 2, -1)
+// // declare Slot := new Slot(0, 2, -1)
+// on init
+// 	message(.3)
+// 	declare Engine := new Engine()
+// 	Engine.group[2].slot[3].set_volume(10000)
+// 	Engine.bus[1].slot[0].set_volume(8000)
+// end on
+
 on init
-	message(.3)
-	declare Engine := new Engine()
-	Engine.group[2].slot[3].set_volume(10000)
-	Engine.bus[1].slot[0].set_volume(8000)
-end on
-
-on init
+	declare arr: int[] := [1 2 3 4 5]
 	message("Initialization complete.")
 end on
