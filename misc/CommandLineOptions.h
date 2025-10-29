@@ -8,6 +8,7 @@
 #include <vector>
 #include <filesystem>
 #include <unordered_map>
+#include <optional>
 
 
 enum class CmdOptions {
@@ -95,8 +96,7 @@ struct CompilerConfig {
 	void set_defaults() {
 		input_filename = "";
 		outputs = {};
-		standard_output_file = std::filesystem::path(
-				std::filesystem::path(input_filename.value()).parent_path() / "out.txt").string();
+		standard_output_file = "out.txt";
 		optimization_level = OptimizationLevel::Standard;
 		debug_mode = DebugMode::Off;
 		parameter_passing = ParameterPassing::ByValue;
