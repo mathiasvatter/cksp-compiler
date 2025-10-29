@@ -1338,6 +1338,12 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_init_list(NodeAST* parent, bool a
 
 			// Allow trailing comma before ']': e.g., [a, b, ]
 			if (peek().type == token::CLOSED_BRACKET) break;
+		} else if (peek().type == token::CLOSED_BRACKET) {
+			break;
+		} else {
+			return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
+				"Found invalid <InitializerList> Syntax.", "<comma> or ]", peek())
+			);
 		}
 	}
 	auto end_tok = consume(); // consume ]
@@ -2302,7 +2308,15 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 	while(peek().type != end_construct) {
 		_skip_linebreaks();
 		if(peek().type == end_construct) break;
-		if(peek().type == token::DECLARE || peek().type == token::KEYWORD) {
+		if(peek().type == token::DECLARE || peek().type == token::KEYWORD || modifier_keywords.contains(peek().type)) {
+			if (peek().type == token::UI_CONTROL) {
+				return Result<std::unique_ptr<NodeStruct>>(CompileError(ErrorType::SyntaxError,
+							 "Found unknown <struct> syntax. Can not declare <ui control> variables as <struct> members.", "valid <struct> member or method", peek()));
+			}
+			if (peek().type == token::POLYPHONIC) {
+				return Result<std::unique_ptr<NodeStruct>>(CompileError(ErrorType::SyntaxError,
+							 "Found unknown <struct> syntax. Can not declare <polyphonic> variables as <struct> members.", "valid <struct> member or method", peek()));
+			}
 			auto declare_stmt = parse_declare_statement(node_member_block.get());
 			if(declare_stmt.is_error()) {
 				return Result<std::unique_ptr<NodeStruct>>(declare_stmt.get_error());

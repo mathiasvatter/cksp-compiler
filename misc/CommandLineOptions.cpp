@@ -120,9 +120,9 @@ CommandLineOptions::CommandLineOptions(int argc, char **argv) {
 		err.exit();
 	}
 
-
 	m_compiler_config->input_filename = input_file;
-
+	m_compiler_config->standard_output_file = std::filesystem::path(
+				std::filesystem::path(input_file).parent_path() / "out.txt").string();
 }
 
 std::string CommandLineOptions::get_help_option() const {
