@@ -77,7 +77,7 @@ CommandLineOptions::CommandLineOptions(int argc, char **argv) {
         } else if (arg == "--no-combine-callbacks") {
         	m_compiler_config->combine_callbacks = false;
         } else if (arg == "-P" || arg == "--pass-by") {
-        	// Expect a value next (value|reference)
+	        // Expect a value next (value|reference)
         	std::string mode;
         	if (arg == "--pass-by" && i + 1 < argc) {
         		mode = argv[++i];
@@ -93,6 +93,25 @@ CommandLineOptions::CommandLineOptions(int argc, char **argv) {
         		std::exit(1);
         	}
         	m_compiler_config->parameter_passing = it->second;
+        } else if (arg == "-s" || arg == "--max-callback-depth") {
+        	std::string val;
+        	if (i + 1 < argc) {
+				val = argv[++i];
+			} else {
+				std::cerr << "Error: " << arg << " requires an integer argument.\n";
+				std::exit(1);
+			}
+			try {
+				int depth = std::stoi(val);
+				if (depth <= 0) {
+					std::cerr << "Error: max callback stack depth must be positive.\n";
+					std::exit(1);
+				}
+				m_compiler_config->max_callback_depth = depth;
+			} catch (const std::exception& e) {
+				std::cerr << "Error: invalid integer for max callback stack depth: " << val << "\n";
+				std::exit(1);
+			}
         } else {
         	// First non-option token is the input file
         	if (input_file.empty())
