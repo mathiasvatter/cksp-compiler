@@ -64,6 +64,7 @@ struct CompilerConfig {
 	DebugMode debug_mode = DebugMode::Unset;
 	ParameterPassing parameter_passing = ParameterPassing::Unset;
 	std::optional<bool> combine_callbacks;
+	std::optional<int> max_callback_depth;
 
 	/// constructor with default values
 	CompilerConfig() = default;
@@ -90,6 +91,9 @@ struct CompilerConfig {
 		if (other.combine_callbacks.has_value())
 			combine_callbacks = other.combine_callbacks;
 
+		if (other.max_callback_depth.has_value())
+			max_callback_depth = other.max_callback_depth;
+
 		return *this;
 	}
 
@@ -101,6 +105,7 @@ struct CompilerConfig {
 		debug_mode = DebugMode::Off;
 		parameter_passing = ParameterPassing::ByValue;
 		combine_callbacks = false;
+		max_callback_depth = 1000;
 	}
 
 };
@@ -142,6 +147,7 @@ private:
 			{"c", "combine-callbacks", "", CmdOptions::CallbackCombining, "Combine duplicate callbacks into one (enable)"},
 			{"",  "no-combine-callbacks", "", CmdOptions::CallbackCombining, "Disable duplicate callback combining"},
 			{"P", "pass-by", "<value|reference>", CmdOptions::ParameterPassing, "Force the parameter passing method for all function parameters. The default is 'value'. To imitate SublimeKSP behavior, use 'reference'."},
+			{"s", "max-callback-depth", "<value>", CmdOptions::ParameterPassing, "Set the maximum callback stack depth (default: 1000)"},
     };
 
 	[[nodiscard]] std::string get_help_option() const;

@@ -7,6 +7,7 @@
 
 PreNodeAST *PreASTDesugar::visit(PreNodeProgram &node) {
     m_program = &node;
+	m_substitution_stack = {};
 
     for(auto & def : node.macro_definitions) {
         m_macro_lookup.insert({{def->header->get_name(), (int)def->header->num_args()}, def.get()});
@@ -310,29 +311,4 @@ std::unique_ptr<PreNodeAST> PreASTDesugar::get_substitute(const std::string& nam
 	return nullptr;
 }
 
-std::string PreASTDesugar::get_text_replacement(const Token& name) {
-	// Zähle einmalig die Anzahl der '#' im Token
-	if (StringUtils::count_char(name.val, '#') % 2 != 0) {
-		auto error = CompileError(ErrorType::PreprocessorError,
-					 "", "", name);
-		error.set_message("Found wrong number of # in macro replacement.");
-		error.exit();
-	}
-	std::string result = name.val;
-	// Iteriere durch die Substitutionen
-	const auto& substitutions = m_substitution_stack.top();
-	for (const auto&[fst, snd] : substitutions) {
-		// Führe einen frühen Check durch, um zu sehen, ob replacement.first überhaupt qualifiziert ist
-		if (fst.front() == '#' && fst.back() == '#') {
-			size_t start = 0;
-			const std::string& replace_with = snd->get_chunk(0)->get_string();
 
-			// Verwende result.find und result.replace direkt, ohne den String mehrfach zu verändern
-			while ((start = result.find(fst, start)) != std::string::npos) {
-				result.replace(start, fst.length(), replace_with);
-				start += replace_with.length();
-			}
-		}
-	}
-	return result;
-}

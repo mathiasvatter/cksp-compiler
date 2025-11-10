@@ -6,6 +6,7 @@
 
 #include "PreASTVisitor.h"
 #include "../ImportProcessor.h"
+#include "../../AST/ASTVisitor/ASTKSPSyntaxCheck.h"
 #include "../../misc/CommandLineOptions.h"
 #include "../../misc/PathHandler.h"
 
@@ -107,6 +108,26 @@ private:
 				m_config->combine_callbacks = false;
 			} else {
 				get_pragma_error(token, combine, "'true' or 'false'").exit();
+			}
+		};
+
+		pragma_handlers["max_callback_depth"] = [this](const std::string& arg, const Token& token) {
+			std::string depth_str = StringUtils::remove_quotes(arg);
+			try {
+				int depth = std::stoi(depth_str);
+				if (depth < 0) {
+					throw std::invalid_argument("negative value");
+				}
+				m_config->max_callback_depth = depth;
+			} catch (const std::invalid_argument&) {
+				get_pragma_error(token, depth_str, "a non-negative integer").exit();
+			} catch (const std::out_of_range&) {
+				get_pragma_error(token, depth_str, "a valid integer within range").exit();
+			}
+			if (m_config->max_callback_depth > MAX_ARRAY_ELEMENTS) {
+				auto error = get_pragma_error(token, depth_str, "a value less than " + std::to_string(MAX_ARRAY_ELEMENTS));
+				error.m_message = "The specified <max_callback_depth> exceeds the maximum allowed limit.";
+				error.exit();
 			}
 		};
 	}

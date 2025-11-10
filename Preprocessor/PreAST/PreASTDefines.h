@@ -31,9 +31,6 @@ private:
 	std::unique_ptr<PreNodeDefineStatement> get_define_definition(const PreNodeDefineHeader& define_header);
 	static std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> get_substitution_map(PreNodeDefineHeader& definition, const PreNodeDefineHeader& call);
 
-	/// returns substitute for current node.name, or nullptr if there is no substitute
-	std::stack<std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>>> m_substitution_stack;
-
 	std::unordered_set<std::string> m_defines_used;
 	void check_recursion(const Token &tok) const;
 
