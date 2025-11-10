@@ -1,11 +1,441 @@
-{ Compiled with cksp version 0.0.8-alpha.3 on Wed Oct 29 22:38:03 2025 }
+{ Compiled with cksp version 0.0.8-alpha.4 on Mon Nov 10 11:05:31 2025 }
 on init
-  declare const $MAX____CB____STACK := 100
   declare $_iter0
-  declare const $MAX____STRUCTS := 1000000
-  declare @MEM____WARNING
-  @MEM____WARNING := "Memory Error: No more free space available to allocate objects of type"
-  declare %arr[5] := (1, 2, 3, 4, 5)
-  message("Initialization complete.")
+  declare %main_grid_x[6] := (28, 172, 316, 460, 604, 748)
+  declare !field_names[6]
+  !field_names[0] := "SUSTAIN I"
+  !field_names[1] := "SUSTAIN II"
+  !field_names[2] := "ARP I"
+  !field_names[3] := "ARP II"
+  !field_names[4] := "GRAIN"
+  !field_names[5] := "MASTER"
+  declare $exception_idx1
+  declare $idx0
+  declare $uiid1
+  declare $i0
+  declare $idx1
+  message("")
+  make_perfview
+  set_ui_width_px(900)
+  set_ui_height_px(500)
+  set_control_par_str($INST_WALLPAPER_ID, $CONTROL_PAR_PICTURE, "BG")
+  set_snapshot_type(3)
+  set_key_pressed_support(1)
+  set_listener($NI_SIGNAL_TIMER_MS, 10000)
+  SET_CONDITION( NO_SYS_SCRIPT_PEDAL)
+  SET_CONDITION( NO_SYS_SCRIPT_RLS_TRIG)
+  SET_CONDITION( NO_SYS_SCRIPT_GROUP_START)
+  declare %hide_state[2] := ($HIDE_WHOLE_CONTROL, $HIDE_PART_NOTHING)
+  declare $i
+  declare %_font__robmed13[14]
+  %_font__robmed13[0] := get_font_id("Roboto Medium Size 13 Opa 40.png")
+  %_font__robmed13[2] := get_font_id("Roboto Medium Size 13 Opa 100.png")
+  %_font__robmed13[4] := get_font_id("Roboto Medium Size 13 Opa 60.png")
+  %_font__robmed13[6] := get_font_id("Roboto Medium Size 13 Opa 100.png")
+  %_font__robmed13[8] := get_font_id("Roboto Medium Size 13 Opa 60.png")
+  %_font__robmed13[10] := get_font_id("Roboto Medium Size 13 Opa 100.png")
+  %_font__robmed13[12] := get_font_id("Roboto Medium Size 13 Opa 15.png")
+  declare %_font__robconreg13[14]
+  %_font__robconreg13[0] := get_font_id("Roboto Condensed Regular Size 13 Opa 40.png")
+  %_font__robconreg13[2] := get_font_id("Roboto Condensed Regular Size 13 Opa 100.png")
+  %_font__robconreg13[4] := get_font_id("Roboto Condensed Regular Size 13 Opa 60.png")
+  %_font__robconreg13[6] := get_font_id("Roboto Condensed Regular Size 13 Opa 100.png")
+  %_font__robconreg13[8] := get_font_id("Roboto Condensed Regular Size 13 Opa 60.png")
+  %_font__robconreg13[10] := get_font_id("Roboto Condensed Regular Size 13 Opa 100.png")
+  %_font__robconreg13[12] := get_font_id("Roboto Condensed Regular Size 13 Opa 15.png")
+  declare %_font__2pt7[14]
+  %_font__2pt7[0] := get_font_id("roboto_2pt7_white_off.png")
+  %_font__2pt7[2] := get_font_id("roboto_2pt7_white_on.png")
+  %_font__2pt7[4] := get_font_id("roboto_2pt7_white_off_hover.png")
+  %_font__2pt7[6] := get_font_id("roboto_2pt7_white_on.png")
+  %_font__2pt7[8] := get_font_id("roboto_2pt7_white_off_hover.png")
+  %_font__2pt7[10] := get_font_id("roboto_2pt7_white_on.png")
+  %_font__2pt7[12] := get_font_id("roboto_2pt7_white_disabled.png")
+  declare %_font__2pt8[14]
+  %_font__2pt8[0] := get_font_id("roboto_2pt8_white_off.png")
+  %_font__2pt8[2] := get_font_id("roboto_2pt8_white_on.png")
+  %_font__2pt8[4] := get_font_id("roboto_2pt8_white_off_hover.png")
+  %_font__2pt8[6] := get_font_id("roboto_2pt8_white_on.png")
+  %_font__2pt8[8] := get_font_id("roboto_2pt8_white_off_hover.png")
+  %_font__2pt8[10] := get_font_id("roboto_2pt8_white_on.png")
+  %_font__2pt8[12] := get_font_id("roboto_2pt8_white_disabled.png")
+  declare %_font__3pt3[14]
+  %_font__3pt3[0] := get_font_id("roboto_3pt3_white_off.png")
+  %_font__3pt3[2] := get_font_id("roboto_3pt3_white_on.png")
+  %_font__3pt3[4] := get_font_id("roboto_3pt3_white_off_hover.png")
+  %_font__3pt3[6] := get_font_id("roboto_3pt3_white_on.png")
+  %_font__3pt3[8] := get_font_id("roboto_3pt3_white_off_hover.png")
+  %_font__3pt3[10] := get_font_id("roboto_3pt3_white_on.png")
+  %_font__3pt3[12] := get_font_id("roboto_3pt3_white_disabled.png")
+  declare %_font__3pt6[14]
+  %_font__3pt6[0] := get_font_id("roboto_3pt6_white_off.png")
+  %_font__3pt6[2] := get_font_id("roboto_3pt6_white_on.png")
+  %_font__3pt6[4] := get_font_id("roboto_3pt6_white_off_hover.png")
+  %_font__3pt6[6] := get_font_id("roboto_3pt6_white_on.png")
+  %_font__3pt6[8] := get_font_id("roboto_3pt6_white_off_hover.png")
+  %_font__3pt6[10] := get_font_id("roboto_3pt6_white_on.png")
+  %_font__3pt6[12] := get_font_id("roboto_3pt6_white_disabled.png")
+  declare %_font__3pt8[14]
+  %_font__3pt8[0] := get_font_id("roboto_3pt8_white_off.png")
+  %_font__3pt8[2] := get_font_id("roboto_3pt8_white_on.png")
+  %_font__3pt8[4] := get_font_id("roboto_3pt8_white_off_hover.png")
+  %_font__3pt8[6] := get_font_id("roboto_3pt8_white_on.png")
+  %_font__3pt8[8] := get_font_id("roboto_3pt8_white_off_hover.png")
+  %_font__3pt8[10] := get_font_id("roboto_3pt8_white_on.png")
+  %_font__3pt8[12] := get_font_id("roboto_3pt8_white_disabled.png")
+  declare %_font__4pt5[14]
+  %_font__4pt5[0] := get_font_id("roboto_4pt5_white_off.png")
+  %_font__4pt5[2] := get_font_id("roboto_4pt5_white_on.png")
+  %_font__4pt5[4] := get_font_id("roboto_4pt5_white_off_hover.png")
+  %_font__4pt5[6] := get_font_id("roboto_4pt5_white_on.png")
+  %_font__4pt5[8] := get_font_id("roboto_4pt5_white_off_hover.png")
+  %_font__4pt5[10] := get_font_id("roboto_4pt5_white_on.png")
+  %_font__4pt5[12] := get_font_id("roboto_4pt5_white_disabled.png")
+  declare !instr_names[5]
+  !instr_names[0] := "Instrument 1"
+  !instr_names[1] := "Instrument 2"
+  !instr_names[2] := "Instrument 3"
+  !instr_names[3] := "Instrument 4"
+  !instr_names[4] := "Instrument 5"
+  declare ui_label $lbl_title (1, 1)
+  set_control_par_str(get_ui_id($lbl_title), $CONTROL_PAR_TEXT, "")
+  set_control_par_str(get_ui_id($lbl_title), $CONTROL_PAR_PICTURE, "TITLE")
+  set_control_par(get_ui_id($lbl_title), $CONTROL_PAR_POS_X, 0)
+  set_control_par(get_ui_id($lbl_title), $CONTROL_PAR_POS_Y, 15)
+  set_control_par(get_ui_id($lbl_title), $CONTROL_PAR_WIDTH, 900)
+  set_control_par(get_ui_id($lbl_title), $CONTROL_PAR_HEIGHT, 20)
+  declare ui_label $preset_name (1, 1)
+  set_control_par_str(get_ui_id($preset_name), $CONTROL_PAR_TEXT, "< >  Gutes Preset")
+  set_control_par_str(get_ui_id($preset_name), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($preset_name), $CONTROL_PAR_TEXT_ALIGNMENT, 0)
+  set_control_par(get_ui_id($preset_name), $CONTROL_PAR_FONT_TYPE, %_font__3pt3[2])
+  set_control_par(get_ui_id($preset_name), $CONTROL_PAR_POS_X, 15)
+  set_control_par(get_ui_id($preset_name), $CONTROL_PAR_POS_Y, 20)
+  set_control_par(get_ui_id($preset_name), $CONTROL_PAR_WIDTH, 200)
+  set_control_par(get_ui_id($preset_name), $CONTROL_PAR_HEIGHT, 20)
+  declare ui_label $lbl_cc_disp (1, 1)
+  set_control_par_str(get_ui_id($lbl_cc_disp), $CONTROL_PAR_TEXT, "CC1")
+  set_control_par_str(get_ui_id($lbl_cc_disp), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($lbl_cc_disp), $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+  set_control_par(get_ui_id($lbl_cc_disp), $CONTROL_PAR_FONT_TYPE, %_font__2pt8[2])
+  set_control_par(get_ui_id($lbl_cc_disp), $CONTROL_PAR_POS_X, 765)
+  set_control_par(get_ui_id($lbl_cc_disp), $CONTROL_PAR_POS_Y, 27)
+  set_control_par(get_ui_id($lbl_cc_disp), $CONTROL_PAR_WIDTH, 35)
+  set_control_par(get_ui_id($lbl_cc_disp), $CONTROL_PAR_HEIGHT, 8)
+  declare ui_slider $sli_cc_disp (0, 127)
+  make_persistent($sli_cc_disp)
+  read_persistent_var($sli_cc_disp)
+  set_control_par(get_ui_id($sli_cc_disp), $CONTROL_PAR_DEFAULT_VALUE, 90)
+  set_control_par_str(get_ui_id($sli_cc_disp), $CONTROL_PAR_PICTURE, "CCdisp")
+  set_control_par(get_ui_id($sli_cc_disp), $CONTROL_PAR_MOUSE_BEHAVIOUR, 600)
+  set_control_par(get_ui_id($sli_cc_disp), $CONTROL_PAR_POS_X, get_control_par(get_ui_id($lbl_cc_disp), $CONTROL_PAR_POS_X) + 35)
+  set_control_par(get_ui_id($sli_cc_disp), $CONTROL_PAR_POS_Y, 22)
+  set_control_par(get_ui_id($sli_cc_disp), $CONTROL_PAR_WIDTH, 85)
+  set_control_par(get_ui_id($sli_cc_disp), $CONTROL_PAR_HEIGHT, 8)
+  declare ui_button $btn_gui_reference 
+  make_persistent($btn_gui_reference)
+  read_persistent_var($btn_gui_reference)
+  set_control_par_str(get_ui_id($btn_gui_reference), $CONTROL_PAR_TEXT, "")
+  set_control_par_str(get_ui_id($btn_gui_reference), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($btn_gui_reference), $CONTROL_PAR_POS_X, 450)
+  set_control_par(get_ui_id($btn_gui_reference), $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($lbl_title), $CONTROL_PAR_POS_Y))
+  set_control_par(get_ui_id($btn_gui_reference), $CONTROL_PAR_WIDTH, 50)
+  set_control_par(get_ui_id($btn_gui_reference), $CONTROL_PAR_HEIGHT, 30)
+  declare ui_label $lbl_gui_refernece (1, 1)
+  set_control_par_str(get_ui_id($lbl_gui_refernece), $CONTROL_PAR_TEXT, "")
+  set_control_par_str(get_ui_id($lbl_gui_refernece), $CONTROL_PAR_PICTURE, "GRID")
+  set_control_par(get_ui_id($lbl_gui_refernece), $CONTROL_PAR_POS_X, 0)
+  set_control_par(get_ui_id($lbl_gui_refernece), $CONTROL_PAR_POS_Y, 0)
+  set_control_par(get_ui_id($lbl_gui_refernece), $CONTROL_PAR_WIDTH, 900)
+  set_control_par(get_ui_id($lbl_gui_refernece), $CONTROL_PAR_HEIGHT, 500)
+  set_control_par(get_ui_id($lbl_gui_refernece), $CONTROL_PAR_HIDE, %hide_state[$btn_gui_reference])
+  declare %pnl_field[6]
+  declare ui_panel $pnl_field0 
+  declare ui_panel $pnl_field1 
+  declare ui_panel $pnl_field2 
+  declare ui_panel $pnl_field3 
+  declare ui_panel $pnl_field4 
+  declare ui_panel $pnl_field5 
+  $_iter0 := 0
+  while($_iter0 <= 5) 
+    %pnl_field[$_iter0] := get_ui_id($pnl_field0) + $_iter0
+    inc($_iter0)
+  end while
+  declare %btn_field_onoff[5]
+  declare ui_button $btn_field_onoff0 
+  make_persistent($btn_field_onoff0)
+  read_persistent_var($btn_field_onoff0)
+  declare ui_button $btn_field_onoff1 
+  make_persistent($btn_field_onoff1)
+  read_persistent_var($btn_field_onoff1)
+  declare ui_button $btn_field_onoff2 
+  make_persistent($btn_field_onoff2)
+  read_persistent_var($btn_field_onoff2)
+  declare ui_button $btn_field_onoff3 
+  make_persistent($btn_field_onoff3)
+  read_persistent_var($btn_field_onoff3)
+  declare ui_button $btn_field_onoff4 
+  make_persistent($btn_field_onoff4)
+  read_persistent_var($btn_field_onoff4)
+  $_iter0 := 0
+  while($_iter0 <= 4) 
+    %btn_field_onoff[$_iter0] := get_ui_id($btn_field_onoff0) + $_iter0
+    inc($_iter0)
+  end while
+  declare %btn_field_nav[6]
+  declare ui_button $btn_field_nav0 
+  make_persistent($btn_field_nav0)
+  read_persistent_var($btn_field_nav0)
+  declare ui_button $btn_field_nav1 
+  make_persistent($btn_field_nav1)
+  read_persistent_var($btn_field_nav1)
+  declare ui_button $btn_field_nav2 
+  make_persistent($btn_field_nav2)
+  read_persistent_var($btn_field_nav2)
+  declare ui_button $btn_field_nav3 
+  make_persistent($btn_field_nav3)
+  read_persistent_var($btn_field_nav3)
+  declare ui_button $btn_field_nav4 
+  make_persistent($btn_field_nav4)
+  read_persistent_var($btn_field_nav4)
+  declare ui_button $btn_field_nav5 
+  make_persistent($btn_field_nav5)
+  read_persistent_var($btn_field_nav5)
+  $_iter0 := 0
+  while($_iter0 <= 5) 
+    %btn_field_nav[$_iter0] := get_ui_id($btn_field_nav0) + $_iter0
+    inc($_iter0)
+  end while
+  declare %sli_field_vol[6]
+  declare ui_slider $sli_field_vol0 (0, 1000000)
+  make_persistent($sli_field_vol0)
+  read_persistent_var($sli_field_vol0)
+  declare ui_slider $sli_field_vol1 (0, 1000000)
+  make_persistent($sli_field_vol1)
+  read_persistent_var($sli_field_vol1)
+  declare ui_slider $sli_field_vol2 (0, 1000000)
+  make_persistent($sli_field_vol2)
+  read_persistent_var($sli_field_vol2)
+  declare ui_slider $sli_field_vol3 (0, 1000000)
+  make_persistent($sli_field_vol3)
+  read_persistent_var($sli_field_vol3)
+  declare ui_slider $sli_field_vol4 (0, 1000000)
+  make_persistent($sli_field_vol4)
+  read_persistent_var($sli_field_vol4)
+  declare ui_slider $sli_field_vol5 (0, 1000000)
+  make_persistent($sli_field_vol5)
+  read_persistent_var($sli_field_vol5)
+  $_iter0 := 0
+  while($_iter0 <= 5) 
+    %sli_field_vol[$_iter0] := get_ui_id($sli_field_vol0) + $_iter0
+    inc($_iter0)
+  end while
+  declare %lvl_field_l[6]
+  declare ui_level_meter $lvl_field_l0 
+  declare ui_level_meter $lvl_field_l1 
+  declare ui_level_meter $lvl_field_l2 
+  declare ui_level_meter $lvl_field_l3 
+  declare ui_level_meter $lvl_field_l4 
+  declare ui_level_meter $lvl_field_l5 
+  $_iter0 := 0
+  while($_iter0 <= 5) 
+    %lvl_field_l[$_iter0] := get_ui_id($lvl_field_l0) + $_iter0
+    inc($_iter0)
+  end while
+  declare %lvl_field_r[6]
+  declare ui_level_meter $lvl_field_r0 
+  declare ui_level_meter $lvl_field_r1 
+  declare ui_level_meter $lvl_field_r2 
+  declare ui_level_meter $lvl_field_r3 
+  declare ui_level_meter $lvl_field_r4 
+  declare ui_level_meter $lvl_field_r5 
+  $_iter0 := 0
+  while($_iter0 <= 5) 
+    %lvl_field_r[$_iter0] := get_ui_id($lvl_field_r0) + $_iter0
+    inc($_iter0)
+  end while
+  declare %mnu_field_instr_brows[5]
+  declare ui_menu $mnu_field_instr_brows_0 
+  make_persistent($mnu_field_instr_brows_0)
+  read_persistent_var($mnu_field_instr_brows_0)
+  %mnu_field_instr_brows[0] := get_ui_id($mnu_field_instr_brows_0)
+  set_control_par_str(get_ui_id($mnu_field_instr_brows_0), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($mnu_field_instr_brows_0), $CONTROL_PAR_FONT_TYPE, %_font__2pt7[2])
+  set_control_par(get_ui_id($mnu_field_instr_brows_0), $CONTROL_PAR_POS_X, %main_grid_x[0])
+  set_control_par(get_ui_id($mnu_field_instr_brows_0), $CONTROL_PAR_POS_Y, 432)
+  set_control_par(get_ui_id($mnu_field_instr_brows_0), $CONTROL_PAR_WIDTH, 100)
+  set_control_par(get_ui_id($mnu_field_instr_brows_0), $CONTROL_PAR_HEIGHT, 25)
+  $i := 0
+  while($i <= 4) 
+    add_menu_item($mnu_field_instr_brows_0, !instr_names[$i], $i)
+    inc($i)
+  end while
+  declare ui_menu $mnu_field_instr_brows_1 
+  make_persistent($mnu_field_instr_brows_1)
+  read_persistent_var($mnu_field_instr_brows_1)
+  %mnu_field_instr_brows[1] := get_ui_id($mnu_field_instr_brows_1)
+  set_control_par_str(get_ui_id($mnu_field_instr_brows_1), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($mnu_field_instr_brows_1), $CONTROL_PAR_FONT_TYPE, %_font__2pt7[2])
+  set_control_par(get_ui_id($mnu_field_instr_brows_1), $CONTROL_PAR_POS_X, %main_grid_x[1])
+  set_control_par(get_ui_id($mnu_field_instr_brows_1), $CONTROL_PAR_POS_Y, 432)
+  set_control_par(get_ui_id($mnu_field_instr_brows_1), $CONTROL_PAR_WIDTH, 100)
+  set_control_par(get_ui_id($mnu_field_instr_brows_1), $CONTROL_PAR_HEIGHT, 25)
+  $i := 0
+  while($i <= 4) 
+    add_menu_item($mnu_field_instr_brows_1, !instr_names[$i], $i)
+    inc($i)
+  end while
+  declare ui_menu $mnu_field_instr_brows_2 
+  make_persistent($mnu_field_instr_brows_2)
+  read_persistent_var($mnu_field_instr_brows_2)
+  %mnu_field_instr_brows[2] := get_ui_id($mnu_field_instr_brows_2)
+  set_control_par_str(get_ui_id($mnu_field_instr_brows_2), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($mnu_field_instr_brows_2), $CONTROL_PAR_FONT_TYPE, %_font__2pt7[2])
+  set_control_par(get_ui_id($mnu_field_instr_brows_2), $CONTROL_PAR_POS_X, %main_grid_x[2])
+  set_control_par(get_ui_id($mnu_field_instr_brows_2), $CONTROL_PAR_POS_Y, 432)
+  set_control_par(get_ui_id($mnu_field_instr_brows_2), $CONTROL_PAR_WIDTH, 100)
+  set_control_par(get_ui_id($mnu_field_instr_brows_2), $CONTROL_PAR_HEIGHT, 25)
+  $i := 0
+  while($i <= 4) 
+    add_menu_item($mnu_field_instr_brows_2, !instr_names[$i], $i)
+    inc($i)
+  end while
+  declare ui_menu $mnu_field_instr_brows_3 
+  make_persistent($mnu_field_instr_brows_3)
+  read_persistent_var($mnu_field_instr_brows_3)
+  %mnu_field_instr_brows[3] := get_ui_id($mnu_field_instr_brows_3)
+  set_control_par_str(get_ui_id($mnu_field_instr_brows_3), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($mnu_field_instr_brows_3), $CONTROL_PAR_FONT_TYPE, %_font__2pt7[2])
+  set_control_par(get_ui_id($mnu_field_instr_brows_3), $CONTROL_PAR_POS_X, %main_grid_x[3])
+  set_control_par(get_ui_id($mnu_field_instr_brows_3), $CONTROL_PAR_POS_Y, 432)
+  set_control_par(get_ui_id($mnu_field_instr_brows_3), $CONTROL_PAR_WIDTH, 100)
+  set_control_par(get_ui_id($mnu_field_instr_brows_3), $CONTROL_PAR_HEIGHT, 25)
+  $i := 0
+  while($i <= 4) 
+    add_menu_item($mnu_field_instr_brows_3, !instr_names[$i], $i)
+    inc($i)
+  end while
+  declare ui_menu $mnu_field_instr_brows_4 
+  make_persistent($mnu_field_instr_brows_4)
+  read_persistent_var($mnu_field_instr_brows_4)
+  %mnu_field_instr_brows[4] := get_ui_id($mnu_field_instr_brows_4)
+  set_control_par_str(get_ui_id($mnu_field_instr_brows_4), $CONTROL_PAR_PICTURE, "alpha")
+  set_control_par(get_ui_id($mnu_field_instr_brows_4), $CONTROL_PAR_FONT_TYPE, %_font__2pt7[2])
+  set_control_par(get_ui_id($mnu_field_instr_brows_4), $CONTROL_PAR_POS_X, %main_grid_x[4])
+  set_control_par(get_ui_id($mnu_field_instr_brows_4), $CONTROL_PAR_POS_Y, 432)
+  set_control_par(get_ui_id($mnu_field_instr_brows_4), $CONTROL_PAR_WIDTH, 100)
+  set_control_par(get_ui_id($mnu_field_instr_brows_4), $CONTROL_PAR_HEIGHT, 25)
+  $i := 0
+  while($i <= 4) 
+    add_menu_item($mnu_field_instr_brows_4, !instr_names[$i], $i)
+    inc($i)
+  end while
+  $i := 0
+  while($i <= 5) 
+    if($i < 5)
+      set_control_par_str(%btn_field_onoff[$i], $CONTROL_PAR_TEXT, "")
+      set_control_par_str(%btn_field_onoff[$i], $CONTROL_PAR_PICTURE, "OnOff")
+      set_control_par(%btn_field_onoff[$i], $CONTROL_PAR_POS_X, %main_grid_x[$i])
+      set_control_par(%btn_field_onoff[$i], $CONTROL_PAR_POS_Y, 400)
+      set_control_par(%btn_field_onoff[$i], $CONTROL_PAR_WIDTH, 13)
+      set_control_par(%btn_field_onoff[$i], $CONTROL_PAR_HEIGHT, 13)
+      set_control_par_str(%btn_field_nav[$i], $CONTROL_PAR_TEXT, !field_names[$i])
+      set_control_par_str(%btn_field_nav[$i], $CONTROL_PAR_PICTURE, "alpha")
+      set_control_par(%btn_field_nav[$i], $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+      set_control_par(%btn_field_nav[$i], $CONTROL_PAR_FONT_TYPE, %_font__robmed13[2])
+      set_control_par(%btn_field_nav[$i], $CONTROL_PAR_POS_X, %main_grid_x[$i] + 20)
+      set_control_par(%btn_field_nav[$i], $CONTROL_PAR_POS_Y, 400)
+      set_control_par(%btn_field_nav[$i], $CONTROL_PAR_WIDTH, 80)
+      set_control_par(%btn_field_nav[$i], $CONTROL_PAR_HEIGHT, 25)
+      set_control_par(%sli_field_vol[$i], $CONTROL_PAR_DEFAULT_VALUE, 630000)
+      set_control_par_str(%sli_field_vol[$i], $CONTROL_PAR_PICTURE, "LayerVolume")
+      set_control_par(%sli_field_vol[$i], $CONTROL_PAR_POS_X, %main_grid_x[$i])
+      set_control_par(%sli_field_vol[$i], $CONTROL_PAR_POS_Y, 465)
+      set_control_par(%sli_field_vol[$i], $CONTROL_PAR_WIDTH, 110)
+      set_control_par(%sli_field_vol[$i], $CONTROL_PAR_HEIGHT, 15)
+      set_control_par(%lvl_field_l[$i], $CONTROL_PAR_BG_COLOR, 13684944)
+      set_control_par(%lvl_field_l[$i], $CONTROL_PAR_OFF_COLOR, 13684944)
+      set_control_par(%lvl_field_l[$i], $CONTROL_PAR_ON_COLOR, 16777215)
+      set_control_par(%lvl_field_l[$i], $CONTROL_PAR_OVERLOAD_COLOR, 16711680)
+      set_control_par(%lvl_field_r[$i], $CONTROL_PAR_BG_COLOR, 13684944)
+      set_control_par(%lvl_field_r[$i], $CONTROL_PAR_OFF_COLOR, 13684944)
+      set_control_par(%lvl_field_r[$i], $CONTROL_PAR_ON_COLOR, 16777215)
+      set_control_par(%lvl_field_r[$i], $CONTROL_PAR_OVERLOAD_COLOR, 16711680)
+      set_control_par(%lvl_field_l[$i], $CONTROL_PAR_POS_X, %main_grid_x[$i] + 118)
+      set_control_par(%lvl_field_l[$i], $CONTROL_PAR_POS_Y, 432)
+      set_control_par(%lvl_field_l[$i], $CONTROL_PAR_WIDTH, 3)
+      set_control_par(%lvl_field_l[$i], $CONTROL_PAR_HEIGHT, 40)
+      set_control_par(%lvl_field_r[$i], $CONTROL_PAR_POS_X, get_control_par(%lvl_field_l[$i], $CONTROL_PAR_POS_X) + 5)
+      set_control_par(%lvl_field_r[$i], $CONTROL_PAR_POS_Y, 432)
+      set_control_par(%lvl_field_r[$i], $CONTROL_PAR_WIDTH, 3)
+      set_control_par(%lvl_field_r[$i], $CONTROL_PAR_HEIGHT, 40)
+    else
+      set_control_par_str(%btn_field_nav[$i], $CONTROL_PAR_TEXT, !field_names[$i])
+      set_control_par_str(%btn_field_nav[$i], $CONTROL_PAR_PICTURE, "alpha")
+      set_control_par(%btn_field_nav[$i], $CONTROL_PAR_TEXT_ALIGNMENT, 1)
+      set_control_par(%btn_field_nav[$i], $CONTROL_PAR_FONT_TYPE, %_font__robmed13[2])
+      set_control_par(%btn_field_nav[$i], $CONTROL_PAR_POS_X, %main_grid_x[$i] + 15)
+      set_control_par(%btn_field_nav[$i], $CONTROL_PAR_POS_Y, 400)
+      set_control_par(%btn_field_nav[$i], $CONTROL_PAR_WIDTH, 80)
+      set_control_par(%btn_field_nav[$i], $CONTROL_PAR_HEIGHT, 25)
+      set_control_par(%sli_field_vol[$i], $CONTROL_PAR_DEFAULT_VALUE, 630000)
+      set_control_par_str(%sli_field_vol[$i], $CONTROL_PAR_PICTURE, "LayerVolume")
+      set_control_par(%sli_field_vol[$i], $CONTROL_PAR_POS_X, %main_grid_x[$i])
+      set_control_par(%sli_field_vol[$i], $CONTROL_PAR_POS_Y, 465)
+      set_control_par(%sli_field_vol[$i], $CONTROL_PAR_WIDTH, 110)
+      set_control_par(%sli_field_vol[$i], $CONTROL_PAR_HEIGHT, 15)
+      set_control_par(%lvl_field_l[$i], $CONTROL_PAR_BG_COLOR, 13684944)
+      set_control_par(%lvl_field_l[$i], $CONTROL_PAR_OFF_COLOR, 13684944)
+      set_control_par(%lvl_field_l[$i], $CONTROL_PAR_ON_COLOR, 16777215)
+      set_control_par(%lvl_field_l[$i], $CONTROL_PAR_OVERLOAD_COLOR, 16711680)
+      set_control_par(%lvl_field_r[$i], $CONTROL_PAR_BG_COLOR, 13684944)
+      set_control_par(%lvl_field_r[$i], $CONTROL_PAR_OFF_COLOR, 13684944)
+      set_control_par(%lvl_field_r[$i], $CONTROL_PAR_ON_COLOR, 16777215)
+      set_control_par(%lvl_field_r[$i], $CONTROL_PAR_OVERLOAD_COLOR, 16711680)
+      set_control_par(%lvl_field_l[$i], $CONTROL_PAR_POS_X, %main_grid_x[$i] + 118)
+      set_control_par(%lvl_field_l[$i], $CONTROL_PAR_POS_Y, 403)
+      set_control_par(%lvl_field_l[$i], $CONTROL_PAR_WIDTH, 3)
+      set_control_par(%lvl_field_l[$i], $CONTROL_PAR_HEIGHT, 70)
+      set_control_par(%lvl_field_r[$i], $CONTROL_PAR_POS_X, get_control_par(%lvl_field_l[$i], $CONTROL_PAR_POS_X) + 5)
+      set_control_par(%lvl_field_r[$i], $CONTROL_PAR_POS_Y, 403)
+      set_control_par(%lvl_field_r[$i], $CONTROL_PAR_WIDTH, 3)
+      set_control_par(%lvl_field_r[$i], $CONTROL_PAR_HEIGHT, 70)
+    end if
+    inc($i)
+  end while
+  declare ui_label $lbl_bg_change (1, 1)
+  set_control_par_str(get_ui_id($lbl_bg_change), $CONTROL_PAR_TEXT, "")
+  set_control_par_str(get_ui_id($lbl_bg_change), $CONTROL_PAR_PICTURE, "bg-blur")
+  set_control_par(get_ui_id($lbl_bg_change), $CONTROL_PAR_POS_X, 18)
+  set_control_par(get_ui_id($lbl_bg_change), $CONTROL_PAR_POS_Y, 52)
+  set_control_par(get_ui_id($lbl_bg_change), $CONTROL_PAR_WIDTH, 865)
+  set_control_par(get_ui_id($lbl_bg_change), $CONTROL_PAR_HEIGHT, 330)
+  set_control_par(get_ui_id($lbl_bg_change), $CONTROL_PAR_HIDE, %hide_state[0])
+end on
+on ui_controls
+  $uiid1 := $NI_UI_ID
+  $i0 := 0
+  $idx1 := search(%btn_field_nav, $uiid1)
+  if($idx1 # -1)
+    $exception_idx1 := $idx1
+    $idx0 := 0
+    while($idx0 <= (num_elements(%btn_field_nav) - 1)) 
+      if($idx0 # $exception_idx1)
+        set_control_par(%btn_field_nav[$idx0], $CONTROL_PAR_VALUE, 0)
+      else
+        set_control_par(%btn_field_nav[$idx0], $CONTROL_PAR_VALUE, 1)
+      end if
+      inc($idx0)
+    end while
+    $i0 := 0
+    while($i0 <= 5) 
+      set_control_par(%pnl_field[$i0], $CONTROL_PAR_HIDE, %hide_state[get_control_par(%btn_field_nav[$i0], $CONTROL_PAR_VALUE)])
+      set_control_par(%btn_field_nav[$i0], $CONTROL_PAR_FONT_TYPE, %_font__robmed13[get_control_par(%btn_field_nav[$i0], $CONTROL_PAR_VALUE) * 2])
+      inc($i0)
+    end while
+  end if
+end on
+on ui_control($btn_gui_reference)
+  set_control_par(get_ui_id($lbl_gui_refernece), $CONTROL_PAR_HIDE, %hide_state[$btn_gui_reference])
 end on
 

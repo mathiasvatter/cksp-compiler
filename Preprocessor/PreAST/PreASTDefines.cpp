@@ -10,6 +10,7 @@
 
 PreNodeAST *PreASTDefines::visit(PreNodeProgram &node) {
 	m_program = &node;
+	m_substitution_stack = {};
 	for(const auto & def : node.define_statements) {
 		m_define_lookup.insert({def->header->get_name(), def.get()});
 	}
@@ -47,8 +48,12 @@ PreNodeAST *PreASTDefines::do_substitution(PreNodeLiteral &node) {
 	if(m_program->define_call_stack.empty()) return &node;
 	if (!m_substitution_stack.empty()) {
 		if (auto substitute = get_substitute(node.tok.val)) {
-//			substitute->update_token_data(tok);
 			return node.replace_with(std::move(substitute));
+		} else if(node.cast<PreNodeKeyword>()) {
+			// in case there are more # substitutions in one word
+			if (StringUtils::count_char(node.tok.val, '#') >= 2) {
+				node.tok.val = get_text_replacement(node.tok);
+			}
 		}
 	}
 	return &node;
@@ -197,24 +202,8 @@ PreASTDefines::get_builtin_defines() {
     localtime_r(&now_c, &local_tm);
 #endif
 
-    // 1) Sichere Basis-Locale
     std::locale loc = std::locale::classic();
-
-//     // 2) Versuche User-Default; unter Windows mit Fallback-Kandidaten
-//     try {
-//         loc = std::locale(""); // kann werfen
-//     } catch (...) {
-// #if defined(_WIN32)
-//         // Kandidaten, die teils mit MinGW/MSVC funktionieren
-//         const char* candidates[] = { ".UTF-8", "German_Germany.1252", "C" };
-//         for (const char* name : candidates) {
-//             try { loc = std::locale(name); break; } catch (...) {}
-//         }
-// #endif
-//         // Wenn alles scheitert: loc bleibt classic()
-//     }
-
-    auto fmt = [&](const char* pattern) {
+	auto fmt = [&](const char* pattern) {
         std::ostringstream ss;
         ss.imbue(loc);
         ss << std::put_time(&local_tm, pattern);

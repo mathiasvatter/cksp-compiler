@@ -15,13 +15,25 @@
  * applicable.
  */
 class ASTTypeAnnotations final : public ASTVisitor {
+
+	static void check_for_hashtags(const std::string& name, const Token& tok) {
+		if(StringUtils::contains(name, "#")) {
+			auto error = CompileError(ErrorType::VariableError, "", "", tok);
+			error.m_message = "Found '#' character in variable. Variable names may only contain alphanumerical characters, dots and underscores."
+					 " Make sure any preprocessor text substitutions are correctly applied.";
+			error.exit();
+		}
+	}
+
 	/// try out function to convert ____ to :: and __ to . to avoid conflicts with internal names
 	/// Error handling needs to be investigated further
 	static void desanitize_ref_name(NodeReference& ref) {
+		check_for_hashtags(ref.name, ref.tok);
 		ref.name = desanitize_dots(ref.name);
 	}
 
 	static void desanitize_data_name(NodeDataStructure& data) {
+		check_for_hashtags(data.name, data.tok);
 		data.name = desanitize_dots(data.name);
 	}
 

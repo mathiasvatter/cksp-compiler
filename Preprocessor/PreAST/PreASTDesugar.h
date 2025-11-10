@@ -33,9 +33,8 @@ private:
     std::unique_ptr<PreNodeAST> get_substitute(const std::string& name);
     static std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> get_substitution_map(PreNodeMacroHeader& definition, const PreNodeMacroHeader& call);
     PreNodeMacroDefinition* get_macro_definition(const PreNodeMacroHeader& macro_header);
-    std::string get_text_replacement(const Token& name);
 
-	std::stack<std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>>> m_substitution_stack;
+
 
     void check_recursion(const Token &tok) const;
     std::unordered_set<std::string> m_macros_used;

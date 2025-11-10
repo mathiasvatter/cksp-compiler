@@ -41,7 +41,7 @@ public:
 	explicit ASTDimensionExpansion(NodeProgram *main) : m_def_provider(main->def_provider) {
 		m_program = main;
 		m_program->current_callback = nullptr;
-
+		m_cb_stack_size = m_program->compiler_config->max_callback_depth.value();
 		m_program->max_cb_stack = std::make_shared<NodeVariable>(
 			std::nullopt,
 			"MAX::CB::STACK",
