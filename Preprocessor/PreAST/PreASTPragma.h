@@ -6,6 +6,7 @@
 
 #include "PreASTVisitor.h"
 #include "../ImportProcessor.h"
+#include "../../AST/ASTVisitor/ASTKSPSyntaxCheck.h"
 #include "../../misc/CommandLineOptions.h"
 #include "../../misc/PathHandler.h"
 
@@ -122,6 +123,11 @@ private:
 				get_pragma_error(token, depth_str, "a non-negative integer").exit();
 			} catch (const std::out_of_range&) {
 				get_pragma_error(token, depth_str, "a valid integer within range").exit();
+			}
+			if (m_config->max_callback_depth > MAX_ARRAY_ELEMENTS) {
+				auto error = get_pragma_error(token, depth_str, "a value less than " + std::to_string(MAX_ARRAY_ELEMENTS));
+				error.m_message = "The specified <max_callback_depth> exceeds the maximum allowed limit.";
+				error.exit();
 			}
 		};
 	}

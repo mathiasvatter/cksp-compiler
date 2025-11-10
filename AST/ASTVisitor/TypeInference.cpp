@@ -736,7 +736,7 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 
 	if(!definition) {
 		// if definition pre lowering not found -> could be struct __init__ func
-		// this_list := List(42, nil)
+		// this_list := new List(42, nil)
 		if(auto obj_type = TypeRegistry::get_object_type(node.function->name)) {
 			node.ty = obj_type;
 			return &node;
