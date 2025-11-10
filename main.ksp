@@ -1,5 +1,6 @@
 #pragma output_path("test.txt")
 #pragma combine_callbacks(true)
+#pragma max_callback_depth(1234234)
 // #pragma optimize('none')
 // import "/Users/mathias/Scripting/preset-system/dev/ksp/Preset.cksp"
 
@@ -112,5 +113,6 @@ on note
 	declare ev := playstep()
 	ev.set_velocity(420)
 	ev.set_pan(1000)
+	wait(1000)
 end on
 
