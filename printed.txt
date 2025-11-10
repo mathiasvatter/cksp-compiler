@@ -1,476 +1,443 @@
 on init
-	declare _iter15 : int {Reuses: 0}
-	declare self20 : int {Reuses: 0}
-	declare self21 : int {Reuses: 0}
-	declare num_refs8 : int {Reuses: 0}
-	declare current0 : int {Reuses: 0}
-	declare _iter7 : int {Reuses: 2}
-	declare _iter60 : int {Reuses: 2}
-	declare self11 : int {Reuses: 0}
-	declare self12 : int {Reuses: 0}
-	declare num_refs2 : int {Reuses: 0}
-	declare current1 : int {Reuses: 0}
-	declare _iter9 : int {Reuses: 0}
-	declare ret3 : int {Reuses: 0}
-	declare slot_idx0 : int {Reuses: 0}
-	declare group_idx0 : int {Reuses: 1}
-	declare bus_idx1 : int {Reuses: 1}
-	declare self22 : int {Reuses: 1}
-	declare num_refs9 : int {Reuses: 1}
-	declare ret2 : int {Reuses: 0}
-	declare group_idx1 : int {Reuses: 0}
-	declare id0 : int {Reuses: 0}
-	declare _iter10 : int {Reuses: 0}
-	declare self13 : int {Reuses: 0}
-	declare num_refs3 : int {Reuses: 0}
-	declare self17 : int {Reuses: 0}
-	declare self18 : int {Reuses: 0}
-	declare num_refs6 : int {Reuses: 0}
-	declare current2 : int {Reuses: 0}
-	declare _iter12 : int {Reuses: 0}
-	declare ret4 : int {Reuses: 0}
+	declare _iter0 : int {Reuses: 0}
+	declare main_grid_x[6] : int[] := [28, 172, 316, 460, 604, 748] {Reuses: 0}
+	declare field_names[6] : string[] {Reuses: 0}
+	field_names[0]{string[]} {field_names}  := "SUSTAIN I"
+	field_names[1]{string[]} {field_names}  := "SUSTAIN II"
+	field_names[2]{string[]} {field_names}  := "ARP I"
+	field_names[3]{string[]} {field_names}  := "ARP II"
+	field_names[4]{string[]} {field_names}  := "GRAIN"
+	field_names[5]{string[]} {field_names}  := "MASTER"
+	declare exception_idx1 : int {Reuses: 0}
 	declare idx0 : int {Reuses: 0}
-	declare _iter30 : int {Reuses: 0}
-	declare self19 : int {Reuses: 0}
-	declare num_refs7 : int {Reuses: 0}
-	declare self14 : int {Reuses: 0}
-	declare self15 : int {Reuses: 0}
-	declare num_refs4 : int {Reuses: 0}
-	declare current3 : int {Reuses: 0}
-	declare _iter14 : int {Reuses: 0}
-	declare ret5 : int {Reuses: 0}
-	declare bus_idx0 : int {Reuses: 0}
+	declare uiid1 : int {Reuses: 0}
+	declare i0 : int {Reuses: 0}
 	declare idx1 : int {Reuses: 0}
-	declare _iter40 : int {Reuses: 0}
-	declare self16 : int {Reuses: 0}
-	declare num_refs5 : int {Reuses: 0}
-	declare ret1 : int {Reuses: 0}
-	declare id1 : int {Reuses: 3}
-	declare _iter20 : int {Reuses: 3}
-	declare local _ret00 : int {Reuses: 0}
-	declare local _ret10 : int {Reuses: 0}
-	declare local i0 : int {Reuses: 4}
-	declare local _step00 : int {Reuses: 4}
-	declare local _stop00 : int {Reuses: 4}
-	declare Param::free_idx : int {Reuses: 0}
-	declare Param::allocation[2] : int[] {Reuses: 0}
-	declare Slot::free_idx : int {Reuses: 0}
-	declare Slot::allocation[1000000] : int[] {Reuses: 0}
-	declare Slot::slot_idx[1000000] : int[] {Reuses: 0}
-	declare Slot::group_idx[1000000] : int[] {Reuses: 0}
-	declare Slot::bus_idx[1000000] : int[] {Reuses: 0}
-	declare Send::free_idx : int {Reuses: 0}
-	declare Send::allocation[125000] : int[] {Reuses: 0}
-	declare _Send::slot[1000000] : int[] := [-1] {Reuses: 0}
-	declare Bus::free_idx : int {Reuses: 0}
-	declare Bus::allocation[125000] : int[] {Reuses: 0}
-	declare _Bus::slot[1000000] : int[] := [-1] {Reuses: 0}
-	declare Group::free_idx : int {Reuses: 0}
-	declare Group::allocation[125000] : int[] {Reuses: 0}
-	declare _Group::slot[1000000] : int[] := [-1] {Reuses: 0}
-	declare Engine::free_idx : int {Reuses: 0}
-	declare Engine::allocation[1] : int[] {Reuses: 0}
-	declare _Engine::group[100] : int[] := [-1] {Reuses: 0}
-	declare Engine::send[1] : int[] := [-1] {Reuses: 0}
-	declare _Engine::bus[16] : int[] := [-1] {Reuses: 0}
-	declare ui_slider slider_vol : int (0, 1000000) {Reuses: 0}
-	declare ui_slider slider_pan : int (0, 1000000) {Reuses: 0}
-	self22{int} {self22}  := 0
-	_iter60{int} {_iter60}  := get_ui_id(slider_vol{int} {slider_vol} ){Builtin, None, get_ui_id}
-	_iter7{int} {_iter7}  := ENGINE_PAR_VOLUME{int} {ENGINE_PAR_VOLUME} 
-	Param::free_idx{int} {Param::free_idx}  := search(Param::allocation{int[]} {Param::allocation} , 0, Param::free_idx{int} {Param::free_idx} , 1){Builtin, None, search}
-	if(Param::free_idx{int} {Param::free_idx}  = -1)
-		message("Error: No more free space available to allocate objects of type 'Param'"){Builtin, None, message}
-	end if
-	Param::allocation[Param::free_idx{int} {Param::free_idx} ]{int} {Param::allocation}  := 1
-	num_refs9{int} {num_refs9}  := Param::free_idx{int} {Param::free_idx} 
-	_ret00{int} {_ret00}  := num_refs9{int} {num_refs9} 
-	self22{int} {self22}  := 1
-	_iter60{int} {_iter60}  := get_ui_id(slider_pan{int} {slider_pan} ){Builtin, None, get_ui_id}
-	_iter7{int} {_iter7}  := ENGINE_PAR_PAN{int} {ENGINE_PAR_PAN} 
-	Param::free_idx{int} {Param::free_idx}  := search(Param::allocation{int[]} {Param::allocation} , 0, Param::free_idx{int} {Param::free_idx} , 1){Builtin, None, search}
-	if(Param::free_idx{int} {Param::free_idx}  = -1)
-		message("Error: No more free space available to allocate objects of type 'Param'"){Builtin, None, message}
-	end if
-	Param::allocation[Param::free_idx{int} {Param::free_idx} ]{int} {Param::allocation}  := 1
-	num_refs9{int} {num_refs9}  := Param::free_idx{int} {Param::free_idx} 
-	_ret10{int} {_ret10}  := num_refs9{int} {num_refs9} 
-	declare param_objects[2] : int[] {Reuses: 0}
-	param_objects[0]{int[]} {param_objects}  := _ret00{int} {_ret00} 
-	param_objects[1]{int[]} {param_objects}  := _ret10{int} {_ret10} 
-	_iter7{int} {_iter7}  := param_objects[0]{int} {param_objects} 
-	_iter60{int} {_iter60}  := 1
-	if(_iter7{int} {_iter7}  # -1)
-		Param::allocation[_iter7{int} {_iter7} ]{int} {Param::allocation}  := Param::allocation[_iter7{int} {_iter7} ]{int} {Param::allocation}  + _iter60{int} {_iter60} 
-	end if
-	_iter7{int} {_iter7}  := param_objects[1]{int} {param_objects} 
-	_iter60{int} {_iter60}  := num_elements(param_objects{int[]} {param_objects} ){Builtin, None, num_elements} - 1
-	if(_iter7{int} {_iter7}  # -1)
-		Param::allocation[_iter7{int} {_iter7} ]{int} {Param::allocation}  := Param::allocation[_iter7{int} {_iter7} ]{int} {Param::allocation}  + _iter60{int} {_iter60} 
-	end if
-	declare ui_menu mnu : int  {Reuses: 0}
-	i0{int} {i0}  := 0
-	_step00{int} {_step00}  := 1
-	_stop00{int} {_stop00}  := 10
-	while(((i0{int} {i0}  < _stop00{int} {_stop00} ) and (_step00{int} {_step00}  > 0)) or ((i0{int} {i0}  > _stop00{int} {_stop00} ) and (_step00{int} {_step00}  < 0))) 
-		set_menu_item_str(get_ui_id(mnu{int} {mnu} ){Builtin, None, get_ui_id}, i0{int} {i0} , "blabla"){Builtin, None, set_menu_item_str}
-		i0{int} {i0}  := i0{int} {i0}  + _step00{int} {_step00} 
+	message(""){Builtin, None, message}
+	make_perfview{Builtin, None, make_perfview}
+	set_ui_width_px(900){Builtin, None, set_ui_width_px}
+	set_ui_height_px(500){Builtin, None, set_ui_height_px}
+	set_control_par_str(INST_WALLPAPER_ID{int} {INST_WALLPAPER_ID} , CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "BG"){Builtin, None, set_control_par_str}
+	set_snapshot_type(3){Builtin, None, set_snapshot_type}
+	set_key_pressed_support(1){Builtin, None, set_key_pressed_support}
+	set_listener(NI_SIGNAL_TIMER_MS{int} {NI_SIGNAL_TIMER_MS} , 10000){Builtin, None, set_listener}
+	SET_CONDITION(NO_SYS_SCRIPT_PEDAL{unknown} {NO_SYS_SCRIPT_PEDAL} ){Builtin, None, SET_CONDITION}
+	SET_CONDITION(NO_SYS_SCRIPT_RLS_TRIG{unknown} {NO_SYS_SCRIPT_RLS_TRIG} ){Builtin, None, SET_CONDITION}
+	SET_CONDITION(NO_SYS_SCRIPT_GROUP_START{unknown} {NO_SYS_SCRIPT_GROUP_START} ){Builtin, None, SET_CONDITION}
+	declare hide_state[2] : int[] := [HIDE_WHOLE_CONTROL{int} {HIDE_WHOLE_CONTROL} , HIDE_PART_NOTHING{int} {HIDE_PART_NOTHING} ] {Reuses: 0}
+	declare i : int {Reuses: 0}
+	declare _font.robmed13[14] : int[] {Reuses: 0}
+	_font.robmed13[0]{int} {_font.robmed13}  := get_font_id("Roboto Medium Size 13 Opa 40.png"){Builtin, None, get_font_id}
+	_font.robmed13[2]{int} {_font.robmed13}  := get_font_id("Roboto Medium Size 13 Opa 100.png"){Builtin, None, get_font_id}
+	_font.robmed13[4]{int} {_font.robmed13}  := get_font_id("Roboto Medium Size 13 Opa 60.png"){Builtin, None, get_font_id}
+	_font.robmed13[6]{int} {_font.robmed13}  := get_font_id("Roboto Medium Size 13 Opa 100.png"){Builtin, None, get_font_id}
+	_font.robmed13[8]{int} {_font.robmed13}  := get_font_id("Roboto Medium Size 13 Opa 60.png"){Builtin, None, get_font_id}
+	_font.robmed13[10]{int} {_font.robmed13}  := get_font_id("Roboto Medium Size 13 Opa 100.png"){Builtin, None, get_font_id}
+	_font.robmed13[12]{int} {_font.robmed13}  := get_font_id("Roboto Medium Size 13 Opa 15.png"){Builtin, None, get_font_id}
+	declare _font.robconreg13[14] : int[] {Reuses: 0}
+	_font.robconreg13[0]{int} {_font.robconreg13}  := get_font_id("Roboto Condensed Regular Size 13 Opa 40.png"){Builtin, None, get_font_id}
+	_font.robconreg13[2]{int} {_font.robconreg13}  := get_font_id("Roboto Condensed Regular Size 13 Opa 100.png"){Builtin, None, get_font_id}
+	_font.robconreg13[4]{int} {_font.robconreg13}  := get_font_id("Roboto Condensed Regular Size 13 Opa 60.png"){Builtin, None, get_font_id}
+	_font.robconreg13[6]{int} {_font.robconreg13}  := get_font_id("Roboto Condensed Regular Size 13 Opa 100.png"){Builtin, None, get_font_id}
+	_font.robconreg13[8]{int} {_font.robconreg13}  := get_font_id("Roboto Condensed Regular Size 13 Opa 60.png"){Builtin, None, get_font_id}
+	_font.robconreg13[10]{int} {_font.robconreg13}  := get_font_id("Roboto Condensed Regular Size 13 Opa 100.png"){Builtin, None, get_font_id}
+	_font.robconreg13[12]{int} {_font.robconreg13}  := get_font_id("Roboto Condensed Regular Size 13 Opa 15.png"){Builtin, None, get_font_id}
+	declare _font.2pt7[14] : int[] {Reuses: 0}
+	_font.2pt7[0]{int} {_font.2pt7}  := get_font_id("roboto_2pt7_white_off.png"){Builtin, None, get_font_id}
+	_font.2pt7[2]{int} {_font.2pt7}  := get_font_id("roboto_2pt7_white_on.png"){Builtin, None, get_font_id}
+	_font.2pt7[4]{int} {_font.2pt7}  := get_font_id("roboto_2pt7_white_off_hover.png"){Builtin, None, get_font_id}
+	_font.2pt7[6]{int} {_font.2pt7}  := get_font_id("roboto_2pt7_white_on.png"){Builtin, None, get_font_id}
+	_font.2pt7[8]{int} {_font.2pt7}  := get_font_id("roboto_2pt7_white_off_hover.png"){Builtin, None, get_font_id}
+	_font.2pt7[10]{int} {_font.2pt7}  := get_font_id("roboto_2pt7_white_on.png"){Builtin, None, get_font_id}
+	_font.2pt7[12]{int} {_font.2pt7}  := get_font_id("roboto_2pt7_white_disabled.png"){Builtin, None, get_font_id}
+	declare _font.2pt8[14] : int[] {Reuses: 0}
+	_font.2pt8[0]{int} {_font.2pt8}  := get_font_id("roboto_2pt8_white_off.png"){Builtin, None, get_font_id}
+	_font.2pt8[2]{int} {_font.2pt8}  := get_font_id("roboto_2pt8_white_on.png"){Builtin, None, get_font_id}
+	_font.2pt8[4]{int} {_font.2pt8}  := get_font_id("roboto_2pt8_white_off_hover.png"){Builtin, None, get_font_id}
+	_font.2pt8[6]{int} {_font.2pt8}  := get_font_id("roboto_2pt8_white_on.png"){Builtin, None, get_font_id}
+	_font.2pt8[8]{int} {_font.2pt8}  := get_font_id("roboto_2pt8_white_off_hover.png"){Builtin, None, get_font_id}
+	_font.2pt8[10]{int} {_font.2pt8}  := get_font_id("roboto_2pt8_white_on.png"){Builtin, None, get_font_id}
+	_font.2pt8[12]{int} {_font.2pt8}  := get_font_id("roboto_2pt8_white_disabled.png"){Builtin, None, get_font_id}
+	declare _font.3pt3[14] : int[] {Reuses: 0}
+	_font.3pt3[0]{int} {_font.3pt3}  := get_font_id("roboto_3pt3_white_off.png"){Builtin, None, get_font_id}
+	_font.3pt3[2]{int} {_font.3pt3}  := get_font_id("roboto_3pt3_white_on.png"){Builtin, None, get_font_id}
+	_font.3pt3[4]{int} {_font.3pt3}  := get_font_id("roboto_3pt3_white_off_hover.png"){Builtin, None, get_font_id}
+	_font.3pt3[6]{int} {_font.3pt3}  := get_font_id("roboto_3pt3_white_on.png"){Builtin, None, get_font_id}
+	_font.3pt3[8]{int} {_font.3pt3}  := get_font_id("roboto_3pt3_white_off_hover.png"){Builtin, None, get_font_id}
+	_font.3pt3[10]{int} {_font.3pt3}  := get_font_id("roboto_3pt3_white_on.png"){Builtin, None, get_font_id}
+	_font.3pt3[12]{int} {_font.3pt3}  := get_font_id("roboto_3pt3_white_disabled.png"){Builtin, None, get_font_id}
+	declare _font.3pt6[14] : int[] {Reuses: 0}
+	_font.3pt6[0]{int} {_font.3pt6}  := get_font_id("roboto_3pt6_white_off.png"){Builtin, None, get_font_id}
+	_font.3pt6[2]{int} {_font.3pt6}  := get_font_id("roboto_3pt6_white_on.png"){Builtin, None, get_font_id}
+	_font.3pt6[4]{int} {_font.3pt6}  := get_font_id("roboto_3pt6_white_off_hover.png"){Builtin, None, get_font_id}
+	_font.3pt6[6]{int} {_font.3pt6}  := get_font_id("roboto_3pt6_white_on.png"){Builtin, None, get_font_id}
+	_font.3pt6[8]{int} {_font.3pt6}  := get_font_id("roboto_3pt6_white_off_hover.png"){Builtin, None, get_font_id}
+	_font.3pt6[10]{int} {_font.3pt6}  := get_font_id("roboto_3pt6_white_on.png"){Builtin, None, get_font_id}
+	_font.3pt6[12]{int} {_font.3pt6}  := get_font_id("roboto_3pt6_white_disabled.png"){Builtin, None, get_font_id}
+	declare _font.3pt8[14] : int[] {Reuses: 0}
+	_font.3pt8[0]{int} {_font.3pt8}  := get_font_id("roboto_3pt8_white_off.png"){Builtin, None, get_font_id}
+	_font.3pt8[2]{int} {_font.3pt8}  := get_font_id("roboto_3pt8_white_on.png"){Builtin, None, get_font_id}
+	_font.3pt8[4]{int} {_font.3pt8}  := get_font_id("roboto_3pt8_white_off_hover.png"){Builtin, None, get_font_id}
+	_font.3pt8[6]{int} {_font.3pt8}  := get_font_id("roboto_3pt8_white_on.png"){Builtin, None, get_font_id}
+	_font.3pt8[8]{int} {_font.3pt8}  := get_font_id("roboto_3pt8_white_off_hover.png"){Builtin, None, get_font_id}
+	_font.3pt8[10]{int} {_font.3pt8}  := get_font_id("roboto_3pt8_white_on.png"){Builtin, None, get_font_id}
+	_font.3pt8[12]{int} {_font.3pt8}  := get_font_id("roboto_3pt8_white_disabled.png"){Builtin, None, get_font_id}
+	declare _font.4pt5[14] : int[] {Reuses: 0}
+	_font.4pt5[0]{int} {_font.4pt5}  := get_font_id("roboto_4pt5_white_off.png"){Builtin, None, get_font_id}
+	_font.4pt5[2]{int} {_font.4pt5}  := get_font_id("roboto_4pt5_white_on.png"){Builtin, None, get_font_id}
+	_font.4pt5[4]{int} {_font.4pt5}  := get_font_id("roboto_4pt5_white_off_hover.png"){Builtin, None, get_font_id}
+	_font.4pt5[6]{int} {_font.4pt5}  := get_font_id("roboto_4pt5_white_on.png"){Builtin, None, get_font_id}
+	_font.4pt5[8]{int} {_font.4pt5}  := get_font_id("roboto_4pt5_white_off_hover.png"){Builtin, None, get_font_id}
+	_font.4pt5[10]{int} {_font.4pt5}  := get_font_id("roboto_4pt5_white_on.png"){Builtin, None, get_font_id}
+	_font.4pt5[12]{int} {_font.4pt5}  := get_font_id("roboto_4pt5_white_disabled.png"){Builtin, None, get_font_id}
+	declare instr_names[5] : string[] {Reuses: 0}
+	instr_names[0]{string[]} {instr_names}  := "Instrument 1"
+	instr_names[1]{string[]} {instr_names}  := "Instrument 2"
+	instr_names[2]{string[]} {instr_names}  := "Instrument 3"
+	instr_names[3]{string[]} {instr_names}  := "Instrument 4"
+	instr_names[4]{string[]} {instr_names}  := "Instrument 5"
+	declare ui_label lbl_title : int (1, 1) {Reuses: 0}
+	set_control_par_str(get_ui_id(lbl_title{int} {lbl_title} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , ""){Builtin, None, set_control_par_str}
+	set_control_par_str(get_ui_id(lbl_title{int} {lbl_title} ){Builtin, None, get_ui_id}, CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "TITLE"){Builtin, None, set_control_par_str}
+	set_control_par(get_ui_id(lbl_title{int} {lbl_title} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , 0){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(lbl_title{int} {lbl_title} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 15){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(lbl_title{int} {lbl_title} ){Builtin, None, get_ui_id}, CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 900){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(lbl_title{int} {lbl_title} ){Builtin, None, get_ui_id}, CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 20){Builtin, None, set_control_par}
+	declare ui_label preset_name : int (1, 1) {Reuses: 0}
+	set_control_par_str(get_ui_id(preset_name{int} {preset_name} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , "< >  Gutes Preset"){Builtin, None, set_control_par_str}
+	set_control_par_str(get_ui_id(preset_name{int} {preset_name} ){Builtin, None, get_ui_id}, CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "alpha"){Builtin, None, set_control_par_str}
+	set_control_par(get_ui_id(preset_name{int} {preset_name} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXT_ALIGNMENT{int} {CONTROL_PAR_TEXT_ALIGNMENT} , 0){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(preset_name{int} {preset_name} ){Builtin, None, get_ui_id}, CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , _font.3pt3[2]{int} {_font.3pt3} ){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(preset_name{int} {preset_name} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , 15){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(preset_name{int} {preset_name} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 20){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(preset_name{int} {preset_name} ){Builtin, None, get_ui_id}, CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 200){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(preset_name{int} {preset_name} ){Builtin, None, get_ui_id}, CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 20){Builtin, None, set_control_par}
+	declare ui_label lbl_cc_disp : int (1, 1) {Reuses: 0}
+	set_control_par_str(get_ui_id(lbl_cc_disp{int} {lbl_cc_disp} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , "CC1"){Builtin, None, set_control_par_str}
+	set_control_par_str(get_ui_id(lbl_cc_disp{int} {lbl_cc_disp} ){Builtin, None, get_ui_id}, CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "alpha"){Builtin, None, set_control_par_str}
+	set_control_par(get_ui_id(lbl_cc_disp{int} {lbl_cc_disp} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXT_ALIGNMENT{int} {CONTROL_PAR_TEXT_ALIGNMENT} , 1){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(lbl_cc_disp{int} {lbl_cc_disp} ){Builtin, None, get_ui_id}, CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , _font.2pt8[2]{int} {_font.2pt8} ){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(lbl_cc_disp{int} {lbl_cc_disp} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , 765){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(lbl_cc_disp{int} {lbl_cc_disp} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 27){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(lbl_cc_disp{int} {lbl_cc_disp} ){Builtin, None, get_ui_id}, CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 35){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(lbl_cc_disp{int} {lbl_cc_disp} ){Builtin, None, get_ui_id}, CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 8){Builtin, None, set_control_par}
+	declare ui_slider sli_cc_disp : int (0, 127) {Reuses: 0}
+	make_persistent(sli_cc_disp{int} {sli_cc_disp} ){Builtin, None}
+	read_persistent_var(sli_cc_disp{int} {sli_cc_disp} ){Builtin, None}
+	set_control_par(get_ui_id(sli_cc_disp{int} {sli_cc_disp} ){Builtin, None, get_ui_id}, CONTROL_PAR_DEFAULT_VALUE{int} {CONTROL_PAR_DEFAULT_VALUE} , 90){Builtin, None, set_control_par}
+	set_control_par_str(get_ui_id(sli_cc_disp{int} {sli_cc_disp} ){Builtin, None, get_ui_id}, CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "CCdisp"){Builtin, None, set_control_par_str}
+	set_control_par(get_ui_id(sli_cc_disp{int} {sli_cc_disp} ){Builtin, None, get_ui_id}, CONTROL_PAR_MOUSE_BEHAVIOUR{int} {CONTROL_PAR_MOUSE_BEHAVIOUR} , 600){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(sli_cc_disp{int} {sli_cc_disp} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , get_control_par(get_ui_id(lbl_cc_disp{int} {lbl_cc_disp} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} ){Builtin, None, get_control_par} + 35){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(sli_cc_disp{int} {sli_cc_disp} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 22){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(sli_cc_disp{int} {sli_cc_disp} ){Builtin, None, get_ui_id}, CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 85){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(sli_cc_disp{int} {sli_cc_disp} ){Builtin, None, get_ui_id}, CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 8){Builtin, None, set_control_par}
+	declare ui_button btn_gui_reference : int  {Reuses: 0}
+	make_persistent(btn_gui_reference{int} {btn_gui_reference} ){Builtin, None}
+	read_persistent_var(btn_gui_reference{int} {btn_gui_reference} ){Builtin, None}
+	set_control_par_str(get_ui_id(btn_gui_reference{int} {btn_gui_reference} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , ""){Builtin, None, set_control_par_str}
+	set_control_par_str(get_ui_id(btn_gui_reference{int} {btn_gui_reference} ){Builtin, None, get_ui_id}, CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "alpha"){Builtin, None, set_control_par_str}
+	set_control_par(get_ui_id(btn_gui_reference{int} {btn_gui_reference} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , 450){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(btn_gui_reference{int} {btn_gui_reference} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , get_control_par(get_ui_id(lbl_title{int} {lbl_title} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} ){Builtin, None, get_control_par}){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(btn_gui_reference{int} {btn_gui_reference} ){Builtin, None, get_ui_id}, CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 50){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(btn_gui_reference{int} {btn_gui_reference} ){Builtin, None, get_ui_id}, CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 30){Builtin, None, set_control_par}
+	declare ui_label lbl_gui_refernece : int (1, 1) {Reuses: 0}
+	set_control_par_str(get_ui_id(lbl_gui_refernece{int} {lbl_gui_refernece} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , ""){Builtin, None, set_control_par_str}
+	set_control_par_str(get_ui_id(lbl_gui_refernece{int} {lbl_gui_refernece} ){Builtin, None, get_ui_id}, CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "GRID"){Builtin, None, set_control_par_str}
+	set_control_par(get_ui_id(lbl_gui_refernece{int} {lbl_gui_refernece} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , 0){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(lbl_gui_refernece{int} {lbl_gui_refernece} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 0){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(lbl_gui_refernece{int} {lbl_gui_refernece} ){Builtin, None, get_ui_id}, CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 900){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(lbl_gui_refernece{int} {lbl_gui_refernece} ){Builtin, None, get_ui_id}, CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 500){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(lbl_gui_refernece{int} {lbl_gui_refernece} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[btn_gui_reference{int} {btn_gui_reference} ]{int} {hide_state} ){Builtin, None, set_control_par}
+	declare pnl_field[6] : int[] {Reuses: 0}
+	declare ui_panel pnl_field0 : int  {Reuses: 0}
+	declare ui_panel pnl_field1 : int  {Reuses: 0}
+	declare ui_panel pnl_field2 : int  {Reuses: 0}
+	declare ui_panel pnl_field3 : int  {Reuses: 0}
+	declare ui_panel pnl_field4 : int  {Reuses: 0}
+	declare ui_panel pnl_field5 : int  {Reuses: 0}
+	_iter0{int} {_iter0}  := 0
+	while(_iter0{int} {_iter0}  <= 5) 
+		pnl_field[_iter0{int} {_iter0} ]{int} {pnl_field}  := get_ui_id(pnl_field0{int} {pnl_field0} ){Builtin, None, get_ui_id} + _iter0{int} {_iter0} 
+		inc(_iter0{int} {_iter0} ){Builtin, None, inc}
 	end while
-	set_control_par_str(get_ui_id(mnu{int} {mnu} ){Builtin, None, get_ui_id}, CONTROL_PAR_SHORT_NAME{int} {CONTROL_PAR_SHORT_NAME} , "mnu"){Builtin, None, set_control_par_str}
-	message(get_control_par_str(get_ui_id(mnu{int} {mnu} ){Builtin, None, get_ui_id}, CONTROL_PAR_SHORT_NAME{int} {CONTROL_PAR_SHORT_NAME} ){Builtin, None, get_control_par_str}){Builtin, None, message}
-	add_menu_item(get_control_par_str(get_ui_id(mnu{int} {mnu} ){Builtin, None, get_ui_id}, CONTROL_PAR_SHORT_NAME{int} {CONTROL_PAR_SHORT_NAME} ){Builtin, None, get_control_par_str}, "sdfkj", 0){Builtin, None, add_menu_item}
-	declare Engine : int {Reuses: 0}
-	Engine::free_idx{int} {Engine::free_idx}  := search(Engine::allocation{int[]} {Engine::allocation} , 0, Engine::free_idx{int} {Engine::free_idx} , 0){Builtin, None, search}
-	if(Engine::free_idx{int} {Engine::free_idx}  = -1)
-		message("Error: No more free space available to allocate objects of type 'Engine'"){Builtin, None, message}
-	end if
-	Engine::allocation[Engine::free_idx{int} {Engine::free_idx} ]{int} {Engine::allocation}  := 1
-	id1{int} {id1}  := 0
-	_iter20{int} {_iter20}  := 0
-	while(_iter20{int} {_iter20}  <= 99) 
-		self12{int} {self12}  := _Engine::group[(Engine::free_idx{int} {Engine::free_idx}  * 100) + _iter20{int} {_iter20} ]{int} {_Engine::group} 
-		num_refs2{int} {num_refs2}  := 1
-		current1{int} {current1}  := self12{int} {self12} 
-		while(current1{int} {current1}  # -1) 
-			_iter9{int} {_iter9}  := 0
-			Group::allocation[current1{int} {current1} ]{int} {Group::allocation}  := Group::allocation[current1{int} {current1} ]{int} {Group::allocation}  - num_refs2{int} {num_refs2} 
-			if(Group::allocation[current1{int} {current1} ]{int} {Group::allocation}  > 0)
-				current1{int} {current1}  := -1
-				continue{Builtin, None, continue}
-			else
-				Group::allocation[current1{int} {current1} ]{int} {Group::allocation}  := 0
-			end if
-			self12{int} {self12}  := current1{int} {current1} 
-			current1{int} {current1}  := -1
-			_iter9{int} {_iter9}  := 0
-			while(_iter9{int} {_iter9}  <= 7) 
-				self21{int} {self21}  := _Group::slot[(self12{int} {self12}  * 8) + _iter9{int} {_iter9} ]{int} {_Group::slot} 
-				num_refs8{int} {num_refs8}  := 1
-				current0{int} {current0}  := self21{int} {self21} 
-				while(current0{int} {current0}  # -1) 
-					_iter7{int} {_iter7}  := 0
-					Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  - num_refs8{int} {num_refs8} 
-					if(Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  > 0)
-						current0{int} {current0}  := -1
-						continue{Builtin, None, continue}
-					else
-						Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := 0
-					end if
-					self21{int} {self21}  := current0{int} {current0} 
-					current0{int} {current0}  := -1
-					self20{int} {self20}  := self21{int} {self21} 
-					if(self20{int} {self20}  # -1)
-						Slot::bus_idx[self20{int} {self20} ]{int} {Slot::bus_idx}  := 0
-						Slot::group_idx[self20{int} {self20} ]{int} {Slot::group_idx}  := 0
-						Slot::slot_idx[self20{int} {self20} ]{int} {Slot::slot_idx}  := 0
-						Slot::free_idx{int} {Slot::free_idx}  := ((Slot::free_idx{int} {Slot::free_idx}  + self20{int} {self20} ) - abs(Slot::free_idx{int} {Slot::free_idx}  - self20{int} {self20} ){Builtin, None, abs}) / 2
-					end if
-				end while
-				inc(_iter9{int} {_iter9} ){Builtin, None, inc}
-			end while
-			self11{int} {self11}  := self12{int} {self12} 
-			if(self11{int} {self11}  # -1)
-				_iter15{int} {_iter15}  := 0
-				while(_iter15{int} {_iter15}  <= 7) 
-					_Group::slot[(self11{int} {self11}  * 8) + _iter15{int} {_iter15} ]{int} {_Group::slot}  := -1
-					inc(_iter15{int} {_iter15} ){Builtin, None, inc}
-				end while
-				Group::free_idx{int} {Group::free_idx}  := ((Group::free_idx{int} {Group::free_idx}  + self11{int} {self11} ) - abs(Group::free_idx{int} {Group::free_idx}  - self11{int} {self11} ){Builtin, None, abs}) / 2
-			end if
-		end while
-		group_idx1{int} {group_idx1}  := id1{int} {id1} 
-		Group::free_idx{int} {Group::free_idx}  := search(Group::allocation{int[]} {Group::allocation} , 0, Group::free_idx{int} {Group::free_idx} , 124999){Builtin, None, search}
-		if(Group::free_idx{int} {Group::free_idx}  = -1)
-			message("Error: No more free space available to allocate objects of type 'Group'"){Builtin, None, message}
-		end if
-		Group::allocation[Group::free_idx{int} {Group::free_idx} ]{int} {Group::allocation}  := 1
-		id0{int} {id0}  := 0
-		_iter10{int} {_iter10}  := 0
-		while(_iter10{int} {_iter10}  <= 7) 
-			self21{int} {self21}  := _Group::slot[(Group::free_idx{int} {Group::free_idx}  * 8) + _iter10{int} {_iter10} ]{int} {_Group::slot} 
-			num_refs8{int} {num_refs8}  := 1
-			current0{int} {current0}  := self21{int} {self21} 
-			while(current0{int} {current0}  # -1) 
-				_iter7{int} {_iter7}  := 0
-				Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  - num_refs8{int} {num_refs8} 
-				if(Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  > 0)
-					current0{int} {current0}  := -1
-					continue{Builtin, None, continue}
-				else
-					Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := 0
-				end if
-				self21{int} {self21}  := current0{int} {current0} 
-				current0{int} {current0}  := -1
-				self20{int} {self20}  := self21{int} {self21} 
-				if(self20{int} {self20}  # -1)
-					Slot::bus_idx[self20{int} {self20} ]{int} {Slot::bus_idx}  := 0
-					Slot::group_idx[self20{int} {self20} ]{int} {Slot::group_idx}  := 0
-					Slot::slot_idx[self20{int} {self20} ]{int} {Slot::slot_idx}  := 0
-					Slot::free_idx{int} {Slot::free_idx}  := ((Slot::free_idx{int} {Slot::free_idx}  + self20{int} {self20} ) - abs(Slot::free_idx{int} {Slot::free_idx}  - self20{int} {self20} ){Builtin, None, abs}) / 2
-				end if
-			end while
-			slot_idx0{int} {slot_idx0}  := id0{int} {id0} 
-			group_idx0{int} {group_idx0}  := group_idx1{int} {group_idx1} 
-			bus_idx1{int} {bus_idx1}  := -1
-			Slot::free_idx{int} {Slot::free_idx}  := search(Slot::allocation{int[]} {Slot::allocation} , 0, Slot::free_idx{int} {Slot::free_idx} , 999999){Builtin, None, search}
-			if(Slot::free_idx{int} {Slot::free_idx}  = -1)
-				message("Error: No more free space available to allocate objects of type 'Slot'"){Builtin, None, message}
-			end if
-			Slot::allocation[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::allocation}  := 1
-			Slot::slot_idx[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::slot_idx}  := slot_idx0{int} {slot_idx0} 
-			Slot::group_idx[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::group_idx}  := group_idx0{int} {group_idx0} 
-			Slot::bus_idx[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::bus_idx}  := bus_idx1{int} {bus_idx1} 
-			ret3{int} {ret3}  := Slot::free_idx{int} {Slot::free_idx} 
-			_Group::slot[(Group::free_idx{int} {Group::free_idx}  * 8) + _iter10{int} {_iter10} ]{int} {_Group::slot}  := ret3{int} {ret3} 
-			self22{int} {self22}  := _Group::slot[(Group::free_idx{int} {Group::free_idx}  * 8) + _iter10{int} {_iter10} ]{int} {_Group::slot} 
-			num_refs9{int} {num_refs9}  := 1
-			if(self22{int} {self22}  # -1)
-				Slot::allocation[self22{int} {self22} ]{int} {Slot::allocation}  := Slot::allocation[self22{int} {self22} ]{int} {Slot::allocation}  + num_refs9{int} {num_refs9} 
-			end if
-			inc(_iter10{int} {_iter10} ){Builtin, None, inc}
-			inc(id0{int} {id0} ){Builtin, None, inc}
-		end while
-		ret2{int} {ret2}  := Group::free_idx{int} {Group::free_idx} 
-		_Engine::group[(Engine::free_idx{int} {Engine::free_idx}  * 100) + _iter20{int} {_iter20} ]{int} {_Engine::group}  := ret2{int} {ret2} 
-		self13{int} {self13}  := _Engine::group[(Engine::free_idx{int} {Engine::free_idx}  * 100) + _iter20{int} {_iter20} ]{int} {_Engine::group} 
-		num_refs3{int} {num_refs3}  := 1
-		if(self13{int} {self13}  # -1)
-			Group::allocation[self13{int} {self13} ]{int} {Group::allocation}  := Group::allocation[self13{int} {self13} ]{int} {Group::allocation}  + num_refs3{int} {num_refs3} 
-		end if
-		inc(_iter20{int} {_iter20} ){Builtin, None, inc}
-		inc(id1{int} {id1} ){Builtin, None, inc}
+	declare btn_field_onoff[5] : int[] {Reuses: 0}
+	declare ui_button btn_field_onoff0 : int  {Reuses: 0}
+	make_persistent(btn_field_onoff0{int} {btn_field_onoff0} ){Builtin, None}
+	read_persistent_var(btn_field_onoff0{int} {btn_field_onoff0} ){Builtin, None}
+	declare ui_button btn_field_onoff1 : int  {Reuses: 0}
+	make_persistent(btn_field_onoff1{int} {btn_field_onoff1} ){Builtin, None}
+	read_persistent_var(btn_field_onoff1{int} {btn_field_onoff1} ){Builtin, None}
+	declare ui_button btn_field_onoff2 : int  {Reuses: 0}
+	make_persistent(btn_field_onoff2{int} {btn_field_onoff2} ){Builtin, None}
+	read_persistent_var(btn_field_onoff2{int} {btn_field_onoff2} ){Builtin, None}
+	declare ui_button btn_field_onoff3 : int  {Reuses: 0}
+	make_persistent(btn_field_onoff3{int} {btn_field_onoff3} ){Builtin, None}
+	read_persistent_var(btn_field_onoff3{int} {btn_field_onoff3} ){Builtin, None}
+	declare ui_button btn_field_onoff4 : int  {Reuses: 0}
+	make_persistent(btn_field_onoff4{int} {btn_field_onoff4} ){Builtin, None}
+	read_persistent_var(btn_field_onoff4{int} {btn_field_onoff4} ){Builtin, None}
+	_iter0{int} {_iter0}  := 0
+	while(_iter0{int} {_iter0}  <= 4) 
+		btn_field_onoff[_iter0{int} {_iter0} ]{int} {btn_field_onoff}  := get_ui_id(btn_field_onoff0{int} {btn_field_onoff0} ){Builtin, None, get_ui_id} + _iter0{int} {_iter0} 
+		inc(_iter0{int} {_iter0} ){Builtin, None, inc}
 	end while
-	self18{int} {self18}  := Engine::send[Engine::free_idx{int} {Engine::free_idx} ]{int} {Engine::send} 
-	num_refs6{int} {num_refs6}  := 1
-	current2{int} {current2}  := self18{int} {self18} 
-	while(current2{int} {current2}  # -1) 
-		_iter12{int} {_iter12}  := 0
-		Send::allocation[current2{int} {current2} ]{int} {Send::allocation}  := Send::allocation[current2{int} {current2} ]{int} {Send::allocation}  - num_refs6{int} {num_refs6} 
-		if(Send::allocation[current2{int} {current2} ]{int} {Send::allocation}  > 0)
-			current2{int} {current2}  := -1
-			continue{Builtin, None, continue}
+	declare btn_field_nav[6] : int[] {Reuses: 0}
+	declare ui_button btn_field_nav0 : int  {Reuses: 0}
+	make_persistent(btn_field_nav0{int} {btn_field_nav0} ){Builtin, None}
+	read_persistent_var(btn_field_nav0{int} {btn_field_nav0} ){Builtin, None}
+	declare ui_button btn_field_nav1 : int  {Reuses: 0}
+	make_persistent(btn_field_nav1{int} {btn_field_nav1} ){Builtin, None}
+	read_persistent_var(btn_field_nav1{int} {btn_field_nav1} ){Builtin, None}
+	declare ui_button btn_field_nav2 : int  {Reuses: 0}
+	make_persistent(btn_field_nav2{int} {btn_field_nav2} ){Builtin, None}
+	read_persistent_var(btn_field_nav2{int} {btn_field_nav2} ){Builtin, None}
+	declare ui_button btn_field_nav3 : int  {Reuses: 0}
+	make_persistent(btn_field_nav3{int} {btn_field_nav3} ){Builtin, None}
+	read_persistent_var(btn_field_nav3{int} {btn_field_nav3} ){Builtin, None}
+	declare ui_button btn_field_nav4 : int  {Reuses: 0}
+	make_persistent(btn_field_nav4{int} {btn_field_nav4} ){Builtin, None}
+	read_persistent_var(btn_field_nav4{int} {btn_field_nav4} ){Builtin, None}
+	declare ui_button btn_field_nav5 : int  {Reuses: 0}
+	make_persistent(btn_field_nav5{int} {btn_field_nav5} ){Builtin, None}
+	read_persistent_var(btn_field_nav5{int} {btn_field_nav5} ){Builtin, None}
+	_iter0{int} {_iter0}  := 0
+	while(_iter0{int} {_iter0}  <= 5) 
+		btn_field_nav[_iter0{int} {_iter0} ]{int} {btn_field_nav}  := get_ui_id(btn_field_nav0{int} {btn_field_nav0} ){Builtin, None, get_ui_id} + _iter0{int} {_iter0} 
+		inc(_iter0{int} {_iter0} ){Builtin, None, inc}
+	end while
+	declare sli_field_vol[6] : int[] {Reuses: 0}
+	declare ui_slider sli_field_vol0 : int (0, 1000000) {Reuses: 0}
+	make_persistent(sli_field_vol0{int} {sli_field_vol0} ){Builtin, None}
+	read_persistent_var(sli_field_vol0{int} {sli_field_vol0} ){Builtin, None}
+	declare ui_slider sli_field_vol1 : int (0, 1000000) {Reuses: 0}
+	make_persistent(sli_field_vol1{int} {sli_field_vol1} ){Builtin, None}
+	read_persistent_var(sli_field_vol1{int} {sli_field_vol1} ){Builtin, None}
+	declare ui_slider sli_field_vol2 : int (0, 1000000) {Reuses: 0}
+	make_persistent(sli_field_vol2{int} {sli_field_vol2} ){Builtin, None}
+	read_persistent_var(sli_field_vol2{int} {sli_field_vol2} ){Builtin, None}
+	declare ui_slider sli_field_vol3 : int (0, 1000000) {Reuses: 0}
+	make_persistent(sli_field_vol3{int} {sli_field_vol3} ){Builtin, None}
+	read_persistent_var(sli_field_vol3{int} {sli_field_vol3} ){Builtin, None}
+	declare ui_slider sli_field_vol4 : int (0, 1000000) {Reuses: 0}
+	make_persistent(sli_field_vol4{int} {sli_field_vol4} ){Builtin, None}
+	read_persistent_var(sli_field_vol4{int} {sli_field_vol4} ){Builtin, None}
+	declare ui_slider sli_field_vol5 : int (0, 1000000) {Reuses: 0}
+	make_persistent(sli_field_vol5{int} {sli_field_vol5} ){Builtin, None}
+	read_persistent_var(sli_field_vol5{int} {sli_field_vol5} ){Builtin, None}
+	_iter0{int} {_iter0}  := 0
+	while(_iter0{int} {_iter0}  <= 5) 
+		sli_field_vol[_iter0{int} {_iter0} ]{int} {sli_field_vol}  := get_ui_id(sli_field_vol0{int} {sli_field_vol0} ){Builtin, None, get_ui_id} + _iter0{int} {_iter0} 
+		inc(_iter0{int} {_iter0} ){Builtin, None, inc}
+	end while
+	declare lvl_field_l[6] : int[] {Reuses: 0}
+	declare ui_level_meter lvl_field_l0 : int  {Reuses: 0}
+	declare ui_level_meter lvl_field_l1 : int  {Reuses: 0}
+	declare ui_level_meter lvl_field_l2 : int  {Reuses: 0}
+	declare ui_level_meter lvl_field_l3 : int  {Reuses: 0}
+	declare ui_level_meter lvl_field_l4 : int  {Reuses: 0}
+	declare ui_level_meter lvl_field_l5 : int  {Reuses: 0}
+	_iter0{int} {_iter0}  := 0
+	while(_iter0{int} {_iter0}  <= 5) 
+		lvl_field_l[_iter0{int} {_iter0} ]{int} {lvl_field_l}  := get_ui_id(lvl_field_l0{int} {lvl_field_l0} ){Builtin, None, get_ui_id} + _iter0{int} {_iter0} 
+		inc(_iter0{int} {_iter0} ){Builtin, None, inc}
+	end while
+	declare lvl_field_r[6] : int[] {Reuses: 0}
+	declare ui_level_meter lvl_field_r0 : int  {Reuses: 0}
+	declare ui_level_meter lvl_field_r1 : int  {Reuses: 0}
+	declare ui_level_meter lvl_field_r2 : int  {Reuses: 0}
+	declare ui_level_meter lvl_field_r3 : int  {Reuses: 0}
+	declare ui_level_meter lvl_field_r4 : int  {Reuses: 0}
+	declare ui_level_meter lvl_field_r5 : int  {Reuses: 0}
+	_iter0{int} {_iter0}  := 0
+	while(_iter0{int} {_iter0}  <= 5) 
+		lvl_field_r[_iter0{int} {_iter0} ]{int} {lvl_field_r}  := get_ui_id(lvl_field_r0{int} {lvl_field_r0} ){Builtin, None, get_ui_id} + _iter0{int} {_iter0} 
+		inc(_iter0{int} {_iter0} ){Builtin, None, inc}
+	end while
+	declare mnu_field_instr_brows[5] : int[] {Reuses: 0}
+	declare ui_menu mnu_field_instr_brows_0 : int  {Reuses: 0}
+	make_persistent(mnu_field_instr_brows_0{int} {mnu_field_instr_brows_0} ){Builtin, None}
+	read_persistent_var(mnu_field_instr_brows_0{int} {mnu_field_instr_brows_0} ){Builtin, None}
+	mnu_field_instr_brows[0]{int} {mnu_field_instr_brows}  := get_ui_id(mnu_field_instr_brows_0{int} {mnu_field_instr_brows_0} ){Builtin, None, get_ui_id}
+	set_control_par_str(get_ui_id(mnu_field_instr_brows_0{int} {mnu_field_instr_brows_0} ){Builtin, None, get_ui_id}, CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "alpha"){Builtin, None, set_control_par_str}
+	set_control_par(get_ui_id(mnu_field_instr_brows_0{int} {mnu_field_instr_brows_0} ){Builtin, None, get_ui_id}, CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , _font.2pt7[2]{int} {_font.2pt7} ){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(mnu_field_instr_brows_0{int} {mnu_field_instr_brows_0} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , main_grid_x[0]{int} {main_grid_x} ){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(mnu_field_instr_brows_0{int} {mnu_field_instr_brows_0} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 432){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(mnu_field_instr_brows_0{int} {mnu_field_instr_brows_0} ){Builtin, None, get_ui_id}, CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 100){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(mnu_field_instr_brows_0{int} {mnu_field_instr_brows_0} ){Builtin, None, get_ui_id}, CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 25){Builtin, None, set_control_par}
+	i{int} {i}  := 0
+	while(i{int} {i}  <= 4) 
+		add_menu_item(mnu_field_instr_brows_0{int} {mnu_field_instr_brows_0} , instr_names[i{int} {i} ]{string} {instr_names} , i{int} {i} ){Builtin, None, add_menu_item}
+		inc(i{int} {i} ){Builtin, None, inc}
+	end while
+	declare ui_menu mnu_field_instr_brows_1 : int  {Reuses: 0}
+	make_persistent(mnu_field_instr_brows_1{int} {mnu_field_instr_brows_1} ){Builtin, None}
+	read_persistent_var(mnu_field_instr_brows_1{int} {mnu_field_instr_brows_1} ){Builtin, None}
+	mnu_field_instr_brows[1]{int} {mnu_field_instr_brows}  := get_ui_id(mnu_field_instr_brows_1{int} {mnu_field_instr_brows_1} ){Builtin, None, get_ui_id}
+	set_control_par_str(get_ui_id(mnu_field_instr_brows_1{int} {mnu_field_instr_brows_1} ){Builtin, None, get_ui_id}, CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "alpha"){Builtin, None, set_control_par_str}
+	set_control_par(get_ui_id(mnu_field_instr_brows_1{int} {mnu_field_instr_brows_1} ){Builtin, None, get_ui_id}, CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , _font.2pt7[2]{int} {_font.2pt7} ){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(mnu_field_instr_brows_1{int} {mnu_field_instr_brows_1} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , main_grid_x[1]{int} {main_grid_x} ){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(mnu_field_instr_brows_1{int} {mnu_field_instr_brows_1} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 432){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(mnu_field_instr_brows_1{int} {mnu_field_instr_brows_1} ){Builtin, None, get_ui_id}, CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 100){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(mnu_field_instr_brows_1{int} {mnu_field_instr_brows_1} ){Builtin, None, get_ui_id}, CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 25){Builtin, None, set_control_par}
+	i{int} {i}  := 0
+	while(i{int} {i}  <= 4) 
+		add_menu_item(mnu_field_instr_brows_1{int} {mnu_field_instr_brows_1} , instr_names[i{int} {i} ]{string} {instr_names} , i{int} {i} ){Builtin, None, add_menu_item}
+		inc(i{int} {i} ){Builtin, None, inc}
+	end while
+	declare ui_menu mnu_field_instr_brows_2 : int  {Reuses: 0}
+	make_persistent(mnu_field_instr_brows_2{int} {mnu_field_instr_brows_2} ){Builtin, None}
+	read_persistent_var(mnu_field_instr_brows_2{int} {mnu_field_instr_brows_2} ){Builtin, None}
+	mnu_field_instr_brows[2]{int} {mnu_field_instr_brows}  := get_ui_id(mnu_field_instr_brows_2{int} {mnu_field_instr_brows_2} ){Builtin, None, get_ui_id}
+	set_control_par_str(get_ui_id(mnu_field_instr_brows_2{int} {mnu_field_instr_brows_2} ){Builtin, None, get_ui_id}, CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "alpha"){Builtin, None, set_control_par_str}
+	set_control_par(get_ui_id(mnu_field_instr_brows_2{int} {mnu_field_instr_brows_2} ){Builtin, None, get_ui_id}, CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , _font.2pt7[2]{int} {_font.2pt7} ){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(mnu_field_instr_brows_2{int} {mnu_field_instr_brows_2} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , main_grid_x[2]{int} {main_grid_x} ){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(mnu_field_instr_brows_2{int} {mnu_field_instr_brows_2} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 432){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(mnu_field_instr_brows_2{int} {mnu_field_instr_brows_2} ){Builtin, None, get_ui_id}, CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 100){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(mnu_field_instr_brows_2{int} {mnu_field_instr_brows_2} ){Builtin, None, get_ui_id}, CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 25){Builtin, None, set_control_par}
+	i{int} {i}  := 0
+	while(i{int} {i}  <= 4) 
+		add_menu_item(mnu_field_instr_brows_2{int} {mnu_field_instr_brows_2} , instr_names[i{int} {i} ]{string} {instr_names} , i{int} {i} ){Builtin, None, add_menu_item}
+		inc(i{int} {i} ){Builtin, None, inc}
+	end while
+	declare ui_menu mnu_field_instr_brows_3 : int  {Reuses: 0}
+	make_persistent(mnu_field_instr_brows_3{int} {mnu_field_instr_brows_3} ){Builtin, None}
+	read_persistent_var(mnu_field_instr_brows_3{int} {mnu_field_instr_brows_3} ){Builtin, None}
+	mnu_field_instr_brows[3]{int} {mnu_field_instr_brows}  := get_ui_id(mnu_field_instr_brows_3{int} {mnu_field_instr_brows_3} ){Builtin, None, get_ui_id}
+	set_control_par_str(get_ui_id(mnu_field_instr_brows_3{int} {mnu_field_instr_brows_3} ){Builtin, None, get_ui_id}, CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "alpha"){Builtin, None, set_control_par_str}
+	set_control_par(get_ui_id(mnu_field_instr_brows_3{int} {mnu_field_instr_brows_3} ){Builtin, None, get_ui_id}, CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , _font.2pt7[2]{int} {_font.2pt7} ){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(mnu_field_instr_brows_3{int} {mnu_field_instr_brows_3} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , main_grid_x[3]{int} {main_grid_x} ){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(mnu_field_instr_brows_3{int} {mnu_field_instr_brows_3} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 432){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(mnu_field_instr_brows_3{int} {mnu_field_instr_brows_3} ){Builtin, None, get_ui_id}, CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 100){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(mnu_field_instr_brows_3{int} {mnu_field_instr_brows_3} ){Builtin, None, get_ui_id}, CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 25){Builtin, None, set_control_par}
+	i{int} {i}  := 0
+	while(i{int} {i}  <= 4) 
+		add_menu_item(mnu_field_instr_brows_3{int} {mnu_field_instr_brows_3} , instr_names[i{int} {i} ]{string} {instr_names} , i{int} {i} ){Builtin, None, add_menu_item}
+		inc(i{int} {i} ){Builtin, None, inc}
+	end while
+	declare ui_menu mnu_field_instr_brows_4 : int  {Reuses: 0}
+	make_persistent(mnu_field_instr_brows_4{int} {mnu_field_instr_brows_4} ){Builtin, None}
+	read_persistent_var(mnu_field_instr_brows_4{int} {mnu_field_instr_brows_4} ){Builtin, None}
+	mnu_field_instr_brows[4]{int} {mnu_field_instr_brows}  := get_ui_id(mnu_field_instr_brows_4{int} {mnu_field_instr_brows_4} ){Builtin, None, get_ui_id}
+	set_control_par_str(get_ui_id(mnu_field_instr_brows_4{int} {mnu_field_instr_brows_4} ){Builtin, None, get_ui_id}, CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "alpha"){Builtin, None, set_control_par_str}
+	set_control_par(get_ui_id(mnu_field_instr_brows_4{int} {mnu_field_instr_brows_4} ){Builtin, None, get_ui_id}, CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , _font.2pt7[2]{int} {_font.2pt7} ){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(mnu_field_instr_brows_4{int} {mnu_field_instr_brows_4} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , main_grid_x[4]{int} {main_grid_x} ){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(mnu_field_instr_brows_4{int} {mnu_field_instr_brows_4} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 432){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(mnu_field_instr_brows_4{int} {mnu_field_instr_brows_4} ){Builtin, None, get_ui_id}, CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 100){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(mnu_field_instr_brows_4{int} {mnu_field_instr_brows_4} ){Builtin, None, get_ui_id}, CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 25){Builtin, None, set_control_par}
+	i{int} {i}  := 0
+	while(i{int} {i}  <= 4) 
+		add_menu_item(mnu_field_instr_brows_4{int} {mnu_field_instr_brows_4} , instr_names[i{int} {i} ]{string} {instr_names} , i{int} {i} ){Builtin, None, add_menu_item}
+		inc(i{int} {i} ){Builtin, None, inc}
+	end while
+	i{int} {i}  := 0
+	while(i{int} {i}  <= 5) 
+		if(i{int} {i}  < 5)
+			set_control_par_str(btn_field_onoff[i{int} {i} ]{int} {btn_field_onoff} , CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , ""){Builtin, None, set_control_par_str}
+			set_control_par_str(btn_field_onoff[i{int} {i} ]{int} {btn_field_onoff} , CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "OnOff"){Builtin, None, set_control_par_str}
+			set_control_par(btn_field_onoff[i{int} {i} ]{int} {btn_field_onoff} , CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , main_grid_x[i{int} {i} ]{int} {main_grid_x} ){Builtin, None, set_control_par}
+			set_control_par(btn_field_onoff[i{int} {i} ]{int} {btn_field_onoff} , CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 400){Builtin, None, set_control_par}
+			set_control_par(btn_field_onoff[i{int} {i} ]{int} {btn_field_onoff} , CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 13){Builtin, None, set_control_par}
+			set_control_par(btn_field_onoff[i{int} {i} ]{int} {btn_field_onoff} , CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 13){Builtin, None, set_control_par}
+			set_control_par_str(btn_field_nav[i{int} {i} ]{int} {btn_field_nav} , CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , field_names[i{int} {i} ]{string} {field_names} ){Builtin, None, set_control_par_str}
+			set_control_par_str(btn_field_nav[i{int} {i} ]{int} {btn_field_nav} , CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "alpha"){Builtin, None, set_control_par_str}
+			set_control_par(btn_field_nav[i{int} {i} ]{int} {btn_field_nav} , CONTROL_PAR_TEXT_ALIGNMENT{int} {CONTROL_PAR_TEXT_ALIGNMENT} , 1){Builtin, None, set_control_par}
+			set_control_par(btn_field_nav[i{int} {i} ]{int} {btn_field_nav} , CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , _font.robmed13[2]{int} {_font.robmed13} ){Builtin, None, set_control_par}
+			set_control_par(btn_field_nav[i{int} {i} ]{int} {btn_field_nav} , CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , main_grid_x[i{int} {i} ]{int} {main_grid_x}  + 20){Builtin, None, set_control_par}
+			set_control_par(btn_field_nav[i{int} {i} ]{int} {btn_field_nav} , CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 400){Builtin, None, set_control_par}
+			set_control_par(btn_field_nav[i{int} {i} ]{int} {btn_field_nav} , CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 80){Builtin, None, set_control_par}
+			set_control_par(btn_field_nav[i{int} {i} ]{int} {btn_field_nav} , CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 25){Builtin, None, set_control_par}
+			set_control_par(sli_field_vol[i{int} {i} ]{int} {sli_field_vol} , CONTROL_PAR_DEFAULT_VALUE{int} {CONTROL_PAR_DEFAULT_VALUE} , 630000){Builtin, None, set_control_par}
+			set_control_par_str(sli_field_vol[i{int} {i} ]{int} {sli_field_vol} , CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "LayerVolume"){Builtin, None, set_control_par_str}
+			set_control_par(sli_field_vol[i{int} {i} ]{int} {sli_field_vol} , CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , main_grid_x[i{int} {i} ]{int} {main_grid_x} ){Builtin, None, set_control_par}
+			set_control_par(sli_field_vol[i{int} {i} ]{int} {sli_field_vol} , CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 465){Builtin, None, set_control_par}
+			set_control_par(sli_field_vol[i{int} {i} ]{int} {sli_field_vol} , CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 110){Builtin, None, set_control_par}
+			set_control_par(sli_field_vol[i{int} {i} ]{int} {sli_field_vol} , CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 15){Builtin, None, set_control_par}
+			set_control_par(lvl_field_l[i{int} {i} ]{int} {lvl_field_l} , CONTROL_PAR_BG_COLOR{int} {CONTROL_PAR_BG_COLOR} , 13684944){Builtin, None, set_control_par}
+			set_control_par(lvl_field_l[i{int} {i} ]{int} {lvl_field_l} , CONTROL_PAR_OFF_COLOR{int} {CONTROL_PAR_OFF_COLOR} , 13684944){Builtin, None, set_control_par}
+			set_control_par(lvl_field_l[i{int} {i} ]{int} {lvl_field_l} , CONTROL_PAR_ON_COLOR{int} {CONTROL_PAR_ON_COLOR} , 16777215){Builtin, None, set_control_par}
+			set_control_par(lvl_field_l[i{int} {i} ]{int} {lvl_field_l} , CONTROL_PAR_OVERLOAD_COLOR{int} {CONTROL_PAR_OVERLOAD_COLOR} , 16711680){Builtin, None, set_control_par}
+			set_control_par(lvl_field_r[i{int} {i} ]{int} {lvl_field_r} , CONTROL_PAR_BG_COLOR{int} {CONTROL_PAR_BG_COLOR} , 13684944){Builtin, None, set_control_par}
+			set_control_par(lvl_field_r[i{int} {i} ]{int} {lvl_field_r} , CONTROL_PAR_OFF_COLOR{int} {CONTROL_PAR_OFF_COLOR} , 13684944){Builtin, None, set_control_par}
+			set_control_par(lvl_field_r[i{int} {i} ]{int} {lvl_field_r} , CONTROL_PAR_ON_COLOR{int} {CONTROL_PAR_ON_COLOR} , 16777215){Builtin, None, set_control_par}
+			set_control_par(lvl_field_r[i{int} {i} ]{int} {lvl_field_r} , CONTROL_PAR_OVERLOAD_COLOR{int} {CONTROL_PAR_OVERLOAD_COLOR} , 16711680){Builtin, None, set_control_par}
+			set_control_par(lvl_field_l[i{int} {i} ]{int} {lvl_field_l} , CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , main_grid_x[i{int} {i} ]{int} {main_grid_x}  + 118){Builtin, None, set_control_par}
+			set_control_par(lvl_field_l[i{int} {i} ]{int} {lvl_field_l} , CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 432){Builtin, None, set_control_par}
+			set_control_par(lvl_field_l[i{int} {i} ]{int} {lvl_field_l} , CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 3){Builtin, None, set_control_par}
+			set_control_par(lvl_field_l[i{int} {i} ]{int} {lvl_field_l} , CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 40){Builtin, None, set_control_par}
+			set_control_par(lvl_field_r[i{int} {i} ]{int} {lvl_field_r} , CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , get_control_par(lvl_field_l[i{int} {i} ]{int} {lvl_field_l} , CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} ){Builtin, None, get_control_par} + 5){Builtin, None, set_control_par}
+			set_control_par(lvl_field_r[i{int} {i} ]{int} {lvl_field_r} , CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 432){Builtin, None, set_control_par}
+			set_control_par(lvl_field_r[i{int} {i} ]{int} {lvl_field_r} , CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 3){Builtin, None, set_control_par}
+			set_control_par(lvl_field_r[i{int} {i} ]{int} {lvl_field_r} , CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 40){Builtin, None, set_control_par}
 		else
-			Send::allocation[current2{int} {current2} ]{int} {Send::allocation}  := 0
+			set_control_par_str(btn_field_nav[i{int} {i} ]{int} {btn_field_nav} , CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , field_names[i{int} {i} ]{string} {field_names} ){Builtin, None, set_control_par_str}
+			set_control_par_str(btn_field_nav[i{int} {i} ]{int} {btn_field_nav} , CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "alpha"){Builtin, None, set_control_par_str}
+			set_control_par(btn_field_nav[i{int} {i} ]{int} {btn_field_nav} , CONTROL_PAR_TEXT_ALIGNMENT{int} {CONTROL_PAR_TEXT_ALIGNMENT} , 1){Builtin, None, set_control_par}
+			set_control_par(btn_field_nav[i{int} {i} ]{int} {btn_field_nav} , CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , _font.robmed13[2]{int} {_font.robmed13} ){Builtin, None, set_control_par}
+			set_control_par(btn_field_nav[i{int} {i} ]{int} {btn_field_nav} , CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , main_grid_x[i{int} {i} ]{int} {main_grid_x}  + 15){Builtin, None, set_control_par}
+			set_control_par(btn_field_nav[i{int} {i} ]{int} {btn_field_nav} , CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 400){Builtin, None, set_control_par}
+			set_control_par(btn_field_nav[i{int} {i} ]{int} {btn_field_nav} , CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 80){Builtin, None, set_control_par}
+			set_control_par(btn_field_nav[i{int} {i} ]{int} {btn_field_nav} , CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 25){Builtin, None, set_control_par}
+			set_control_par(sli_field_vol[i{int} {i} ]{int} {sli_field_vol} , CONTROL_PAR_DEFAULT_VALUE{int} {CONTROL_PAR_DEFAULT_VALUE} , 630000){Builtin, None, set_control_par}
+			set_control_par_str(sli_field_vol[i{int} {i} ]{int} {sli_field_vol} , CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "LayerVolume"){Builtin, None, set_control_par_str}
+			set_control_par(sli_field_vol[i{int} {i} ]{int} {sli_field_vol} , CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , main_grid_x[i{int} {i} ]{int} {main_grid_x} ){Builtin, None, set_control_par}
+			set_control_par(sli_field_vol[i{int} {i} ]{int} {sli_field_vol} , CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 465){Builtin, None, set_control_par}
+			set_control_par(sli_field_vol[i{int} {i} ]{int} {sli_field_vol} , CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 110){Builtin, None, set_control_par}
+			set_control_par(sli_field_vol[i{int} {i} ]{int} {sli_field_vol} , CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 15){Builtin, None, set_control_par}
+			set_control_par(lvl_field_l[i{int} {i} ]{int} {lvl_field_l} , CONTROL_PAR_BG_COLOR{int} {CONTROL_PAR_BG_COLOR} , 13684944){Builtin, None, set_control_par}
+			set_control_par(lvl_field_l[i{int} {i} ]{int} {lvl_field_l} , CONTROL_PAR_OFF_COLOR{int} {CONTROL_PAR_OFF_COLOR} , 13684944){Builtin, None, set_control_par}
+			set_control_par(lvl_field_l[i{int} {i} ]{int} {lvl_field_l} , CONTROL_PAR_ON_COLOR{int} {CONTROL_PAR_ON_COLOR} , 16777215){Builtin, None, set_control_par}
+			set_control_par(lvl_field_l[i{int} {i} ]{int} {lvl_field_l} , CONTROL_PAR_OVERLOAD_COLOR{int} {CONTROL_PAR_OVERLOAD_COLOR} , 16711680){Builtin, None, set_control_par}
+			set_control_par(lvl_field_r[i{int} {i} ]{int} {lvl_field_r} , CONTROL_PAR_BG_COLOR{int} {CONTROL_PAR_BG_COLOR} , 13684944){Builtin, None, set_control_par}
+			set_control_par(lvl_field_r[i{int} {i} ]{int} {lvl_field_r} , CONTROL_PAR_OFF_COLOR{int} {CONTROL_PAR_OFF_COLOR} , 13684944){Builtin, None, set_control_par}
+			set_control_par(lvl_field_r[i{int} {i} ]{int} {lvl_field_r} , CONTROL_PAR_ON_COLOR{int} {CONTROL_PAR_ON_COLOR} , 16777215){Builtin, None, set_control_par}
+			set_control_par(lvl_field_r[i{int} {i} ]{int} {lvl_field_r} , CONTROL_PAR_OVERLOAD_COLOR{int} {CONTROL_PAR_OVERLOAD_COLOR} , 16711680){Builtin, None, set_control_par}
+			set_control_par(lvl_field_l[i{int} {i} ]{int} {lvl_field_l} , CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , main_grid_x[i{int} {i} ]{int} {main_grid_x}  + 118){Builtin, None, set_control_par}
+			set_control_par(lvl_field_l[i{int} {i} ]{int} {lvl_field_l} , CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 403){Builtin, None, set_control_par}
+			set_control_par(lvl_field_l[i{int} {i} ]{int} {lvl_field_l} , CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 3){Builtin, None, set_control_par}
+			set_control_par(lvl_field_l[i{int} {i} ]{int} {lvl_field_l} , CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 70){Builtin, None, set_control_par}
+			set_control_par(lvl_field_r[i{int} {i} ]{int} {lvl_field_r} , CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , get_control_par(lvl_field_l[i{int} {i} ]{int} {lvl_field_l} , CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} ){Builtin, None, get_control_par} + 5){Builtin, None, set_control_par}
+			set_control_par(lvl_field_r[i{int} {i} ]{int} {lvl_field_r} , CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 403){Builtin, None, set_control_par}
+			set_control_par(lvl_field_r[i{int} {i} ]{int} {lvl_field_r} , CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 3){Builtin, None, set_control_par}
+			set_control_par(lvl_field_r[i{int} {i} ]{int} {lvl_field_r} , CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 70){Builtin, None, set_control_par}
 		end if
-		self18{int} {self18}  := current2{int} {current2} 
-		current2{int} {current2}  := -1
-		_iter12{int} {_iter12}  := 0
-		while(_iter12{int} {_iter12}  <= 7) 
-			self21{int} {self21}  := _Send::slot[(self18{int} {self18}  * 8) + _iter12{int} {_iter12} ]{int} {_Send::slot} 
-			num_refs8{int} {num_refs8}  := 1
-			current0{int} {current0}  := self21{int} {self21} 
-			while(current0{int} {current0}  # -1) 
-				_iter7{int} {_iter7}  := 0
-				Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  - num_refs8{int} {num_refs8} 
-				if(Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  > 0)
-					current0{int} {current0}  := -1
-					continue{Builtin, None, continue}
-				else
-					Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := 0
-				end if
-				self21{int} {self21}  := current0{int} {current0} 
-				current0{int} {current0}  := -1
-				self20{int} {self20}  := self21{int} {self21} 
-				if(self20{int} {self20}  # -1)
-					Slot::bus_idx[self20{int} {self20} ]{int} {Slot::bus_idx}  := 0
-					Slot::group_idx[self20{int} {self20} ]{int} {Slot::group_idx}  := 0
-					Slot::slot_idx[self20{int} {self20} ]{int} {Slot::slot_idx}  := 0
-					Slot::free_idx{int} {Slot::free_idx}  := ((Slot::free_idx{int} {Slot::free_idx}  + self20{int} {self20} ) - abs(Slot::free_idx{int} {Slot::free_idx}  - self20{int} {self20} ){Builtin, None, abs}) / 2
-				end if
-			end while
-			inc(_iter12{int} {_iter12} ){Builtin, None, inc}
-		end while
-		self17{int} {self17}  := self18{int} {self18} 
-		if(self17{int} {self17}  # -1)
-			_iter15{int} {_iter15}  := 0
-			while(_iter15{int} {_iter15}  <= 7) 
-				_Send::slot[(self17{int} {self17}  * 8) + _iter15{int} {_iter15} ]{int} {_Send::slot}  := -1
-				inc(_iter15{int} {_iter15} ){Builtin, None, inc}
-			end while
-			Send::free_idx{int} {Send::free_idx}  := ((Send::free_idx{int} {Send::free_idx}  + self17{int} {self17} ) - abs(Send::free_idx{int} {Send::free_idx}  - self17{int} {self17} ){Builtin, None, abs}) / 2
-		end if
+		inc(i{int} {i} ){Builtin, None, inc}
 	end while
-	Send::free_idx{int} {Send::free_idx}  := search(Send::allocation{int[]} {Send::allocation} , 0, Send::free_idx{int} {Send::free_idx} , 124999){Builtin, None, search}
-	if(Send::free_idx{int} {Send::free_idx}  = -1)
-		message("Error: No more free space available to allocate objects of type 'Send'"){Builtin, None, message}
-	end if
-	Send::allocation[Send::free_idx{int} {Send::free_idx} ]{int} {Send::allocation}  := 1
-	idx0{int} {idx0}  := 0
-	_iter30{int} {_iter30}  := 0
-	while(_iter30{int} {_iter30}  <= 7) 
-		self21{int} {self21}  := _Send::slot[(Send::free_idx{int} {Send::free_idx}  * 8) + _iter30{int} {_iter30} ]{int} {_Send::slot} 
-		num_refs8{int} {num_refs8}  := 1
-		current0{int} {current0}  := self21{int} {self21} 
-		while(current0{int} {current0}  # -1) 
-			_iter7{int} {_iter7}  := 0
-			Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  - num_refs8{int} {num_refs8} 
-			if(Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  > 0)
-				current0{int} {current0}  := -1
-				continue{Builtin, None, continue}
+	declare ui_label lbl_bg_change : int (1, 1) {Reuses: 0}
+	set_control_par_str(get_ui_id(lbl_bg_change{int} {lbl_bg_change} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , ""){Builtin, None, set_control_par_str}
+	set_control_par_str(get_ui_id(lbl_bg_change{int} {lbl_bg_change} ){Builtin, None, get_ui_id}, CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "bg-blur"){Builtin, None, set_control_par_str}
+	set_control_par(get_ui_id(lbl_bg_change{int} {lbl_bg_change} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_X{int} {CONTROL_PAR_POS_X} , 18){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(lbl_bg_change{int} {lbl_bg_change} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , 52){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(lbl_bg_change{int} {lbl_bg_change} ){Builtin, None, get_ui_id}, CONTROL_PAR_WIDTH{int} {CONTROL_PAR_WIDTH} , 865){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(lbl_bg_change{int} {lbl_bg_change} ){Builtin, None, get_ui_id}, CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , 330){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(lbl_bg_change{int} {lbl_bg_change} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[0]{int} {hide_state} ){Builtin, None, set_control_par}
+end on
+
+on ui_controls
+	uiid1{int} {uiid1}  := NI_UI_ID{int} {NI_UI_ID} 
+	i0{int} {i0}  := 0
+	idx1{int} {idx1}  := search(btn_field_nav{int[]} {btn_field_nav} , uiid1{int} {uiid1} ){Builtin, None, search}
+	if(idx1{int} {idx1}  # -1)
+		exception_idx1{int} {exception_idx1}  := idx1{int} {idx1} 
+		idx0{int} {idx0}  := 0
+		while(idx0{int} {idx0}  <= (num_elements(btn_field_nav{int[]} {btn_field_nav} ){Builtin, None, num_elements} - 1)) 
+			if(idx0{int} {idx0}  # exception_idx1{int} {exception_idx1} )
+				set_control_par(btn_field_nav[idx0{int} {idx0} ]{int} {btn_field_nav} , CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} , 0){Builtin, None, set_control_par}
 			else
-				Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := 0
+				set_control_par(btn_field_nav[idx0{int} {idx0} ]{int} {btn_field_nav} , CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} , 1){Builtin, None, set_control_par}
 			end if
-			self21{int} {self21}  := current0{int} {current0} 
-			current0{int} {current0}  := -1
-			self20{int} {self20}  := self21{int} {self21} 
-			if(self20{int} {self20}  # -1)
-				Slot::bus_idx[self20{int} {self20} ]{int} {Slot::bus_idx}  := 0
-				Slot::group_idx[self20{int} {self20} ]{int} {Slot::group_idx}  := 0
-				Slot::slot_idx[self20{int} {self20} ]{int} {Slot::slot_idx}  := 0
-				Slot::free_idx{int} {Slot::free_idx}  := ((Slot::free_idx{int} {Slot::free_idx}  + self20{int} {self20} ) - abs(Slot::free_idx{int} {Slot::free_idx}  - self20{int} {self20} ){Builtin, None, abs}) / 2
-			end if
+			inc(idx0{int} {idx0} ){Builtin, None, inc}
 		end while
-		slot_idx0{int} {slot_idx0}  := idx0{int} {idx0} 
-		group_idx0{int} {group_idx0}  := -1
-		bus_idx1{int} {bus_idx1}  := NI_SEND_BUS{int} {NI_SEND_BUS} 
-		Slot::free_idx{int} {Slot::free_idx}  := search(Slot::allocation{int[]} {Slot::allocation} , 0, Slot::free_idx{int} {Slot::free_idx} , 999999){Builtin, None, search}
-		if(Slot::free_idx{int} {Slot::free_idx}  = -1)
-			message("Error: No more free space available to allocate objects of type 'Slot'"){Builtin, None, message}
-		end if
-		Slot::allocation[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::allocation}  := 1
-		Slot::slot_idx[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::slot_idx}  := slot_idx0{int} {slot_idx0} 
-		Slot::group_idx[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::group_idx}  := group_idx0{int} {group_idx0} 
-		Slot::bus_idx[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::bus_idx}  := bus_idx1{int} {bus_idx1} 
-		ret3{int} {ret3}  := Slot::free_idx{int} {Slot::free_idx} 
-		_Send::slot[(Send::free_idx{int} {Send::free_idx}  * 8) + _iter30{int} {_iter30} ]{int} {_Send::slot}  := ret3{int} {ret3} 
-		self22{int} {self22}  := _Send::slot[(Send::free_idx{int} {Send::free_idx}  * 8) + _iter30{int} {_iter30} ]{int} {_Send::slot} 
-		num_refs9{int} {num_refs9}  := 1
-		if(self22{int} {self22}  # -1)
-			Slot::allocation[self22{int} {self22} ]{int} {Slot::allocation}  := Slot::allocation[self22{int} {self22} ]{int} {Slot::allocation}  + num_refs9{int} {num_refs9} 
-		end if
-		inc(_iter30{int} {_iter30} ){Builtin, None, inc}
-		inc(idx0{int} {idx0} ){Builtin, None, inc}
-	end while
-	ret4{int} {ret4}  := Send::free_idx{int} {Send::free_idx} 
-	Engine::send[Engine::free_idx{int} {Engine::free_idx} ]{int} {Engine::send}  := ret4{int} {ret4} 
-	self19{int} {self19}  := Engine::send[Engine::free_idx{int} {Engine::free_idx} ]{int} {Engine::send} 
-	num_refs7{int} {num_refs7}  := 1
-	if(self19{int} {self19}  # -1)
-		Send::allocation[self19{int} {self19} ]{int} {Send::allocation}  := Send::allocation[self19{int} {self19} ]{int} {Send::allocation}  + num_refs7{int} {num_refs7} 
+		i0{int} {i0}  := 0
+		while(i0{int} {i0}  <= 5) 
+			set_control_par(pnl_field[i0{int} {i0} ]{int} {pnl_field} , CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[get_control_par(btn_field_nav[i0{int} {i0} ]{int} {btn_field_nav} , CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} ){Builtin, None, get_control_par}]{int} {hide_state} ){Builtin, None, set_control_par}
+			set_control_par(btn_field_nav[i0{int} {i0} ]{int} {btn_field_nav} , CONTROL_PAR_FONT_TYPE{int} {CONTROL_PAR_FONT_TYPE} , _font.robmed13[get_control_par(btn_field_nav[i0{int} {i0} ]{int} {btn_field_nav} , CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} ){Builtin, None, get_control_par} * 2]{int} {_font.robmed13} ){Builtin, None, set_control_par}
+			inc(i0{int} {i0} ){Builtin, None, inc}
+		end while
 	end if
-	id1{int} {id1}  := 0
-	_iter20{int} {_iter20}  := 0
-	while(_iter20{int} {_iter20}  <= 15) 
-		self15{int} {self15}  := _Engine::bus[(Engine::free_idx{int} {Engine::free_idx}  * 16) + _iter20{int} {_iter20} ]{int} {_Engine::bus} 
-		num_refs4{int} {num_refs4}  := 1
-		current3{int} {current3}  := self15{int} {self15} 
-		while(current3{int} {current3}  # -1) 
-			_iter14{int} {_iter14}  := 0
-			Bus::allocation[current3{int} {current3} ]{int} {Bus::allocation}  := Bus::allocation[current3{int} {current3} ]{int} {Bus::allocation}  - num_refs4{int} {num_refs4} 
-			if(Bus::allocation[current3{int} {current3} ]{int} {Bus::allocation}  > 0)
-				current3{int} {current3}  := -1
-				continue{Builtin, None, continue}
-			else
-				Bus::allocation[current3{int} {current3} ]{int} {Bus::allocation}  := 0
-			end if
-			self15{int} {self15}  := current3{int} {current3} 
-			current3{int} {current3}  := -1
-			_iter14{int} {_iter14}  := 0
-			while(_iter14{int} {_iter14}  <= 7) 
-				self21{int} {self21}  := _Bus::slot[(self15{int} {self15}  * 8) + _iter14{int} {_iter14} ]{int} {_Bus::slot} 
-				num_refs8{int} {num_refs8}  := 1
-				current0{int} {current0}  := self21{int} {self21} 
-				while(current0{int} {current0}  # -1) 
-					_iter7{int} {_iter7}  := 0
-					Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  - num_refs8{int} {num_refs8} 
-					if(Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  > 0)
-						current0{int} {current0}  := -1
-						continue{Builtin, None, continue}
-					else
-						Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := 0
-					end if
-					self21{int} {self21}  := current0{int} {current0} 
-					current0{int} {current0}  := -1
-					self20{int} {self20}  := self21{int} {self21} 
-					if(self20{int} {self20}  # -1)
-						Slot::bus_idx[self20{int} {self20} ]{int} {Slot::bus_idx}  := 0
-						Slot::group_idx[self20{int} {self20} ]{int} {Slot::group_idx}  := 0
-						Slot::slot_idx[self20{int} {self20} ]{int} {Slot::slot_idx}  := 0
-						Slot::free_idx{int} {Slot::free_idx}  := ((Slot::free_idx{int} {Slot::free_idx}  + self20{int} {self20} ) - abs(Slot::free_idx{int} {Slot::free_idx}  - self20{int} {self20} ){Builtin, None, abs}) / 2
-					end if
-				end while
-				inc(_iter14{int} {_iter14} ){Builtin, None, inc}
-			end while
-			self14{int} {self14}  := self15{int} {self15} 
-			if(self14{int} {self14}  # -1)
-				_iter15{int} {_iter15}  := 0
-				while(_iter15{int} {_iter15}  <= 7) 
-					_Bus::slot[(self14{int} {self14}  * 8) + _iter15{int} {_iter15} ]{int} {_Bus::slot}  := -1
-					inc(_iter15{int} {_iter15} ){Builtin, None, inc}
-				end while
-				Bus::free_idx{int} {Bus::free_idx}  := ((Bus::free_idx{int} {Bus::free_idx}  + self14{int} {self14} ) - abs(Bus::free_idx{int} {Bus::free_idx}  - self14{int} {self14} ){Builtin, None, abs}) / 2
-			end if
-		end while
-		bus_idx0{int} {bus_idx0}  := id1{int} {id1} 
-		Bus::free_idx{int} {Bus::free_idx}  := search(Bus::allocation{int[]} {Bus::allocation} , 0, Bus::free_idx{int} {Bus::free_idx} , 124999){Builtin, None, search}
-		if(Bus::free_idx{int} {Bus::free_idx}  = -1)
-			message("Error: No more free space available to allocate objects of type 'Bus'"){Builtin, None, message}
-		end if
-		Bus::allocation[Bus::free_idx{int} {Bus::free_idx} ]{int} {Bus::allocation}  := 1
-		idx1{int} {idx1}  := 0
-		_iter40{int} {_iter40}  := 0
-		while(_iter40{int} {_iter40}  <= 7) 
-			self21{int} {self21}  := _Bus::slot[(Bus::free_idx{int} {Bus::free_idx}  * 8) + _iter40{int} {_iter40} ]{int} {_Bus::slot} 
-			num_refs8{int} {num_refs8}  := 1
-			current0{int} {current0}  := self21{int} {self21} 
-			while(current0{int} {current0}  # -1) 
-				_iter7{int} {_iter7}  := 0
-				Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  - num_refs8{int} {num_refs8} 
-				if(Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  > 0)
-					current0{int} {current0}  := -1
-					continue{Builtin, None, continue}
-				else
-					Slot::allocation[current0{int} {current0} ]{int} {Slot::allocation}  := 0
-				end if
-				self21{int} {self21}  := current0{int} {current0} 
-				current0{int} {current0}  := -1
-				self20{int} {self20}  := self21{int} {self21} 
-				if(self20{int} {self20}  # -1)
-					Slot::bus_idx[self20{int} {self20} ]{int} {Slot::bus_idx}  := 0
-					Slot::group_idx[self20{int} {self20} ]{int} {Slot::group_idx}  := 0
-					Slot::slot_idx[self20{int} {self20} ]{int} {Slot::slot_idx}  := 0
-					Slot::free_idx{int} {Slot::free_idx}  := ((Slot::free_idx{int} {Slot::free_idx}  + self20{int} {self20} ) - abs(Slot::free_idx{int} {Slot::free_idx}  - self20{int} {self20} ){Builtin, None, abs}) / 2
-				end if
-			end while
-			slot_idx0{int} {slot_idx0}  := idx1{int} {idx1} 
-			group_idx0{int} {group_idx0}  := -1
-			bus_idx1{int} {bus_idx1}  := NI_BUS_OFFSET{int} {NI_BUS_OFFSET}  + bus_idx0{int} {bus_idx0} 
-			Slot::free_idx{int} {Slot::free_idx}  := search(Slot::allocation{int[]} {Slot::allocation} , 0, Slot::free_idx{int} {Slot::free_idx} , 999999){Builtin, None, search}
-			if(Slot::free_idx{int} {Slot::free_idx}  = -1)
-				message("Error: No more free space available to allocate objects of type 'Slot'"){Builtin, None, message}
-			end if
-			Slot::allocation[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::allocation}  := 1
-			Slot::slot_idx[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::slot_idx}  := slot_idx0{int} {slot_idx0} 
-			Slot::group_idx[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::group_idx}  := group_idx0{int} {group_idx0} 
-			Slot::bus_idx[Slot::free_idx{int} {Slot::free_idx} ]{int} {Slot::bus_idx}  := bus_idx1{int} {bus_idx1} 
-			ret3{int} {ret3}  := Slot::free_idx{int} {Slot::free_idx} 
-			_Bus::slot[(Bus::free_idx{int} {Bus::free_idx}  * 8) + _iter40{int} {_iter40} ]{int} {_Bus::slot}  := ret3{int} {ret3} 
-			self22{int} {self22}  := _Bus::slot[(Bus::free_idx{int} {Bus::free_idx}  * 8) + _iter40{int} {_iter40} ]{int} {_Bus::slot} 
-			num_refs9{int} {num_refs9}  := 1
-			if(self22{int} {self22}  # -1)
-				Slot::allocation[self22{int} {self22} ]{int} {Slot::allocation}  := Slot::allocation[self22{int} {self22} ]{int} {Slot::allocation}  + num_refs9{int} {num_refs9} 
-			end if
-			inc(_iter40{int} {_iter40} ){Builtin, None, inc}
-			inc(idx1{int} {idx1} ){Builtin, None, inc}
-		end while
-		ret5{int} {ret5}  := Bus::free_idx{int} {Bus::free_idx} 
-		_Engine::bus[(Engine::free_idx{int} {Engine::free_idx}  * 16) + _iter20{int} {_iter20} ]{int} {_Engine::bus}  := ret5{int} {ret5} 
-		self16{int} {self16}  := _Engine::bus[(Engine::free_idx{int} {Engine::free_idx}  * 16) + _iter20{int} {_iter20} ]{int} {_Engine::bus} 
-		num_refs5{int} {num_refs5}  := 1
-		if(self16{int} {self16}  # -1)
-			Bus::allocation[self16{int} {self16} ]{int} {Bus::allocation}  := Bus::allocation[self16{int} {self16} ]{int} {Bus::allocation}  + num_refs5{int} {num_refs5} 
-		end if
-		inc(_iter20{int} {_iter20} ){Builtin, None, inc}
-		inc(id1{int} {id1} ){Builtin, None, inc}
-	end while
-	ret1{int} {ret1}  := Engine::free_idx{int} {Engine::free_idx} 
-	Engine{int} {Engine}  := ret1{int} {ret1} 
-	bus_idx1{int} {bus_idx1}  := _Group::slot[(_Engine::group[(Engine{int} {Engine}  * 100) + 2]{int} {_Engine::group}  * 8) + 3]{int} {_Group::slot} 
-	group_idx0{int} {group_idx0}  := 10000
-	set_engine_par(ENGINE_PAR_VOLUME{int} {ENGINE_PAR_VOLUME} , 10000, Slot::group_idx[bus_idx1{int} {bus_idx1} ]{int} {Slot::group_idx} , Slot::slot_idx[bus_idx1{int} {bus_idx1} ]{int} {Slot::slot_idx} , Slot::bus_idx[bus_idx1{int} {bus_idx1} ]{int} {Slot::bus_idx} ){Builtin, None, set_engine_par}
-	bus_idx1{int} {bus_idx1}  := _Bus::slot[_Engine::bus[(Engine{int} {Engine}  * 16) + 1]{int} {_Engine::bus}  * 8]{int} {_Bus::slot} 
-	group_idx0{int} {group_idx0}  := 8000
-	set_engine_par(ENGINE_PAR_VOLUME{int} {ENGINE_PAR_VOLUME} , 8000, Slot::group_idx[bus_idx1{int} {bus_idx1} ]{int} {Slot::group_idx} , Slot::slot_idx[bus_idx1{int} {bus_idx1} ]{int} {Slot::slot_idx} , Slot::bus_idx[bus_idx1{int} {bus_idx1} ]{int} {Slot::bus_idx} ){Builtin, None, set_engine_par}
+end on
+
+on ui_control(btn_gui_reference{int} {btn_gui_reference} )
+	set_control_par(get_ui_id(lbl_gui_refernece{int} {lbl_gui_refernece} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[btn_gui_reference{int} {btn_gui_reference} ]{int} {hide_state} ){Builtin, None, set_control_par}
 end on
 
 

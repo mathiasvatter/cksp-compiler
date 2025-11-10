@@ -150,6 +150,7 @@ public:
 		// input_filename = "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp";
 		// input_filename = "/Users/mathias/Scripting/sonu-libraries/try.ksp";
 		// input_filename = "/Users/mathias/Scripting/trinity-drums-2/main.ksp";
+		input_filename = "/Users/mathias/Scripting/the-sculpture/TheSculpture.ksp";
 		if (!input_filename.empty()) m_cli_config->input_filename = input_filename;
 		// m_cli_config->optimization_level = OptimizationLevel::None;
 #endif

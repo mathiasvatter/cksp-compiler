@@ -70,40 +70,47 @@ struct Slot
 	end macro
 end struct
 
-const PARAM
-	VOL, PAN
-end const
-
-struct Param
-	param_idx: int
-	ui_id: int
-	engine_par: int
-end struct
-define knob_with_title(#param_idx#, #name#, #engine_par#) := new Param(PARAM.#param_idx#, get_ui_id(slider_#name#), ENGINE_PAR_#engine_par#)
-on init
-	declare ui_slider slider_vol: int (0,1000000)
-	declare ui_slider slider_pan: int (0,1000000)
-	declare param_objects: Param[] := [
-		knob_with_title(VOL, vol, VOLUME),
-		knob_with_title(PAN, pan, PAN)
-	]
-end on
 
 // declare Slot := new Slot(0, 2, -1)
-on init
-	declare ui_menu mnu: int
-	for i in range(10)
-		set_menu_item_str(get_ui_id(mnu), i, "blabla")
-	end for
-	mnu -> short_name := "mnu"
-	message(mnu -> short_name)
-	add_menu_item(mnu->short_name, "sdfkj", 0)
+// on init
+// 	declare ui_menu mnu: int
+// 	for i in range(10)
+// 		set_menu_item_str(get_ui_id(mnu), i, "blabla")
+// 	end for
+// 	mnu -> short_name := "mnu"
+// 	message(mnu -> short_name)
+// 	add_menu_item(mnu->short_name, "sdfkj", 0)
 
-	declare Engine := new Engine()
-	Engine.group[2].slot[3].set_volume(10000)
-	Engine.bus[1].slot[0].set_volume(8000)
-end on
+// 	declare Engine := new Engine()
+// 	Engine.group[2].slot[3].set_volume(10000)
+// 	Engine.bus[1].slot[0].set_volume(8000)
+// end on
 
 // on init
 // 	message("Initialization complete.")
 // end on
+
+
+struct Event
+	id: int
+
+	function set_velocity(self, val: int)
+		set_event_par(self.id, EVENT_PAR_VELOCITY, val)
+	end function
+
+	function set_pan(self, val: int)
+		set_event_par(self.id, EVENT_PAR_PAN, val)
+	end function
+end struct
+
+function playstep(): Event
+	declare id := play_note(60, 127, 0, -1)
+	return new Event(id)
+end function
+
+on note
+	declare ev := playstep()
+	ev.set_velocity(420)
+	ev.set_pan(1000)
+end on
+
