@@ -13,8 +13,10 @@ class TypeInference final : public ASTVisitor {
 	std::vector<NodeFunctionCall*> m_func_calls;
 
 	void do_monomorphization() {
-
-		for (const auto& call : m_func_calls) {
+		// copy m_func_calls to avoid modification during iteration (especially when visiting nodes again
+		// and collecting the same function call twice!!)
+		std::vector<NodeFunctionCall*> calls = m_func_calls;
+		for (const auto& call : calls) {
 			if (call->kind != NodeFunctionCall::Kind::UserDefined) continue;
 			auto const def = call->get_definition();
 			if (!def) continue;
@@ -36,7 +38,7 @@ class TypeInference final : public ASTVisitor {
 
 		m_program->reset_function_visited_flag();
 
-		for (const auto& call : m_func_calls) {
+		for (const auto& call : calls) {
 			if (call->kind != NodeFunctionCall::Kind::UserDefined) continue;
 			auto const def = call->get_definition();
 			if (!def) continue;
