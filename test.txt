@@ -1,64 +1,36 @@
-{ Compiled with cksp version 0.0.8-alpha.4 on Mon Nov 10 13:03:11 2025 }
+{ Compiled with cksp version 0.0.8-alpha.5 on Sat Nov 29 17:11:47 2025 }
 on init
-  declare $_iter0
-  declare $ret1
-  declare $id0
   declare $ret0
-  declare $id1
-  declare $current0
-  declare %ev0[420]
-  declare $Event____free_idx
-  declare %Event____allocation[1000000]
-  declare %Event____id[1000000]
-end on
-on note
-  $_iter0 := 0
-  while($_iter0 <= (num_elements(%ev0) - 1)) 
-    %ev0[$_iter0] := 0
-    inc($_iter0)
+  declare $num_keys_pressed0
+  declare $_iter10
+  declare $i0
+  declare $_step00
+  declare $_stop00
+  declare %fx_modules_head_y[2] := (95, 254)
+  declare %fx_mnus_y[3] := (%fx_modules_head_y[0], %fx_modules_head_y[1], %fx_modules_head_y[1])
+  message(%fx_mnus_y[0])
+  declare %MAX_KEYS[3] := (123, 123, 23)
+  declare %MIN_KEYS[3]
+  %MIN_KEYS[0] := %MAX_KEYS[0]
+  %MIN_KEYS[1] := 12
+  %MIN_KEYS[2] := 0
+  message(%MIN_KEYS[0])
+  declare %keys_pressed__seq[128]
+  $i0 := 0
+  $_step00 := 1
+  $_stop00 := 128
+  while((($i0 < $_stop00) and ($_step00 > 0)) or (($i0 > $_stop00) and ($_step00 < 0))) 
+    %keys_pressed__seq[$i0] := random(0, 1)
+    $i0 := $i0 + $_step00
   end while
-  $id1 := play_note(60, 127, 0, -1)
-  $id0 := $id1
-  $Event____free_idx := search(%Event____allocation, 0, $Event____free_idx, 999999)
-  if($Event____free_idx = -1)
-    message("Error: No more free space available to allocate objects of type 'Event'")
-  end if
-  %Event____allocation[$Event____free_idx] := 1
-  %Event____id[$Event____free_idx] := $id0
-  $ret1 := $Event____free_idx
-  $ret0 := $ret1
-  %ev0[$NI_CALLBACK_ID mod 420] := $ret0
-  $ret0 := %ev0[$NI_CALLBACK_ID mod 420]
-  $id1 := 1
-  if($ret0 # -1)
-    %Event____allocation[$ret0] := %Event____allocation[$ret0] + $id1
-  end if
-  $id1 := %ev0[$NI_CALLBACK_ID mod 420]
-  $ret0 := 420
-  set_event_par(%Event____id[$id1], $EVENT_PAR_VELOCITY, $ret0)
-  $ret0 := %ev0[$NI_CALLBACK_ID mod 420]
-  $id1 := 1000
-  set_event_par(%Event____id[$ret0], $EVENT_PAR_PAN, 1000)
-  wait(1000)
-  $id1 := %ev0[$NI_CALLBACK_ID mod 420]
-  $ret0 := 1
-  $current0 := $id1
-  while($current0 # -1) 
-    %Event____allocation[$current0] := %Event____allocation[$current0] - $ret0
-    if(%Event____allocation[$current0] > 0)
-      $current0 := -1
-      continue
-    else
-      %Event____allocation[$current0] := 0
-    end if
-    $id1 := $current0
-    $current0 := -1
-    $id0 := $id1
-    $ret1 := 0
-    if($id0 # -1)
-      %Event____id[$id0] := 0
-      $Event____free_idx := (($Event____free_idx + $id0) - abs($Event____free_idx - $id0)) / 2
-    end if
+  $num_keys_pressed0 := 0
+  $_iter10 := 0
+  while($_iter10 <= (num_elements(%keys_pressed__seq) - 1)) 
+    $num_keys_pressed0 := $num_keys_pressed0 + %keys_pressed__seq[$_iter10]
+    inc($_iter10)
   end while
+  $ret0 := $num_keys_pressed0
+  $i0 := $ret0
+  message($i0)
 end on
 

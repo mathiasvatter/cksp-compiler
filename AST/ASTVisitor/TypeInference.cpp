@@ -43,7 +43,6 @@ void TypeInference::cast_data_structure_types(const NodeProgram* program, const 
 			match_reference_declaration(*ref, declaration);
 		}
 	}
-	def_provider->m_all_data_structures.clear();
 	def_provider->m_all_references.clear();
 }
 
@@ -391,10 +390,6 @@ NodeAST * TypeInference::visit(NodeForEach& node) {
 		match_against(*node.key->variable, TypeRegistry::Integer);
 	}
 
-	// if (node.value->variable->name == "preset") {
-	//
-	// }
-
 	node.range->accept(*this);
 	if(auto pairs = node.range->cast<NodePairs>()) {
 		match_element_types(*pairs->range, *node.value->variable);
@@ -598,12 +593,12 @@ NodeAST * TypeInference::visit(NodeSingleDeclaration& node) {
 	m_def_provider->add_to_declarations(&node);
 
 	// if declaration is pointer -> always initialize with nil!
-	if(node.variable->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
+	if(node.variable->ty->get_element_type()->cast<ObjectType>()) {
 		if(!node.value) {
 			node.set_value(std::make_unique<NodeNil>(node.tok));
 			node.value->accept(*this);
 			// wrap nil in initializer list if variable is of composite type
-			if(node.variable->ty->get_type_kind() == TypeKind::Composite) {
+			if(node.variable->ty->cast<CompositeType>()) {
 				return node.value
 				->replace_with(std::make_unique<NodeInitializerList>(node.tok, std::make_unique<NodeNil>(node.tok)))
 				->accept(*this);
@@ -893,7 +888,7 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 
 	bool is_object = false;
 	// if type is object -> check for operator overloading
-	if(node.left->ty->get_type_kind() == TypeKind::Object) {
+	if(node.left->ty->cast<ObjectType>()) {
 		auto strct = NodeReference::get_object_ptr(m_program, node.left->ty->to_string());
 		if(auto def = strct->get_overloaded_method(node.op)) {
 			match_type(*node.right, *def->header->get_param(1), "Second argument of overloaded operator does not match expected type.");

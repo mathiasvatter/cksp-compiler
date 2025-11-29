@@ -124,6 +124,68 @@ class TypeInference final : public ASTVisitor {
 		// std::cout << "[Timing] Mergen und updaten der function definitions dauerte: " << duration_merge << " µs" << std::endl;
 	}
 
+	void apply_types_to_data_structures() const {
+		parallel_for_each(m_def_provider->m_all_data_structures.begin(),
+			m_def_provider->m_all_data_structures.end(),
+			[](const std::weak_ptr<NodeDataStructure>& data_struct_weak) {
+				auto data_ptr = data_struct_weak.lock();
+				if (!data_ptr) {
+					return;
+				}
+				if (auto comp_type = data_ptr->ty->cast<CompositeType>()) {
+					if (comp_type->get_dimensions() == 0) {
+						data_ptr->ty = TypeRegistry::add_composite_type(CompoundKind::Array,
+							comp_type->get_element_type(), 1);
+					}
+					std::unique_ptr<NodeDataStructure> new_node = nullptr;
+					// if node is variable -> array or ndarray
+					if (data_ptr->cast<NodeVariable>()) {
+						auto dims = std::max(1, comp_type->get_dimensions());
+						if (dims == 1) {
+							new_node = data_ptr->to_array(nullptr);
+						} else {
+							new_node = data_ptr->to_ndarray();
+						}
+					}
+					if (new_node != nullptr) {
+						new_node -> ty = data_ptr->ty;
+						data_ptr->replace_datastruct(std::move(new_node));
+					}
+				}
+			});
+		// for (int i = 0; i < m_def_provider->m_all_data_structures.size(); i++) {
+		//
+		// 	auto data_struct = m_def_provider->m_all_data_structures[i];
+		// 	auto data_ptr = data_struct.lock();
+		// 	if (!data_ptr) {
+		// 		continue;
+		// 	}
+		//
+		// 	if (auto comp_type = data_ptr->ty->cast<CompositeType>()) {
+		// 		if (comp_type->get_dimensions() == 0) {
+		// 			data_ptr->ty = TypeRegistry::add_composite_type(CompoundKind::Array,
+		// 				comp_type->get_element_type(), 1);
+		// 		}
+		// 		std::unique_ptr<NodeDataStructure> new_node = nullptr;
+		// 		// if node is variable -> array or ndarray
+		// 		if (data_ptr->cast<NodeVariable>()) {
+		// 			auto dims = std::max(1, comp_type->get_dimensions());
+		// 			if (dims == 1) {
+		// 				new_node = data_ptr->to_array(nullptr);
+		// 			} else {
+		// 				new_node = data_ptr->to_ndarray();
+		// 			}
+		// 		}
+		// 		if (new_node != nullptr) {
+		// 			new_node -> ty = data_ptr->ty;
+		// 			data_ptr->replace_datastruct(std::move(new_node));
+		// 		}
+		// 	}
+		// }
+
+		m_program->def_provider->m_all_data_structures.clear();
+	}
+
 
 public:
 	explicit TypeInference(NodeProgram* main) {
@@ -155,6 +217,7 @@ public:
 		for(const auto & s : node.struct_definitions) {
 			s->collect_recursive_structs(m_program);
 		}
+		apply_types_to_data_structures();
 		return &node;
 	}
 

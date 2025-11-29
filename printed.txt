@@ -3,68 +3,26 @@ declare _iter0 : int {Reuses: 0}
 declare const MAX::STRUCTS : int := 1000000 {Reuses: 0}
 declare const MEM::WARNING : string := "Memory Error: No more free space available to allocate objects of type" {Reuses: 0}
 on init
-declare _iter0 : int {Reuses: 0}
-declare ret1 : int {Reuses: 0}
-declare id0 : int {Reuses: 0}
-declare ret0 : int {Reuses: 0}
-declare id1 : int {Reuses: 0}
-declare current0 : int {Reuses: 0}
-declare ev0[420] : int[] {Reuses: 0}
-declare Event____free_idx : int {Reuses: 0}
-declare Event____allocation[1000000] : int[] {Reuses: 0}
-declare Event____id[1000000] : int[] {Reuses: 0}
+declare test : unknown := [ENGINE_PAR_ATTACK{unknown} {no declaration} , - 1] {Reuses: 0}
+declare fx_engine_params : int[][] := [[ENGINE_PAR_ATTACK{unknown} {no declaration} , ENGINE_PAR_RELEASE{unknown} {no declaration} , ENGINE_PAR_CUTOFF{unknown} {no declaration} , ENGINE_PAR_CUTOFF{unknown} {no declaration} , ENGINE_PAR_GAIN1{unknown} {no declaration} , ENGINE_PAR_GAIN2{unknown} {no declaration} , ENGINE_PAR_GAIN3{unknown} {no declaration} , ENGINE_PAR_SHAPE{unknown} {no declaration} , ENGINE_PAR_INSERT_EFFECT_OUTPUT_GAIN{unknown} {no declaration} , ENGINE_PAR_PSYDL_TIME{unknown} {no declaration} , ENGINE_PAR_PSYDL_FEEDBACK{unknown} {no declaration} , ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN{unknown} {no declaration} , ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN{unknown} {no declaration} , - 1, - 1, - 1, - 1, - 1], [- 1, - 1, - 1, - 1, - 1, - 1, - 1, ENGINE_PAR_DRIVE{unknown} {no declaration} , ENGINE_PAR_INSERT_EFFECT_OUTPUT_GAIN{unknown} {no declaration} , ENGINE_PAR_RDL_TIME{unknown} {no declaration} , ENGINE_PAR_RDL_FEEDBACK{unknown} {no declaration} , ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN{unknown} {no declaration} , - 1, - 1, - 1, - 1, - 1, - 1], [- 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, ENGINE_PAR_DL_TIME{unknown} {no declaration} , ENGINE_PAR_DL_FEEDBACK{unknown} {no declaration} , ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN{unknown} {no declaration} , - 1, - 1, - 1, - 1, - 1, - 1]] {Reuses: 0}
+message(fx_mnus_y[0]{unknown} {no declaration} ){Builtin, None, message}
+declare MAX_KEYS : unknown := [123, 123, 23] {Reuses: 0}
+declare const MIN_KEYS : unknown := [MAX_KEYS[0]{unknown} {no declaration} , 12, 0] {Reuses: 0}
+message(MIN_KEYS[0]{unknown} {no declaration} ){Builtin, None, message}
+declare keys_pressed.seq[128] : int[] {Reuses: 0}
+for i : unknown in range(0, 128, 1)
+keys_pressed.seq[i{unknown} {no declaration} ]{unknown} {no declaration}  := random(0, 1){Builtin, None, random}
+end for
+message(count_seq_key_pressed{UserDefined, None, count_seq_key_pressed}){Builtin, None, message}
 end on
 
-on note
-_iter0{int} {no declaration}  := 0
-while(_iter0{int} {no declaration}  <= (num_elements[ev0{int[]} {no declaration} ] - 1)) 
-ev0[_iter0{int} {no declaration} ]{int[]} {no declaration}  := 0
-inc(_iter0{int} {no declaration} ){Builtin, None, inc}
-end while
-id1{int} {no declaration}  := play_note(60, 127, 0, - 1){Builtin, None, play_note}
-id0{int} {no declaration}  := id1{int} {no declaration} 
-Event____free_idx{int} {no declaration}  := search[Event____allocation{int[]} {no declaration} , 0, Event____free_idx{int} {no declaration} , 999999]
-if(Event____free_idx{int} {no declaration}  = - 1)
-message("Error: No more free space available to allocate objects of type 'Event'"){Builtin, None, message}
-end if
-Event____allocation[Event____free_idx{int} {no declaration} ]{int[]} {no declaration}  := 1
-Event____id[Event____free_idx{int} {no declaration} ]{int[]} {no declaration}  := id0{int} {no declaration} 
-ret1{int} {no declaration}  := Event____free_idx{int} {no declaration} 
-ret0{int} {no declaration}  := ret1{int} {no declaration} 
-ev0[NI_CALLBACK_ID{int} {no declaration}  mod 420]{int[]} {no declaration}  := ret0{int} {no declaration} 
-ret0{int} {no declaration}  := ev0[NI_CALLBACK_ID{int} {no declaration}  mod 420]{int[]} {no declaration} 
-id1{int} {no declaration}  := 1
-if(ret0{int} {no declaration}  # - 1)
-Event____allocation[ret0{int} {no declaration} ]{int[]} {no declaration}  := Event____allocation[ret0{int} {no declaration} ]{int[]} {no declaration}  + id1{int} {no declaration} 
-end if
-id1{int} {no declaration}  := ev0[NI_CALLBACK_ID{int} {no declaration}  mod 420]{int[]} {no declaration} 
-ret0{int} {no declaration}  := 420
-set_event_par(Event____id[id1{int} {no declaration} ]{int[]} {no declaration} , EVENT_PAR_VELOCITY{int} {no declaration} , ret0{int} {no declaration} ){Builtin, None, set_event_par}
-ret0{int} {no declaration}  := ev0[NI_CALLBACK_ID{int} {no declaration}  mod 420]{int[]} {no declaration} 
-id1{int} {no declaration}  := 1000
-set_event_par(Event____id[ret0{int} {no declaration} ]{int[]} {no declaration} , EVENT_PAR_PAN{int} {no declaration} , 1000){Builtin, None, set_event_par}
-wait(1000){Builtin, None, wait}
-id1{int} {no declaration}  := ev0[NI_CALLBACK_ID{int} {no declaration}  mod 420]{int[]} {no declaration} 
-ret0{int} {no declaration}  := 1
-current0{int} {no declaration}  := id1{int} {no declaration} 
-while(current0{int} {no declaration}  # - 1) 
-Event____allocation[current0{int} {no declaration} ]{int[]} {no declaration}  := Event____allocation[current0{int} {no declaration} ]{int[]} {no declaration}  - ret0{int} {no declaration} 
-if(Event____allocation[current0{int} {no declaration} ]{int[]} {no declaration}  > 0)
-current0{int} {no declaration}  := - 1
-continue{Builtin, None, continue}
-else
-Event____allocation[current0{int} {no declaration} ]{int[]} {no declaration}  := 0
-end if
-id1{int} {no declaration}  := current0{int} {no declaration} 
-current0{int} {no declaration}  := - 1
-id0{int} {no declaration}  := id1{int} {no declaration} 
-ret1{int} {no declaration}  := 0
-if(id0{int} {no declaration}  # - 1)
-Event____id[id0{int} {no declaration} ]{int[]} {no declaration}  := 0
-Event____free_idx{int} {no declaration}  := ((Event____free_idx{int} {no declaration}  + id0{int} {no declaration} ) - abs(Event____free_idx{int} {no declaration}  - id0{int} {no declaration} ){Builtin, None, abs}) / 2
-end if
-end while
-end on
+function count_seq_key_pressed
+	declare num_keys_pressed : int {Reuses: 0}
+	for key_pressed : unknown in keys_pressed.seq{unknown} {no declaration} 
+	num_keys_pressed{unknown} {no declaration}  := num_keys_pressed{unknown} {no declaration}  + key_pressed{unknown} {no declaration} 
+	end for
+	return (num_keys_pressed{unknown} {no declaration} )
+end function
 
 function CKSP::__bool__(x : int)
 	return (1 + sh_right(abs(x{unknown} {no declaration} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
