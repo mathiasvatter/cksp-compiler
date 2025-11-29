@@ -5,114 +5,146 @@
 // import "/Users/mathias/Scripting/preset-system/dev/ksp/Preset.cksp"
 
 
-struct Engine
-	declare group[100]: Group[]
-	declare send: Send
-	declare bus[16]: Bus[]
+// struct Engine
+// 	declare group[100]: Group[]
+// 	declare send: Send
+// 	declare bus[16]: Bus[]
 
-	function __init__(self)
-		for id, gr in pairs(self.group)
-			gr := new Group(id)
-		end for
-		self.send := new Send()
-		for id, bs in pairs(self.bus)
-			bs := new Bus(id)
-		end for
-	end function
-end struct 
+// 	function __init__(self)
+// 		for id, gr in pairs(self.group)
+// 			gr := new Group(id)
+// 		end for
+// 		self.send := new Send()
+// 		for id, bs in pairs(self.bus)
+// 			bs := new Bus(id)
+// 		end for
+// 	end function
+// end struct 
 
-struct Group
-	declare slot[8]: Slot[]
-	function __init__(self, group_idx: int)
-		for id, sl in pairs(self.slot)
-			sl := new Slot(id, group_idx, -1)
-		end for
-	end function
-end struct
+// struct Group
+// 	declare slot[8]: Slot[]
+// 	function __init__(self, group_idx: int)
+// 		for id, sl in pairs(self.slot)
+// 			sl := new Slot(id, group_idx, -1)
+// 		end for
+// 	end function
+// end struct
 
-struct Bus
-	declare slot[8]: Slot[]
-	function __init__(self, bus_idx: int)
-		for idx, sl in pairs(self.slot)
-			sl := new Slot(idx, -1, NI_BUS_OFFSET + bus_idx)
-		end for
-	end function
-end struct
+// struct Bus
+// 	declare slot[8]: Slot[]
+// 	function __init__(self, bus_idx: int)
+// 		for idx, sl in pairs(self.slot)
+// 			sl := new Slot(idx, -1, NI_BUS_OFFSET + bus_idx)
+// 		end for
+// 	end function
+// end struct
 
-struct Send
-	declare slot[8]: Slot[]
-	function __init__(self)
-		for idx, sl in pairs(self.slot)
-			sl := new Slot(idx, -1, NI_SEND_BUS)
-		end for
-	end function
-end struct
+// struct Send
+// 	declare slot[8]: Slot[]
+// 	function __init__(self)
+// 		for idx, sl in pairs(self.slot)
+// 			sl := new Slot(idx, -1, NI_SEND_BUS)
+// 		end for
+// 	end function
+// end struct
 
-struct Slot
-	slot_idx: int
-	group_idx: int
-	bus_idx: int
+// struct Slot
+// 	slot_idx: int
+// 	group_idx: int
+// 	bus_idx: int
 
-	function __init__(self, slot_idx: int, group_idx: int, bus_idx: int)
-		self.slot_idx := slot_idx
-		self.group_idx := group_idx
-		self.bus_idx := bus_idx
-	end function
+// 	function __init__(self, slot_idx: int, group_idx: int, bus_idx: int)
+// 		self.slot_idx := slot_idx
+// 		self.group_idx := group_idx
+// 		self.bus_idx := bus_idx
+// 	end function
 
-	add_engine_par_method(volume, VOLUME)
-	// .... your other engine par methods here
-	macro add_engine_par_method(#short_name#, #param#)
-		function set_#short_name#(self, value: int)
-			set_engine_par(ENGINE_PAR_#param#, value, self.group_idx, self.slot_idx, self.bus_idx)
-		end function
-		function get_#short_name#(self): int
-			return get_engine_par(ENGINE_PAR_#param#, self.group_idx, self.slot_idx, self.bus_idx)
-		end function
-	end macro
-end struct
+// 	add_engine_par_method(volume, VOLUME)
+// 	// .... your other engine par methods here
+// 	macro add_engine_par_method(#short_name#, #param#)
+// 		function set_#short_name#(self, value: int)
+// 			set_engine_par(ENGINE_PAR_#param#, value, self.group_idx, self.slot_idx, self.bus_idx)
+// 		end function
+// 		function get_#short_name#(self): int
+// 			return get_engine_par(ENGINE_PAR_#param#, self.group_idx, self.slot_idx, self.bus_idx)
+// 		end function
+// 	end macro
+// end struct
+
+// // declare Slot := new Slot(0, 2, -1)
+// // on init
+// // 	declare ui_menu mnu: int
+// // 	for i in range(10)
+// // 		set_menu_item_str(get_ui_id(mnu), i, "blabla")
+// // 	end for
+// // 	mnu -> short_name := "mnu"
+// // 	message(mnu -> short_name)
+// // 	add_menu_item(mnu->short_name, "sdfkj", 0)
+
+// // 	declare Engine := new Engine()
+// // 	Engine.group[2].slot[3].set_volume(10000)
+// // 	Engine.bus[1].slot[0].set_volume(8000)
+// // end on
+
+// // on init
+// // 	message("Initialization complete.")
+// // end on
 
 
-// declare Slot := new Slot(0, 2, -1)
-// on init
-// 	declare ui_menu mnu: int
-// 	for i in range(10)
-// 		set_menu_item_str(get_ui_id(mnu), i, "blabla")
-// 	end for
-// 	mnu -> short_name := "mnu"
-// 	message(mnu -> short_name)
-// 	add_menu_item(mnu->short_name, "sdfkj", 0)
+// struct Event
+// 	const pups: int
+// 	id: int
 
-// 	declare Engine := new Engine()
-// 	Engine.group[2].slot[3].set_volume(10000)
-// 	Engine.bus[1].slot[0].set_volume(8000)
+// 	function __init__(self, id: int)
+// 		self.pups := 42
+// 		self.id := id
+// 	end function
+
+// 	function set_velocity(self, val: int)
+// 		set_event_par(self.id, EVENT_PAR_VELOCITY, val)
+// 	end function
+
+// 	function set_pan(self, val: int)
+// 		set_event_par(self.id, EVENT_PAR_PAN, val)
+// 	end function
+// end struct
+
+// function playstep(): Event
+// 	declare id := play_note(60, 127, 0, -1)
+// 	return new Event(id)
+// end function
+
+// on note
+// 	declare ev := playstep()
+// 	ev.set_velocity(420)
+// 	ev.set_pan(1000)
+// 	wait(1000)
+// 	message(ev.pups)
 // end on
 
-// on init
-// 	message("Initialization complete.")
-// end on
+on init
+	declare test[] := (ENGINE_PAR_ATTACK, -1)
 
-
-struct Event
-	id: int
-
-	function set_velocity(self, val: int)
-		set_event_par(self.id, EVENT_PAR_VELOCITY, val)
-	end function
-
-	function set_pan(self, val: int)
-		set_event_par(self.id, EVENT_PAR_PAN, val)
-	end function
-end struct
-
-function playstep(): Event
-	declare id := play_note(60, 127, 0, -1)
-	return new Event(id)
-end function
-
-on note
-	declare ev := playstep()
-	ev.set_velocity(420)
-	ev.set_pan(1000)
-	wait(1000)
+declare fx_engine_params[]: int[][] := [[ENGINE_PAR_ATTACK, ENGINE_PAR_RELEASE, ENGINE_PAR_CUTOFF, ENGINE_PAR_CUTOFF, ENGINE_PAR_GAIN1, ENGINE_PAR_GAIN2, ENGINE_PAR_GAIN3, ENGINE_PAR_SHAPE, ENGINE_PAR_INSERT_EFFECT_OUTPUT_GAIN, ENGINE_PAR_PSYDL_TIME, ENGINE_PAR_PSYDL_FEEDBACK, ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN, ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN, -1, -1, -1, -1, -1],
+									 		[				 -1,				 -1,				 -1,				-1,				  -1,				-1, 			  -1, ENGINE_PAR_DRIVE, ENGINE_PAR_INSERT_EFFECT_OUTPUT_GAIN,   ENGINE_PAR_RDL_TIME,   ENGINE_PAR_RDL_FEEDBACK, ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN, 								-1, -1, -1 ,-1, -1, -1],
+											[				 -1,				 -1,				 -1,				-1,				  -1,				-1, 			  -1, 				-1, 								  -1,    ENGINE_PAR_DL_TIME,    ENGINE_PAR_DL_FEEDBACK, ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN, 								-1, -1, -1 ,-1, -1, -1],
+											]
+	message(fx_mnus_y[0])
+	declare MAX_KEYS := [123, 123, 23]
+	declare const MIN_KEYS := [MAX_KEYS[0], 12, 0]
+	message(MIN_KEYS[0])
+	declare keys_pressed.seq[128]: int[]
+	for i in range(128)
+		keys_pressed.seq[i] := random(0,1)
+	end for
+	message(count_seq_key_pressed())
 end on
+
+function count_seq_key_pressed(): int
+	declare num_keys_pressed: int
+	for key_pressed in keys_pressed.seq
+		num_keys_pressed += key_pressed
+	end for
+	return num_keys_pressed
+end function
 

@@ -597,6 +597,15 @@ struct NodeSingleDeclaration final : NodeInstruction {
 		value = std::move(new_value);
 		value->parent = this;
 	}
+	/// checks if declaration of a constant is properly initialized
+	void check_constant_initialization() const {
+		if (variable->is_member()) return;
+		if (variable->data_type == DataType::Const and !value) {
+			auto error = CompileError(ErrorType::VariableError, "", "", tok);
+			error.m_message = "Constant variables must be initialized upon declaration.";
+			error.exit();
+		}
+	}
 };
 
 struct NodeFunctionParam final : NodeInstruction {
