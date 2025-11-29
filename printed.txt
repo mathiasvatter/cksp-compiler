@@ -1,55 +1,35 @@
-// Global Declarations:
-declare _iter0 : int {Reuses: 0}
-declare const MAX::STRUCTS : int := 1000000 {Reuses: 0}
-declare const MEM::WARNING : string := "Memory Error: No more free space available to allocate objects of type" {Reuses: 0}
 on init
-declare test : unknown := [ENGINE_PAR_ATTACK{unknown} {no declaration} , - 1] {Reuses: 0}
-declare fx_engine_params : int[][] := [[ENGINE_PAR_ATTACK{unknown} {no declaration} , ENGINE_PAR_RELEASE{unknown} {no declaration} , ENGINE_PAR_CUTOFF{unknown} {no declaration} , ENGINE_PAR_CUTOFF{unknown} {no declaration} , ENGINE_PAR_GAIN1{unknown} {no declaration} , ENGINE_PAR_GAIN2{unknown} {no declaration} , ENGINE_PAR_GAIN3{unknown} {no declaration} , ENGINE_PAR_SHAPE{unknown} {no declaration} , ENGINE_PAR_INSERT_EFFECT_OUTPUT_GAIN{unknown} {no declaration} , ENGINE_PAR_PSYDL_TIME{unknown} {no declaration} , ENGINE_PAR_PSYDL_FEEDBACK{unknown} {no declaration} , ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN{unknown} {no declaration} , ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN{unknown} {no declaration} , - 1, - 1, - 1, - 1, - 1], [- 1, - 1, - 1, - 1, - 1, - 1, - 1, ENGINE_PAR_DRIVE{unknown} {no declaration} , ENGINE_PAR_INSERT_EFFECT_OUTPUT_GAIN{unknown} {no declaration} , ENGINE_PAR_RDL_TIME{unknown} {no declaration} , ENGINE_PAR_RDL_FEEDBACK{unknown} {no declaration} , ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN{unknown} {no declaration} , - 1, - 1, - 1, - 1, - 1, - 1], [- 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, - 1, ENGINE_PAR_DL_TIME{unknown} {no declaration} , ENGINE_PAR_DL_FEEDBACK{unknown} {no declaration} , ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN{unknown} {no declaration} , - 1, - 1, - 1, - 1, - 1, - 1]] {Reuses: 0}
-message(fx_mnus_y[0]{unknown} {no declaration} ){Builtin, None, message}
-declare MAX_KEYS : unknown := [123, 123, 23] {Reuses: 0}
-declare const MIN_KEYS : unknown := [MAX_KEYS[0]{unknown} {no declaration} , 12, 0] {Reuses: 0}
-message(MIN_KEYS[0]{unknown} {no declaration} ){Builtin, None, message}
-declare keys_pressed.seq[128] : int[] {Reuses: 0}
-for i : unknown in range(0, 128, 1)
-keys_pressed.seq[i{unknown} {no declaration} ]{unknown} {no declaration}  := random(0, 1){Builtin, None, random}
-end for
-message(count_seq_key_pressed{UserDefined, None, count_seq_key_pressed}){Builtin, None, message}
+	declare ret0 : int {Reuses: 0}
+	declare num_keys_pressed0 : int {Reuses: 0}
+	declare _iter10 : int {Reuses: 0}
+	declare local i0 : int {Reuses: 1}
+	declare local _step00 : int {Reuses: 1}
+	declare local _stop00 : int {Reuses: 1}
+	declare _fx_engine_params[54] : int[] := [ENGINE_PAR_ATTACK{int} {ENGINE_PAR_ATTACK} , ENGINE_PAR_RELEASE{int} {ENGINE_PAR_RELEASE} , ENGINE_PAR_CUTOFF{int} {ENGINE_PAR_CUTOFF} , ENGINE_PAR_CUTOFF{int} {ENGINE_PAR_CUTOFF} , ENGINE_PAR_GAIN1{int} {ENGINE_PAR_GAIN1} , ENGINE_PAR_GAIN2{int} {ENGINE_PAR_GAIN2} , ENGINE_PAR_GAIN3{int} {ENGINE_PAR_GAIN3} , ENGINE_PAR_SHAPE{int} {ENGINE_PAR_SHAPE} , ENGINE_PAR_INSERT_EFFECT_OUTPUT_GAIN{int} {ENGINE_PAR_INSERT_EFFECT_OUTPUT_GAIN} , ENGINE_PAR_PSYDL_TIME{int} {ENGINE_PAR_PSYDL_TIME} , ENGINE_PAR_PSYDL_FEEDBACK{int} {ENGINE_PAR_PSYDL_FEEDBACK} , ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN{int} {ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN} , ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN{int} {ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN} , -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, ENGINE_PAR_DRIVE{int} {ENGINE_PAR_DRIVE} , ENGINE_PAR_INSERT_EFFECT_OUTPUT_GAIN{int} {ENGINE_PAR_INSERT_EFFECT_OUTPUT_GAIN} , ENGINE_PAR_RDL_TIME{int} {ENGINE_PAR_RDL_TIME} , ENGINE_PAR_RDL_FEEDBACK{int} {ENGINE_PAR_RDL_FEEDBACK} , ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN{int} {ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN} , -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, ENGINE_PAR_DL_TIME{int} {ENGINE_PAR_DL_TIME} , ENGINE_PAR_DL_FEEDBACK{int} {ENGINE_PAR_DL_FEEDBACK} , ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN{int} {ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN} , -1, -1, -1, -1, -1, -1] {Reuses: 0}
+	message(_fx_engine_params[0]{int} {_fx_engine_params} ){Builtin, None, message}
+	declare MAX_KEYS[3] : int[] := [123, 123, 23] {Reuses: 0}
+	declare MIN_KEYS[3] : int[] {Reuses: 0}
+	MIN_KEYS[0]{int[]} {MIN_KEYS}  := MAX_KEYS[0]{int} {MAX_KEYS} 
+	MIN_KEYS[1]{int[]} {MIN_KEYS}  := 12
+	MIN_KEYS[2]{int[]} {MIN_KEYS}  := 0
+	message(MIN_KEYS[0]{int} {MIN_KEYS} ){Builtin, None, message}
+	declare keys_pressed.seq[128] : int[] {Reuses: 0}
+	i0{int} {i0}  := 0
+	_step00{int} {_step00}  := 1
+	_stop00{int} {_stop00}  := 128
+	while(((i0{int} {i0}  < _stop00{int} {_stop00} ) and (_step00{int} {_step00}  > 0)) or ((i0{int} {i0}  > _stop00{int} {_stop00} ) and (_step00{int} {_step00}  < 0))) 
+		keys_pressed.seq[i0{int} {i0} ]{int} {keys_pressed.seq}  := random(0, 1){Builtin, None, random}
+		i0{int} {i0}  := i0{int} {i0}  + _step00{int} {_step00} 
+	end while
+	num_keys_pressed0{int} {num_keys_pressed0}  := 0
+	_iter10{int} {_iter10}  := 0
+	while(_iter10{int} {_iter10}  <= (num_elements(keys_pressed.seq{int[]} {keys_pressed.seq} ){Builtin, None, num_elements} - 1)) 
+		num_keys_pressed0{int} {num_keys_pressed0}  := num_keys_pressed0{int} {num_keys_pressed0}  + keys_pressed.seq[_iter10{int} {_iter10} ]{int} {keys_pressed.seq} 
+		inc(_iter10{int} {_iter10} ){Builtin, None, inc}
+	end while
+	ret0{int} {ret0}  := num_keys_pressed0{int} {num_keys_pressed0} 
+	i0{int} {i0}  := ret0{int} {ret0} 
+	message(i0{int} {i0} ){Builtin, None, message}
 end on
-
-function count_seq_key_pressed
-	declare num_keys_pressed : int {Reuses: 0}
-	for key_pressed : unknown in keys_pressed.seq{unknown} {no declaration} 
-	num_keys_pressed{unknown} {no declaration}  := num_keys_pressed{unknown} {no declaration}  + key_pressed{unknown} {no declaration} 
-	end for
-	return (num_keys_pressed{unknown} {no declaration} )
-end function
-
-function CKSP::__bool__(x : int)
-	return (1 + sh_right(abs(x{unknown} {no declaration} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__ge__(a : int, b : int)
-	return (sh_right(a{unknown} {no declaration}  - b{unknown} {no declaration} , 31){Builtin, None, sh_right} + 1)
-end function
-
-function CKSP::__lt__(a : int, b : int)
-	return (- sh_right(a{unknown} {no declaration}  - b{unknown} {no declaration} , 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__ne__(a : int, b : int)
-	return (1 - - sh_right(abs(a{unknown} {no declaration}  - b{unknown} {no declaration} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__eq__(a : int, b : int)
-	return (- sh_right(abs(a{unknown} {no declaration}  - b{unknown} {no declaration} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__le__(a : int, b : int)
-	return (1 + sh_right(b{unknown} {no declaration}  - a{unknown} {no declaration} , 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__gt__(a : int, b : int)
-	return (- sh_right(b{unknown} {no declaration}  - a{unknown} {no declaration} , 31){Builtin, None, sh_right})
-end function
 
 

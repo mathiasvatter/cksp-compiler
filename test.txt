@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.8-alpha.5 on Sat Nov 29 17:11:47 2025 }
+{ Compiled with cksp version 0.0.8-alpha.5 on Sat Nov 29 17:43:01 2025 }
 on init
   declare $ret0
   declare $num_keys_pressed0
@@ -6,9 +6,8 @@ on init
   declare $i0
   declare $_step00
   declare $_stop00
-  declare %fx_modules_head_y[2] := (95, 254)
-  declare %fx_mnus_y[3] := (%fx_modules_head_y[0], %fx_modules_head_y[1], %fx_modules_head_y[1])
-  message(%fx_mnus_y[0])
+  declare %_fx_engine_params[54] := ($ENGINE_PAR_ATTACK, $ENGINE_PAR_RELEASE, $ENGINE_PAR_CUTOFF, $ENGINE_PAR_CUTOFF, $ENGINE_PAR_GAIN1, $ENGINE_PAR_GAIN2, $ENGINE_PAR_GAIN3, $ENGINE_PAR_SHAPE, $ENGINE_PAR_INSERT_EFFECT_OUTPUT_GAIN, $ENGINE_PAR_PSYDL_TIME, $ENGINE_PAR_PSYDL_FEEDBACK, $ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN, $ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, $ENGINE_PAR_DRIVE, $ENGINE_PAR_INSERT_EFFECT_OUTPUT_GAIN, $ENGINE_PAR_RDL_TIME, $ENGINE_PAR_RDL_FEEDBACK, $ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, $ENGINE_PAR_DL_TIME, $ENGINE_PAR_DL_FEEDBACK, $ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN, -1, -1, -1, -1, -1, -1)
+  message(%_fx_engine_params[0])
   declare %MAX_KEYS[3] := (123, 123, 23)
   declare %MIN_KEYS[3]
   %MIN_KEYS[0] := %MAX_KEYS[0]

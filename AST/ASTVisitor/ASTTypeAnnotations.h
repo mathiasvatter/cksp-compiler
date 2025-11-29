@@ -84,7 +84,8 @@ public:
 	NodeAST* visit(NodeArray& node) override {
 		desanitize_data_name(node);
 		if(node.size) node.size->accept(*this);
-		check_annotation_with_expected(node, TypeRegistry::ArrayOfUnknown);
+		auto temp_type = std::make_unique<CompositeType>(CompoundKind::Array, TypeRegistry::Unknown, 0);
+		check_annotation_with_expected(node, temp_type.get());
 		check_for_correct_object_type_annotation(node);
 		return apply_type_annotations(node.get_shared());
 	}
@@ -115,7 +116,8 @@ public:
 	NodeAST* visit(NodeNDArray& node) override {
 		desanitize_data_name(node);
 		if(node.sizes) node.sizes->accept(*this);
-		check_annotation_with_expected(node, std::make_unique<CompositeType>(CompoundKind::Array, TypeRegistry::Unknown, node.dimensions).get());
+		auto temp_type = std::make_unique<CompositeType>(CompoundKind::Array, TypeRegistry::Unknown, node.dimensions);
+		check_annotation_with_expected(node, temp_type.get());
 		check_for_correct_object_type_annotation(node);
 		return apply_type_annotations(node.get_shared());
 	}
@@ -216,7 +218,7 @@ private:
 
 	void check_for_correct_object_type_annotation(const NodeDataStructure& node) const {
 		const auto element_type = node.ty->get_element_type();
-		if (element_type->get_type_kind() == TypeKind::Object) {
+		if (element_type->cast<ObjectType>()) {
 			if (!NodeReference::get_object_ptr(m_program, element_type->to_string())) {
 				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
 				error.m_message = "Found undefined Type. Type Annotation of "+node.name+" does not match any existing <Object> type.";
