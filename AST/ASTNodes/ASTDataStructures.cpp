@@ -141,7 +141,8 @@ std::unique_ptr<NodeReference> NodeArray::to_reference() {
 }
 
 std::unique_ptr<NodeNDArray> NodeArray::to_ndarray() {
-    auto nd_array = std::make_unique<NodeNDArray>(persistence, name, ty, std::make_unique<NodeParamList>(tok, size->clone()), tok, data_type);
+	auto sizes = size ? std::make_unique<NodeParamList>(tok, size->clone()) : nullptr;
+    auto nd_array = std::make_unique<NodeNDArray>(persistence, name, ty, std::move(sizes), tok, data_type);
 	nd_array->match_metadata(get_shared());
 	return nd_array;
 }
