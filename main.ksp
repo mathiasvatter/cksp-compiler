@@ -122,30 +122,31 @@
 // 	message(ev.pups)
 // end on
 
+
 on init
-	declare test[] := (ENGINE_PAR_ATTACK, -1)
-
-	declare fx_engine_params[]: int[][] := [
-		[ENGINE_PAR_ATTACK, ENGINE_PAR_RELEASE, ENGINE_PAR_CUTOFF, ENGINE_PAR_CUTOFF, ENGINE_PAR_GAIN1, ENGINE_PAR_GAIN2, ENGINE_PAR_GAIN3, ENGINE_PAR_SHAPE, ENGINE_PAR_INSERT_EFFECT_OUTPUT_GAIN, ENGINE_PAR_PSYDL_TIME, ENGINE_PAR_PSYDL_FEEDBACK, ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN, ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN, -1, -1, -1, -1, -1],
-		[				 -1,				 -1,				 -1,				-1,				  -1,				-1, 			  -1, ENGINE_PAR_DRIVE, ENGINE_PAR_INSERT_EFFECT_OUTPUT_GAIN,   ENGINE_PAR_RDL_TIME,   ENGINE_PAR_RDL_FEEDBACK, ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN, 								-1, -1, -1 ,-1, -1, -1],
-		[				 -1,				 -1,				 -1,				-1,				  -1,				-1, 			  -1, 				-1, 								  -1,    ENGINE_PAR_DL_TIME,    ENGINE_PAR_DL_FEEDBACK, ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN, 								-1, -1, -1 ,-1, -1, -1],
-	]
-	message(fx_engine_params[0, 0])
-	declare MAX_KEYS := [123, 123, 23]
-	declare const MIN_KEYS := [MAX_KEYS[0], 12, 0]
-	message(MIN_KEYS[0])
-	declare keys_pressed.seq[128]: int[]
-	for i in range(128)
-		keys_pressed.seq[i] := random(0,1)
-	end for
-	message(count_seq_key_pressed())
+    declare a := 5**4
+    a >>= 4
+    message(f'<get_folder(GET_FOLDER_LIBRARY_DIR)>Samples/Resources/data/my_array.nka')
+    message(f"hallo <12> und du <3>")
+	set_listener(NI_SIGNAL_TIMER_MS, 1000)
+    declare flag
 end on
-
-function count_seq_key_pressed(): int
-	declare num_keys_pressed: int
-	for key_pressed in keys_pressed.seq
-		num_keys_pressed += key_pressed
-	end for
-	return num_keys_pressed
+on note
+    flag := 1
+    do_something()
+    flag := 0
+end on
+function do_something()
+    if flag = 1
+        message("this function is already running, don't run it again")
+        exit
+    else
+        message("good to go")
+        wait(DURATION_QUARTER)
+    end if
 end function
-
+on listener
+    flag := 1
+    do_something()
+    flag := 0
+end on
