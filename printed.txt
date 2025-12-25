@@ -1,35 +1,33 @@
 on init
-	declare ret0 : int {Reuses: 0}
-	declare num_keys_pressed0 : int {Reuses: 0}
-	declare _iter10 : int {Reuses: 0}
-	declare local i0 : int {Reuses: 1}
-	declare local _step00 : int {Reuses: 1}
-	declare local _stop00 : int {Reuses: 1}
-	declare _fx_engine_params[54] : int[] := [ENGINE_PAR_ATTACK{int} {ENGINE_PAR_ATTACK} , ENGINE_PAR_RELEASE{int} {ENGINE_PAR_RELEASE} , ENGINE_PAR_CUTOFF{int} {ENGINE_PAR_CUTOFF} , ENGINE_PAR_CUTOFF{int} {ENGINE_PAR_CUTOFF} , ENGINE_PAR_GAIN1{int} {ENGINE_PAR_GAIN1} , ENGINE_PAR_GAIN2{int} {ENGINE_PAR_GAIN2} , ENGINE_PAR_GAIN3{int} {ENGINE_PAR_GAIN3} , ENGINE_PAR_SHAPE{int} {ENGINE_PAR_SHAPE} , ENGINE_PAR_INSERT_EFFECT_OUTPUT_GAIN{int} {ENGINE_PAR_INSERT_EFFECT_OUTPUT_GAIN} , ENGINE_PAR_PSYDL_TIME{int} {ENGINE_PAR_PSYDL_TIME} , ENGINE_PAR_PSYDL_FEEDBACK{int} {ENGINE_PAR_PSYDL_FEEDBACK} , ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN{int} {ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN} , ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN{int} {ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN} , -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, ENGINE_PAR_DRIVE{int} {ENGINE_PAR_DRIVE} , ENGINE_PAR_INSERT_EFFECT_OUTPUT_GAIN{int} {ENGINE_PAR_INSERT_EFFECT_OUTPUT_GAIN} , ENGINE_PAR_RDL_TIME{int} {ENGINE_PAR_RDL_TIME} , ENGINE_PAR_RDL_FEEDBACK{int} {ENGINE_PAR_RDL_FEEDBACK} , ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN{int} {ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN} , -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, ENGINE_PAR_DL_TIME{int} {ENGINE_PAR_DL_TIME} , ENGINE_PAR_DL_FEEDBACK{int} {ENGINE_PAR_DL_FEEDBACK} , ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN{int} {ENGINE_PAR_SEND_EFFECT_OUTPUT_GAIN} , -1, -1, -1, -1, -1, -1] {Reuses: 0}
-	message(_fx_engine_params[0]{int} {_fx_engine_params} ){Builtin, None, message}
-	declare MAX_KEYS[3] : int[] := [123, 123, 23] {Reuses: 0}
-	declare MIN_KEYS[3] : int[] {Reuses: 0}
-	MIN_KEYS[0]{int[]} {MIN_KEYS}  := MAX_KEYS[0]{int} {MAX_KEYS} 
-	MIN_KEYS[1]{int[]} {MIN_KEYS}  := 12
-	MIN_KEYS[2]{int[]} {MIN_KEYS}  := 0
-	message(MIN_KEYS[0]{int} {MIN_KEYS} ){Builtin, None, message}
-	declare keys_pressed.seq[128] : int[] {Reuses: 0}
-	i0{int} {i0}  := 0
-	_step00{int} {_step00}  := 1
-	_stop00{int} {_stop00}  := 128
-	while(((i0{int} {i0}  < _stop00{int} {_stop00} ) and (_step00{int} {_step00}  > 0)) or ((i0{int} {i0}  > _stop00{int} {_stop00} ) and (_step00{int} {_step00}  < 0))) 
-		keys_pressed.seq[i0{int} {i0} ]{int} {keys_pressed.seq}  := random(0, 1){Builtin, None, random}
-		i0{int} {i0}  := i0{int} {i0}  + _step00{int} {_step00} 
-	end while
-	num_keys_pressed0{int} {num_keys_pressed0}  := 0
-	_iter10{int} {_iter10}  := 0
-	while(_iter10{int} {_iter10}  <= (num_elements(keys_pressed.seq{int[]} {keys_pressed.seq} ){Builtin, None, num_elements} - 1)) 
-		num_keys_pressed0{int} {num_keys_pressed0}  := num_keys_pressed0{int} {num_keys_pressed0}  + keys_pressed.seq[_iter10{int} {_iter10} ]{int} {keys_pressed.seq} 
-		inc(_iter10{int} {_iter10} ){Builtin, None, inc}
-	end while
-	ret0{int} {ret0}  := num_keys_pressed0{int} {num_keys_pressed0} 
-	i0{int} {i0}  := ret0{int} {ret0} 
-	message(i0{int} {i0} ){Builtin, None, message}
+	declare a : real {Reuses: 0}
+	a{real} {a}  := pow(5, 4){Builtin, None, pow}
+	a{real} {a}  := sh_right(a{real} {a} , 4){Builtin, None, sh_right}
+	message(get_folder(GET_FOLDER_LIBRARY_DIR{int} {GET_FOLDER_LIBRARY_DIR} ){Builtin, None, get_folder} & "Samples/Resources/data/my_array.nka"){Builtin, None, message}
+	message("hallo " & 12 & " und du " & 3 & ""){Builtin, None, message}
+	set_listener(NI_SIGNAL_TIMER_MS{int} {NI_SIGNAL_TIMER_MS} , 1000){Builtin, None, set_listener}
+	declare flag : int {Reuses: 0}
 end on
+
+on note{thread-unsafe}
+	flag{int} {flag}  := 1
+	call do_something{UserDefined, Call, do_something}
+	flag{int} {flag}  := 0
+end on
+
+on listener{thread-unsafe}
+	flag{int} {flag}  := 1
+	call do_something{UserDefined, Call, do_something}
+	flag{int} {flag}  := 0
+end on
+
+function do_something{thread-unsafe}
+	if(flag{int} {flag}  = 1)
+		message("this function is already running, don't run it again"){Builtin, None, message}
+		exit{Builtin, None, exit}
+	else
+		message("good to go"){Builtin, None, message}
+		wait(DURATION_QUARTER{int} {DURATION_QUARTER} ){Builtin, None, wait}
+	end if
+end function
 
 
