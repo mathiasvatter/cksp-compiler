@@ -1,9 +1,14 @@
 on init
-	declare a : real {Reuses: 0}
-	a{real} {a}  := pow(5, 4){Builtin, None, pow}
-	a{real} {a}  := sh_right(a{real} {a} , 4){Builtin, None, sh_right}
-	message(get_folder(GET_FOLDER_LIBRARY_DIR{int} {GET_FOLDER_LIBRARY_DIR} ){Builtin, None, get_folder} & "Samples/Resources/data/my_array.nka"){Builtin, None, message}
-	message("hallo " & 12 & " und du " & 3 & ""){Builtin, None, message}
+	declare local i0 : int {Reuses: 0}
+	declare local _step00 : int {Reuses: 0}
+	declare local _stop00 : int {Reuses: 0}
+	i0{int} {i0}  := 0
+	_step00{int} {_step00}  := 1
+	_stop00{int} {_stop00}  := 1
+	while(((i0{int} {i0}  < _stop00{int} {_stop00} ) and (_step00{int} {_step00}  > 0)) or ((i0{int} {i0}  > _stop00{int} {_stop00} ) and (_step00{int} {_step00}  < 0))) 
+		message(i0{int} {i0} ){Builtin, None, message}
+		i0{int} {i0}  := i0{int} {i0}  + _step00{int} {_step00} 
+	end while
 	set_listener(NI_SIGNAL_TIMER_MS{int} {NI_SIGNAL_TIMER_MS} , 1000){Builtin, None, set_listener}
 	declare flag : int {Reuses: 0}
 end on
