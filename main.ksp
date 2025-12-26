@@ -124,29 +124,28 @@
 
 
 on init
-    declare a := 5**4
-    a >>= 4
-    message(f'<get_folder(GET_FOLDER_LIBRARY_DIR)>Samples/Resources/data/my_array.nka')
-    message(f"hallo <12> und du <3>")
+	for i in range(0, 1)
+		message(i)
+	end for
 	set_listener(NI_SIGNAL_TIMER_MS, 1000)
-    declare flag
+	declare flag
 end on
 on note
-    flag := 1
-    do_something()
-    flag := 0
+	flag := 1
+	do_something()
+	flag := 0
 end on
 function do_something()
-    if flag = 1
-        message("this function is already running, don't run it again")
-        exit
-    else
-        message("good to go")
-        wait(DURATION_QUARTER)
-    end if
+	if flag = 1
+		message("this function is already running, don't run it again")
+		exit
+	else
+		message("good to go")
+		wait(DURATION_QUARTER)
+	end if
 end function
 on listener
-    flag := 1
-    do_something()
-    flag := 0
+	flag := 1
+	do_something()
+	flag := 0
 end on
