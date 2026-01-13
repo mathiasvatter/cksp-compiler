@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.8-alpha.4 on Tue Jan 13 21:52:11 2026 }
+{ Compiled with cksp version 0.0.8-alpha.5 on Tue Jan 13 22:29:38 2026 }
 on init
   declare $i0
   declare $_step00
@@ -23,10 +23,12 @@ function do_something
   end if
 end function
 on note
+  $flag := 1
   call do_something
   $flag := 0
 end on
 on listener
+  $flag := 1
   call do_something
   $flag := 0
 end on
