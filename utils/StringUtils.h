@@ -8,13 +8,15 @@
 #include <vector>
 #include <sstream>
 #include <regex>
+#include <ranges>
+#include <algorithm>
 
 namespace StringUtils {
 
 inline bool is_whitespace (char c) { return c == ' ' || (c <= 13 && c >= 9); }
 inline bool is_digit (char c) { return static_cast<uint32_t> (c - '0') < 10; }
 
-inline long count_char(const std::string& str, char c) {
+inline long count_char(const std::string& str, const char c) {
 	return std::ranges::count(str, c);
 }
 
