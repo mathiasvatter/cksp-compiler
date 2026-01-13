@@ -25,3 +25,16 @@ The following features are not comprehensive when compared to vanilla KSP syntax
 ## Installation
 
 The compiler is currently in active development, but the latest version of the CLI executable can be downloaded from [Releases](https://github.com/mathiasvatter/cksp-compiler-issues/releases/latest). To utilize existing syntax highlighting from the SublimeKSP plugin, the executable can also be used as a Sublime Build System. A Visual Studio Code language extension is also under active development.
+
+## Deploying a new Release
+
+To deploy a new release, follow these steps:
+0. Make sure to be on branch `development`
+1. Update the version number in `CMakeLists.txt`
+2. Run `run_tests.sh --with-kontakt` to ensure all tests pass.
+3. Run `./get_changelog.sh` to generate the changelog notes for the new version. This will be pushed to the git submodule `cksp-compiler-issues`.
+4. Formulate a proper changelog entry from the notes into `CHANGELOG.md` and `cksp-compiler-issues/changelogs/CHANGELOG_vX.Y.Z.md`, replacing `X.Y.Z` with the new version number.
+5. Run `.scripts/push_changelog.sh` to push the changelog changes to the `cksp-compiler-issues` repository.
+6. Commit all changes to git and push to the `development` branch.
+7. Merge `development` into `main` and push. This will trigger the GitHub Actions workflow to build and deploy the new release privately.
+8. When the release is built, run `publish_latest_release.sh` to publish the release publicly on GitHub.

@@ -123,6 +123,25 @@
 // end on
 
 
+struct Sample_Note
+    declare note_num: int
+    declare velocity: int
+    declare mark: int
+    declare id: int
+    
+    function set_mark(self, mark: int)
+        self.mark := mark
+    end function
+
+    function get_mark(self)
+        return self.mark
+    end function
+
+    function play(self): int
+        return play_note(self.note_num, self.velocity, 0, -1)
+    end function
+end struct
+
 on init
 	for i in range(0, 1)
 		message(i)
