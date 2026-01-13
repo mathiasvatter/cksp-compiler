@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "FreeVarCollector.h"
 #include "../AST/ASTVisitor/ASTOptimizations.h"
 
 /**
@@ -13,11 +14,23 @@
 class DeadCodeElimination final : public ASTOptimizations {
 
 	std::unordered_map<StringTypeKey, NodeReference*, StringTypeKeyHash> m_last_reference;
+	std::unordered_map<NodeFunctionDefinition*, std::unordered_set<std::string>> m_function_used_vars;
 
 public:
 
 	DeadCodeElimination() {
 		m_last_reference.clear();
+		m_function_used_vars.clear();
+	}
+
+	NodeAST* visit(NodeProgram& node) override {
+		m_program = &node;
+		m_function_used_vars.reserve(node.function_definitions.size());
+		m_program->global_declarations->accept(*this);
+		visit_all(node.callbacks, *this);
+		visit_all(node.function_definitions, *this);
+		node.reset_function_visited_flag();
+		return &node;
 	}
 
 	/// kill empty while loops and if statements
@@ -120,6 +133,27 @@ public:
 		return &node;
 	}
 
+	NodeAST* visit(NodeFunctionCall& node) override {
+		node.function->accept(*this);
+		// clear map incase var is used inside function call
+		if (!node.is_builtin_kind()) {
+			auto def = node.get_definition();
+			if (!def) return &node;
+			auto it = m_function_used_vars.find(def.get());
+			if (it == m_function_used_vars.end()) {
+				static FreeVarCollector free_var;
+				auto free_vars = free_var.collect(*def);
+				m_function_used_vars[def.get()] = free_vars;
+			}
+
+			const auto& used_vars = m_function_used_vars[def.get()];
+			std::erase_if(m_last_reference, [&](const auto& kv) {
+				return kv.second && used_vars.contains(kv.second->name);
+			});
+		}
+		return &node;
+	}
+
 	/// if this and the last occurence of the var ref are assignment statements with this var
 	/// on the left side, remove the last assignment
 	/// TODO: do not kill last assignment is current assignment has the var as r_value
@@ -128,10 +162,11 @@ public:
 	/// do not kill if r_value is function call (builtin or user defined)
 	bool kill_last_assignment(NodeReference* node) {
 		if(m_last_reference.empty()) return false;
+		const auto key = get_hash_value(*node);
 		// if current reference is arg in a function, make sure to not delete the last assignment
 		// remove ref out of last reference map
 		if (node->is_func_arg() or node->is_r_value()) {
-			m_last_reference.erase(get_hash_value(*node));
+			m_last_reference.erase(key);
             return false;
 		}
 		// if we are not an l_value of an assignment, return false
@@ -144,7 +179,7 @@ public:
 			return false;
 		}
 
-		auto const it = m_last_reference.find(get_hash_value(*node));
+		auto const it = m_last_reference.find(key);
 		if(it != m_last_reference.end()) {
 			// check if reference is also somewhere on the right side of the assignment
 			if (node->is_r_value()) return false;

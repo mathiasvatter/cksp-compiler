@@ -7,12 +7,7 @@
 
 FileHandler::FileHandler(const std::string &file) : m_input_file(file) {
     // do not continue if file has no valid filetype
-    std::string extension = std::filesystem::path(file).extension().string();
-    auto it = m_allowed_filetypes.find(extension);
-    if(it == m_allowed_filetypes.end()) {
-        CompileError(ErrorType::FileError, "Unable to open file. Not a valid file type.", -1, "*.ksp or *.nckp",extension, "").exit();
-    }
-    m_file_type = it->second;
+    m_file_type = determine_valid_file_type(file);
 
     m_output = read_file(file);
 }

@@ -345,7 +345,7 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 			}
 		}
 		auto error = CompileError(ErrorType::SyntaxError, "", "", data_struct->tok);
-		error.m_message = "Found different reference types for the same function parameter: " + data_struct->tok.val + ".";
+		error.m_message = "Found different types of reference for the same variable: " + data_struct->tok.val + ".";
 		for(const auto & ref : ref_names) {
 			error.m_got += " as <" + ref + ">, ";
 		}
