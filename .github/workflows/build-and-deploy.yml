@@ -163,15 +163,15 @@ jobs:
         run: |
             find _Releases/${{ needs.build-macos.outputs.version_dir }} -type f ! -name "*.*" -exec chmod +x {} \;          
 
-      - name: Push merged _Releases to master
-        env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-            git config user.name "GitHub Actions"
-            git config user.email "actions@github.com"
-            git add _Releases/${{ needs.build-macos.outputs.version_dir }}
-            git commit -m "Merge artifacts for version ${{ needs.build-macos.outputs.version_dir }}"
-            git push origin master
+      # - name: Push merged _Releases to master
+      #   env:
+      #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   run: |
+      #       git config user.name "GitHub Actions"
+      #       git config user.email "actions@github.com"
+      #       git add _Releases/${{ needs.build-macos.outputs.version_dir }}
+      #       git commit -m "Merge artifacts for version ${{ needs.build-macos.outputs.version_dir }}"
+      #       git push origin master
 
       - name: Delete existing Git tag
         env:
