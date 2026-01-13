@@ -280,14 +280,20 @@ bool NodeFunctionCall::has_side_effects(const std::unordered_set<std::string> &f
 		return true;
 	}
 	static FreeVarCollector free_var;
-	auto vars = free_var.collect(*this);
-	for (const auto &var : vars) {
-		if (free_vars.contains(var)) {
-			return true;
+	const auto vars = free_var.collect(*this);
+	// iterate the smaller set to minimize hash lookups
+	if (vars.size() <= free_vars.size()) {
+		for (const auto& v : vars) {
+			if (free_vars.contains(v)) return true;
+		}
+	} else {
+		for (const auto& fv : free_vars) {
+			if (vars.contains(fv)) return true;
 		}
 	}
-	const auto visited_functions = free_var.get_visited_functions();
-	for (auto &func : visited_functions) {
+
+	const auto& visited_functions = free_var.get_visited_functions();
+	for (const auto* func : visited_functions) {
 		if (BuiltinRestrictionValidator::is_builtin_with_side_effects(func->header->name)) {
 			return true;
 		}

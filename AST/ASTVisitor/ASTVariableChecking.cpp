@@ -296,6 +296,9 @@ NodeAST* ASTVariableChecking::visit(NodeVariable& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
+	// if (node.name == "FX_SLI_DIST") {
+	//
+	// }
 	if(node.get_declaration()) return &node;
 	auto node_declaration = m_def_provider->get_declaration(node);
 

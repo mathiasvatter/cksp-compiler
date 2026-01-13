@@ -26,6 +26,10 @@ function __eq__(a: int, b: int): int
   return -sh_right(abs(a-b)-1,31)
 end function
 
+// function __eq__(a: int, b: int): int
+//   return 1 + sh_right((a .xor. b) .xor. -(a .xor. b),31)
+// end function
+
 {doc:-----------------------------------------------
 *	LESS THAN. Returns TRUE if a < b, otherwise FALSE
 *	@param	a		<int>
@@ -52,12 +56,20 @@ function __ne__(a: int, b: int): int
 	return 1-(-sh_right(abs(a-b)-1,31))
 end function
 
+// function __eq__(a: int, b: int): int
+//   return -sh_right((a .xor. b) .xor. -(a .xor. b),31)
+// end function
+
 {doc:-----------------------------------------------
 *	Turns input into boolean. Returns 1/TRUE if x # 0 and 0/FALSE if x = 0
 *	@param	x		input <int>		
 ---------------------------------------------------}
+// function __bool__(x: int): int
+//   return 1+sh_right(abs(x)-1,31)
+// end function
+
 function __bool__(x: int): int
-  return 1+sh_right(abs(x)-1,31)
+  return -sh_right(x .xor. -x,31)
 end function
 
 

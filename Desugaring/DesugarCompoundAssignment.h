@@ -45,7 +45,6 @@ public:
 			}
 		}
 
-
 		// clone l_value beforehand to avoid dangling pointers because windows thx
 		auto l_value = clone_as<NodeReference>(node.l_value.get());
 		auto assignment = std::make_unique<NodeSingleAssignment>(

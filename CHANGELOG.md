@@ -1,20 +1,18 @@
 # Changelog
 
-## [v0.0.8-alpha.4] - 2025-11-10
+## [v0.0.8-alpha.5] - 2026-01-13
 
 ### Added
+* Added **new built-in constants** introduced with **Kontakt 8.3**.  
+* Added **error reporting** when a **constant is declared but not initialized** ([#57](https://github.com/mathiasvatter/cksp-compiler-issues/issues/57)).  
+* Added support to **declare arrays as variables without using brackets** ([#60](https://github.com/mathiasvatter/cksp-compiler-issues/issues/60)).  
+* Added a **Changelog** to track compiler changes across releases.
 
-* Introduced new **pragma directive** `max_callback_depth(<val>)` allowing users to define the **maximum number of concurrent callbacks** ([#55](https://github.com/mathiasvatter/cksp-compiler-issues/issues/55)).
-* Added **error handling** for invalid variable names that still contain `#` characters after preprocessing ([#54](https://github.com/mathiasvatter/cksp-compiler-issues/issues/54)).
-* Added **error reporting** when using **`polyphonic`** or **`ui_control`** modifier keywords inside **struct member declarations**, which are not permitted.
+### Changed
+* Updated **error message** when the value passed to `max_callback_depth` exceeds **1,000,000** to be clearer and more actionable.  
 
 ### Fixed
-
-* Fixed **segmentation fault** during **monomorphization**, improving compiler stability.
-* Fixed [#51](https://github.com/mathiasvatter/cksp-compiler-issues/issues/51): **substring substitutions in `#define` parameters** are now supported.
-* Fixed [#52](https://github.com/mathiasvatter/cksp-compiler-issues/issues/52): **initializer lists** without commas are now correctly flagged as invalid.
-* Fixed [#53](https://github.com/mathiasvatter/cksp-compiler-issues/issues/53): the **`declare` keyword** is no longer required when defining **struct members** with modifier keywords (e.g., `const`, `read`, etc.).
-
-### Meta
-
-* Compiler version bumped to **v0.0.8-alpha.4**.
+* Fixed [#66](https://github.com/mathiasvatter/cksp-compiler-issues/issues/66): incorrect lowering of **f-strings using single quotes**.  
+* Fixed [#63](https://github.com/mathiasvatter/cksp-compiler-issues/issues/63): **optimization pass** no longer removes assignments that are still used inside functions.  
+* Fixed [#58](https://github.com/mathiasvatter/cksp-compiler-issues/issues/58): declaring **multidimensional arrays with empty brackets** no longer causes a type error.  
+* Fixed [#14](https://github.com/mathiasvatter/cksp-compiler-issues/issues/14): **`.txt` files** are no longer flagged as unsupported file types.

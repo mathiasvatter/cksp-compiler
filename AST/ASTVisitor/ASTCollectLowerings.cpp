@@ -113,6 +113,7 @@ NodeAST * ASTCollectLowerings::visit(NodeFunctionDefinition& node) {
 
 NodeAST * ASTCollectLowerings::visit(NodeSingleDeclaration &node) {
 	//TRACE();
+	node.check_constant_initialization();
 	node.variable->accept(*this);
 	if(node.value) node.value->accept(*this);
 	return node.lower(m_program);
