@@ -122,6 +122,28 @@
 // 	message(ev.pups)
 // end on
 
+function foo()
+	message("hello")
+end function	
+
+namespace Foo
+	declare ui_button btn_sth
+	declare ui_button sdfb
+	// function bar()	
+	// 	declare dummyboi: bool := true
+		
+	// 	message(dummyboi ? "true" : "false")
+	// 	foo()
+	// end function
+
+	// function baz()
+	// 	bar()
+	// end function
+	
+end namespace
+
+
+
 
 struct Sample_Note
     declare note_num: int
@@ -143,6 +165,8 @@ struct Sample_Note
 end struct
 
 on init
+	declare ui_button btn
+	// Foo.baz()
 	for i in range(0, 1)
 		message(i)
 	end for
@@ -167,4 +191,5 @@ on listener
 	flag := 1
 	do_something()
 	flag := 0
+	message(EVENT_NOTE)
 end on
