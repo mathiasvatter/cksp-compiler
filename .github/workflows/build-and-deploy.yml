@@ -3,9 +3,9 @@ name: Build and Deploy CKSP Compiler
 on:
   push:
     # tags:
-    #   - 'v*' # Trigger nur bei neuen Tags, z. B. v1.0.0
+    #   - 'v*' # Trigger only on new tags, e.g., v1.0.0
     branches:
-      - master # Trigger bei Push auf main-Branch
+      - master # Trigger on push to the main branch
 
 jobs:
   build-macos:
@@ -15,7 +15,7 @@ jobs:
       tag: ${{ steps.extract-tag-macos.outputs.tag }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up CMake
         uses: jwlawson/actions-setup-cmake@v1
@@ -69,13 +69,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-build
-          path: _Releases/${{ steps.extract-version-macos.outputs.version_dir }} # Release-Dateien für macOS hochladen
+          path: _Releases/${{ steps.extract-version-macos.outputs.version_dir }} # Upload release files for macOS
 
   build-windows:
     runs-on: windows-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Check and install dependencies
         shell: pwsh
@@ -106,11 +106,11 @@ jobs:
         run: |
             for /f "delims=" %%a in ('call scripts\extract_version_dir.bat') do echo VERSION_DIR=%%a >> %GITHUB_ENV%
             
-            rem Ausgabe der extrahierten VERSION_DIR
+            rem Output of the extracted VERSION_DIR
             echo Extracted VERSION_DIR:
             for /f "delims=" %%a in ('call scripts\extract_version_dir.bat') do echo %%a
             
-            rem Anzeigen des Inhalts des _Releases-Ordners
+            rem Show contents of the _Releases folder
             echo Current _Releases folder content:
             dir _Releases /s
     
@@ -119,14 +119,19 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: _Releases/${{ env.VERSION_DIR }} # Release-Dateien für Windows hochladen
+          path: _Releases/${{ env.VERSION_DIR }} # Upload release files for Windows
 
   deploy:
     runs-on: ubuntu-latest
     needs: [build-macos, build-windows]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # important for pushing tags and commits
+          submodules : recursive
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: false
 
       - name: Check if VERSION_DIR is set
         if: ${{ needs.build-macos.outputs.version_dir == '' || needs.build-macos.outputs.version_dir == null }}
@@ -150,13 +155,13 @@ jobs:
         run: |
             ls windows-release/
             ls macos-release/
-            # Sicherstellen, dass der Zielordner existiert
+            # Ensure the target folder exists
             mkdir -p _Releases/${{ needs.build-macos.outputs.version_dir }}
             
-            # Dateien aus macos-release/ kopieren
+            # Copy files from macos-release/
             rsync -a macos-release/ _Releases/${{ needs.build-macos.outputs.version_dir }}/
             
-            # Dateien aus windows-release/ kopieren
+            # Copy files from windows-release/
             rsync -a windows-release/windows/ _Releases/${{ needs.build-macos.outputs.version_dir }}/windows/
 
       - name: Fix permissions for macOS binary
@@ -173,12 +178,60 @@ jobs:
       #       git commit -m "Merge artifacts for version ${{ needs.build-macos.outputs.version_dir }}"
       #       git push origin master
 
+      - name: Configure git author (for tagging)
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Publish changelog to submodule
+        env:
+          SUBMODULE_TOKEN: ${{ secrets.SUBMODULE_TOKEN }}
+          TAG: ${{ needs.build-macos.outputs.tag }}
+        run: |
+          chmod +x scripts/publish_submodule_changelog.sh
+          ./scripts/publish_submodule_changelog.sh
+
+      - name: Push to master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          git add CHANGELOG.md
+          # Only commit if there are staged changes
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+            DID_COMMIT=0
+          else
+            git commit -m "Publish Release: ${{ needs.build-macos.outputs.tag }}"
+            DID_COMMIT=1
+          fi
+
+          # Set main repo remote to HTTPS + token (because persist-credentials: false)
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          
+          # Determine current branch (robust for main/master/feature branches)
+          BRANCH="${GITHUB_REF_NAME:-$(git rev-parse --abbrev-ref HEAD)}"
+          echo "Pushing pointer commit to ${BRANCH}"
+
+          # Rebase against remote (avoids non-fast-forward on parallel runs)
+          git fetch origin "${BRANCH}"
+          git pull --rebase origin "${BRANCH}" || true
+
+          # Push is always safe: if nothing is new, exit code is still 0
+          if [ "$DID_COMMIT" -eq 1 ]; then
+            echo "Pushing new commit…"
+          else
+            echo "No new commit, but ensuring remote is up to date…"
+          fi
+          git push origin "HEAD:${BRANCH}"
+
       - name: Delete existing Git tag
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-            git config user.name "GitHub Actions"
-            git config user.email "actions@github.com"
             git fetch --tags
             TAG="${{ needs.build-macos.outputs.tag }}"
       
@@ -193,19 +246,14 @@ jobs:
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-            git config user.name "GitHub Actions"
-            git config user.email "actions@github.com"
             git fetch --tags
             TAG="${{ needs.build-macos.outputs.tag }}"
 
-            # Neuen Tag erstellen und pushen
+            # Create and push new tag
             git tag -a "$TAG" -m "Release $TAG"
             git push origin "$TAG"
 
-      # - name: Zip _Releases folder
-      #   run: |
-      #       zip -r _Releases/${{ needs.build-macos.outputs.version_dir }}.zip _Releases/${{ needs.build-macos.outputs.version_dir }} -x "*.DS_Store"
-    
+            
       - name: Zip version_dir folder
         run: |
             cd _Releases && zip -r ${{ needs.build-macos.outputs.version_dir }}.zip ${{ needs.build-macos.outputs.version_dir }} -x "*.DS_Store"
@@ -217,8 +265,8 @@ jobs:
         run: |
             EXISTING_RELEASE=$(gh release view "${{ needs.build-macos.outputs.tag }}" --json url --jq .url || echo "")
             if [ -n "$EXISTING_RELEASE" ]; then
-            echo "Deleting existing release ${{ needs.build-macos.outputs.tag }}"
-            gh release delete "${{ needs.build-macos.outputs.tag }}" --yes
+              echo "Deleting existing release ${{ needs.build-macos.outputs.tag }}"
+              gh release delete "${{ needs.build-macos.outputs.tag }}" --yes
             fi
             
       - name: Create GitHub release
