@@ -127,7 +127,7 @@ function foo()
 end function	
 
 namespace Foo
-	declare ui_button btn_sth
+	// declare ui_button btn_sth
 	declare ui_button sdfb
 	// function bar()	
 	// 	declare dummyboi: bool := true
@@ -165,6 +165,10 @@ struct Sample_Note
 end struct
 
 on init
+	
+	declare read ui_xy xy_arp[2]
+	declare idx := search(xy_arp, 0)
+
 	declare ui_button btn
 	// Foo.baz()
 	for i in range(0, 1)

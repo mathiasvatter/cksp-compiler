@@ -90,11 +90,14 @@ Result<SuccessTag> ImportProcessor::evaluate_import(std::vector<Token>& tokens, 
         if(processed_imports.is_error())
             return Result<SuccessTag>(processed_imports.get_error());
         m_pos = og_pos;
-        // check END_TOKEN status and remove END_TOKEN from imported files
-        if (!tokens.empty() && tokens.back().type == token::END_TOKEN) {
-            tokens.pop_back();
+        // Keep the host file END_TOKEN at the end and strip the imported file END_TOKEN.
+        if (!new_tokens.empty() && new_tokens.back().type == token::END_TOKEN) {
+            new_tokens.pop_back();
         }
-        tokens.insert(tokens.end(), new_tokens.begin(), new_tokens.end());
+        const auto insert_pos = static_cast<std::ptrdiff_t>(m_pos);
+        tokens.insert(tokens.begin() + insert_pos, new_tokens.begin(), new_tokens.end());
+        // Continue after the newly inlined import body.
+        m_pos += new_tokens.size();
     }
 	return Result<SuccessTag>(SuccessTag{});
 }
@@ -178,4 +181,3 @@ Result<std::unique_ptr<NodeImport>> ImportProcessor::parse_import(std::vector<To
     "Not a filepath",peek(tokens).line,"path",peek(tokens).val, peek(tokens).file));
     }
 }
-
