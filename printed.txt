@@ -8,6 +8,11 @@ on init
 	read_persistent_var(xy_arp{real[]} {xy_arp} ){Builtin, None}
 	declare idx : int {Reuses: 0}
 	idx{int} {idx}  := search(xy_arp{real[]} {xy_arp} , 0){Builtin, None, search}
+	declare a : int {Reuses: 0}
+	declare f : int {Reuses: 0}
+	declare g : int {Reuses: 0}
+	declare d : int {Reuses: 0}
+	message(a{int} {a}  & ", " & f{int} {f}  & ", " & g{int} {g}  & ", " & f{int} {f}  & ", " & d{int} {d} ){Builtin, None, message}
 	declare ui_button btn : int  {Reuses: 0}
 	i0{int} {i0}  := 0
 	_step00{int} {_step00}  := 1

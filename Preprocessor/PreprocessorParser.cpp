@@ -202,6 +202,30 @@ Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::parse_token(PreNodeAST* 
             return Result<std::unique_ptr<PreNodeAST>>(result_literate_macro.get_error());
         node_statement->statement = std::move(result_literate_macro.unwrap());
         stmt = std::move(node_statement);
+    } else if (peek().type == token::SET_CONDITION) {
+        auto result_condition_def = parse_set_condition(node_statement.get());
+        if (result_condition_def.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_condition_def.get_error());
+        node_statement->statement = std::move(result_condition_def.unwrap());
+        stmt = std::move(node_statement);
+    } else if (peek().type == token::RESET_CONDITION) {
+        auto result_condition_def = parse_reset_condition(node_statement.get());
+        if (result_condition_def.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_condition_def.get_error());
+        node_statement->statement = std::move(result_condition_def.unwrap());
+        stmt = std::move(node_statement);
+    } else if (peek().type == token::IMPORT) {
+        auto result_import = parse_import(node_statement.get());
+        if (result_import.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_import.get_error());
+        node_statement->statement = std::move(result_import.unwrap());
+        stmt = std::move(node_statement);
+    } else if (peek().type == token::KEYWORD and peek().val == "import_nckp") {
+        auto result_import_nckp = parse_import_nckp(node_statement.get());
+        if (result_import_nckp.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_import_nckp.get_error());
+        node_statement->statement = std::move(result_import_nckp.unwrap());
+        stmt = std::move(node_statement);
     } else if(peek().type == token::KEYWORD or peek().type == token::STRING or peek().type == token::DEFAULT or peek().type == token::RETURN) {
         auto result_keyword = parse_keyword(node_statement.get());
         if (result_keyword.is_error())
@@ -689,6 +713,144 @@ Result<std::unique_ptr<PreNodeIncrementer>> PreprocessorParser::parse_incremente
     node_incrementer->iterator_step->parent = node_incrementer.get();
     node_incrementer->set_range(start_inc, end_inc);
     return Result<std::unique_ptr<PreNodeIncrementer>>(std::move(node_incrementer));
+}
+
+Result<std::unique_ptr<PreNodeImport>> PreprocessorParser::parse_import(PreNodeAST *parent) {
+    auto token = consume(); // consume import
+    Token path = consume();
+    if(path.type != token::STRING) {
+        auto error = CompileError(ErrorType::FileError, "Not a filepath.","path",path);
+        error.add_message("Import statements must be followed by a string literal representing the file path to import in POSIX format.");
+        return Result<std::unique_ptr<PreNodeImport>>(error);
+    }
+    std::string filepath = StringUtils::remove_quotes(path.val);
+    std::unique_ptr<PreNodeKeyword> alias;
+    if(peek().type == token::AS) {
+        auto error = CompileError(ErrorType::ParseError, "", "", peek());
+        error.set_message("Importing file with alias is not supported in as of version " + COMPILER_VERSION + ". "+
+                          "Please remove the 'as <alias>' part from the import statement.");
+        error.exit();
+
+        consume(); // consume <as> token
+        auto alias_keyword = parse_keyword(parent);
+        if (alias_keyword.is_error()) {
+            auto error = alias_keyword.get_error();
+            error.add_message("Import statements with alias must be in the format: import \"<filepath>\" as <alias>, where <alias> is a single keyword token.");
+            return Result<std::unique_ptr<PreNodeImport>>(error);
+        }
+        alias = std::move(alias_keyword.unwrap());
+    }
+    auto end_token = peek(-1);
+    if(peek().type != token::LINEBRK) {
+        auto error = CompileError(ErrorType::ParseError, "Incorrect <import> syntax.","linebreak",peek());
+        error.add_message("Import statements must end with a linebreak after the file path.");
+        return Result<std::unique_ptr<PreNodeImport>>(error);
+
+    }
+    consume(); //consume linebreak
+    auto import_statement = std::make_unique<PreNodeImport>(filepath, token, parent);
+    import_statement->set_alias(std::move(alias));
+    import_statement->set_range(token, end_token);
+    return Result<std::unique_ptr<PreNodeImport>>(std::move(import_statement));
+}
+
+Result<std::unique_ptr<PreNodeImportNCKP>> PreprocessorParser::parse_import_nckp(PreNodeAST *parent) {
+    auto token = consume(); // consume import_nckp
+    if(peek().type != token::OPEN_PARENTH) {
+        return Result<std::unique_ptr<PreNodeImportNCKP>>(CompileError(ErrorType::ParseError,
+        "Incorrect import_nckp Syntax.","(",peek()));
+    }
+    consume(); // consume (
+    if(peek().type != token::STRING) {
+        return Result<std::unique_ptr<PreNodeImportNCKP>>(CompileError(ErrorType::PreprocessorError,
+        "Not a filepath","path",peek()));
+    }
+    Token path = consume(); // consume filepath
+    std::string filepath = StringUtils::remove_quotes(path.val);
+    if(peek().type != token::CLOSED_PARENTH) {
+        return Result<std::unique_ptr<PreNodeImportNCKP>>(CompileError(ErrorType::ParseError,
+        "Incorrect import_nckp Syntax.",")",peek()));
+    }
+    auto end_token = consume(); // consume )
+    if(peek().type != token::LINEBRK)
+        return Result<std::unique_ptr<PreNodeImportNCKP>>(CompileError(ErrorType::ParseError,
+        "Incorrect import Syntax.","linebreak",peek()));
+    consume(); //consume linebreak
+    auto return_value = std::make_unique<PreNodeImportNCKP>(filepath, token, parent);
+    return_value->set_range(token, end_token);
+    return Result<std::unique_ptr<PreNodeImportNCKP>>(std::move(return_value));
+}
+
+Result<std::unique_ptr<PreNodeSetCondition>> PreprocessorParser::parse_set_condition(PreNodeAST *parent) {
+    auto token = consume(); // consume SET_CONDITION
+    if(peek().type != token::OPEN_PARENTH) {
+        auto error = CompileError(ErrorType::PreprocessorError, "Found invalid <condition> syntax.","(",peek());
+        error.add_message("<condition> statements must be in the format: SET_CONDITION(<condition-symbol>)");
+        return Result<std::unique_ptr<PreNodeSetCondition>>(error);
+    }
+    consume(); // consume (
+    if(peek().type != token::KEYWORD) {
+        auto error = CompileError(ErrorType::PreprocessorError, "Found invalid <condition> syntax.","<condition-symbol>",peek());
+        error.add_message("<condition> statements must be in the format: SET_CONDITION(<condition-symbol>), where <condition-symbol> is a single keyword token representing the symbol to set for conditional compilation.");
+        return Result<std::unique_ptr<PreNodeSetCondition>>(error);
+    }
+    auto condition = parse_keyword(parent);
+    if (condition.is_error()) {
+        auto error = condition.get_error();
+        error.add_message("<condition> statements must be in the format: SET_CONDITION(<condition-symbol>), where <condition-symbol> is a single keyword token representing the symbol to set for conditional compilation.");
+        return Result<std::unique_ptr<PreNodeSetCondition>>(condition.get_error());
+    }
+    if(peek().type != token::CLOSED_PARENTH) {
+        auto error = CompileError(ErrorType::PreprocessorError, "Found invalid <condition> syntax.",")",peek());
+        error.add_message("<condition> statements must be in the format: SET_CONDITION(<condition-symbol>).");
+        return Result<std::unique_ptr<PreNodeSetCondition>>(error);
+    }
+    auto end_token = consume(); // consume )
+    if(peek().type != token::LINEBRK) {
+        auto error = CompileError(ErrorType::PreprocessorError, "Found invalid <condition> syntax.","linebreak",peek());
+        error.add_message("<condition> statements must end with a linebreak after the closing parenthesis.");
+        return Result<std::unique_ptr<PreNodeSetCondition>>(error);
+    }
+    consume(); // consume linebreak
+    auto node_set_condition = std::make_unique<PreNodeSetCondition>(std::move(condition.unwrap()), token, parent);
+    node_set_condition->set_range(token, end_token);
+    return Result<std::unique_ptr<PreNodeSetCondition>>(std::move(node_set_condition));
+}
+
+Result<std::unique_ptr<PreNodeResetCondition>> PreprocessorParser::parse_reset_condition(PreNodeAST *parent) {
+    auto token = consume(); // consume RESET_CONDITION
+    if(peek().type != token::OPEN_PARENTH) {
+        auto error = CompileError(ErrorType::PreprocessorError, "Found invalid <condition> syntax.","(",peek());
+        error.add_message("<condition> statements must be in the format: RESET_CONDITION(<condition-symbol>)");
+        return Result<std::unique_ptr<PreNodeResetCondition>>(error);
+    }
+    consume(); // consume (
+    if(peek().type != token::KEYWORD) {
+        auto error = CompileError(ErrorType::PreprocessorError, "Found invalid <condition> syntax.","<condition-symbol>",peek());
+        error.add_message("<condition> statements must be in the format: RESET_CONDITION(<condition-symbol>), where <condition-symbol> is a single keyword token representing the symbol to reset for conditional compilation.");
+        return Result<std::unique_ptr<PreNodeResetCondition>>(error);
+    }
+    auto condition = parse_keyword(parent);
+    if (condition.is_error()) {
+        auto error = condition.get_error();
+        error.add_message("<condition> statements must be in the format: RESET_CONDITION(<condition-symbol>), where <condition-symbol> is a single keyword token representing the symbol to reset for conditional compilation.");
+        return Result<std::unique_ptr<PreNodeResetCondition>>(condition.get_error());
+    }
+    if(peek().type != token::CLOSED_PARENTH) {
+        auto error = CompileError(ErrorType::PreprocessorError, "Found invalid <condition> syntax.",")",peek());
+        error.add_message("<condition> statements must be in the format: RESET_CONDITION(<condition-symbol>).");
+        return Result<std::unique_ptr<PreNodeResetCondition>>(error);
+    }
+    auto end_token = consume(); // consume )
+    if(peek().type != token::LINEBRK) {
+        auto error = CompileError(ErrorType::PreprocessorError, "Found invalid <condition> syntax.","linebreak",peek());
+        error.add_message("<condition> statements must end with a linebreak after the closing parenthesis.");
+        return Result<std::unique_ptr<PreNodeResetCondition>>(error);
+    }
+    consume(); // consume linebreak
+    auto node_reset_condition = std::make_unique<PreNodeResetCondition>(std::move(condition.unwrap()), token, parent);
+    node_reset_condition->set_range(token, end_token);
+    return Result<std::unique_ptr<PreNodeResetCondition>>(std::move(node_reset_condition));
 }
 
 Result<std::unique_ptr<PreNodePragma>> PreprocessorParser::parse_pragma(PreNodeAST* parent) {
