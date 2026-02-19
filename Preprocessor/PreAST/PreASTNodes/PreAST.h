@@ -368,6 +368,112 @@ struct PreNodeList final : PreNodeAST {
 	}
 };
 
+struct PreNodeImport final : PreNodeAST {
+	std::string path;
+	std::unique_ptr<PreNodeKeyword> alias;
+	PreNodeImport(Token tok, PreNodeAST *parent)
+		: PreNodeAST(std::move(tok), parent, PreNodeType::IMPORT) {}
+	PreNodeImport(std::string path, Token tok, PreNodeAST *parent)
+		: PreNodeAST(std::move(tok), parent, PreNodeType::IMPORT), path(std::move(path)) {
+	}
+	PreNodeAST *accept(PreASTVisitor &visitor) override;
+	PreNodeImport(const PreNodeImport& other);
+	[[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
+	void update_parents(PreNodeAST* new_parent) override {
+		parent = new_parent;
+		if (alias) alias->update_parents(this);
+	}
+	void set_child_parents() override {
+		if (alias) alias->parent = this;
+	}
+	std::string get_string() override {
+		return "import " + path + (alias ? " as " + alias->get_string() : "");
+	}
+	void update_token_data(const Token &token) override {
+		tok.line = token.line; tok.file = token.file;
+		if (alias) alias->update_token_data(token);
+	}
+	void set_alias(std::unique_ptr<PreNodeKeyword> new_alias) {
+		alias = std::move(new_alias);
+		if (alias) alias->parent = this;
+	}
+};
+
+struct PreNodeImportNCKP final : PreNodeAST {
+	std::string path;
+	PreNodeImportNCKP(Token tok, PreNodeAST *parent)
+		: PreNodeAST(std::move(tok), parent, PreNodeType::IMPORT_NCKP) {}
+	PreNodeImportNCKP(std::string path, Token tok, PreNodeAST *parent)
+		: PreNodeAST(std::move(tok), parent, PreNodeType::IMPORT_NCKP), path(std::move(path)) {
+	}
+	PreNodeAST *accept(PreASTVisitor &visitor) override;
+	PreNodeImportNCKP(const PreNodeImportNCKP& other);
+	[[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
+	void update_parents(PreNodeAST* new_parent) override {
+		parent = new_parent;
+	}
+	std::string get_string() override {
+		return "import_nckp " + path;
+	}
+	void update_token_data(const Token &token) override {
+		tok.line = token.line; tok.file = token.file;
+	}
+};
+
+struct PreNodeSetCondition final : PreNodeAST {
+	std::unique_ptr<PreNodeKeyword> condition;
+	PreNodeSetCondition(Token tok, PreNodeAST *parent)
+		: PreNodeAST(std::move(tok), parent, PreNodeType::SET_CONDITION) {}
+	PreNodeSetCondition(std::unique_ptr<PreNodeKeyword> condition, Token tok, PreNodeAST *parent)
+		: PreNodeAST(std::move(tok), parent, PreNodeType::SET_CONDITION), condition(std::move(condition)) {
+	    set_child_parents();
+	}
+	PreNodeAST *accept(PreASTVisitor &visitor) override;
+	PreNodeSetCondition(const PreNodeSetCondition& other);
+	[[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
+	void set_child_parents() override {
+		condition->parent = this;
+	}
+	void update_parents(PreNodeAST* new_parent) override {
+		parent = new_parent;
+		condition->update_parents(this);
+	}
+	std::string get_string() override {
+		return "set_condition " + condition->get_string();
+	}
+	void update_token_data(const Token &token) override {
+		tok.line = token.line; tok.file = token.file;
+		condition->update_token_data(token);
+	}
+};
+
+struct PreNodeResetCondition final : PreNodeAST {
+	std::unique_ptr<PreNodeKeyword> condition;
+	PreNodeResetCondition(Token tok, PreNodeAST *parent)
+		: PreNodeAST(std::move(tok), parent, PreNodeType::RESET_CONDITION) {}
+	PreNodeResetCondition(std::unique_ptr<PreNodeKeyword> condition, Token tok, PreNodeAST *parent)
+		: PreNodeAST(std::move(tok), parent, PreNodeType::RESET_CONDITION), condition(std::move(condition)) {
+	    set_child_parents();
+	}
+	PreNodeAST *accept(PreASTVisitor &visitor) override;
+	PreNodeResetCondition(const PreNodeResetCondition& other);
+	[[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
+	void set_child_parents() override {
+		condition->parent = this;
+	}
+	void update_parents(PreNodeAST* new_parent) override {
+		parent = new_parent;
+		condition->update_parents(this);
+	}
+	std::string get_string() override {
+		return "reset_condition " + condition->get_string();
+	}
+	void update_token_data(const Token &token) override {
+		tok.line = token.line; tok.file = token.file;
+		condition->update_token_data(token);
+	}
+};
+
 struct PreNodeMacroHeader final : PreNodeAST {
     std::unique_ptr<PreNodeKeyword> name;
     std::unique_ptr<PreNodeList> args;

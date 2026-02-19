@@ -212,6 +212,57 @@ std::unique_ptr<PreNodeAST> PreNodeList::clone() const {
 	return std::make_unique<PreNodeList>(*this);
 }
 
+// ************* PreNodeImport *************
+PreNodeAST * PreNodeImport::accept(PreASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+
+PreNodeImport::PreNodeImport(const PreNodeImport &other): PreNodeAST(other), path(other.path) {
+	PreNodeImport::set_child_parents();
+}
+
+std::unique_ptr<PreNodeAST> PreNodeImport::clone() const {
+	return std::make_unique<PreNodeImport>(*this);
+}
+
+// ************* PreNodeImportNCKP *************
+PreNodeAST * PreNodeImportNCKP::accept(PreASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+
+PreNodeImportNCKP::PreNodeImportNCKP(const PreNodeImportNCKP &other): PreNodeAST(other), path(other.path) {
+}
+
+std::unique_ptr<PreNodeAST> PreNodeImportNCKP::clone() const {
+	return std::make_unique<PreNodeImportNCKP>(*this);
+}
+
+// ************* PreNodeSetCondition *************
+PreNodeAST * PreNodeSetCondition::accept(PreASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+
+PreNodeSetCondition::PreNodeSetCondition(const PreNodeSetCondition &other): PreNodeAST(other), condition(clone_unique(other.condition)) {
+	PreNodeSetCondition::set_child_parents();
+}
+
+std::unique_ptr<PreNodeAST> PreNodeSetCondition::clone() const {
+	return std::make_unique<PreNodeSetCondition>(*this);
+}
+
+// ************* PreNodeResetCondition *************
+PreNodeAST * PreNodeResetCondition::accept(PreASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+
+PreNodeResetCondition::PreNodeResetCondition(const PreNodeResetCondition &other): PreNodeAST(other), condition(clone_unique(other.condition)) {
+	PreNodeResetCondition::set_child_parents();
+}
+
+std::unique_ptr<PreNodeAST> PreNodeResetCondition::clone() const {
+	return std::make_unique<PreNodeResetCondition>(*this);
+}
+
 // ************* PreNodeMacroHeader *************
 PreNodeAST *PreNodeMacroHeader::accept(PreASTVisitor &visitor) {
 	return visitor.visit(*this);

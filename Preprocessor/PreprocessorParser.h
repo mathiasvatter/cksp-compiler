@@ -41,6 +41,15 @@ private:
 	/// INCREMENTER
     Result<std::unique_ptr<PreNodeIncrementer>> parse_incrementer(PreNodeAST* parent);
 
+	/// IMPORT
+	Result<std::unique_ptr<PreNodeImport>> parse_import(PreNodeAST* parent);
+	Result<std::unique_ptr<PreNodeImportNCKP>> parse_import_nckp(PreNodeAST* parent);
+
+	/// PREPROCESSOR CONDITIONS
+	Result<std::unique_ptr<PreNodeSetCondition>> parse_set_condition(PreNodeAST* parent);
+	Result<std::unique_ptr<PreNodeResetCondition>> parse_reset_condition(PreNodeAST* parent);
+
+
     std::unordered_map<StringIntKey, std::string, StringIntKeyHash> m_define_strings;
     // macro name and num_macro_arguments
     std::unordered_map<StringIntKey, std::string, StringIntKeyHash> m_macro_strings;

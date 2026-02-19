@@ -103,6 +103,18 @@ public:
         visit_all(node.program, *this);
         return &node;
     }
+    virtual PreNodeAST *visit(PreNodeImport &node) {
+        return &node;
+    }
+    virtual PreNodeAST *visit(PreNodeImportNCKP &node) {
+        return &node;
+    }
+    virtual PreNodeAST *visit(PreNodeSetCondition &node) {
+        return &node;
+    }
+    virtual PreNodeAST *visit(PreNodeResetCondition &node) {
+        return &node;
+    }
     virtual PreNodeAST *visit(PreNodeMacroHeader &node) {
 		node.name->accept(*this);
         node.args->accept(*this);
