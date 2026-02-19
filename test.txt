@@ -1,9 +1,14 @@
-{ Compiled with cksp version 0.0.8-alpha.5 on Fri Jan 23 16:47:59 2026 }
+{ Compiled with cksp version 0.0.8-alpha.6 on Thu Feb 19 18:31:49 2026 }
 on init
-  declare ui_button $Foo__btn_sth 
+  declare ui_button $Foo__sdfb 
   declare $i0
   declare $_step00
   declare $_stop00
+  declare ui_xy ?xy_arp[2] 
+  make_persistent(?xy_arp)
+  read_persistent_var(?xy_arp)
+  declare $idx
+  $idx := search(?xy_arp, 0)
   declare ui_button $btn 
   $i0 := 0
   $_step00 := 1

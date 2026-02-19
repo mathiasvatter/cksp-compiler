@@ -1,7 +1,14 @@
 on init
+	declare ui_button Foo.sdfb : int  {Reuses: 0}
 	declare local i0 : int {Reuses: 0}
 	declare local _step00 : int {Reuses: 0}
 	declare local _stop00 : int {Reuses: 0}
+	declare ui_xy xy_arp[2] : real[]  {Reuses: 0}
+	make_persistent(xy_arp{real[]} {xy_arp} ){Builtin, None}
+	read_persistent_var(xy_arp{real[]} {xy_arp} ){Builtin, None}
+	declare idx : int {Reuses: 0}
+	idx{int} {idx}  := search(xy_arp{real[]} {xy_arp} , 0){Builtin, None, search}
+	declare ui_button btn : int  {Reuses: 0}
 	i0{int} {i0}  := 0
 	_step00{int} {_step00}  := 1
 	_stop00{int} {_stop00}  := 1
@@ -23,6 +30,7 @@ on listener{thread-unsafe}
 	flag{int} {flag}  := 1
 	call do_something{UserDefined, Call, do_something}
 	flag{int} {flag}  := 0
+	message(EVENT_NOTE{int} {EVENT_NOTE} ){Builtin, None, message}
 end on
 
 function do_something{thread-unsafe}
