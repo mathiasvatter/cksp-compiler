@@ -48,7 +48,7 @@ private:
 	/// PREPROCESSOR CONDITIONS
 	Result<std::unique_ptr<PreNodeSetCondition>> parse_set_condition(PreNodeAST* parent);
 	Result<std::unique_ptr<PreNodeResetCondition>> parse_reset_condition(PreNodeAST* parent);
-
+	Result<std::unique_ptr<PreNodeUseCodeIf>> parse_use_code_if(PreNodeAST* parent);
 
     std::unordered_map<StringIntKey, std::string, StringIntKeyHash> m_define_strings;
     // macro name and num_macro_arguments

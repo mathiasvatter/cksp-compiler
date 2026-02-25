@@ -420,6 +420,53 @@ struct PreNodeImportNCKP final : PreNodeAST {
 	}
 };
 
+struct PreNodeUseCodeIf final : PreNodeAST {
+	std::unique_ptr<PreNodeKeyword> condition;
+	std::unique_ptr<PreNodeChunk> if_branch;
+	std::unique_ptr<PreNodeChunk> else_branch;
+	PreNodeUseCodeIf(Token tok, PreNodeAST *parent)
+		: PreNodeAST(std::move(tok), parent, PreNodeType::USE_CODE_IF) {}
+	PreNodeUseCodeIf(std::unique_ptr<PreNodeKeyword> condition, Token tok, PreNodeAST *parent)
+		: PreNodeAST(std::move(tok), parent, PreNodeType::USE_CODE_IF), condition(std::move(condition)) {
+	    set_child_parents();
+	}
+	PreNodeAST *accept(PreASTVisitor &visitor) override;
+	PreNodeUseCodeIf(const PreNodeUseCodeIf& other);
+	[[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
+	void set_child_parents() override {
+		condition->parent = this;
+		if (if_branch) if_branch->parent = this;
+		if (else_branch) else_branch->parent = this;
+	}
+	void update_parents(PreNodeAST* new_parent) override {
+		parent = new_parent;
+		condition->update_parents(this);
+		if (if_branch) if_branch->update_parents(this);
+		if (else_branch) else_branch->update_parents(this);
+	}
+	std::string get_string() override {
+		return "use_code_if " + condition->get_string();
+	}
+	void update_token_data(const Token &token) override {
+		tok.line = token.line; tok.file = token.file;
+		condition->update_token_data(token);
+		if (if_branch) if_branch->update_token_data(token);
+		if (else_branch) else_branch->update_token_data(token);
+	}
+	void set_if_branch(std::unique_ptr<PreNodeChunk> chunk) {
+		this->if_branch = std::move(chunk);
+		if (this->if_branch) this->if_branch->parent = this;
+	}
+	void set_else_branch(std::unique_ptr<PreNodeChunk> chunk) {
+		this->else_branch = std::move(chunk);
+		if (this->else_branch) this->else_branch->parent = this;
+	}
+	void set_condition(std::unique_ptr<PreNodeKeyword> cond) {
+		this->condition = std::move(cond);
+		if (this->condition) this->condition->parent = this;
+	}
+};
+
 struct PreNodeSetCondition final : PreNodeAST {
 	std::unique_ptr<PreNodeKeyword> condition;
 	PreNodeSetCondition(Token tok, PreNodeAST *parent)
@@ -440,6 +487,33 @@ struct PreNodeSetCondition final : PreNodeAST {
 	}
 	std::string get_string() override {
 		return "set_condition " + condition->get_string();
+	}
+	void update_token_data(const Token &token) override {
+		tok.line = token.line; tok.file = token.file;
+		condition->update_token_data(token);
+	}
+};
+
+struct PreNodeSetGlobalCondition final : PreNodeAST {
+	std::unique_ptr<PreNodeKeyword> condition;
+	PreNodeSetGlobalCondition(Token tok, PreNodeAST *parent)
+		: PreNodeAST(std::move(tok), parent, PreNodeType::SET_GLOBAL_CONDITION) {}
+	PreNodeSetGlobalCondition(std::unique_ptr<PreNodeKeyword> condition, Token tok, PreNodeAST *parent)
+		: PreNodeAST(std::move(tok), parent, PreNodeType::SET_GLOBAL_CONDITION), condition(std::move(condition)) {
+		set_child_parents();
+	}
+	PreNodeAST *accept(PreASTVisitor &visitor) override;
+	PreNodeSetGlobalCondition(const PreNodeSetGlobalCondition& other);
+	[[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
+	void set_child_parents() override {
+		condition->parent = this;
+	}
+	void update_parents(PreNodeAST* new_parent) override {
+		parent = new_parent;
+		condition->update_parents(this);
+	}
+	std::string get_string() override {
+		return "set_global_condition " + condition->get_string();
 	}
 	void update_token_data(const Token &token) override {
 		tok.line = token.line; tok.file = token.file;
@@ -473,6 +547,35 @@ struct PreNodeResetCondition final : PreNodeAST {
 		condition->update_token_data(token);
 	}
 };
+
+struct PreNodeResetGlobalCondition final : PreNodeAST {
+	std::unique_ptr<PreNodeKeyword> condition;
+	PreNodeResetGlobalCondition(Token tok, PreNodeAST *parent)
+		: PreNodeAST(std::move(tok), parent, PreNodeType::RESET_GLOBAL_CONDITION) {}
+	PreNodeResetGlobalCondition(std::unique_ptr<PreNodeKeyword> condition, Token tok, PreNodeAST *parent)
+		: PreNodeAST(std::move(tok), parent, PreNodeType::RESET_GLOBAL_CONDITION), condition(std::move(condition)) {
+		set_child_parents();
+	}
+	PreNodeAST *accept(PreASTVisitor &visitor) override;
+	PreNodeResetGlobalCondition(const PreNodeResetGlobalCondition& other);
+	[[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
+	void set_child_parents() override {
+		condition->parent = this;
+	}
+	void update_parents(PreNodeAST* new_parent) override {
+		parent = new_parent;
+		condition->update_parents(this);
+	}
+	std::string get_string() override {
+		return "reset_global_condition " + condition->get_string();
+	}
+	void update_token_data(const Token &token) override {
+		tok.line = token.line; tok.file = token.file;
+		condition->update_token_data(token);
+	}
+};
+
+
 
 struct PreNodeMacroHeader final : PreNodeAST {
     std::unique_ptr<PreNodeKeyword> name;
@@ -810,18 +913,14 @@ struct PreNodeIncrementer final : PreNodeAST {
     PreNodeIncrementer(const PreNodeIncrementer& other);
     [[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
 	void set_child_parents() override {
-		for (const auto & b : body) {
-			b->parent = this;
-		}
+		for (const auto & b : body) b->parent = this;
 		counter->parent = this;
 		iterator_start->parent = this;
 		iterator_step->parent = this;
 	}
     void update_parents(PreNodeAST* new_parent) override {
         parent = new_parent;
-        for (const auto & b : body) {
-            b->update_parents(this);
-        }
+        for (const auto & b : body) b->update_parents(this);
         counter->update_parents(this);
         iterator_start->update_parents(this);
         iterator_step->update_parents(this);
@@ -831,13 +930,23 @@ struct PreNodeIncrementer final : PreNodeAST {
     }
     void update_token_data(const Token &token) override {
         tok.line = token.line; tok.file = token.file;
-        for(const auto & b : body) {
-            b->update_token_data(token);
-        }
+        for(const auto & b : body) b->update_token_data(token);
         counter->update_token_data(token);
         iterator_start->update_token_data(token);
         iterator_step->update_token_data(token);
     }
+	void set_counter(std::unique_ptr<PreNodeAST> new_counter) {
+		counter = std::move(new_counter);
+		counter->parent = this;
+	}
+	void set_iterator_start(std::unique_ptr<PreNodeChunk> new_start) {
+		iterator_start = std::move(new_start);
+		iterator_start->parent = this;
+	}
+	void set_iterator_step(std::unique_ptr<PreNodeChunk> new_step) {
+		iterator_step = std::move(new_step);
+		iterator_step->parent = this;
+	}
 };
 
 struct PreNodeProgram final : PreNodeAST {

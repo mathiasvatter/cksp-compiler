@@ -237,6 +237,21 @@ std::unique_ptr<PreNodeAST> PreNodeImportNCKP::clone() const {
 	return std::make_unique<PreNodeImportNCKP>(*this);
 }
 
+// ************* PreNodeUseCodeIf *************
+PreNodeAST * PreNodeUseCodeIf::accept(PreASTVisitor &visitor) {
+	return PreNodeAST::accept(visitor);
+}
+
+PreNodeUseCodeIf::PreNodeUseCodeIf(const PreNodeUseCodeIf &other): PreNodeAST(other),
+condition(clone_unique(other.condition)), if_branch(clone_unique(other.if_branch)), else_branch(clone_unique(other.else_branch)) {
+	PreNodeUseCodeIf::set_child_parents();
+
+}
+
+std::unique_ptr<PreNodeAST> PreNodeUseCodeIf::clone() const {
+	return std::make_unique<PreNodeUseCodeIf>(*this);
+}
+
 // ************* PreNodeSetCondition *************
 PreNodeAST * PreNodeSetCondition::accept(PreASTVisitor &visitor) {
 	return visitor.visit(*this);
@@ -250,6 +265,19 @@ std::unique_ptr<PreNodeAST> PreNodeSetCondition::clone() const {
 	return std::make_unique<PreNodeSetCondition>(*this);
 }
 
+// ************* PreNodeSetGlobalCondition *************
+PreNodeAST * PreNodeSetGlobalCondition::accept(PreASTVisitor &visitor) {
+	return PreNodeAST::accept(visitor);
+}
+
+PreNodeSetGlobalCondition::PreNodeSetGlobalCondition(const PreNodeSetGlobalCondition &other): PreNodeAST(other), condition(clone_unique(other.condition)) {
+	PreNodeSetGlobalCondition::set_child_parents();
+}
+
+std::unique_ptr<PreNodeAST> PreNodeSetGlobalCondition::clone() const {
+	return std::make_unique<PreNodeSetGlobalCondition>(*this);
+}
+
 // ************* PreNodeResetCondition *************
 PreNodeAST * PreNodeResetCondition::accept(PreASTVisitor &visitor) {
 	return visitor.visit(*this);
@@ -261,6 +289,19 @@ PreNodeResetCondition::PreNodeResetCondition(const PreNodeResetCondition &other)
 
 std::unique_ptr<PreNodeAST> PreNodeResetCondition::clone() const {
 	return std::make_unique<PreNodeResetCondition>(*this);
+}
+
+// ************* PreNodeResetGlobalCondition *************
+PreNodeAST * PreNodeResetGlobalCondition::accept(PreASTVisitor &visitor) {
+	return PreNodeAST::accept(visitor);
+}
+
+PreNodeResetGlobalCondition::PreNodeResetGlobalCondition(const PreNodeResetGlobalCondition &other): PreNodeAST(other), condition(clone_unique(other.condition)) {
+	PreNodeResetGlobalCondition::set_child_parents();
+}
+
+std::unique_ptr<PreNodeAST> PreNodeResetGlobalCondition::clone() const {
+	return std::make_unique<PreNodeResetGlobalCondition>(*this);
 }
 
 // ************* PreNodeMacroHeader *************
