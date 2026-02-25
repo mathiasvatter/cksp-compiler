@@ -1,42 +1,55 @@
-on init
+// Global Declarations:
+	declare _iter0 : int {Reuses: 0}
+	declare const MAX::STRUCTS : int := 1000000 {Reuses: 0}
+	declare const MEM::WARNING : string := "Memory Error: No more free space available to allocate objects of type" {Reuses: 0}
 	declare ui_button Foo.sdfb : int  {Reuses: 0}
-	declare local i0 : int {Reuses: 0}
-	declare local _step00 : int {Reuses: 0}
-	declare local _stop00 : int {Reuses: 0}
-	declare ui_xy xy_arp[2] : real[]  {Reuses: 0}
-	make_persistent(xy_arp{real[]} {xy_arp} ){Builtin, None}
-	read_persistent_var(xy_arp{real[]} {xy_arp} ){Builtin, None}
-	declare idx : int {Reuses: 0}
-	idx{int} {idx}  := search(xy_arp{real[]} {xy_arp} , 0){Builtin, None, search}
+on init
+	declare const Sample_Note::MAX_STRUCTS : int := MAX::STRUCTS{unknown} {no declaration}  {Reuses: 0}
+	declare Sample_Note::free_idx : int {Reuses: 0}
+	declare Sample_Note::allocation[Sample_Note::MAX_STRUCTS{int} {Sample_Note::MAX_STRUCTS} ] : int[] {Reuses: 0}
+	declare Sample_Note::stack[Sample_Note::MAX_STRUCTS{int} {Sample_Note::MAX_STRUCTS} ] : int[] {Reuses: 0}
+	declare Sample_Note::stack_top : int {Reuses: 0}
+	declare Sample_Note::note_num[Sample_Note::MAX_STRUCTS{int} {Sample_Note::MAX_STRUCTS} ] : int[] {Reuses: 0}
+	declare Sample_Note::velocity[Sample_Note::MAX_STRUCTS{int} {Sample_Note::MAX_STRUCTS} ] : int[] {Reuses: 0}
+	declare Sample_Note::mark[Sample_Note::MAX_STRUCTS{int} {Sample_Note::MAX_STRUCTS} ] : int[] {Reuses: 0}
+	declare Sample_Note::id[Sample_Note::MAX_STRUCTS{int} {Sample_Note::MAX_STRUCTS} ] : int[] {Reuses: 0}
+	message(henlo{any} {no declaration} ){Builtin, None, message}
+	declare ui_xy read xy_arp[2] : real[]  {Reuses: 0}
+	declare idx : int := search[xy_arp{real[]} {xy_arp} , 0] {Reuses: 0}
 	declare a : int {Reuses: 0}
 	declare f : int {Reuses: 0}
 	declare g : int {Reuses: 0}
 	declare d : int {Reuses: 0}
 	message(a{int} {a}  & ", " & f{int} {f}  & ", " & g{int} {g}  & ", " & f{int} {f}  & ", " & d{int} {d} ){Builtin, None, message}
 	declare ui_button btn : int  {Reuses: 0}
-	i0{int} {i0}  := 0
-	_step00{int} {_step00}  := 1
-	_stop00{int} {_stop00}  := 1
-	while(((i0{int} {i0}  < _stop00{int} {_stop00} ) and (_step00{int} {_step00}  > 0)) or ((i0{int} {i0}  > _stop00{int} {_stop00} ) and (_step00{int} {_step00}  < 0))) 
-		message(i0{int} {i0} ){Builtin, None, message}
-		i0{int} {i0}  := i0{int} {i0}  + _step00{int} {_step00} 
-	end while
+		declare local i : int := 0 {Reuses: 0}
+		declare local _step0 : int := 1 {Reuses: 0}
+		declare local _stop0 : int := 1 {Reuses: 0}
+		while(((i{int} {i}  < _stop0{int} {_stop0} ) and (_step0{int} {_step0}  > 0)) or ((i{int} {i}  > _stop0{int} {_stop0} ) and (_step0{int} {_step0}  < 0))) 
+			message(i{int} {i} ){Builtin, None, message}
+			i{int} {i}  := i{int} {i}  + _step0{int} {_step0} 
+		end while
+
 	set_listener(NI_SIGNAL_TIMER_MS{int} {NI_SIGNAL_TIMER_MS} , 1000){Builtin, None, set_listener}
 	declare flag : int {Reuses: 0}
 end on
 
 on note{thread-unsafe}
 	flag{int} {flag}  := 1
-	call do_something{UserDefined, Call, do_something}
+	do_something{UserDefined, None, do_something}
 	flag{int} {flag}  := 0
 end on
 
 on listener{thread-unsafe}
 	flag{int} {flag}  := 1
-	call do_something{UserDefined, Call, do_something}
+	do_something{UserDefined, None, do_something}
 	flag{int} {flag}  := 0
 	message(EVENT_NOTE{int} {EVENT_NOTE} ){Builtin, None, message}
 end on
+
+function foo
+	message("hello"){Builtin, None, message}
+end function
 
 function do_something{thread-unsafe}
 	if(flag{int} {flag}  = 1)
@@ -45,6 +58,105 @@ function do_something{thread-unsafe}
 	else
 		message("good to go"){Builtin, None, message}
 		wait(DURATION_QUARTER{int} {DURATION_QUARTER} ){Builtin, None, wait}
+	end if
+end function
+
+function CKSP::__bool__(x0 : int)
+	return (- sh_right(x0{int} {x0}  .xor. - x0{int} {x0} , 31){Builtin, None, sh_right})
+end function
+
+function CKSP::__ge__(a5 : int, b4 : int)
+	return (sh_right(a5{int} {a5}  - b4{int} {b4} , 31){Builtin, None, sh_right} + 1)
+end function
+
+function CKSP::__lt__(a4 : int, b3 : int)
+	return (- sh_right(a4{int} {a4}  - b3{int} {b3} , 31){Builtin, None, sh_right})
+end function
+
+function CKSP::__ne__(a3 : int, b2 : int)
+	return (1 - - sh_right(abs(a3{int} {a3}  - b2{int} {b2} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
+end function
+
+function CKSP::__eq__(a2 : int, b1 : int)
+	return (- sh_right(abs(a2{int} {a2}  - b1{int} {b1} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
+end function
+
+function CKSP::__le__(a1 : int, b5 : int)
+	return (1 + sh_right(b5{int} {b5}  - a1{int} {a1} , 31){Builtin, None, sh_right})
+end function
+
+function CKSP::__gt__(a0 : int, b0 : int)
+	return (- sh_right(b0{int} {b0}  - a0{int} {a0} , 31){Builtin, None, sh_right})
+end function
+
+function Struct::max(a : int, b : int)
+	return (((a{int} {a}  + b{int} {b} ) + abs(a{int} {a}  - b{int} {b} ){Builtin, None, abs}) / 2)
+end function
+
+function Struct::min(a : int, b : int)
+	return (((a{int} {a}  + b{int} {b} ) - abs(a{int} {a}  - b{int} {b} ){Builtin, None, abs}) / 2)
+end function
+
+function Sample_Note::set_mark(self3 : int, mark1 : int)
+	Sample_Note::mark[self3{int} {self3} ]{int} {Sample_Note::mark}  := mark1{int} {mark1} 
+end function
+
+function Sample_Note::get_mark(self1 : int)
+	return (Sample_Note::mark[self1{int} {self1} ]{int} {Sample_Note::mark} )
+end function
+
+function Sample_Note::play(self2 : int)
+	return (play_note(Sample_Note::note_num[self2{int} {self2} ]{int} {Sample_Note::note_num} , Sample_Note::velocity[self2{int} {self2} ]{int} {Sample_Note::velocity} , 0, - 1){Builtin, None, play_note})
+end function
+
+function Sample_Note::__init__(note_num0 : int, velocity0 : int, mark0 : int, id0 : int)
+	Sample_Note::free_idx{int} {Sample_Note::free_idx}  := search(Sample_Note::allocation{int[]} {Sample_Note::allocation} , 0, Sample_Note::free_idx{int} {Sample_Note::free_idx} , Sample_Note::MAX_STRUCTS{int} {Sample_Note::MAX_STRUCTS}  - 1){Builtin, None, search}
+	if(Sample_Note::free_idx{int} {Sample_Note::free_idx}  = -1)
+		message("Error: No more free space available to allocate objects of type 'Sample_Note'"){Builtin, None, message}
+	end if
+	Sample_Note::allocation[Sample_Note::free_idx{int} {Sample_Note::free_idx} ]{int[]} {Sample_Note::allocation}  := 1
+	Sample_Note::note_num[Sample_Note::free_idx{int} {Sample_Note::free_idx} ]{int} {Sample_Note::note_num}  := note_num0{int} {note_num0} 
+	Sample_Note::velocity[Sample_Note::free_idx{int} {Sample_Note::free_idx} ]{int} {Sample_Note::velocity}  := velocity0{int} {velocity0} 
+	Sample_Note::mark[Sample_Note::free_idx{int} {Sample_Note::free_idx} ]{int} {Sample_Note::mark}  := mark0{int} {mark0} 
+	Sample_Note::id[Sample_Note::free_idx{int} {Sample_Note::free_idx} ]{int} {Sample_Note::id}  := id0{int} {id0} 
+	return (Sample_Note::free_idx{int} {Sample_Note::free_idx} )
+end function
+
+function Sample_Note::__repr__(self0 : int)
+	return ("<Sample_Note> Object: " & self0{int} {self0} )
+end function
+
+function Sample_Note::__del__(self4 : int)
+	declare local _iter : int {Reuses: 0}
+	if(self4{int} {self4}  # - 1)
+		Sample_Note::note_num[self4{int} {self4} ]{int} {Sample_Note::note_num}  := 0
+		Sample_Note::mark[self4{int} {self4} ]{int} {Sample_Note::mark}  := 0
+		Sample_Note::velocity[self4{int} {self4} ]{int} {Sample_Note::velocity}  := 0
+		Sample_Note::id[self4{int} {self4} ]{int} {Sample_Note::id}  := 0
+		Sample_Note::free_idx{int} {Sample_Note::free_idx}  := Struct::min(Sample_Note::free_idx{int} {Sample_Note::free_idx} , self4{int} {self4} ){UserDefined, None, Struct::min}
+	end if
+end function
+
+function Sample_Note::__decr__(self5 : int, num_refs0 : int)
+	declare local current : int := self5{int} {self5}  {Reuses: 0}
+	while(current{int} {current}  # - 1) 
+		declare local _iter : int {Reuses: 0}
+		Sample_Note::allocation[current{int} {current} ]{int} {Sample_Note::allocation}  := Sample_Note::allocation[current{int} {current} ]{int} {Sample_Note::allocation}  - num_refs0{int} {num_refs0} 
+		if(Sample_Note::allocation[current{int} {current} ]{int} {Sample_Note::allocation}  > 0)
+			current{int} {current}  := - 1
+			continue{Builtin, None, continue}
+		else
+			Sample_Note::allocation[current{int} {current} ]{int} {Sample_Note::allocation}  := 0
+		end if
+		self5{int} {self5}  := current{int} {current} 
+		current{int} {current}  := - 1
+		Sample_Note::__del__(self5{int} {self5} ){UserDefined, None, Sample_Note::__del__}
+	end while
+end function
+
+function Sample_Note::__incr__(self6 : int, num_refs1 : int)
+	if(self6{int} {self6}  # - 1)
+		Sample_Note::allocation[self6{int} {self6} ]{int} {Sample_Note::allocation}  := Sample_Note::allocation[self6{int} {self6} ]{int} {Sample_Note::allocation}  + num_refs1{int} {num_refs1} 
 	end if
 end function
 

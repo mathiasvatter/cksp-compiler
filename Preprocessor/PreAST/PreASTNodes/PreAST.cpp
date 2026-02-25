@@ -4,6 +4,8 @@
 
 #include "PreAST.h"
 
+#include "../PreASTImport.h"
+#include "../PreASTConditions.h"
 #include "../PreASTPrinter.h"
 #include "../PreASTVisitor.h"
 
@@ -24,6 +26,16 @@ void PreNodeAST::debug_print(const std::string &path) {
 	printer.generate(path);
 #endif
 }
+
+PreNodeAST * PreNodeAST::do_preprocessing(const std::string &current_file,
+	const std::unordered_set<std::string> &imported_files,
+	const std::unordered_map<std::string, std::string> &basename_map) {
+	PreASTConditions conditions_processor;
+	accept(conditions_processor);
+	static PreASTImport import_processor(current_file, imported_files, basename_map);
+	return accept(import_processor);
+}
+
 
 // ************* PreNodeLiteral *************
 std::unique_ptr<PreNodeAST> PreNodeLiteral::clone() const {
@@ -471,7 +483,7 @@ PreNodeAST *PreNodeProgram::accept(PreASTVisitor &visitor) {
 }
 
 PreNodeProgram::PreNodeProgram(const PreNodeProgram &other)
-: PreNodeAST(other), program(clone_vector(other.program)),
+: PreNodeAST(other), program(clone_unique(other.program)),
 define_statements(clone_vector(other.define_statements)),
 macro_definitions(clone_vector(other.macro_definitions)) {
 	PreNodeProgram::set_child_parents();

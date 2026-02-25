@@ -236,6 +236,8 @@ add_executable(cksp main.cpp
         Lowering/LoweringBoolean.h
         SyntaxChecks/KSPConditions.h
         Lowering/LoweringComparisons.h
+        Preprocessor/PreAST/PreASTImport.h
+        Preprocessor/PreAST/PreASTConditions.h
 )
 add_dependencies(cksp generate_headers)
 

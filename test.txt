@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.8-alpha.6 on Thu Feb 19 22:27:48 2026 }
+{ Compiled with cksp version 0.0.8-alpha.6 on Wed Feb 25 18:26:35 2026 }
 on init
   declare ui_button $Foo__sdfb 
   declare $i0

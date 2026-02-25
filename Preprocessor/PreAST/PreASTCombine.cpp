@@ -30,8 +30,8 @@ PreNodeAST *PreASTCombine::visit(PreNodeOther &node) {
 }
 
 PreNodeAST *PreASTCombine::visit(PreNodeProgram &node) {
-	m_tokens.reserve(m_tokens.size() + node.program.size());
-	visit_all(node.program, *this);
+	m_tokens.reserve(m_tokens.size() + node.program->num_chunks());
+	node.program->accept(*this);
 	return &node;
 }
 

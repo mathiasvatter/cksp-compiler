@@ -100,7 +100,7 @@ public:
         m_program = &node;
         visit_all(node.define_statements, *this);
         // visit_all(node.macro_definitions, *this);
-        visit_all(node.program, *this);
+        node.program->accept(*this);
         return &node;
     }
     virtual PreNodeAST *visit(PreNodeImport &node) {

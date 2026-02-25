@@ -111,7 +111,7 @@ public:
 		os << "\n";
 	    visit_all(node.macro_definitions, *this);
 		os << "\n";
-		visit_all(node.program, *this);
+		node.program->accept(*this);
 		return &node;
     }
 

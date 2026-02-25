@@ -17,7 +17,7 @@ PreNodeAST *PreASTDefines::visit(PreNodeProgram &node) {
 
 	m_builtin_defines = get_builtin_defines();
 	visit_all(node.define_statements, *this);
-	visit_all(node.program, *this);
+	node.program->accept(*this);
 	visit_all(node.macro_definitions, *this);
 	return &node;
 }

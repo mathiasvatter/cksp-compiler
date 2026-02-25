@@ -13,7 +13,7 @@ PreNodeAST *PreASTDesugar::visit(PreNodeProgram &node) {
         m_macro_lookup.insert({{def->header->get_name(), (int)def->header->num_args()}, def.get()});
 		m_macro_string_lookup.insert({def->header->get_name(), def.get()});
     }
-	visit_all(node.program, *this);
+	node.program->accept(*this);
 	return &node;
 }
 

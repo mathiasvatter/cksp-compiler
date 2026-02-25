@@ -4,17 +4,14 @@
 
 #include "PreprocessorParser.h"
 
-PreprocessorParser::PreprocessorParser(std::vector<Token> tokens) : Processor(std::move(tokens)) {
-    m_pos = 0;
-	m_curr_token_type = m_tokens.at(0).type;
-}
-
 Result<std::unique_ptr<PreNodeProgram>> PreprocessorParser::parse_program(PreNodeAST *parent) {
-    std::vector<std::unique_ptr<PreNodeAST>> program;
+    auto program = std::make_unique<PreNodeChunk>(Token(), parent);
     std::vector<std::unique_ptr<PreNodeDefineStatement>> define_statements;
     std::vector<std::unique_ptr<PreNodeMacroDefinition>> macro_definitions;
     auto node_program = std::make_unique<PreNodeProgram>(std::move(program), std::move(define_statements), std::move(macro_definitions), Token(), nullptr);
+    node_program->def_provider = m_definition_provider;
     m_program = node_program.get();
+    m_pos = 0;
     // get definitions first
     while(peek().type != token::END_TOKEN) {
         if (is_define_definition()) {
@@ -48,12 +45,12 @@ Result<std::unique_ptr<PreNodeProgram>> PreprocessorParser::parse_program(PreNod
             auto token_result = parse_token(parent);
             if (token_result.is_error())
                 return Result<std::unique_ptr<PreNodeProgram>>(token_result.get_error());
-            m_program->program.push_back(std::move(token_result.unwrap()));
+            m_program->program->add_chunk(std::move(token_result.unwrap()));
         }
     }
     auto node_end_token = std::make_unique<PreNodeOther>(std::move(consume()), parent);
 //    node_program->define_statements = std::move(m_define_definitions);
-    node_program->program.push_back(std::move(node_end_token));
+    node_program->program->add_chunk(std::move(node_end_token));
     return Result<std::unique_ptr<PreNodeProgram>>(std::move(node_program));
 }
 
@@ -219,6 +216,12 @@ Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::parse_token(PreNodeAST* 
         if (result_import.is_error())
             return Result<std::unique_ptr<PreNodeAST>>(result_import.get_error());
         node_statement->statement = std::move(result_import.unwrap());
+        stmt = std::move(node_statement);
+    } else if (peek().type == token::USE_CODE_IF || peek().type == token::USE_CODE_IF_NOT) {
+        auto result_use_code_if = parse_use_code_if(node_statement.get());
+        if (result_use_code_if.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_use_code_if.get_error());
+        node_statement->statement = std::move(result_use_code_if.unwrap());
         stmt = std::move(node_statement);
     } else if (peek().type == token::KEYWORD and peek().val == "import_nckp") {
         auto result_import_nckp = parse_import_nckp(node_statement.get());
@@ -853,7 +856,8 @@ Result<std::unique_ptr<PreNodeResetCondition>> PreprocessorParser::parse_reset_c
 }
 
 Result<std::unique_ptr<PreNodeUseCodeIf>> PreprocessorParser::parse_use_code_if(PreNodeAST *parent) {
-    auto token = consume(); // consume USE_CODE_IF
+    auto token = consume(); // consume USE_CODE_IF or USE_CODE_IF_NOT
+    bool use_if = token.type == token::USE_CODE_IF; // will be false if token::USE_CODE_IF_NOT
     auto error_msg = "Found invalid <USE_CODE_IF> syntax. ";
     auto node_if = std::make_unique<PreNodeUseCodeIf>(token, parent);
     if(peek().type != token::OPEN_PARENTH) {
@@ -910,7 +914,11 @@ Result<std::unique_ptr<PreNodeUseCodeIf>> PreprocessorParser::parse_use_code_if(
     }
     consume(); // consume linebreak
     node_if->set_condition(std::move(condition));
-    node_if->set_if_branch(std::move(node_chunk));
+    if (use_if) {
+        node_if->set_if_branch(std::move(node_chunk));
+    } else {
+        node_if->set_else_branch(std::move(node_chunk));
+    }
     return Result<std::unique_ptr<PreNodeUseCodeIf>>(std::move(node_if));
 }
 
