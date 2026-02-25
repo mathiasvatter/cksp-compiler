@@ -30,9 +30,11 @@ Token Processor::consume(const std::vector<Token> &tok) {
 		const auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
 		CompileError(ErrorType::PreprocessorError, err_msg, tok.at(m_pos).line, "end token", tok.at(m_pos).val, tok.at(m_pos).file).exit();
 	}
-	m_curr_token = tok.at(m_pos+1);
-	m_curr_token_type = m_curr_token.type;
-	m_curr_token_value = m_curr_token.val;
+	if (m_pos + 1 < tok.size()) {
+		m_curr_token = tok.at(m_pos + 1);
+		m_curr_token_type = m_curr_token.type;
+		m_curr_token_value = m_curr_token.val;
+	}
 	return tok.at(m_pos++);
 }
 

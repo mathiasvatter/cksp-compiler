@@ -10,12 +10,16 @@
 
 class PreprocessorParser : public Processor {
 public:
-    explicit PreprocessorParser(std::vector<Token> tokens);
+    explicit PreprocessorParser(std::vector<Token> tokens, DefinitionProvider* def_provider) : Processor(std::move(tokens)), m_definition_provider(def_provider) {;
+		m_pos = 0;
+		m_curr_token_type = m_tokens.at(0).type;
+	}
 
     Result<std::unique_ptr<PreNodeProgram>> parse_program(PreNodeAST* parent);
 
 private:
 	PreNodeProgram* m_program = nullptr;
+	DefinitionProvider* m_definition_provider;
 
     Result<std::unique_ptr<PreNodeNumber>> parse_number(PreNodeAST* parent);
     Result<std::unique_ptr<PreNodeAST>> parse_int(PreNodeAST *parent);

@@ -8,6 +8,7 @@
 
 #include "PreASTHelper.h"
 #include "../../../AST/ASTNodes/ASTHelper.h"
+#include "../../../BuiltinsProcessing/DefinitionProvider.h"
 #include "../../../misc/HashFunctions.h"
 #include "../../../utils/StringUtils.h"
 
@@ -61,6 +62,8 @@ struct PreNodeAST {
 		return nullptr;
 	}
 	void debug_print(const std::string &path = PRINTER_OUTPUT);
+	// does import passes
+	PreNodeAST* do_preprocessing(const std::string& current_file, const std::unordered_set<std::string> &imported_files, const std::unordered_map<std::string, std::string> &basename_map);
 };
 
 // Template-Funktion für sicheren Cast
@@ -950,13 +953,13 @@ struct PreNodeIncrementer final : PreNodeAST {
 };
 
 struct PreNodeProgram final : PreNodeAST {
-	std::string output_path = "";
+	DefinitionProvider* def_provider = nullptr;
 	std::stack<PreNodeDefineStatement*> define_call_stack;
 	std::stack<PreNodeMacroCall*> macro_call_stack;
-    std::vector<std::unique_ptr<PreNodeAST>> program;
+	std::unique_ptr<PreNodeChunk> program;
     std::vector<std::unique_ptr<PreNodeDefineStatement>> define_statements;
     std::vector<std::unique_ptr<PreNodeMacroDefinition>> macro_definitions;
-    PreNodeProgram(std::vector<std::unique_ptr<PreNodeAST>> program, std::vector<std::unique_ptr<PreNodeDefineStatement>> defines,
+    PreNodeProgram(std::unique_ptr<PreNodeChunk> program, std::vector<std::unique_ptr<PreNodeDefineStatement>> defines,
                    std::vector<std::unique_ptr<PreNodeMacroDefinition>> macro_definitions, Token tok, PreNodeAST* parent)
     	: PreNodeAST(std::move(tok), parent, PreNodeType::PROGRAM), program(std::move(program)), define_statements(std::move(defines)), macro_definitions(std::move(macro_definitions)) {}
 
@@ -964,13 +967,13 @@ struct PreNodeProgram final : PreNodeAST {
     PreNodeProgram(const PreNodeProgram& other);
     [[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
 	void set_child_parents() override {
-		for(const auto & p : program) p->parent = this;
+		program->parent = this;
 		for(const auto & def : define_statements) def ->parent = this;
 		for(const auto & def : macro_definitions) def ->parent = this;
 	}
     void update_parents(PreNodeAST* new_parent) override {
         parent = new_parent;
-        for(const auto & p : program) p->update_parents(this);
+		program->update_parents(this);
         for(const auto & def : define_statements) def ->update_parents(this);
         for(const auto & def : macro_definitions) def ->update_parents(this);
     }
@@ -978,6 +981,7 @@ struct PreNodeProgram final : PreNodeAST {
 		return "";
 	}
     void update_token_data(const Token &token) override {}
+
 };
 
 

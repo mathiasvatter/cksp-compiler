@@ -165,7 +165,7 @@ struct Sample_Note
 end struct
 
 on init
-	
+	message(henlo)
 	declare read ui_xy xy_arp[2]
 	declare idx := search(xy_arp, 0)
 
