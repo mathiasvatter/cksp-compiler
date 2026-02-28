@@ -20,6 +20,9 @@ public:
     PreNodeAST *visit(PreNodeIncrementer &node) override;
     PreNodeAST *visit(PreNodeList &node) override;
     PreNodeAST *visit(PreNodeMacroHeader &node) override;
+    PreNodeAST *visit(PreNodeFunctionHeader &node) override;
+    PreNodeAST *visit(PreNodeDefineHeader &node) override;
 
+    void debug_print_tokens(const std::string &path = PRINTER_OUTPUT) const;
 };
 

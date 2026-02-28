@@ -936,11 +936,17 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
             stmt = std::move(declare_stmt.unwrap());
         } else if ((peek().type == token::CALL) xor
                    (peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK or peek(1).type == token::CLOSED_PARENTH)) {
-			auto function_call = parse_function_call(node_statement.get());
-			if (function_call.is_error()) {
-				return Result<std::unique_ptr<NodeStatement>>(function_call.get_error());
-			}
-			stmt = std::move(function_call.unwrap());
+	        auto function_call = parse_function_call(node_statement.get());
+        	if (function_call.is_error()) {
+        		return Result<std::unique_ptr<NodeStatement>>(function_call.get_error());
+        	}
+        	stmt = std::move(function_call.unwrap());
+        } else if (peek().type == token::SET_CONDITION or peek().type == token::RESET_CONDITION) {
+        	auto function_call = parse_function_call(node_statement.get());
+        	if (function_call.is_error()) {
+        		return Result<std::unique_ptr<NodeStatement>>(function_call.get_error());
+        	}
+        	stmt = std::move(function_call.unwrap());
         } else {
         	auto l_values = parse_l_values(node_statement.get());
         	if (l_values.is_error()) return Result<std::unique_ptr<NodeStatement>>(l_values.get_error());
@@ -1279,7 +1285,11 @@ Result<std::unique_ptr<NodeParamList>> Parser::parse_multiple_values(NodeAST* pa
 
 Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(NodeAST* parent, bool allow_linebreaks) {
 	auto param_list = std::make_unique<NodeParamList>(get_tok());
-	if (peek().type == token::OPEN_PARENTH) consume(); // consume (
+	bool has_open_parenth = false;
+	if (peek().type == token::OPEN_PARENTH) {
+		consume(); // consume (
+		has_open_parenth = true;
+	}
 	if (allow_linebreaks) _skip_linebreaks();
 	while (true) {
 		if (peek().type == token::CLOSED_PARENTH) break;
@@ -1294,7 +1304,7 @@ Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(NodeAST* parent,
 			param_list->add_param(std::move(exprResult.unwrap()));
 		} else {
 			auto error = exprResult.get_error();
-            error.m_message += " Found possible nested <ParameterList> Syntax. To denote <Array> initializers inside <ParameterLists>, use '[' and ']'.";
+            error.add_message(" Found possible nested <ParameterList> Syntax. To denote <Array> initializers inside <ParameterLists>, use '[' and ']'.");
 			return Result<std::unique_ptr<NodeParamList>>(error);
 		}
 		if (allow_linebreaks) _skip_linebreaks();
@@ -1303,6 +1313,10 @@ Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(NodeAST* parent,
 		if (allow_linebreaks) _skip_linebreaks();
 		// Allow trailing comma before ')': e.g., f(a, b, )
 		if (peek().type == token::CLOSED_PARENTH) break;
+	}
+	if (has_open_parenth and peek().type != token::CLOSED_PARENTH) {
+		return Result<std::unique_ptr<NodeParamList>>(CompileError(ErrorType::SyntaxError,
+			"Expected closing parenthesis for parameter list.", ")", peek()));
 	}
 	if (peek().type == token::CLOSED_PARENTH) consume(); // consume )
 

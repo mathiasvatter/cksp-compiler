@@ -47,10 +47,10 @@
 #include "AST/ASTVisitor/GlobalScope/ASTParameterPromotion.h"
 #include "AST/ASTVisitor/GlobalScope/MarkThreadSafe.h"
 #include "AST/ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
+#include "JSON/parser/JSONParser.h"
 #include "Lowering/LoweringTernaryOperator.h"
 #include "Optimization/ArrayInitializationRaising.h"
-
-
+#include "Preprocessor/PreAST/PreASTConditions.h"
 
 class Compiler {
 	std::unique_ptr<CompilerConfig> m_pragma_config;
@@ -80,9 +80,26 @@ public:
 		return parser.parse_program(nullptr);
 	}
 
+	static std::unique_ptr<JSONValue> parse_json(const std::string &input_filename) {
+		const FileHandler file_handler(input_filename);
+		JSONParser parser;
+		return parser.parse(file_handler.get_output(), input_filename);
+	}
+
 	void preprocess() {
 		auto result = Result<SuccessTag>(SuccessTag{});
+		m_timer.start("Import");
 
+
+		// m_tokens = Compiler::tokenize(m_cli_config->input_filename.value());
+		// static ImportProcessor imports(m_tokens, m_cli_config->input_filename.value(), &m_definition_provider);
+		// if(auto import_result = imports.process_imports(); import_result.is_error()) {
+		// 	auto error = import_result.get_error();
+		// 	error.m_message += " Preprocessor failed while processing import statements.";
+		// 	error.exit();
+		// }
+		// m_tokens = std::move(imports.get_token_vector());
+		//
 		// PreprocessorConditions conditions(m_tokens);
 		// result = conditions.process_conditions();
 		// if(result.is_error()) {
@@ -91,7 +108,7 @@ public:
 		// 	error.exit();
 		// }
 		// m_tokens = std::move(conditions.get_token_vector());
-
+		//
 		// PreprocessorParser parser(m_tokens, &m_definition_provider);
 		// auto result_parse = parser.parse_program(nullptr);
 		// if(result_parse.is_error()) {
@@ -99,7 +116,7 @@ public:
 		// 	error.m_message += " Preprocessor parsing failed.";
 		// 	error.exit();
 		// }
-
+		// auto pre_ast = std::move(result_parse.unwrap());
 
 
 		auto pre_ast_result = Compiler::preproc_parse(m_cli_config->input_filename.value(), &m_definition_provider);
@@ -109,7 +126,15 @@ public:
 			error.exit();
 		}
 		auto pre_ast = std::move(pre_ast_result.unwrap());
-		pre_ast->do_preprocessing(m_cli_config->input_filename.value(), {}, {});
+		std::unordered_set<std::string> imported_files{};
+		std::unordered_map<std::string, std::string> basename_map{};
+		pre_ast->do_preprocessing(m_cli_config->input_filename.value(), m_cli_config->input_filename.value(), imported_files, basename_map);
+
+		m_timer.stop("Import");
+		std::cout << m_timer.print_timer("Import") << std::endl;
+
+		PreASTConditions conditions_processor;
+		pre_ast->accept(conditions_processor);
 
 		PreASTPragma pragma(m_pragma_config.get());
 		pre_ast->accept(pragma);
@@ -128,6 +153,7 @@ public:
 
 		PreASTCombine combine;
 		pre_ast->accept(combine);
+		combine.debug_print_tokens();
 
 		m_tokens = std::move(combine.m_tokens);
 	}
@@ -149,18 +175,18 @@ public:
 		//    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
 		//    input_filename = R"(C:\Users\mathi\Documents\Scripting\time-textures\time-textures.ksp)";
 		// input_filename = R"(C:\Users\mathi\Documents\Scripting\preset-system\main.ksp)";
-		// input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
+		input_filename = "/Users/mathias/Scripting/the-score/the-score.ksp";
 		// input_filename = "/Users/mathias/Scripting/legato-dev/one-shot.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score-essentials/the-score-essentials.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
-		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
+		input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Ensemble.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Single.ksp";
 		// input_filename = "/Users/mathias/Scripting/toc-single-instruments/legato.ksp";
 		// input_filename = "/Users/mathias/Scripting/toc-single-instruments/keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/the-orchestra-complete-4/the_orchestra_ens_V1.2.ksp";
-		// input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
-		// input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
+		input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
+		input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 		// input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
 		// input_filename = "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp";
@@ -179,19 +205,6 @@ public:
 #endif
 
 		m_timer.start("Total Time");
-		m_timer.start("Import");
-
-		// m_tokens = Compiler::tokenize(m_cli_config->input_filename.value());
-
-		// static ImportProcessor imports(m_tokens, m_cli_config->input_filename.value(), &m_definition_provider);
-		// if(auto import_result = imports.process_imports(); import_result.is_error()) {
-		// 	auto error = import_result.get_error();
-		// 	error.m_message += " Preprocessor failed while processing import statements.";
-		// 	error.exit();
-		// }
-		// m_tokens = std::move(imports.get_token_vector());
-
-		m_timer.stop("Import");
 		m_timer.start("Preprocessor");
 
 		preprocess();
@@ -222,7 +235,7 @@ public:
 		std::filesystem::path curr_path = __FILE__;
 
 		m_timer.stop("Preprocessor");
-		std::cout << m_timer.print_timer("Import") << "\n";
+		// std::cout << m_timer.print_timer("Import") << "\n";
 		std::cout << m_timer.print_timer("Preprocessor") << "\n";
 		m_timer.start("Parsing");
 

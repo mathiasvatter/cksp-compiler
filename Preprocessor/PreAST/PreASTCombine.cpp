@@ -83,4 +83,36 @@ PreNodeAST *PreASTCombine::visit(PreNodeMacroHeader &node) {
 		node.args->accept(*this);
 	}
 	return &node;
-};
+}
+
+PreNodeAST * PreASTCombine::visit(PreNodeFunctionHeader &node) {
+	node.name->accept(*this);
+	if(node.has_parenth) {
+		node.args->accept(*this);
+	}
+	return &node;
+}
+
+PreNodeAST * PreASTCombine::visit(PreNodeDefineHeader &node) {
+	node.name->accept(*this);
+	if(node.has_parenth) {
+		node.args->accept(*this);
+	}
+	return &node;
+}
+
+void PreASTCombine::debug_print_tokens(const std::string &path) const {
+	std::ostringstream os;
+	for (const auto& tok : m_tokens) {
+		os << tok.val;
+	}
+
+	std::ofstream out_file(path);
+	if (out_file) {
+		out_file << os.str() << " ";
+	} else {
+		// Fehlerbehandlung, falls die Datei nicht geöffnet werden kann
+		std::cerr << "Fehler beim Öffnen der Datei: " << path << std::endl;
+	}
+	os.str("");
+}

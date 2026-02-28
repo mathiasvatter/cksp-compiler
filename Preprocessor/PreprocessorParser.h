@@ -21,6 +21,8 @@ private:
 	PreNodeProgram* m_program = nullptr;
 	DefinitionProvider* m_definition_provider;
 
+	Result<SuccessTag> parse_main_constructs(PreNodeAST* parent, std::unique_ptr<PreNodeChunk>& chunk);
+
     Result<std::unique_ptr<PreNodeNumber>> parse_number(PreNodeAST* parent);
     Result<std::unique_ptr<PreNodeAST>> parse_int(PreNodeAST *parent);
     Result<std::unique_ptr<PreNodeKeyword>> parse_keyword(PreNodeAST* parent);
@@ -41,6 +43,10 @@ private:
     Result<std::unique_ptr<PreNodeMacroDefinition>> parse_macro_definition(PreNodeAST* parent);
     Result<std::unique_ptr<PreNodeIterateMacro>> parse_iterate_macro(PreNodeAST* parent);
     Result<std::unique_ptr<PreNodeLiterateMacro>> parse_literate_macro(PreNodeAST* parent);
+
+	/// any function-call-like construct
+	Result<std::unique_ptr<PreNodeFunctionCall>> parse_function_call(PreNodeAST* parent);
+    Result<std::unique_ptr<PreNodeFunctionHeader>> parse_function_header(PreNodeAST* parent);
 
 	/// INCREMENTER
     Result<std::unique_ptr<PreNodeIncrementer>> parse_incrementer(PreNodeAST* parent);
@@ -66,6 +72,8 @@ private:
 
     bool is_define_call(const Token &tok);
     bool is_macro_call(const Token &tok);
+	bool is_function_call(const Token &tok);
+	bool is_iterate_macro_call(const Token &tok); // checks if inside iterate/literate stmt
     bool is_define_definition();
     bool is_macro_definition();
 };

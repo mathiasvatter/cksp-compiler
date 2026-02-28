@@ -5,7 +5,6 @@
 #include "PreAST.h"
 
 #include "../PreASTImport.h"
-#include "../PreASTConditions.h"
 #include "../PreASTPrinter.h"
 #include "../PreASTVisitor.h"
 
@@ -27,12 +26,12 @@ void PreNodeAST::debug_print(const std::string &path) {
 #endif
 }
 
-PreNodeAST * PreNodeAST::do_preprocessing(const std::string &current_file,
-	const std::unordered_set<std::string> &imported_files,
-	const std::unordered_map<std::string, std::string> &basename_map) {
-	PreASTConditions conditions_processor;
-	accept(conditions_processor);
-	static PreASTImport import_processor(current_file, imported_files, basename_map);
+PreNodeAST * PreNodeAST::do_preprocessing(
+	const std::string &base_file,
+	const std::string &current_file,
+	std::unordered_set<std::string> &imported_files,
+	std::unordered_map<std::string, std::string> &basename_map) {
+	PreASTImport import_processor(base_file, current_file, imported_files, basename_map);
 	return accept(import_processor);
 }
 
@@ -112,6 +111,22 @@ PreNodeAST *PreNodeKeyword::accept(PreASTVisitor &visitor) {
 }
 std::unique_ptr<PreNodeAST> PreNodeKeyword::clone() const {
 	return std::make_unique<PreNodeKeyword>(*this);
+}
+
+std::unique_ptr<PreNodeDefineCall> PreNodeKeyword::transform_to_define_call() const {
+	auto define_name = std::make_unique<PreNodeKeyword>(tok, parent);
+	auto define_args = std::make_unique<PreNodeList>(tok, nullptr);
+	auto define_header = std::make_unique<PreNodeDefineHeader>(std::move(define_name), std::move(define_args), tok, nullptr);
+	auto node_define_call = std::make_unique<PreNodeDefineCall>(std::move(define_header), tok, parent);
+	return node_define_call;
+}
+
+std::unique_ptr<struct PreNodeMacroCall> PreNodeKeyword::transform_to_macro_call() const {
+	auto macro_name = std::make_unique<PreNodeKeyword>(tok, parent);
+	auto macro_args = std::make_unique<PreNodeList>(tok, nullptr);
+	auto macro_header = std::make_unique<PreNodeMacroHeader>(std::move(macro_name), std::move(macro_args), tok, nullptr);
+	auto node_macro_call = std::make_unique<PreNodeMacroCall>(std::move(macro_header), tok, parent);
+	return node_macro_call;
 }
 
 // ************* PreNodeOther *************
@@ -251,7 +266,7 @@ std::unique_ptr<PreNodeAST> PreNodeImportNCKP::clone() const {
 
 // ************* PreNodeUseCodeIf *************
 PreNodeAST * PreNodeUseCodeIf::accept(PreASTVisitor &visitor) {
-	return PreNodeAST::accept(visitor);
+	return visitor.visit(*this);
 }
 
 PreNodeUseCodeIf::PreNodeUseCodeIf(const PreNodeUseCodeIf &other): PreNodeAST(other),
@@ -277,19 +292,6 @@ std::unique_ptr<PreNodeAST> PreNodeSetCondition::clone() const {
 	return std::make_unique<PreNodeSetCondition>(*this);
 }
 
-// ************* PreNodeSetGlobalCondition *************
-PreNodeAST * PreNodeSetGlobalCondition::accept(PreASTVisitor &visitor) {
-	return PreNodeAST::accept(visitor);
-}
-
-PreNodeSetGlobalCondition::PreNodeSetGlobalCondition(const PreNodeSetGlobalCondition &other): PreNodeAST(other), condition(clone_unique(other.condition)) {
-	PreNodeSetGlobalCondition::set_child_parents();
-}
-
-std::unique_ptr<PreNodeAST> PreNodeSetGlobalCondition::clone() const {
-	return std::make_unique<PreNodeSetGlobalCondition>(*this);
-}
-
 // ************* PreNodeResetCondition *************
 PreNodeAST * PreNodeResetCondition::accept(PreASTVisitor &visitor) {
 	return visitor.visit(*this);
@@ -301,19 +303,6 @@ PreNodeResetCondition::PreNodeResetCondition(const PreNodeResetCondition &other)
 
 std::unique_ptr<PreNodeAST> PreNodeResetCondition::clone() const {
 	return std::make_unique<PreNodeResetCondition>(*this);
-}
-
-// ************* PreNodeResetGlobalCondition *************
-PreNodeAST * PreNodeResetGlobalCondition::accept(PreASTVisitor &visitor) {
-	return PreNodeAST::accept(visitor);
-}
-
-PreNodeResetGlobalCondition::PreNodeResetGlobalCondition(const PreNodeResetGlobalCondition &other): PreNodeAST(other), condition(clone_unique(other.condition)) {
-	PreNodeResetGlobalCondition::set_child_parents();
-}
-
-std::unique_ptr<PreNodeAST> PreNodeResetGlobalCondition::clone() const {
-	return std::make_unique<PreNodeResetGlobalCondition>(*this);
 }
 
 // ************* PreNodeMacroHeader *************
@@ -347,7 +336,7 @@ PreNodeAST *PreNodeDefineHeader::accept(PreASTVisitor &visitor) {
 }
 
 PreNodeDefineHeader::PreNodeDefineHeader(const PreNodeDefineHeader &other)
-: PreNodeAST(other), name(clone_unique(other.name)),
+: PreNodeAST(other), name(clone_unique(other.name)), has_parenth(other.has_parenth),
 args(clone_unique(other.args)) {
 	PreNodeDefineHeader::set_child_parents();
 }
@@ -392,13 +381,28 @@ PreNodeAST *PreNodeMacroCall::accept(PreASTVisitor &visitor) {
 }
 
 PreNodeMacroCall::PreNodeMacroCall(const PreNodeMacroCall &other)
-: PreNodeAST(other), macro(clone_unique(other.macro)),
+: PreNodeAST(other), macro(clone_unique(other.macro)), definition(other.definition),
 is_iterate_macro(other.is_iterate_macro) {
 	PreNodeMacroCall::set_child_parents();
 }
 
 std::unique_ptr<PreNodeAST> PreNodeMacroCall::clone() const {
 	return std::make_unique<PreNodeMacroCall>(*this);
+}
+
+
+// ************* PreNodeFunctionHeader *************
+PreNodeAST * PreNodeFunctionHeader::accept(PreASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+
+PreNodeFunctionHeader::PreNodeFunctionHeader(const PreNodeFunctionHeader &other): PreNodeAST(other),
+name(clone_unique(other.name)), args(clone_unique(other.args)), has_parenth(other.has_parenth) {
+	PreNodeFunctionHeader::set_child_parents();
+}
+
+std::unique_ptr<PreNodeAST> PreNodeFunctionHeader::clone() const {
+	return std::make_unique<PreNodeFunctionHeader>(*this);
 }
 
 // ************* PreNodeFunctionCall *************
@@ -421,7 +425,7 @@ PreNodeAST *PreNodeDefineCall::accept(PreASTVisitor &visitor) {
 }
 
 PreNodeDefineCall::PreNodeDefineCall(const PreNodeDefineCall &other)
-: PreNodeAST(other), define(clone_unique(other.define)) {
+: PreNodeAST(other), define(clone_unique(other.define)), definition(other.definition) {
 	PreNodeDefineCall::set_child_parents();
 }
 
@@ -485,7 +489,7 @@ PreNodeAST *PreNodeProgram::accept(PreASTVisitor &visitor) {
 PreNodeProgram::PreNodeProgram(const PreNodeProgram &other)
 : PreNodeAST(other), program(clone_unique(other.program)),
 define_statements(clone_vector(other.define_statements)),
-macro_definitions(clone_vector(other.macro_definitions)) {
+macro_definitions(clone_vector(other.macro_definitions)), def_provider(other.def_provider) {
 	PreNodeProgram::set_child_parents();
 }
 
