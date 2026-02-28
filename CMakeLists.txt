@@ -90,7 +90,6 @@ add_executable(cksp main.cpp
         Interpreter/SimpleExprInterpreter.h
         Interpreter/SimpleExprInterpreter.cpp
         Preprocessor/PreAST/PreASTCombine.h
-        Preprocessor/PreAST/PreASTCombine.cpp
         Preprocessor/PreAST/PreASTIncrementer.h
         Preprocessor/PreAST/PreASTIncrementer.cpp
         BuiltinsProcessing/BuiltinsProcessor.h
