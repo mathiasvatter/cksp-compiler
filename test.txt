@@ -1,29 +1,29 @@
-{ Compiled with cksp version 0.0.8-alpha.6 on Sat Feb 28 20:35:30 2026 }
+{ Compiled with cksp version 0.0.8-alpha.6 on Sat Feb 28 20:56:02 2026 }
 on init
   declare $_iter0
   declare $slider
   declare %clicktime[3]
-  declare @result5
+  declare @result4
   declare @nka0
   declare @parent_folder0
   declare @path0
   declare $result12
   declare $min1
   declare $max1
-  declare $result7
+  declare $result6
   declare $last_random0
   declare $min_random0
   declare $max_random0
   declare $Boolean5
   declare $Boolean4
+  declare $Boolean2
   declare $Boolean1
-  declare $Boolean7
   declare $Boolean0
   declare $Boolean3
   declare $z000
   declare $q000
   declare ~zw0
-  declare %doubleclickControl1[1000]
+  declare %doubleclickControl2[1000]
   declare %start_group1[1000]
   declare %num_dynamic_layers1[1000]
   declare %num_rr1[1000]
@@ -31,7 +31,7 @@ on init
   declare %sustain_fx0[1000]
   make_perfview
   set_script_title("Legato Script")
-  message("** Script " & "'" & "Legato Script" & "'" & " Compile " & "20:35:28" & " " & "02/28/26" & " **")
+  message("** Script " & "'" & "Legato Script" & "'" & " Compile " & "20:56:00" & " " & "02/28/26" & " **")
   set_listener($NI_SIGNAL_TIMER_MS, 10000)
   declare $_id
   declare %decode[2]
@@ -52,8 +52,8 @@ on init
     $_id := load_array_str(%decode, get_folder($GET_FOLDER_PATCH_DIR) & @path0 & @parent_folder0 & @nka0 & ".nka")
     inc($result12)
   end while
-  @result5 := get_folder($GET_FOLDER_PATCH_DIR) & @path0 & @nka0 & ".nka"
-  @decode_path := @result5
+  @result4 := get_folder($GET_FOLDER_PATCH_DIR) & @path0 & @nka0 & ".nka"
+  @decode_path := @result4
   %decode[0] := -1
   $_id := load_array_str(%decode, @decode_path)
   declare %development[2]
@@ -74,8 +74,8 @@ on init
     $_id := load_array_str(%development, get_folder($GET_FOLDER_PATCH_DIR) & @path0 & @parent_folder0 & @nka0 & ".nka")
     inc($result12)
   end while
-  @result5 := get_folder($GET_FOLDER_PATCH_DIR) & @path0 & @nka0 & ".nka"
-  @development_path := @result5
+  @result4 := get_folder($GET_FOLDER_PATCH_DIR) & @path0 & @nka0 & ".nka"
+  @development_path := @result4
   if(abs(sh_right(abs(- sh_right(abs(%decode[0] - 81202) - 1, 31)) - 1, 31)) = 1)
     @development_path := get_folder($GET_FOLDER_PATCH_DIR) & "development.nka"
   end if
@@ -2319,10 +2319,10 @@ on init
     $max1 := 1000
     $___M__Seed := (8088405 * $___M__Seed) + 1
     $result12 := ((sh_right($___M__Seed, 8) .and. 16777215) mod 1000) + 1
-    $result7 := $result12
-    $result7 := ($last_random0 + $result7) mod 1001
-    $last_random0 := $result7
-    %randNoteValues[$i] := $result7
+    $result6 := $result12
+    $result6 := ($last_random0 + $result6) mod 1001
+    $last_random0 := $result6
+    %randNoteValues[$i] := $result6
     %randNoteValues[$i] := real_to_int((((int_to_real(%randNoteValues[$i]) - 0.) * 1000.) / 1000.) + -500.)
     inc($i)
   end while
@@ -2904,14 +2904,14 @@ on init
     set_control_par(get_ui_id($UI_dataSettings), $CONTROL_PAR_HIDE, %hide_state[$btn_legatoSettings])
     set_control_par(get_ui_id($UI_waveform), $CONTROL_PAR_HIDE, %hide_state[$btn_legatoSettings])
     set_control_par(get_ui_id($UI_sustainSettings), $CONTROL_PAR_HIDE, %hide_state[$btn_legatoSettings])
+    $Boolean2 := 0
+    set_control_par(get_ui_id($btn_reset), $CONTROL_PAR_HIDE, %hide_state[abs(sh_right(abs($Boolean2) - 1, 31))])
+    set_control_par(get_ui_id($UI_resetWindow), $CONTROL_PAR_HIDE, %hide_state[$Boolean2])
+    set_control_par(get_ui_id($UI_checkButtons), $CONTROL_PAR_HIDE, %hide_state[$Boolean2])
     $Boolean1 := 0
-    set_control_par(get_ui_id($btn_reset), $CONTROL_PAR_HIDE, %hide_state[abs(sh_right(abs($Boolean1) - 1, 31))])
-    set_control_par(get_ui_id($UI_resetWindow), $CONTROL_PAR_HIDE, %hide_state[$Boolean1])
+    set_control_par(get_ui_id($btn_forall), $CONTROL_PAR_HIDE, %hide_state[abs(sh_right(abs($Boolean1) - 1, 31))])
+    set_control_par(get_ui_id($UI_forallWindow), $CONTROL_PAR_HIDE, %hide_state[$Boolean1])
     set_control_par(get_ui_id($UI_checkButtons), $CONTROL_PAR_HIDE, %hide_state[$Boolean1])
-    $Boolean7 := 0
-    set_control_par(get_ui_id($btn_forall), $CONTROL_PAR_HIDE, %hide_state[abs(sh_right(abs($Boolean7) - 1, 31))])
-    set_control_par(get_ui_id($UI_forallWindow), $CONTROL_PAR_HIDE, %hide_state[$Boolean7])
-    set_control_par(get_ui_id($UI_checkButtons), $CONTROL_PAR_HIDE, %hide_state[$Boolean7])
     set_text($lbl_volume, "Zone Vol.")
     set_text($lbl_samplestart, "S. Start")
     set_text($lbl_waitSus, "Wait Time")
@@ -2946,19 +2946,19 @@ on init
         end if
         inc($min_random0)
       end while
-      $result7 := 0
+      $result6 := 0
       $NUM_SHOWN_PRESETS_OLD := $NUM_SHOWN_PRESETS
       $NUM_PRESETS := search(%zone_ids_master, -1)
       $NUM_SHOWN_PRESETS := $NUM_PRESETS
       set_control_par_str(get_ui_id($lbl_presetcount), $CONTROL_PAR_TEXT, $NUM_SHOWN_PRESETS & "/" & $NUM_PRESETS)
       if($NUM_SHOWN_PRESETS_OLD # $NUM_SHOWN_PRESETS)
-        $result7 := 0
-        while($result7 <= (num_elements(%legatoList__end_of_list) - 1)) 
-          %legatoList__end_of_list[$result7] := -1
-          if($result7 < $NUM_SHOWN_PRESETS)
-            %legatoList__end_of_list[$result7] := 1
+        $result6 := 0
+        while($result6 <= (num_elements(%legatoList__end_of_list) - 1)) 
+          %legatoList__end_of_list[$result6] := -1
+          if($result6 < $NUM_SHOWN_PRESETS)
+            %legatoList__end_of_list[$result6] := 1
           end if
-          inc($result7)
+          inc($result6)
         end while
       end if
       $scroll__up := real_to_int((((~scroll__realup - 0.) * (int_to_real($NUM_SHOWN_PRESETS - 12) - 0.)) / (int_to_real($NUM_SHOWN_PRESETS_OLD - 12) - 0.)) + 0.)
@@ -3054,14 +3054,14 @@ function all_windows__show
   set_control_par(get_ui_id($UI_dataSettings), $CONTROL_PAR_HIDE, %hide_state[$btn_legatoSettings])
   set_control_par(get_ui_id($UI_waveform), $CONTROL_PAR_HIDE, %hide_state[$btn_legatoSettings])
   set_control_par(get_ui_id($UI_sustainSettings), $CONTROL_PAR_HIDE, %hide_state[$btn_legatoSettings])
+  $Boolean2 := 0
+  set_control_par(get_ui_id($btn_reset), $CONTROL_PAR_HIDE, %hide_state[abs(sh_right(abs($Boolean2) - 1, 31))])
+  set_control_par(get_ui_id($UI_resetWindow), $CONTROL_PAR_HIDE, %hide_state[$Boolean2])
+  set_control_par(get_ui_id($UI_checkButtons), $CONTROL_PAR_HIDE, %hide_state[$Boolean2])
   $Boolean1 := 0
-  set_control_par(get_ui_id($btn_reset), $CONTROL_PAR_HIDE, %hide_state[abs(sh_right(abs($Boolean1) - 1, 31))])
-  set_control_par(get_ui_id($UI_resetWindow), $CONTROL_PAR_HIDE, %hide_state[$Boolean1])
+  set_control_par(get_ui_id($btn_forall), $CONTROL_PAR_HIDE, %hide_state[abs(sh_right(abs($Boolean1) - 1, 31))])
+  set_control_par(get_ui_id($UI_forallWindow), $CONTROL_PAR_HIDE, %hide_state[$Boolean1])
   set_control_par(get_ui_id($UI_checkButtons), $CONTROL_PAR_HIDE, %hide_state[$Boolean1])
-  $Boolean7 := 0
-  set_control_par(get_ui_id($btn_forall), $CONTROL_PAR_HIDE, %hide_state[abs(sh_right(abs($Boolean7) - 1, 31))])
-  set_control_par(get_ui_id($UI_forallWindow), $CONTROL_PAR_HIDE, %hide_state[$Boolean7])
-  set_control_par(get_ui_id($UI_checkButtons), $CONTROL_PAR_HIDE, %hide_state[$Boolean7])
   set_text($lbl_volume, "Zone Vol.")
   set_text($lbl_samplestart, "S. Start")
   set_text($lbl_waitSus, "Wait Time")
@@ -3096,19 +3096,19 @@ function all_windows__show
       end if
       inc($min_random0)
     end while
-    $result7 := 0
+    $result6 := 0
     $NUM_SHOWN_PRESETS_OLD := $NUM_SHOWN_PRESETS
     $NUM_PRESETS := search(%zone_ids_master, -1)
     $NUM_SHOWN_PRESETS := $NUM_PRESETS
     set_control_par_str(get_ui_id($lbl_presetcount), $CONTROL_PAR_TEXT, $NUM_SHOWN_PRESETS & "/" & $NUM_PRESETS)
     if($NUM_SHOWN_PRESETS_OLD # $NUM_SHOWN_PRESETS)
-      $result7 := 0
-      while($result7 <= (num_elements(%legatoList__end_of_list) - 1)) 
-        %legatoList__end_of_list[$result7] := -1
-        if($result7 < $NUM_SHOWN_PRESETS)
-          %legatoList__end_of_list[$result7] := 1
+      $result6 := 0
+      while($result6 <= (num_elements(%legatoList__end_of_list) - 1)) 
+        %legatoList__end_of_list[$result6] := -1
+        if($result6 < $NUM_SHOWN_PRESETS)
+          %legatoList__end_of_list[$result6] := 1
         end if
-        inc($result7)
+        inc($result6)
       end while
     end if
     $scroll__up := real_to_int((((~scroll__realup - 0.) * (int_to_real($NUM_SHOWN_PRESETS - 12) - 0.)) / (int_to_real($NUM_SHOWN_PRESETS_OLD - 12) - 0.)) + 0.)
@@ -3185,14 +3185,14 @@ function legatoSettings__show
   set_control_par(get_ui_id($UI_dataSettings), $CONTROL_PAR_HIDE, %hide_state[$btn_legatoSettings])
   set_control_par(get_ui_id($UI_waveform), $CONTROL_PAR_HIDE, %hide_state[$btn_legatoSettings])
   set_control_par(get_ui_id($UI_sustainSettings), $CONTROL_PAR_HIDE, %hide_state[$btn_legatoSettings])
+  $Boolean2 := 0
+  set_control_par(get_ui_id($btn_reset), $CONTROL_PAR_HIDE, %hide_state[abs(sh_right(abs($Boolean2) - 1, 31))])
+  set_control_par(get_ui_id($UI_resetWindow), $CONTROL_PAR_HIDE, %hide_state[$Boolean2])
+  set_control_par(get_ui_id($UI_checkButtons), $CONTROL_PAR_HIDE, %hide_state[$Boolean2])
   $Boolean1 := 0
-  set_control_par(get_ui_id($btn_reset), $CONTROL_PAR_HIDE, %hide_state[abs(sh_right(abs($Boolean1) - 1, 31))])
-  set_control_par(get_ui_id($UI_resetWindow), $CONTROL_PAR_HIDE, %hide_state[$Boolean1])
+  set_control_par(get_ui_id($btn_forall), $CONTROL_PAR_HIDE, %hide_state[abs(sh_right(abs($Boolean1) - 1, 31))])
+  set_control_par(get_ui_id($UI_forallWindow), $CONTROL_PAR_HIDE, %hide_state[$Boolean1])
   set_control_par(get_ui_id($UI_checkButtons), $CONTROL_PAR_HIDE, %hide_state[$Boolean1])
-  $Boolean7 := 0
-  set_control_par(get_ui_id($btn_forall), $CONTROL_PAR_HIDE, %hide_state[abs(sh_right(abs($Boolean7) - 1, 31))])
-  set_control_par(get_ui_id($UI_forallWindow), $CONTROL_PAR_HIDE, %hide_state[$Boolean7])
-  set_control_par(get_ui_id($UI_checkButtons), $CONTROL_PAR_HIDE, %hide_state[$Boolean7])
   set_text($lbl_volume, "Zone Vol.")
   set_text($lbl_samplestart, "S. Start")
   set_text($lbl_waitSus, "Wait Time")
@@ -3241,7 +3241,7 @@ function get_sus_zone_ids0
   $blip_note := play_note($event_note, 1, 1, -1)
   change_vol($blip_note, -200000, 0)
   set_event_par_arr($blip_note, $EVENT_PAR_ALLOW_GROUP, 0, $ALL_GROUPS)
-  set_event_par_arr($blip_note, $EVENT_PAR_ALLOW_GROUP, 1, %doubleclickControl1[$NI_CALLBACK_ID mod 1000] + %sustain_fx0[$NI_CALLBACK_ID mod 1000])
+  set_event_par_arr($blip_note, $EVENT_PAR_ALLOW_GROUP, 1, %doubleclickControl2[$NI_CALLBACK_ID mod 1000] + %sustain_fx0[$NI_CALLBACK_ID mod 1000])
   wait(1)
   %sus_zone_ids[%sustain_fx0[$NI_CALLBACK_ID mod 1000]] := get_event_par($blip_note, $EVENT_PAR_ZONE_ID)
   fade_out($blip_note, 0, 1)
@@ -3253,15 +3253,15 @@ function update__mnu_rr0
   if($mnu_rr = $NUM_TRANS_GROUPS)
     $i := 0
     while($i <= ($NUM_TRANS_GROUPS - 1)) 
-      if(in_range($Boolean7, %_trans_ranges[$i * 2], %_trans_ranges[($i * 2) + 1]))
+      if(in_range($Boolean1, %_trans_ranges[$i * 2], %_trans_ranges[($i * 2) + 1]))
         $current_trans_group := $trans_group + $i
       end if
       inc($i)
     end while
   else
     if($mnu_rr = ($NUM_TRANS_GROUPS + 1))
-      %_trans_rr[(get_event_par($Boolean1, $EVENT_PAR_NOTE) * 24) + (get_event_par($Boolean1, $EVENT_PAR_VELOCITY) / 5)] := (%_trans_rr[(get_event_par($Boolean1, $EVENT_PAR_NOTE) * 24) + (get_event_par($Boolean1, $EVENT_PAR_VELOCITY) / 5)] + 1) mod $NUM_TRANS_GROUPS
-      $current_trans_group := $trans_group + %_trans_rr[(get_event_par($Boolean1, $EVENT_PAR_NOTE) * 24) + (get_event_par($Boolean1, $EVENT_PAR_VELOCITY) / 5)]
+      %_trans_rr[(get_event_par($Boolean2, $EVENT_PAR_NOTE) * 24) + (get_event_par($Boolean2, $EVENT_PAR_VELOCITY) / 5)] := (%_trans_rr[(get_event_par($Boolean2, $EVENT_PAR_NOTE) * 24) + (get_event_par($Boolean2, $EVENT_PAR_VELOCITY) / 5)] + 1) mod $NUM_TRANS_GROUPS
+      $current_trans_group := $trans_group + %_trans_rr[(get_event_par($Boolean2, $EVENT_PAR_NOTE) * 24) + (get_event_par($Boolean2, $EVENT_PAR_VELOCITY) / 5)]
     else
       $current_trans_group := $trans_group + $mnu_rr
     end if
@@ -3382,8 +3382,8 @@ function update__waveform
   $transition_id := play_note($play_event, $play_velo, 0, -1)
   change_vol($transition_id, -200000, 0)
   set_event_par_arr($transition_id, $EVENT_PAR_ALLOW_GROUP, 0, $ALL_GROUPS)
-  $Boolean7 := $play_velo
-  $Boolean1 := $transition_id
+  $Boolean1 := $play_velo
+  $Boolean2 := $transition_id
   call update__mnu_rr0
   set_event_par_arr($transition_id, $EVENT_PAR_ALLOW_GROUP, 1, $current_trans_group)
   wait(1)
@@ -3427,19 +3427,19 @@ function update__legatoArrays
   end while
 end function
 function update__legatoList
-  $result7 := 0
+  $result6 := 0
   $NUM_SHOWN_PRESETS_OLD := $NUM_SHOWN_PRESETS
   $NUM_PRESETS := search(%zone_ids_master, -1)
   $NUM_SHOWN_PRESETS := $NUM_PRESETS
   set_control_par_str(get_ui_id($lbl_presetcount), $CONTROL_PAR_TEXT, $NUM_SHOWN_PRESETS & "/" & $NUM_PRESETS)
   if($NUM_SHOWN_PRESETS_OLD # $NUM_SHOWN_PRESETS)
-    $result7 := 0
-    while($result7 <= (num_elements(%legatoList__end_of_list) - 1)) 
-      %legatoList__end_of_list[$result7] := -1
-      if($result7 < $NUM_SHOWN_PRESETS)
-        %legatoList__end_of_list[$result7] := 1
+    $result6 := 0
+    while($result6 <= (num_elements(%legatoList__end_of_list) - 1)) 
+      %legatoList__end_of_list[$result6] := -1
+      if($result6 < $NUM_SHOWN_PRESETS)
+        %legatoList__end_of_list[$result6] := 1
       end if
-      inc($result7)
+      inc($result6)
     end while
   end if
   $scroll__up := real_to_int((((~scroll__realup - 0.) * (int_to_real($NUM_SHOWN_PRESETS - 12) - 0.)) / (int_to_real($NUM_SHOWN_PRESETS_OLD - 12) - 0.)) + 0.)
@@ -3547,19 +3547,19 @@ function legatoList__show
       end if
       inc($min_random0)
     end while
-    $result7 := 0
+    $result6 := 0
     $NUM_SHOWN_PRESETS_OLD := $NUM_SHOWN_PRESETS
     $NUM_PRESETS := search(%zone_ids_master, -1)
     $NUM_SHOWN_PRESETS := $NUM_PRESETS
     set_control_par_str(get_ui_id($lbl_presetcount), $CONTROL_PAR_TEXT, $NUM_SHOWN_PRESETS & "/" & $NUM_PRESETS)
     if($NUM_SHOWN_PRESETS_OLD # $NUM_SHOWN_PRESETS)
-      $result7 := 0
-      while($result7 <= (num_elements(%legatoList__end_of_list) - 1)) 
-        %legatoList__end_of_list[$result7] := -1
-        if($result7 < $NUM_SHOWN_PRESETS)
-          %legatoList__end_of_list[$result7] := 1
+      $result6 := 0
+      while($result6 <= (num_elements(%legatoList__end_of_list) - 1)) 
+        %legatoList__end_of_list[$result6] := -1
+        if($result6 < $NUM_SHOWN_PRESETS)
+          %legatoList__end_of_list[$result6] := 1
         end if
-        inc($result7)
+        inc($result6)
       end while
     end if
     $scroll__up := real_to_int((((~scroll__realup - 0.) * (int_to_real($NUM_SHOWN_PRESETS - 12) - 0.)) / (int_to_real($NUM_SHOWN_PRESETS_OLD - 12) - 0.)) + 0.)
@@ -3737,7 +3737,7 @@ end function
 function doubleclick_check
   wait(402000)
   if(($ENGINE_UPTIME - %clicktime[1]) > 400)
-    set_control_par(%doubleclickControl1[$NI_CALLBACK_ID mod 1000], $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
+    set_control_par(%doubleclickControl2[$NI_CALLBACK_ID mod 1000], $CONTROL_PAR_HIDE, $HIDE_WHOLE_CONTROL)
     %clicktime[2] := 0
   end if
 end function
@@ -4503,14 +4503,14 @@ function update__cc_expression
   set_controller(111, real_to_int((((int_to_real($sli_expression) - 0.) * 127.) / 1000000.) + 0.))
 end function
 function visibility__forallWindow
-  set_control_par(get_ui_id($btn_forall), $CONTROL_PAR_HIDE, %hide_state[abs(sh_right(abs($Boolean7) - 1, 31))])
-  set_control_par(get_ui_id($UI_forallWindow), $CONTROL_PAR_HIDE, %hide_state[$Boolean7])
-  set_control_par(get_ui_id($UI_checkButtons), $CONTROL_PAR_HIDE, %hide_state[$Boolean7])
+  set_control_par(get_ui_id($btn_forall), $CONTROL_PAR_HIDE, %hide_state[abs(sh_right(abs($Boolean1) - 1, 31))])
+  set_control_par(get_ui_id($UI_forallWindow), $CONTROL_PAR_HIDE, %hide_state[$Boolean1])
+  set_control_par(get_ui_id($UI_checkButtons), $CONTROL_PAR_HIDE, %hide_state[$Boolean1])
 end function
 function visibility__resetWindow
-  set_control_par(get_ui_id($btn_reset), $CONTROL_PAR_HIDE, %hide_state[abs(sh_right(abs($Boolean1) - 1, 31))])
-  set_control_par(get_ui_id($UI_resetWindow), $CONTROL_PAR_HIDE, %hide_state[$Boolean1])
-  set_control_par(get_ui_id($UI_checkButtons), $CONTROL_PAR_HIDE, %hide_state[$Boolean1])
+  set_control_par(get_ui_id($btn_reset), $CONTROL_PAR_HIDE, %hide_state[abs(sh_right(abs($Boolean2) - 1, 31))])
+  set_control_par(get_ui_id($UI_resetWindow), $CONTROL_PAR_HIDE, %hide_state[$Boolean2])
+  set_control_par(get_ui_id($UI_checkButtons), $CONTROL_PAR_HIDE, %hide_state[$Boolean2])
 end function
 on ui_control($btn_legatoSettings)
   $Boolean3 := 0
@@ -4538,13 +4538,13 @@ end on
 on ui_control($btn_analyze)
   $atk_sus_group := ($title_groups + $NUM_ATK_GROUPS) + $title_groups
   message("atk_sus_group: " & $atk_sus_group)
-  %doubleclickControl1[$NI_CALLBACK_ID mod 1000] := $atk_sus_group
+  %doubleclickControl2[$NI_CALLBACK_ID mod 1000] := $atk_sus_group
   $keys := 0
   while($keys <= 127) 
     $blip_note := play_note($keys, 1, 0, 1)
     set_event_par_arr($blip_note, $EVENT_PAR_ALLOW_GROUP, 0, $ALL_GROUPS)
     change_vol($blip_note, -2000000, 0)
-    set_event_par_arr($blip_note, $EVENT_PAR_ALLOW_GROUP, 1, %doubleclickControl1[$NI_CALLBACK_ID mod 1000])
+    set_event_par_arr($blip_note, $EVENT_PAR_ALLOW_GROUP, 1, %doubleclickControl2[$NI_CALLBACK_ID mod 1000])
     wait(1)
     $zone_id := get_event_par($blip_note, $EVENT_PAR_ZONE_ID)
     if(($zone_id # -1) and ($zone_id # 0))
@@ -4559,7 +4559,7 @@ on ui_control($btn_analyze)
     $blip_note := play_note(127 - $keys, 1, 0, -1)
     set_event_par_arr($blip_note, $EVENT_PAR_ALLOW_GROUP, 0, $ALL_GROUPS)
     change_vol($blip_note, -2000000, 0)
-    set_event_par_arr($blip_note, $EVENT_PAR_ALLOW_GROUP, 1, %doubleclickControl1[$NI_CALLBACK_ID mod 1000])
+    set_event_par_arr($blip_note, $EVENT_PAR_ALLOW_GROUP, 1, %doubleclickControl2[$NI_CALLBACK_ID mod 1000])
     wait(1)
     $zone_id := get_event_par($blip_note, $EVENT_PAR_ZONE_ID)
     if(($zone_id # -1) and ($zone_id # 0))
@@ -4590,7 +4590,7 @@ on ui_control($btn_analyze)
   set_control_par_str(get_ui_id(@txt_loadedData), $CONTROL_PAR_TEXT, !legato_prefixes[$prefix_idx])
   $iii := 0
   while($iii <= ($NUM_DYNAMIC_LAYER - 1)) 
-    %doubleclickControl1[$NI_CALLBACK_ID mod 1000] := $atk_sus_group
+    %doubleclickControl2[$NI_CALLBACK_ID mod 1000] := $atk_sus_group
     %sustain_fx0[$NI_CALLBACK_ID mod 1000] := $iii
     call get_sus_zone_ids0
     set_control_par_str(%lbl_sus_filename[$iii], $CONTROL_PAR_TEXT, get_sample(%sus_zone_ids[$iii], $NI_FILE_NAME))
@@ -5862,13 +5862,13 @@ on ui_control(@txt_element_marked11)
   call update__gui__legato
 end on
 on ui_control($btn_element_button0)
-  $Boolean1 := get_ui_id($btn_listBrowserDC)
-  set_control_par($Boolean1, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button0), $CONTROL_PAR_POS_X))
-  set_control_par($Boolean1, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button0), $CONTROL_PAR_POS_Y))
-  set_control_par($Boolean1, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button0), $CONTROL_PAR_WIDTH))
-  set_control_par($Boolean1, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button0), $CONTROL_PAR_HEIGHT))
-  set_control_par($Boolean1, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
-  $Boolean1 := 0
+  $Boolean2 := get_ui_id($btn_listBrowserDC)
+  set_control_par($Boolean2, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button0), $CONTROL_PAR_POS_X))
+  set_control_par($Boolean2, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button0), $CONTROL_PAR_POS_Y))
+  set_control_par($Boolean2, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button0), $CONTROL_PAR_WIDTH))
+  set_control_par($Boolean2, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button0), $CONTROL_PAR_HEIGHT))
+  set_control_par($Boolean2, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
+  $Boolean2 := 0
   %clicktime[0] := get_ui_id($btn_element_button0)
   %clicktime[1] := $ENGINE_UPTIME
   if(($element__idx # -1) and (%legatoList__element_numbers[$element__idx] = %legatoList__element_numbers[$scroll__up]))
@@ -5921,17 +5921,17 @@ on ui_control($btn_element_button0)
   %async_ids[10] := save_array_str(%trans_fadeIn_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeIn_time.nka")
   %async_ids[11] := save_array_str(%trans_fadeOut_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeOut_time.nka")
   %async_ids[12] := save_array_str(%completed_elements, @legato_path & !legato_prefixes[$prefix_idx] & "completed_elements.nka")
-  %doubleclickControl1[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
+  %doubleclickControl2[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
   call doubleclick_check
 end on
 on ui_control($btn_element_button1)
-  $Boolean1 := get_ui_id($btn_listBrowserDC)
-  set_control_par($Boolean1, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button1), $CONTROL_PAR_POS_X))
-  set_control_par($Boolean1, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button1), $CONTROL_PAR_POS_Y))
-  set_control_par($Boolean1, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button1), $CONTROL_PAR_WIDTH))
-  set_control_par($Boolean1, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button1), $CONTROL_PAR_HEIGHT))
-  set_control_par($Boolean1, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
-  $Boolean1 := 0
+  $Boolean2 := get_ui_id($btn_listBrowserDC)
+  set_control_par($Boolean2, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button1), $CONTROL_PAR_POS_X))
+  set_control_par($Boolean2, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button1), $CONTROL_PAR_POS_Y))
+  set_control_par($Boolean2, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button1), $CONTROL_PAR_WIDTH))
+  set_control_par($Boolean2, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button1), $CONTROL_PAR_HEIGHT))
+  set_control_par($Boolean2, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
+  $Boolean2 := 0
   %clicktime[0] := get_ui_id($btn_element_button1)
   %clicktime[1] := $ENGINE_UPTIME
   if(($element__idx # -1) and (%legatoList__element_numbers[$element__idx] = %legatoList__element_numbers[$scroll__up + 1]))
@@ -5984,17 +5984,17 @@ on ui_control($btn_element_button1)
   %async_ids[10] := save_array_str(%trans_fadeIn_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeIn_time.nka")
   %async_ids[11] := save_array_str(%trans_fadeOut_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeOut_time.nka")
   %async_ids[12] := save_array_str(%completed_elements, @legato_path & !legato_prefixes[$prefix_idx] & "completed_elements.nka")
-  %doubleclickControl1[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
+  %doubleclickControl2[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
   call doubleclick_check
 end on
 on ui_control($btn_element_button2)
-  $Boolean1 := get_ui_id($btn_listBrowserDC)
-  set_control_par($Boolean1, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button2), $CONTROL_PAR_POS_X))
-  set_control_par($Boolean1, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button2), $CONTROL_PAR_POS_Y))
-  set_control_par($Boolean1, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button2), $CONTROL_PAR_WIDTH))
-  set_control_par($Boolean1, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button2), $CONTROL_PAR_HEIGHT))
-  set_control_par($Boolean1, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
-  $Boolean1 := 0
+  $Boolean2 := get_ui_id($btn_listBrowserDC)
+  set_control_par($Boolean2, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button2), $CONTROL_PAR_POS_X))
+  set_control_par($Boolean2, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button2), $CONTROL_PAR_POS_Y))
+  set_control_par($Boolean2, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button2), $CONTROL_PAR_WIDTH))
+  set_control_par($Boolean2, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button2), $CONTROL_PAR_HEIGHT))
+  set_control_par($Boolean2, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
+  $Boolean2 := 0
   %clicktime[0] := get_ui_id($btn_element_button2)
   %clicktime[1] := $ENGINE_UPTIME
   if(($element__idx # -1) and (%legatoList__element_numbers[$element__idx] = %legatoList__element_numbers[$scroll__up + 2]))
@@ -6047,17 +6047,17 @@ on ui_control($btn_element_button2)
   %async_ids[10] := save_array_str(%trans_fadeIn_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeIn_time.nka")
   %async_ids[11] := save_array_str(%trans_fadeOut_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeOut_time.nka")
   %async_ids[12] := save_array_str(%completed_elements, @legato_path & !legato_prefixes[$prefix_idx] & "completed_elements.nka")
-  %doubleclickControl1[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
+  %doubleclickControl2[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
   call doubleclick_check
 end on
 on ui_control($btn_element_button3)
-  $Boolean1 := get_ui_id($btn_listBrowserDC)
-  set_control_par($Boolean1, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button3), $CONTROL_PAR_POS_X))
-  set_control_par($Boolean1, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button3), $CONTROL_PAR_POS_Y))
-  set_control_par($Boolean1, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button3), $CONTROL_PAR_WIDTH))
-  set_control_par($Boolean1, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button3), $CONTROL_PAR_HEIGHT))
-  set_control_par($Boolean1, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
-  $Boolean1 := 0
+  $Boolean2 := get_ui_id($btn_listBrowserDC)
+  set_control_par($Boolean2, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button3), $CONTROL_PAR_POS_X))
+  set_control_par($Boolean2, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button3), $CONTROL_PAR_POS_Y))
+  set_control_par($Boolean2, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button3), $CONTROL_PAR_WIDTH))
+  set_control_par($Boolean2, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button3), $CONTROL_PAR_HEIGHT))
+  set_control_par($Boolean2, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
+  $Boolean2 := 0
   %clicktime[0] := get_ui_id($btn_element_button3)
   %clicktime[1] := $ENGINE_UPTIME
   if(($element__idx # -1) and (%legatoList__element_numbers[$element__idx] = %legatoList__element_numbers[$scroll__up + 3]))
@@ -6110,17 +6110,17 @@ on ui_control($btn_element_button3)
   %async_ids[10] := save_array_str(%trans_fadeIn_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeIn_time.nka")
   %async_ids[11] := save_array_str(%trans_fadeOut_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeOut_time.nka")
   %async_ids[12] := save_array_str(%completed_elements, @legato_path & !legato_prefixes[$prefix_idx] & "completed_elements.nka")
-  %doubleclickControl1[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
+  %doubleclickControl2[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
   call doubleclick_check
 end on
 on ui_control($btn_element_button4)
-  $Boolean1 := get_ui_id($btn_listBrowserDC)
-  set_control_par($Boolean1, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button4), $CONTROL_PAR_POS_X))
-  set_control_par($Boolean1, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button4), $CONTROL_PAR_POS_Y))
-  set_control_par($Boolean1, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button4), $CONTROL_PAR_WIDTH))
-  set_control_par($Boolean1, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button4), $CONTROL_PAR_HEIGHT))
-  set_control_par($Boolean1, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
-  $Boolean1 := 0
+  $Boolean2 := get_ui_id($btn_listBrowserDC)
+  set_control_par($Boolean2, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button4), $CONTROL_PAR_POS_X))
+  set_control_par($Boolean2, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button4), $CONTROL_PAR_POS_Y))
+  set_control_par($Boolean2, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button4), $CONTROL_PAR_WIDTH))
+  set_control_par($Boolean2, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button4), $CONTROL_PAR_HEIGHT))
+  set_control_par($Boolean2, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
+  $Boolean2 := 0
   %clicktime[0] := get_ui_id($btn_element_button4)
   %clicktime[1] := $ENGINE_UPTIME
   if(($element__idx # -1) and (%legatoList__element_numbers[$element__idx] = %legatoList__element_numbers[$scroll__up + 4]))
@@ -6173,17 +6173,17 @@ on ui_control($btn_element_button4)
   %async_ids[10] := save_array_str(%trans_fadeIn_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeIn_time.nka")
   %async_ids[11] := save_array_str(%trans_fadeOut_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeOut_time.nka")
   %async_ids[12] := save_array_str(%completed_elements, @legato_path & !legato_prefixes[$prefix_idx] & "completed_elements.nka")
-  %doubleclickControl1[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
+  %doubleclickControl2[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
   call doubleclick_check
 end on
 on ui_control($btn_element_button5)
-  $Boolean1 := get_ui_id($btn_listBrowserDC)
-  set_control_par($Boolean1, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button5), $CONTROL_PAR_POS_X))
-  set_control_par($Boolean1, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button5), $CONTROL_PAR_POS_Y))
-  set_control_par($Boolean1, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button5), $CONTROL_PAR_WIDTH))
-  set_control_par($Boolean1, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button5), $CONTROL_PAR_HEIGHT))
-  set_control_par($Boolean1, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
-  $Boolean1 := 0
+  $Boolean2 := get_ui_id($btn_listBrowserDC)
+  set_control_par($Boolean2, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button5), $CONTROL_PAR_POS_X))
+  set_control_par($Boolean2, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button5), $CONTROL_PAR_POS_Y))
+  set_control_par($Boolean2, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button5), $CONTROL_PAR_WIDTH))
+  set_control_par($Boolean2, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button5), $CONTROL_PAR_HEIGHT))
+  set_control_par($Boolean2, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
+  $Boolean2 := 0
   %clicktime[0] := get_ui_id($btn_element_button5)
   %clicktime[1] := $ENGINE_UPTIME
   if(($element__idx # -1) and (%legatoList__element_numbers[$element__idx] = %legatoList__element_numbers[$scroll__up + 5]))
@@ -6236,17 +6236,17 @@ on ui_control($btn_element_button5)
   %async_ids[10] := save_array_str(%trans_fadeIn_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeIn_time.nka")
   %async_ids[11] := save_array_str(%trans_fadeOut_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeOut_time.nka")
   %async_ids[12] := save_array_str(%completed_elements, @legato_path & !legato_prefixes[$prefix_idx] & "completed_elements.nka")
-  %doubleclickControl1[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
+  %doubleclickControl2[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
   call doubleclick_check
 end on
 on ui_control($btn_element_button6)
-  $Boolean1 := get_ui_id($btn_listBrowserDC)
-  set_control_par($Boolean1, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button6), $CONTROL_PAR_POS_X))
-  set_control_par($Boolean1, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button6), $CONTROL_PAR_POS_Y))
-  set_control_par($Boolean1, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button6), $CONTROL_PAR_WIDTH))
-  set_control_par($Boolean1, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button6), $CONTROL_PAR_HEIGHT))
-  set_control_par($Boolean1, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
-  $Boolean1 := 0
+  $Boolean2 := get_ui_id($btn_listBrowserDC)
+  set_control_par($Boolean2, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button6), $CONTROL_PAR_POS_X))
+  set_control_par($Boolean2, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button6), $CONTROL_PAR_POS_Y))
+  set_control_par($Boolean2, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button6), $CONTROL_PAR_WIDTH))
+  set_control_par($Boolean2, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button6), $CONTROL_PAR_HEIGHT))
+  set_control_par($Boolean2, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
+  $Boolean2 := 0
   %clicktime[0] := get_ui_id($btn_element_button6)
   %clicktime[1] := $ENGINE_UPTIME
   if(($element__idx # -1) and (%legatoList__element_numbers[$element__idx] = %legatoList__element_numbers[$scroll__up + 6]))
@@ -6299,17 +6299,17 @@ on ui_control($btn_element_button6)
   %async_ids[10] := save_array_str(%trans_fadeIn_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeIn_time.nka")
   %async_ids[11] := save_array_str(%trans_fadeOut_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeOut_time.nka")
   %async_ids[12] := save_array_str(%completed_elements, @legato_path & !legato_prefixes[$prefix_idx] & "completed_elements.nka")
-  %doubleclickControl1[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
+  %doubleclickControl2[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
   call doubleclick_check
 end on
 on ui_control($btn_element_button7)
-  $Boolean1 := get_ui_id($btn_listBrowserDC)
-  set_control_par($Boolean1, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button7), $CONTROL_PAR_POS_X))
-  set_control_par($Boolean1, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button7), $CONTROL_PAR_POS_Y))
-  set_control_par($Boolean1, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button7), $CONTROL_PAR_WIDTH))
-  set_control_par($Boolean1, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button7), $CONTROL_PAR_HEIGHT))
-  set_control_par($Boolean1, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
-  $Boolean1 := 0
+  $Boolean2 := get_ui_id($btn_listBrowserDC)
+  set_control_par($Boolean2, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button7), $CONTROL_PAR_POS_X))
+  set_control_par($Boolean2, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button7), $CONTROL_PAR_POS_Y))
+  set_control_par($Boolean2, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button7), $CONTROL_PAR_WIDTH))
+  set_control_par($Boolean2, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button7), $CONTROL_PAR_HEIGHT))
+  set_control_par($Boolean2, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
+  $Boolean2 := 0
   %clicktime[0] := get_ui_id($btn_element_button7)
   %clicktime[1] := $ENGINE_UPTIME
   if(($element__idx # -1) and (%legatoList__element_numbers[$element__idx] = %legatoList__element_numbers[$scroll__up + 7]))
@@ -6362,17 +6362,17 @@ on ui_control($btn_element_button7)
   %async_ids[10] := save_array_str(%trans_fadeIn_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeIn_time.nka")
   %async_ids[11] := save_array_str(%trans_fadeOut_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeOut_time.nka")
   %async_ids[12] := save_array_str(%completed_elements, @legato_path & !legato_prefixes[$prefix_idx] & "completed_elements.nka")
-  %doubleclickControl1[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
+  %doubleclickControl2[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
   call doubleclick_check
 end on
 on ui_control($btn_element_button8)
-  $Boolean1 := get_ui_id($btn_listBrowserDC)
-  set_control_par($Boolean1, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button8), $CONTROL_PAR_POS_X))
-  set_control_par($Boolean1, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button8), $CONTROL_PAR_POS_Y))
-  set_control_par($Boolean1, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button8), $CONTROL_PAR_WIDTH))
-  set_control_par($Boolean1, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button8), $CONTROL_PAR_HEIGHT))
-  set_control_par($Boolean1, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
-  $Boolean1 := 0
+  $Boolean2 := get_ui_id($btn_listBrowserDC)
+  set_control_par($Boolean2, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button8), $CONTROL_PAR_POS_X))
+  set_control_par($Boolean2, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button8), $CONTROL_PAR_POS_Y))
+  set_control_par($Boolean2, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button8), $CONTROL_PAR_WIDTH))
+  set_control_par($Boolean2, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button8), $CONTROL_PAR_HEIGHT))
+  set_control_par($Boolean2, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
+  $Boolean2 := 0
   %clicktime[0] := get_ui_id($btn_element_button8)
   %clicktime[1] := $ENGINE_UPTIME
   if(($element__idx # -1) and (%legatoList__element_numbers[$element__idx] = %legatoList__element_numbers[$scroll__up + 8]))
@@ -6425,17 +6425,17 @@ on ui_control($btn_element_button8)
   %async_ids[10] := save_array_str(%trans_fadeIn_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeIn_time.nka")
   %async_ids[11] := save_array_str(%trans_fadeOut_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeOut_time.nka")
   %async_ids[12] := save_array_str(%completed_elements, @legato_path & !legato_prefixes[$prefix_idx] & "completed_elements.nka")
-  %doubleclickControl1[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
+  %doubleclickControl2[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
   call doubleclick_check
 end on
 on ui_control($btn_element_button9)
-  $Boolean1 := get_ui_id($btn_listBrowserDC)
-  set_control_par($Boolean1, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button9), $CONTROL_PAR_POS_X))
-  set_control_par($Boolean1, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button9), $CONTROL_PAR_POS_Y))
-  set_control_par($Boolean1, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button9), $CONTROL_PAR_WIDTH))
-  set_control_par($Boolean1, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button9), $CONTROL_PAR_HEIGHT))
-  set_control_par($Boolean1, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
-  $Boolean1 := 0
+  $Boolean2 := get_ui_id($btn_listBrowserDC)
+  set_control_par($Boolean2, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button9), $CONTROL_PAR_POS_X))
+  set_control_par($Boolean2, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button9), $CONTROL_PAR_POS_Y))
+  set_control_par($Boolean2, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button9), $CONTROL_PAR_WIDTH))
+  set_control_par($Boolean2, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button9), $CONTROL_PAR_HEIGHT))
+  set_control_par($Boolean2, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
+  $Boolean2 := 0
   %clicktime[0] := get_ui_id($btn_element_button9)
   %clicktime[1] := $ENGINE_UPTIME
   if(($element__idx # -1) and (%legatoList__element_numbers[$element__idx] = %legatoList__element_numbers[$scroll__up + 9]))
@@ -6488,17 +6488,17 @@ on ui_control($btn_element_button9)
   %async_ids[10] := save_array_str(%trans_fadeIn_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeIn_time.nka")
   %async_ids[11] := save_array_str(%trans_fadeOut_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeOut_time.nka")
   %async_ids[12] := save_array_str(%completed_elements, @legato_path & !legato_prefixes[$prefix_idx] & "completed_elements.nka")
-  %doubleclickControl1[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
+  %doubleclickControl2[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
   call doubleclick_check
 end on
 on ui_control($btn_element_button10)
-  $Boolean1 := get_ui_id($btn_listBrowserDC)
-  set_control_par($Boolean1, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button10), $CONTROL_PAR_POS_X))
-  set_control_par($Boolean1, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button10), $CONTROL_PAR_POS_Y))
-  set_control_par($Boolean1, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button10), $CONTROL_PAR_WIDTH))
-  set_control_par($Boolean1, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button10), $CONTROL_PAR_HEIGHT))
-  set_control_par($Boolean1, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
-  $Boolean1 := 0
+  $Boolean2 := get_ui_id($btn_listBrowserDC)
+  set_control_par($Boolean2, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button10), $CONTROL_PAR_POS_X))
+  set_control_par($Boolean2, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button10), $CONTROL_PAR_POS_Y))
+  set_control_par($Boolean2, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button10), $CONTROL_PAR_WIDTH))
+  set_control_par($Boolean2, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button10), $CONTROL_PAR_HEIGHT))
+  set_control_par($Boolean2, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
+  $Boolean2 := 0
   %clicktime[0] := get_ui_id($btn_element_button10)
   %clicktime[1] := $ENGINE_UPTIME
   if(($element__idx # -1) and (%legatoList__element_numbers[$element__idx] = %legatoList__element_numbers[$scroll__up + 10]))
@@ -6551,17 +6551,17 @@ on ui_control($btn_element_button10)
   %async_ids[10] := save_array_str(%trans_fadeIn_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeIn_time.nka")
   %async_ids[11] := save_array_str(%trans_fadeOut_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeOut_time.nka")
   %async_ids[12] := save_array_str(%completed_elements, @legato_path & !legato_prefixes[$prefix_idx] & "completed_elements.nka")
-  %doubleclickControl1[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
+  %doubleclickControl2[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
   call doubleclick_check
 end on
 on ui_control($btn_element_button11)
-  $Boolean1 := get_ui_id($btn_listBrowserDC)
-  set_control_par($Boolean1, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button11), $CONTROL_PAR_POS_X))
-  set_control_par($Boolean1, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button11), $CONTROL_PAR_POS_Y))
-  set_control_par($Boolean1, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button11), $CONTROL_PAR_WIDTH))
-  set_control_par($Boolean1, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button11), $CONTROL_PAR_HEIGHT))
-  set_control_par($Boolean1, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
-  $Boolean1 := 0
+  $Boolean2 := get_ui_id($btn_listBrowserDC)
+  set_control_par($Boolean2, $CONTROL_PAR_POS_X, get_control_par(get_ui_id($btn_element_button11), $CONTROL_PAR_POS_X))
+  set_control_par($Boolean2, $CONTROL_PAR_POS_Y, get_control_par(get_ui_id($btn_element_button11), $CONTROL_PAR_POS_Y))
+  set_control_par($Boolean2, $CONTROL_PAR_WIDTH, get_control_par(get_ui_id($btn_element_button11), $CONTROL_PAR_WIDTH))
+  set_control_par($Boolean2, $CONTROL_PAR_HEIGHT, get_control_par(get_ui_id($btn_element_button11), $CONTROL_PAR_HEIGHT))
+  set_control_par($Boolean2, $CONTROL_PAR_HIDE, $HIDE_PART_NOTHING)
+  $Boolean2 := 0
   %clicktime[0] := get_ui_id($btn_element_button11)
   %clicktime[1] := $ENGINE_UPTIME
   if(($element__idx # -1) and (%legatoList__element_numbers[$element__idx] = %legatoList__element_numbers[$scroll__up + 11]))
@@ -6614,7 +6614,7 @@ on ui_control($btn_element_button11)
   %async_ids[10] := save_array_str(%trans_fadeIn_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeIn_time.nka")
   %async_ids[11] := save_array_str(%trans_fadeOut_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeOut_time.nka")
   %async_ids[12] := save_array_str(%completed_elements, @legato_path & !legato_prefixes[$prefix_idx] & "completed_elements.nka")
-  %doubleclickControl1[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
+  %doubleclickControl2[$NI_CALLBACK_ID mod 1000] := $btn_listBrowserDC
   call doubleclick_check
 end on
 on ui_control($btn_scan)
@@ -7819,14 +7819,14 @@ on note
     if(- sh_right(abs(%development[0] - 22714) - 1, 31) = 1)
       $iii := 0
       while($iii <= ($NUM_DYNAMIC_LAYER - 1)) 
-        %doubleclickControl1[$NI_CALLBACK_ID mod 1000] := $atk_sus_group
+        %doubleclickControl2[$NI_CALLBACK_ID mod 1000] := $atk_sus_group
         %sustain_fx0[$NI_CALLBACK_ID mod 1000] := $iii
         call get_sus_zone_ids0
         set_control_par_str(%lbl_sus_filename[$iii], $CONTROL_PAR_TEXT, get_sample(%sus_zone_ids[$iii], $NI_FILE_NAME))
         inc($iii)
       end while
     end if
-    %doubleclickControl1[$NI_CALLBACK_ID mod 1000] := $EVENT_NOTE
+    %doubleclickControl2[$NI_CALLBACK_ID mod 1000] := $EVENT_NOTE
     %start_group1[$NI_CALLBACK_ID mod 1000] := $title_groups
     %num_dynamic_layers1[$NI_CALLBACK_ID mod 1000] := $NUM_DYNAMIC_LAYER
     %num_rr1[$NI_CALLBACK_ID mod 1000] := $NUM_ATK_GROUPS
@@ -7846,19 +7846,19 @@ on note
       inc($i)
     end while
     $interval := $EVENT_NOTE - $last_note
-    if((($num_notes > 1) and (%doubleclickControl1[$NI_CALLBACK_ID mod 1000] # $last_note)) and ($is_attack # -1))
+    if((($num_notes > 1) and (%doubleclickControl2[$NI_CALLBACK_ID mod 1000] # $last_note)) and ($is_attack # -1))
       $is_attack := 0
       if(abs($interval) <= 12)
         if(- sh_right(abs(%development[0] - 22714) - 1, 31) = 1)
-          $Boolean3 := %doubleclickControl1[$NI_CALLBACK_ID mod 1000]
-          $Boolean4 := %doubleclickControl1[$NI_CALLBACK_ID mod 1000] - $interval
+          $Boolean3 := %doubleclickControl2[$NI_CALLBACK_ID mod 1000]
+          $Boolean4 := %doubleclickControl2[$NI_CALLBACK_ID mod 1000] - $interval
           call update__interval_keycolor
         end if
-        $blip_note := play_note((%doubleclickControl1[$NI_CALLBACK_ID mod 1000] * abs(sh_right(abs(sh_right($interval, 31) + 1) - 1, 31))) + ($last_note * (sh_right($interval, 31) + 1)), (abs($interval) * 5) + ((sh_right($interval, 31) + 1) * 60), 0, -1)
+        $blip_note := play_note((%doubleclickControl2[$NI_CALLBACK_ID mod 1000] * abs(sh_right(abs(sh_right($interval, 31) + 1) - 1, 31))) + ($last_note * (sh_right($interval, 31) + 1)), (abs($interval) * 5) + ((sh_right($interval, 31) + 1) * 60), 0, -1)
         change_vol($blip_note, -200000, 0)
         set_event_par_arr($blip_note, $EVENT_PAR_ALLOW_GROUP, 0, $ALL_GROUPS)
-        $Boolean7 := $EVENT_VELOCITY
-        $Boolean1 := $blip_note
+        $Boolean1 := $EVENT_VELOCITY
+        $Boolean2 := $blip_note
         call update__mnu_rr0
         set_event_par_arr($blip_note, $EVENT_PAR_ALLOW_GROUP, 1, $current_trans_group)
         wait(1)
@@ -7870,9 +7870,9 @@ on note
         fade_out($attack_id, 200000, 1)
         fade_out($last_transition, 200000, 1)
         fade_out($blip_note, 0, 1)
-        $transition_id := play_note((%doubleclickControl1[$NI_CALLBACK_ID mod 1000] * abs(sh_right(abs(sh_right($interval, 31) + 1) - 1, 31))) + ($last_note * (sh_right($interval, 31) + 1)), (abs($interval) * 5) + ((sh_right($interval, 31) + 1) * 60), real_to_int((int_to_real(%trans_zone_start[$trans_idx]) / 48000.) * 1000000.), 0)
-        $Boolean7 := $EVENT_VELOCITY
-        $Boolean1 := $transition_id
+        $transition_id := play_note((%doubleclickControl2[$NI_CALLBACK_ID mod 1000] * abs(sh_right(abs(sh_right($interval, 31) + 1) - 1, 31))) + ($last_note * (sh_right($interval, 31) + 1)), (abs($interval) * 5) + ((sh_right($interval, 31) + 1) * 60), real_to_int((int_to_real(%trans_zone_start[$trans_idx]) / 48000.) * 1000000.), 0)
+        $Boolean1 := $EVENT_VELOCITY
+        $Boolean2 := $transition_id
         call update__mnu_rr0
         set_event_par_arr($transition_id, $EVENT_PAR_ALLOW_GROUP, 0, $ALL_GROUPS)
         set_event_par_arr($transition_id, $EVENT_PAR_MOD_VALUE_ID, %trans_fadeIn_time[$trans_idx], 3)
@@ -7899,9 +7899,9 @@ on note
           end if
         end if
         if($btn_sus = 1)
-          $event_id := play_note(%doubleclickControl1[$NI_CALLBACK_ID mod 1000], $EVENT_VELOCITY, $sus_s_start, -1)
+          $event_id := play_note(%doubleclickControl2[$NI_CALLBACK_ID mod 1000], $EVENT_VELOCITY, $sus_s_start, -1)
           set_event_mark($event_id, $MARK_1)
-          %sus_rr[%doubleclickControl1[$NI_CALLBACK_ID mod 1000]] := (%sus_rr[%doubleclickControl1[$NI_CALLBACK_ID mod 1000]] + 1) mod 3
+          %sus_rr[%doubleclickControl2[$NI_CALLBACK_ID mod 1000]] := (%sus_rr[%doubleclickControl2[$NI_CALLBACK_ID mod 1000]] + 1) mod 3
           set_event_par_arr($event_id, $EVENT_PAR_MOD_VALUE_ID, %trans_wait_time[$trans_idx], 0)
           set_event_par_arr($event_id, $EVENT_PAR_MOD_VALUE_ID, %sus_fadeIn_time[$trans_idx], 2)
           if(- sh_right(abs(%development[0] - 22714) - 1, 31) = 1)
@@ -7921,7 +7921,7 @@ on note
         end while
       else
         fade_out($event_id, 152000, 1)
-        $event_id := play_note(%doubleclickControl1[$NI_CALLBACK_ID mod 1000], $EVENT_VELOCITY, $sus_s_start, -1)
+        $event_id := play_note(%doubleclickControl2[$NI_CALLBACK_ID mod 1000], $EVENT_VELOCITY, $sus_s_start, -1)
         set_event_par_arr($event_id, $EVENT_PAR_MOD_VALUE_ID, 150000, 0)
         set_event_par_arr($event_id, $EVENT_PAR_MOD_VALUE_ID, 780000, 2)
         set_event_par_arr($event_id, $EVENT_PAR_ALLOW_GROUP, 0, $ALL_GROUPS)
@@ -7946,9 +7946,9 @@ on note
           $is_attack := 0
         end if
         set_event_par_arr($ALL_EVENTS, $EVENT_PAR_ALLOW_GROUP, 0, $ALL_GROUPS)
-        $event_id := play_note(%doubleclickControl1[$NI_CALLBACK_ID mod 1000], $EVENT_VELOCITY, $sus_s_start, -1)
+        $event_id := play_note(%doubleclickControl2[$NI_CALLBACK_ID mod 1000], $EVENT_VELOCITY, $sus_s_start, -1)
         set_event_mark($event_id, $MARK_1)
-        $attack_id := play_note(%doubleclickControl1[$NI_CALLBACK_ID mod 1000], %CC[103], 0, 0)
+        $attack_id := play_note(%doubleclickControl2[$NI_CALLBACK_ID mod 1000], %CC[103], 0, 0)
         if($btn_sus = 1)
           set_event_par_arr($event_id, $EVENT_PAR_ALLOW_GROUP, 0, $ALL_GROUPS)
           $iii := 0
@@ -7962,8 +7962,8 @@ on note
             inc($iii)
           end while
           if(- sh_right($NUM_ATK_GROUPS .xor. - $NUM_ATK_GROUPS, 31) = 1)
-            set_event_par_arr($attack_id, $EVENT_PAR_ALLOW_GROUP, 1, $atk_group + %rr_count[%doubleclickControl1[$NI_CALLBACK_ID mod 1000]])
-            %rr_count[%doubleclickControl1[$NI_CALLBACK_ID mod 1000]] := (%rr_count[%doubleclickControl1[$NI_CALLBACK_ID mod 1000]] + 1) mod $NUM_ATK_GROUPS
+            set_event_par_arr($attack_id, $EVENT_PAR_ALLOW_GROUP, 1, $atk_group + %rr_count[%doubleclickControl2[$NI_CALLBACK_ID mod 1000]])
+            %rr_count[%doubleclickControl2[$NI_CALLBACK_ID mod 1000]] := (%rr_count[%doubleclickControl2[$NI_CALLBACK_ID mod 1000]] + 1) mod $NUM_ATK_GROUPS
           end if
         end if
       else
@@ -7999,8 +7999,8 @@ on release
   set_key_pressed($EVENT_NOTE, 0)
 end on
 on ui_control($mnu_rr)
-  $Boolean7 := $play_velo
-  $Boolean1 := $blip_note
+  $Boolean1 := $play_velo
+  $Boolean2 := $blip_note
   call update__mnu_rr0
   call update__waveform
 end on
@@ -8016,27 +8016,27 @@ on ui_control($btn_reset)
     inc($i)
   end while
   $btn_check_markSample := 0
-  $Boolean7 := 0
+  $Boolean1 := 0
   call visibility__forallWindow
-  $Boolean1 := 1
+  $Boolean2 := 1
   call visibility__resetWindow
 end on
 on ui_control($btn_cancel)
   $btn_cancel := 0
-  $Boolean1 := 0
+  $Boolean2 := 0
   call visibility__resetWindow
 end on
 on ui_control($btn_ok)
   $btn_ok := 0
-  $Boolean1 := 0
+  $Boolean2 := 0
   $i := 0
   while($i <= (num_elements(%check_button_state) - 1)) 
-    $Boolean1 := $Boolean1 + get_control_par(%check_button_state[$i], $CONTROL_PAR_VALUE)
+    $Boolean2 := $Boolean2 + get_control_par(%check_button_state[$i], $CONTROL_PAR_VALUE)
     inc($i)
   end while
   $i := 0
   while($i <= 1999) 
-    if($Boolean1 = num_elements(%check_button_state))
+    if($Boolean2 = num_elements(%check_button_state))
       !trans_file_names[$i] := ""
       %trans_zone_ids[$i] := -1
       !file_names_master[$i] := ""
@@ -8072,7 +8072,7 @@ on ui_control($btn_ok)
   %async_ids[10] := save_array_str(%trans_fadeIn_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeIn_time.nka")
   %async_ids[11] := save_array_str(%trans_fadeOut_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeOut_time.nka")
   %async_ids[12] := save_array_str(%completed_elements, @legato_path & !legato_prefixes[$prefix_idx] & "completed_elements.nka")
-  $Boolean1 := 0
+  $Boolean2 := 0
   call visibility__resetWindow
   call init__arrays
   call update__waveform
@@ -8235,14 +8235,14 @@ on ui_control($btn_forall)
   call update__releaseSus
   call update__fadeInTrans
   call update__fadeOutTrans
-  $Boolean1 := 0
+  $Boolean2 := 0
   call visibility__resetWindow
-  $Boolean7 := 1
+  $Boolean1 := 1
   call visibility__forallWindow
 end on
 on ui_control($btn_cancel2)
   $btn_cancel2 := 0
-  $Boolean7 := 0
+  $Boolean1 := 0
   call visibility__forallWindow
   call reset__label_texts
 end on
@@ -8277,7 +8277,7 @@ on ui_control($btn_ok2)
   %async_ids[10] := save_array_str(%trans_fadeIn_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeIn_time.nka")
   %async_ids[11] := save_array_str(%trans_fadeOut_time, @legato_path & !legato_prefixes[$prefix_idx] & "trans_fadeOut_time.nka")
   %async_ids[12] := save_array_str(%completed_elements, @legato_path & !legato_prefixes[$prefix_idx] & "completed_elements.nka")
-  $Boolean7 := 0
+  $Boolean1 := 0
   call visibility__forallWindow
 end on
 on ui_control($btn_export_marked)
