@@ -2,10 +2,10 @@
 // Created by Mathias Vatter on 10.11.23.
 //
 
-#include "PreASTDesugar.h"
+#include "PreASTMacros.h"
 #include "../../Interpreter/SimpleExprInterpreter.h"
 
-PreNodeAST *PreASTDesugar::visit(PreNodeProgram &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeProgram &node) {
     m_program = &node;
 	m_substitution_stack = {};
 
@@ -22,7 +22,7 @@ PreNodeAST *PreASTDesugar::visit(PreNodeProgram &node) {
 	return &node;
 }
 
-PreNodeAST * PreASTDesugar::visit(PreNodeFunctionCall &node) {
+PreNodeAST * PreASTMacros::visit(PreNodeFunctionCall &node) {
 	node.function->accept(*this);
 	if (auto def = m_program->get_macro_definition(node)) {
 		auto node_define_call = node.transform_to_macro_call();
@@ -32,7 +32,7 @@ PreNodeAST * PreASTDesugar::visit(PreNodeFunctionCall &node) {
 	return &node;
 }
 
-PreNodeMacroDefinition *PreASTDesugar::get_macro_string_definition(const PreNodeMacroHeader& macro_header) {
+PreNodeMacroDefinition *PreASTMacros::get_macro_string_definition(const PreNodeMacroHeader& macro_header) {
 	// if macro call has no arguments (literate or iterate) and therefore does not match its original definition
 	const auto it2 = m_macro_string_lookup.find(macro_header.get_name());
 	if(it2 != m_macro_string_lookup.end()) {
@@ -41,7 +41,7 @@ PreNodeMacroDefinition *PreASTDesugar::get_macro_string_definition(const PreNode
 	return nullptr;
 }
 
-PreNodeAST *PreASTDesugar::do_substitution(PreNodeLiteral &node) {
+PreNodeAST *PreASTMacros::do_substitution(PreNodeLiteral &node) {
 	if (!m_substitution_stack.empty()) {
 		if (auto substitute = get_substitute(node.tok.val)) {
 			return node.replace_with(std::move(substitute));
@@ -55,19 +55,19 @@ PreNodeAST *PreASTDesugar::do_substitution(PreNodeLiteral &node) {
 	return &node;
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeNumber &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeNumber &node) {
 	m_debug_token = node.get_string();
     // substitution
 	return do_substitution(node);
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeInt &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeInt &node) {
 	m_debug_token = node.get_string();
     // substitution
 	return do_substitution(node);
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeKeyword &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeKeyword &node) {
 	m_debug_token = node.get_string();
 	// if (node.get_name() == "ui.slider.automation#n#") {
 	//
@@ -81,36 +81,36 @@ PreNodeAST *PreASTDesugar::visit(PreNodeKeyword &node) {
 	return do_substitution(node);
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeIncrementer &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeIncrementer &node) {
 	visit_all(node.body, *this);
 	return &node;
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeOther &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeOther &node) {
 	m_debug_token = node.get_string();
 	return &node;
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeStatement &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeStatement &node) {
     node.statement->accept(*this);
 	return &node;
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeChunk &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeChunk &node) {
 	node.flatten();
 	visit_all(node.chunk, *this);
 	node.flatten();
 	return &node;
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeList &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeList &node) {
     for(auto &p : node.params){
         if(p) p->accept(*this);
     }
 	return &node;
 }
 
-void PreASTDesugar::check_recursion(const Token &tok) const {
+void PreASTMacros::check_recursion(const Token &tok) const {
 	if(m_macros_used.contains(tok.val)) {
 		// recursive function call detected
 		auto error = CompileError(ErrorType::PreprocessorError, "", "", tok);
@@ -120,7 +120,8 @@ void PreASTDesugar::check_recursion(const Token &tok) const {
 	}
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeMacroCall &node) {
+PreNodeAST *PreASTMacros::
+visit(PreNodeMacroCall &node) {
 	m_debug_token = node.get_string();
 
 	m_program->macro_call_stack.push(&node);
@@ -180,13 +181,13 @@ PreNodeAST *PreASTDesugar::visit(PreNodeMacroCall &node) {
 	return &node;
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeMacroHeader &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeMacroHeader &node) {
 	node.name->accept(*this);
 	node.args->accept(*this);
 	return &node;
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeIterateMacro &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeIterateMacro &node) {
     if(node.macro_call->params.size()>1) {
     	auto error = CompileError(ErrorType::PreprocessorError,"",  "", node.tok);
     	error.m_message = "Found incorrect <iterate_macro> syntax.";
@@ -270,7 +271,7 @@ PreNodeAST *PreASTDesugar::visit(PreNodeIterateMacro &node) {
     return node.replace_with(std::move(node_new_chunk));
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeLiterateMacro &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeLiterateMacro &node) {
     if(node.macro_call->params.size()>1) {
         CompileError(ErrorType::PreprocessorError,"Found incorrect <literate_macro> syntax.", -1, "", "", "").exit();
     }
@@ -321,7 +322,7 @@ PreNodeAST *PreASTDesugar::visit(PreNodeLiterateMacro &node) {
     return node.replace_with(std::move(node_new_chunk));
 }
 
-std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> PreASTDesugar::get_substitution_map(PreNodeMacroHeader& definition, const PreNodeMacroHeader& call) {
+std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> PreASTMacros::get_substitution_map(PreNodeMacroHeader& definition, const PreNodeMacroHeader& call) {
 	std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> map;
 	map.reserve(definition.num_args());
 	for(int i= 0; i<definition.num_args(); i++) {
@@ -352,7 +353,7 @@ std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> PreASTDesugar::ge
 //     return nullptr;
 // }
 
-std::unique_ptr<PreNodeAST> PreASTDesugar::get_substitute(const std::string& name) {
+std::unique_ptr<PreNodeAST> PreASTMacros::get_substitute(const std::string& name) {
 	if(m_substitution_stack.empty()) return nullptr;
 	const auto & map = m_substitution_stack.top();
 	if(const auto it = map.find(name); it != map.end()) {

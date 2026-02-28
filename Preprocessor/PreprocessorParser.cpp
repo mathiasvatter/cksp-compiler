@@ -429,23 +429,14 @@ Result<std::unique_ptr<PreNodeMacroDefinition>> PreprocessorParser::parse_macro_
     }
     consume(); // consume linebreak
     auto node_chunk = std::make_unique<PreNodeChunk>(peek(), node_macro_definition.get());
-    while (peek().type != token::END_MACRO) {
+    while(peek().type != token::END_MACRO) {
         if(peek().type == token::END_MACRO) break;
-
         if (peek().type == token::MACRO) {
-            return Result<std::unique_ptr<PreNodeMacroDefinition>>(CompileError(ErrorType::PreprocessorError,
-                "Nested macros are not allowed. Maybe you forgot an 'end macro' along the line?",peek().line, "", peek().val,peek().file));
-        } else if (is_define_definition()) {
-            auto result_define = parse_define_definition(node_chunk.get());
-            if (result_define.is_error())
-                return Result<std::unique_ptr<PreNodeMacroDefinition>>(result_define.get_error());
-            m_program->define_statements.push_back(std::move(result_define.unwrap()));
-        } else {
-            auto result_token = parse_token(node_chunk.get());
-            if(result_token.is_error())
-                return Result<std::unique_ptr<PreNodeMacroDefinition>>(result_token.get_error());
-            node_chunk->chunk.push_back(std::move(result_token.unwrap()));
+            auto error = CompileError(ErrorType::PreprocessorError, "", "", peek());
+            error.set_message("Nested macros are not allowed. Maybe you forgot an <end macro> along the line?");
+            return Result<std::unique_ptr<PreNodeMacroDefinition>>(error);
         }
+        parse_main_constructs(parent, node_chunk);
     }
     auto end_token = consume(); // consume end macro
     node_macro_definition->body = std::move(node_chunk);
@@ -654,17 +645,7 @@ Result<std::unique_ptr<PreNodeIncrementer>> PreprocessorParser::parse_incremente
                 error.set_message("Missing <END_INC> statement. Reached the end of the file while parsing an incrementer.");
                 return Result<std::unique_ptr<PreNodeIncrementer>>(error);
             }
-            if (is_define_definition()) {
-                auto result_define = parse_define_definition(parent);
-                if (result_define.is_error())
-                    return Result<std::unique_ptr<PreNodeIncrementer>>(result_define.get_error());
-                m_program->define_statements.push_back(std::move(result_define.unwrap()));
-            } else {
-                auto token_result = parse_token(parent);
-                if (token_result.is_error())
-                    return Result<std::unique_ptr<PreNodeIncrementer>>(token_result.get_error());
-                node_chunk->chunk.push_back(std::move(token_result.unwrap()));
-            }
+            parse_main_constructs(parent, node_chunk);
 
         }
         if(peek().type == token::LINEBRK) {
@@ -868,17 +849,7 @@ Result<std::unique_ptr<PreNodeUseCodeIf>> PreprocessorParser::parse_use_code_if(
             error.set_message("Missing <END_USE_CODE> statement. Reached the end of the file while parsing an preprocessor if statement.");
             return Result<std::unique_ptr<PreNodeUseCodeIf>>(error);
         }
-        if (is_define_definition()) {
-            auto result_define = parse_define_definition(parent);
-            if (result_define.is_error())
-                return Result<std::unique_ptr<PreNodeUseCodeIf>>(result_define.get_error());
-            m_program->define_statements.push_back(std::move(result_define.unwrap()));
-        } else {
-            auto token_result = parse_token(parent);
-            if (token_result.is_error())
-                return Result<std::unique_ptr<PreNodeUseCodeIf>>(token_result.get_error());
-            node_chunk->chunk.push_back(std::move(token_result.unwrap()));
-        }
+        parse_main_constructs(parent, node_chunk);
     }
     auto end_inc = consume(); // consume END_INC
 
@@ -897,100 +868,100 @@ Result<std::unique_ptr<PreNodeUseCodeIf>> PreprocessorParser::parse_use_code_if(
     return Result<std::unique_ptr<PreNodeUseCodeIf>>(std::move(node_if));
 }
 
-int PreprocessorParser::get_num_params_in_definition() {
-    size_t begin = m_pos;
-    consume(); // consume name
-    _skip_linebreaks();
-    int num_params = 0;
+// int PreprocessorParser::get_num_params_in_definition() {
+//     size_t begin = m_pos;
+//     consume(); // consume name
+//     _skip_linebreaks();
+//     int num_params = 0;
+//
+//     if(peek().type == token::OPEN_PARENTH) {
+//         consume(); // consume (
+//         _skip_linebreaks();
+//         if (peek().type != token::CLOSED_PARENTH) {
+//             int parenth_depth = 1; // Start with 1 because we've already consumed the first OPEN_PARENTH
+//             while (parenth_depth > 0) {
+//                 if (peek().type == token::OPEN_PARENTH || peek().type == token::OPEN_BRACKET) {
+//                     parenth_depth++;
+//                 } else if (peek().type == token::CLOSED_PARENTH || peek().type == token::CLOSED_BRACKET) {
+//                     _skip_linebreaks();
+//                     parenth_depth--;
+//                 } else if (peek().type == token::LINEBRK) {
+//                     _skip_linebreaks();
+//                     continue;
+//                 } else if (peek().type == token::END_TOKEN) {
+//                     auto error = CompileError(ErrorType::PreprocessorError,
+//                                               "",")", peek());
+//                     error.add_message("Unexpected end of file. Missing closing parenthesis.");
+//                     error.exit();
+//                 }
+//                 if (peek().type == token::COMMA && parenth_depth == 1) {
+//                     num_params++;
+//                     consume(); // consume COMMA
+//                     _skip_linebreaks();
+//                 } else if (parenth_depth > 0) {
+//                     consume();
+//                 }
+//             }
+//             if(num_params>0) {
+//                 num_params += 2;
+//             } else {
+//                 num_params = 1;
+//             }
+//         }
+//     }
+//
+//     m_pos = begin;
+//     return num_params;
+// }
 
-    if(peek().type == token::OPEN_PARENTH) {
-        consume(); // consume (
-        _skip_linebreaks();
-        if (peek().type != token::CLOSED_PARENTH) {
-            int parenth_depth = 1; // Start with 1 because we've already consumed the first OPEN_PARENTH
-            while (parenth_depth > 0) {
-                if (peek().type == token::OPEN_PARENTH || peek().type == token::OPEN_BRACKET) {
-                    parenth_depth++;
-                } else if (peek().type == token::CLOSED_PARENTH || peek().type == token::CLOSED_BRACKET) {
-                    _skip_linebreaks();
-                    parenth_depth--;
-                } else if (peek().type == token::LINEBRK) {
-                    _skip_linebreaks();
-                    continue;
-                } else if (peek().type == token::END_TOKEN) {
-                    auto error = CompileError(ErrorType::PreprocessorError,
-                                              "",")", peek());
-                    error.add_message("Unexpected end of file. Missing closing parenthesis.");
-                    error.exit();
-                }
-                if (peek().type == token::COMMA && parenth_depth == 1) {
-                    num_params++;
-                    consume(); // consume COMMA
-                    _skip_linebreaks();
-                } else if (parenth_depth > 0) {
-                    consume();
-                }
-            }
-            if(num_params>0) {
-                num_params += 2;
-            } else {
-                num_params = 1;
-            }
-        }
-    }
+// bool PreprocessorParser::is_define_call(const Token &tok) {
+//     bool syntax = false;
+//     if(m_pos >0) {
+//         syntax = (peek().type == token::KEYWORD and m_pos > 0 and (peek(-1).type != token::MACRO or peek(-1).type != token::FUNCTION));
+//     }
+//     syntax = peek().type == token::KEYWORD;
+//
+//     if(syntax) {
+//         //search in m_define_strings
+//         int num_args = get_num_params_in_definition();
+//         auto it = m_define_strings.find({tok.val, num_args});
+//         syntax &= it != m_define_strings.end();
+//     }
+//     return syntax;
+// }
 
-    m_pos = begin;
-    return num_params;
-}
-
-bool PreprocessorParser::is_define_call(const Token &tok) {
-    bool syntax = false;
-    if(m_pos >0) {
-        syntax = (peek().type == token::KEYWORD and m_pos > 0 and (peek(-1).type != token::MACRO or peek(-1).type != token::FUNCTION));
-    }
-    syntax = peek().type == token::KEYWORD;
-
-    if(syntax) {
-        //search in m_define_strings
-        int num_args = get_num_params_in_definition();
-        auto it = m_define_strings.find({tok.val, num_args});
-        syntax &= it != m_define_strings.end();
-    }
-    return syntax;
-}
-
-bool PreprocessorParser::is_macro_call(const Token &tok) {
-    if(peek().type != token::KEYWORD) return false;
-
-    bool is_macro_call = peek().type == token::KEYWORD;
-    bool is_iterator_macro_call = peek().type == token::KEYWORD;
-
-    if(m_pos<2) {
-        // iterator macro call cannot be at first position in file
-        is_iterator_macro_call = false;
-        // macro call has to have linebreak or open parenth after it
-        is_macro_call &= peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK;
-    } else {
-        is_iterator_macro_call &= peek(-2).type == token::ITERATE_MACRO || peek(-2).type == token::LITERATE_MACRO;
-        // iterator macro call has to have open parenth beforehand
-        is_iterator_macro_call &= peek(-1).type == token::OPEN_PARENTH and (m_parsing_iterator_macro || m_parsing_literate_macro) and (peek(1).type == token::OPEN_PARENTH or peek(1).type == token::CLOSED_PARENTH);
-        // macro call has to have linebreak before and either linebreak or open parenth after it
-        is_macro_call &= peek(-1).type == token::LINEBRK and (peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK);
-    }
-
-    int num_hashes = StringUtils::count_char(tok.val, '#');
-    if(is_iterator_macro_call) {
-        is_iterator_macro_call &= m_macro_iterate_strings.contains(tok.val) or (num_hashes > 0 and num_hashes % 2 == 0);
-        return is_iterator_macro_call;
-    }
-    if(is_macro_call) {
-        int num_args = get_num_params_in_definition();
-        //search in m_define_strings
-        is_macro_call &= m_macro_strings.contains({tok.val, num_args}) or (num_hashes > 0 and num_hashes % 2 == 0);
-        return is_macro_call;
-    }
-    return false;
-}
+// bool PreprocessorParser::is_macro_call(const Token &tok) {
+//     if(peek().type != token::KEYWORD) return false;
+//
+//     bool is_macro_call = peek().type == token::KEYWORD;
+//     bool is_iterator_macro_call = peek().type == token::KEYWORD;
+//
+//     if(m_pos<2) {
+//         // iterator macro call cannot be at first position in file
+//         is_iterator_macro_call = false;
+//         // macro call has to have linebreak or open parenth after it
+//         is_macro_call &= peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK;
+//     } else {
+//         is_iterator_macro_call &= peek(-2).type == token::ITERATE_MACRO || peek(-2).type == token::LITERATE_MACRO;
+//         // iterator macro call has to have open parenth beforehand
+//         is_iterator_macro_call &= peek(-1).type == token::OPEN_PARENTH and (m_parsing_iterator_macro || m_parsing_literate_macro) and (peek(1).type == token::OPEN_PARENTH or peek(1).type == token::CLOSED_PARENTH);
+//         // macro call has to have linebreak before and either linebreak or open parenth after it
+//         is_macro_call &= peek(-1).type == token::LINEBRK and (peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK);
+//     }
+//
+//     int num_hashes = StringUtils::count_char(tok.val, '#');
+//     if(is_iterator_macro_call) {
+//         is_iterator_macro_call &= m_macro_iterate_strings.contains(tok.val) or (num_hashes > 0 and num_hashes % 2 == 0);
+//         return is_iterator_macro_call;
+//     }
+//     if(is_macro_call) {
+//         int num_args = get_num_params_in_definition();
+//         //search in m_define_strings
+//         is_macro_call &= m_macro_strings.contains({tok.val, num_args}) or (num_hashes > 0 and num_hashes % 2 == 0);
+//         return is_macro_call;
+//     }
+//     return false;
+// }
 
 bool PreprocessorParser::is_function_call(const Token &tok) {
     if(peek().type != token::KEYWORD) return false;

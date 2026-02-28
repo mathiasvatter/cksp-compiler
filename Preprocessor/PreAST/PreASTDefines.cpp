@@ -11,14 +11,7 @@
 PreNodeAST *PreASTDefines::visit(PreNodeProgram &node) {
 	m_program = &node;
 	m_substitution_stack = {};
-	// for(const auto & def : node.define_statements) {
-	// 	m_define_lookup.insert({def->header->get_name(), def.get()});
-	// }
 
-	// parallel_for_each(node.define_statements.begin(), node.define_statements.end(),
-	// 		[&](const auto& def) {
-	// 			m_program->add_to_define_lookup(def);
-	// 		});
 	for (const auto& def : node.define_statements) {
 		m_program->add_to_define_lookup(def);
 	}
@@ -29,28 +22,6 @@ PreNodeAST *PreASTDefines::visit(PreNodeProgram &node) {
 	visit_all(node.macro_definitions, *this);
 	return &node;
 }
-
-// PreNodeAST *PreASTDefines::visit(PreNodeMacroDefinition &node) {
-// 	node.header->accept(*this);
-// 	node.body->accept(*this);
-//
-// 	if(m_program) {
-// 		auto node_macro_definition = std::make_unique<PreNodeMacroDefinition>(
-// 			std::move(node.header),
-// 			std::move(node.body),
-// 			node.tok,
-// 			node.parent
-// 		);
-// 		m_program->macro_definitions.push_back(std::move(node_macro_definition));
-// 	}
-// 	// replace node with dead code after incrementation
-// 	return node.replace_with(std::make_unique<PreNodeDeadCode>(node.tok, node.parent));
-// }
-
-// void PreASTDefines::visit(PreNodePragma &node) {
-// 	static PreASTPragma pragma(m_program);
-// 	node.accept(pragma);
-// }
 
 PreNodeAST *PreASTDefines::do_substitution(PreNodeLiteral &node) {
 	if(m_program->define_call_stack.empty()) return &node;
@@ -178,14 +149,6 @@ PreNodeAST *PreASTDefines::visit(PreNodeDefineCall &node) {
 	m_defines_used.erase(token_name.val);
 	return node.replace_with(std::move(define_body));
 }
-
-// std::unique_ptr<PreNodeDefineStatement> PreASTDefines::get_define_definition(const PreNodeDefineHeader& define_header) {
-// 	const auto it = m_define_lookup.find(define_header.name->tok.val);
-// 	if(it != m_define_lookup.end()) {
-// 		return clone_as<PreNodeDefineStatement>(it->second);
-// 	}
-// 	return nullptr;
-// }
 
 std::unique_ptr<PreNodeAST> PreASTDefines::get_substitute(const std::string& name) {
 	for (const auto &pair: m_substitution_stack.top()) {

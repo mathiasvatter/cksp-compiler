@@ -64,8 +64,8 @@ add_executable(cksp main.cpp
         Preprocessor/PreAST/PreASTVisitor.cpp
         Preprocessor/PreprocessorParser.h
         Preprocessor/PreprocessorParser.cpp
-        Preprocessor/PreAST/PreASTDesugar.h
-        Preprocessor/PreAST/PreASTDesugar.cpp
+        Preprocessor/PreAST/PreASTMacros.h
+        Preprocessor/PreAST/PreASTMacros.cpp
         AST/ASTNodes/AST.h
         AST/ASTNodes/AST.cpp
         AST/ASTNodes/ASTDataStructures.h

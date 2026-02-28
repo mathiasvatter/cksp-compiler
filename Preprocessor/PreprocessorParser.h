@@ -60,18 +60,18 @@ private:
 	Result<std::unique_ptr<PreNodeResetCondition>> parse_reset_condition(PreNodeAST* parent);
 	Result<std::unique_ptr<PreNodeUseCodeIf>> parse_use_code_if(PreNodeAST* parent);
 
-    std::unordered_map<StringIntKey, std::string, StringIntKeyHash> m_define_strings;
+    // std::unordered_map<StringIntKey, std::string, StringIntKeyHash> m_define_strings;
     // macro name and num_macro_arguments
-    std::unordered_map<StringIntKey, std::string, StringIntKeyHash> m_macro_strings;
-    std::set<std::string> m_macro_iterate_strings;
+    // std::unordered_map<StringIntKey, std::string, StringIntKeyHash> m_macro_strings;
+    // std::set<std::string> m_macro_iterate_strings;
     bool m_parsing_iterator_macro = false;
 	bool m_parsing_literate_macro = false;
     std::vector<std::unique_ptr<PreNodeDefineStatement>> m_define_definitions;
 
-    int get_num_params_in_definition();
+    // int get_num_params_in_definition();
 
-    bool is_define_call(const Token &tok);
-    bool is_macro_call(const Token &tok);
+    // bool is_define_call(const Token &tok);
+    // bool is_macro_call(const Token &tok);
 	bool is_function_call(const Token &tok);
 	bool is_iterate_macro_call(const Token &tok); // checks if inside iterate/literate stmt
     bool is_define_definition();
