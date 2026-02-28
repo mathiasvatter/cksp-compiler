@@ -72,8 +72,8 @@ private:
 
     // bool is_define_call(const Token &tok);
     // bool is_macro_call(const Token &tok);
-	bool is_function_call(const Token &tok);
-	bool is_iterate_macro_call(const Token &tok); // checks if inside iterate/literate stmt
+	bool is_function_call(const Token &tok) const;
+	bool is_iterate_macro_call(const Token &tok) const; // checks if inside iterate/literate stmt
     bool is_define_definition();
     bool is_macro_definition();
 };
