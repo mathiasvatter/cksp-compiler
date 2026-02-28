@@ -107,6 +107,7 @@ public:
     }
 
     void debug_print_tokens(const std::string &path = PRINTER_OUTPUT) const {
+    #ifndef NDEBUG
         std::ostringstream os;
         for (const auto &tok : m_tokens) {
             os << tok.val;
@@ -118,5 +119,6 @@ public:
         } else {
             std::cerr << "Unable to open file: " << path << std::endl;
         }
+    #endif
     }
 };

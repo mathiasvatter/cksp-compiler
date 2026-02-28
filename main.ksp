@@ -192,6 +192,9 @@ function do_something()
 		message("good to go")
 		wait(DURATION_QUARTER)
 	end if
+	declare glob := 5
+	message(flag > glob ? glob : "goodbye")
+
 end function
 on listener
 	flag := 1
