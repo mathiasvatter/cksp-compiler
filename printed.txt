@@ -2,27 +2,27 @@ on init
 	declare _iter0 : int {Reuses: 0}
 	declare slider : int {Reuses: 0}
 	declare clicktime[3] : int[] {Reuses: 0}
-	declare result1 : string {Reuses: 0}
+	declare result5 : string {Reuses: 0}
 	declare nka0 : string {Reuses: 0}
 	declare parent_folder0 : string {Reuses: 0}
 	declare path0 : string {Reuses: 0}
 	declare result12 : int {Reuses: 4}
 	declare min1 : int {Reuses: 2}
 	declare max1 : int {Reuses: 4}
-	declare result4 : int {Reuses: 1}
+	declare result7 : int {Reuses: 1}
 	declare last_random0 : int {Reuses: 1}
 	declare min_random0 : int {Reuses: 1}
 	declare max_random0 : int {Reuses: 3}
+	declare Boolean5 : int {Reuses: 1}
 	declare Boolean4 : int {Reuses: 1}
-	declare Boolean3 : int {Reuses: 1}
 	declare Boolean1 : int {Reuses: 3}
 	declare Boolean7 : int {Reuses: 1}
 	declare Boolean0 : int {Reuses: 0}
-	declare Boolean2 : int {Reuses: 2}
+	declare Boolean3 : int {Reuses: 2}
 	declare z000 : int {Reuses: 2}
 	declare q000 : int {Reuses: 1}
 	declare zw0 : real {Reuses: 0}
-	declare doubleclickControl2[1000] : int[] {thread-unsafe} {Reuses: 0}
+	declare doubleclickControl1[1000] : int[] {thread-unsafe} {Reuses: 0}
 	declare start_group1[1000] : int[] {thread-unsafe} {Reuses: 0}
 	declare num_dynamic_layers1[1000] : int[] {thread-unsafe} {Reuses: 0}
 	declare num_rr1[1000] : int[] {thread-unsafe} {Reuses: 0}
@@ -30,7 +30,7 @@ on init
 	declare sustain_fx0[1000] : int[] {thread-unsafe} {Reuses: 0}
 	make_perfview{Builtin, None, make_perfview}
 	set_script_title("Legato Script"){Builtin, None, set_script_title}
-	message("** Script " & "'" & "Legato Script" & "'" & " Compile " & "20:29:39" & " " & "02/28/26" & " **"){Builtin, None, message}
+	message("** Script " & "'" & "Legato Script" & "'" & " Compile " & "20:35:28" & " " & "02/28/26" & " **"){Builtin, None, message}
 	set_listener(NI_SIGNAL_TIMER_MS{int} {NI_SIGNAL_TIMER_MS} , 10000){Builtin, None, set_listener}
 	declare _id : int {Reuses: 0}
 	declare decode[2] : int[] {Reuses: 0}
@@ -51,8 +51,8 @@ on init
 		_id{int} {_id}  := load_array_str(decode{int[]} {decode} , get_folder(GET_FOLDER_PATCH_DIR{int} {GET_FOLDER_PATCH_DIR} ){Builtin, None, get_folder} & path0{string} {path0}  & parent_folder0{string} {parent_folder0}  & nka0{string} {nka0}  & ".nka"){Builtin, None, load_array_str}
 		inc(result12{int} {result12} ){Builtin, None, inc}
 	end while
-	result1{string} {result1}  := get_folder(GET_FOLDER_PATCH_DIR{int} {GET_FOLDER_PATCH_DIR} ){Builtin, None, get_folder} & path0{string} {path0}  & nka0{string} {nka0}  & ".nka"
-	decode_path{string} {decode_path}  := result1{string} {result1} 
+	result5{string} {result5}  := get_folder(GET_FOLDER_PATCH_DIR{int} {GET_FOLDER_PATCH_DIR} ){Builtin, None, get_folder} & path0{string} {path0}  & nka0{string} {nka0}  & ".nka"
+	decode_path{string} {decode_path}  := result5{string} {result5} 
 	decode[0]{int} {decode}  := -1
 	_id{int} {_id}  := load_array_str(decode{int[]} {decode} , decode_path{string} {decode_path} ){Builtin, None, load_array_str}
 	declare development[2] : int[] {Reuses: 0}
@@ -73,8 +73,8 @@ on init
 		_id{int} {_id}  := load_array_str(development{int[]} {development} , get_folder(GET_FOLDER_PATCH_DIR{int} {GET_FOLDER_PATCH_DIR} ){Builtin, None, get_folder} & path0{string} {path0}  & parent_folder0{string} {parent_folder0}  & nka0{string} {nka0}  & ".nka"){Builtin, None, load_array_str}
 		inc(result12{int} {result12} ){Builtin, None, inc}
 	end while
-	result1{string} {result1}  := get_folder(GET_FOLDER_PATCH_DIR{int} {GET_FOLDER_PATCH_DIR} ){Builtin, None, get_folder} & path0{string} {path0}  & nka0{string} {nka0}  & ".nka"
-	development_path{string} {development_path}  := result1{string} {result1} 
+	result5{string} {result5}  := get_folder(GET_FOLDER_PATCH_DIR{int} {GET_FOLDER_PATCH_DIR} ){Builtin, None, get_folder} & path0{string} {path0}  & nka0{string} {nka0}  & ".nka"
+	development_path{string} {development_path}  := result5{string} {result5} 
 	if(abs(sh_right(abs(- sh_right(abs(decode[0]{int} {decode}  - 81202){Builtin, None, abs} - 1, 31){Builtin, None, sh_right}){Builtin, None, abs} - 1, 31){Builtin, None, sh_right}){Builtin, None, abs} = 1)
 		development_path{string} {development_path}  := get_folder(GET_FOLDER_PATCH_DIR{int} {GET_FOLDER_PATCH_DIR} ){Builtin, None, get_folder} & "development.nka"
 	end if
@@ -2318,10 +2318,10 @@ on init
 		max1{int} {max1}  := 1000
 		___M.Seed{int} {___M.Seed}  := (8088405 * ___M.Seed{int} {___M.Seed} ) + 1
 		result12{int} {result12}  := ((sh_right(___M.Seed{int} {___M.Seed} , 8){Builtin, None, sh_right} .and. 16777215) mod 1000) + 1
-		result4{int} {result4}  := result12{int} {result12} 
-		result4{int} {result4}  := (last_random0{int} {last_random0}  + result4{int} {result4} ) mod 1001
-		last_random0{int} {last_random0}  := result4{int} {result4} 
-		randNoteValues[i{int} {i} ]{int} {randNoteValues}  := result4{int} {result4} 
+		result7{int} {result7}  := result12{int} {result12} 
+		result7{int} {result7}  := (last_random0{int} {last_random0}  + result7{int} {result7} ) mod 1001
+		last_random0{int} {last_random0}  := result7{int} {result7} 
+		randNoteValues[i{int} {i} ]{int} {randNoteValues}  := result7{int} {result7} 
 		randNoteValues[i{int} {i} ]{int} {randNoteValues}  := real_to_int((((int_to_real(randNoteValues[i{int} {i} ]{int} {randNoteValues} ){Builtin, None, int_to_real} - 0) * 1000) / 1000) + -500){Builtin, None, real_to_int}
 		inc(i{int} {i} ){Builtin, None, inc}
 	end while
@@ -2889,15 +2889,15 @@ on init
 		inc(keys{int} {keys} ){Builtin, None, inc}
 	end while
 	if(not (- sh_right(abs(development[0]{int} {development}  - 22714){Builtin, None, abs} - 1, 31){Builtin, None, sh_right} = 1))
-		Boolean2{int} {Boolean2}  := 0
-		Boolean4{int} {Boolean4}  := 0
-		btn_home{int} {btn_home}  := 0
-		set_control_par(get_ui_id(UI_home{int} {UI_home} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean4{int} {Boolean4} ]{int} {hide_state} ){Builtin, None, set_control_par}
-		set_control_par(get_ui_id(UI_reverb{int} {UI_reverb} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean4{int} {Boolean4} ]{int} {hide_state} ){Builtin, None, set_control_par}
-		set_control_par(get_ui_id(UI_eq{int} {UI_eq} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , HIDE_WHOLE_CONTROL{int} {HIDE_WHOLE_CONTROL} ){Builtin, None, set_control_par}
 		Boolean3{int} {Boolean3}  := 0
+		Boolean5{int} {Boolean5}  := 0
+		btn_home{int} {btn_home}  := 0
+		set_control_par(get_ui_id(UI_home{int} {UI_home} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean5{int} {Boolean5} ]{int} {hide_state} ){Builtin, None, set_control_par}
+		set_control_par(get_ui_id(UI_reverb{int} {UI_reverb} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean5{int} {Boolean5} ]{int} {hide_state} ){Builtin, None, set_control_par}
+		set_control_par(get_ui_id(UI_eq{int} {UI_eq} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , HIDE_WHOLE_CONTROL{int} {HIDE_WHOLE_CONTROL} ){Builtin, None, set_control_par}
+		Boolean4{int} {Boolean4}  := 0
 		btn_settings{int} {btn_settings}  := 0
-		set_control_par(get_ui_id(UI_settings{int} {UI_settings} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean3{int} {Boolean3} ]{int} {hide_state} ){Builtin, None, set_control_par}
+		set_control_par(get_ui_id(UI_settings{int} {UI_settings} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean4{int} {Boolean4} ]{int} {hide_state} ){Builtin, None, set_control_par}
 		result12{int} {result12}  := 0
 		btn_legatoSettings{int} {btn_legatoSettings}  := result12{int} {result12} 
 		set_control_par(get_ui_id(UI_dataSettings{int} {UI_dataSettings} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[btn_legatoSettings{int} {btn_legatoSettings} ]{int} {hide_state} ){Builtin, None, set_control_par}
@@ -2945,19 +2945,19 @@ on init
 				end if
 				inc(min_random0{int} {min_random0} ){Builtin, None, inc}
 			end while
-			result4{int} {result4}  := 0
+			result7{int} {result7}  := 0
 			NUM_SHOWN_PRESETS_OLD{int} {NUM_SHOWN_PRESETS_OLD}  := NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS} 
 			NUM_PRESETS{int} {NUM_PRESETS}  := search(zone_ids_master{int[]} {zone_ids_master} , -1){Builtin, None, search}
 			NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS}  := NUM_PRESETS{int} {NUM_PRESETS} 
 			set_control_par_str(get_ui_id(lbl_presetcount{int} {lbl_presetcount} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS}  & "/" & NUM_PRESETS{int} {NUM_PRESETS} ){Builtin, None, set_control_par_str}
 			if(NUM_SHOWN_PRESETS_OLD{int} {NUM_SHOWN_PRESETS_OLD}  # NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS} )
-				result4{int} {result4}  := 0
-				while(result4{int} {result4}  <= (num_elements(legatoList.end_of_list{int[]} {legatoList.end_of_list} ){Builtin, None, num_elements} - 1)) 
-					legatoList.end_of_list[result4{int} {result4} ]{int} {legatoList.end_of_list}  := -1
-					if(result4{int} {result4}  < NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS} )
-						legatoList.end_of_list[result4{int} {result4} ]{int} {legatoList.end_of_list}  := 1
+				result7{int} {result7}  := 0
+				while(result7{int} {result7}  <= (num_elements(legatoList.end_of_list{int[]} {legatoList.end_of_list} ){Builtin, None, num_elements} - 1)) 
+					legatoList.end_of_list[result7{int} {result7} ]{int} {legatoList.end_of_list}  := -1
+					if(result7{int} {result7}  < NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS} )
+						legatoList.end_of_list[result7{int} {result7} ]{int} {legatoList.end_of_list}  := 1
 					end if
-					inc(result4{int} {result4} ){Builtin, None, inc}
+					inc(result7{int} {result7} ){Builtin, None, inc}
 				end while
 			end if
 			scroll.up{int} {scroll.up}  := real_to_int((((scroll.realup{real} {scroll.realup}  - 0) * (int_to_real(NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS}  - 12){Builtin, None, int_to_real} - 0)) / (int_to_real(NUM_SHOWN_PRESETS_OLD{int} {NUM_SHOWN_PRESETS_OLD}  - 12){Builtin, None, int_to_real} - 0)) + 0){Builtin, None, real_to_int}
@@ -3025,14 +3025,14 @@ on init
 			set_control_par(get_ui_id(lbl_scrollhandle{int} {lbl_scrollhandle} ){Builtin, None, get_ui_id}, CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , handle_size{int} {handle_size} ){Builtin, None, set_control_par}
 			set_control_par(get_ui_id(lbl_scrollhandle{int} {lbl_scrollhandle} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , get_control_par(get_ui_id(sli_scrollbar{int} {sli_scrollbar} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} ){Builtin, None, get_control_par} + ((245 - handle_size{int} {handle_size} ) - ((sli_scrollbar{int} {sli_scrollbar}  * (245 - handle_size{int} {handle_size} )) / 1000000))){Builtin, None, set_control_par}
 		end if
-		Boolean0{int} {Boolean0}  := Boolean2{int} {Boolean2} 
+		Boolean0{int} {Boolean0}  := Boolean3{int} {Boolean3} 
 		btn_vibratoSettings{int} {btn_vibratoSettings}  := Boolean0{int} {Boolean0} 
 		set_control_par(get_ui_id(UI_vibrato{int} {UI_vibrato} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean0{int} {Boolean0} ]{int} {hide_state} ){Builtin, None, set_control_par}
 		btn_home{int} {btn_home}  := 1
-		Boolean4{int} {Boolean4}  := btn_home{int} {btn_home} 
-		btn_home{int} {btn_home}  := Boolean4{int} {Boolean4} 
-		set_control_par(get_ui_id(UI_home{int} {UI_home} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean4{int} {Boolean4} ]{int} {hide_state} ){Builtin, None, set_control_par}
-		set_control_par(get_ui_id(UI_reverb{int} {UI_reverb} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean4{int} {Boolean4} ]{int} {hide_state} ){Builtin, None, set_control_par}
+		Boolean5{int} {Boolean5}  := btn_home{int} {btn_home} 
+		btn_home{int} {btn_home}  := Boolean5{int} {Boolean5} 
+		set_control_par(get_ui_id(UI_home{int} {UI_home} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean5{int} {Boolean5} ]{int} {hide_state} ){Builtin, None, set_control_par}
+		set_control_par(get_ui_id(UI_reverb{int} {UI_reverb} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean5{int} {Boolean5} ]{int} {hide_state} ){Builtin, None, set_control_par}
 		set_control_par(get_ui_id(UI_eq{int} {UI_eq} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , HIDE_WHOLE_CONTROL{int} {HIDE_WHOLE_CONTROL} ){Builtin, None, set_control_par}
 	end if
 	set_control_par(get_ui_id(btn_home{int} {btn_home} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[- sh_right(abs(development[0]{int} {development}  - 22714){Builtin, None, abs} - 1, 31){Builtin, None, sh_right}]{int} {hide_state} ){Builtin, None, set_control_par}
@@ -3041,7 +3041,7 @@ on init
 end on
 
 on ui_control(btn_legatoSettings{int} {btn_legatoSettings} )
-	Boolean2{int} {Boolean2}  := 0
+	Boolean3{int} {Boolean3}  := 0
 	call all_windows.show{UserDefined, Call, all_windows.show}
 	btn_legatoSettings{int} {btn_legatoSettings}  := 1
 	result12{int} {result12}  := btn_legatoSettings{int} {btn_legatoSettings} 
@@ -3072,13 +3072,13 @@ end on
 on ui_control(btn_analyze{int} {btn_analyze} ){thread-unsafe}
 	atk_sus_group{int} {atk_sus_group}  := (title_groups{int} {title_groups}  + NUM_ATK_GROUPS{int} {NUM_ATK_GROUPS} ) + title_groups{int} {title_groups} 
 	message("atk_sus_group: " & atk_sus_group{int} {atk_sus_group} ){Builtin, None, message}
-	doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2}  := atk_sus_group{int} {atk_sus_group} 
+	doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1}  := atk_sus_group{int} {atk_sus_group} 
 	keys{int} {keys}  := 0
 	while(keys{int} {keys}  <= 127) 
 		blip_note{int} {blip_note}  := play_note(keys{int} {keys} , 1, 0, 1){Builtin, None, play_note}
 		set_event_par_arr(blip_note{int} {blip_note} , EVENT_PAR_ALLOW_GROUP{int} {EVENT_PAR_ALLOW_GROUP} , 0, ALL_GROUPS{int} {ALL_GROUPS} ){Builtin, None, set_event_par_arr}
 		change_vol(blip_note{int} {blip_note} , -2000000, 0){Builtin, None, change_vol}
-		set_event_par_arr(blip_note{int} {blip_note} , EVENT_PAR_ALLOW_GROUP{int} {EVENT_PAR_ALLOW_GROUP} , 1, doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2} ){Builtin, None, set_event_par_arr}
+		set_event_par_arr(blip_note{int} {blip_note} , EVENT_PAR_ALLOW_GROUP{int} {EVENT_PAR_ALLOW_GROUP} , 1, doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1} ){Builtin, None, set_event_par_arr}
 		wait(1){Builtin, None, wait}
 		zone_id{int} {zone_id}  := get_event_par(blip_note{int} {blip_note} , EVENT_PAR_ZONE_ID{int} {EVENT_PAR_ZONE_ID} ){Builtin, None, get_event_par}
 		if((zone_id{int} {zone_id}  # -1) and (zone_id{int} {zone_id}  # 0))
@@ -3093,7 +3093,7 @@ on ui_control(btn_analyze{int} {btn_analyze} ){thread-unsafe}
 		blip_note{int} {blip_note}  := play_note(127 - keys{int} {keys} , 1, 0, -1){Builtin, None, play_note}
 		set_event_par_arr(blip_note{int} {blip_note} , EVENT_PAR_ALLOW_GROUP{int} {EVENT_PAR_ALLOW_GROUP} , 0, ALL_GROUPS{int} {ALL_GROUPS} ){Builtin, None, set_event_par_arr}
 		change_vol(blip_note{int} {blip_note} , -2000000, 0){Builtin, None, change_vol}
-		set_event_par_arr(blip_note{int} {blip_note} , EVENT_PAR_ALLOW_GROUP{int} {EVENT_PAR_ALLOW_GROUP} , 1, doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2} ){Builtin, None, set_event_par_arr}
+		set_event_par_arr(blip_note{int} {blip_note} , EVENT_PAR_ALLOW_GROUP{int} {EVENT_PAR_ALLOW_GROUP} , 1, doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1} ){Builtin, None, set_event_par_arr}
 		wait(1){Builtin, None, wait}
 		zone_id{int} {zone_id}  := get_event_par(blip_note{int} {blip_note} , EVENT_PAR_ZONE_ID{int} {EVENT_PAR_ZONE_ID} ){Builtin, None, get_event_par}
 		if((zone_id{int} {zone_id}  # -1) and (zone_id{int} {zone_id}  # 0))
@@ -3124,7 +3124,7 @@ on ui_control(btn_analyze{int} {btn_analyze} ){thread-unsafe}
 	set_control_par_str(get_ui_id(txt_loadedData{string} {txt_loadedData} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes} ){Builtin, None, set_control_par_str}
 	iii{int} {iii}  := 0
 	while(iii{int} {iii}  <= (NUM_DYNAMIC_LAYER{int} {NUM_DYNAMIC_LAYER}  - 1)) 
-		doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2}  := atk_sus_group{int} {atk_sus_group} 
+		doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1}  := atk_sus_group{int} {atk_sus_group} 
 		sustain_fx0[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {sustain_fx0}  := iii{int} {iii} 
 		call get_sus_zone_ids0{UserDefined, Call, get_sus_zone_ids0}
 		set_control_par_str(lbl_sus_filename[iii{int} {iii} ]{int} {lbl_sus_filename} , CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , get_sample(sus_zone_ids[iii{int} {iii} ]{int} {sus_zone_ids} , NI_FILE_NAME{int} {NI_FILE_NAME} ){Builtin, None, get_sample}){Builtin, None, set_control_par_str}
@@ -3395,7 +3395,7 @@ on ui_control(btn_completed{int} {btn_completed} )
 end on
 
 on ui_control(btn_legatoList{int} {btn_legatoList} )
-	Boolean2{int} {Boolean2}  := 0
+	Boolean3{int} {Boolean3}  := 0
 	call all_windows.show{UserDefined, Call, all_windows.show}
 	btn_legatoList{int} {btn_legatoList}  := 1
 	min1{int} {min1}  := btn_legatoList{int} {btn_legatoList} 
@@ -3404,7 +3404,7 @@ end on
 
 on ui_control(btn_filename{int} {btn_filename} )
 	btn_filename{int} {btn_filename}  := 0
-	Boolean2{int} {Boolean2}  := 0
+	Boolean3{int} {Boolean3}  := 0
 	call all_windows.show{UserDefined, Call, all_windows.show}
 	btn_legatoList{int} {btn_legatoList}  := 1
 	min1{int} {min1}  := btn_legatoList{int} {btn_legatoList} 
@@ -3412,7 +3412,7 @@ on ui_control(btn_filename{int} {btn_filename} )
 end on
 
 on ui_control(btn_listBrowserDC{int} {btn_listBrowserDC} )
-	Boolean2{int} {Boolean2}  := 0
+	Boolean3{int} {Boolean3}  := 0
 	call all_windows.show{UserDefined, Call, all_windows.show}
 	btn_legatoSettings{int} {btn_legatoSettings}  := 1
 	result12{int} {result12}  := btn_legatoSettings{int} {btn_legatoSettings} 
@@ -3421,7 +3421,7 @@ end on
 
 on ui_control(btn_closeBrowser{int} {btn_closeBrowser} )
 	btn_closeBrowser{int} {btn_closeBrowser}  := 0
-	Boolean2{int} {Boolean2}  := 0
+	Boolean3{int} {Boolean3}  := 0
 	call all_windows.show{UserDefined, Call, all_windows.show}
 	btn_legatoSettings{int} {btn_legatoSettings}  := 1
 	result12{int} {result12}  := btn_legatoSettings{int} {btn_legatoSettings} 
@@ -3430,7 +3430,7 @@ end on
 
 on ui_control(btn_listBrowserBG{int} {btn_listBrowserBG} )
 	btn_listBrowserBG{int} {btn_listBrowserBG}  := 0
-	Boolean2{int} {Boolean2}  := 0
+	Boolean3{int} {Boolean3}  := 0
 	call all_windows.show{UserDefined, Call, all_windows.show}
 	btn_legatoSettings{int} {btn_legatoSettings}  := 1
 	result12{int} {result12}  := btn_legatoSettings{int} {btn_legatoSettings} 
@@ -4524,7 +4524,7 @@ on ui_control(btn_element_button0{int} {btn_element_button0} ){thread-unsafe}
 	async_ids[10]{int} {async_ids}  := save_array_str(trans_fadeIn_time{int[]} {trans_fadeIn_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeIn_time.nka"){Builtin, None, save_array_str}
 	async_ids[11]{int} {async_ids}  := save_array_str(trans_fadeOut_time{int[]} {trans_fadeOut_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeOut_time.nka"){Builtin, None, save_array_str}
 	async_ids[12]{int} {async_ids}  := save_array_str(completed_elements{int[]} {completed_elements} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "completed_elements.nka"){Builtin, None, save_array_str}
-	doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
+	doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
 	call doubleclick_check{UserDefined, Call, doubleclick_check}
 end on
 
@@ -4588,7 +4588,7 @@ on ui_control(btn_element_button1{int} {btn_element_button1} ){thread-unsafe}
 	async_ids[10]{int} {async_ids}  := save_array_str(trans_fadeIn_time{int[]} {trans_fadeIn_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeIn_time.nka"){Builtin, None, save_array_str}
 	async_ids[11]{int} {async_ids}  := save_array_str(trans_fadeOut_time{int[]} {trans_fadeOut_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeOut_time.nka"){Builtin, None, save_array_str}
 	async_ids[12]{int} {async_ids}  := save_array_str(completed_elements{int[]} {completed_elements} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "completed_elements.nka"){Builtin, None, save_array_str}
-	doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
+	doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
 	call doubleclick_check{UserDefined, Call, doubleclick_check}
 end on
 
@@ -4652,7 +4652,7 @@ on ui_control(btn_element_button2{int} {btn_element_button2} ){thread-unsafe}
 	async_ids[10]{int} {async_ids}  := save_array_str(trans_fadeIn_time{int[]} {trans_fadeIn_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeIn_time.nka"){Builtin, None, save_array_str}
 	async_ids[11]{int} {async_ids}  := save_array_str(trans_fadeOut_time{int[]} {trans_fadeOut_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeOut_time.nka"){Builtin, None, save_array_str}
 	async_ids[12]{int} {async_ids}  := save_array_str(completed_elements{int[]} {completed_elements} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "completed_elements.nka"){Builtin, None, save_array_str}
-	doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
+	doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
 	call doubleclick_check{UserDefined, Call, doubleclick_check}
 end on
 
@@ -4716,7 +4716,7 @@ on ui_control(btn_element_button3{int} {btn_element_button3} ){thread-unsafe}
 	async_ids[10]{int} {async_ids}  := save_array_str(trans_fadeIn_time{int[]} {trans_fadeIn_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeIn_time.nka"){Builtin, None, save_array_str}
 	async_ids[11]{int} {async_ids}  := save_array_str(trans_fadeOut_time{int[]} {trans_fadeOut_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeOut_time.nka"){Builtin, None, save_array_str}
 	async_ids[12]{int} {async_ids}  := save_array_str(completed_elements{int[]} {completed_elements} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "completed_elements.nka"){Builtin, None, save_array_str}
-	doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
+	doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
 	call doubleclick_check{UserDefined, Call, doubleclick_check}
 end on
 
@@ -4780,7 +4780,7 @@ on ui_control(btn_element_button4{int} {btn_element_button4} ){thread-unsafe}
 	async_ids[10]{int} {async_ids}  := save_array_str(trans_fadeIn_time{int[]} {trans_fadeIn_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeIn_time.nka"){Builtin, None, save_array_str}
 	async_ids[11]{int} {async_ids}  := save_array_str(trans_fadeOut_time{int[]} {trans_fadeOut_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeOut_time.nka"){Builtin, None, save_array_str}
 	async_ids[12]{int} {async_ids}  := save_array_str(completed_elements{int[]} {completed_elements} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "completed_elements.nka"){Builtin, None, save_array_str}
-	doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
+	doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
 	call doubleclick_check{UserDefined, Call, doubleclick_check}
 end on
 
@@ -4844,7 +4844,7 @@ on ui_control(btn_element_button5{int} {btn_element_button5} ){thread-unsafe}
 	async_ids[10]{int} {async_ids}  := save_array_str(trans_fadeIn_time{int[]} {trans_fadeIn_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeIn_time.nka"){Builtin, None, save_array_str}
 	async_ids[11]{int} {async_ids}  := save_array_str(trans_fadeOut_time{int[]} {trans_fadeOut_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeOut_time.nka"){Builtin, None, save_array_str}
 	async_ids[12]{int} {async_ids}  := save_array_str(completed_elements{int[]} {completed_elements} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "completed_elements.nka"){Builtin, None, save_array_str}
-	doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
+	doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
 	call doubleclick_check{UserDefined, Call, doubleclick_check}
 end on
 
@@ -4908,7 +4908,7 @@ on ui_control(btn_element_button6{int} {btn_element_button6} ){thread-unsafe}
 	async_ids[10]{int} {async_ids}  := save_array_str(trans_fadeIn_time{int[]} {trans_fadeIn_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeIn_time.nka"){Builtin, None, save_array_str}
 	async_ids[11]{int} {async_ids}  := save_array_str(trans_fadeOut_time{int[]} {trans_fadeOut_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeOut_time.nka"){Builtin, None, save_array_str}
 	async_ids[12]{int} {async_ids}  := save_array_str(completed_elements{int[]} {completed_elements} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "completed_elements.nka"){Builtin, None, save_array_str}
-	doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
+	doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
 	call doubleclick_check{UserDefined, Call, doubleclick_check}
 end on
 
@@ -4972,7 +4972,7 @@ on ui_control(btn_element_button7{int} {btn_element_button7} ){thread-unsafe}
 	async_ids[10]{int} {async_ids}  := save_array_str(trans_fadeIn_time{int[]} {trans_fadeIn_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeIn_time.nka"){Builtin, None, save_array_str}
 	async_ids[11]{int} {async_ids}  := save_array_str(trans_fadeOut_time{int[]} {trans_fadeOut_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeOut_time.nka"){Builtin, None, save_array_str}
 	async_ids[12]{int} {async_ids}  := save_array_str(completed_elements{int[]} {completed_elements} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "completed_elements.nka"){Builtin, None, save_array_str}
-	doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
+	doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
 	call doubleclick_check{UserDefined, Call, doubleclick_check}
 end on
 
@@ -5036,7 +5036,7 @@ on ui_control(btn_element_button8{int} {btn_element_button8} ){thread-unsafe}
 	async_ids[10]{int} {async_ids}  := save_array_str(trans_fadeIn_time{int[]} {trans_fadeIn_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeIn_time.nka"){Builtin, None, save_array_str}
 	async_ids[11]{int} {async_ids}  := save_array_str(trans_fadeOut_time{int[]} {trans_fadeOut_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeOut_time.nka"){Builtin, None, save_array_str}
 	async_ids[12]{int} {async_ids}  := save_array_str(completed_elements{int[]} {completed_elements} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "completed_elements.nka"){Builtin, None, save_array_str}
-	doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
+	doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
 	call doubleclick_check{UserDefined, Call, doubleclick_check}
 end on
 
@@ -5100,7 +5100,7 @@ on ui_control(btn_element_button9{int} {btn_element_button9} ){thread-unsafe}
 	async_ids[10]{int} {async_ids}  := save_array_str(trans_fadeIn_time{int[]} {trans_fadeIn_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeIn_time.nka"){Builtin, None, save_array_str}
 	async_ids[11]{int} {async_ids}  := save_array_str(trans_fadeOut_time{int[]} {trans_fadeOut_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeOut_time.nka"){Builtin, None, save_array_str}
 	async_ids[12]{int} {async_ids}  := save_array_str(completed_elements{int[]} {completed_elements} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "completed_elements.nka"){Builtin, None, save_array_str}
-	doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
+	doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
 	call doubleclick_check{UserDefined, Call, doubleclick_check}
 end on
 
@@ -5164,7 +5164,7 @@ on ui_control(btn_element_button10{int} {btn_element_button10} ){thread-unsafe}
 	async_ids[10]{int} {async_ids}  := save_array_str(trans_fadeIn_time{int[]} {trans_fadeIn_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeIn_time.nka"){Builtin, None, save_array_str}
 	async_ids[11]{int} {async_ids}  := save_array_str(trans_fadeOut_time{int[]} {trans_fadeOut_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeOut_time.nka"){Builtin, None, save_array_str}
 	async_ids[12]{int} {async_ids}  := save_array_str(completed_elements{int[]} {completed_elements} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "completed_elements.nka"){Builtin, None, save_array_str}
-	doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
+	doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
 	call doubleclick_check{UserDefined, Call, doubleclick_check}
 end on
 
@@ -5228,7 +5228,7 @@ on ui_control(btn_element_button11{int} {btn_element_button11} ){thread-unsafe}
 	async_ids[10]{int} {async_ids}  := save_array_str(trans_fadeIn_time{int[]} {trans_fadeIn_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeIn_time.nka"){Builtin, None, save_array_str}
 	async_ids[11]{int} {async_ids}  := save_array_str(trans_fadeOut_time{int[]} {trans_fadeOut_time} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "trans_fadeOut_time.nka"){Builtin, None, save_array_str}
 	async_ids[12]{int} {async_ids}  := save_array_str(completed_elements{int[]} {completed_elements} , legato_path{string} {legato_path}  & legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes}  & "completed_elements.nka"){Builtin, None, save_array_str}
-	doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
+	doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1}  := btn_listBrowserDC{int} {btn_listBrowserDC} 
 	call doubleclick_check{UserDefined, Call, doubleclick_check}
 end on
 
@@ -5479,7 +5479,7 @@ on async_complete
 end on
 
 on ui_control(btn_vibratoSettings{int} {btn_vibratoSettings} )
-	Boolean2{int} {Boolean2}  := 0
+	Boolean3{int} {Boolean3}  := 0
 	call all_windows.show{UserDefined, Call, all_windows.show}
 	btn_vibratoSettings{int} {btn_vibratoSettings}  := 1
 	Boolean0{int} {Boolean0}  := btn_vibratoSettings{int} {btn_vibratoSettings} 
@@ -6298,10 +6298,10 @@ on ui_control(sli_eqGain{int} {sli_eqGain} ){thread-unsafe}
 end on
 
 on ui_control(btn_home{int} {btn_home} )
-	Boolean2{int} {Boolean2}  := 0
+	Boolean3{int} {Boolean3}  := 0
 	call all_windows.show{UserDefined, Call, all_windows.show}
 	btn_home{int} {btn_home}  := 1
-	Boolean4{int} {Boolean4}  := btn_home{int} {btn_home} 
+	Boolean5{int} {Boolean5}  := btn_home{int} {btn_home} 
 	call home.show{UserDefined, Call, home.show}
 end on
 
@@ -6378,14 +6378,14 @@ end on
 
 on ui_control(btn_settings{int} {btn_settings} )
 	if(btn_settings{int} {btn_settings}  = 1)
-		Boolean2{int} {Boolean2}  := 0
-		call all_windows.show{UserDefined, Call, all_windows.show}
-		Boolean3{int} {Boolean3}  := 1
-		call settings.show{UserDefined, Call, settings.show}
-	else
-		Boolean2{int} {Boolean2}  := 0
+		Boolean3{int} {Boolean3}  := 0
 		call all_windows.show{UserDefined, Call, all_windows.show}
 		Boolean4{int} {Boolean4}  := 1
+		call settings.show{UserDefined, Call, settings.show}
+	else
+		Boolean3{int} {Boolean3}  := 0
+		call all_windows.show{UserDefined, Call, all_windows.show}
+		Boolean5{int} {Boolean5}  := 1
 		call home.show{UserDefined, Call, home.show}
 	end if
 end on
@@ -6412,7 +6412,7 @@ on persistence_changed{thread-unsafe}
 		set_control_par_str(get_ui_id(lbl_loadedData{int} {lbl_loadedData} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes} ){Builtin, None, set_control_par_str}
 		set_control_par_str(get_ui_id(txt_loadedData{string} {txt_loadedData} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , legato_prefixes[prefix_idx{int} {prefix_idx} ]{string} {legato_prefixes} ){Builtin, None, set_control_par_str}
 		if(- sh_right(abs(development[0]{int} {development}  - 22714){Builtin, None, abs} - 1, 31){Builtin, None, sh_right} = 1)
-			Boolean2{int} {Boolean2}  := 0
+			Boolean3{int} {Boolean3}  := 0
 			call all_windows.show{UserDefined, Call, all_windows.show}
 			btn_legatoSettings{int} {btn_legatoSettings}  := 1
 			result12{int} {result12}  := btn_legatoSettings{int} {btn_legatoSettings} 
@@ -6483,14 +6483,14 @@ on note{thread-unsafe}
 		if(- sh_right(abs(development[0]{int} {development}  - 22714){Builtin, None, abs} - 1, 31){Builtin, None, sh_right} = 1)
 			iii{int} {iii}  := 0
 			while(iii{int} {iii}  <= (NUM_DYNAMIC_LAYER{int} {NUM_DYNAMIC_LAYER}  - 1)) 
-				doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2}  := atk_sus_group{int} {atk_sus_group} 
+				doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1}  := atk_sus_group{int} {atk_sus_group} 
 				sustain_fx0[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {sustain_fx0}  := iii{int} {iii} 
 				call get_sus_zone_ids0{UserDefined, Call, get_sus_zone_ids0}
 				set_control_par_str(lbl_sus_filename[iii{int} {iii} ]{int} {lbl_sus_filename} , CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , get_sample(sus_zone_ids[iii{int} {iii} ]{int} {sus_zone_ids} , NI_FILE_NAME{int} {NI_FILE_NAME} ){Builtin, None, get_sample}){Builtin, None, set_control_par_str}
 				inc(iii{int} {iii} ){Builtin, None, inc}
 			end while
 		end if
-		doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2}  := EVENT_NOTE{int} {EVENT_NOTE} 
+		doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1}  := EVENT_NOTE{int} {EVENT_NOTE} 
 		start_group1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {start_group1}  := title_groups{int} {title_groups} 
 		num_dynamic_layers1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {num_dynamic_layers1}  := NUM_DYNAMIC_LAYER{int} {NUM_DYNAMIC_LAYER} 
 		num_rr1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {num_rr1}  := NUM_ATK_GROUPS{int} {NUM_ATK_GROUPS} 
@@ -6510,15 +6510,15 @@ on note{thread-unsafe}
 			inc(i{int} {i} ){Builtin, None, inc}
 		end while
 		interval{int} {interval}  := EVENT_NOTE{int} {EVENT_NOTE}  - last_note{int} {last_note} 
-		if(((num_notes{int} {num_notes}  > 1) and (doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2}  # last_note{int} {last_note} )) and (is_attack{int} {is_attack}  # -1))
+		if(((num_notes{int} {num_notes}  > 1) and (doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1}  # last_note{int} {last_note} )) and (is_attack{int} {is_attack}  # -1))
 			is_attack{int} {is_attack}  := 0
 			if(abs(interval{int} {interval} ){Builtin, None, abs} <= 12)
 				if(- sh_right(abs(development[0]{int} {development}  - 22714){Builtin, None, abs} - 1, 31){Builtin, None, sh_right} = 1)
-					Boolean2{int} {Boolean2}  := doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2} 
-					Boolean3{int} {Boolean3}  := doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2}  - interval{int} {interval} 
+					Boolean3{int} {Boolean3}  := doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1} 
+					Boolean4{int} {Boolean4}  := doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1}  - interval{int} {interval} 
 					call update.interval_keycolor{UserDefined, Call, update.interval_keycolor}
 				end if
-				blip_note{int} {blip_note}  := play_note((doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2}  * abs(sh_right(abs(sh_right(interval{int} {interval} , 31){Builtin, None, sh_right} + 1){Builtin, None, abs} - 1, 31){Builtin, None, sh_right}){Builtin, None, abs}) + (last_note{int} {last_note}  * (sh_right(interval{int} {interval} , 31){Builtin, None, sh_right} + 1)), (abs(interval{int} {interval} ){Builtin, None, abs} * 5) + ((sh_right(interval{int} {interval} , 31){Builtin, None, sh_right} + 1) * 60), 0, -1){Builtin, None, play_note}
+				blip_note{int} {blip_note}  := play_note((doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1}  * abs(sh_right(abs(sh_right(interval{int} {interval} , 31){Builtin, None, sh_right} + 1){Builtin, None, abs} - 1, 31){Builtin, None, sh_right}){Builtin, None, abs}) + (last_note{int} {last_note}  * (sh_right(interval{int} {interval} , 31){Builtin, None, sh_right} + 1)), (abs(interval{int} {interval} ){Builtin, None, abs} * 5) + ((sh_right(interval{int} {interval} , 31){Builtin, None, sh_right} + 1) * 60), 0, -1){Builtin, None, play_note}
 				change_vol(blip_note{int} {blip_note} , -200000, 0){Builtin, None, change_vol}
 				set_event_par_arr(blip_note{int} {blip_note} , EVENT_PAR_ALLOW_GROUP{int} {EVENT_PAR_ALLOW_GROUP} , 0, ALL_GROUPS{int} {ALL_GROUPS} ){Builtin, None, set_event_par_arr}
 				Boolean7{int} {Boolean7}  := EVENT_VELOCITY{int} {EVENT_VELOCITY} 
@@ -6534,7 +6534,7 @@ on note{thread-unsafe}
 				fade_out(attack_id{int} {attack_id} , 200000, 1){Builtin, None, fade_out}
 				fade_out(last_transition{int} {last_transition} , 200000, 1){Builtin, None, fade_out}
 				fade_out(blip_note{int} {blip_note} , 0, 1){Builtin, None, fade_out}
-				transition_id{int} {transition_id}  := play_note((doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2}  * abs(sh_right(abs(sh_right(interval{int} {interval} , 31){Builtin, None, sh_right} + 1){Builtin, None, abs} - 1, 31){Builtin, None, sh_right}){Builtin, None, abs}) + (last_note{int} {last_note}  * (sh_right(interval{int} {interval} , 31){Builtin, None, sh_right} + 1)), (abs(interval{int} {interval} ){Builtin, None, abs} * 5) + ((sh_right(interval{int} {interval} , 31){Builtin, None, sh_right} + 1) * 60), real_to_int((int_to_real(trans_zone_start[trans_idx{int} {trans_idx} ]{int} {trans_zone_start} ){Builtin, None, int_to_real} / 48000) * 1e+06){Builtin, None, real_to_int}, 0){Builtin, None, play_note}
+				transition_id{int} {transition_id}  := play_note((doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1}  * abs(sh_right(abs(sh_right(interval{int} {interval} , 31){Builtin, None, sh_right} + 1){Builtin, None, abs} - 1, 31){Builtin, None, sh_right}){Builtin, None, abs}) + (last_note{int} {last_note}  * (sh_right(interval{int} {interval} , 31){Builtin, None, sh_right} + 1)), (abs(interval{int} {interval} ){Builtin, None, abs} * 5) + ((sh_right(interval{int} {interval} , 31){Builtin, None, sh_right} + 1) * 60), real_to_int((int_to_real(trans_zone_start[trans_idx{int} {trans_idx} ]{int} {trans_zone_start} ){Builtin, None, int_to_real} / 48000) * 1e+06){Builtin, None, real_to_int}, 0){Builtin, None, play_note}
 				Boolean7{int} {Boolean7}  := EVENT_VELOCITY{int} {EVENT_VELOCITY} 
 				Boolean1{int} {Boolean1}  := transition_id{int} {transition_id} 
 				call update.mnu_rr0{UserDefined, Call, update.mnu_rr0}
@@ -6563,9 +6563,9 @@ on note{thread-unsafe}
 					end if
 				end if
 				if(btn_sus{int} {btn_sus}  = 1)
-					event_id{int} {event_id}  := play_note(doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2} , EVENT_VELOCITY{int} {EVENT_VELOCITY} , sus_s_start{int} {sus_s_start} , -1){Builtin, None, play_note}
+					event_id{int} {event_id}  := play_note(doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1} , EVENT_VELOCITY{int} {EVENT_VELOCITY} , sus_s_start{int} {sus_s_start} , -1){Builtin, None, play_note}
 					set_event_mark(event_id{int} {event_id} , MARK_1{int} {MARK_1} ){Builtin, None, set_event_mark}
-					sus_rr[doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2} ]{int} {sus_rr}  := (sus_rr[doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2} ]{int} {sus_rr}  + 1) mod 3
+					sus_rr[doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1} ]{int} {sus_rr}  := (sus_rr[doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1} ]{int} {sus_rr}  + 1) mod 3
 					set_event_par_arr(event_id{int} {event_id} , EVENT_PAR_MOD_VALUE_ID{int} {EVENT_PAR_MOD_VALUE_ID} , trans_wait_time[trans_idx{int} {trans_idx} ]{int} {trans_wait_time} , 0){Builtin, None, set_event_par_arr}
 					set_event_par_arr(event_id{int} {event_id} , EVENT_PAR_MOD_VALUE_ID{int} {EVENT_PAR_MOD_VALUE_ID} , sus_fadeIn_time[trans_idx{int} {trans_idx} ]{int} {sus_fadeIn_time} , 2){Builtin, None, set_event_par_arr}
 					if(- sh_right(abs(development[0]{int} {development}  - 22714){Builtin, None, abs} - 1, 31){Builtin, None, sh_right} = 1)
@@ -6585,7 +6585,7 @@ on note{thread-unsafe}
 				end while
 			else
 				fade_out(event_id{int} {event_id} , 152000, 1){Builtin, None, fade_out}
-				event_id{int} {event_id}  := play_note(doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2} , EVENT_VELOCITY{int} {EVENT_VELOCITY} , sus_s_start{int} {sus_s_start} , -1){Builtin, None, play_note}
+				event_id{int} {event_id}  := play_note(doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1} , EVENT_VELOCITY{int} {EVENT_VELOCITY} , sus_s_start{int} {sus_s_start} , -1){Builtin, None, play_note}
 				set_event_par_arr(event_id{int} {event_id} , EVENT_PAR_MOD_VALUE_ID{int} {EVENT_PAR_MOD_VALUE_ID} , 150000, 0){Builtin, None, set_event_par_arr}
 				set_event_par_arr(event_id{int} {event_id} , EVENT_PAR_MOD_VALUE_ID{int} {EVENT_PAR_MOD_VALUE_ID} , 780000, 2){Builtin, None, set_event_par_arr}
 				set_event_par_arr(event_id{int} {event_id} , EVENT_PAR_ALLOW_GROUP{int} {EVENT_PAR_ALLOW_GROUP} , 0, ALL_GROUPS{int} {ALL_GROUPS} ){Builtin, None, set_event_par_arr}
@@ -6610,9 +6610,9 @@ on note{thread-unsafe}
 					is_attack{int} {is_attack}  := 0
 				end if
 				set_event_par_arr(ALL_EVENTS{int} {ALL_EVENTS} , EVENT_PAR_ALLOW_GROUP{int} {EVENT_PAR_ALLOW_GROUP} , 0, ALL_GROUPS{int} {ALL_GROUPS} ){Builtin, None, set_event_par_arr}
-				event_id{int} {event_id}  := play_note(doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2} , EVENT_VELOCITY{int} {EVENT_VELOCITY} , sus_s_start{int} {sus_s_start} , -1){Builtin, None, play_note}
+				event_id{int} {event_id}  := play_note(doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1} , EVENT_VELOCITY{int} {EVENT_VELOCITY} , sus_s_start{int} {sus_s_start} , -1){Builtin, None, play_note}
 				set_event_mark(event_id{int} {event_id} , MARK_1{int} {MARK_1} ){Builtin, None, set_event_mark}
-				attack_id{int} {attack_id}  := play_note(doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2} , CC[103]{int} {CC} , 0, 0){Builtin, None, play_note}
+				attack_id{int} {attack_id}  := play_note(doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1} , CC[103]{int} {CC} , 0, 0){Builtin, None, play_note}
 				if(btn_sus{int} {btn_sus}  = 1)
 					set_event_par_arr(event_id{int} {event_id} , EVENT_PAR_ALLOW_GROUP{int} {EVENT_PAR_ALLOW_GROUP} , 0, ALL_GROUPS{int} {ALL_GROUPS} ){Builtin, None, set_event_par_arr}
 					iii{int} {iii}  := 0
@@ -6626,8 +6626,8 @@ on note{thread-unsafe}
 						inc(iii{int} {iii} ){Builtin, None, inc}
 					end while
 					if(- sh_right(NUM_ATK_GROUPS{int} {NUM_ATK_GROUPS}  .xor. - NUM_ATK_GROUPS{int} {NUM_ATK_GROUPS} , 31){Builtin, None, sh_right} = 1)
-						set_event_par_arr(attack_id{int} {attack_id} , EVENT_PAR_ALLOW_GROUP{int} {EVENT_PAR_ALLOW_GROUP} , 1, atk_group{int} {atk_group}  + rr_count[doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2} ]{int} {rr_count} ){Builtin, None, set_event_par_arr}
-						rr_count[doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2} ]{int} {rr_count}  := (rr_count[doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2} ]{int} {rr_count}  + 1) mod NUM_ATK_GROUPS{int} {NUM_ATK_GROUPS} 
+						set_event_par_arr(attack_id{int} {attack_id} , EVENT_PAR_ALLOW_GROUP{int} {EVENT_PAR_ALLOW_GROUP} , 1, atk_group{int} {atk_group}  + rr_count[doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1} ]{int} {rr_count} ){Builtin, None, set_event_par_arr}
+						rr_count[doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1} ]{int} {rr_count}  := (rr_count[doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1} ]{int} {rr_count}  + 1) mod NUM_ATK_GROUPS{int} {NUM_ATK_GROUPS} 
 					end if
 				end if
 			else
@@ -7041,15 +7041,15 @@ on ui_control(btn_export_marked{int} {btn_export_marked} ){thread-unsafe}
 end on
 
 function all_windows.show
-	Boolean4{int} {Boolean4}  := Boolean2{int} {Boolean2} 
-	btn_home{int} {btn_home}  := Boolean4{int} {Boolean4} 
-	set_control_par(get_ui_id(UI_home{int} {UI_home} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean4{int} {Boolean4} ]{int} {hide_state} ){Builtin, None, set_control_par}
-	set_control_par(get_ui_id(UI_reverb{int} {UI_reverb} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean4{int} {Boolean4} ]{int} {hide_state} ){Builtin, None, set_control_par}
+	Boolean5{int} {Boolean5}  := Boolean3{int} {Boolean3} 
+	btn_home{int} {btn_home}  := Boolean5{int} {Boolean5} 
+	set_control_par(get_ui_id(UI_home{int} {UI_home} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean5{int} {Boolean5} ]{int} {hide_state} ){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(UI_reverb{int} {UI_reverb} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean5{int} {Boolean5} ]{int} {hide_state} ){Builtin, None, set_control_par}
 	set_control_par(get_ui_id(UI_eq{int} {UI_eq} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , HIDE_WHOLE_CONTROL{int} {HIDE_WHOLE_CONTROL} ){Builtin, None, set_control_par}
-	Boolean3{int} {Boolean3}  := Boolean2{int} {Boolean2} 
-	btn_settings{int} {btn_settings}  := Boolean3{int} {Boolean3} 
-	set_control_par(get_ui_id(UI_settings{int} {UI_settings} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean3{int} {Boolean3} ]{int} {hide_state} ){Builtin, None, set_control_par}
-	result12{int} {result12}  := Boolean2{int} {Boolean2} 
+	Boolean4{int} {Boolean4}  := Boolean3{int} {Boolean3} 
+	btn_settings{int} {btn_settings}  := Boolean4{int} {Boolean4} 
+	set_control_par(get_ui_id(UI_settings{int} {UI_settings} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean4{int} {Boolean4} ]{int} {hide_state} ){Builtin, None, set_control_par}
+	result12{int} {result12}  := Boolean3{int} {Boolean3} 
 	btn_legatoSettings{int} {btn_legatoSettings}  := result12{int} {result12} 
 	set_control_par(get_ui_id(UI_dataSettings{int} {UI_dataSettings} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[btn_legatoSettings{int} {btn_legatoSettings} ]{int} {hide_state} ){Builtin, None, set_control_par}
 	set_control_par(get_ui_id(UI_waveform{int} {UI_waveform} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[btn_legatoSettings{int} {btn_legatoSettings} ]{int} {hide_state} ){Builtin, None, set_control_par}
@@ -7071,7 +7071,7 @@ function all_windows.show
 	set_text(lbl_fadeOutTrans{int} {lbl_fadeOutTrans} , "Fade Out"){Builtin, None, set_text}
 	set_control_par(get_ui_id(btn_reset{int} {btn_reset} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[btn_legatoSettings{int} {btn_legatoSettings} ]{int} {hide_state} ){Builtin, None, set_control_par}
 	set_control_par(get_ui_id(btn_forall{int} {btn_forall} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[btn_legatoSettings{int} {btn_legatoSettings} ]{int} {hide_state} ){Builtin, None, set_control_par}
-	min1{int} {min1}  := Boolean2{int} {Boolean2} 
+	min1{int} {min1}  := Boolean3{int} {Boolean3} 
 	btn_legatoList{int} {btn_legatoList}  := min1{int} {min1} 
 	set_control_par(get_ui_id(UI_legatoList{int} {UI_legatoList} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[btn_legatoList{int} {btn_legatoList} ]{int} {hide_state} ){Builtin, None, set_control_par}
 	if(- sh_right(abs(development[0]{int} {development}  - 22714){Builtin, None, abs} - 1, 31){Builtin, None, sh_right} = 1)
@@ -7096,19 +7096,19 @@ function all_windows.show
 			end if
 			inc(min_random0{int} {min_random0} ){Builtin, None, inc}
 		end while
-		result4{int} {result4}  := 0
+		result7{int} {result7}  := 0
 		NUM_SHOWN_PRESETS_OLD{int} {NUM_SHOWN_PRESETS_OLD}  := NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS} 
 		NUM_PRESETS{int} {NUM_PRESETS}  := search(zone_ids_master{int[]} {zone_ids_master} , -1){Builtin, None, search}
 		NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS}  := NUM_PRESETS{int} {NUM_PRESETS} 
 		set_control_par_str(get_ui_id(lbl_presetcount{int} {lbl_presetcount} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS}  & "/" & NUM_PRESETS{int} {NUM_PRESETS} ){Builtin, None, set_control_par_str}
 		if(NUM_SHOWN_PRESETS_OLD{int} {NUM_SHOWN_PRESETS_OLD}  # NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS} )
-			result4{int} {result4}  := 0
-			while(result4{int} {result4}  <= (num_elements(legatoList.end_of_list{int[]} {legatoList.end_of_list} ){Builtin, None, num_elements} - 1)) 
-				legatoList.end_of_list[result4{int} {result4} ]{int} {legatoList.end_of_list}  := -1
-				if(result4{int} {result4}  < NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS} )
-					legatoList.end_of_list[result4{int} {result4} ]{int} {legatoList.end_of_list}  := 1
+			result7{int} {result7}  := 0
+			while(result7{int} {result7}  <= (num_elements(legatoList.end_of_list{int[]} {legatoList.end_of_list} ){Builtin, None, num_elements} - 1)) 
+				legatoList.end_of_list[result7{int} {result7} ]{int} {legatoList.end_of_list}  := -1
+				if(result7{int} {result7}  < NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS} )
+					legatoList.end_of_list[result7{int} {result7} ]{int} {legatoList.end_of_list}  := 1
 				end if
-				inc(result4{int} {result4} ){Builtin, None, inc}
+				inc(result7{int} {result7} ){Builtin, None, inc}
 			end while
 		end if
 		scroll.up{int} {scroll.up}  := real_to_int((((scroll.realup{real} {scroll.realup}  - 0) * (int_to_real(NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS}  - 12){Builtin, None, int_to_real} - 0)) / (int_to_real(NUM_SHOWN_PRESETS_OLD{int} {NUM_SHOWN_PRESETS_OLD}  - 12){Builtin, None, int_to_real} - 0)) + 0){Builtin, None, real_to_int}
@@ -7176,7 +7176,7 @@ function all_windows.show
 		set_control_par(get_ui_id(lbl_scrollhandle{int} {lbl_scrollhandle} ){Builtin, None, get_ui_id}, CONTROL_PAR_HEIGHT{int} {CONTROL_PAR_HEIGHT} , handle_size{int} {handle_size} ){Builtin, None, set_control_par}
 		set_control_par(get_ui_id(lbl_scrollhandle{int} {lbl_scrollhandle} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} , get_control_par(get_ui_id(sli_scrollbar{int} {sli_scrollbar} ){Builtin, None, get_ui_id}, CONTROL_PAR_POS_Y{int} {CONTROL_PAR_POS_Y} ){Builtin, None, get_control_par} + ((245 - handle_size{int} {handle_size} ) - ((sli_scrollbar{int} {sli_scrollbar}  * (245 - handle_size{int} {handle_size} )) / 1000000))){Builtin, None, set_control_par}
 	end if
-	Boolean0{int} {Boolean0}  := Boolean2{int} {Boolean2} 
+	Boolean0{int} {Boolean0}  := Boolean3{int} {Boolean3} 
 	btn_vibratoSettings{int} {btn_vibratoSettings}  := Boolean0{int} {Boolean0} 
 	set_control_par(get_ui_id(UI_vibrato{int} {UI_vibrato} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean0{int} {Boolean0} ]{int} {hide_state} ){Builtin, None, set_control_par}
 end function
@@ -7245,7 +7245,7 @@ function get_sus_zone_ids0{thread-unsafe}
 	blip_note{int} {blip_note}  := play_note(event_note{int} {event_note} , 1, 1, -1){Builtin, None, play_note}
 	change_vol(blip_note{int} {blip_note} , -200000, 0){Builtin, None, change_vol}
 	set_event_par_arr(blip_note{int} {blip_note} , EVENT_PAR_ALLOW_GROUP{int} {EVENT_PAR_ALLOW_GROUP} , 0, ALL_GROUPS{int} {ALL_GROUPS} ){Builtin, None, set_event_par_arr}
-	set_event_par_arr(blip_note{int} {blip_note} , EVENT_PAR_ALLOW_GROUP{int} {EVENT_PAR_ALLOW_GROUP} , 1, doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2}  + sustain_fx0[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {sustain_fx0} ){Builtin, None, set_event_par_arr}
+	set_event_par_arr(blip_note{int} {blip_note} , EVENT_PAR_ALLOW_GROUP{int} {EVENT_PAR_ALLOW_GROUP} , 1, doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1}  + sustain_fx0[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {sustain_fx0} ){Builtin, None, set_event_par_arr}
 	wait(1){Builtin, None, wait}
 	sus_zone_ids[sustain_fx0[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {sustain_fx0} ]{int} {sus_zone_ids}  := get_event_par(blip_note{int} {blip_note} , EVENT_PAR_ZONE_ID{int} {EVENT_PAR_ZONE_ID} ){Builtin, None, get_event_par}
 	fade_out(blip_note{int} {blip_note} , 0, 1){Builtin, None, fade_out}
@@ -7327,13 +7327,13 @@ function update.gui.legato
 	set_control_par_str(get_ui_id(btn_filename{int} {btn_filename} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , "File: " & get_sample(get_event_par(transition_id{int} {transition_id} , EVENT_PAR_ZONE_ID{int} {EVENT_PAR_ZONE_ID} ){Builtin, None, get_event_par}, NI_FILE_NAME{int} {NI_FILE_NAME} ){Builtin, None, get_sample}){Builtin, None, set_control_par_str}
 	set_control_par_str(get_ui_id(lbl_zonevolume{int} {lbl_zonevolume} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , "Vol.: " & get_zone_par(get_event_par(transition_id{int} {transition_id} , EVENT_PAR_ZONE_ID{int} {EVENT_PAR_ZONE_ID} ){Builtin, None, get_event_par}, ZONE_PAR_VOLUME{int} {ZONE_PAR_VOLUME} ){Builtin, None, get_zone_par} & " dB"){Builtin, None, set_control_par_str}
 	set_control_par_str(get_ui_id(lbl_zonepan{int} {lbl_zonepan} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , "Pan: " & get_zone_par(get_event_par(transition_id{int} {transition_id} , EVENT_PAR_ZONE_ID{int} {EVENT_PAR_ZONE_ID} ){Builtin, None, get_event_par}, ZONE_PAR_PAN{int} {ZONE_PAR_PAN} ){Builtin, None, get_zone_par}){Builtin, None, set_control_par_str}
-	Boolean2{int} {Boolean2}  := transition_id{int} {transition_id} 
-	if((get_zone_par(get_event_par(Boolean2{int} {Boolean2} , EVENT_PAR_ZONE_ID{int} {EVENT_PAR_ZONE_ID} ){Builtin, None, get_event_par}, ZONE_PAR_HIGH_VELO{int} {ZONE_PAR_HIGH_VELO} ){Builtin, None, get_zone_par} / 5) <= 12)
-		played_interval[0]{int} {played_interval}  := get_event_par(Boolean2{int} {Boolean2} , EVENT_PAR_NOTE{int} {EVENT_PAR_NOTE} ){Builtin, None, get_event_par} + (get_zone_par(get_event_par(Boolean2{int} {Boolean2} , EVENT_PAR_ZONE_ID{int} {EVENT_PAR_ZONE_ID} ){Builtin, None, get_event_par}, ZONE_PAR_HIGH_VELO{int} {ZONE_PAR_HIGH_VELO} ){Builtin, None, get_zone_par} / 5)
-		played_interval[1]{int} {played_interval}  := get_zone_par(get_event_par(Boolean2{int} {Boolean2} , EVENT_PAR_ZONE_ID{int} {EVENT_PAR_ZONE_ID} ){Builtin, None, get_event_par}, ZONE_PAR_ROOT_KEY{int} {ZONE_PAR_ROOT_KEY} ){Builtin, None, get_zone_par}
+	Boolean3{int} {Boolean3}  := transition_id{int} {transition_id} 
+	if((get_zone_par(get_event_par(Boolean3{int} {Boolean3} , EVENT_PAR_ZONE_ID{int} {EVENT_PAR_ZONE_ID} ){Builtin, None, get_event_par}, ZONE_PAR_HIGH_VELO{int} {ZONE_PAR_HIGH_VELO} ){Builtin, None, get_zone_par} / 5) <= 12)
+		played_interval[0]{int} {played_interval}  := get_event_par(Boolean3{int} {Boolean3} , EVENT_PAR_NOTE{int} {EVENT_PAR_NOTE} ){Builtin, None, get_event_par} + (get_zone_par(get_event_par(Boolean3{int} {Boolean3} , EVENT_PAR_ZONE_ID{int} {EVENT_PAR_ZONE_ID} ){Builtin, None, get_event_par}, ZONE_PAR_HIGH_VELO{int} {ZONE_PAR_HIGH_VELO} ){Builtin, None, get_zone_par} / 5)
+		played_interval[1]{int} {played_interval}  := get_zone_par(get_event_par(Boolean3{int} {Boolean3} , EVENT_PAR_ZONE_ID{int} {EVENT_PAR_ZONE_ID} ){Builtin, None, get_event_par}, ZONE_PAR_ROOT_KEY{int} {ZONE_PAR_ROOT_KEY} ){Builtin, None, get_zone_par}
 	else
-		played_interval[0]{int} {played_interval}  := get_event_par(Boolean2{int} {Boolean2} , EVENT_PAR_NOTE{int} {EVENT_PAR_NOTE} ){Builtin, None, get_event_par}
-		played_interval[1]{int} {played_interval}  := get_zone_par(get_event_par(Boolean2{int} {Boolean2} , EVENT_PAR_ZONE_ID{int} {EVENT_PAR_ZONE_ID} ){Builtin, None, get_event_par}, ZONE_PAR_ROOT_KEY{int} {ZONE_PAR_ROOT_KEY} ){Builtin, None, get_zone_par} + ((get_zone_par(get_event_par(Boolean2{int} {Boolean2} , EVENT_PAR_ZONE_ID{int} {EVENT_PAR_ZONE_ID} ){Builtin, None, get_event_par}, ZONE_PAR_HIGH_VELO{int} {ZONE_PAR_HIGH_VELO} ){Builtin, None, get_zone_par} / 5) - 12)
+		played_interval[0]{int} {played_interval}  := get_event_par(Boolean3{int} {Boolean3} , EVENT_PAR_NOTE{int} {EVENT_PAR_NOTE} ){Builtin, None, get_event_par}
+		played_interval[1]{int} {played_interval}  := get_zone_par(get_event_par(Boolean3{int} {Boolean3} , EVENT_PAR_ZONE_ID{int} {EVENT_PAR_ZONE_ID} ){Builtin, None, get_event_par}, ZONE_PAR_ROOT_KEY{int} {ZONE_PAR_ROOT_KEY} ){Builtin, None, get_zone_par} + ((get_zone_par(get_event_par(Boolean3{int} {Boolean3} , EVENT_PAR_ZONE_ID{int} {EVENT_PAR_ZONE_ID} ){Builtin, None, get_event_par}, ZONE_PAR_HIGH_VELO{int} {ZONE_PAR_HIGH_VELO} ){Builtin, None, get_zone_par} / 5) - 12)
 	end if
 	playedInterval{string} {playedInterval}  := midi.note_names[played_interval[0]{int} {played_interval} ]{string} {midi.note_names}  & " to " & midi.note_names[played_interval[1]{int} {played_interval} ]{string} {midi.note_names} 
 	set_control_par_str(get_ui_id(lbl_intervalInfo{int} {lbl_intervalInfo} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , playedInterval{string} {playedInterval} ){Builtin, None, set_control_par_str}
@@ -7448,19 +7448,19 @@ function update.legatoArrays
 end function
 
 function update.legatoList
-	result4{int} {result4}  := 0
+	result7{int} {result7}  := 0
 	NUM_SHOWN_PRESETS_OLD{int} {NUM_SHOWN_PRESETS_OLD}  := NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS} 
 	NUM_PRESETS{int} {NUM_PRESETS}  := search(zone_ids_master{int[]} {zone_ids_master} , -1){Builtin, None, search}
 	NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS}  := NUM_PRESETS{int} {NUM_PRESETS} 
 	set_control_par_str(get_ui_id(lbl_presetcount{int} {lbl_presetcount} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS}  & "/" & NUM_PRESETS{int} {NUM_PRESETS} ){Builtin, None, set_control_par_str}
 	if(NUM_SHOWN_PRESETS_OLD{int} {NUM_SHOWN_PRESETS_OLD}  # NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS} )
-		result4{int} {result4}  := 0
-		while(result4{int} {result4}  <= (num_elements(legatoList.end_of_list{int[]} {legatoList.end_of_list} ){Builtin, None, num_elements} - 1)) 
-			legatoList.end_of_list[result4{int} {result4} ]{int} {legatoList.end_of_list}  := -1
-			if(result4{int} {result4}  < NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS} )
-				legatoList.end_of_list[result4{int} {result4} ]{int} {legatoList.end_of_list}  := 1
+		result7{int} {result7}  := 0
+		while(result7{int} {result7}  <= (num_elements(legatoList.end_of_list{int[]} {legatoList.end_of_list} ){Builtin, None, num_elements} - 1)) 
+			legatoList.end_of_list[result7{int} {result7} ]{int} {legatoList.end_of_list}  := -1
+			if(result7{int} {result7}  < NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS} )
+				legatoList.end_of_list[result7{int} {result7} ]{int} {legatoList.end_of_list}  := 1
 			end if
-			inc(result4{int} {result4} ){Builtin, None, inc}
+			inc(result7{int} {result7} ){Builtin, None, inc}
 		end while
 	end if
 	scroll.up{int} {scroll.up}  := real_to_int((((scroll.realup{real} {scroll.realup}  - 0) * (int_to_real(NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS}  - 12){Builtin, None, int_to_real} - 0)) / (int_to_real(NUM_SHOWN_PRESETS_OLD{int} {NUM_SHOWN_PRESETS_OLD}  - 12){Builtin, None, int_to_real} - 0)) + 0){Builtin, None, real_to_int}
@@ -7570,19 +7570,19 @@ function legatoList.show
 			end if
 			inc(min_random0{int} {min_random0} ){Builtin, None, inc}
 		end while
-		result4{int} {result4}  := 0
+		result7{int} {result7}  := 0
 		NUM_SHOWN_PRESETS_OLD{int} {NUM_SHOWN_PRESETS_OLD}  := NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS} 
 		NUM_PRESETS{int} {NUM_PRESETS}  := search(zone_ids_master{int[]} {zone_ids_master} , -1){Builtin, None, search}
 		NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS}  := NUM_PRESETS{int} {NUM_PRESETS} 
 		set_control_par_str(get_ui_id(lbl_presetcount{int} {lbl_presetcount} ){Builtin, None, get_ui_id}, CONTROL_PAR_TEXT{int} {CONTROL_PAR_TEXT} , NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS}  & "/" & NUM_PRESETS{int} {NUM_PRESETS} ){Builtin, None, set_control_par_str}
 		if(NUM_SHOWN_PRESETS_OLD{int} {NUM_SHOWN_PRESETS_OLD}  # NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS} )
-			result4{int} {result4}  := 0
-			while(result4{int} {result4}  <= (num_elements(legatoList.end_of_list{int[]} {legatoList.end_of_list} ){Builtin, None, num_elements} - 1)) 
-				legatoList.end_of_list[result4{int} {result4} ]{int} {legatoList.end_of_list}  := -1
-				if(result4{int} {result4}  < NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS} )
-					legatoList.end_of_list[result4{int} {result4} ]{int} {legatoList.end_of_list}  := 1
+			result7{int} {result7}  := 0
+			while(result7{int} {result7}  <= (num_elements(legatoList.end_of_list{int[]} {legatoList.end_of_list} ){Builtin, None, num_elements} - 1)) 
+				legatoList.end_of_list[result7{int} {result7} ]{int} {legatoList.end_of_list}  := -1
+				if(result7{int} {result7}  < NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS} )
+					legatoList.end_of_list[result7{int} {result7} ]{int} {legatoList.end_of_list}  := 1
 				end if
-				inc(result4{int} {result4} ){Builtin, None, inc}
+				inc(result7{int} {result7} ){Builtin, None, inc}
 			end while
 		end if
 		scroll.up{int} {scroll.up}  := real_to_int((((scroll.realup{real} {scroll.realup}  - 0) * (int_to_real(NUM_SHOWN_PRESETS{int} {NUM_SHOWN_PRESETS}  - 12){Builtin, None, int_to_real} - 0)) / (int_to_real(NUM_SHOWN_PRESETS_OLD{int} {NUM_SHOWN_PRESETS_OLD}  - 12){Builtin, None, int_to_real} - 0)) + 0){Builtin, None, real_to_int}
@@ -7717,8 +7717,8 @@ function update.interval_keycolor
 		set_key_color(keys{int} {keys} , KEY_COLOR_DEFAULT{int} {KEY_COLOR_DEFAULT} ){Builtin, None, set_key_color}
 		inc(keys{int} {keys} ){Builtin, None, inc}
 	end while
-	set_key_color(Boolean2{int} {Boolean2} , KEY_COLOR_BLUE{int} {KEY_COLOR_BLUE} ){Builtin, None, set_key_color}
 	set_key_color(Boolean3{int} {Boolean3} , KEY_COLOR_BLUE{int} {KEY_COLOR_BLUE} ){Builtin, None, set_key_color}
+	set_key_color(Boolean4{int} {Boolean4} , KEY_COLOR_BLUE{int} {KEY_COLOR_BLUE} ){Builtin, None, set_key_color}
 end function
 
 function load.element{thread-unsafe}
@@ -7743,8 +7743,8 @@ function load.element{thread-unsafe}
 	call update.gui.legato{UserDefined, Call, update.gui.legato}
 	call update.gui.sustain{UserDefined, Call, update.gui.sustain}
 	call reset.label_texts{UserDefined, Call, reset.label_texts}
-	Boolean2{int} {Boolean2}  := played_interval[0]{int} {played_interval} 
-	Boolean3{int} {Boolean3}  := played_interval[1]{int} {played_interval} 
+	Boolean3{int} {Boolean3}  := played_interval[0]{int} {played_interval} 
+	Boolean4{int} {Boolean4}  := played_interval[1]{int} {played_interval} 
 	call update.interval_keycolor{UserDefined, Call, update.interval_keycolor}
 end function
 
@@ -7768,7 +7768,7 @@ end function
 function doubleclick_check{thread-unsafe}
 	wait(402000){Builtin, None, wait}
 	if((ENGINE_UPTIME{int} {ENGINE_UPTIME}  - clicktime[1]{int} {clicktime} ) > 400)
-		set_control_par(doubleclickControl2[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl2} , CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , HIDE_WHOLE_CONTROL{int} {HIDE_WHOLE_CONTROL} ){Builtin, None, set_control_par}
+		set_control_par(doubleclickControl1[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 1000]{int} {doubleclickControl1} , CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , HIDE_WHOLE_CONTROL{int} {HIDE_WHOLE_CONTROL} ){Builtin, None, set_control_par}
 		clicktime[2]{int} {clicktime}  := 0
 	end if
 end function
@@ -8529,9 +8529,9 @@ function vibrato.show
 end function
 
 function home.show
-	btn_home{int} {btn_home}  := Boolean4{int} {Boolean4} 
-	set_control_par(get_ui_id(UI_home{int} {UI_home} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean4{int} {Boolean4} ]{int} {hide_state} ){Builtin, None, set_control_par}
-	set_control_par(get_ui_id(UI_reverb{int} {UI_reverb} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean4{int} {Boolean4} ]{int} {hide_state} ){Builtin, None, set_control_par}
+	btn_home{int} {btn_home}  := Boolean5{int} {Boolean5} 
+	set_control_par(get_ui_id(UI_home{int} {UI_home} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean5{int} {Boolean5} ]{int} {hide_state} ){Builtin, None, set_control_par}
+	set_control_par(get_ui_id(UI_reverb{int} {UI_reverb} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean5{int} {Boolean5} ]{int} {hide_state} ){Builtin, None, set_control_par}
 	set_control_par(get_ui_id(UI_eq{int} {UI_eq} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , HIDE_WHOLE_CONTROL{int} {HIDE_WHOLE_CONTROL} ){Builtin, None, set_control_par}
 end function
 
@@ -8546,8 +8546,8 @@ function update.cc_dynamics
 end function
 
 function settings.show
-	btn_settings{int} {btn_settings}  := Boolean3{int} {Boolean3} 
-	set_control_par(get_ui_id(UI_settings{int} {UI_settings} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean3{int} {Boolean3} ]{int} {hide_state} ){Builtin, None, set_control_par}
+	btn_settings{int} {btn_settings}  := Boolean4{int} {Boolean4} 
+	set_control_par(get_ui_id(UI_settings{int} {UI_settings} ){Builtin, None, get_ui_id}, CONTROL_PAR_HIDE{int} {CONTROL_PAR_HIDE} , hide_state[Boolean4{int} {Boolean4} ]{int} {hide_state} ){Builtin, None, set_control_par}
 end function
 
 function update.cc_expression
