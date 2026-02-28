@@ -91,7 +91,7 @@ class TypeInference final : public ASTVisitor {
 
 				// ----- Zeitmessung: collect_declarations Schritt -----
 				// auto start_collect = std::chrono::high_resolution_clock::now();
-				static ASTCollectDeclarations collect(m_program);
+				ASTCollectDeclarations collect(m_program);
 				new_func_def->accept(collect);
 				// auto end_collect = std::chrono::high_resolution_clock::now();
 				// auto duration_collect = std::chrono::duration_cast<std::chrono::microseconds>(end_collect - start_collect).count();
@@ -341,27 +341,39 @@ public:
 
     /// check types of initializations and try to infer overall element type
     static Type* infer_initialization_types(std::vector<Type*> &type_list, const NodeAST* node) {
-        std::set<Type*> types(type_list.begin(), type_list.end());
         auto error = CompileError(ErrorType::TypeError, "", "", node->tok);
-        if(types.empty()) CompileError(ErrorType::InternalError, "Found no types in list", "", node->tok).exit();
-        // all types in param list are the same -> set new param list node type
-        if(types.size() == 1) {
-            auto ty = *types.begin();
-            // if(ty->get_type_kind() == TypeKind::Composite) {
-            //     error.m_message = "Composite types are not allowed in an initialization.";
-            //     error.exit();
-            // }
-            return ty;
-        // two types in param list -> only allowed if types are int|real and string
-        } else if (types.size() == 2) {
-	        if(const auto it = types.find(TypeRegistry::String); it != types.end()) {
-                if(types.contains(TypeRegistry::Integer) or types.contains(TypeRegistry::Real)) {
-                    return TypeRegistry::String;
-                } else {
-                    error.m_message = "Only <String> and <Integer> or <Real> types are allowed in an initialization.";
-                    error.exit();
-                }
+        if(type_list.empty()) CompileError(ErrorType::InternalError, "Found no types in list", "", node->tok).exit();
+
+        Type* first = nullptr;
+        Type* second = nullptr;
+        bool has_more_than_two_types = false;
+        for (auto* ty : type_list) {
+            if (ty == first || ty == second) continue;
+            if (!first) {
+                first = ty;
+            } else if (!second) {
+                second = ty;
+            } else {
+                has_more_than_two_types = true;
+                break;
             }
+        }
+
+        // all types are the same
+        if (first && !second) {
+            return first;
+        }
+
+        // exactly two different types -> only allowed if they are <String> and <Integer>/<Real>
+        if (!has_more_than_two_types && first && second) {
+            const bool contains_string = first == TypeRegistry::String || second == TypeRegistry::String;
+            const bool contains_number = first == TypeRegistry::Integer || first == TypeRegistry::Real ||
+                                         second == TypeRegistry::Integer || second == TypeRegistry::Real;
+            if (contains_string && contains_number) {
+                return TypeRegistry::String;
+            }
+            error.m_message = "Only <String> and <Integer> or <Real> types are allowed in an initialization.";
+            error.exit();
         }
 		error.m_message = "Unable to infer type from initialization.";
 		error.exit();

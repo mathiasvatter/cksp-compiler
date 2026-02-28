@@ -186,7 +186,7 @@ public:
 		// input_filename = "/Users/mathias/Scripting/toc-single-instruments/keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/the-orchestra-complete-4/the_orchestra_ens_V1.2.ksp";
 		input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
-		input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
+		// input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
 		// input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
 		// input_filename = "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp";
