@@ -63,7 +63,7 @@ struct PreNodeAST {
 	}
 	void debug_print(const std::string &path = PRINTER_OUTPUT);
 	// does import passes
-	PreNodeAST* do_preprocessing(const std::string& current_file, const std::unordered_set<std::string> &imported_files, const std::unordered_map<std::string, std::string> &basename_map);
+	PreNodeAST* do_preprocessing(const std::string& base_file, const std::string& current_file, std::unordered_set<std::string> &imported_files, std::unordered_map<std::string, std::string> &basename_map);
 };
 
 // Template-Funktion für sicheren Cast
@@ -110,6 +110,11 @@ struct PreNodeKeyword final : PreNodeLiteral {
 	PreNodeAST *accept(PreASTVisitor &visitor) override;
 	PreNodeKeyword(const PreNodeKeyword& other) = default;
 	[[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
+	std::string get_name() const {
+		return tok.val;
+	}
+	std::unique_ptr<struct PreNodeDefineCall> transform_to_define_call() const;
+	std::unique_ptr<struct PreNodeMacroCall> transform_to_macro_call() const;
 };
 
 struct PreNodeUnaryExpr final : PreNodeAST {
@@ -497,33 +502,6 @@ struct PreNodeSetCondition final : PreNodeAST {
 	}
 };
 
-struct PreNodeSetGlobalCondition final : PreNodeAST {
-	std::unique_ptr<PreNodeKeyword> condition;
-	PreNodeSetGlobalCondition(Token tok, PreNodeAST *parent)
-		: PreNodeAST(std::move(tok), parent, PreNodeType::SET_GLOBAL_CONDITION) {}
-	PreNodeSetGlobalCondition(std::unique_ptr<PreNodeKeyword> condition, Token tok, PreNodeAST *parent)
-		: PreNodeAST(std::move(tok), parent, PreNodeType::SET_GLOBAL_CONDITION), condition(std::move(condition)) {
-		set_child_parents();
-	}
-	PreNodeAST *accept(PreASTVisitor &visitor) override;
-	PreNodeSetGlobalCondition(const PreNodeSetGlobalCondition& other);
-	[[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
-	void set_child_parents() override {
-		condition->parent = this;
-	}
-	void update_parents(PreNodeAST* new_parent) override {
-		parent = new_parent;
-		condition->update_parents(this);
-	}
-	std::string get_string() override {
-		return "set_global_condition " + condition->get_string();
-	}
-	void update_token_data(const Token &token) override {
-		tok.line = token.line; tok.file = token.file;
-		condition->update_token_data(token);
-	}
-};
-
 struct PreNodeResetCondition final : PreNodeAST {
 	std::unique_ptr<PreNodeKeyword> condition;
 	PreNodeResetCondition(Token tok, PreNodeAST *parent)
@@ -544,33 +522,6 @@ struct PreNodeResetCondition final : PreNodeAST {
 	}
 	std::string get_string() override {
 		return "reset_condition " + condition->get_string();
-	}
-	void update_token_data(const Token &token) override {
-		tok.line = token.line; tok.file = token.file;
-		condition->update_token_data(token);
-	}
-};
-
-struct PreNodeResetGlobalCondition final : PreNodeAST {
-	std::unique_ptr<PreNodeKeyword> condition;
-	PreNodeResetGlobalCondition(Token tok, PreNodeAST *parent)
-		: PreNodeAST(std::move(tok), parent, PreNodeType::RESET_GLOBAL_CONDITION) {}
-	PreNodeResetGlobalCondition(std::unique_ptr<PreNodeKeyword> condition, Token tok, PreNodeAST *parent)
-		: PreNodeAST(std::move(tok), parent, PreNodeType::RESET_GLOBAL_CONDITION), condition(std::move(condition)) {
-		set_child_parents();
-	}
-	PreNodeAST *accept(PreASTVisitor &visitor) override;
-	PreNodeResetGlobalCondition(const PreNodeResetGlobalCondition& other);
-	[[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
-	void set_child_parents() override {
-		condition->parent = this;
-	}
-	void update_parents(PreNodeAST* new_parent) override {
-		parent = new_parent;
-		condition->update_parents(this);
-	}
-	std::string get_string() override {
-		return "reset_global_condition " + condition->get_string();
 	}
 	void update_token_data(const Token &token) override {
 		tok.line = token.line; tok.file = token.file;
@@ -646,10 +597,10 @@ struct PreNodeMacroHeader final : PreNodeAST {
 	}
 };
 
-
 struct PreNodeDefineHeader final : PreNodeAST {
     std::unique_ptr<PreNodeKeyword> name;
     std::unique_ptr<PreNodeList> args;
+	bool has_parenth = false;
 	PreNodeDefineHeader(Token tok, PreNodeAST *parent) : PreNodeAST(std::move(tok), parent, PreNodeType::DEFINE_HEADER) {}
 	PreNodeDefineHeader(std::unique_ptr<PreNodeKeyword> name, std::unique_ptr<PreNodeList> args, Token tok, PreNodeAST *parent)
 		: PreNodeAST(std::move(tok), parent, PreNodeType::DEFINE_HEADER), name(std::move(name)), args(std::move(args)) {
@@ -756,6 +707,7 @@ struct PreNodeDefineStatement final : PreNodeAST {
 
 struct PreNodeMacroCall final : PreNodeAST {
     std::unique_ptr<PreNodeMacroHeader> macro;
+	PreNodeMacroDefinition* definition = nullptr;
 	bool is_iterate_macro = false;
 	PreNodeMacroCall(Token tok, PreNodeAST *parent)
 		: PreNodeAST(std::move(tok), parent, PreNodeType::MACRO_CALL) {}
@@ -781,12 +733,97 @@ struct PreNodeMacroCall final : PreNodeAST {
     }
 };
 
+struct PreNodeFunctionHeader final : PreNodeAST {
+    std::unique_ptr<PreNodeKeyword> name;
+    std::unique_ptr<PreNodeList> args;
+	bool has_parenth = false;
+	PreNodeFunctionHeader(Token tok, PreNodeAST *parent)
+		: PreNodeAST(std::move(tok), parent, PreNodeType::FUNCTION_HEADER) {}
+    PreNodeFunctionHeader(std::unique_ptr<PreNodeKeyword> name, std::unique_ptr<PreNodeList> args, Token tok, PreNodeAST *parent)
+    : PreNodeAST(std::move(tok), parent, PreNodeType::FUNCTION_HEADER), name(std::move(name)), args(std::move(args)) {
+	    set_child_parents();
+    }
+    PreNodeAST *accept(PreASTVisitor &visitor) override;
+    PreNodeFunctionHeader(const PreNodeFunctionHeader& other);
+    [[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
+	void set_child_parents() override {
+		name->parent = this;
+		args->parent = this;
+	}
+	std::string get_name() const {
+		return name->tok.val;
+	}
+    void update_parents(PreNodeAST* new_parent) override {
+        parent = new_parent;
+        name->update_parents(this);
+        args->update_parents(this);
+    }
+	std::string get_string() override {
+		return name->get_string() + args->get_string();
+	}
+    void update_token_data(const Token &token) override {
+        name->update_token_data(token);
+        args->update_token_data(token);
+    }
+	void set_args(std::unique_ptr<PreNodeList> new_args) {
+		args = std::move(new_args);
+		args->parent = this;
+	}
+	bool has_args() const {
+	    return !args->params.empty();
+    }
+	size_t num_args() const {
+		return args->params.size();
+	}
+	// is destructive, will move args out of header and into macro header, should only be used when converting function header to macro header
+	std::unique_ptr<PreNodeMacroHeader> transform_to_macro_header() {
+		auto macro_name = std::make_unique<PreNodeKeyword>(name->tok, nullptr);
+		auto macro_args = std::make_unique<PreNodeList>(std::move(args->params), args->tok, nullptr);
+		return std::make_unique<PreNodeMacroHeader>(std::move(macro_name), std::move(macro_args), tok, parent);
+	}
+	// is destructive as well
+	std::unique_ptr<PreNodeDefineHeader> transform_to_define_header() {
+		auto define_name = std::make_unique<PreNodeKeyword>(name->tok, nullptr);
+		auto define_args = std::make_unique<PreNodeList>(std::move(args->params), args->tok, nullptr);
+		return std::make_unique<PreNodeDefineHeader>(std::move(define_name), std::move(define_args), tok, parent);
+	}
+
+};
+
+struct PreNodeDefineCall final : PreNodeAST {
+	std::unique_ptr<PreNodeDefineHeader> define;
+	PreNodeDefineStatement* definition = nullptr;
+	PreNodeDefineCall(Token tok, PreNodeAST *parent) : PreNodeAST(std::move(tok), parent, PreNodeType::DEFINE_CALL) {}
+	PreNodeDefineCall(std::unique_ptr<PreNodeDefineHeader> define, Token tok, PreNodeAST* parent)
+		: PreNodeAST(std::move(tok), parent, PreNodeType::DEFINE_CALL), define(std::move(define)) {
+		set_child_parents();
+	}
+	PreNodeAST *accept(PreASTVisitor &visitor) override;
+	PreNodeDefineCall(const PreNodeDefineCall& other);
+	[[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
+	void set_child_parents() override {
+		define->parent = this;
+	}
+	void update_parents(PreNodeAST* new_parent) override {
+		parent = new_parent;
+		define->update_parents(this);
+	}
+	std::string get_string() override {
+		return define->get_string();
+	}
+	void update_token_data(const Token &token) override {
+		define->update_token_data(token);
+	}
+};
+
 struct PreNodeFunctionCall final : PreNodeAST {
-	std::unique_ptr<PreNodeMacroHeader> function;
-	PreNodeFunctionCall(std::unique_ptr<PreNodeMacroHeader> function, Token tok, PreNodeAST* parent)
+	std::unique_ptr<PreNodeFunctionHeader> function;
+	bool no_macro = false; // macros can only be called as separate statements -> no in expressions
+	PreNodeFunctionCall(std::unique_ptr<PreNodeFunctionHeader> function, Token tok, PreNodeAST* parent)
 		: PreNodeAST(std::move(tok), parent, PreNodeType::FUNCTION_CALL), function(std::move(function)) {
 		set_child_parents();
 	}
+	PreNodeFunctionCall(Token tok, PreNodeAST* parent): PreNodeAST(std::move(tok), parent, PreNodeType::FUNCTION_CALL) {}
 	PreNodeAST *accept(PreASTVisitor &visitor) override;
 	PreNodeFunctionCall(const PreNodeFunctionCall& other);
 	[[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
@@ -803,31 +840,16 @@ struct PreNodeFunctionCall final : PreNodeAST {
 	void update_token_data(const Token &token) override {
 		function->update_token_data(token);
 	}
-};
-
-struct PreNodeDefineCall final : PreNodeAST {
-    std::unique_ptr<PreNodeDefineHeader> define;
-	PreNodeDefineCall(Token tok, PreNodeAST *parent) : PreNodeAST(std::move(tok), parent, PreNodeType::DEFINE_CALL) {}
-    PreNodeDefineCall(std::unique_ptr<PreNodeDefineHeader> define, Token tok, PreNodeAST* parent)
-		: PreNodeAST(std::move(tok), parent, PreNodeType::DEFINE_CALL), define(std::move(define)) {
-	    set_child_parents();
-    }
-    PreNodeAST *accept(PreASTVisitor &visitor) override;
-    PreNodeDefineCall(const PreNodeDefineCall& other);
-    [[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
-	void set_child_parents() override {
-		define->parent = this;
+	void set_header(std::unique_ptr<PreNodeFunctionHeader> new_header) {
+		function = std::move(new_header);
+		function->parent = this;
 	}
-    void update_parents(PreNodeAST* new_parent) override {
-        parent = new_parent;
-        define->update_parents(this);
-    }
-	std::string get_string() override {
-		return define->get_string();
+	std::unique_ptr<PreNodeMacroCall> transform_to_macro_call() {
+		return std::make_unique<PreNodeMacroCall>(function->transform_to_macro_header(), tok, parent);
 	}
-    void update_token_data(const Token &token) override {
-        define->update_token_data(token);
-    }
+	std::unique_ptr<PreNodeDefineCall> transform_to_define_call() {
+		return std::make_unique<PreNodeDefineCall>(function->transform_to_define_header(), tok, parent);
+	}
 };
 
 struct PreNodeIterateMacro final : PreNodeAST {
@@ -959,6 +981,9 @@ struct PreNodeProgram final : PreNodeAST {
 	std::unique_ptr<PreNodeChunk> program;
     std::vector<std::unique_ptr<PreNodeDefineStatement>> define_statements;
     std::vector<std::unique_ptr<PreNodeMacroDefinition>> macro_definitions;
+	std::unordered_map<StringIntKey, PreNodeDefineStatement*, StringIntKeyHash> define_lookup;
+	std::unordered_map<StringIntKey, PreNodeMacroDefinition*, StringIntKeyHash> macro_lookup;
+
     PreNodeProgram(std::unique_ptr<PreNodeChunk> program, std::vector<std::unique_ptr<PreNodeDefineStatement>> defines,
                    std::vector<std::unique_ptr<PreNodeMacroDefinition>> macro_definitions, Token tok, PreNodeAST* parent)
     	: PreNodeAST(std::move(tok), parent, PreNodeType::PROGRAM), program(std::move(program)), define_statements(std::move(defines)), macro_definitions(std::move(macro_definitions)) {}
@@ -981,6 +1006,64 @@ struct PreNodeProgram final : PreNodeAST {
 		return "";
 	}
     void update_token_data(const Token &token) override {}
+
+	void add_to_define_lookup(const std::unique_ptr<PreNodeDefineStatement>& define) {
+		define_lookup[StringIntKey(define->header->get_name(), define->header->num_args())] = define.get();
+	}
+	void add_to_macro_lookup(const std::unique_ptr<PreNodeMacroDefinition>& macro) {
+		macro_lookup[StringIntKey(macro->header->get_name(), macro->header->num_args())] = macro.get();
+	}
+	PreNodeDefineStatement* get_define_definition(const PreNodeFunctionCall &call) {
+		const auto it = define_lookup.find(StringIntKey(call.function->get_name(), call.function->num_args()));
+		if (it != define_lookup.end()) {
+			return it->second;
+		}
+		return nullptr;
+	}
+	PreNodeDefineStatement* get_define_definition(const PreNodeKeyword &call) {
+		if (!call.parent) {
+			auto error = CompileError(ErrorType::InternalError, "<PreNodeKeyword> has no parent", "", call.tok);
+			error.exit();
+		}
+		if (call.parent->cast<PreNodeDefineHeader>() || call.parent->cast<PreNodeMacroHeader>()) {
+			// if the keyword is part of a macro or define header, it can't be a macro call
+			return nullptr;
+		}
+		const auto it = define_lookup.find(StringIntKey(call.get_name(), 0));
+		if (it != define_lookup.end()) {
+			return it->second;
+		}
+		return nullptr;
+	}
+	PreNodeMacroDefinition* get_macro_definition(const PreNodeKeyword &call) {
+		if (!call.parent) {
+			auto error = CompileError(ErrorType::InternalError, "<PreNodeKeyword> has no parent", "", call.tok);
+			error.exit();
+		}
+		if (call.parent->cast<PreNodeMacroHeader>() || call.parent->cast<PreNodeDefineHeader>()) {
+			// if the keyword is part of a macro or define header, it can't be a macro call
+			return nullptr;
+		}
+		const auto it = macro_lookup.find(StringIntKey(call.get_name(), 0));
+		if (it != macro_lookup.end()) {
+			return it->second;
+		}
+		return nullptr;
+	}
+	PreNodeMacroDefinition* get_macro_definition(const PreNodeFunctionCall &call) {
+		const auto it = macro_lookup.find(StringIntKey(call.function->get_name(), call.function->num_args()));
+		if (it != macro_lookup.end()) {
+			return it->second;
+		}
+		return nullptr;
+	}
+	PreNodeMacroDefinition* get_macro_definition(const PreNodeMacroCall &call) {
+		const auto it = macro_lookup.find(StringIntKey(call.macro->get_name(), call.macro->num_args()));
+		if (it != macro_lookup.end()) {
+			return it->second;
+		}
+		return nullptr;
+	}
 
 };
 

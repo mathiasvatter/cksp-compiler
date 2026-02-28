@@ -115,12 +115,6 @@ public:
     virtual PreNodeAST *visit(PreNodeResetCondition &node) {
         return &node;
     }
-    virtual PreNodeAST *visit(PreNodeSetGlobalCondition &node) {
-        return &node;
-    }
-    virtual PreNodeAST *visit(PreNodeResetGlobalCondition &node) {
-        return &node;
-    }
     virtual PreNodeAST *visit(PreNodeUseCodeIf &node) {
         node.condition->accept(*this);
         if (node.if_branch) node.if_branch->accept(*this);
@@ -145,6 +139,11 @@ public:
 		node.function->accept(*this);
         return &node;
 	}
+    virtual PreNodeAST *visit(PreNodeFunctionHeader &node) {
+        node.name->accept(*this);
+        node.args->accept(*this);
+        return &node;
+    }
     virtual PreNodeAST *visit(PreNodeIterateMacro &node) {
 		node.iterator_start->accept(*this);
 		node.iterator_end->accept(*this);
