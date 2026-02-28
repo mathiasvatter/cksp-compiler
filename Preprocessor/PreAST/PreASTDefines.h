@@ -8,7 +8,6 @@
 
 class PreASTDefines final : public PreASTVisitor {
 public:
-	// void visit(PreNodePragma& node) override;
 
 	// transform to define calls if define definition exists, otherwise return node
 	PreNodeAST *visit(PreNodeFunctionCall &node) override;
@@ -21,16 +20,12 @@ public:
 	PreNodeAST *visit(PreNodeDefineStatement &node) override;
 	PreNodeAST *visit(PreNodeDefineCall &node) override;
 	PreNodeAST *visit(PreNodeProgram &node) override;
-	// PreNodeAST *visit(PreNodeMacroDefinition &node) override;
 
 private:
 	std::string m_debug_token;
 
-	// std::unordered_map<std::string, PreNodeDefineStatement*> m_define_lookup;
-
 	PreNodeAST *do_substitution(PreNodeLiteral &node);
 	std::unique_ptr<PreNodeAST> get_substitute(const std::string& name);
-	// std::unique_ptr<PreNodeDefineStatement> get_define_definition(const PreNodeDefineHeader& define_header);
 	static std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> get_substitution_map(PreNodeDefineHeader& definition, const PreNodeDefineHeader& call);
 
 	std::unordered_set<std::string> m_defines_used;

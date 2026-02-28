@@ -10,7 +10,7 @@
 #include "Preprocessor/PreprocessorParser.h"
 #include "Preprocessor/PreAST/PreASTCombine.h"
 #include "Preprocessor/PreAST/PreASTDefines.h"
-#include "Preprocessor/PreAST/PreASTDesugar.h"
+#include "Preprocessor/PreAST/PreASTMacros.h"
 #include "Preprocessor/PreAST/PreASTIncrementer.h"
 #include "Preprocessor/PreAST/PreASTPragma.h"
 // misc
@@ -143,7 +143,7 @@ public:
 		pre_ast->accept(defines);
 		pre_ast->debug_print();
 
-		PreASTDesugar desugar;
+		PreASTMacros desugar;
 		pre_ast->accept(desugar);
 		pre_ast->debug_print();
 

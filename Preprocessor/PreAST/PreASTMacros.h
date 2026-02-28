@@ -6,7 +6,7 @@
 
 #include "PreASTVisitor.h"
 
-class PreASTDesugar final : public PreASTVisitor {
+class PreASTMacros final : public PreASTVisitor {
 public:
 	// transform to macro calls if macro definition exists, otherwise return node
 	PreNodeAST *visit(PreNodeFunctionCall &node) override;
