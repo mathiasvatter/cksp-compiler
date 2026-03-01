@@ -223,6 +223,7 @@ struct NodeReference : NodeAST {
 	// gets effective size of references (1 unless it is array or ndarray with wildcards)
 	virtual std::unique_ptr<NodeAST> get_size();
 	[[nodiscard]] struct NodeFunctionCall* is_in_get_ui_id() const;
+	bool check_restricted_environment(NodeCallback *current_callback) const;
 };
 
 struct NodeVariable;

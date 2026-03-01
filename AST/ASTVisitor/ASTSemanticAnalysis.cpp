@@ -235,6 +235,8 @@ NodeAST * ASTSemanticAnalysis::visit(NodeVariableRef &node) {
 		new_node = repl;
 		new_node->accept(*this);
 	}
+	// checks for restricted functions and allowed callbacks -> throws error
+	node.check_restricted_environment(m_program->current_callback);
 	return replace_incorrectly_detected_data_struct(new_node->get_declaration());
 }
 

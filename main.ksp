@@ -186,6 +186,8 @@ on note
 	flag := 0
 end on
 function do_something()
+	message(EVENT_NOTE)
+	
 	if flag = 1
 		message("this function is already running, don't run it again")
 		exit
