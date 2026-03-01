@@ -2379,19 +2379,21 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 		}
 	}
 
-	if(peek().type != token::OPEN_BRACKET) {
-		return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
-															 "Found unknown <list> syntax.", "[", peek()));
+	bool has_open_bracket = false;
+	if(peek().type == token::OPEN_BRACKET) {
+		has_open_bracket = true;
+		consume(); // consume [
 	}
-	consume(); // consume [
 	if(peek().type == token::COMMA) {
 		consume(); // consume comma
 	}
-	if(peek().type != token::CLOSED_BRACKET) {
-		return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
-															 "Found unknown <list> syntax.", "]", peek()));
+	if(has_open_bracket && peek().type != token::CLOSED_BRACKET) {
+		auto error = CompileError(ErrorType::SyntaxError, "Found unknown <list> syntax.", "valid <list> type annotation or closing bracket", peek());
+		return Result<std::unique_ptr<NodeAST>>(error);
 	}
-	consume(); // consume ]
+	if (peek().type == token::CLOSED_BRACKET) {
+		consume(); // consume ]
+	}
 	auto type = parse_type_annotation(ty);
 	if(type.is_error()) {
 		return Result<std::unique_ptr<NodeAST>>(type.get_error());
