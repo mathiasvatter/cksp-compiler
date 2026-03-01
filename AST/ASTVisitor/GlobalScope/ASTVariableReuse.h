@@ -232,9 +232,14 @@ private:
 		node.variable->determine_locality(m_program, get_current_block());
 
 		if(is_in_global_declarations(node, m_program)) {
-			node.variable->to_global();
+			// when global, variable can also be a ui control
+			auto& variable = node.variable;
+			if (auto ui_control = node.variable->cast<NodeUIControl>()) {
+				variable = ui_control->control_var;
+			}
+			variable->to_global();
+			m_def_provider->set_declaration(variable, !node.variable->is_local);
 			if(node.value) node.value->accept(*this);
-			m_def_provider->set_declaration(node.variable, !node.variable->is_local);
 			return &node;
 		}
 
