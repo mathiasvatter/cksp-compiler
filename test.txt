@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.8-alpha.6 on Sun Mar 01 22:43:48 2026 }
+{ Compiled with cksp version 0.0.8-alpha.6 on Sun Mar 01 23:03:49 2026 }
 on init
   declare ui_button $Foo__btn_sth 
   declare ui_button $Foo__sdfb 
@@ -43,17 +43,6 @@ on note
   $flag := 0
 end on
 on listener
-  $flag := 1
-  message($EVENT_NOTE)
-  message("this function is already running, don't run it again")
-  exit
-  if($flag > 5)
-    @ret0 := "dflk"
-  else
-    @ret0 := "goodbye"
-  end if
-  !_ret00[$NI_CALLBACK_ID mod 420] := @ret0
-  message(!_ret00[$NI_CALLBACK_ID mod 420])
-  $flag := 0
+  message("this is another override listener")
 end on
 

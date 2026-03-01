@@ -1079,6 +1079,10 @@ Result<std::unique_ptr<NodeCallback>> Parser::parse_callback(NodeAST* parent) {
         }
         consume(); // consume )
     }
+	if (peek().type == token::OVERRIDE) {
+		consume(); // consume override
+		node_callback->is_override = true;
+	}
     if(peek().type != token::LINEBRK) {
         return Result<std::unique_ptr<NodeCallback>>(CompileError(ErrorType::ParseError,
       "Missing linebreak after <callback>",  "linebreak",peek()));

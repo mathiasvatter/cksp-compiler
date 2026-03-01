@@ -780,6 +780,7 @@ struct NodeBinaryExpr final : NodeAST {
 
 struct NodeCallback final : NodeAST {
 	bool is_thread_safe = true;
+	bool is_override = false;
     std::string begin_callback;
     std::unique_ptr<NodeAST> callback_id = nullptr;
     std::unique_ptr<NodeBlock> statements;
@@ -907,6 +908,7 @@ struct NodeProgram final : NodeAST {
 	/// Checks for uniqueness of all callbacks except "on ui_control"
 	[[nodiscard]] std::unordered_map<std::string, std::vector<NodeCallback*>> get_callback_counts() const;
 	bool check_unique_callbacks() const;
+	bool apply_callback_overrides();
 	bool combine_callbacks();
 	/// Checks for existence and uniqueness of "on init" callback
 	/// If found, returns pointer to the callback node
@@ -928,7 +930,6 @@ struct NodeProgram final : NodeAST {
 	std::shared_ptr<NodeVariable> get_tmp_var(Type* ty, DataType data=DataType::Mutable);
 	std::shared_ptr<NodePointer> get_tmp_ptr(Type* ty, DataType data=DataType::Mutable);
 };
-
 
 
 
