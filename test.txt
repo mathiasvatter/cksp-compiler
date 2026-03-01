@@ -1,16 +1,14 @@
-{ Compiled with cksp version 0.0.8-alpha.6 on Sun Mar 01 21:36:23 2026 }
+{ Compiled with cksp version 0.0.8-alpha.6 on Sun Mar 01 22:08:57 2026 }
 on init
+  declare ui_button $Foo__btn_sth 
+  declare ui_button $Foo__sdfb 
   declare @ret0
   declare $i0
   declare $_step00
   declare $_stop00
+  set_control_par(get_ui_id($Foo__btn_sth), $CONTROL_PAR_VALUE, get_control_par(get_ui_id($Foo__btn_sth), $CONTROL_PAR_VALUE) + 1)
   set_control_par_str($INST_WALLPAPER_ID, $CONTROL_PAR_PICTURE, "bubu.")
   message(4)
-  declare ui_xy ?xy_arp[2] 
-  make_persistent(?xy_arp)
-  read_persistent_var(?xy_arp)
-  declare $idx
-  $idx := search(?xy_arp, 0)
   declare $a
   declare $f
   declare $g

@@ -1,15 +1,13 @@
 on init
+	declare ui_button Foo.btn_sth : int  {Reuses: 0}
+	declare ui_button Foo.sdfb : int  {Reuses: 0}
 	declare ret0 : string {Reuses: 0}
 	declare local i0 : int {Reuses: 0}
 	declare local _step00 : int {Reuses: 0}
 	declare local _stop00 : int {Reuses: 0}
+	set_control_par(get_ui_id(Foo.btn_sth{int} {Foo.btn_sth} ){Builtin, None, get_ui_id}, CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} , get_control_par(get_ui_id(Foo.btn_sth{int} {Foo.btn_sth} ){Builtin, None, get_ui_id}, CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} ){Builtin, None, get_control_par} + 1){Builtin, None, set_control_par}
 	set_control_par_str(INST_WALLPAPER_ID{int} {INST_WALLPAPER_ID} , CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "bubu."){Builtin, None, set_control_par_str}
 	message(4){Builtin, None, message}
-	declare ui_xy xy_arp[2] : real[]  {Reuses: 0}
-	make_persistent(xy_arp{real[]} {xy_arp} ){Builtin, None}
-	read_persistent_var(xy_arp{real[]} {xy_arp} ){Builtin, None}
-	declare idx : int {Reuses: 0}
-	idx{int} {idx}  := search(xy_arp{real[]} {xy_arp} , 0){Builtin, None, search}
 	declare a : int {Reuses: 0}
 	declare f : int {Reuses: 0}
 	declare g : int {Reuses: 0}

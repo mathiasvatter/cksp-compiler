@@ -164,10 +164,11 @@ end struct
 
 on init
 	
+	Foo.btn_sth->value += 1
 	INST_WALLPAPER_ID -> picture := 'bubu.'
 	message(henlo)
-	declare read ui_xy xy_arp[2]
-	declare idx := search(xy_arp, 0)
+	// declare read ui_xy xy_arp[2]
+	// declare idx := search(xy_arp, 0)
 
 	import "/Users/mathias/Desktop/sth.cksp"
 
