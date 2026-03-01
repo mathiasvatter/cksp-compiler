@@ -233,12 +233,13 @@ private:
 
 		if(is_in_global_declarations(node, m_program)) {
 			// when global, variable can also be a ui control
-			auto& variable = node.variable;
 			if (auto ui_control = node.variable->cast<NodeUIControl>()) {
-				variable = ui_control->control_var;
+				ui_control->control_var->to_global();
+				m_def_provider->set_declaration(ui_control->control_var, !node.variable->is_local);
+			} else {
+				node.variable->to_global();
+				m_def_provider->set_declaration(node.variable, !node.variable->is_local);
 			}
-			variable->to_global();
-			m_def_provider->set_declaration(variable, !node.variable->is_local);
 			if(node.value) node.value->accept(*this);
 			return &node;
 		}

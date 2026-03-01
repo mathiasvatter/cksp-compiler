@@ -37,11 +37,14 @@ public:
 	explicit DesugarCompoundAssignment(NodeProgram* program) : ASTDesugaring(program) {};
 
 	NodeAST* visit(NodeCompoundAssignment& node) override {
-		// transform to dec or inc if operator is +/- and r_value is 1 or -1
-		auto it = m_inc_dec_transform.find(node.op);
-		if (it != m_inc_dec_transform.end()) {
-			if (auto transformed = it->second(node)) {
-				return transformed;
+		// do the transformation in inc/dec only when l_value is not get_control
+		if (!node.l_value->cast<NodeGetControl>()) {
+			// transform to dec or inc if operator is +/- and r_value is 1 or -1
+			auto it = m_inc_dec_transform.find(node.op);
+			if (it != m_inc_dec_transform.end()) {
+				if (auto transformed = it->second(node)) {
+					return transformed;
+				}
 			}
 		}
 
