@@ -193,7 +193,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeString &node) {
 	}
 	// string values have to have " " on both sides -> ' ' is not permissible
 	if (node.value[0] == '\'') {
-		StringUtils::remove_quotes(node.value);
+		node.value = StringUtils::remove_quotes(node.value);
 		node.value = StringUtils::add_double_quotes(node.value);
 	}
 	return &node;
