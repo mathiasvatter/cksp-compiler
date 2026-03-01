@@ -36,6 +36,8 @@ FILES=(
   "/Users/mathias/Scripting/the-orchestra-complete-4/the_orchestra_ens_V1.2.ksp"
   "/Users/mathias/Scripting/legato-dev/legato.ksp"
   "/Users/mathias/Scripting/legato-dev/keyswitch.ksp"
+  "/Users/mathias/Scripting/fluegel/fluegel.ksp"
+  "/Users/mathias/Scripting/chroma-upright-piano/Chroma Cimbalom.ksp"
   "/Users/mathias/Scripting/ro-ki/rho_des.ksp"
   "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp"
   "/Users/Mathias/Scripting/the-score/the-score-lead.ksp"
