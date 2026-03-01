@@ -247,12 +247,13 @@ public:
 		}
 		auto ast = std::move(ast_result.unwrap());
 		{
-			m_program = ast.get();
-			m_program->def_provider = &m_definition_provider;
-			m_program->compiler_config = m_final_config.get();
-			if (m_pragma_config->combine_callbacks) {
-				m_program->combine_callbacks();
-			}
+				m_program = ast.get();
+				m_program->def_provider = &m_definition_provider;
+				m_program->compiler_config = m_final_config.get();
+				m_program->apply_callback_overrides();
+				if (m_pragma_config->combine_callbacks) {
+					m_program->combine_callbacks();
+				}
 			m_program->check_unique_callbacks();
 			m_program->init_callback = m_program->move_on_init_callback();
 		}
