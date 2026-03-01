@@ -10,12 +10,18 @@
 
 class PreprocessorParser : public Processor {
 public:
-    explicit PreprocessorParser(std::vector<Token> tokens);
+    explicit PreprocessorParser(std::vector<Token> tokens, DefinitionProvider* def_provider) : Processor(std::move(tokens)), m_definition_provider(def_provider) {;
+		m_pos = 0;
+		m_curr_token_type = m_tokens.at(0).type;
+	}
 
     Result<std::unique_ptr<PreNodeProgram>> parse_program(PreNodeAST* parent);
 
 private:
 	PreNodeProgram* m_program = nullptr;
+	DefinitionProvider* m_definition_provider;
+
+	Result<SuccessTag> parse_main_constructs(PreNodeAST* parent, std::unique_ptr<PreNodeChunk>& chunk);
 
     Result<std::unique_ptr<PreNodeNumber>> parse_number(PreNodeAST* parent);
     Result<std::unique_ptr<PreNodeAST>> parse_int(PreNodeAST *parent);
@@ -38,6 +44,10 @@ private:
     Result<std::unique_ptr<PreNodeIterateMacro>> parse_iterate_macro(PreNodeAST* parent);
     Result<std::unique_ptr<PreNodeLiterateMacro>> parse_literate_macro(PreNodeAST* parent);
 
+	/// any function-call-like construct
+	Result<std::unique_ptr<PreNodeFunctionCall>> parse_function_call(PreNodeAST* parent);
+    Result<std::unique_ptr<PreNodeFunctionHeader>> parse_function_header(PreNodeAST* parent);
+
 	/// INCREMENTER
     Result<std::unique_ptr<PreNodeIncrementer>> parse_incrementer(PreNodeAST* parent);
 
@@ -50,18 +60,20 @@ private:
 	Result<std::unique_ptr<PreNodeResetCondition>> parse_reset_condition(PreNodeAST* parent);
 	Result<std::unique_ptr<PreNodeUseCodeIf>> parse_use_code_if(PreNodeAST* parent);
 
-    std::unordered_map<StringIntKey, std::string, StringIntKeyHash> m_define_strings;
+    // std::unordered_map<StringIntKey, std::string, StringIntKeyHash> m_define_strings;
     // macro name and num_macro_arguments
-    std::unordered_map<StringIntKey, std::string, StringIntKeyHash> m_macro_strings;
-    std::set<std::string> m_macro_iterate_strings;
+    // std::unordered_map<StringIntKey, std::string, StringIntKeyHash> m_macro_strings;
+    // std::set<std::string> m_macro_iterate_strings;
     bool m_parsing_iterator_macro = false;
 	bool m_parsing_literate_macro = false;
     std::vector<std::unique_ptr<PreNodeDefineStatement>> m_define_definitions;
 
-    int get_num_params_in_definition();
+    // int get_num_params_in_definition();
 
-    bool is_define_call(const Token &tok);
-    bool is_macro_call(const Token &tok);
+    // bool is_define_call(const Token &tok);
+    // bool is_macro_call(const Token &tok);
+	bool is_function_call(const Token &tok) const;
+	bool is_iterate_macro_call(const Token &tok) const; // checks if inside iterate/literate stmt
     bool is_define_definition();
     bool is_macro_definition();
 };

@@ -30,11 +30,12 @@ protected:
 	Token m_curr_token;
 
 
-	Token peek(const std::vector<Token>& tok, int ahead = 0);
-	Token consume(const std::vector<Token>& tok);
+	const Token& peek(const std::vector<Token>& tok, int ahead = 0);
+	const Token& consume(const std::vector<Token>& tok);
 
-	Token peek(int ahead = 0);
-	Token consume();
+	const Token& peek(int ahead = 0);
+	const Token& consume();
+	[[nodiscard]] token peek_type(int ahead = 0) const;
 
 	[[nodiscard]] const Token& get_tok(const std::vector<Token>& tok) const;
     [[nodiscard]] const Token& get_tok() const;
@@ -51,4 +52,3 @@ protected:
 	void _skip_linebreaks();
 
 };
-

@@ -252,6 +252,7 @@ NodeAST * TypeInference::visit(NodeList& node) {
 
     // check if all types are the same and try to infer list type from it
     std::vector<Type*> types;
+    types.reserve(node.body.size());
     for(auto & b : node.body) {
         b->accept(*this);
         types.push_back(b->ty);
@@ -529,6 +530,7 @@ NodeAST * TypeInference::visit(NodeInitializerList& node) {
 	}
 
 	std::vector<Type*> types;
+	types.reserve(node.elements.size());
 	for(const auto & param : node.elements) {
 		param->accept(*this);
 		types.push_back(param->ty);
@@ -700,13 +702,17 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 				if (reference->data_type == DataType::UIControl) continue;
 			}
 			auto &param = definition->get_param(i+method_idx);
-			const std::string error_message =
-				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
-					+ param->ty->to_string() + " as argument type.";
-			// if (!param->ty->is_string_int_assignment(func_arg->ty))
 			// this is needed for string -> int stuff -> needs better solution
-			if (param->ty->get_element_type() != TypeRegistry::String)
-				match_type(*func_arg, *param, error_message);
+			if (param->ty->get_element_type() != TypeRegistry::String) {
+				if (!func_arg->ty->is_compatible(param->ty)) {
+					const std::string error_message =
+						"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
+							+ param->ty->to_string() + " as argument type.";
+					match_type(*func_arg, *param, error_message);
+				} else {
+					match_type(*func_arg, *param);
+				}
+			}
 
 		}
 		// sh_right(abs(a{number} - b{number}), 1)
@@ -764,17 +770,22 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 		for (int i = 0; i < node.function->get_num_args(); i++) {
 			auto &func_arg = node.function->get_arg(i);
 			auto &param = definition->get_param(i+method_idx);
-			const std::string error_message =
-				"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
-					+ param->ty->to_string() + " as argument type.";
 
 			if (auto reference = func_arg->is_reference()) {
 				// ignore ui control variables
 				if (reference->data_type == DataType::UIControl) continue;
 			}
 			// if (!param->ty->is_string_int_assignment(func_arg->ty))
-			if (param->ty->get_element_type() != TypeRegistry::String)
-				match_type(*func_arg, *param, error_message);
+			if (param->ty->get_element_type() != TypeRegistry::String) {
+				if (!func_arg->ty->is_compatible(param->ty)) {
+					const std::string error_message =
+						"Found incorrect type in <Function Call>. Function <" + node.function->name + "> expects "
+							+ param->ty->to_string() + " as argument type.";
+					match_type(*func_arg, *param, error_message);
+				} else {
+					match_type(*func_arg, *param);
+				}
+			}
 
 		}
 

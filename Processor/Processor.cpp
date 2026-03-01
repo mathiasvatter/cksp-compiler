@@ -6,38 +6,53 @@
 #include "../AST/TypeRegistry.h"
 
 Processor::Processor(std::vector<Token> tokens) : m_tokens(std::move(tokens)) {
-	if(!m_tokens.empty())
+	if(!m_tokens.empty()) {
 		m_curr_token_type = m_tokens.at(0).type;
+		m_curr_token_value = m_tokens.at(0).val;
+		m_curr_token = m_tokens.at(0);
+	}
 }
 
-Token Processor::peek(const std::vector<Token> &tok, const int ahead) {
-	if (tok.size() < m_pos+ahead) {
+const Token &Processor::peek(const std::vector<Token> &tok, const int ahead) {
+	const auto idx = static_cast<long long>(m_pos) + ahead;
+	if (idx < 0 || idx >= static_cast<long long>(tok.size())) {
 		auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
 		CompileError(ErrorType::PreprocessorError, err_msg, tok.at(m_pos).line, "end token", tok.at(m_pos).val, tok.at(m_pos).file).exit();
 	}
-	m_curr_token = tok.at(m_pos);
+	m_curr_token = tok[m_pos];
 	m_curr_token_type = m_curr_token.type;
 	m_curr_token_value = m_curr_token.val;
-	return tok.at(m_pos+ahead);
+	return tok[static_cast<size_t>(idx)];
 }
 
-Token Processor::peek(const int ahead) {
+const Token &Processor::peek(const int ahead) {
 	return peek(m_tokens, ahead);
 }
 
-Token Processor::consume(const std::vector<Token> &tok) {
+const Token &Processor::consume(const std::vector<Token> &tok) {
 	if (m_pos >= tok.size()) {
 		const auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
 		CompileError(ErrorType::PreprocessorError, err_msg, tok.at(m_pos).line, "end token", tok.at(m_pos).val, tok.at(m_pos).file).exit();
 	}
-	m_curr_token = tok.at(m_pos+1);
-	m_curr_token_type = m_curr_token.type;
-	m_curr_token_value = m_curr_token.val;
-	return tok.at(m_pos++);
+	if (m_pos + 1 < tok.size()) {
+		m_curr_token = tok[m_pos + 1];
+		m_curr_token_type = m_curr_token.type;
+		m_curr_token_value = m_curr_token.val;
+	}
+	return tok[m_pos++];
 }
 
-Token Processor::consume() {
+const Token &Processor::consume() {
 	return consume(m_tokens);
+}
+
+token Processor::peek_type(const int ahead) const {
+	const auto idx = static_cast<long long>(m_pos) + ahead;
+	if (idx < 0 || idx >= static_cast<long long>(m_tokens.size())) {
+		auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
+		CompileError(ErrorType::PreprocessorError, err_msg, m_tokens.at(m_pos).line, "end token", m_tokens.at(m_pos).val, m_tokens.at(m_pos).file).exit();
+	}
+	return m_tokens[static_cast<size_t>(idx)].type;
 }
 
 const Token &Processor::get_tok(const std::vector<Token> &tok) const {

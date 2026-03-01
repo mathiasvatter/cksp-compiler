@@ -64,8 +64,8 @@ add_executable(cksp main.cpp
         Preprocessor/PreAST/PreASTVisitor.cpp
         Preprocessor/PreprocessorParser.h
         Preprocessor/PreprocessorParser.cpp
-        Preprocessor/PreAST/PreASTDesugar.h
-        Preprocessor/PreAST/PreASTDesugar.cpp
+        Preprocessor/PreAST/PreASTMacros.h
+        Preprocessor/PreAST/PreASTMacros.cpp
         AST/ASTNodes/AST.h
         AST/ASTNodes/AST.cpp
         AST/ASTNodes/ASTDataStructures.h
@@ -90,7 +90,6 @@ add_executable(cksp main.cpp
         Interpreter/SimpleExprInterpreter.h
         Interpreter/SimpleExprInterpreter.cpp
         Preprocessor/PreAST/PreASTCombine.h
-        Preprocessor/PreAST/PreASTCombine.cpp
         Preprocessor/PreAST/PreASTIncrementer.h
         Preprocessor/PreAST/PreASTIncrementer.cpp
         BuiltinsProcessing/BuiltinsProcessor.h
@@ -236,6 +235,8 @@ add_executable(cksp main.cpp
         Lowering/LoweringBoolean.h
         SyntaxChecks/KSPConditions.h
         Lowering/LoweringComparisons.h
+        Preprocessor/PreAST/PreASTImport.h
+        Preprocessor/PreAST/PreASTConditions.h
 )
 add_dependencies(cksp generate_headers)
 

@@ -60,7 +60,6 @@ public:
     }
 
 	PreNodeAST *visit(PreNodeStatement &node) override {
-
 		os << get_indent();
         node.statement->accept(*this);
 		return &node;
@@ -72,6 +71,36 @@ public:
 		m_scope_count--;
 		return &node;
     }
+
+	PreNodeAST *visit(PreNodeSetCondition &node) override {
+		os << "SET_CONDITION(";
+		node.condition->accept(*this);
+		os << ")\n";
+		return &node;
+	}
+
+	PreNodeAST *visit(PreNodeResetCondition &node) override {
+		os << "RESET_CONDITION(";
+		node.condition->accept(*this);
+		os << ")\n";
+		return &node;
+	}
+
+	PreNodeAST *visit(PreNodeUseCodeIf &node) override {
+		os << "USE_CODE_IF(";
+		node.condition->accept(*this);
+		os << ")\n";
+		if(node.if_branch) {
+			node.if_branch->accept(*this);
+		}
+		if(node.else_branch) {
+			os << "USE_CODE_ELSE()\n";
+			node.else_branch->accept(*this);
+		}
+		os << "END_USE_CODE()\n";
+		return &node;
+	}
+
 
 	PreNodeAST *visit(PreNodeDefineHeader &node) override {
 	    os << node.name->accept(*this);
@@ -111,7 +140,7 @@ public:
 		os << "\n";
 	    visit_all(node.macro_definitions, *this);
 		os << "\n";
-		visit_all(node.program, *this);
+		node.program->accept(*this);
 		return &node;
     }
 
