@@ -163,7 +163,12 @@ struct Sample_Note
 end struct
 
 on init
-	
+	list mylist
+      1
+      2
+      3
+end list
+message(mylist[0])
 	Foo.btn_sth->value += 1
 	INST_WALLPAPER_ID -> picture := 'bubu.'
 	message(henlo)
@@ -203,5 +208,5 @@ on listener
 	flag := 1
 	do_something()
 	flag := 0
-	message(EVENT_NOTE)
+	// message(EVENT_NOTE)
 end on
