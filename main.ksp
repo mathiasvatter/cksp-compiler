@@ -127,7 +127,7 @@ function foo()
 end function	
 
 namespace Foo
-	// declare ui_button btn_sth
+	declare ui_button btn_sth
 	declare ui_button sdfb
 	// function bar()	
 	// 	declare dummyboi: bool := true
@@ -141,8 +141,6 @@ namespace Foo
 	// end function
 	
 end namespace
-
-
 
 
 struct Sample_Note

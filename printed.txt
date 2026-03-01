@@ -1,5 +1,4 @@
 on init
-	declare ui_button Foo.sdfb : int  {Reuses: 0}
 	declare ret0 : string {Reuses: 0}
 	declare local i0 : int {Reuses: 0}
 	declare local _step00 : int {Reuses: 0}

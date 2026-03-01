@@ -1127,6 +1127,7 @@ Result<std::unique_ptr<NodeNamespace>> Parser::parse_namespace(NodeAST *parent) 
 	std::vector<std::shared_ptr<NodeFunctionDefinition>> node_functions;
 	while(peek().type != end_construct) {
 		_skip_linebreaks();
+		if (peek().type == end_construct) break;
 		if(peek().type == token::DECLARE) {
 			auto declare_stmt = parse_declare_statement(node_declarations.get());
 			if(declare_stmt.is_error()) {
