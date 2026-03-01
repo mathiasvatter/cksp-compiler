@@ -486,6 +486,10 @@ NodeFunctionCall* NodeReference::is_in_get_ui_id() const {
 	return nullptr;
 }
 
+bool NodeReference::check_restricted_environment(NodeCallback *current_callback) const {
+	return BuiltinRestrictionValidator::check_variable_callability(*this, current_callback);
+}
+
 // ************* NodeInstruction ***************
 std::unique_ptr<NodeAST> NodeInstruction::clone() const {
     return std::make_unique<NodeInstruction>(*this);
