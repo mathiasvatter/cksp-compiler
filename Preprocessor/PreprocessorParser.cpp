@@ -3,268 +3,49 @@
 //
 
 #include "PreprocessorParser.h"
-
-PreprocessorParser::PreprocessorParser(std::vector<Token> tokens) : Processor(std::move(tokens)) {
-    m_pos = 0;
-	m_curr_token_type = m_tokens.at(0).type;
-}
+#include "PreAST/PreASTConditions.h"
+#include <charconv>
 
 Result<std::unique_ptr<PreNodeProgram>> PreprocessorParser::parse_program(PreNodeAST *parent) {
-    std::vector<std::unique_ptr<PreNodeAST>> program;
+    auto program = std::make_unique<PreNodeChunk>(Token(), parent);
     std::vector<std::unique_ptr<PreNodeDefineStatement>> define_statements;
     std::vector<std::unique_ptr<PreNodeMacroDefinition>> macro_definitions;
+    const auto token_count = m_tokens.size();
+    program->chunk.reserve(token_count);
+    define_statements.reserve(token_count / 32 + 1);
+    macro_definitions.reserve(token_count / 64 + 1);
     auto node_program = std::make_unique<PreNodeProgram>(std::move(program), std::move(define_statements), std::move(macro_definitions), Token(), nullptr);
+    node_program->def_provider = m_definition_provider;
     m_program = node_program.get();
-    // get definitions first
-    while(peek().type != token::END_TOKEN) {
-        if (is_define_definition()) {
-            consume(); // consume define
-            int num_args = get_num_params_in_definition();
-            auto name = consume().val;
-            m_define_strings.insert({{name, num_args}, name});
-        } else if (is_macro_definition()) {
-            consume(); // consume macro
-            // get number of arguments to not get define and macro confused
-            int num_args = get_num_params_in_definition();
-            auto name = consume().val;
-            m_macro_iterate_strings.insert(name);
-            m_macro_strings.insert({{name, num_args}, name});
-        } else consume();
-    }
     // get construct calls
     m_pos = 0;
     while(peek().type != token::END_TOKEN) {
-        if (is_define_definition()) {
-            auto result_define = parse_define_definition(parent);
-            if (result_define.is_error())
-                return Result<std::unique_ptr<PreNodeProgram>>(result_define.get_error());
-            m_program->define_statements.push_back(std::move(result_define.unwrap()));
-//        } else if (is_macro_definition()) {
-//            auto result_macro_def = parse_macro_definition(parent);
-//            if (result_macro_def.is_error())
-//                return Result<std::unique_ptr<PreNodeProgram>>(result_macro_def.get_error());
-//            m_program->macro_definitions.push_back(std::move(result_macro_def.unwrap()));
-        } else {
-            auto token_result = parse_token(parent);
-            if (token_result.is_error())
-                return Result<std::unique_ptr<PreNodeProgram>>(token_result.get_error());
-            m_program->program.push_back(std::move(token_result.unwrap()));
+        if(peek().type == token::END_TOKEN) break;
+        auto parse_result = parse_main_constructs(parent, m_program->program);
+        if (parse_result.is_error()) {
+            return Result<std::unique_ptr<PreNodeProgram>>(parse_result.get_error());
         }
     }
     auto node_end_token = std::make_unique<PreNodeOther>(std::move(consume()), parent);
-//    node_program->define_statements = std::move(m_define_definitions);
-    node_program->program.push_back(std::move(node_end_token));
+    node_program->program->add_chunk(std::move(node_end_token));
     return Result<std::unique_ptr<PreNodeProgram>>(std::move(node_program));
 }
 
-
-bool PreprocessorParser::is_define_definition() {
-    if(m_pos >0) {
-        return m_pos > 0 and peek().type == token::DEFINE and peek(-1).type == token::LINEBRK;
-    }
-    return peek().type == token::DEFINE;
-}
-
-bool PreprocessorParser::is_macro_definition() {
-    if(m_pos >0) {
-        return m_pos > 0 and peek().type == token::MACRO and peek(-1).type == token::LINEBRK;
-    }
-    return peek().type == token::MACRO;
-}
-
-bool PreprocessorParser::is_define_call(const Token &tok) {
-    bool syntax = false;
-    if(m_pos >0) {
-        syntax = (peek().type == token::KEYWORD and m_pos > 0 and (peek(-1).type != token::MACRO or peek(-1).type != token::FUNCTION));
-    }
-    syntax = peek().type == token::KEYWORD;
-
-    if(syntax) {
-        //search in m_define_strings
-        int num_args = get_num_params_in_definition();
-        auto it = m_define_strings.find({tok.val, num_args});
-        syntax &= it != m_define_strings.end();
-    }
-    return syntax;
-}
-
-bool PreprocessorParser::is_macro_call(const Token &tok) {
-	if(peek().type != token::KEYWORD) return false;
-
-	bool is_macro_call = peek().type == token::KEYWORD;
-	bool is_iterator_macro_call = peek().type == token::KEYWORD;
-
-	if(m_pos<2) {
-		// iterator macro call cannot be at first position in file
-		is_iterator_macro_call = false;
-		// macro call has to have linebreak or open parenth after it
-		is_macro_call &= peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK;
-	} else {
-	    is_iterator_macro_call &= peek(-2).type == token::ITERATE_MACRO || peek(-2).type == token::LITERATE_MACRO;
-		// iterator macro call has to have open parenth beforehand
-		is_iterator_macro_call &= peek(-1).type == token::OPEN_PARENTH and (m_parsing_iterator_macro || m_parsing_literate_macro) and (peek(1).type == token::OPEN_PARENTH or peek(1).type == token::CLOSED_PARENTH);
-		// macro call has to have linebreak before and either linebreak or open parenth after it
-		is_macro_call &= peek(-1).type == token::LINEBRK and (peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK);
-	}
-
-    int num_hashes = StringUtils::count_char(tok.val, '#');
-	if(is_iterator_macro_call) {
-		is_iterator_macro_call &= m_macro_iterate_strings.contains(tok.val) or (num_hashes > 0 and num_hashes % 2 == 0);
-		return is_iterator_macro_call;
-	}
-	if(is_macro_call) {
-		int num_args = get_num_params_in_definition();
-		//search in m_define_strings
-		is_macro_call &= m_macro_strings.contains({tok.val, num_args}) or (num_hashes > 0 and num_hashes % 2 == 0);
-		return is_macro_call;
-	}
-	return false;
-}
-
-int PreprocessorParser::get_num_params_in_definition() {
-    size_t begin = m_pos;
-    consume(); // consume name
-    _skip_linebreaks();
-    int num_params = 0;
-
-    if(peek().type == token::OPEN_PARENTH) {
-        consume(); // consume (
-        _skip_linebreaks();
-        if (peek().type != token::CLOSED_PARENTH) {
-            int parenth_depth = 1; // Start with 1 because we've already consumed the first OPEN_PARENTH
-            while (parenth_depth > 0) {
-                if (peek().type == token::OPEN_PARENTH || peek().type == token::OPEN_BRACKET) {
-                    parenth_depth++;
-                } else if (peek().type == token::CLOSED_PARENTH || peek().type == token::CLOSED_BRACKET) {
-                    _skip_linebreaks();
-                    parenth_depth--;
-                } else if (peek().type == token::LINEBRK) {
-                    _skip_linebreaks();
-                    continue;
-                } else if (peek().type == token::END_TOKEN) {
-                    auto error = CompileError(ErrorType::PreprocessorError,
-                "",")", peek());
-                    error.add_message("Unexpected end of file. Missing closing parenthesis.");
-                    error.exit();
-                }
-                if (peek().type == token::COMMA && parenth_depth == 1) {
-                    num_params++;
-                    consume(); // consume COMMA
-                    _skip_linebreaks();
-                } else if (parenth_depth > 0) {
-                    consume();
-                }
-            }
-            if(num_params>0) {
-                num_params += 2;
-            } else {
-                num_params = 1;
-            }
-        }
-    }
-
-    m_pos = begin;
-    return num_params;
-}
-
-
-Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::parse_token(PreNodeAST* parent) {
-    std::unique_ptr<PreNodeAST> stmt;
-    auto start_token = peek();
-    auto node_statement = std::make_unique<PreNodeStatement>(start_token, parent);
-	if (is_macro_definition()) {
-		auto result_macro_def = parse_macro_definition(node_statement.get());
-		if (result_macro_def.is_error())
-			return Result<std::unique_ptr<PreNodeAST>>(result_macro_def.get_error());
-		node_statement->statement = std::move(result_macro_def.unwrap());
-		stmt = std::move(node_statement);
-	} else if(is_define_call(peek())) {
-        auto result_define_call = parse_define_call(node_statement.get());
-        if (result_define_call.is_error())
-            return Result<std::unique_ptr<PreNodeAST>>(result_define_call.get_error());
-        node_statement->statement = std::move(result_define_call.unwrap());
-        stmt = std::move(node_statement);
-    } else if(is_macro_call(peek())) {
-        auto result_macro_call = parse_macro_call(node_statement.get());
-        if (result_macro_call.is_error())
-            return Result<std::unique_ptr<PreNodeAST>>(result_macro_call.get_error());
-        node_statement->statement = std::move(result_macro_call.unwrap());
-        stmt = std::move(node_statement);
-    } else if(peek().type == token::ITERATE_MACRO) {
-        auto result_iterate_macro = parse_iterate_macro(node_statement.get());
-        if(result_iterate_macro.is_error())
-            return Result<std::unique_ptr<PreNodeAST>>(result_iterate_macro.get_error());
-        node_statement->statement = std::move(result_iterate_macro.unwrap());
-        stmt = std::move(node_statement);
-    } else if(peek().type == token::LITERATE_MACRO) {
-        auto result_literate_macro = parse_literate_macro(node_statement.get());
-        if(result_literate_macro.is_error())
-            return Result<std::unique_ptr<PreNodeAST>>(result_literate_macro.get_error());
-        node_statement->statement = std::move(result_literate_macro.unwrap());
-        stmt = std::move(node_statement);
-    } else if (peek().type == token::SET_CONDITION) {
-        auto result_condition_def = parse_set_condition(node_statement.get());
-        if (result_condition_def.is_error())
-            return Result<std::unique_ptr<PreNodeAST>>(result_condition_def.get_error());
-        node_statement->statement = std::move(result_condition_def.unwrap());
-        stmt = std::move(node_statement);
-    } else if (peek().type == token::RESET_CONDITION) {
-        auto result_condition_def = parse_reset_condition(node_statement.get());
-        if (result_condition_def.is_error())
-            return Result<std::unique_ptr<PreNodeAST>>(result_condition_def.get_error());
-        node_statement->statement = std::move(result_condition_def.unwrap());
-        stmt = std::move(node_statement);
-    } else if (peek().type == token::IMPORT) {
-        auto result_import = parse_import(node_statement.get());
-        if (result_import.is_error())
-            return Result<std::unique_ptr<PreNodeAST>>(result_import.get_error());
-        node_statement->statement = std::move(result_import.unwrap());
-        stmt = std::move(node_statement);
-    } else if (peek().type == token::KEYWORD and peek().val == "import_nckp") {
-        auto result_import_nckp = parse_import_nckp(node_statement.get());
-        if (result_import_nckp.is_error())
-            return Result<std::unique_ptr<PreNodeAST>>(result_import_nckp.get_error());
-        node_statement->statement = std::move(result_import_nckp.unwrap());
-        stmt = std::move(node_statement);
-    } else if(peek().type == token::KEYWORD or peek().type == token::STRING or peek().type == token::DEFAULT or peek().type == token::RETURN) {
-        auto result_keyword = parse_keyword(node_statement.get());
-        if (result_keyword.is_error())
-            return Result<std::unique_ptr<PreNodeAST>>(result_keyword.get_error());
-        node_statement->statement = std::move(result_keyword.unwrap());
-        stmt = std::move(node_statement);
-    } else if(peek().type == token::INT) {
-        auto result_int = parse_int(node_statement.get());
-        if (result_int.is_error())
-            return Result<std::unique_ptr<PreNodeAST>>(result_int.get_error());
-        node_statement->statement = std::move(result_int.unwrap());
-        stmt = std::move(node_statement);
-    } else if(peek().type == token::FLOAT or peek().type == token::BINARY or peek().type == token::HEXADECIMAL) {
-        auto result_number = parse_number(node_statement.get());
-        if (result_number.is_error())
-            return Result<std::unique_ptr<PreNodeAST>>(result_number.get_error());
-        node_statement->statement = std::move(result_number.unwrap());
-        stmt = std::move(node_statement);
-    } else if (peek().type == token::START_INC) {
-        auto result_inc = parse_incrementer(node_statement.get());
-        if (result_inc.is_error())
-            return Result<std::unique_ptr<PreNodeAST>>(result_inc.get_error());
-        node_statement->statement = std::move(result_inc.unwrap());
-        stmt = std::move(node_statement);
-    } else if (peek().type == token::PRAGMA) {
-        auto result_pragma = parse_pragma(node_statement.get());
-        if (result_pragma.is_error())
-            return Result<std::unique_ptr<PreNodeAST>>(result_pragma.get_error());
-        node_statement->statement = std::move(result_pragma.unwrap());
-        stmt = std::move(node_statement);
+Result<SuccessTag> PreprocessorParser::parse_main_constructs(PreNodeAST *parent, std::unique_ptr<PreNodeChunk> &chunk) {
+    if (is_define_definition()) {
+        auto result_define = parse_define_definition(parent);
+        if (result_define.is_error())
+            return Result<SuccessTag>(result_define.get_error());
+        m_program->define_statements.push_back(std::move(result_define.unwrap()));
     } else {
-        auto result_other = parse_other(parent);
-        if(result_other.is_error())
-            return Result<std::unique_ptr<PreNodeAST>>(result_other.get_error());
-        stmt = std::move(result_other.unwrap());
+        auto token_result = parse_token(parent);
+        if (token_result.is_error())
+            return Result<SuccessTag>(token_result.get_error());
+        chunk->add_chunk(std::move(token_result.unwrap()));
     }
-    stmt->set_range(start_token, peek(-1));
-    return Result<std::unique_ptr<PreNodeAST>>(std::move(stmt));
+    return Result<SuccessTag>(SuccessTag{});
 }
+
 
 Result<std::unique_ptr<PreNodeNumber>> PreprocessorParser::parse_number(PreNodeAST *parent) {
     auto number_token = peek();
@@ -275,17 +56,19 @@ Result<std::unique_ptr<PreNodeNumber>> PreprocessorParser::parse_number(PreNodeA
 
 Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::parse_int(PreNodeAST *parent) {
     auto token = consume();
-    auto value = token.val;
-    try {
-        long long val = std::stoll(value, nullptr, 10);
-        auto node = std::make_unique<PreNodeInt>(static_cast<int32_t>(val & 0xFFFFFFFF), token, parent);
-        node->set_range(token);
-        return Result<std::unique_ptr<PreNodeAST>>(std::move(node));
-    } catch (const std::exception& e) {
+    const auto &value = token.val;
+    long long val = 0;
+    const auto *begin = value.data();
+    const auto *end = begin + value.size();
+    const auto parse_res = std::from_chars(begin, end, val, 10);
+    if (parse_res.ec != std::errc() || parse_res.ptr != end) {
         auto expected = std::string(1, "valid int base "[10]);
         return Result<std::unique_ptr<PreNodeAST>>(CompileError(ErrorType::PreprocessorError,
-        "Invalid integer format.", token.line, expected, value, token.file));
+                                                                "Invalid integer format.", token.line, expected, value, token.file));
     }
+    auto node = std::make_unique<PreNodeInt>(static_cast<int32_t>(val & 0xFFFFFFFF), token, parent);
+    node->set_range(token);
+    return Result<std::unique_ptr<PreNodeAST>>(std::move(node));
 }
 
 Result<std::unique_ptr<PreNodeKeyword>> PreprocessorParser::parse_keyword(PreNodeAST *parent) {
@@ -302,8 +85,129 @@ Result<std::unique_ptr<PreNodeOther>> PreprocessorParser::parse_other(PreNodeAST
     return Result<std::unique_ptr<PreNodeOther>>(std::move(node_other));
 }
 
+Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::parse_token(PreNodeAST* parent) {
+    std::unique_ptr<PreNodeAST> stmt;
+    const Token &curr = peek();
+    const auto curr_type = curr.type;
+    const auto start_token = curr;
+    auto node_statement = std::make_unique<PreNodeStatement>(start_token, parent);
+    if (is_macro_definition()) {
+        auto result_macro_def = parse_macro_definition(node_statement.get());
+        if (result_macro_def.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_macro_def.get_error());
+        node_statement->statement = std::move(result_macro_def.unwrap());
+        stmt = std::move(node_statement);
+    } else if (is_iterate_macro_call(curr)) {
+        auto result_macro_call = parse_macro_call(node_statement.get());
+        if (result_macro_call.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_macro_call.get_error());
+        node_statement->statement = std::move(result_macro_call.unwrap());
+        stmt = std::move(node_statement);
+
+
+        // } else if(is_define_call(peek())) {
+        //        auto result_define_call = parse_define_call(node_statement.get());
+        //        if (result_define_call.is_error())
+        //            return Result<std::unique_ptr<PreNodeAST>>(result_define_call.get_error());
+        //        node_statement->statement = std::move(result_define_call.unwrap());
+        //        stmt = std::move(node_statement);
+        //    } else if(is_macro_call(peek())) {
+        //        auto result_macro_call = parse_macro_call(node_statement.get());
+        //        if (result_macro_call.is_error())
+        //            return Result<std::unique_ptr<PreNodeAST>>(result_macro_call.get_error());
+        //        node_statement->statement = std::move(result_macro_call.unwrap());
+        //        stmt = std::move(node_statement);
+    } else if(curr_type == token::ITERATE_MACRO) {
+        auto result_iterate_macro = parse_iterate_macro(node_statement.get());
+        if(result_iterate_macro.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_iterate_macro.get_error());
+        node_statement->statement = std::move(result_iterate_macro.unwrap());
+        stmt = std::move(node_statement);
+    } else if(curr_type == token::LITERATE_MACRO) {
+        auto result_literate_macro = parse_literate_macro(node_statement.get());
+        if(result_literate_macro.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_literate_macro.get_error());
+        node_statement->statement = std::move(result_literate_macro.unwrap());
+        stmt = std::move(node_statement);
+    } else if (curr_type == token::SET_CONDITION && !PreASTConditions::is_builtin_condition(peek(1))) {
+        auto result_condition_def = parse_set_condition(node_statement.get());
+        if (result_condition_def.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_condition_def.get_error());
+        node_statement->statement = std::move(result_condition_def.unwrap());
+        stmt = std::move(node_statement);
+    } else if (curr_type == token::RESET_CONDITION) {
+        auto result_condition_def = parse_reset_condition(node_statement.get());
+        if (result_condition_def.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_condition_def.get_error());
+        node_statement->statement = std::move(result_condition_def.unwrap());
+        stmt = std::move(node_statement);
+    } else if (curr_type == token::IMPORT) {
+        auto result_import = parse_import(node_statement.get());
+        if (result_import.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_import.get_error());
+        node_statement->statement = std::move(result_import.unwrap());
+        stmt = std::move(node_statement);
+    } else if (curr_type == token::USE_CODE_IF || curr_type == token::USE_CODE_IF_NOT) {
+        auto result_use_code_if = parse_use_code_if(node_statement.get());
+        if (result_use_code_if.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_use_code_if.get_error());
+        node_statement->statement = std::move(result_use_code_if.unwrap());
+        stmt = std::move(node_statement);
+    } else if (curr_type == token::KEYWORD && curr.val == "import_nckp") {
+        auto result_import_nckp = parse_import_nckp(node_statement.get());
+        if (result_import_nckp.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_import_nckp.get_error());
+        node_statement->statement = std::move(result_import_nckp.unwrap());
+        stmt = std::move(node_statement);
+    } else if (is_function_call(curr)) {
+        auto result_function_call  = parse_function_call(node_statement.get());
+        if (result_function_call.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_function_call.get_error());
+        node_statement->statement = std::move(result_function_call.unwrap());
+        stmt = std::move(node_statement);
+    } else if(curr_type == token::KEYWORD || curr_type == token::STRING || curr_type == token::DEFAULT || curr_type == token::RETURN) {
+        auto result_keyword = parse_keyword(node_statement.get());
+        if (result_keyword.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_keyword.get_error());
+        node_statement->statement = std::move(result_keyword.unwrap());
+        stmt = std::move(node_statement);
+    } else if(curr_type == token::INT) {
+        auto result_int = parse_int(node_statement.get());
+        if (result_int.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_int.get_error());
+        node_statement->statement = std::move(result_int.unwrap());
+        stmt = std::move(node_statement);
+    } else if(curr_type == token::FLOAT || curr_type == token::BINARY || curr_type == token::HEXADECIMAL) {
+        auto result_number = parse_number(node_statement.get());
+        if (result_number.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_number.get_error());
+        node_statement->statement = std::move(result_number.unwrap());
+        stmt = std::move(node_statement);
+    } else if (curr_type == token::START_INC) {
+        auto result_inc = parse_incrementer(node_statement.get());
+        if (result_inc.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_inc.get_error());
+        node_statement->statement = std::move(result_inc.unwrap());
+        stmt = std::move(node_statement);
+    } else if (curr_type == token::PRAGMA) {
+        auto result_pragma = parse_pragma(node_statement.get());
+        if (result_pragma.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_pragma.get_error());
+        node_statement->statement = std::move(result_pragma.unwrap());
+        stmt = std::move(node_statement);
+    } else {
+        auto result_other = parse_other(parent);
+        if(result_other.is_error())
+            return Result<std::unique_ptr<PreNodeAST>>(result_other.get_error());
+        stmt = std::move(result_other.unwrap());
+    }
+    stmt->set_range(start_token, peek(-1));
+    return Result<std::unique_ptr<PreNodeAST>>(std::move(stmt));
+}
+
 Result<std::unique_ptr<PreNodeList>> PreprocessorParser::parse_list(PreNodeAST *parent) {
     std::vector<std::unique_ptr<PreNodeChunk>> params_list = {};
+    params_list.reserve(4);
     auto node_list = std::make_unique<PreNodeList>(std::move(params_list), peek(), parent);
     if (peek().type != token::OPEN_PARENTH) {
         auto error = CompileError(ErrorType::PreprocessorError, "", "(", peek());
@@ -313,28 +217,46 @@ Result<std::unique_ptr<PreNodeList>> PreprocessorParser::parse_list(PreNodeAST *
     auto start_token = consume(); // consume (
     _skip_linebreaks();
     if (peek().type != token::CLOSED_PARENTH) {
-        int parenth_depth = 1; // Start with 1 because we've already consumed the first OPEN_PARENTH
+        int parenth_depth = 1; // start with 1 because we've already consumed the first OPEN_PARENTH
+        int bracket_depth = 0;
         auto node_chunk = std::make_unique<PreNodeChunk>(peek(), node_list.get());
+        node_chunk->chunk.reserve(4);
         while (parenth_depth > 0) {
             // Swallow any number of line breaks while inside parentheses
             if (peek().type == token::LINEBRK) {
                 _skip_linebreaks();
                 continue;
             }
-            if (peek().type == token::OPEN_PARENTH or peek().type == token::OPEN_BRACKET) {
+            if (peek().type == token::OPEN_PARENTH) {
                 parenth_depth++;
-            } else if (peek().type == token::CLOSED_PARENTH or peek().type == token::CLOSED_BRACKET) {
+            } else if (peek().type == token::OPEN_BRACKET) {
+                bracket_depth++;
+            } else if (peek().type == token::CLOSED_PARENTH) {
+                if (parenth_depth == 1 && bracket_depth > 0) {
+                    auto error = CompileError(ErrorType::PreprocessorError, "", "]", peek());
+                    error.set_message("Unexpected closing parenthesis in <list> syntax.");
+                    error.add_message("Missing closing bracket before ')'.");
+                    return Result<std::unique_ptr<PreNodeList>>(error);
+                }
                 parenth_depth--;
+            } else if (peek().type == token::CLOSED_BRACKET) {
+                if (bracket_depth == 0) {
+                    auto error = CompileError(ErrorType::PreprocessorError, "", "[", peek());
+                    error.set_message("Unexpected closing bracket in <list> syntax.");
+                    return Result<std::unique_ptr<PreNodeList>>(error);
+                }
+                bracket_depth--;
             } else if (peek().type == token::END_TOKEN) {
                 return Result<std::unique_ptr<PreNodeList>>(CompileError(ErrorType::PreprocessorError,
-            "Unexpected end of file. Missing closing parenthesis.",")", peek()));
-    //         } else if (peek().type == token::LINEBRK) {
-				// return Result<std::unique_ptr<PreNodeList>>(CompileError(ErrorType::SyntaxError,
-				//  "Unexpected linebreak. Missing closing parenthesis.",")", peek()));
-			}
-            if (peek().type == token::COMMA && parenth_depth == 1) {
+                                                                         "Unexpected end of file. Missing closing parenthesis.",")", peek()));
+                //         } else if (peek().type == token::LINEBRK) {
+                // return Result<std::unique_ptr<PreNodeList>>(CompileError(ErrorType::SyntaxError,
+                //  "Unexpected linebreak. Missing closing parenthesis.",")", peek()));
+            }
+            if (peek().type == token::COMMA && parenth_depth == 1 && bracket_depth == 0) {
                 node_list->add_element(std::move(node_chunk));
                 node_chunk = std::make_unique<PreNodeChunk>(peek(), node_list.get());
+                node_chunk->chunk.reserve(4);
                 consume(); // consume COMMA
                 _skip_linebreaks();
             } else if(parenth_depth > 0) {
@@ -354,6 +276,42 @@ Result<std::unique_ptr<PreNodeList>> PreprocessorParser::parse_list(PreNodeAST *
     return Result<std::unique_ptr<PreNodeList>>(std::move(node_list));
 }
 
+Result<std::unique_ptr<PreNodePragma>> PreprocessorParser::parse_pragma(PreNodeAST* parent) {
+    auto token = consume(); // consume #pragma
+    auto node_pragma = std::make_unique<PreNodePragma>(token, parent);
+    std::string pragma_error_msg = "Unable to process #pragma syntax.";
+    if(peek().type != token::KEYWORD) {
+        return Result<std::unique_ptr<PreNodePragma>>(CompileError(ErrorType::PreprocessorError,
+                                                                   pragma_error_msg, token.line, "Valid pragma option.",token.val, token.file));
+    }
+    auto node_option = parse_keyword(node_pragma.get());
+    if(peek().type != token::OPEN_PARENTH) {
+        return Result<std::unique_ptr<PreNodePragma>>(CompileError(ErrorType::PreprocessorError, pragma_error_msg, token.line, "(",token.val, token.file));
+    }
+    consume(); // consume (
+    if(peek().type != token::KEYWORD and peek().type != token::STRING and peek().type != token::INT and peek().type != token::TRUE and peek().type != token::FALSE) {
+        return Result<std::unique_ptr<PreNodePragma>>(CompileError(ErrorType::PreprocessorError, pragma_error_msg, token.line, "Valid pragma parameter in <string>, <integer>, <bool> format.",token.val, token.file));
+    }
+    auto result_keyword = parse_keyword(node_pragma.get());
+    if (result_keyword.is_error())
+        return Result<std::unique_ptr<PreNodePragma>>(result_keyword.get_error());
+    auto node_parameter = std::move(result_keyword.unwrap());
+
+    if(peek().type != token::CLOSED_PARENTH) {
+        CompileError(ErrorType::PreprocessorError, pragma_error_msg, token.line, ")",token.val, token.file).exit();
+    }
+    auto end_token = consume(); // consume )
+    if(peek().type != token::LINEBRK) {
+        CompileError(ErrorType::PreprocessorError, pragma_error_msg, token.line, "linebreak",token.val, token.file).exit();
+    }
+    consume(); // consume \n
+    node_pragma->option = std::move(node_option.unwrap());
+    node_pragma->argument = std::move(node_parameter);
+    node_pragma->set_range(token, end_token);
+    return Result<std::unique_ptr<PreNodePragma>>(std::move(node_pragma));
+}
+
+
 Result<std::unique_ptr<PreNodeDefineHeader>> PreprocessorParser::parse_define_header(PreNodeAST *parent) {
     auto start_token = peek();
     auto node_define_header = std::make_unique<PreNodeDefineHeader>(start_token, parent);
@@ -363,6 +321,7 @@ Result<std::unique_ptr<PreNodeDefineHeader>> PreprocessorParser::parse_define_he
     node_define_header->name = std::move(define_name.unwrap());
     auto define_args = std::make_unique<PreNodeList>(peek(), node_define_header.get());
     if(peek().type == token::OPEN_PARENTH) {
+        node_define_header->has_parenth = true;
         auto define_args_result = parse_list(node_define_header.get());
         if (define_args_result.is_error())
             return Result<std::unique_ptr<PreNodeDefineHeader>>(define_args_result.get_error());
@@ -373,52 +332,7 @@ Result<std::unique_ptr<PreNodeDefineHeader>> PreprocessorParser::parse_define_he
     return Result<std::unique_ptr<PreNodeDefineHeader>>(std::move(node_define_header));
 }
 
-Result<std::unique_ptr<PreNodeDefineStatement>> PreprocessorParser::parse_define_definition(PreNodeAST *parent) {
-    auto start_token = consume(); //consume define
-    auto define_statement = std::make_unique<PreNodeDefineStatement>(start_token, parent);
-    if (peek().type != token::KEYWORD) {
-        return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::PreprocessorError,
-     "Missing define name.",peek().line,"<keyword>",peek().val, peek().file));
-    }
-    auto define_header_result = parse_define_header(define_statement.get());
-    if(define_header_result.is_error())
-        return Result<std::unique_ptr<PreNodeDefineStatement>>(define_header_result.get_error());
-    auto header = define_header_result.unwrap()->get_name();
-    if(peek().type != token::ASSIGN)
-        return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::PreprocessorError,
-     "Found invalid Define Statement Syntax. Missing <assign> symbol.", peek().line, ":=", peek().val, peek().file));
-    consume(); //consume :=
 
-    auto node_chunk = std::make_unique<PreNodeChunk>(peek(), parent);
-    while(peek().type != token::LINEBRK) {
-        if (peek().type == token::END_TOKEN)
-            return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::PreprocessorError,
-         "Unexpected end of m_tokens. Missing assignment of define statement.",peek().line, "", peek().val,peek().file));
-
-        if(peek().type == token::KEYWORD and define_header_result.unwrap()->name->tok.val == peek().val) {
-            return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::SyntaxError,
-	    "A define constant cannot define itself.",peek().line,"","", peek().file));
-		}
-		auto result_token = parse_token(node_chunk.get());
-        if(result_token.is_error()) {
-            return Result<std::unique_ptr<PreNodeDefineStatement>>(result_token.get_error());
-		}
-        node_chunk->add_chunk(std::move(result_token.unwrap()));
-    }
-    if(node_chunk->chunk.empty()) {
-        return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::PreprocessorError,
-     "Found empty define statement assignment.",peek().line, "", peek().val,peek().file));
-    }
-    if (peek().type != token::LINEBRK) {
-        return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::PreprocessorError,
-     "Missing necessary linebreak after define statement.",peek().line,"linebreak",peek().val, peek().file));
-    }
-    consume(); //consume linebreak
-    define_statement->header = std::move(define_header_result.unwrap());
-    define_statement->body = std::move(node_chunk);
-    define_statement->set_range(start_token, peek(-1));
-    return Result<std::unique_ptr<PreNodeDefineStatement>>(std::move(define_statement));
-}
 
 Result<std::unique_ptr<PreNodeDefineCall>> PreprocessorParser::parse_define_call(PreNodeAST *parent) {
     auto start_token = peek();
@@ -431,6 +345,53 @@ Result<std::unique_ptr<PreNodeDefineCall>> PreprocessorParser::parse_define_call
     return Result<std::unique_ptr<PreNodeDefineCall>>(std::move(node_define_call));
 }
 
+Result<std::unique_ptr<PreNodeDefineStatement>> PreprocessorParser::parse_define_definition(PreNodeAST *parent) {
+    auto start_token = consume(); //consume define
+    auto define_statement = std::make_unique<PreNodeDefineStatement>(start_token, parent);
+    if (peek().type != token::KEYWORD) {
+        return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::PreprocessorError,
+                                                                            "Missing define name.",peek().line,"<keyword>",peek().val, peek().file));
+    }
+    auto define_header_result = parse_define_header(define_statement.get());
+    if(define_header_result.is_error())
+        return Result<std::unique_ptr<PreNodeDefineStatement>>(define_header_result.get_error());
+    auto header = define_header_result.unwrap()->get_name();
+    if(peek().type != token::ASSIGN)
+        return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::PreprocessorError,
+                                                                            "Found invalid Define Statement Syntax. Missing <assign> symbol.", peek().line, ":=", peek().val, peek().file));
+    consume(); //consume :=
+
+    auto node_chunk = std::make_unique<PreNodeChunk>(peek(), parent);
+    while(peek().type != token::LINEBRK) {
+        if (peek().type == token::END_TOKEN)
+            return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::PreprocessorError,
+                "Unexpected end of m_tokens. Missing assignment of define statement.",peek().line, "", peek().val,peek().file));
+
+        if(peek().type == token::KEYWORD and define_header_result.unwrap()->name->tok.val == peek().val) {
+            return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::SyntaxError,
+                "A define constant cannot define itself.",peek().line,"","", peek().file));
+        }
+        auto result_token = parse_token(node_chunk.get());
+        if(result_token.is_error()) {
+            return Result<std::unique_ptr<PreNodeDefineStatement>>(result_token.get_error());
+        }
+        node_chunk->add_chunk(std::move(result_token.unwrap()));
+    }
+    if(node_chunk->chunk.empty()) {
+        return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::PreprocessorError,
+                                                                            "Found empty define statement assignment.",peek().line, "", peek().val,peek().file));
+    }
+    if (peek().type != token::LINEBRK) {
+        return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::PreprocessorError,
+                                                                            "Missing necessary linebreak after define statement.",peek().line,"linebreak",peek().val, peek().file));
+    }
+    consume(); //consume linebreak
+    define_statement->header = std::move(define_header_result.unwrap());
+    define_statement->body = std::move(node_chunk);
+    define_statement->set_range(start_token, peek(-1));
+    return Result<std::unique_ptr<PreNodeDefineStatement>>(std::move(define_statement));
+}
+
 Result<std::unique_ptr<PreNodeMacroHeader>> PreprocessorParser::parse_macro_header(PreNodeAST* parent) {
     auto start_token = peek();
     auto node_macro_header = std::make_unique<PreNodeMacroHeader>( start_token, parent);
@@ -441,7 +402,7 @@ Result<std::unique_ptr<PreNodeMacroHeader>> PreprocessorParser::parse_macro_head
     auto macro_args = std::make_unique<PreNodeList>(peek(), node_macro_header.get());
 
     if (peek().type == token::OPEN_PARENTH) {
-		node_macro_header->has_parenth = true;
+        node_macro_header->has_parenth = true;
         auto macro_args_result = parse_list(node_macro_header.get());
         if (macro_args_result.is_error())
             return Result<std::unique_ptr<PreNodeMacroHeader>>(macro_args_result.get_error());
@@ -459,7 +420,7 @@ Result<std::unique_ptr<PreNodeMacroCall>> PreprocessorParser::parse_macro_call(P
     if(macro_stmt.is_error()){
         return Result<std::unique_ptr<PreNodeMacroCall>>(macro_stmt.get_error());
     }
-	node_macro_call->is_iterate_macro = m_parsing_iterator_macro;
+    // node_macro_call->is_iterate_macro = m_parsing_iterator_macro;
     node_macro_call->macro = std::move(macro_stmt.unwrap());
     node_macro_call->set_range(start_token, peek(-1));
     return Result<std::unique_ptr<PreNodeMacroCall>>(std::move(node_macro_call));
@@ -470,7 +431,7 @@ Result<std::unique_ptr<PreNodeMacroDefinition>> PreprocessorParser::parse_macro_
     auto node_macro_definition = std::make_unique<PreNodeMacroDefinition>(start_token, parent);
     if (peek().type != token::KEYWORD) {
         return Result<std::unique_ptr<PreNodeMacroDefinition>>(CompileError(ErrorType::SyntaxError,
-    "Missing macro name.",peek().line,"keyword",peek().val, peek().file));
+                                                                            "Missing macro name.",peek().line,"keyword",peek().val, peek().file));
     }
     auto header = parse_macro_header(node_macro_definition.get());
     if (header.is_error()) {
@@ -479,26 +440,20 @@ Result<std::unique_ptr<PreNodeMacroDefinition>> PreprocessorParser::parse_macro_
     node_macro_definition->header = std::move(header.unwrap());
     if (peek().type != token::LINEBRK) {
         return Result<std::unique_ptr<PreNodeMacroDefinition>>(CompileError(ErrorType::PreprocessorError,
-     "Missing necessary linebreak after macro header.",peek().line,"linebreak",peek().val, peek().file));
+                                                                            "Missing necessary linebreak after macro header.",peek().line,"linebreak",peek().val, peek().file));
     }
     consume(); // consume linebreak
     auto node_chunk = std::make_unique<PreNodeChunk>(peek(), node_macro_definition.get());
-    while (peek().type != token::END_MACRO) {
+    while(peek().type != token::END_MACRO) {
         if(peek().type == token::END_MACRO) break;
-
         if (peek().type == token::MACRO) {
-            return Result<std::unique_ptr<PreNodeMacroDefinition>>(CompileError(ErrorType::PreprocessorError,
-        "Nested macros are not allowed. Maybe you forgot an 'end macro' along the line?",peek().line, "", peek().val,peek().file));
-        } else if (is_define_definition()) {
-            auto result_define = parse_define_definition(node_chunk.get());
-            if (result_define.is_error())
-                return Result<std::unique_ptr<PreNodeMacroDefinition>>(result_define.get_error());
-            m_program->define_statements.push_back(std::move(result_define.unwrap()));
-        } else {
-            auto result_token = parse_token(node_chunk.get());
-            if(result_token.is_error())
-                return Result<std::unique_ptr<PreNodeMacroDefinition>>(result_token.get_error());
-            node_chunk->chunk.push_back(std::move(result_token.unwrap()));
+            auto error = CompileError(ErrorType::PreprocessorError, "", "", peek());
+            error.set_message("Nested macros are not allowed. Maybe you forgot an <end macro> along the line?");
+            return Result<std::unique_ptr<PreNodeMacroDefinition>>(error);
+        }
+        auto parse_result = parse_main_constructs(parent, node_chunk);
+        if (parse_result.is_error()) {
+            return Result<std::unique_ptr<PreNodeMacroDefinition>>(parse_result.get_error());
         }
     }
     auto end_token = consume(); // consume end macro
@@ -510,13 +465,13 @@ Result<std::unique_ptr<PreNodeMacroDefinition>> PreprocessorParser::parse_macro_
 Result<std::unique_ptr<PreNodeIterateMacro>> PreprocessorParser::parse_iterate_macro(PreNodeAST* parent) {
     auto start_token = consume(); // consume iterate_macro
     auto node_iterate_macro = std::make_unique<PreNodeIterateMacro>(start_token, parent);
-	if(m_parsing_iterator_macro || m_parsing_literate_macro) {
-		CompileError(ErrorType::SyntaxError,"Found nested macro iteration.", peek().line, "", "", peek().file).exit();
-	}
+    if(m_parsing_iterator_macro || m_parsing_literate_macro) {
+        CompileError(ErrorType::SyntaxError,"Found nested macro iteration.", peek().line, "", "", peek().file).exit();
+    }
     m_parsing_iterator_macro = true;
     if(peek().type != token::OPEN_PARENTH) {
         return Result<std::unique_ptr<PreNodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
-      "Found invalid <iterate_macro> statement syntax.",peek().line,"(",peek().val, peek().file));
+                                                                         "Found invalid <iterate_macro> statement syntax.",peek().line,"(",peek().val, peek().file));
     }
     auto node_statement = parse_list(node_iterate_macro.get());
     if(node_statement.is_error())
@@ -524,7 +479,7 @@ Result<std::unique_ptr<PreNodeIterateMacro>> PreprocessorParser::parse_iterate_m
 
     if(peek().type != token::ASSIGN) {
         return Result<std::unique_ptr<PreNodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
-      "Found invalid <iterate_macro> statement syntax.", peek().line,":=", peek().val, peek().file));
+                                                                         "Found invalid <iterate_macro> statement syntax.", peek().line,":=", peek().val, peek().file));
     }
     consume(); // consume :=
 
@@ -539,7 +494,7 @@ Result<std::unique_ptr<PreNodeIterateMacro>> PreprocessorParser::parse_iterate_m
 
     if(not(peek().type == token::TO or peek().type == token::DOWNTO)) {
         return Result<std::unique_ptr<PreNodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
-      "Found invalid <iterate_macro> statement syntax.", peek().line,"<to>/<downto>", peek().val, peek().file));
+                                                                         "Found invalid <iterate_macro> statement syntax.", peek().line,"<to>/<downto>", peek().val, peek().file));
     }
     Token to = consume(); // consume downto/to
 
@@ -554,7 +509,7 @@ Result<std::unique_ptr<PreNodeIterateMacro>> PreprocessorParser::parse_iterate_m
 
     auto step = std::make_unique<PreNodeChunk>(peek(), node_iterate_macro.get());
     auto step_statement = std::make_unique<PreNodeStatement>(peek(), step.get());
-//    Token toki = Token(INT, "1", 0, "");
+    //    Token toki = Token(INT, "1", 0, "");
     auto int_tok = peek(); int_tok.set_type(token::INT); int_tok.set_val("1");
     auto node_int = std::make_unique<PreNodeInt>(1,  int_tok, step_statement.get());
     step_statement->statement = std::move(node_int);
@@ -572,11 +527,11 @@ Result<std::unique_ptr<PreNodeIterateMacro>> PreprocessorParser::parse_iterate_m
     }
     if (peek().type != token::LINEBRK) {
         return Result<std::unique_ptr<PreNodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
-    "Missing necessary linebreak after <iterate_macro> statement.",peek().line,"linebreak",peek().val, peek().file));
+                                                                         "Missing necessary linebreak after <iterate_macro> statement.",peek().line,"linebreak",peek().val, peek().file));
     }
 
     consume(); // consume linebreak
-	_skip_linebreaks();
+    _skip_linebreaks();
     node_iterate_macro->macro_call = std::move(node_statement.unwrap());
     node_iterate_macro->iterator_start = std::move(node_iterator_start);
     node_iterate_macro->iterator_end = std::move(node_iterator_end);
@@ -590,13 +545,13 @@ Result<std::unique_ptr<PreNodeIterateMacro>> PreprocessorParser::parse_iterate_m
 Result<std::unique_ptr<PreNodeLiterateMacro>> PreprocessorParser::parse_literate_macro(PreNodeAST* parent) {
     auto start_token = consume(); // consume literate_macro
     auto node_literate_macro = std::make_unique<PreNodeLiterateMacro>(start_token, parent);
-	if(m_parsing_iterator_macro || m_parsing_literate_macro) {
-		CompileError(ErrorType::SyntaxError,"Found nested macro iteration.", peek().line, "", "", peek().file).exit();
-	}
-	m_parsing_literate_macro = true;
+    if(m_parsing_iterator_macro || m_parsing_literate_macro) {
+        CompileError(ErrorType::SyntaxError,"Found nested macro iteration.", peek().line, "", "", peek().file).exit();
+    }
+    m_parsing_literate_macro = true;
     if(peek().type != token::OPEN_PARENTH) {
         return Result<std::unique_ptr<PreNodeLiterateMacro>>(CompileError(ErrorType::SyntaxError,
-       "Found invalid <literate_macro> statement syntax.",peek().line,"(",peek().val, peek().file));
+                                                                          "Found invalid <literate_macro> statement syntax.",peek().line,"(",peek().val, peek().file));
     }
     auto node_statement = parse_list(node_literate_macro.get());
     if(node_statement.is_error())
@@ -604,7 +559,7 @@ Result<std::unique_ptr<PreNodeLiterateMacro>> PreprocessorParser::parse_literate
 
     if(peek().type != token::ON) {
         return Result<std::unique_ptr<PreNodeLiterateMacro>>(CompileError(ErrorType::SyntaxError,
-       "Found invalid <literate_macro> statement syntax.", peek().line,"on", peek().val, peek().file));
+                                                                          "Found invalid <literate_macro> statement syntax.", peek().line,"on", peek().val, peek().file));
     }
     consume(); // consume on
     auto node_chunk = std::make_unique<PreNodeChunk>(peek(), node_literate_macro.get());
@@ -616,7 +571,7 @@ Result<std::unique_ptr<PreNodeLiterateMacro>> PreprocessorParser::parse_literate
             node_chunk->chunk.push_back(std::move(result_token.unwrap()));
         } else {
             return Result<std::unique_ptr<PreNodeLiterateMacro>>(CompileError(ErrorType::SyntaxError,
-          "Found invalid <literate_macro> statement syntax. Can only literate on <keywords>.",peek().line,"<keyword>",peek().val, peek().file));
+                                                                              "Found invalid <literate_macro> statement syntax. Can only literate on <keywords>.",peek().line,"<keyword>",peek().val, peek().file));
         }
         if(peek().type == token::COMMA)
             consume();
@@ -624,15 +579,47 @@ Result<std::unique_ptr<PreNodeLiterateMacro>> PreprocessorParser::parse_literate
 
     if (peek().type != token::LINEBRK) {
         return Result<std::unique_ptr<PreNodeLiterateMacro>>(CompileError(ErrorType::SyntaxError,
-     "Missing necessary linebreak after <literate_macro> statement.",peek().line,"linebreak",peek().val, peek().file));
+                                                                          "Missing necessary linebreak after <literate_macro> statement.",peek().line,"linebreak",peek().val, peek().file));
     }
     consume(); // consume linebreak
 
     node_literate_macro->macro_call = std::move(node_statement.unwrap());
     node_literate_macro->literate_tokens = std::move(node_chunk);
     node_literate_macro->set_range(start_token, peek(-1));
-	m_parsing_literate_macro = false;
+    m_parsing_literate_macro = false;
     return Result<std::unique_ptr<PreNodeLiterateMacro>>(std::move(node_literate_macro));
+}
+
+Result<std::unique_ptr<PreNodeFunctionCall>> PreprocessorParser::parse_function_call(PreNodeAST *parent) {
+    auto start_token = peek();
+    auto node_function_call = std::make_unique<PreNodeFunctionCall>(start_token, parent);
+    auto header = parse_function_header(node_function_call.get());
+    if(header.is_error()){
+        return Result<std::unique_ptr<PreNodeFunctionCall>>(header.get_error());
+    }
+    node_function_call->set_header(std::move(header.unwrap()));
+    node_function_call->set_range(start_token, peek(-1));
+    return Result<std::unique_ptr<PreNodeFunctionCall>>(std::move(node_function_call));
+}
+
+Result<std::unique_ptr<PreNodeFunctionHeader>> PreprocessorParser::parse_function_header(PreNodeAST *parent) {
+    auto start_token = peek();
+    auto node_function_header = std::make_unique<PreNodeFunctionHeader>( start_token, parent);
+    auto function_name = parse_keyword(node_function_header.get());
+    if(function_name.is_error())
+        return Result<std::unique_ptr<PreNodeFunctionHeader>>(function_name.get_error());
+    node_function_header->name = std::move(function_name.unwrap());
+    auto function_args = std::make_unique<PreNodeList>(peek(), node_function_header.get());
+    if (peek().type == token::OPEN_PARENTH) {
+        node_function_header->has_parenth = true;
+        auto macro_args_result = parse_list(node_function_header.get());
+        if (macro_args_result.is_error())
+            return Result<std::unique_ptr<PreNodeFunctionHeader>>(macro_args_result.get_error());
+        function_args = std::move(macro_args_result.unwrap());
+    }
+    node_function_header->set_args(std::move(function_args));
+    node_function_header->set_range(start_token, peek(-1));
+    return Result<std::unique_ptr<PreNodeFunctionHeader>>(std::move(node_function_header));
 }
 
 Result<std::unique_ptr<PreNodeIncrementer>> PreprocessorParser::parse_incrementer(PreNodeAST *parent) {
@@ -676,16 +663,9 @@ Result<std::unique_ptr<PreNodeIncrementer>> PreprocessorParser::parse_incremente
                 error.set_message("Missing <END_INC> statement. Reached the end of the file while parsing an incrementer.");
                 return Result<std::unique_ptr<PreNodeIncrementer>>(error);
             }
-            if (is_define_definition()) {
-                auto result_define = parse_define_definition(parent);
-                if (result_define.is_error())
-                    return Result<std::unique_ptr<PreNodeIncrementer>>(result_define.get_error());
-                m_program->define_statements.push_back(std::move(result_define.unwrap()));
-            } else {
-                auto token_result = parse_token(parent);
-                if (token_result.is_error())
-                    return Result<std::unique_ptr<PreNodeIncrementer>>(token_result.get_error());
-                node_chunk->chunk.push_back(std::move(token_result.unwrap()));
+            auto parse_result = parse_main_constructs(parent, node_chunk);
+            if (parse_result.is_error()) {
+                return Result<std::unique_ptr<PreNodeIncrementer>>(parse_result.get_error());
             }
 
         }
@@ -725,7 +705,7 @@ Result<std::unique_ptr<PreNodeImport>> PreprocessorParser::parse_import(PreNodeA
     if(peek().type == token::AS) {
         auto error = CompileError(ErrorType::ParseError, "", "", peek());
         error.set_message("Importing file with alias is not supported in as of version " + COMPILER_VERSION + ". "+
-                          "Please remove the 'as <alias>' part from the import statement.");
+            "Please remove the 'as <alias>' part from the import statement.");
         error.exit();
 
         consume(); // consume <as> token
@@ -755,23 +735,23 @@ Result<std::unique_ptr<PreNodeImportNCKP>> PreprocessorParser::parse_import_nckp
     auto token = consume(); // consume import_nckp
     if(peek().type != token::OPEN_PARENTH) {
         return Result<std::unique_ptr<PreNodeImportNCKP>>(CompileError(ErrorType::ParseError,
-        "Incorrect import_nckp Syntax.","(",peek()));
+                                                                       "Incorrect import_nckp Syntax.","(",peek()));
     }
     consume(); // consume (
     if(peek().type != token::STRING) {
         return Result<std::unique_ptr<PreNodeImportNCKP>>(CompileError(ErrorType::PreprocessorError,
-        "Not a filepath","path",peek()));
+                                                                       "Not a filepath","path",peek()));
     }
     Token path = consume(); // consume filepath
     std::string filepath = StringUtils::remove_quotes(path.val);
     if(peek().type != token::CLOSED_PARENTH) {
         return Result<std::unique_ptr<PreNodeImportNCKP>>(CompileError(ErrorType::ParseError,
-        "Incorrect import_nckp Syntax.",")",peek()));
+                                                                       "Incorrect import_nckp Syntax.",")",peek()));
     }
     auto end_token = consume(); // consume )
     if(peek().type != token::LINEBRK)
         return Result<std::unique_ptr<PreNodeImportNCKP>>(CompileError(ErrorType::ParseError,
-        "Incorrect import Syntax.","linebreak",peek()));
+                                                                       "Incorrect import Syntax.","linebreak",peek()));
     consume(); //consume linebreak
     auto return_value = std::make_unique<PreNodeImportNCKP>(filepath, token, parent);
     return_value->set_range(token, end_token);
@@ -853,7 +833,8 @@ Result<std::unique_ptr<PreNodeResetCondition>> PreprocessorParser::parse_reset_c
 }
 
 Result<std::unique_ptr<PreNodeUseCodeIf>> PreprocessorParser::parse_use_code_if(PreNodeAST *parent) {
-    auto token = consume(); // consume USE_CODE_IF
+    auto token = consume(); // consume USE_CODE_IF or USE_CODE_IF_NOT
+    bool use_if = token.type == token::USE_CODE_IF; // will be false if token::USE_CODE_IF_NOT
     auto error_msg = "Found invalid <USE_CODE_IF> syntax. ";
     auto node_if = std::make_unique<PreNodeUseCodeIf>(token, parent);
     if(peek().type != token::OPEN_PARENTH) {
@@ -889,16 +870,9 @@ Result<std::unique_ptr<PreNodeUseCodeIf>> PreprocessorParser::parse_use_code_if(
             error.set_message("Missing <END_USE_CODE> statement. Reached the end of the file while parsing an preprocessor if statement.");
             return Result<std::unique_ptr<PreNodeUseCodeIf>>(error);
         }
-        if (is_define_definition()) {
-            auto result_define = parse_define_definition(parent);
-            if (result_define.is_error())
-                return Result<std::unique_ptr<PreNodeUseCodeIf>>(result_define.get_error());
-            m_program->define_statements.push_back(std::move(result_define.unwrap()));
-        } else {
-            auto token_result = parse_token(parent);
-            if (token_result.is_error())
-                return Result<std::unique_ptr<PreNodeUseCodeIf>>(token_result.get_error());
-            node_chunk->chunk.push_back(std::move(token_result.unwrap()));
+        auto parse_result = parse_main_constructs(parent, node_chunk);
+        if (parse_result.is_error()) {
+            return Result<std::unique_ptr<PreNodeUseCodeIf>>(parse_result.get_error());
         }
     }
     auto end_inc = consume(); // consume END_INC
@@ -910,47 +884,136 @@ Result<std::unique_ptr<PreNodeUseCodeIf>> PreprocessorParser::parse_use_code_if(
     }
     consume(); // consume linebreak
     node_if->set_condition(std::move(condition));
-    node_if->set_if_branch(std::move(node_chunk));
+    if (use_if) {
+        node_if->set_if_branch(std::move(node_chunk));
+    } else {
+        node_if->set_else_branch(std::move(node_chunk));
+    }
     return Result<std::unique_ptr<PreNodeUseCodeIf>>(std::move(node_if));
 }
 
-Result<std::unique_ptr<PreNodePragma>> PreprocessorParser::parse_pragma(PreNodeAST* parent) {
-    auto token = consume(); // consume #pragma
-    auto node_pragma = std::make_unique<PreNodePragma>(token, parent);
-    std::string pragma_error_msg = "Unable to process #pragma syntax.";
-    if(peek().type != token::KEYWORD) {
-        return Result<std::unique_ptr<PreNodePragma>>(CompileError(ErrorType::PreprocessorError,
-    pragma_error_msg, token.line, "Valid pragma option.",token.val, token.file));
-    }
-    auto node_option = parse_keyword(node_pragma.get());
-    if(peek().type != token::OPEN_PARENTH) {
-        return Result<std::unique_ptr<PreNodePragma>>(CompileError(ErrorType::PreprocessorError, pragma_error_msg, token.line, "(",token.val, token.file));
-    }
-    consume(); // consume (
-    if(peek().type != token::KEYWORD and peek().type != token::STRING and peek().type != token::INT and peek().type != token::TRUE and peek().type != token::FALSE) {
-        return Result<std::unique_ptr<PreNodePragma>>(CompileError(ErrorType::PreprocessorError, pragma_error_msg, token.line, "Valid pragma parameter in <string>, <integer>, <bool> format.",token.val, token.file));
-    }
-    auto result_keyword = parse_keyword(node_pragma.get());
-    if (result_keyword.is_error())
-        return Result<std::unique_ptr<PreNodePragma>>(result_keyword.get_error());
-    auto node_parameter = std::move(result_keyword.unwrap());
+// int PreprocessorParser::get_num_params_in_definition() {
+//     size_t begin = m_pos;
+//     consume(); // consume name
+//     _skip_linebreaks();
+//     int num_params = 0;
+//
+//     if(peek().type == token::OPEN_PARENTH) {
+//         consume(); // consume (
+//         _skip_linebreaks();
+//         if (peek().type != token::CLOSED_PARENTH) {
+//             int parenth_depth = 1; // Start with 1 because we've already consumed the first OPEN_PARENTH
+//             while (parenth_depth > 0) {
+//                 if (peek().type == token::OPEN_PARENTH || peek().type == token::OPEN_BRACKET) {
+//                     parenth_depth++;
+//                 } else if (peek().type == token::CLOSED_PARENTH || peek().type == token::CLOSED_BRACKET) {
+//                     _skip_linebreaks();
+//                     parenth_depth--;
+//                 } else if (peek().type == token::LINEBRK) {
+//                     _skip_linebreaks();
+//                     continue;
+//                 } else if (peek().type == token::END_TOKEN) {
+//                     auto error = CompileError(ErrorType::PreprocessorError,
+//                                               "",")", peek());
+//                     error.add_message("Unexpected end of file. Missing closing parenthesis.");
+//                     error.exit();
+//                 }
+//                 if (peek().type == token::COMMA && parenth_depth == 1) {
+//                     num_params++;
+//                     consume(); // consume COMMA
+//                     _skip_linebreaks();
+//                 } else if (parenth_depth > 0) {
+//                     consume();
+//                 }
+//             }
+//             if(num_params>0) {
+//                 num_params += 2;
+//             } else {
+//                 num_params = 1;
+//             }
+//         }
+//     }
+//
+//     m_pos = begin;
+//     return num_params;
+// }
 
-    if(peek().type != token::CLOSED_PARENTH) {
-        CompileError(ErrorType::PreprocessorError, pragma_error_msg, token.line, ")",token.val, token.file).exit();
+// bool PreprocessorParser::is_define_call(const Token &tok) {
+//     bool syntax = false;
+//     if(m_pos >0) {
+//         syntax = (peek().type == token::KEYWORD and m_pos > 0 and (peek(-1).type != token::MACRO or peek(-1).type != token::FUNCTION));
+//     }
+//     syntax = peek().type == token::KEYWORD;
+//
+//     if(syntax) {
+//         //search in m_define_strings
+//         int num_args = get_num_params_in_definition();
+//         auto it = m_define_strings.find({tok.val, num_args});
+//         syntax &= it != m_define_strings.end();
+//     }
+//     return syntax;
+// }
+
+// bool PreprocessorParser::is_macro_call(const Token &tok) {
+//     if(peek().type != token::KEYWORD) return false;
+//
+//     bool is_macro_call = peek().type == token::KEYWORD;
+//     bool is_iterator_macro_call = peek().type == token::KEYWORD;
+//
+//     if(m_pos<2) {
+//         // iterator macro call cannot be at first position in file
+//         is_iterator_macro_call = false;
+//         // macro call has to have linebreak or open parenth after it
+//         is_macro_call &= peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK;
+//     } else {
+//         is_iterator_macro_call &= peek(-2).type == token::ITERATE_MACRO || peek(-2).type == token::LITERATE_MACRO;
+//         // iterator macro call has to have open parenth beforehand
+//         is_iterator_macro_call &= peek(-1).type == token::OPEN_PARENTH and (m_parsing_iterator_macro || m_parsing_literate_macro) and (peek(1).type == token::OPEN_PARENTH or peek(1).type == token::CLOSED_PARENTH);
+//         // macro call has to have linebreak before and either linebreak or open parenth after it
+//         is_macro_call &= peek(-1).type == token::LINEBRK and (peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK);
+//     }
+//
+//     int num_hashes = StringUtils::count_char(tok.val, '#');
+//     if(is_iterator_macro_call) {
+//         is_iterator_macro_call &= m_macro_iterate_strings.contains(tok.val) or (num_hashes > 0 and num_hashes % 2 == 0);
+//         return is_iterator_macro_call;
+//     }
+//     if(is_macro_call) {
+//         int num_args = get_num_params_in_definition();
+//         //search in m_define_strings
+//         is_macro_call &= m_macro_strings.contains({tok.val, num_args}) or (num_hashes > 0 and num_hashes % 2 == 0);
+//         return is_macro_call;
+//     }
+//     return false;
+// }
+
+bool PreprocessorParser::is_function_call(const Token &tok) const {
+    if (tok.type != token::KEYWORD) return false;
+    auto function_syntax = tok.type == token::KEYWORD && peek_type(1) == token::OPEN_PARENTH;
+    auto macro_syntax = tok.type == token::KEYWORD && (peek_type(1) == token::LINEBRK || peek_type(1) == token::OPEN_PARENTH);
+    if (m_pos > 1) {
+        macro_syntax = peek_type(-1) == token::LINEBRK && tok.type == token::KEYWORD && (peek_type(1) == token::LINEBRK || peek_type(1) == token::OPEN_PARENTH);
     }
-    auto end_token = consume(); // consume )
-    if(peek().type != token::LINEBRK) {
-        CompileError(ErrorType::PreprocessorError, pragma_error_msg, token.line, "linebreak",token.val, token.file).exit();
-    }
-    consume(); // consume \n
-    node_pragma->option = std::move(node_option.unwrap());
-    node_pragma->argument = std::move(node_parameter);
-    node_pragma->set_range(token, end_token);
-    return Result<std::unique_ptr<PreNodePragma>>(std::move(node_pragma));
+    return function_syntax || macro_syntax;
 }
 
+bool PreprocessorParser::is_iterate_macro_call(const Token &tok) const {
+    if (tok.type != token::KEYWORD) return false;
+    if (m_pos < 2) return false; // iterate macro call cannot be at first position in file
+    return peek_type(-2) == token::ITERATE_MACRO || (peek_type(-2) == token::LITERATE_MACRO && peek_type(-1) == token::OPEN_PARENTH && (peek_type(1) == token::OPEN_PARENTH || peek_type(1) == token::CLOSED_PARENTH));
+}
 
+bool PreprocessorParser::is_define_definition() {
+    if(m_pos >0) {
+        return m_pos > 0 and peek().type == token::DEFINE and peek(-1).type == token::LINEBRK;
+    }
+    return peek().type == token::DEFINE;
+}
 
-
-
+bool PreprocessorParser::is_macro_definition() {
+    if(m_pos >0) {
+        return m_pos > 0 and peek().type == token::MACRO and peek(-1).type == token::LINEBRK;
+    }
+    return peek().type == token::MACRO;
+}
 

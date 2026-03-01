@@ -1,9 +1,11 @@
-{ Compiled with cksp version 0.0.8-alpha.6 on Thu Feb 19 22:27:48 2026 }
+{ Compiled with cksp version 0.0.8-alpha.6 on Sun Mar 01 21:36:23 2026 }
 on init
-  declare ui_button $Foo__sdfb 
+  declare @ret0
   declare $i0
   declare $_step00
   declare $_stop00
+  set_control_par_str($INST_WALLPAPER_ID, $CONTROL_PAR_PICTURE, "bubu.")
+  message(4)
   declare ui_xy ?xy_arp[2] 
   make_persistent(?xy_arp)
   read_persistent_var(?xy_arp)
@@ -24,6 +26,7 @@ on init
   end while
   set_listener($NI_SIGNAL_TIMER_MS, 1000)
   declare $flag
+  declare !_ret00[420]
 end on
 function do_something
   if($flag = 1)
@@ -33,6 +36,13 @@ function do_something
     message("good to go")
     wait($DURATION_QUARTER)
   end if
+  if($flag > 5)
+    @ret0 := "dflk"
+  else
+    @ret0 := "goodbye"
+  end if
+  !_ret00[$NI_CALLBACK_ID mod 420] := @ret0
+  message(!_ret00[$NI_CALLBACK_ID mod 420])
 end function
 on note
   $flag := 1

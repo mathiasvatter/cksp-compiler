@@ -1,8 +1,10 @@
 on init
-	declare ui_button Foo.sdfb : int  {Reuses: 0}
+	declare ret0 : string {Reuses: 0}
 	declare local i0 : int {Reuses: 0}
 	declare local _step00 : int {Reuses: 0}
 	declare local _stop00 : int {Reuses: 0}
+	set_control_par_str(INST_WALLPAPER_ID{int} {INST_WALLPAPER_ID} , CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "bubu."){Builtin, None, set_control_par_str}
+	message(4){Builtin, None, message}
 	declare ui_xy xy_arp[2] : real[]  {Reuses: 0}
 	make_persistent(xy_arp{real[]} {xy_arp} ){Builtin, None}
 	read_persistent_var(xy_arp{real[]} {xy_arp} ){Builtin, None}
@@ -23,6 +25,7 @@ on init
 	end while
 	set_listener(NI_SIGNAL_TIMER_MS{int} {NI_SIGNAL_TIMER_MS} , 1000){Builtin, None, set_listener}
 	declare flag : int {Reuses: 0}
+	declare _ret00[420] : string[] {thread-unsafe} {Reuses: 0}
 end on
 
 on note{thread-unsafe}
@@ -46,6 +49,13 @@ function do_something{thread-unsafe}
 		message("good to go"){Builtin, None, message}
 		wait(DURATION_QUARTER{int} {DURATION_QUARTER} ){Builtin, None, wait}
 	end if
+	if(flag{int} {flag}  > 5)
+		ret0{string} {ret0}  := "dflk"
+	else
+		ret0{string} {ret0}  := "goodbye"
+	end if
+	_ret00[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 420]{string} {_ret00}  := ret0{string} {ret0} 
+	message(_ret00[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 420]{string} {_ret00} ){Builtin, None, message}
 end function
 
 

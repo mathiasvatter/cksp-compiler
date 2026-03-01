@@ -22,7 +22,7 @@ public:
 
 	PreNodeAST *visit(PreNodeProgram &node) override {
 		m_program = &node;
-		visit_all(node.program, *this);
+		node.program->accept(*this);
 		return &node;
 	}
 

@@ -6,6 +6,7 @@
 
 #include "ASTVisitor.h"
 #include "ReturnFunctionRewriting/ReturnFunctionIsolation.h"
+#include "ReturnFunctionRewriting/ReturnFunctionCallHoisting.h"
 #include "ASTTemporaryPointerScope.h"
 
 
@@ -51,6 +52,8 @@ public:
 	void do_rewriting(NodeProgram& node) {
 		// do hoisting and return parameter promotion
 		node.accept(*this);
+		static ReturnFunctionCallHoisting hoisting;
+		hoisting.visit(node);
 		node.reset_function_visited_flag();
 		node.debug_print();
 
@@ -93,6 +96,15 @@ private:
 		if (const auto func_call = node.value->cast<NodeFunctionCall>()) {
 			func_call->bind_definition(m_program);
 			const auto definition = func_call->get_definition();
+			if (!definition) {
+				node.value->accept(*this);
+				return &node;
+			}
+			// Fast path: only declarations from return-value functions need special handling.
+			if (definition->num_return_params <= 0) {
+				node.value->accept(*this);
+				return &node;
+			}
 
 			static ExpressionChainValidator expression_chain_validator;
 			if (expression_chain_validator.is_expression_chain(*func_call)) {
@@ -142,7 +154,7 @@ private:
 			// 	}
 			// }
 		}
-		return node.do_function_call_hoisting(m_program);
+		return &node;
 	}
 
 	NodeAST * visit(NodeFunctionHeaderRef& node) override {
@@ -179,5 +191,4 @@ private:
 	// }
 
 };
-
 

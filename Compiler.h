@@ -10,7 +10,7 @@
 #include "Preprocessor/PreprocessorParser.h"
 #include "Preprocessor/PreAST/PreASTCombine.h"
 #include "Preprocessor/PreAST/PreASTDefines.h"
-#include "Preprocessor/PreAST/PreASTDesugar.h"
+#include "Preprocessor/PreAST/PreASTMacros.h"
 #include "Preprocessor/PreAST/PreASTIncrementer.h"
 #include "Preprocessor/PreAST/PreASTPragma.h"
 // misc
@@ -47,10 +47,10 @@
 #include "AST/ASTVisitor/GlobalScope/ASTParameterPromotion.h"
 #include "AST/ASTVisitor/GlobalScope/MarkThreadSafe.h"
 #include "AST/ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
+#include "JSON/parser/JSONParser.h"
 #include "Lowering/LoweringTernaryOperator.h"
 #include "Optimization/ArrayInitializationRaising.h"
-
-
+#include "Preprocessor/PreAST/PreASTConditions.h"
 
 class Compiler {
 	std::unique_ptr<CompilerConfig> m_pragma_config;
@@ -66,27 +66,76 @@ class Compiler {
 //	bool parse();
 //	bool process_ast();
 //	bool generate();
+public:
+
+	static std::vector<Token> tokenize(const std::string &input_filename) {
+		const FileHandler file_handler(input_filename);
+		Tokenizer tokenizer(file_handler.get_output(), input_filename, file_handler.get_file_type());
+		return tokenizer.tokenize();
+	}
+
+	static Result<std::unique_ptr<PreNodeProgram>> preproc_parse(const std::string &input_filename, DefinitionProvider* definition_provider) {
+		const auto& tokens = Compiler::tokenize(input_filename);
+		PreprocessorParser parser(tokens, definition_provider);
+		return parser.parse_program(nullptr);
+	}
+
+	static std::unique_ptr<JSONValue> parse_json(const std::string &input_filename) {
+		const FileHandler file_handler(input_filename);
+		JSONParser parser;
+		return parser.parse(file_handler.get_output(), input_filename);
+	}
 
 	void preprocess() {
 		auto result = Result<SuccessTag>(SuccessTag{});
+		m_timer.start("Import");
 
-		PreprocessorConditions conditions(m_tokens);
-		result = conditions.process_conditions();
-		if(result.is_error()) {
-			auto error = result.get_error();
-			error.m_message += " Preprocessor failed while processing conditions.";
-			error.exit();
-		}
-		m_tokens = std::move(conditions.get_token_vector());
 
-		PreprocessorParser parser(m_tokens);
-		auto result_parse = parser.parse_program(nullptr);
-		if(result_parse.is_error()) {
-			auto error = result_parse.get_error();
+		// m_tokens = Compiler::tokenize(m_cli_config->input_filename.value());
+		// static ImportProcessor imports(m_tokens, m_cli_config->input_filename.value(), &m_definition_provider);
+		// if(auto import_result = imports.process_imports(); import_result.is_error()) {
+		// 	auto error = import_result.get_error();
+		// 	error.m_message += " Preprocessor failed while processing import statements.";
+		// 	error.exit();
+		// }
+		// m_tokens = std::move(imports.get_token_vector());
+		//
+		// PreprocessorConditions conditions(m_tokens);
+		// result = conditions.process_conditions();
+		// if(result.is_error()) {
+		// 	auto error = result.get_error();
+		// 	error.m_message += " Preprocessor failed while processing conditions.";
+		// 	error.exit();
+		// }
+		// m_tokens = std::move(conditions.get_token_vector());
+		//
+		// PreprocessorParser parser(m_tokens, &m_definition_provider);
+		// auto result_parse = parser.parse_program(nullptr);
+		// if(result_parse.is_error()) {
+		// 	auto error = result_parse.get_error();
+		// 	error.m_message += " Preprocessor parsing failed.";
+		// 	error.exit();
+		// }
+		// auto pre_ast = std::move(result_parse.unwrap());
+
+
+		auto pre_ast_result = Compiler::preproc_parse(m_cli_config->input_filename.value(), &m_definition_provider);
+		if(pre_ast_result.is_error()) {
+			auto error = pre_ast_result.get_error();
 			error.m_message += " Preprocessor parsing failed.";
 			error.exit();
 		}
-		auto pre_ast = std::move(result_parse.unwrap());
+		auto pre_ast = std::move(pre_ast_result.unwrap());
+		std::unordered_set<std::string> imported_files{};
+		std::unordered_map<std::string, std::string> basename_map{};
+		pre_ast->do_preprocessing(m_cli_config->input_filename.value(), m_cli_config->input_filename.value(), imported_files, basename_map);
+
+		m_timer.stop("Import");
+		std::cout << m_timer.print_timer("Import") << std::endl;
+
+		PreASTConditions conditions_processor;
+		pre_ast->accept(conditions_processor);
+
 		PreASTPragma pragma(m_pragma_config.get());
 		pre_ast->accept(pragma);
 
@@ -94,7 +143,7 @@ class Compiler {
 		pre_ast->accept(defines);
 		pre_ast->debug_print();
 
-		PreASTDesugar desugar;
+		PreASTMacros desugar;
 		pre_ast->accept(desugar);
 		pre_ast->debug_print();
 
@@ -104,11 +153,11 @@ class Compiler {
 
 		PreASTCombine combine;
 		pre_ast->accept(combine);
+		combine.debug_print_tokens();
 
 		m_tokens = std::move(combine.m_tokens);
 	}
 
-public:
 	explicit Compiler(std::unique_ptr<CompilerConfig> config) : m_cli_config(std::move(config)) {
 		m_pragma_config = std::make_unique<CompilerConfig>();
 		// initialize standard types and registry
@@ -156,21 +205,6 @@ public:
 #endif
 
 		m_timer.start("Total Time");
-		m_timer.start("Import");
-
-		static FileHandler file_handler(m_cli_config->input_filename.value());
-		static Tokenizer tokenizer(file_handler.get_output(), m_cli_config->input_filename.value());
-		m_tokens = tokenizer.tokenize();
-
-		static ImportProcessor imports(m_tokens, m_cli_config->input_filename.value(), &m_definition_provider);
-		if(auto import_result = imports.process_imports(); import_result.is_error()) {
-			auto error = import_result.get_error();
-			error.m_message += " Preprocessor failed while processing import statements.";
-			error.exit();
-		}
-		m_tokens = std::move(imports.get_token_vector());
-
-		m_timer.stop("Import");
 		m_timer.start("Preprocessor");
 
 		preprocess();
@@ -201,7 +235,7 @@ public:
 		std::filesystem::path curr_path = __FILE__;
 
 		m_timer.stop("Preprocessor");
-		std::cout << m_timer.print_timer("Import") << "\n";
+		// std::cout << m_timer.print_timer("Import") << "\n";
 		std::cout << m_timer.print_timer("Preprocessor") << "\n";
 		m_timer.start("Parsing");
 

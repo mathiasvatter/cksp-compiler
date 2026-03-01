@@ -2,22 +2,46 @@
 // Created by Mathias Vatter on 10.11.23.
 //
 
-#include "PreASTDesugar.h"
+#include "PreASTMacros.h"
 #include "../../Interpreter/SimpleExprInterpreter.h"
 
-PreNodeAST *PreASTDesugar::visit(PreNodeProgram &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeProgram &node) {
     m_program = &node;
 	m_substitution_stack = {};
 
+	// parallel_for_each(node.macro_definitions.begin(), node.macro_definitions.end(),
+	// 		[&](const auto& def) {
+	// 			m_program->add_to_macro_lookup(def);
+	// 			m_macro_string_lookup.insert({def->header->get_name(), def.get()});
+	// 		});
     for(auto & def : node.macro_definitions) {
-        m_macro_lookup.insert({{def->header->get_name(), (int)def->header->num_args()}, def.get()});
+    	m_program->add_to_macro_lookup(def);
 		m_macro_string_lookup.insert({def->header->get_name(), def.get()});
     }
-	visit_all(node.program, *this);
+	node.program->accept(*this);
 	return &node;
 }
 
-PreNodeAST *PreASTDesugar::do_substitution(PreNodeLiteral &node) {
+PreNodeAST * PreASTMacros::visit(PreNodeFunctionCall &node) {
+	node.function->accept(*this);
+	if (auto def = m_program->get_macro_definition(node)) {
+		auto node_define_call = node.transform_to_macro_call();
+		node_define_call->definition = def;
+		return node.replace_with(std::move(node_define_call))->accept(*this);
+	}
+	return &node;
+}
+
+PreNodeMacroDefinition *PreASTMacros::get_macro_string_definition(const PreNodeMacroHeader& macro_header) {
+	// if macro call has no arguments (literate or iterate) and therefore does not match its original definition
+	const auto it2 = m_macro_string_lookup.find(macro_header.get_name());
+	if(it2 != m_macro_string_lookup.end()) {
+		return it2->second;
+	}
+	return nullptr;
+}
+
+PreNodeAST *PreASTMacros::do_substitution(PreNodeLiteral &node) {
 	if (!m_substitution_stack.empty()) {
 		if (auto substitute = get_substitute(node.tok.val)) {
 			return node.replace_with(std::move(substitute));
@@ -31,54 +55,62 @@ PreNodeAST *PreASTDesugar::do_substitution(PreNodeLiteral &node) {
 	return &node;
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeNumber &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeNumber &node) {
 	m_debug_token = node.get_string();
     // substitution
 	return do_substitution(node);
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeInt &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeInt &node) {
 	m_debug_token = node.get_string();
     // substitution
 	return do_substitution(node);
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeKeyword &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeKeyword &node) {
 	m_debug_token = node.get_string();
+	// if (node.get_name() == "ui.slider.automation#n#") {
+	//
+	// }
+	// if (auto def = m_program->get_macro_definition(node)) {
+	// 	auto node_macro_call = node.transform_to_macro_call();
+	// 	node_macro_call->definition = def;
+	// 	return node.replace_with(std::move(node_macro_call))->accept(*this);
+	// }
     // substitution
 	return do_substitution(node);
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeIncrementer &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeIncrementer &node) {
 	visit_all(node.body, *this);
 	return &node;
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeOther &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeOther &node) {
 	m_debug_token = node.get_string();
 	return &node;
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeStatement &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeStatement &node) {
     node.statement->accept(*this);
 	return &node;
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeChunk &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeChunk &node) {
 	node.flatten();
 	visit_all(node.chunk, *this);
 	node.flatten();
 	return &node;
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeList &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeList &node) {
     for(auto &p : node.params){
         if(p) p->accept(*this);
     }
 	return &node;
 }
 
-void PreASTDesugar::check_recursion(const Token &tok) const {
+void PreASTMacros::check_recursion(const Token &tok) const {
 	if(m_macros_used.contains(tok.val)) {
 		// recursive function call detected
 		auto error = CompileError(ErrorType::PreprocessorError, "", "", tok);
@@ -88,7 +120,8 @@ void PreASTDesugar::check_recursion(const Token &tok) const {
 	}
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeMacroCall &node) {
+PreNodeAST *PreASTMacros::
+visit(PreNodeMacroCall &node) {
 	m_debug_token = node.get_string();
 
 	m_program->macro_call_stack.push(&node);
@@ -96,12 +129,22 @@ PreNodeAST *PreASTDesugar::visit(PreNodeMacroCall &node) {
 
     const Token token_name = node.macro->name->tok;
 	check_recursion(token_name);
+	if (!node.definition) {
+		// auto error = CompileError(ErrorType::InternalError, "", "", token_name);
+		// error.m_message = "Undefined <define> called. This construct was marked as a <define-call> during parsing, but no definition was found during preprocessing. This is likely a bug in the preprocessor.";
+		// error.exit();
+
+		// this could still be a wrongly detected macro call inside interate
+		m_program->macro_call_stack.pop();
+		return &node;
+	}
+
     // substitution
     auto node_new_chunk = std::make_unique<PreNodeChunk>(node.tok, node.parent);
 
 	// see if parent is iterate or literate -> ignore amount of parameters then
-    if(const auto def = get_macro_definition(*node.macro)) {
-    	const auto macro_definition = clone_as<PreNodeMacroDefinition>(def);
+    if(node.definition) {
+    	const auto macro_definition = clone_as<PreNodeMacroDefinition>(node.definition);
         m_macros_used.insert(token_name.val);
         // macro_definition->parent = node.parent;
 		if(node.macro->has_args()) {
@@ -135,17 +178,16 @@ PreNodeAST *PreASTDesugar::visit(PreNodeMacroCall &node) {
 		m_program->macro_call_stack.pop();
     	return node.replace_with(std::move(node_new_chunk));
     }
-	m_program->macro_call_stack.pop();
 	return &node;
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeMacroHeader &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeMacroHeader &node) {
 	node.name->accept(*this);
 	node.args->accept(*this);
 	return &node;
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeIterateMacro &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeIterateMacro &node) {
     if(node.macro_call->params.size()>1) {
     	auto error = CompileError(ErrorType::PreprocessorError,"",  "", node.tok);
     	error.m_message = "Found incorrect <iterate_macro> syntax.";
@@ -203,7 +245,8 @@ PreNodeAST *PreASTDesugar::visit(PreNodeIterateMacro &node) {
 			if (auto node_stmt = node_chunk->chunk[0]->cast<PreNodeStatement>()) {
 				node_macro_call = node_stmt->statement->cast<PreNodeMacroCall>();
 				if(node_macro_call) {
-					if(get_macro_definition(*node_macro_call->macro)) {
+					if(auto def = get_macro_string_definition(*node_macro_call->macro)) {
+						node_macro_call->definition = def;
 						// if #n# is not already an arg, add it
 						if (node_macro_call->macro->get_arg("#n#") == -1) {
 							node_macro_call->macro->add_arg(std::move(node_number_chunk_macro_arg));
@@ -228,7 +271,7 @@ PreNodeAST *PreASTDesugar::visit(PreNodeIterateMacro &node) {
     return node.replace_with(std::move(node_new_chunk));
 }
 
-PreNodeAST *PreASTDesugar::visit(PreNodeLiterateMacro &node) {
+PreNodeAST *PreASTMacros::visit(PreNodeLiterateMacro &node) {
     if(node.macro_call->params.size()>1) {
         CompileError(ErrorType::PreprocessorError,"Found incorrect <literate_macro> syntax.", -1, "", "", "").exit();
     }
@@ -263,6 +306,14 @@ PreNodeAST *PreASTDesugar::visit(PreNodeLiterateMacro &node) {
         m_substitution_stack.push(std::move(subst_map));
 
         auto macro_call = node.macro_call->params[0]->clone();
+    	if (auto node_chunk = macro_call->cast<PreNodeChunk>()) {
+    		if (auto node_stmt = node_chunk->chunk[0]->cast<PreNodeStatement>()) {
+    			auto node_macro_call = node_stmt->statement->cast<PreNodeMacroCall>();
+    			if(node_macro_call) {
+    				node_macro_call->definition = get_macro_string_definition(*node_macro_call->macro);
+    			}
+    		}
+    	}
         macro_call->accept(*this);
         node_new_chunk->chunk.push_back(std::move(macro_call));
         m_substitution_stack.pop();
@@ -271,7 +322,7 @@ PreNodeAST *PreASTDesugar::visit(PreNodeLiterateMacro &node) {
     return node.replace_with(std::move(node_new_chunk));
 }
 
-std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> PreASTDesugar::get_substitution_map(PreNodeMacroHeader& definition, const PreNodeMacroHeader& call) {
+std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> PreASTMacros::get_substitution_map(PreNodeMacroHeader& definition, const PreNodeMacroHeader& call) {
 	std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> map;
 	map.reserve(definition.num_args());
 	for(int i= 0; i<definition.num_args(); i++) {
@@ -288,21 +339,21 @@ std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> PreASTDesugar::ge
 	return map;
 }
 
-PreNodeMacroDefinition* PreASTDesugar::get_macro_definition(const PreNodeMacroHeader& macro_header) {
-    const auto it = m_macro_lookup.find({macro_header.get_name(), (int)macro_header.num_args()});
-    if(it != m_macro_lookup.end()) {
-        return it->second;
-    }
-	// if macro call has no arguments (literate or iterate) and therefore does not match its original definition
-	const auto it2 = m_macro_string_lookup.find(macro_header.get_name());
-	if(it2 != m_macro_string_lookup.end()) {
-		return it2->second;
-	}
+// PreNodeMacroDefinition* PreASTDesugar::get_macro_definition(const PreNodeMacroHeader& macro_header) {
+//     const auto it = m_macro_lookup.find({macro_header.get_name(), (int)macro_header.num_args()});
+//     if(it != m_macro_lookup.end()) {
+//         return it->second;
+//     }
+// 	// if macro call has no arguments (literate or iterate) and therefore does not match its original definition
+// 	const auto it2 = m_macro_string_lookup.find(macro_header.get_name());
+// 	if(it2 != m_macro_string_lookup.end()) {
+// 		return it2->second;
+// 	}
+//
+//     return nullptr;
+// }
 
-    return nullptr;
-}
-
-std::unique_ptr<PreNodeAST> PreASTDesugar::get_substitute(const std::string& name) {
+std::unique_ptr<PreNodeAST> PreASTMacros::get_substitute(const std::string& name) {
 	if(m_substitution_stack.empty()) return nullptr;
 	const auto & map = m_substitution_stack.top();
 	if(const auto it = map.find(name); it != map.end()) {

@@ -127,7 +127,7 @@ function foo()
 end function	
 
 namespace Foo
-	// declare ui_button btn_sth
+	declare ui_button btn_sth
 	declare ui_button sdfb
 	// function bar()	
 	// 	declare dummyboi: bool := true
@@ -141,8 +141,6 @@ namespace Foo
 	// end function
 	
 end namespace
-
-
 
 
 struct Sample_Note
@@ -166,6 +164,8 @@ end struct
 
 on init
 	
+	INST_WALLPAPER_ID -> picture := 'bubu.'
+	message(henlo)
 	declare read ui_xy xy_arp[2]
 	declare idx := search(xy_arp, 0)
 
@@ -192,6 +192,9 @@ function do_something()
 		message("good to go")
 		wait(DURATION_QUARTER)
 	end if
+	declare glob := 5
+	message(flag > glob ? "dflk" : "goodbye")
+
 end function
 on listener
 	flag := 1
