@@ -1,120 +1,50 @@
-// Global Declarations:
-	declare _iter0 : int {Reuses: 0}
-	declare const MAX::STRUCTS : int := 1000000 {Reuses: 0}
-	declare const MEM::WARNING : string := "Memory Error: No more free space available to allocate objects of type" {Reuses: 0}
-	namespace Foo
-	declare ui_button Foo.btn_sth : unknown  {Reuses: 0}
-	declare ui_button Foo.sdfb : unknown  {Reuses: 0}
-
-end namespace
-
-struct Sample_Note
-declare local self{Ptr} : Sample_Note {Reuses: 0}
-declare local Sample_Note::note_num : int {Reuses: 0}
-declare local Sample_Note::velocity : int {Reuses: 0}
-declare local Sample_Note::mark : int {Reuses: 0}
-declare local Sample_Note::id : int {Reuses: 0}
-
-	function Sample_Note::set_mark(self{Ptr} : Sample_Note, mark : int)
-		Sample_Note::mark{unknown} {Sample_Note::mark}  := mark{unknown} {mark} 
-	end function
-
-	function Sample_Note::get_mark(self{Ptr} : Sample_Note)
-		return (Sample_Note::mark{unknown} {Sample_Note::mark} )
-	end function
-
-	function Sample_Note::play(self{Ptr} : Sample_Note)
-		return (play_note(Sample_Note::note_num{unknown} {Sample_Note::note_num} , Sample_Note::velocity{unknown} {Sample_Note::velocity} , 0, - 1){Builtin, None, play_note})
-	end function
-
-	function Sample_Note::__init__(note_num : int, velocity : int, mark : int, id : int)
-		Sample_Note::note_num{int} {Sample_Note::note_num}  := note_num{int} {note_num} 
-		Sample_Note::velocity{int} {Sample_Note::velocity}  := velocity{int} {velocity} 
-		Sample_Note::mark{int} {Sample_Note::mark}  := mark{int} {mark} 
-		Sample_Note::id{int} {Sample_Note::id}  := id{int} {id} 
-	end function
-
-	function Sample_Note::__repr__(self{Ptr} : Sample_Note)
-		return ("<Sample_Note> Object: " & self{Ptr}{Sample_Note} {self} )
-	end function
-
-end struct
-
 on init
-	declare [1][2][3] {Reuses: 0}
-	message(mylist[0]{unknown} {mylist} ){Builtin, None, message}
-	Foo.btn_sth{unknown} {Foo.btn_sth}  -> value := Foo.btn_sth{unknown} {Foo.btn_sth}  -> value + 1
-	INST_WALLPAPER_ID{unknown} {INST_WALLPAPER_ID}  -> picture := 'bubu.'
+	declare ui_button Foo.btn_sth : int  {Reuses: 0}
+	declare ui_button Foo.sdfb : int  {Reuses: 0}
+	declare ret0 : string {Reuses: 0}
+	declare local i0 : int {Reuses: 0}
+	declare local _step00 : int {Reuses: 0}
+	declare local _stop00 : int {Reuses: 0}
+	declare mylist[3] : int[] := [1, 2, 3] {Reuses: 0}
+	message(mylist[0]{int} {mylist} ){Builtin, None, message}
+	set_control_par(get_ui_id(Foo.btn_sth{int} {Foo.btn_sth} ){Builtin, None, get_ui_id}, CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} , get_control_par(get_ui_id(Foo.btn_sth{int} {Foo.btn_sth} ){Builtin, None, get_ui_id}, CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} ){Builtin, None, get_control_par} + 1){Builtin, None, set_control_par}
+	set_control_par_str(INST_WALLPAPER_ID{int} {INST_WALLPAPER_ID} , CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "bubu."){Builtin, None, set_control_par_str}
 	message(4){Builtin, None, message}
-	declare a : unknown {Reuses: 0}
-	declare f : unknown {Reuses: 0}
-	declare g : unknown {Reuses: 0}
-	declare d : unknown {Reuses: 0}
-	message(a{unknown} {a}  & ", " & f{unknown} {f}  & ", " & g{unknown} {g}  & ", " & f{unknown} {f}  & ", " & d{unknown} {d} ){Builtin, None, message}
-	declare ui_button btn : unknown  {Reuses: 0}
-	for i : unknown in range(0, 1, 1)
-		message(i{unknown} {i} ){Builtin, None, message}
-	end for
-	set_listener(NI_SIGNAL_TIMER_MS{unknown} {NI_SIGNAL_TIMER_MS} , 1000){Builtin, None, set_listener}
-	declare flag : unknown {Reuses: 0}
+	declare a : int {Reuses: 0}
+	declare f : int {Reuses: 0}
+	declare g : int {Reuses: 0}
+	declare d : int {Reuses: 0}
+	message(a{int} {a}  & ", " & f{int} {f}  & ", " & g{int} {g}  & ", " & f{int} {f}  & ", " & d{int} {d} ){Builtin, None, message}
+	declare ui_button btn : int  {Reuses: 0}
+	i0{int} {i0}  := 0
+	_step00{int} {_step00}  := 1
+	_stop00{int} {_stop00}  := 1
+	while(((i0{int} {i0}  < _stop00{int} {_stop00} ) and (_step00{int} {_step00}  > 0)) or ((i0{int} {i0}  > _stop00{int} {_stop00} ) and (_step00{int} {_step00}  < 0))) 
+		message(i0{int} {i0} ){Builtin, None, message}
+		i0{int} {i0}  := i0{int} {i0}  + _step00{int} {_step00} 
+	end while
+	set_listener(NI_SIGNAL_TIMER_MS{int} {NI_SIGNAL_TIMER_MS} , 1000){Builtin, None, set_listener}
+	declare flag : int {Reuses: 0}
+	declare _ret00[420] : string[] {thread-unsafe} {Reuses: 0}
 end on
 
-on note
-	flag{unknown} {flag}  := 1
-	do_something{UserDefined, None, do_something}
-	flag{unknown} {flag}  := 0
+on note{thread-unsafe}
+	flag{int} {flag}  := 1
+	message(EVENT_NOTE{int} {EVENT_NOTE} ){Builtin, None, message}
+	message("this function is already running, don't run it again"){Builtin, None, message}
+	exit{Builtin, None, exit}
+	if(flag{int} {flag}  > 5)
+		ret0{string} {ret0}  := "dflk"
+	else
+		ret0{string} {ret0}  := "goodbye"
+	end if
+	_ret00[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 420]{string} {_ret00}  := ret0{string} {ret0} 
+	message(_ret00[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 420]{string} {_ret00} ){Builtin, None, message}
+	flag{int} {flag}  := 0
 end on
 
 on listener
-	flag{unknown} {flag}  := 1
-	do_something{UserDefined, None, do_something}
-	flag{unknown} {flag}  := 0
-	message(EVENT_NOTE{unknown} {EVENT_NOTE} ){Builtin, None, message}
+	message("this is an override listener"){Builtin, None, message}
 end on
-
-function foo
-	message("hello"){Builtin, None, message}
-end function
-
-function do_something
-	message(EVENT_NOTE{unknown} {EVENT_NOTE} ){Builtin, None, message}
-	if(flag{unknown} {flag}  = 1)
-		message("this function is already running, don't run it again"){Builtin, None, message}
-		exit{Builtin, None, exit}
-	else
-		message("good to go"){Builtin, None, message}
-		wait(DURATION_QUARTER{unknown} {DURATION_QUARTER} ){Builtin, None, wait}
-	end if
-	declare local glob : unknown := 5 {Reuses: 0}
-	message((flag{unknown} {flag}  > glob{unknown} {glob} ) ? "dflk" : "goodbye" ){Builtin, None, message}
-end function
-
-function CKSP::__bool__(x : int)
-	return (- sh_right(x{unknown} {x}  .xor. - x{unknown} {x} , 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__ge__(a : int, b : int)
-	return (sh_right(a{unknown} {a}  - b{unknown} {b} , 31){Builtin, None, sh_right} + 1)
-end function
-
-function CKSP::__lt__(a : int, b : int)
-	return (- sh_right(a{unknown} {a}  - b{unknown} {b} , 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__ne__(a : int, b : int)
-	return (1 - - sh_right(abs(a{unknown} {a}  - b{unknown} {b} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__eq__(a : int, b : int)
-	return (- sh_right(abs(a{unknown} {a}  - b{unknown} {b} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__le__(a : int, b : int)
-	return (1 + sh_right(b{unknown} {b}  - a{unknown} {a} , 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__gt__(a : int, b : int)
-	return (- sh_right(b{unknown} {b}  - a{unknown} {a} , 31){Builtin, None, sh_right})
-end function
 
 

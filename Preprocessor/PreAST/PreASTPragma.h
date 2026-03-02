@@ -5,7 +5,6 @@
 #pragma once
 
 #include "PreASTVisitor.h"
-#include "../ImportProcessor.h"
 #include "../../AST/ASTVisitor/ASTKSPSyntaxCheck.h"
 #include "../../misc/CommandLineOptions.h"
 #include "../../misc/PathHandler.h"

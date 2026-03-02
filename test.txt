@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.8-alpha.6 on Sun Mar 01 23:03:49 2026 }
+{ Compiled with cksp version 0.0.8-alpha.6 on Mon Mar 02 09:15:14 2026 }
 on init
   declare ui_button $Foo__btn_sth 
   declare ui_button $Foo__sdfb 
@@ -43,6 +43,6 @@ on note
   $flag := 0
 end on
 on listener
-  message("this is another override listener")
+  message("this is an override listener")
 end on
 
