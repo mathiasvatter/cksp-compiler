@@ -486,6 +486,10 @@ NodeFunctionCall* NodeReference::is_in_get_ui_id() const {
 	return nullptr;
 }
 
+bool NodeReference::check_restricted_environment(NodeCallback *current_callback) const {
+	return BuiltinRestrictionValidator::check_variable_callability(*this, current_callback);
+}
+
 // ************* NodeInstruction ***************
 std::unique_ptr<NodeAST> NodeInstruction::clone() const {
     return std::make_unique<NodeInstruction>(*this);
@@ -1035,7 +1039,8 @@ NodeAST *NodeCallback::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeCallback::NodeCallback(const NodeCallback& other)
-        : NodeAST(other), is_thread_safe(other.is_thread_safe), begin_callback(other.begin_callback),
+        : NodeAST(other), is_thread_safe(other.is_thread_safe), is_override(other.is_override),
+		begin_callback(other.begin_callback),
 		callback_id(clone_unique(other.callback_id)),
 		statements(clone_unique(other.statements)),
 		end_callback(other.end_callback) {
@@ -1445,6 +1450,39 @@ bool NodeProgram::check_unique_callbacks() const {
 	return true;
 }
 
+bool NodeProgram::apply_callback_overrides() {
+	std::unordered_map<std::string, size_t> last_override_idx;
+	last_override_idx.reserve(callbacks.size());
+
+	for (size_t i = 0; i < callbacks.size(); ++i) {
+		const auto& cb = callbacks[i];
+		if (!cb->is_override) continue;
+
+		std::string hash = cb->begin_callback;
+		if (cb->callback_id) {
+			hash += "_" + cb->callback_id->get_string();
+		}
+		// If multiple overrides exist for the same callback, the last parsed one wins.
+		last_override_idx[hash] = i;
+	}
+
+	if (last_override_idx.empty()) return true;
+
+	size_t idx = 0;
+	std::erase_if(callbacks, [&](const std::unique_ptr<NodeCallback>& cb) mutable {
+		const size_t curr_idx = idx++;
+		std::string hash = cb->begin_callback;
+		if (cb->callback_id) {
+			hash += "_" + cb->callback_id->get_string();
+		}
+		const auto it = last_override_idx.find(hash);
+		if (it == last_override_idx.end()) return false;
+		return curr_idx != it->second;
+	});
+
+	return true;
+}
+
 bool NodeProgram::combine_callbacks() {
 
 	auto callback_counts = get_callback_counts();
@@ -1604,7 +1642,6 @@ std::shared_ptr<NodePointer> NodeProgram::get_tmp_ptr(Type *ty, DataType data) {
 	// tmp->is_engine = true;
 	return tmp;
 }
-
 
 
 

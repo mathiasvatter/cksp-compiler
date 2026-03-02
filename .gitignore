@@ -40,5 +40,6 @@ build/*
 
 *.zip
 tests/logs/
+_Releases/
 
 

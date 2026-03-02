@@ -36,6 +36,8 @@ FILES=(
   "/Users/mathias/Scripting/the-orchestra-complete-4/the_orchestra_ens_V1.2.ksp"
   "/Users/mathias/Scripting/legato-dev/legato.ksp"
   "/Users/mathias/Scripting/legato-dev/keyswitch.ksp"
+  "/Users/mathias/Scripting/fluegel/fluegel.ksp"
+  "/Users/mathias/Scripting/chroma-upright-piano/Chroma Cimbalom.ksp"
   "/Users/mathias/Scripting/ro-ki/rho_des.ksp"
   "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp"
   "/Users/Mathias/Scripting/the-score/the-score-lead.ksp"
@@ -87,6 +89,17 @@ stop_spinner() {
   wait "$1" 2>/dev/null || true
   tput cnorm 2>/dev/null || true
   printf "\r"
+}
+
+# High-resolution timestamp in milliseconds (portable for macOS/Linux)
+now_ms() {
+  if command -v python3 >/dev/null 2>&1; then
+    python3 -c 'import time; print(int(time.time() * 1000))'
+  elif command -v perl >/dev/null 2>&1; then
+    perl -MTime::HiRes=time -e 'print int(time() * 1000)'
+  else
+    echo $(( $(date +%s) * 1000 ))
+  fi
 }
 
 # -----------------------------
@@ -156,27 +169,28 @@ for entry in "${BUILDS[@]}"; do
 	kontakt_log="$log_dir/kontakt_output.log"
 	OUTPUT_FILE="$log_dir/code_output.txt"
 
-	# ----- Compile -----
-	label="compile: $filename"
-	start_spinner "$label" & spin_pid=$!
-	start_ts=$(date +%s)
+		# ----- Compile -----
+		label="compile: $filename"
+		start_spinner "$label" & spin_pid=$!
+		start_ms=$(now_ms)
 
-	"$executable" -o "$OUTPUT_FILE" "$file" >"$log_dir/.tmp_compile" 2>&1
-	compile_exit=$?
+		"$executable" -o "$OUTPUT_FILE" "$file" >"$log_dir/.tmp_compile" 2>&1
+		compile_exit=$?
 
-	stop_spinner "$spin_pid"
-	end_ts=$(date +%s)
-	duration_compile=$(( end_ts - start_ts ))
+		stop_spinner "$spin_pid"
+		end_ms=$(now_ms)
+		duration_compile_ms=$(( end_ms - start_ms ))
+		duration_compile=$(awk -v ms="$duration_compile_ms" 'BEGIN { printf "%.3f", ms / 1000 }')
 
 	sed -E 's/\x1B\[[0-9;]*[mK]//g' "$log_dir/.tmp_compile" > "$log_dir/.compile_clean"
 	rm -f "$log_dir/.tmp_compile"
 
 	if [[ $compile_exit -eq 0 ]]; then
-	  echo -e "✅ ${GREEN}Compiled${RESET} ($duration_compile s) - $filename"
+		  echo -e "✅ ${GREEN}Compiled${RESET} (${duration_compile} s) - $filename"
 	  compile_passed=$((compile_passed + 1))
 	  mv "$log_dir/.compile_clean" "$stdout_log"
 	else
-	  echo -e "❌ ${RED}Compile failed${RESET} ($duration_compile s) - $filename"
+		  echo -e "❌ ${RED}Compile failed${RESET} (${duration_compile} s) - $filename"
 	  compile_failed=$((compile_failed + 1))
 	  failed_compile_list+=("$filename")
 	  mv "$log_dir/.compile_clean" "$stderr_log"
@@ -191,24 +205,25 @@ for entry in "${BUILDS[@]}"; do
 	fi
 
 	# ----- Kontakt (optional) -----
-	if [[ "$USE_KONTAKT" == true ]]; then
-	  label="kontakt: $filename"
-	  start_spinner "$label" & spin2_pid=$!
+		if [[ "$USE_KONTAKT" == true ]]; then
+		  label="kontakt: $filename"
+		  start_spinner "$label" & spin2_pid=$!
 
-	  start_ts=$(date +%s)
-	  python3 "$KONTAKT_RUNNER" \
-		--kontakt "$KONTAKT_EXEC" \
-		--idle "$IDLE" \
+		  start_ms=$(now_ms)
+		  python3 "$KONTAKT_RUNNER" \
+			--kontakt "$KONTAKT_EXEC" \
+			--idle "$IDLE" \
 		--startup-grace "$STARTUP_GRACE" \
 		--hard-timeout "$HARD_TIMEOUT" \
 		--grace "$GRACE" \
 		--output "$kontakt_log" \
 		"$OUTPUT_FILE"
-	  kontakt_exit=$?
+		  kontakt_exit=$?
 
-	  stop_spinner "$spin2_pid"
-	  end_ts=$(date +%s)
-	  duration_kontakt=$(( end_ts - start_ts ))
+		  stop_spinner "$spin2_pid"
+		  end_ms=$(now_ms)
+		  duration_kontakt_ms=$(( end_ms - start_ms ))
+		  duration_kontakt=$(awk -v ms="$duration_kontakt_ms" 'BEGIN { printf "%.3f", ms / 1000 }')
 
 	  if [[ $kontakt_exit -eq 1 ]]; then
 		echo -e "❌ ${RED}Kontakt failed${RESET} ($duration_kontakt s) - $filename (rc=$kontakt_exit)"

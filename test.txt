@@ -1,8 +1,22 @@
-{ Compiled with cksp version 0.0.8-alpha.5 on Tue Jan 13 22:29:38 2026 }
+{ Compiled with cksp version 0.0.8-alpha.6 on Mon Mar 02 09:15:14 2026 }
 on init
+  declare ui_button $Foo__btn_sth 
+  declare ui_button $Foo__sdfb 
+  declare @ret0
   declare $i0
   declare $_step00
   declare $_stop00
+  declare %mylist[3] := (1, 2, 3)
+  message(%mylist[0])
+  set_control_par(get_ui_id($Foo__btn_sth), $CONTROL_PAR_VALUE, get_control_par(get_ui_id($Foo__btn_sth), $CONTROL_PAR_VALUE) + 1)
+  set_control_par_str($INST_WALLPAPER_ID, $CONTROL_PAR_PICTURE, "bubu.")
+  message(4)
+  declare $a
+  declare $f
+  declare $g
+  declare $d
+  message($a & ", " & $f & ", " & $g & ", " & $f & ", " & $d)
+  declare ui_button $btn 
   $i0 := 0
   $_step00 := 1
   $_stop00 := 1
@@ -12,24 +26,23 @@ on init
   end while
   set_listener($NI_SIGNAL_TIMER_MS, 1000)
   declare $flag
+  declare !_ret00[420]
 end on
-function do_something
-  if($flag = 1)
-    message("this function is already running, don't run it again")
-    exit
-  else
-    message("good to go")
-    wait($DURATION_QUARTER)
-  end if
-end function
 on note
   $flag := 1
-  call do_something
+  message($EVENT_NOTE)
+  message("this function is already running, don't run it again")
+  exit
+  if($flag > 5)
+    @ret0 := "dflk"
+  else
+    @ret0 := "goodbye"
+  end if
+  !_ret00[$NI_CALLBACK_ID mod 420] := @ret0
+  message(!_ret00[$NI_CALLBACK_ID mod 420])
   $flag := 0
 end on
 on listener
-  $flag := 1
-  call do_something
-  $flag := 0
+  message("this is an override listener")
 end on
 

@@ -936,11 +936,17 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
             stmt = std::move(declare_stmt.unwrap());
         } else if ((peek().type == token::CALL) xor
                    (peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK or peek(1).type == token::CLOSED_PARENTH)) {
-			auto function_call = parse_function_call(node_statement.get());
-			if (function_call.is_error()) {
-				return Result<std::unique_ptr<NodeStatement>>(function_call.get_error());
-			}
-			stmt = std::move(function_call.unwrap());
+	        auto function_call = parse_function_call(node_statement.get());
+        	if (function_call.is_error()) {
+        		return Result<std::unique_ptr<NodeStatement>>(function_call.get_error());
+        	}
+        	stmt = std::move(function_call.unwrap());
+        } else if (peek().type == token::SET_CONDITION or peek().type == token::RESET_CONDITION) {
+        	auto function_call = parse_function_call(node_statement.get());
+        	if (function_call.is_error()) {
+        		return Result<std::unique_ptr<NodeStatement>>(function_call.get_error());
+        	}
+        	stmt = std::move(function_call.unwrap());
         } else {
         	auto l_values = parse_l_values(node_statement.get());
         	if (l_values.is_error()) return Result<std::unique_ptr<NodeStatement>>(l_values.get_error());
@@ -1073,6 +1079,10 @@ Result<std::unique_ptr<NodeCallback>> Parser::parse_callback(NodeAST* parent) {
         }
         consume(); // consume )
     }
+	if (peek().type == token::OVERRIDE) {
+		consume(); // consume override
+		node_callback->is_override = true;
+	}
     if(peek().type != token::LINEBRK) {
         return Result<std::unique_ptr<NodeCallback>>(CompileError(ErrorType::ParseError,
       "Missing linebreak after <callback>",  "linebreak",peek()));
@@ -1121,6 +1131,7 @@ Result<std::unique_ptr<NodeNamespace>> Parser::parse_namespace(NodeAST *parent) 
 	std::vector<std::shared_ptr<NodeFunctionDefinition>> node_functions;
 	while(peek().type != end_construct) {
 		_skip_linebreaks();
+		if (peek().type == end_construct) break;
 		if(peek().type == token::DECLARE) {
 			auto declare_stmt = parse_declare_statement(node_declarations.get());
 			if(declare_stmt.is_error()) {
@@ -1279,7 +1290,11 @@ Result<std::unique_ptr<NodeParamList>> Parser::parse_multiple_values(NodeAST* pa
 
 Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(NodeAST* parent, bool allow_linebreaks) {
 	auto param_list = std::make_unique<NodeParamList>(get_tok());
-	if (peek().type == token::OPEN_PARENTH) consume(); // consume (
+	bool has_open_parenth = false;
+	if (peek().type == token::OPEN_PARENTH) {
+		consume(); // consume (
+		has_open_parenth = true;
+	}
 	if (allow_linebreaks) _skip_linebreaks();
 	while (true) {
 		if (peek().type == token::CLOSED_PARENTH) break;
@@ -1294,7 +1309,7 @@ Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(NodeAST* parent,
 			param_list->add_param(std::move(exprResult.unwrap()));
 		} else {
 			auto error = exprResult.get_error();
-            error.m_message += " Found possible nested <ParameterList> Syntax. To denote <Array> initializers inside <ParameterLists>, use '[' and ']'.";
+            error.add_message(" Found possible nested <ParameterList> Syntax. To denote <Array> initializers inside <ParameterLists>, use '[' and ']'.");
 			return Result<std::unique_ptr<NodeParamList>>(error);
 		}
 		if (allow_linebreaks) _skip_linebreaks();
@@ -1303,6 +1318,10 @@ Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(NodeAST* parent,
 		if (allow_linebreaks) _skip_linebreaks();
 		// Allow trailing comma before ')': e.g., f(a, b, )
 		if (peek().type == token::CLOSED_PARENTH) break;
+	}
+	if (has_open_parenth and peek().type != token::CLOSED_PARENTH) {
+		return Result<std::unique_ptr<NodeParamList>>(CompileError(ErrorType::SyntaxError,
+			"Expected closing parenthesis for parameter list.", ")", peek()));
 	}
 	if (peek().type == token::CLOSED_PARENTH) consume(); // consume )
 
@@ -2364,19 +2383,21 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 		}
 	}
 
-	if(peek().type != token::OPEN_BRACKET) {
-		return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
-															 "Found unknown <list> syntax.", "[", peek()));
+	bool has_open_bracket = false;
+	if(peek().type == token::OPEN_BRACKET) {
+		has_open_bracket = true;
+		consume(); // consume [
 	}
-	consume(); // consume [
 	if(peek().type == token::COMMA) {
 		consume(); // consume comma
 	}
-	if(peek().type != token::CLOSED_BRACKET) {
-		return Result<std::unique_ptr<NodeAST>>(CompileError(ErrorType::SyntaxError,
-															 "Found unknown <list> syntax.", "]", peek()));
+	if(has_open_bracket && peek().type != token::CLOSED_BRACKET) {
+		auto error = CompileError(ErrorType::SyntaxError, "Found unknown <list> syntax.", "valid <list> type annotation or closing bracket", peek());
+		return Result<std::unique_ptr<NodeAST>>(error);
 	}
-	consume(); // consume ]
+	if (peek().type == token::CLOSED_BRACKET) {
+		consume(); // consume ]
+	}
 	auto type = parse_type_annotation(ty);
 	if(type.is_error()) {
 		return Result<std::unique_ptr<NodeAST>>(type.get_error());

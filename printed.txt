@@ -1,7 +1,21 @@
 on init
+	declare ui_button Foo.btn_sth : int  {Reuses: 0}
+	declare ui_button Foo.sdfb : int  {Reuses: 0}
+	declare ret0 : string {Reuses: 0}
 	declare local i0 : int {Reuses: 0}
 	declare local _step00 : int {Reuses: 0}
 	declare local _stop00 : int {Reuses: 0}
+	declare mylist[3] : int[] := [1, 2, 3] {Reuses: 0}
+	message(mylist[0]{int} {mylist} ){Builtin, None, message}
+	set_control_par(get_ui_id(Foo.btn_sth{int} {Foo.btn_sth} ){Builtin, None, get_ui_id}, CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} , get_control_par(get_ui_id(Foo.btn_sth{int} {Foo.btn_sth} ){Builtin, None, get_ui_id}, CONTROL_PAR_VALUE{int} {CONTROL_PAR_VALUE} ){Builtin, None, get_control_par} + 1){Builtin, None, set_control_par}
+	set_control_par_str(INST_WALLPAPER_ID{int} {INST_WALLPAPER_ID} , CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "bubu."){Builtin, None, set_control_par_str}
+	message(4){Builtin, None, message}
+	declare a : int {Reuses: 0}
+	declare f : int {Reuses: 0}
+	declare g : int {Reuses: 0}
+	declare d : int {Reuses: 0}
+	message(a{int} {a}  & ", " & f{int} {f}  & ", " & g{int} {g}  & ", " & f{int} {f}  & ", " & d{int} {d} ){Builtin, None, message}
+	declare ui_button btn : int  {Reuses: 0}
 	i0{int} {i0}  := 0
 	_step00{int} {_step00}  := 1
 	_stop00{int} {_stop00}  := 1
@@ -11,28 +25,26 @@ on init
 	end while
 	set_listener(NI_SIGNAL_TIMER_MS{int} {NI_SIGNAL_TIMER_MS} , 1000){Builtin, None, set_listener}
 	declare flag : int {Reuses: 0}
+	declare _ret00[420] : string[] {thread-unsafe} {Reuses: 0}
 end on
 
 on note{thread-unsafe}
 	flag{int} {flag}  := 1
-	call do_something{UserDefined, Call, do_something}
-	flag{int} {flag}  := 0
-end on
-
-on listener{thread-unsafe}
-	flag{int} {flag}  := 1
-	call do_something{UserDefined, Call, do_something}
-	flag{int} {flag}  := 0
-end on
-
-function do_something{thread-unsafe}
-	if(flag{int} {flag}  = 1)
-		message("this function is already running, don't run it again"){Builtin, None, message}
-		exit{Builtin, None, exit}
+	message(EVENT_NOTE{int} {EVENT_NOTE} ){Builtin, None, message}
+	message("this function is already running, don't run it again"){Builtin, None, message}
+	exit{Builtin, None, exit}
+	if(flag{int} {flag}  > 5)
+		ret0{string} {ret0}  := "dflk"
 	else
-		message("good to go"){Builtin, None, message}
-		wait(DURATION_QUARTER{int} {DURATION_QUARTER} ){Builtin, None, wait}
+		ret0{string} {ret0}  := "goodbye"
 	end if
-end function
+	_ret00[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 420]{string} {_ret00}  := ret0{string} {ret0} 
+	message(_ret00[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 420]{string} {_ret00} ){Builtin, None, message}
+	flag{int} {flag}  := 0
+end on
+
+on listener
+	message("this is an override listener"){Builtin, None, message}
+end on
 
 

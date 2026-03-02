@@ -9,7 +9,7 @@
 
 PreNodeAST *PreASTIncrementer::visit(PreNodeProgram &node) {
 	m_program = &node;
-	visit_all(node.program, *this);
+	node.program->accept(*this);
 	return &node;
 }
 

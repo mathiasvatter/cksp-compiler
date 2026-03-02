@@ -48,7 +48,9 @@ public:
 		{ "EVENT_NOTE", { "note", "release", "midi_in" } },
 		{ "EVENT_ID",     {"note", "release", "midi_in"} },
 		{ "EVENT_VELOCITY", {"note", "release", "midi_in"} },
-		{"NI_SIGNAL_TYPE", {"listener"}}
+		{"NI_SIGNAL_TYPE", {"listener"}},
+		{"CC_NUM", {"controller"}},
+		{"POLY_AT_NUM", {"poly_at"}},
 	};
 
 	inline static const std::unordered_map<std::string, std::unordered_set<std::string>> m_thread_unsafe_functions = {
@@ -79,19 +81,49 @@ public:
 		return func_name == "message" || m_restricted_functions.contains(func_name) || m_thread_unsafe_functions.contains(func_name);
 	}
 
+	static bool check_variable_callability(const NodeReference& node, NodeCallback* callback) {
+		if (!callback) return true;
+		if (node.kind != NodeReference::Builtin) return true;
+		const auto declaration = node.get_declaration();
+		if (!declaration) {
+			// will (probably with ui controls) always lead to errors
+			return true;
+			// auto error = get_raw_compile_error(ErrorType::InternalError, node);
+			// error.m_message = "Unable to find builtin variable declaration for <" + node.name + ">.";
+			// error.exit();
+		}
+		if (declaration->is_restricted) {
+			const auto callback_name = StringUtils::remove(callback->begin_callback, "on ");
+			const auto allowed_callbacks = get_allowed_callbacks(node);
+			if (!allowed_callbacks.contains(callback_name)) {
+				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
+				error.m_message = "Found restricted variable. <" + node.name + "> can not be used in <" + callback->begin_callback + "> callback.";
+				error.m_expected = "Allowed Callbacks are: \n";
+				for (const auto& allowed_callback : allowed_callbacks) {
+					error.m_expected += "<" + allowed_callback + ">, ";
+				}
+				error.m_expected.erase(error.m_expected.size() - 2);
+				error.m_got = "<" + callback->begin_callback + ">";
+				error.exit();
+				return false;
+			}
+		}
+		return true;
+	}
+
 	static bool check_function_callability(const NodeFunctionCall& node, NodeCallback* callback) {
 		if (node.kind != NodeFunctionCall::Builtin) return true;
 		if (!callback) return true;
 		const auto definition = node.get_definition();
 		if (!definition) {
-			auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
+			auto error = get_raw_compile_error(ErrorType::InternalError, node);
 			error.m_message = "Unable to find builtin function definition for <" + node.function->name + ">.";
 			error.exit();
 		}
 		// check if called in restricted callback
 		if (definition->is_restricted || !definition->is_thread_safe) {
 			const auto callback_name = StringUtils::remove(callback->begin_callback, "on ");
-			const auto allowed_callbacks = get_allowed_callbacks(node.function->name);
+			const auto allowed_callbacks = get_allowed_callbacks(*node.function);
 			if (!allowed_callbacks.contains(callback_name)) {
 				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
 				error.m_message = "Found restricted function. <" + node.function->name + "> can not be used in <" + callback->begin_callback + "> callback.";
@@ -127,12 +159,22 @@ public:
 		}
 	}
 
-	static std::unordered_set<std::string> get_allowed_callbacks(const std::string& func_name) {
+	static std::unordered_set<std::string> get_allowed_callbacks(const NodeFunctionHeaderRef& header) {
+		const auto func_name = header.name;
 		std::unordered_set<std::string> allowed;
 		if (const auto it = m_restricted_functions.find(func_name); it != m_restricted_functions.end()) {
 			allowed.insert(it->second.begin(), it->second.end());
 		}
 		if (const auto it = m_thread_unsafe_functions.find(func_name); it != m_thread_unsafe_functions.end()) {
+			allowed.insert(it->second.begin(), it->second.end());
+		}
+		return allowed;
+	}
+
+	static std::unordered_set<std::string> get_allowed_callbacks(const NodeReference& node) {
+		const auto var_name = node.name;
+		std::unordered_set<std::string> allowed;
+		if (const auto it = m_restricted_variables.find(var_name); it != m_restricted_variables.end()) {
 			allowed.insert(it->second.begin(), it->second.end());
 		}
 		return allowed;

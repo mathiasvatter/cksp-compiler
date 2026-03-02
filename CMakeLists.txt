@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 project(CKSP_Compiler VERSION 0.0.8)
-set(PRE_RELEASE_VERSION "-alpha.5")
+set(PRE_RELEASE_VERSION "-alpha.6")
 
 set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
 configure_file(
@@ -54,18 +54,14 @@ add_executable(cksp main.cpp
         misc/CompileError.h
         misc/CompileError.cpp
         misc/Result.h
-        Preprocessor/ImportProcessor.h
-        Preprocessor/ImportProcessor.cpp
-        Preprocessor/PreprocessorConditions.h
-        Preprocessor/PreprocessorConditions.cpp
         Preprocessor/PreAST/PreASTNodes/PreAST.h
         Preprocessor/PreAST/PreASTNodes/PreAST.cpp
         Preprocessor/PreAST/PreASTVisitor.h
         Preprocessor/PreAST/PreASTVisitor.cpp
         Preprocessor/PreprocessorParser.h
         Preprocessor/PreprocessorParser.cpp
-        Preprocessor/PreAST/PreASTDesugar.h
-        Preprocessor/PreAST/PreASTDesugar.cpp
+        Preprocessor/PreAST/PreASTMacros.h
+        Preprocessor/PreAST/PreASTMacros.cpp
         AST/ASTNodes/AST.h
         AST/ASTNodes/AST.cpp
         AST/ASTNodes/ASTDataStructures.h
@@ -90,7 +86,6 @@ add_executable(cksp main.cpp
         Interpreter/SimpleExprInterpreter.h
         Interpreter/SimpleExprInterpreter.cpp
         Preprocessor/PreAST/PreASTCombine.h
-        Preprocessor/PreAST/PreASTCombine.cpp
         Preprocessor/PreAST/PreASTIncrementer.h
         Preprocessor/PreAST/PreASTIncrementer.cpp
         BuiltinsProcessing/BuiltinsProcessor.h
@@ -236,6 +231,8 @@ add_executable(cksp main.cpp
         Lowering/LoweringBoolean.h
         SyntaxChecks/KSPConditions.h
         Lowering/LoweringComparisons.h
+        Preprocessor/PreAST/PreASTImport.h
+        Preprocessor/PreAST/PreASTConditions.h
 )
 add_dependencies(cksp generate_headers)
 
