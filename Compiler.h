@@ -6,7 +6,6 @@
 
 
 // Preprocessor
-#include "Preprocessor/PreprocessorConditions.h"
 #include "Preprocessor/PreprocessorParser.h"
 #include "Preprocessor/PreAST/PreASTCombine.h"
 #include "Preprocessor/PreAST/PreASTDefines.h"
@@ -23,7 +22,6 @@
 #include "BuiltinsProcessing/BuiltinsProcessor.h"
 #include "Generator/ASTGenerator.h"
 #include "AST/ASTVisitor/ASTDesugar.h"
-#include "Preprocessor/ImportProcessor.h"
 #include "AST/ASTVisitor/ASTCollectLowerings.h"
 #include "AST/ASTVisitor/ASTSemanticAnalysis.h"
 #include "AST/ASTVisitor/ASTVariableChecking.h"
