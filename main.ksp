@@ -211,9 +211,9 @@ on listener
 	// message(EVENT_NOTE)
 end on
 
-// on listener override
-// 	message("this is an override listener")
-// end on	
+on listener override
+	message("this is an override listener")
+end on	
 
 // on listener override
 // 	message("this is another override listener")
