@@ -72,7 +72,6 @@ add_executable(cksp main.cpp Tokenizer/Tokenizer.cpp Tokenizer/Tokenizer.h
         AST/ASTVisitor.cpp
         ExprInterpreter/SimpleExprInterpreter.cpp
         ExprInterpreter/SimpleExprInterpreter.h
-        Preprocessor/PreAST/PreASTCombine.cpp
         Preprocessor/PreAST/PreASTCombine.h
         Preprocessor/PreAST/PreASTIncrementer.cpp
         Preprocessor/PreAST/PreASTIncrementer.h

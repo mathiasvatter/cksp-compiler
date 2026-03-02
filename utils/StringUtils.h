@@ -252,6 +252,26 @@ static std::string bytes_to_hex_string(const std::vector<unsigned char>& bytes) 
     return ss.str();
 }
 
+/// Converts an integral value to a hex string (optional 0x prefix and width).
+template <typename T>
+inline std::string to_hex_string(T value, bool uppercase = true, bool with_prefix = false, int width = 0) {
+    static_assert(std::is_integral<T>::value, "to_hex_string requires an integral type");
+    std::ostringstream ss;
+    if (with_prefix) {
+        ss << "0x";
+    }
+    if (uppercase) {
+        ss << std::uppercase;
+    }
+    ss << std::hex;
+    if (width > 0) {
+        ss << std::setfill('0') << std::setw(width);
+    }
+    using UnsignedT = typename std::make_unsigned<T>::type;
+    ss << static_cast<UnsignedT>(value);
+    return ss.str();
+}
+
 /// Converts a given string to lowercase
 inline std::string to_lower (std::string s) {
     std::transform (s.begin(), s.end(), s.begin(), [] (auto c) { return static_cast<char> (std::tolower (static_cast<unsigned char> (c))); });

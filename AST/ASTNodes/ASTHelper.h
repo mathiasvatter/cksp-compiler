@@ -163,6 +163,28 @@ void visit_all(const std::vector<std::shared_ptr<T>>& elements, Visitor& visitor
 	}
 }
 
+template <typename T, typename Visitor>
+void visit_all_parallel(const std::vector<std::unique_ptr<T>>& elements, Visitor& visitor, size_t num_threads=0) {
+	parallel_for_each(elements.begin(), elements.end(),
+		[&visitor](const auto& element) {
+			if (element) {
+				element->accept(visitor);
+			}
+		},
+		num_threads);
+}
+
+template <typename T, typename Visitor>
+void visit_all_parallel(const std::vector<std::shared_ptr<T>>& elements, Visitor& visitor, size_t num_threads=0) {
+	parallel_for_each(elements.begin(), elements.end(),
+		[&visitor](const auto& element) {
+			if (element) {
+				element->accept(visitor);
+			}
+		},
+		num_threads);
+}
+
 template <typename T>
 std::shared_ptr<T> to_shared_ptr(std::unique_ptr<T> uniquePtr) {
 	return std::shared_ptr<T>(std::move(uniquePtr));
@@ -232,5 +254,4 @@ std::vector<std::unique_ptr<T>> clone_vector(const std::vector<std::unique_ptr<T
 	}
 	return new_vec;
 }
-
 
