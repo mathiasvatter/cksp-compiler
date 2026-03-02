@@ -32,8 +32,8 @@ To deploy a new release, follow these steps:
 0. Make sure to be on branch `development`
 1. Update the version number in `CMakeLists.txt`
 2. Run `run_tests.sh --with-kontakt` to ensure all tests pass.
-3. Run `./get_changelog.sh` to generate the changelog notes for the new version. This will be pushed to the git submodule `cksp-compiler-issues`.
-4. Formulate a proper changelog entry from the notes into `CHANGELOG.md` and `cksp-compiler-issues/changelogs/CHANGELOG_vX.Y.Z.md`, replacing `X.Y.Z` with the new version number.
+3. Run `./scripts/write_changelog.sh` to generate the raw changelog notes for the new version. The notes will be generated based on the commit messages since the last release and written into `CHANGELOG.md` in thte project root.
+4. Formulate a proper changelog entry from the notes into `CHANGELOG.md`.
 6. Commit all changes to git and push to the `development` branch.
-7. Merge `development` into `main` and push. This will trigger the GitHub Actions workflow to build and deploy the new release privately.
+7. Merge `development` into `main` and push. This will trigger the GitHub Actions workflow to build and deploy the new release privately. The workflow will build the releases for macos arm and x86, and windows x86, push the `CHANGELOG.md` update to the `cksp-compiler-issues` submodule (branch `cksp-releases`) and create a new release on GitHub (privately on the `cksp-compiler` repository) with the new version number and the changelog entry as release notes. A tag will be created in `cksp-compiler-issues` and `cksp-compiler`.
 8. When the release is built, run `publish_latest_release.sh` to publish the release publicly on GitHub and commit the final tag and release notes to `cksp-compiler-issues`.

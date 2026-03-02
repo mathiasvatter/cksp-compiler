@@ -87,11 +87,6 @@ for ASSET_NAME in "${ASSET_NAMES[@]}"; do
 done
 echo "Assets downloaded successfully."
 
-# 4. (Optional) Changelogs pushen (wenn nötig)
-echo "Pushing potential changelog updates..."
-./scripts/push_changelog.sh
-check_error "Pushing changelogs"
-
 # 5. Öffentliches Repo vorbereiten (Tag + Release löschen, neuen Tag erstellen)
 echo "Preparing public repository ($PUBLIC_REPO)..."
 
