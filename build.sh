@@ -21,23 +21,8 @@ fi
 # Determine architecture or override via ENV (e.g. ARCH_OVERRIDE)
 ARCHITECTURE=${ARCH_OVERRIDE:-$(uname -m)}
 
-# Architecture-dependent CMake selection
-if [ "$CI" == "true" ]; then
-    # CI environment: use system cmake
-    CMAKE_DIR=$(which cmake)
-else
-    # Local environment
-    if [ -z "$CUSTOM_CMAKE_DIR" ]; then
-        ARCH=$(uname -m)
-        if [ "$ARCH" == "arm64" ]; then
-            CMAKE_DIR="/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake"
-        else
-            CMAKE_DIR="/Applications/CLion.app/Contents/bin/cmake/mac/x64/bin/cmake"
-        fi
-    else
-        CMAKE_DIR="$CUSTOM_CMAKE_DIR"
-    fi
-fi
+# CI environment: use system cmake
+CMAKE_DIR=$(which cmake)
 
 # Check if CMake is available
 if [ -z "$CMAKE_DIR" ] || [ ! -x "$CMAKE_DIR" ]; then
@@ -50,7 +35,11 @@ echo "Using CMake: $CMAKE_DIR"
 echo "Build directory: $BUILD_DIR"
 
 # Configuration
-$CMAKE_DIR -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE="$CMAKE_BUILD_TYPE" -DCMAKE_OSX_ARCHITECTURES="$ARCHITECTURE" -S .
+$CMAKE_DIR -B "$BUILD_DIR" \
+    -DCMAKE_BUILD_TYPE="$CMAKE_BUILD_TYPE" \
+    -DCMAKE_OSX_ARCHITECTURES="$ARCHITECTURE" \
+    -S .
+
 if [ $? -ne 0 ]; then
     echo "Error: CMake configuration failed." >&2
     exit 1

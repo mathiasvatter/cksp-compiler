@@ -16,7 +16,6 @@ public:
 	/// purge_group can only be used in on ui_control, on ui_controls and on persistence_changed
 	/// wait, wait_ticks, wait_async, stop_wait can not be used in on init
 	/// save_array, save_array_str, load_array, load_array_str can be used in on init, on persistence_changed, on ui_control and on pgs_changed
-	///
 	inline static const std::unordered_map<std::string, std::unordered_set<std::string>> m_restricted_functions = {
 		// purge_group: allowed only in "ui_control", "ui_controls", and "persistence_changed"
 		{ "purge_group", { "ui_control", "ui_controls", "persistence_changed" } },

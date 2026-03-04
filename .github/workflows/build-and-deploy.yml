@@ -98,7 +98,7 @@ jobs:
 
       - name: Build CKSP (Windows)
         run: |
-            cmd /c build_script.bat
+            cmd /c build.bat
 
       - name: Extract version directory (Windows)
         id: extract-version-windows

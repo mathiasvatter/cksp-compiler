@@ -1,21 +1,21 @@
 @echo off
 setlocal
 
-rem Dynamische Pfad-Suche für CI-Umgebungen oder lokale Systeme
-if defined CI (
+rem Dynamic path lookup for CI environments or local systems
+@REM if defined CI (
     for /f "tokens=*" %%i in ('where cmake') do set "CMAKE=%%i"
     for /f "tokens=*" %%i in ('where ninja') do set "NINJA=%%i"
     set "CC=gcc"
     set "CXX=g++"
-) else (
-    rem Lokale Pfade (anpassbar)
-    set "CMAKE=C:\Program Files\CMake\bin\cmake.exe"
-    set "NINJA=C:\Program Files\JetBrains\CLion 2024.3.2\bin\ninja\win\x64\ninja.exe"
-    set "CC=C:/msys64/ucrt64/bin/gcc.exe"
-    set "CXX=C:/msys64/ucrt64/bin/g++.exe"
-)
+@REM ) else (
+@REM     rem Local paths (customizable)
+@REM     set "CMAKE=C:\Program Files\CMake\bin\cmake.exe"
+@REM     set "NINJA=C:\Program Files\JetBrains\CLion 2024.3.2\bin\ninja\win\x64\ninja.exe"
+@REM     set "CC=C:/msys64/ucrt64/bin/gcc.exe"
+@REM     set "CXX=C:/msys64/ucrt64/bin/g++.exe"
+@REM )
 
-rem Prüfen, ob die benötigten Tools vorhanden sind
+rem Check whether required tools are available
 if not exist "%CMAKE%" (
     echo Error: cmake not found.
     exit /b 1
@@ -25,10 +25,10 @@ if not exist "%NINJA%" (
     exit /b 1
 )
 
-rem Setze das Build-Verzeichnis
+rem Set build directory
 set "BUILD_DIR=cmake-build-release"
 
-rem Build-Projekt mit CMake und Ninja
+rem Build project with CMake and Ninja
 "%CMAKE%" -DCMAKE_BUILD_TYPE=Release ^
     -DCMAKE_C_COMPILER="%CC%" ^
     -DCMAKE_CXX_COMPILER="%CXX%" ^
@@ -47,7 +47,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-rem Überprüfen, ob die cksp-Binärdatei existiert
+rem Check whether the cksp binary exists
 if not exist "%BUILD_DIR%\cksp.exe" (
     echo Error: cksp executable not found in %BUILD_DIR%.
     exit /b 1
@@ -55,14 +55,14 @@ if not exist "%BUILD_DIR%\cksp.exe" (
 
 rem Run cksp --version and extract the version number
 for /f "tokens=3" %%a in ('%BUILD_DIR%\cksp.exe --version') do set "VERSION=%%a"
-rem Dynamisch die Version Directory ermitteln
+rem Determine the version directory dynamically
 if "%VERSION%" == "" (
     echo Error: Version could not be determined.
     exit /b 1
 )
 echo Detected version: %VERSION%
 
-rem Prüfen, ob es sich um eine Pre-Release-Version handelt
+rem Check whether this is a pre-release version
 echo %VERSION% | find "-" >nul
 if %ERRORLEVEL%==0 (
     set "VERSION_DIR=cksp_v%VERSION%"
