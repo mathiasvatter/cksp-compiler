@@ -29,6 +29,7 @@ public:
 		{ "set_snapshot_type", {"init"}},
 		{ "set_map_editor_event_color", {"init"}},
 		{ "watch_var", {"init"}},
+		{ "set_num_user_zones", {"init"}},
 		{ "watch_array_idx", {"init"}},
 		{ "disable_logging", {"init"}},
 		{ "set_note_controller", ([]() -> std::unordered_set<std::string> {
@@ -48,9 +49,9 @@ public:
 		{ "EVENT_NOTE", { "note", "release", "midi_in" } },
 		{ "EVENT_ID",     {"note", "release", "midi_in"} },
 		{ "EVENT_VELOCITY", {"note", "release", "midi_in"} },
-		{"NI_SIGNAL_TYPE", {"listener"}},
-		{"CC_NUM", {"controller"}},
-		{"POLY_AT_NUM", {"poly_at"}},
+		{ "NI_SIGNAL_TYPE", {"listener"} },
+		{ "CC_NUM", {"controller"} },
+		{ "POLY_AT_NUM", {"poly_at"} },
 	};
 
 	inline static const std::unordered_map<std::string, std::unordered_set<std::string>> m_thread_unsafe_functions = {

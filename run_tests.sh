@@ -44,6 +44,7 @@ FILES=(
   "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp"
   "/Users/Mathias/Scripting/action-strings-2/action_strings2_V0.1.ksp"
   "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp"
+  "/Users/mathias/Scripting/dark-matter/Dark Horizon.ksp"
   "/Users/mathias/Scripting/fragments-modern-percussion/Fragments.ksp"
   "/Users/mathias/Scripting/sonu-northern-spheres/Nordic Spheres.ksp"
 )
