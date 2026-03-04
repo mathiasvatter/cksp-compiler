@@ -2,15 +2,15 @@
 
 BUILD_DIR="cmake-build-release"
 
-# Version aus der Binärdatei extrahieren
+# Extract version from the binary
 VERSION=$("$BUILD_DIR/cksp" --version | awk '{print $3}')
 
-# Überprüfen, ob es sich um eine Pre-Release-Version handelt
+# Check whether this is a pre-release version
 if [[ "$VERSION" == *"-"* ]]; then
     VERSION_DIR="cksp_v${VERSION}"
 else
     VERSION_DIR="cksp_v${VERSION}_release"
 fi
 
-# Ergebnis ausgeben
+# Print result
 echo "$VERSION_DIR"

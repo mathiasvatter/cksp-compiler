@@ -43,11 +43,11 @@ BUILDS=(
   "release:$RELEASE_EXEC"
 )
 
-# Spinner-Funktionen
+# Spinner functions
 start_spinner() {
   local spin_chars='-\|/'
   i=0
-  tput civis  # Cursor ausblenden
+  tput civis  # Hide cursor
   while true; do
     i=$(( (i+1) % 4 ))
     printf "\r⏳ $CURRENT_FILE ... ${spin_chars:$i:1} "
@@ -58,7 +58,7 @@ start_spinner() {
 stop_spinner() {
   kill "$1" &>/dev/null
   wait "$1" 2>/dev/null
-  tput cnorm  # Cursor wieder einblenden
+  tput cnorm  # Show cursor again
 }
 
 
@@ -103,7 +103,7 @@ for entry in "${BUILDS[@]}"; do
     stderr_log="$log_dir/stderr.log"
 
 #    echo -n "⏳ $filename ... "
-    # Aktuellen Dateinamen für Spinner anzeigen
+    # Show current filename in spinner
     CURRENT_FILE="$filename"
 
     # Start time in ms
@@ -161,7 +161,6 @@ for entry in "${BUILDS[@]}"; do
 done
 
 rm "$OUTPUT_FILE"
-
 
 
 
