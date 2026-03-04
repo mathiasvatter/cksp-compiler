@@ -3,14 +3,13 @@ import sys
 def convert_to_header(input_file, output_file):
     try:
         with open(input_file, 'rb') as infile, open(output_file, 'w') as outfile:
-            # Erstellen des Array-Namens aus dem Dateinamen
+            # Extract array name from input filename
             array_name = input_file.split('/')[-1].split('.')[0]
             outfile.write(f"unsigned char {array_name}[] = {{\n    ")
 
             byte_count = 0
             byte = infile.read(1)
             while byte:
-                # Schreiben jedes Bytes als Hexadezimalwert
                 outfile.write(f"0x{byte.hex()}, ")
                 byte_count += 1
                 if byte_count % 12 == 0:

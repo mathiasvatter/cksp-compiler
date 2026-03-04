@@ -8,7 +8,7 @@ BUILD_DIR="cmake-build-release"
 # build only
 ./build.sh release
 
-# Überprüfen, auf welcher macOS-Architektur man sich befindet und setze target_dir
+# Check which macOS architecture is being used and set target_dir
 ARCH=$(uname -m)
 if [ "$ARCH" == "arm64" ]; then
     TARGET_DIR="$ARM_DIR"
@@ -26,7 +26,7 @@ if [ ! -d "$RELEASES_DIR" ]; then
 fi
 
 TAG="v${VERSION}"
-# Überprüfen, ob es sich um eine Pre-Release-Version handelt (z.B. -alpha, -beta, -rc)
+# Check whether this is a pre-release version (e.g. -alpha, -beta, -rc)
 if [[ "$VERSION" == *"-"* ]]; then
     VERSION_DIR="cksp_v${VERSION}"
 else
@@ -34,10 +34,10 @@ else
 fi
 RELEASE_DIR="${RELEASES_DIR}/${VERSION_DIR}"
 
-# Erstellen des Release-Ordners
+# Create the release folder
 mkdir -p "$RELEASE_DIR"
 
-# Kopieren von README.md und CHANGELOG.md in den Release-Ordner
+# Copy README.md and CHANGELOG.md into the release folder
 cp README.md "$RELEASE_DIR/README.md"
 # cp CHANGELOG.md "$RELEASE_DIR/CHANGELOG.md"
 
@@ -46,10 +46,10 @@ mkdir -p "$RELEASE_DIR/$INTEL_DIR"
 mkdir -p "$RELEASE_DIR/$WINDOWS_DIR"
 
 rm "$RELEASE_DIR/$TARGET_DIR/cksp"
-# Kopieren der Binärdateien in den Release-Ordner
+# Copy the binaries into the release folder
 cp "$BUILD_DIR/cksp" "$RELEASE_DIR/$TARGET_DIR/cksp"
 
-# Erstellen eines Namens für den Release-Ordner
+# Create a name for the release folder
 WIKI_DIR="ksp-compiler.wiki"
 # check if cksp exists
 if [ -d "$WIKI_DIR" ]; then
@@ -60,11 +60,11 @@ if [ -d "$WIKI_DIR" ]; then
   cd -
 fi
 
-# Wechseln in das Verzeichnis _Releases vor dem Zippen
+# Change to the _Releases directory before zipping
 cd "$RELEASES_DIR"
 # zipping it up
 zip -vr "${VERSION_DIR}.zip" "$VERSION_DIR" -x "*.DS_Store"
-# Zurück zum ursprünglichen Verzeichnis
+# Return to the original directory
 cd -
 
 echo "Release files copied to $RELEASE_DIR"
