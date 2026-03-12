@@ -29,7 +29,6 @@ file(MAKE_DIRECTORY ${GENERATED_HEADERS_DIR})
 # Find all text files in the specified directory
 file(GLOB TEXT_FILES CONFIGURE_DEPENDS "${TEXT_FILES_DIR}/*.txt")
 
-# For each text file
 foreach(TEXT_FILE ${TEXT_FILES})
     # Create a name for the generated header file
     get_filename_component(FILENAME ${TEXT_FILE} NAME_WE)
