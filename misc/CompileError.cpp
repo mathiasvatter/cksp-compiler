@@ -96,7 +96,7 @@ void CompileError::exit(const ErrorType err) {
     print(err);
     std::cout << ColorCode::Red << "\nSeems like the compilation exited with a failure." << std::endl;
 	if(!m_file_name.empty()) {
-    	std::cout << ColorCode::Reset << "To help make cksp better, please report any compiler related issues here: " << generate_github_issue_url("mathiasvatter", "cksp-compiler-issues") << std::endl;
+    	std::cout << ColorCode::Reset << "To help make cksp better, please report any compiler related issues here: " << generate_github_issue_url("mathiasvatter", "cksp-compiler") << std::endl;
 	}
     ::exit(EXIT_FAILURE);
 }
