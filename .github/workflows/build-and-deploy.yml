@@ -6,6 +6,7 @@ on:
     #   - 'v*' # Trigger only on new tags, e.g., v1.0.0
     branches:
       - master # Trigger on push to the main branch
+  workflow_dispatch: # Allow manual triggering of the workflow
 
 jobs:
   build-macos:
@@ -33,16 +34,16 @@ jobs:
         run: |
           export CI=true
           chmod +x build.sh
-          chmod +x build_and_package.sh
-          ./build_and_package.sh
+          chmod +x scripts/build_and_package.sh
+          ./scripts/build_and_package.sh
 
       - name: Build CKSP for x86_64 (Rosetta)
         run: |
           export CI=true
           export ARCH_OVERRIDE=x86_64
           chmod +x build.sh
-          chmod +x build_and_package.sh
-          arch -x86_64 ./build_and_package.sh
+          chmod +x scripts/build_and_package.sh
+          arch -x86_64 ./scripts/build_and_package.sh
 
       - name: Verify architectures of macOS binaries
         run: |
