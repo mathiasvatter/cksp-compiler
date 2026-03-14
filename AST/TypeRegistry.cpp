@@ -6,9 +6,9 @@
 #include "ASTNodes/ASTDataStructures.h"
 #include "ASTNodes/ASTReferences.h"
 
-// Implementierung der Initialisierungsmethode
+// Implementation of the initialization method
 void TypeRegistry::initialize() {
-    // Initialisierung der Standardtypen
+    // Initialization of standard types
     IntegerType = std::make_unique<BasicType>(Kind::Integer);
     Integer = IntegerType.get();
     BooleanType = std::make_unique<BasicType>(Kind::Boolean);
@@ -30,7 +30,7 @@ void TypeRegistry::initialize() {
 	PGSType = std::make_unique<BasicType>(Kind::PGS);
 	PGS = PGSType.get();
 
-    // Initialisierung der Composite-Typen
+    // Initialization of composite types
     ArrayOfInt = add_composite_type(CompoundKind::Array, Integer, 1);
     ArrayOfReal = add_composite_type(CompoundKind::Array, Real, 1);
     ArrayOfBool = add_composite_type(CompoundKind::Array, Boolean, 1);
@@ -42,7 +42,7 @@ void TypeRegistry::initialize() {
 
 	Nil = add_object_type("nil");
 
-    // Initialisierung der Maps
+    // Initialization of the maps
     annotation_to_type = {
             {"int", Integer},
             {"real", Real},
@@ -184,4 +184,3 @@ FunctionType *TypeRegistry::add_function_type(const std::vector<Type *>& params,
 	function_types[hash_val] = std::move(func_type);
 	return function_types[hash_val].get();
 }
-
