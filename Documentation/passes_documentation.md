@@ -1,5 +1,5 @@
 
-# AST Reihenfolge
+# AST Order
 
 1. Desugar
    - foreach loops -> for loops

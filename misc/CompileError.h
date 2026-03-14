@@ -9,7 +9,6 @@
 #include <fstream>
 
 struct ColorCode {
-    // Farben
     inline static const std::string Red = "\033[31m";
     inline static const std::string Green = "\033[32m";
     inline static const std::string Yellow = "\033[33m";
@@ -18,13 +17,11 @@ struct ColorCode {
     inline static const std::string Cyan = "\033[36m";
     inline static const std::string White = "\033[37m";
 
-    // Stile
     inline static const std::string Reset = "\033[0m";
     inline static const std::string Bold = "\033[1m";
     inline static const std::string Italic = "\033[3m";
     inline static const std::string Underline = "\033[4m";
 
-    // Hintergrundfarben
     inline static const std::string BgRed = "\033[41m";
     inline static const std::string BgGreen = "\033[42m";
     inline static const std::string BgYellow = "\033[43m";
@@ -33,12 +30,6 @@ struct ColorCode {
     inline static const std::string BgCyan = "\033[46m";
     inline static const std::string BgWhite = "\033[47m";
 };
-
-//// ANSI-Escapesequenz für Rot
-//const std::string red = "\033[31m";
-//
-//// ANSI-Escapesequenz zum Zurücksetzen der Farbe
-//const std::string reset = "\033[0m";
 
 enum class ErrorType {
     CompileError,
@@ -52,7 +43,7 @@ enum class ErrorType {
     PreprocessorError,
 	MathError,
 	InternalError
-	// TODO weitere Fehlerarten
+	// TODO more error types
 };
 
 /// execute command line operations
@@ -100,12 +91,11 @@ public:
 			case ErrorType::MathError: return "MathError";
             case ErrorType::FileError: return "FileError";
 			case ErrorType::InternalError: return "InternalError";
-            // TODO weitere Fehlerarten
+            // TODO more error types
             default: return "UnknownError";
         }
     };
 
-    // Funktion, die alle \t in einem String durch Spaces ersetzt
     static std::string replace_tabs_with_spaces(const std::string& input, int spacesPerTab = 4);
 };
 
