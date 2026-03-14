@@ -26,9 +26,9 @@ GRACE="2.0"
 GREEN='\033[0;32m'; RED='\033[0;31m'; YELLOW='\033[0;33m'; RESET='\033[0m'
 
 # -----------------------------
-# Default test files (extend with extra CLI args)
+# Default internal test files
 # -----------------------------
-FILES=(
+DEFAULT_FILES=(
   "/Users/mathias/Scripting/the-score/the-score.ksp"
   "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp"
   "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp"
@@ -49,15 +49,69 @@ FILES=(
   "/Users/mathias/Scripting/sonu-northern-spheres/Nordic Spheres.ksp"
 )
 
+# Effective file selection (computed from CLI args)
+FILES=()
+CUSTOM_FILES=()
+POSITIONAL_FILES=()
+USE_CUSTOM_FILES=false
+
 # -----------------------------
 # CLI parsing
 # -----------------------------
 while [[ $# -gt 0 ]]; do
   case "$1" in
-	--with-kontakt) USE_KONTAKT=true; shift;;
-	*)               FILES+=("$1");      shift;;
+    --with-kontakt)
+      USE_KONTAKT=true
+      shift
+      ;;
+    --files)
+      USE_CUSTOM_FILES=true
+      shift
+      while [[ $# -gt 0 && "$1" != --* ]]; do
+        CUSTOM_FILES+=("$1")
+        shift
+      done
+      ;;
+    --file)
+      USE_CUSTOM_FILES=true
+      if [[ $# -lt 2 || "$2" == --* ]]; then
+        echo "❗️ --file expects a path argument"
+        exit 2
+      fi
+      CUSTOM_FILES+=("$2")
+      shift 2
+      ;;
+    -h|--help)
+      echo "Usage: $0 [--with-kontakt] [--files <file1> <file2> ...] [--file <file>] [extra-files...]"
+      echo ""
+      echo "Examples:"
+      echo "  $0"
+      echo "  $0 --with-kontakt"
+      echo "  $0 --files /tmp/a.ksp /tmp/b.ksp"
+      echo "  $0 --file /tmp/a.ksp --file /tmp/b.ksp"
+      exit 0
+      ;;
+    --*)
+      echo "❗️ Unknown option: $1"
+      exit 2
+      ;;
+    *)
+      POSITIONAL_FILES+=("$1")
+      shift
+      ;;
   esac
 done
+
+if [[ "$USE_CUSTOM_FILES" == true ]]; then
+  FILES=("${CUSTOM_FILES[@]}" "${POSITIONAL_FILES[@]}")
+else
+  FILES=("${DEFAULT_FILES[@]}" "${POSITIONAL_FILES[@]}")
+fi
+
+if (( ${#FILES[@]} == 0 )); then
+  echo "❗️ No test files selected."
+  exit 2
+fi
 
 # if [[ "$USE_KONTAKT" == true && "$KONTAKT_ONLY" == true ]]; then
 #   echo "❗️ Options --with-kontakt and --kontakt-only are mutually exclusive."
