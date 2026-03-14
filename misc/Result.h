@@ -10,6 +10,11 @@
 
 struct SuccessTag {};
 
+/**
+ * @class Result
+ * @brief A simple Result type to represent either a successful value of type T or a CompileError.
+ * Provides utility functions to check if the result is an error and to unwrap the value or get the error.
+ */
 template<typename T>
 class Result {
 public:

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 project(CKSP_Compiler VERSION 0.0.8)
-set(PRE_RELEASE_VERSION "-alpha.6")
+set(PRE_RELEASE_VERSION "")
 
 set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
 configure_file(
@@ -9,41 +9,43 @@ configure_file(
 )
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
 if(WIN32)
-    set(CMAKE_EXE_LINKER_FLAGS -static) # problems with typinfo tf??
+    set(CMAKE_EXE_LINKER_FLAGS -static) # Potential typeinfo/linking issues on Windows
 endif()
 #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -march=native -flto -fno-plt -fomit-frame-pointer")
 
-# Pfad zu den Textdateien
+# Path to text files
 set(TEXT_FILES_DIR "${CMAKE_SOURCE_DIR}/Builtins")
 
-# Pfad zum Verzeichnis, in dem die generierten Header-Dateien abgelegt werden sollen
+# Path to the directory where generated header files should be placed
 set(GENERATED_HEADERS_DIR "${CMAKE_BINARY_DIR}/generated_headers")
 file(MAKE_DIRECTORY ${GENERATED_HEADERS_DIR})
 
-# Finden Sie alle Textdateien im angegebenen Verzeichnis
-file(GLOB TEXT_FILES "${TEXT_FILES_DIR}/*.txt")
+# Find all text files in the specified directory
+file(GLOB TEXT_FILES CONFIGURE_DEPENDS "${TEXT_FILES_DIR}/*.txt")
 
-# Für jede Textdatei
 foreach(TEXT_FILE ${TEXT_FILES})
-    # Erstellen Sie einen Namen für die generierte Header-Datei
+    # Create a name for the generated header file
     get_filename_component(FILENAME ${TEXT_FILE} NAME_WE)
     set(HEADER_FILENAME "${GENERATED_HEADERS_DIR}/${FILENAME}.h")
 
-    # Führen Sie ein benutzerdefiniertes Kommando aus, um die Datei zu konvertieren
+    # Run a custom command to convert the file
     add_custom_command(
             OUTPUT ${HEADER_FILENAME}
-            COMMAND python3 ${CMAKE_SOURCE_DIR}/text_file_to_header.py ${TEXT_FILE} ${HEADER_FILENAME}
-            DEPENDS ${TEXT_FILE}
+            COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/text_file_to_header.py ${TEXT_FILE} ${HEADER_FILENAME}
+            DEPENDS ${TEXT_FILE} ${CMAKE_SOURCE_DIR}/scripts/text_file_to_header.py
+            VERBATIM
     )
 
-    # Fügen Sie die generierte Header-Datei zur Liste der Quelldateien hinzu
+    # Add the generated header file to the source list
     list(APPEND GENERATED_HEADERS ${HEADER_FILENAME})
 endforeach()
 add_custom_target(generate_headers DEPENDS ${GENERATED_HEADERS})
-
-include_directories(${GENERATED_HEADERS_DIR}
-        ${GENERATED_DIR})
 
 add_executable(cksp main.cpp
         Tokenizer/Tokens.h
@@ -235,5 +237,10 @@ add_executable(cksp main.cpp
         Preprocessor/PreAST/PreASTConditions.h
 )
 add_dependencies(cksp generate_headers)
+
+target_include_directories(cksp PRIVATE
+        ${GENERATED_HEADERS_DIR}
+        ${GENERATED_DIR}
+)
 
 target_compile_definitions(cksp PRIVATE PRINTER_OUTPUT_PATH="${CMAKE_SOURCE_DIR}")

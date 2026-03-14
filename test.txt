@@ -1,14 +1,38 @@
-{ Compiled with cksp version 0.0.8-alpha.6 on Mon Mar 02 09:15:14 2026 }
+{ Compiled with cksp version 0.0.8-alpha.6 on Sat Mar 14 18:47:19 2026 }
 on init
+  declare $_iter0
   declare ui_button $Foo__btn_sth 
   declare ui_button $Foo__sdfb 
+  declare $idx0
   declare @ret0
-  declare $i0
+  declare $idx00
   declare $_step00
   declare $_stop00
-  declare %mylist[3] := (1, 2, 3)
-  message(%mylist[0])
-  set_control_par(get_ui_id($Foo__btn_sth), $CONTROL_PAR_VALUE, get_control_par(get_ui_id($Foo__btn_sth), $CONTROL_PAR_VALUE) + 1)
+  declare %arr[5] := (1, 2, 3, 4, 5)
+  declare %arr2[5] := (0, 0, 0, 0, 0)
+  $_iter0 := 0
+  while($_iter0 <= (num_elements(%arr) - 1)) 
+    %arr2[$_iter0] := %arr[$_iter0]
+    inc($_iter0)
+  end while
+  declare %urmom0[50]
+  %urmom0[0] := 0
+  %urmom0[1] := 0
+  %urmom0[2] := 0
+  %urmom0[3] := 0
+  %urmom0[4] := 0
+  $_iter0 := 0
+  while($_iter0 <= (num_elements(%arr) - 1)) 
+    %urmom0[$_iter0] := %arr[$_iter0]
+    inc($_iter0)
+  end while
+  sort(%urmom0, 0)
+  $idx0 := 0
+  while($idx0 <= (num_elements(%arr) - 1)) 
+    %arr2[$idx0] := %arr[$idx0]
+    inc($idx0)
+  end while
+  message(%arr2[0])
   set_control_par_str($INST_WALLPAPER_ID, $CONTROL_PAR_PICTURE, "bubu.")
   message(4)
   declare $a
@@ -17,12 +41,12 @@ on init
   declare $d
   message($a & ", " & $f & ", " & $g & ", " & $f & ", " & $d)
   declare ui_button $btn 
-  $i0 := 0
+  $idx00 := 0
   $_step00 := 1
   $_stop00 := 1
-  while((($i0 < $_stop00) and ($_step00 > 0)) or (($i0 > $_stop00) and ($_step00 < 0))) 
-    message($i0)
-    $i0 := $i0 + $_step00
+  while((($idx00 < $_stop00) and ($_step00 > 0)) or (($idx00 > $_stop00) and ($_step00 < 0))) 
+    message($idx00)
+    $idx00 := $idx00 + $_step00
   end while
   set_listener($NI_SIGNAL_TIMER_MS, 1000)
   declare $flag

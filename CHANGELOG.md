@@ -1,29 +1,66 @@
 # Changelog
 
-## [v0.0.8-alpha.6] - 2026-03-02
+## [0.0.8] – 2026-03-14
 
-> Note: The Preprocessor got restructured in this release, and even though I tested it as much as I could, there might still be edge cases that cause issues. If you encounter any problems, please report them so I can fix them as soon as possible.
+>This release summarizes all changes in pre-release versions leading up to `0.0.8`. It introduces major improvements to the CKSP compiler, including a fully restructured preprocessor, support for overriding callbacks, scientific notation, and numerous stability fixes.
 
-### Added
-* Added support for **`import` statements in any scope**, mirroring `sksp` behaviour. This allows for the importing of code segments anywhere without needing to wrap them in a function, macro or namespace.
-* Added support to **override callbacks**, providing more flexibility when extending or redefining behavior of architecture.
-* Added validation to prevent usage of **built-in variables inside restricted callbacks** (e.g. `EVENT_NOTE` in `on listener`) — the compiler now throws a clear error ([#69](https://github.com/mathiasvatter/cksp-compiler-issues/issues/69)).
+>With this version, the `cksp-compiler` repository will be **public** under the **Apache-2.0 License**, allowing for open-source contributions.
 
+### Language
 
-### Fixed
-* Fixed [#44](https://github.com/mathiasvatter/cksp-compiler-issues/issues/44): `cksp` no longer requires brackets in list block declarations when `sksp` does not.
-* Fixed [#72](https://github.com/mathiasvatter/cksp-compiler-issues/issues/72): compound assignments are no longer incorrectly lowered to `inc`/`dec` when using `get_control` shorthands.
-* Fixed [#81](https://github.com/mathiasvatter/cksp-compiler-issues/issues/81): empty namespaces no longer cause parsing errors.
-* Fixed [#77](https://github.com/mathiasvatter/cksp-compiler-issues/issues/77): namespaces now allow declaration of multiple `ui_control` elements.
-* Fixed [#83](https://github.com/mathiasvatter/cksp-compiler-issues/issues/83): strings using single quotes are no longer transformed incorrectly.
-* Fixed [#84](https://github.com/mathiasvatter/cksp-compiler-issues/issues/84): local variables inside ternary expressions no longer trigger `UndeclaredVariable` errors.
+- Added support for **`import` statements in any scope**, mirroring `sksp` behaviour.
+- Added support for **overriding callbacks**.
+- Introduced **scientific notation** support for numeric literals (e.g. `1.2e-10`, `.5e2`).
+- Added support to **declare arrays without brackets** when used as variables.
+- The **`declare` keyword is now optional** for struct member declarations.
 
+### Compiler
 
-### Internal Changes
-* **Preprocessor completely restructured**:
-  - Rewrote handling of **`import`**, **`macro`**, and **`define`** preprocessing.
-  - Reintroduced **`set_condition`**, **`reset_condition`**, **`use_code_if`** and **`import`** as explicit **AST nodes**, including full parsing support.
-  - Migrated condition and import handling to the **visitor pattern**.
-* Improved **TypeInference** and **ReturnFunctionRewriting** passes for better performance.
-* Improved parser efficiency by handling `peek()` and `consume()` return values as references.
-* Updated CI/CD workflow
+- Introduced new pragma directives:
+  - `combine_callbacks`
+  - `max_callback_depth(<value>)`
+- Added CLI options for:
+  - `--combine_callbacks`
+  - `--pass_by`
+  - multiple output files (`-o`) and `#pragma output_path()`.
+- Added validation for:
+  - invalid variable names still containing `#` after preprocessing
+  - constants declared without initialization
+  - usage of built-in variables inside restricted callbacks
+- Added new built-in constants introduced with **Kontakt 8.3**.
+
+### Improvements
+
+- Improved **TypeInference** and **ReturnFunctionRewriting** passes.
+- Improved parser efficiency.
+- Improved efficiency of `import` handling in the preprocessor
+- Improved error and warning messages for duplicate callbacks.
+- Improved short-circuit evaluation transformation logic in regards to function calls in conditions.
+
+### Fixes
+
+Fixed multiple compiler issues affecting language correctness and runtime behavior:
+  - Fix incorrect evaluation of comparisons inside message functions [#26](https://github.com/mathiasvatter/cksp-compiler-issues/issues/26)
+  - Fix incorrect transformation of single-quoted strings [#83](https://github.com/mathiasvatter/cksp-compiler-issues/issues/83)
+  - Fix incorrect lowering of compound assignments when using `get_control` shorthands [#72](https://github.com/mathiasvatter/cksp-compiler-issues/issues/72)
+  - Fix local variables inside ternary expressions causing `UndeclaredVariable` errors [#84](https://github.com/mathiasvatter/cksp-compiler-issues/issues/84)
+  - Fix parsing errors for empty namespaces [#81](https://github.com/mathiasvatter/cksp-compiler-issues/issues/81)
+  - Fix namespace restrictions preventing multiple `ui_control` declarations [#77](https://github.com/mathiasvatter/cksp-compiler-issues/issues/77)
+  - Fix segmentation fault during monomorphization
+  - Fix substring substitutions in `#define` parameters [#51](https://github.com/mathiasvatter/cksp-compiler-issues/issues/51)
+  - Fix incorrect validation of `ndarray` size expressions
+  - Fix initializer lists without commas not producing errors [#52](https://github.com/mathiasvatter/cksp-compiler-issues/issues/52)
+  - Fix multidimensional array declarations with empty brackets [#58](https://github.com/mathiasvatter/cksp-compiler-issues/issues/58)
+  - Fix incorrect f-string lowering with single quotes [#66](https://github.com/mathiasvatter/cksp-compiler-issues/issues/66)
+  - Fix optimization pass removing assignments still used inside functions [#63](https://github.com/mathiasvatter/cksp-compiler-issues/issues/63)
+  - Fix incorrect dead-code elimination behavior
+  - Fix `.txt` files being incorrectly flagged as unsupported
+  - Fix missing warning when `set_num_user_zones` is used outside `on init` [#75](https://github.com/mathiasvatter/cksp-compiler-issues/issues/75)
+  - Fix issue where `struct`, `macro`, or `function` at file position 0 caused a `PreprocessorError` [#45](https://github.com/mathiasvatter/cksp-compiler-issues/issues/45)
+
+### Preprocessor
+
+Major restructuring of the preprocessor:
+  - Rewritten handling of `import`, `macro`, and `define`.
+  - Reintroduced `set_condition`, `reset_condition`, `use_code_if`, and `import` as dedicated AST nodes.
+

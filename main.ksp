@@ -144,32 +144,41 @@ end namespace
 
 
 struct Sample_Note
-    declare note_num: int
-    declare velocity: int
-    declare mark: int
-    declare id: int
-    
-    function set_mark(self, mark: int)
-        self.mark := mark
-    end function
+	declare note_num: int
+	declare velocity: int
+	declare mark: int
+	declare id: int
+	
+	function set_mark(self, mark: int)
+		self.mark := mark
+	end function
 
-    function get_mark(self)
-        return self.mark
-    end function
+	function get_mark(self)
+		return self.mark
+	end function
 
-    function play(self): int
-        return play_note(self.note_num, self.velocity, 0, -1)
-    end function
+	function play(self): int
+		return play_note(self.note_num, self.velocity, 0, -1)
+	end function
 end struct
 
+function load_arrays(array1: int[], array2: int[])
+	declare urmom[50]: int[] := (0,0,0,0,0)
+	urmom := array1
+	sort(urmom, 0)
+	for idx, val in pairs(array1)
+		array2[idx] := val
+	end for
+end function
+
 on init
-	list mylist
-      1
-      2
-      3
-end list
-message(mylist[0])
-	Foo.btn_sth->value += 1
+	
+	declare arr: int[] := (1,2,3,4,5)
+	declare arr2: int[] := (0,0,0,0,0)
+	arr2 := arr
+	load_arrays(arr, arr2)
+	message(arr2[0])
+
 	INST_WALLPAPER_ID -> picture := 'bubu.'
 	message(henlo)
 	// declare read ui_xy xy_arp[2]

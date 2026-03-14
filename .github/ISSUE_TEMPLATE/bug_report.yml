@@ -1,0 +1,76 @@
+name: Bug report
+description: Create a report to help us improve CKSP
+title: "[BUG] "
+labels: ["bug"]
+projects: ["CKSP Compiler"]
+assignees: mathiasvatter
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug!
+        Please fill out the form below as completely as possible.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+      placeholder: What went wrong?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: To Reproduce
+      description: |
+        Provide a minimal CKSP code snippet that triggers the issue
+        and describe the steps to reproduce it.
+      placeholder: |
+        ```cksp
+        // Code snippet that causes the error
+        ```
+      render: markdown
+    validations:
+      required: false
+
+  - type: input
+    id: cksp_version
+    attributes:
+      label: CKSP Version
+      description: Specify the version of CKSP you are using.
+      placeholder: e.g. 0.0.7
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - All
+        - macOS
+        - Windows
+        - Linux
+    validations:
+      required: true
+
+  - type: dropdown
+    id: arch
+    attributes:
+      label: OS Architecture
+      options:
+        - All
+        - arm64
+        - x86_64
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: tooling
+    attributes:
+      label: Tooling
+      options:
+        - label: Using VS Code plugin
+        - label: Using Sublime Text build system

@@ -98,7 +98,7 @@ jobs:
 
       - name: Build CKSP (Windows)
         run: |
-            cmd /c build_script.bat
+            cmd /c build.bat
 
       - name: Extract version directory (Windows)
         id: extract-version-windows
@@ -192,6 +192,14 @@ jobs:
           chmod +x scripts/publish_submodule_changelog.sh
           ./scripts/publish_submodule_changelog.sh
 
+      - name: Copy renamed changelog to project changelogs directory
+        env:
+          TAG: ${{ needs.build-macos.outputs.tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p changelogs
+          cp CHANGELOG.md "changelogs/CHANGELOG-${TAG}.md"
+
       - name: Push to master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -200,7 +208,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          git add CHANGELOG.md
+          git add CHANGELOG.md changelogs/
           # Only commit if there are staged changes
           if git diff --cached --quiet; then
             echo "Nothing to commit."

@@ -3,7 +3,6 @@ For a more extensive collection of features and an introduction into the syntax 
 https://mathiasvatter.github.io/cksp-compiler/
 
 KNOWN ISSUES (in comparison to the sublime ksp fork):
- - Incrementer cannot start in one macro definition and end outside, has to stay in one scope
  - lists can only be declared in blocks and not with <declare list ls[]> and then appended with list_add()
  - <import as> namespaces
  - task functions

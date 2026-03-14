@@ -16,11 +16,10 @@ public:
 	/// purge_group can only be used in on ui_control, on ui_controls and on persistence_changed
 	/// wait, wait_ticks, wait_async, stop_wait can not be used in on init
 	/// save_array, save_array_str, load_array, load_array_str can be used in on init, on persistence_changed, on ui_control and on pgs_changed
-	///
 	inline static const std::unordered_map<std::string, std::unordered_set<std::string>> m_restricted_functions = {
-		// purge_group: Nur in "ui_control", "ui_controls" und "persistence_changed" erlaubt
+		// purge_group: allowed only in "ui_control", "ui_controls", and "persistence_changed"
 		{ "purge_group", { "ui_control", "ui_controls", "persistence_changed" } },
-		// save_array und verwandte Funktionen: Erlaubt in "init", "persistence_changed", "ui_control" und "pgs_changed"
+		// save_array and related functions: allowed in "init", "persistence_changed", "ui_control", and "pgs_changed"
 		{ "save_array",     { "init", "persistence_changed", "ui_control", "pgs_changed", "ui_controls" } },
 		{ "save_array_str", { "init", "persistence_changed", "ui_control", "pgs_changed", "ui_controls" } },
 		{ "load_array",     { "init", "persistence_changed", "ui_control", "pgs_changed", "ui_controls" } },
@@ -29,6 +28,7 @@ public:
 		{ "set_snapshot_type", {"init"}},
 		{ "set_map_editor_event_color", {"init"}},
 		{ "watch_var", {"init"}},
+		{ "set_num_user_zones", {"init"}},
 		{ "watch_array_idx", {"init"}},
 		{ "disable_logging", {"init"}},
 		{ "set_note_controller", ([]() -> std::unordered_set<std::string> {
@@ -48,13 +48,13 @@ public:
 		{ "EVENT_NOTE", { "note", "release", "midi_in" } },
 		{ "EVENT_ID",     {"note", "release", "midi_in"} },
 		{ "EVENT_VELOCITY", {"note", "release", "midi_in"} },
-		{"NI_SIGNAL_TYPE", {"listener"}},
-		{"CC_NUM", {"controller"}},
-		{"POLY_AT_NUM", {"poly_at"}},
+		{ "NI_SIGNAL_TYPE", {"listener"} },
+		{ "CC_NUM", {"controller"} },
+		{ "POLY_AT_NUM", {"poly_at"} },
 	};
 
 	inline static const std::unordered_map<std::string, std::unordered_set<std::string>> m_thread_unsafe_functions = {
-		// wait-Funktionen: Alle CALLBACKS außer "init"
+		// wait functions: all CALLBACKS except "init"
 	{ "wait", ([]() -> std::unordered_set<std::string> {
 		 std::unordered_set<std::string> allowed(CALLBACKS.begin(), CALLBACKS.end());
 		 allowed.erase("init");
