@@ -16,7 +16,7 @@
  */
 class TypeRegistry {
 public:
-    /// Initialisierungsmethode
+    /// Initialization method
     static void initialize();
 
     /// returns the type from the annotation name (int, bool, string[], ...)
@@ -42,7 +42,7 @@ public:
 	static FunctionType* get_function_type(std::vector<Type*> params, Type* return_type);
 	static FunctionType* add_function_type(const std::vector<Type*>& params, Type* return_type);
 
-    // Deklaration der Standardtypen
+    // Declaration of standard types
     static inline std::unique_ptr<BasicType> IntegerType;
     static inline BasicType* Integer;
     static inline std::unique_ptr<BasicType> BooleanType;
@@ -64,7 +64,7 @@ public:
 	static inline std::unique_ptr<BasicType> PGSType;
 	static inline BasicType* PGS;
 
-    // Deklaration der Composite-Typen
+    // Declaration of composite types
     static inline CompositeType* ArrayOfInt;
     static inline CompositeType* ArrayOfReal;
     static inline CompositeType* ArrayOfBool;

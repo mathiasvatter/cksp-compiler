@@ -51,10 +51,10 @@ public:
 	virtual bool is_same_type(const Type* other) const {
 		return get_type_kind() == other->get_type_kind();
 	}
-	// Template-Methode für den Cast
+	// Template method for casting
 	template <typename TargetType>
 	const TargetType* cast() const {
-		// Überprüfen, ob der Typ des Objekts mit `TargetType` übereinstimmt
+		// Check whether the object's type matches `TargetType`
 		if (std::type_index(typeid(*this)) == std::type_index(typeid(TargetType))) {
 			return static_cast<const TargetType*>(this);
 		}
@@ -243,7 +243,7 @@ public:
 	[[nodiscard]] Type* get_return_type() const { return m_return_type; }
 
 	[[nodiscard]] bool is_compatible(const Type* other) const override {
-		// Zunächst prüfen, ob der andere Typ ebenfalls ein Funktionstyp ist
+		// First, check whether the other type is also a function type
 		if (other->get_type_kind() != TypeKind::Function and other->get_kind() != Kind::Unknown) {
 			return false;
 		}
@@ -251,27 +251,27 @@ public:
 			return true;
 		}
 
-		// Cast auf den Funktionstyp
+		// Cast to function type
 		const auto other_function = other->cast<FunctionType>();
 
-		// Parameteranzahl prüfen
+		// Check parameter count
 		if (m_params.size() != other_function->get_params().size()) {
 			return false;
 		}
 
-		// Jeder Parameter muss kompatibel sein
+		// Every parameter must be compatible
 		for (size_t i = 0; i < m_params.size(); ++i) {
 			if (!m_params[i]->is_compatible(other_function->get_params()[i])) {
 				return false;
 			}
 		}
 
-		// Der Rückgabewert muss ebenfalls kompatibel sein
+		// The return type must also be compatible
 		if (!m_return_type->is_compatible(other_function->get_return_type())) {
 			return false;
 		}
 
-		// Wenn alle Überprüfungen erfolgreich waren, sind die Funktionstypen kompatibel
+		// If all checks were successful, the function types are compatible
 		return true;
 	}
 
@@ -280,17 +280,17 @@ public:
 			return false;
 		}
 		const auto other_function = other->cast<FunctionType>();
-		// Anzahl der Parameter vergleichen
+		// Compare number of parameters
 		if (m_params.size() != other_function->m_params.size()) {
 			return false;
 		}
-		// Jeden Parameter auf exakte Übereinstimmung prüfen (mittels is_same_type)
+		// Check each parameter for exact match (using is_same_type)
 		for (size_t i = 0; i < m_params.size(); ++i) {
 			if (!m_params[i]->is_same_type(other_function->m_params[i])) {
 				return false;
 			}
 		}
-		// Rückgabetyp prüfen
+		// Check return type
 		// if (!m_return_type->is_same_type(other_function->m_return_type)) {
 		// 	return false;
 		// }
@@ -300,5 +300,3 @@ public:
 	std::vector<Type*> m_params;
 	Type* m_return_type;
 };
-
-
