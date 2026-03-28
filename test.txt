@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.8-alpha.6 on Sat Mar 14 18:47:19 2026 }
+{ Compiled with cksp version 0.0.8 on Sat Mar 28 14:11:42 2026 }
 on init
   declare $_iter0
   declare ui_button $Foo__btn_sth 
@@ -35,6 +35,7 @@ on init
   message(%arr2[0])
   set_control_par_str($INST_WALLPAPER_ID, $CONTROL_PAR_PICTURE, "bubu.")
   message(4)
+  exit
   declare $a
   declare $f
   declare $g
