@@ -12,6 +12,12 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# CLion/CMake can cache a Python path from an older local installation.
+# If that interpreter no longer exists, drop the cached value and re-discover.
+if(DEFINED Python3_EXECUTABLE AND NOT EXISTS "${Python3_EXECUTABLE}")
+    unset(Python3_EXECUTABLE CACHE)
+endif()
+
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 if(WIN32)
