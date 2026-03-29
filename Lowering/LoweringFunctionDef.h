@@ -22,7 +22,7 @@ class LoweringFunctionDef final : public ASTLowering {
 	/// - the function has multiple return statements
 	/// - the function has one return stmt but its not the last stmt in the block
 	/// - (the function consists NOT of only one if statement with a return stmt in each branch)
-	static bool needs_rewrite(NodeFunctionDefinition& def) {
+	static bool needs_rewrite(const NodeFunctionDefinition& def) {
 		if(def.num_return_stmts == 0) return false;
 		/// function has one return stmt and its the last one
 		if(def.num_return_stmts == 1) {
@@ -56,7 +56,7 @@ public:
 
 		if(!needs_rewrite(node)) return &node;
 		m_exit_flag_name = m_program->def_provider->get_fresh_name("RETURN_FLAG");
-		auto return_flag_decl = get_exit_flag_declaration(node.tok, m_exit_flag_name);
+		auto return_flag_decl = get_return_flag_declaration(node.tok, m_exit_flag_name);
 		m_exit_flag_var = return_flag_decl->variable.get();
 		auto return_flag_ref = m_exit_flag_var->to_reference();
 //		return_flag_ref->match_data_structure(m_exit_flag_var);
@@ -196,18 +196,18 @@ private:
 		return std::move(new_condition);
 	}
 
-	static std::unique_ptr<NodeSingleDeclaration> get_exit_flag_declaration(Token &tok, std::string &flag_name) {
+	static std::unique_ptr<NodeSingleDeclaration> get_return_flag_declaration(Token &tok, std::string &flag_name) {
 		// add exit flag to condition
-		auto exit_flag_var = std::make_shared<NodeVariable>(
+		auto return_flag_var = std::make_shared<NodeVariable>(
 			std::nullopt,
 			flag_name,
 			TypeRegistry::Integer,
 			tok,
 			DataType::Mutable
 		);
-		exit_flag_var->is_local = true;
+		return_flag_var->is_local = true;
 		return std::make_unique<NodeSingleDeclaration>(
-			std::move(exit_flag_var),
+			std::move(return_flag_var),
 			nullptr,
 			tok
 		);

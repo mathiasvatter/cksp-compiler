@@ -324,12 +324,14 @@ public:
 		std::cout << m_timer.print_timer("Lowering") << "\n";
 		m_timer.start("Return Function Rewriting");
 
+		// that should also work here and then I can do the returnstmt lowering in ASTReturnFunctionRewriting???
+		static MarkThreadSafe marker(m_program);
+		marker.mark_environments(*ast);
+
 		ASTReturnFunctionRewriting return_function_rewriting(m_program);
 		return_function_rewriting.do_rewriting(*ast);
 		ast->debug_print();
 
-		static MarkThreadSafe marker(m_program);
-		marker.mark_environments(*ast);
 		static MarkThreadSafeVars mark_vars(m_program);
 		mark_vars.mark_variables(*ast);
 		ast->debug_print();

@@ -11,10 +11,12 @@
 /**
  * @brief Promotes parameters for all functions until all variables are in callbacks.
  *
- * - Visits each function call up to the last nested call, adds local declarations as new parameters,
- *   and maps pointers to the next higher function definitions.
+ * - Visits each function call up to the last nested call,
+ * - calls variable reuse
+ * - adds local declarations as new parameters, and maps pointers to the next higher function definitions.
  * - Repeats this process until the function call stack is empty and inserts the declarations into the callback.
  * - these declarations in callbacks are marked as promoted, to be removed later
+ * --> important: NOT promoted: Composite Types and thread-unsafe variables. Those are directly moved to the global scope
  */
 class ASTParameterPromotion final : public ASTVisitor {
 	DefinitionProvider* m_def_provider;
@@ -78,7 +80,7 @@ private:
 				m_function_call_stack.push_back(&node);
 				definition->accept(*this);
 				definition->visited = true;
-				const auto func_local_vars = std::move(definition->do_variable_reuse(m_program));
+				const auto& func_local_vars = definition->do_variable_reuse(m_program);
 
 				// promote if no composite type
 				for (auto &var : func_local_vars) {
