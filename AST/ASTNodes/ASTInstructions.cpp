@@ -280,7 +280,7 @@ bool NodeFunctionCall::has_side_effects(const std::unordered_set<std::string> &f
 		return true;
 	}
 	static FreeVarCollector free_var;
-	const auto vars = free_var.collect(*this);
+	const auto& vars = free_var.collect(*this);
 	// iterate the smaller set to minimize hash lookups
 	if (vars.size() <= free_vars.size()) {
 		for (const auto& v : vars) {
