@@ -183,13 +183,13 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
 
-      - name: Publish changelog to submodule
-        env:
-          SUBMODULE_TOKEN: ${{ secrets.SUBMODULE_TOKEN }}
-          TAG: ${{ needs.build-macos.outputs.tag }}
-        run: |
-          chmod +x scripts/publish_submodule_changelog.sh
-          ./scripts/publish_submodule_changelog.sh
+      # - name: Publish changelog to submodule
+      #   env:
+      #     SUBMODULE_TOKEN: ${{ secrets.SUBMODULE_TOKEN }}
+      #     TAG: ${{ needs.build-macos.outputs.tag }}
+      #   run: |
+      #     chmod +x scripts/publish_submodule_changelog.sh
+      #     ./scripts/publish_submodule_changelog.sh
 
       - name: Copy renamed changelog to project changelogs directory
         env:
