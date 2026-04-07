@@ -328,6 +328,9 @@ public:
 		static MarkThreadSafe marker(m_program);
 		marker.mark_environments(*ast);
 
+		ASTFunctionStrategy function_strategy(m_program, m_pragma_config->parameter_passing);
+		function_strategy.determine_function_strategies(*m_program);
+
 		ASTReturnFunctionRewriting return_function_rewriting(m_program);
 		return_function_rewriting.do_rewriting(*ast);
 		ast->debug_print();
@@ -335,6 +338,7 @@ public:
 		static MarkThreadSafeVars mark_vars(m_program);
 		mark_vars.mark_variables(*ast);
 		ast->debug_print();
+
 
 		{
 			variable_checking.do_reachable_traversal(*ast, true);
@@ -349,11 +353,7 @@ public:
 			ASTParameterPromotion param_promotion(m_program);
 			param_promotion.do_param_promotion(*ast);
 
-			// static ASTParameterQualifier parameter_qualifier(m_program);
-			// ast->accept(parameter_qualifier);
 			ast->debug_print();
-			ASTFunctionStrategy function_strategy(m_program, m_pragma_config->parameter_passing);
-			function_strategy.determine_function_strategies(*m_program);
 
 			static ParameterAssignmentTransformation assignment_transformation(m_program);
 			assignment_transformation.do_parameter_assignment(*m_program);

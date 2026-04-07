@@ -1,74 +1,44 @@
 on init
-	declare _iter0 : int {Reuses: 0}
-	declare ui_button Foo.btn_sth : int  {Reuses: 0}
-	declare ui_button Foo.sdfb : int  {Reuses: 0}
-	declare idx0 : int {Reuses: 0}
-	declare ret0 : string {Reuses: 0}
-	declare local idx00 : int {Reuses: 1}
-	declare local _step00 : int {Reuses: 0}
-	declare local _stop00 : int {Reuses: 0}
-	declare arr[5] : int[] := [1, 2, 3, 4, 5] {Reuses: 0}
-	declare arr2[5] : int[] := [0, 0, 0, 0, 0] {Reuses: 0}
-	_iter0{int} {_iter0}  := 0
-	while(_iter0{int} {_iter0}  <= (num_elements(arr{int[]} {arr} ){Builtin, None, num_elements} - 1)) 
-		arr2[_iter0{int} {_iter0} ]{int[]} {arr2}  := arr[_iter0{int} {_iter0} ]{int[]} {arr} 
-		inc(_iter0{int} {_iter0} ){Builtin, None, inc}
-	end while
-	declare urmom0[50] : int[] {Reuses: 0}
-	urmom0[0]{int[]} {urmom0}  := 0
-	urmom0[1]{int[]} {urmom0}  := 0
-	urmom0[2]{int[]} {urmom0}  := 0
-	urmom0[3]{int[]} {urmom0}  := 0
-	urmom0[4]{int[]} {urmom0}  := 0
-	_iter0{int} {_iter0}  := 0
-	while(_iter0{int} {_iter0}  <= (num_elements(arr{int[]} {arr} ){Builtin, None, num_elements} - 1)) 
-		urmom0[_iter0{int} {_iter0} ]{int[]} {urmom0}  := arr[_iter0{int} {_iter0} ]{int[]} {arr} 
-		inc(_iter0{int} {_iter0} ){Builtin, None, inc}
-	end while
-	sort(urmom0{int[]} {urmom0} , 0){Builtin, None, sort}
-	idx0{int} {idx0}  := 0
-	while(idx0{int} {idx0}  <= (num_elements(arr{int[]} {arr} ){Builtin, None, num_elements} - 1)) 
-		arr2[idx0{int} {idx0} ]{int} {arr2}  := arr[idx0{int} {idx0} ]{int} {arr} 
-		inc(idx0{int} {idx0} ){Builtin, None, inc}
-	end while
-	message(arr2[0]{int} {arr2} ){Builtin, None, message}
-	set_control_par_str(INST_WALLPAPER_ID{int} {INST_WALLPAPER_ID} , CONTROL_PAR_PICTURE{int} {CONTROL_PAR_PICTURE} , "bubu."){Builtin, None, set_control_par_str}
-	message(4){Builtin, None, message}
-	declare a : int {Reuses: 0}
-	declare f : int {Reuses: 0}
-	declare g : int {Reuses: 0}
-	declare d : int {Reuses: 0}
-	message(a{int} {a}  & ", " & f{int} {f}  & ", " & g{int} {g}  & ", " & f{int} {f}  & ", " & d{int} {d} ){Builtin, None, message}
-	declare ui_button btn : int  {Reuses: 0}
-	idx00{int} {idx00}  := 0
-	_step00{int} {_step00}  := 1
-	_stop00{int} {_stop00}  := 1
-	while(((idx00{int} {idx00}  < _stop00{int} {_stop00} ) and (_step00{int} {_step00}  > 0)) or ((idx00{int} {idx00}  > _stop00{int} {_stop00} ) and (_step00{int} {_step00}  < 0))) 
-		message(idx00{int} {idx00} ){Builtin, None, message}
-		idx00{int} {idx00}  := idx00{int} {idx00}  + _step00{int} {_step00} 
-	end while
-	set_listener(NI_SIGNAL_TIMER_MS{int} {NI_SIGNAL_TIMER_MS} , 1000){Builtin, None, set_listener}
-	declare flag : int {Reuses: 0}
-	declare _ret00[420] : string[] {thread-unsafe} {Reuses: 0}
+	declare ret0 : int {Reuses: 0}
+	declare param10 : int {Reuses: 0}
+	declare _ret00 : unknown {Reuses: 0}
+	declare _ret10 : unknown {Reuses: 0}
 end on
 
-on note{thread-unsafe}
-	flag{int} {flag}  := 1
-	message(EVENT_NOTE{int} {EVENT_NOTE} ){Builtin, None, message}
-	message("this function is already running, don't run it again"){Builtin, None, message}
-	exit{Builtin, None, exit}
-	if(flag{int} {flag}  > 5)
-		ret0{string} {ret0}  := "dflk"
-	else
-		ret0{string} {ret0}  := "goodbye"
+on note
+	param10{int} {param10}  := 5
+	call return_sth{UserDefined, Call, return_sth}
+	_ret00{int} {_ret00}  := ret0{int} {ret0} 
+	message(_ret00{any} {_ret00} ){Builtin, None, message}
+	param10{int} {param10}  := 4
+	call return_sth{UserDefined, Call, return_sth}
+	_ret10{int} {_ret10}  := ret0{int} {ret0} 
+	message(_ret10{any} {_ret10} ){Builtin, None, message}
+end on
+
+function return_sth
+	if(1 = param10{int} {param10} )
+		ret0{int} {ret0}  := 0
+		exit{Builtin, None, exit}
 	end if
-	_ret00[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 420]{string} {_ret00}  := ret0{string} {ret0} 
-	message(_ret00[NI_CALLBACK_ID{int} {NI_CALLBACK_ID}  mod 420]{string} {_ret00} ){Builtin, None, message}
-	flag{int} {flag}  := 0
-end on
-
-on listener
-	message("this is an override listener"){Builtin, None, message}
-end on
+	if(2 = param10{int} {param10} )
+		ret0{int} {ret0}  := 1
+		exit{Builtin, None, exit}
+	end if
+	if(3 = param10{int} {param10} )
+		ret0{int} {ret0}  := 2
+		exit{Builtin, None, exit}
+	end if
+	if(5 = param10{int} {param10} )
+		ret0{int} {ret0}  := 3
+		exit{Builtin, None, exit}
+	end if
+	if(6 = param10{int} {param10} )
+		ret0{int} {ret0}  := 4
+		exit{Builtin, None, exit}
+	end if
+	ret0{int} {ret0}  := -1
+	exit{Builtin, None, exit}
+end function
 
 

@@ -173,7 +173,7 @@ add_executable(cksp main.cpp
         Desugaring/DesugarParamList.h
         Desugaring/DesugarBinaryExpr.h
         Lowering/LoweringWhile.h
-        Lowering/LoweringFunctionDef.h
+        Lowering/LoweringFunctionDefReturnStmts.h
         AST/ASTNodes/NodeStructCreateRefCountFunctions.h
         Lowering/PreLoweringStruct.h
         Lowering/LoweringMemAlloc.h
