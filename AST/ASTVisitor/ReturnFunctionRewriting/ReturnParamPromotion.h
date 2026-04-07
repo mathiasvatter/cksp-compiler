@@ -7,8 +7,8 @@
 #include "../ASTVisitor.h"
 
 /// Rewrites all return statements
-/// promotes all return values to function parameters utilizing the typesystem
-/// The return parameter names are generated be global Gensym instance
+///  - promotes all return values to function parameters utilizing the typesystem
+///  - The return parameter names are generated be global Gensym instance
 class ReturnParamPromotion final : public ASTVisitor {
 	DefinitionProvider* m_def_provider = nullptr;
 	std::string m_return_param_name = "ret";

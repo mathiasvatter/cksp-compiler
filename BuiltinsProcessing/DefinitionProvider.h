@@ -420,6 +420,25 @@ public:
 		return func_call;
 	}
 
+	/// exit
+	static std::unique_ptr<NodeFunctionCall> exit(Token &tok) {
+		auto func_call = std::make_unique<NodeFunctionCall>(
+			false,
+			std::make_unique<NodeFunctionHeaderRef>(
+				"exit",
+				std::make_unique<NodeParamList>(
+					tok
+				),
+				tok
+			),
+			tok
+		);
+		func_call->function->has_forced_parenth = false;
+		func_call->kind = NodeFunctionCall::Kind::Builtin;
+		func_call->ty = TypeRegistry::Void;
+		return func_call;
+	}
+
 	/// sh_right(a, b)
 	static std::unique_ptr<NodeFunctionCall> sh_right(std::unique_ptr<NodeAST> a, std::unique_ptr<NodeAST> b) {
 		auto func_call = std::make_unique<NodeFunctionCall>(

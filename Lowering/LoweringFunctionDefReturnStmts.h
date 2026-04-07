@@ -6,16 +6,19 @@
 
 #include "ASTLowering.h"
 
-/// Lowering of Function Definitions with return statements by
-/// - deleting all statements after return statements in the same block
-/// - wrapping defs with return stmts (that are not at the end of the init block) in while loop
-/// - placing exit_flag and continue statement after every return statement
-/// -
-class LoweringFunctionDef final : public ASTLowering {
+/// Lowering of Function Definitions with return statements by two methods:
+/// - if the function is inlined somewhere (so not transformed into callable ksp function, this pass will:
+///    - deleting all statements after return statements in the same block
+///    - wrapping defs with return stmts (that are not at the end of the init block) in while loop
+///    - placing exit_flag and continue statement after every return statement
+/// - if the function is NEVER inlined (so transformed into callable ksp functions:
+///    - no bigger rewrite needed: everything stays as is and later on, the empty return stmts will be replaced with exit
+class LoweringFunctionDefReturnStmts final : public ASTLowering {
 	NodeFunctionDefinition* m_current_function = nullptr;
 	std::string m_exit_flag_name;
 	NodeDataStructure* m_exit_flag_var = nullptr;
 	int m_num_nested_loops = 0;
+	bool needs_exit_replacement = false;
 
 	/// returns true if the function definitions return statements need to be rewritten
 	/// this is the case if:
@@ -50,11 +53,21 @@ class LoweringFunctionDef final : public ASTLowering {
 		return true;
 	}
 public:
-	explicit LoweringFunctionDef(NodeProgram *program) : ASTLowering(program) {}
+	explicit LoweringFunctionDefReturnStmts(NodeProgram *program) : ASTLowering(program) {}
 
 	NodeAST* visit(NodeFunctionDefinition& node) override {
 
 		if(!needs_rewrite(node)) return &node;
+		// if the function is not inlined, we do not need to rewrite return statements, we will ad an exit statement afterwards
+		if (!node.is_inlined) {
+			needs_exit_replacement = true;
+			m_current_function = &node;
+			node.body->accept(*this);
+			m_current_function = nullptr;
+			needs_exit_replacement = false;
+			return &node;
+		}
+
 		m_exit_flag_name = m_program->def_provider->get_fresh_name("RETURN_FLAG");
 		auto return_flag_decl = get_return_flag_declaration(node.tok, m_exit_flag_name);
 		m_exit_flag_var = return_flag_decl->variable.get();
@@ -94,30 +107,41 @@ public:
 	}
 
 	NodeAST* visit(NodeWhile& node) override {
+		if (!m_current_function->is_inlined) {
+			return ASTVisitor::visit(node);
+		}
+
 		m_num_nested_loops++;
 		node.body->accept(*this);
 		node.condition = add_return_condition(std::move(node.condition), m_exit_flag_var);
-//		if(m_num_nested_loops > 1) {
-			// if there are nested loops add exit flag if-condition check
-			auto block = std::make_unique<NodeBlock>(
-				node.tok,
-				std::make_unique<NodeStatement>(
-					std::make_unique<NodeWhile>(
-						std::move(node.condition),
-						std::move(node.body),
-						node.tok
-					),
+		// if there are nested loops add exit flag if-condition check
+		auto block = std::make_unique<NodeBlock>(
+			node.tok,
+			std::make_unique<NodeStatement>(
+				std::make_unique<NodeWhile>(
+					std::move(node.condition),
+					std::move(node.body),
 					node.tok
 				),
-				std::make_unique<NodeStatement>(get_return_if_check(m_exit_flag_var, node.tok), node.tok)
-			);
-			return node.replace_with(std::move(block));
-//		}
-//		return &node;
+				node.tok
+			),
+			std::make_unique<NodeStatement>(get_return_if_check(m_exit_flag_var, node.tok), node.tok)
+		);
+		return node.replace_with(std::move(block));
 	}
 
 	NodeAST* visit(NodeBlock& node) override {
 		for(auto & stmt : node.statements) {
+			if (needs_exit_replacement) {
+				if (stmt->statement->cast<NodeReturn>()) {
+					auto block = std::make_unique<NodeBlock>(stmt->statement->tok);
+					block->add_as_stmt(std::move(stmt->statement));
+					block->add_as_stmt(DefinitionProvider::exit(block->tok));
+					stmt->set_statement(std::move(block));
+					continue;
+				}
+			}
+
 			stmt->accept(*this);
 		}
 		return &node;

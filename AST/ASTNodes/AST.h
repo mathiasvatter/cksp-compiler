@@ -817,6 +817,9 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	bool is_restricted = false;
 	/// is tagged when non thread-safe builtin functions are used within this function (wait, wait_asnyc, etc)
 	bool is_thread_safe = true;
+	/// tagged when there is at least one call to this function that is inlined (e.g. on init). In which case
+	/// exit cannot be used to prematurely leave the function
+	bool is_inlined = false;
     bool is_used = false;
     bool is_compiled = false;
 	bool visited = false;

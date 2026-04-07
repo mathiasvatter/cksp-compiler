@@ -1106,7 +1106,8 @@ NodeAST *NodeFunctionDefinition::accept(ASTVisitor &visitor) {
 }
 
 NodeFunctionDefinition::NodeFunctionDefinition(const NodeFunctionDefinition& other)
-        : NodeAST(other), is_restricted(other.is_restricted), is_thread_safe(other.is_thread_safe), is_used(other.is_used), is_compiled(other.is_compiled), visited(other.visited),
+        : NodeAST(other), is_restricted(other.is_restricted), is_thread_safe(other.is_thread_safe),
+		is_inlined(other.is_inlined), is_used(other.is_used), is_compiled(other.is_compiled), visited(other.visited),
           num_return_params(other.num_return_params), num_return_stmts(other.num_return_stmts),
           return_stmts(other.return_stmts), call_sites(other.call_sites),
 		  header(clone_shared(other.header)), override(other.override),
@@ -1140,7 +1141,7 @@ ASTDesugaring *NodeFunctionDefinition::get_desugaring(NodeProgram *program) cons
 }
 
 ASTLowering *NodeFunctionDefinition::get_lowering(NodeProgram *program) const {
-	static LoweringFunctionDef lowering(program);
+	static LoweringFunctionDefReturnStmts lowering(program);
 	return &lowering;
 }
 

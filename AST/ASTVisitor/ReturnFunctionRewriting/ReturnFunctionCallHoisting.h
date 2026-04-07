@@ -101,7 +101,8 @@ public:
 	NodeAST * visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		node.bind_definition(m_program);
-		if(node.get_definition() and node.get_definition()->is_expression_function()) return &node;
+		if (node.is_builtin_kind()) return &node;
+		if (node.get_definition() and node.get_definition()->is_expression_function()) return &node;
 
 		if(is_hoistable(node)) {
 			const auto last_stmt = node.get_parent_statement();
