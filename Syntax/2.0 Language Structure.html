@@ -1,0 +1,1861 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://mathiasvatter.github.io/cksp-compiler/Syntax/2.0%20Language%20Structure.html">
+      
+      
+        <link rel="prev" href="../2.%20The%20CKSP%20Syntax.html">
+      
+      
+        <link rel="next" href="2.1%20Variables%20and%20Arrays.html">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/logos/logo.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Language Structure - CKSP Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+  
+  
+  
+  
+  <style>:root{--md-annotation-icon:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M22%2012a10%2010%200%200%201-10%2010A10%2010%200%200%201%202%2012%2010%2010%200%200%201%2012%202a10%2010%200%200%201%2010%2010m-12%206%206-6-6-6-1.4%201.4%204.6%204.6-4.6%204.6z%22/%3E%3C/svg%3E');}</style>
+
+
+    
+    
+      
+        <script src="../assets/external/unpkg.com/iframe-worker/shim.js"></script>
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+      <link rel="stylesheet" href="../stylesheets/hero.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="cksp" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#language-structure" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../index.html" title="CKSP Documentation" class="md-header__button md-logo" aria-label="CKSP Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.82 17 13 19.28V22H6c-1.11 0-2-.89-2-2V4a2 2 0 0 1 2-2h1v7l2.5-1.5L12 9V2h6a2 2 0 0 1 2 2v8.54l-1.5-.82zM24 17l-5.5-3-5.5 3 5.5 3zm-9 2.09v2L18.5 23l3.5-1.91v-2L18.5 21z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CKSP Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Language Structure
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/mathiasvatter/cksp-compiler" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    CKSP Compiler
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../index.html" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../2.%20The%20CKSP%20Syntax.html" class="md-tabs__link">
+          
+  
+  
+  Syntax
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../3.%20Adopted%20Features.html" class="md-tabs__link">
+          
+  
+  
+  Adopted Features
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../6.%20VS%20Code%20Extension.html" class="md-tabs__link">
+          
+  
+  
+  VS Code Extension
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../5.%20Installation.html" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Installation
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+  
+        
+      
+	
+
+	<script>
+(function () {
+  let onScroll = null, onResize = null, onKeydown = null, mo = null;
+
+  function applySearchHint() {
+    const inputs = document.querySelectorAll('.md-search__input');
+    if (!inputs.length) return;
+    inputs.forEach((input) => {
+      const original = input.dataset.placeholderBase || input.getAttribute('placeholder') || 'Search';
+      input.dataset.placeholderBase = original;
+      input.setAttribute('placeholder', `${original} (Press F)`);
+      input.setAttribute('aria-label', `${original}. Press F to search`);
+    });
+  }
+
+  function openSearch() {
+    const toggle = document.getElementById('__search');
+    if (toggle && toggle.type === 'checkbox') toggle.checked = true;
+    const input = document.querySelector('.md-search__input');
+    if (input) {
+      input.focus();
+      input.select();
+    }
+  }
+
+  function shouldIgnoreShortcutTarget(target) {
+    if (!target) return false;
+    const tag = (target.tagName || '').toLowerCase();
+    return (
+      tag === 'input' ||
+      tag === 'textarea' ||
+      tag === 'select' ||
+      target.isContentEditable
+    );
+  }
+
+  function getOffset() {
+	const css   = getComputedStyle(document.documentElement);
+	const varPx = parseFloat(css.getPropertyValue('--hero-offset').trim());
+	if (!Number.isNaN(varPx) && varPx > 0) return varPx;
+
+	const header = document.querySelector('.md-header');
+	const tabs   = document.querySelector('.md-tabs');
+	const h = header ? header.getBoundingClientRect().height : 0;
+	const t = (tabs && getComputedStyle(tabs).display !== 'none') ? tabs.getBoundingClientRect().height : 0;
+	return h + t;
+  }
+
+  function updateHero() {
+	const root = document.documentElement;
+	const hero = document.querySelector('.hero-section');
+
+	// Pages without hero: ensure normal header state
+	if (!hero) {
+	  root.classList.remove('home-with-hero', 'over-hero');
+	  root.style.removeProperty('--hero-header-opacity');
+	  return;
+	}
+
+	root.classList.add('home-with-hero');
+
+	// Transparent while we are "over" the hero (before passing its bottom minus header/tabs)
+	const offset = getOffset();
+	const heroHeight = hero.offsetHeight || 0;
+	const limit  = Math.max(0, heroHeight - offset);    // scroll threshold
+	const isOver = window.scrollY < (limit - 1);        // tolerance
+	root.classList.toggle('over-hero', isOver);
+
+
+	// Smoothly fade the header background in before leaving the hero
+	const css = getComputedStyle(root);
+	let fadeFactor = parseFloat(css.getPropertyValue('--hero-header-fade-factor').trim());
+	// if (Number.isNaN(fadeFactor)) fadeFactor = 0.1;
+	fadeFactor = Math.min(Math.max(fadeFactor, 0), 0.95);
+	let fadeBuffer = parseFloat(css.getPropertyValue('--hero-header-fade-buffer').trim());
+	// if (Number.isNaN(fadeBuffer)) fadeBuffer = 0.35;
+	fadeBuffer = Math.min(Math.max(fadeBuffer, 0), 0.95);
+	const fadeEndBuffer = Math.max(12, offset * 0.1, heroHeight * fadeBuffer);
+	const fadeEnd = Math.max(0, limit - fadeEndBuffer);
+	const fadeStart = fadeEnd * fadeFactor;
+	const fadeWindow = Math.max(1, fadeEnd - fadeStart);
+	let headerOpacity = 1;
+
+	if (isOver) {
+	  if (fadeEnd <= 0 || window.scrollY <= fadeStart) {
+		headerOpacity = 0;
+	  } else if (window.scrollY >= fadeEnd) {
+		headerOpacity = 1;
+	  } else {
+		const progress = (window.scrollY - fadeStart) / fadeWindow;
+		headerOpacity = Math.min(1, Math.max(0, progress));
+	  }
+	}
+
+
+	root.style.setProperty('--hero-header-opacity', headerOpacity.toFixed(3));
+
+	// Optional: parallax / content fade
+	const content = hero.querySelector('.hero-content');
+	const vh = window.innerHeight;
+	const progress = Math.min(1, Math.max(0, window.scrollY / vh));
+	// hero.style.backgroundPositionY = `${progress * 40}%`;
+	// hero.style.setProperty('--hero-parallax', String(progress));
+	// Parallax: move the hero image slower than the page
+	const img = hero.querySelector('.hero-bg img');
+	if (img) {
+		// How far the hero's top edge is from the viewport top
+		const rect = hero.getBoundingClientRect();
+		// 0.25 = 25% of scroll speed => adjust to taste (0.15 … 0.35)
+		const offsetPx = rect.top * 0.21;
+		hero.style.setProperty('--hero-translate', `${offsetPx}px`);
+	}
+
+
+	if (content) {
+	  content.style.setProperty('--content-opacity', Math.max(0, 1 - progress * 2.5));
+	  content.style.setProperty('--content-shift', `${progress * 80}px`);
+	}
+	hero.style.setProperty('--fade-opacity', progress);
+  }
+
+  function attachListeners() {
+	detachListeners();
+	onScroll = () => updateHero();
+	onResize = () => updateHero();
+	onKeydown = (event) => {
+	  if (event.defaultPrevented) return;
+	  if (event.ctrlKey || event.metaKey || event.altKey) return;
+	  if (event.key !== 'f' && event.key !== 'F') return;
+	  if (shouldIgnoreShortcutTarget(event.target)) return;
+	  event.preventDefault();
+	  openSearch();
+	};
+	window.addEventListener('scroll', onScroll, { passive: true });
+	window.addEventListener('resize', onResize);
+	window.addEventListener('keydown', onKeydown);
+  }
+
+  function detachListeners() {
+	if (onScroll) window.removeEventListener('scroll', onScroll);
+	if (onResize) window.removeEventListener('resize', onResize);
+	if (onKeydown) window.removeEventListener('keydown', onKeydown);
+	onScroll = onResize = onKeydown = null;
+  }
+
+  function hardResetIfNoHero() {
+	if (!document.querySelector('.hero-section')) {
+	  const docEl = document.documentElement;
+	  docEl.classList.remove('home-with-hero', 'over-hero');
+	  docEl.style.removeProperty('--hero-header-opacity');
+	  const tabs = document.querySelector('.md-tabs');
+	  if (tabs) tabs.classList.remove('md-tabs--lifted');
+	}
+  }
+
+  function init() {
+	attachListeners();
+	applySearchHint();
+	// Run immediately and once more after layout settles
+	updateHero();
+	requestAnimationFrame(() => {
+	  updateHero();
+	  applySearchHint();
+	});
+  }
+
+  // ---- Initial load
+  hardResetIfNoHero();
+  init();
+
+  // ---- SPA navigation (Material for MkDocs)
+  if (typeof window.document$ !== 'undefined') {
+	window.document$.subscribe(() => {
+	  detachListeners();
+	  document.documentElement.classList.remove('home-with-hero', 'over-hero');
+	  document.documentElement.style.removeProperty('--hero-header-opacity');
+	  const tabs = document.querySelector('.md-tabs');
+	  if (tabs) tabs.classList.remove('md-tabs--lifted');
+	  init();
+	});
+  }
+
+  // ---- Optional: keep in sync if content mutates
+  const main = document.querySelector('main.md-main');
+  if (main && 'MutationObserver' in window) {
+	mo = new MutationObserver(() => requestAnimationFrame(updateHero));
+	mo.observe(main, { childList: true, subtree: true });
+  }
+
+
+})();
+</script>
+
+
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../index.html" title="CKSP Documentation" class="md-nav__button md-logo" aria-label="CKSP Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.82 17 13 19.28V22H6c-1.11 0-2-.89-2-2V4a2 2 0 0 1 2-2h1v7l2.5-1.5L12 9V2h6a2 2 0 0 1 2 2v8.54l-1.5-.82zM24 17l-5.5-3-5.5 3 5.5 3zm-9 2.09v2L18.5 23l3.5-1.91v-2L18.5 21z"/></svg>
+
+    </a>
+    CKSP Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/mathiasvatter/cksp-compiler" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    CKSP Compiler
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Syntax
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Syntax
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../2.%20The%20CKSP%20Syntax.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The CKSP Syntax
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Language Structure
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="2.0%20Language%20Structure.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Language Structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#callbacks-and-event-driven-programming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Callbacks and Event-Driven Programming
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#syntax-fundamentals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Syntax Fundamentals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#execution-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Execution Model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-language-constructs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Language Constructs
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Language Constructs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#callbacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Callbacks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variables-arrays-and-declarations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Variables, Arrays, and Declarations
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Functions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#control-flow-and-loops" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Control Flow and Loops
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-data-structures" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom Data Structures
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#imports-and-namespaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Imports and Namespaces
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pragma-directives" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pragma Directives
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fast-start-guidance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fast Start Guidance
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.1%20Variables%20and%20Arrays.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Variables and Arrays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.2%20Literals%20and%20Expressions.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Literals and Expressions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.3%20Declarations.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Declarations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.4%20Assignments.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assignments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.5%20Lexical%20Scope.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lexical Scope
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.6%20Functions.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Functions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.7%20Loops.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loops
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.8%20Control%20Flow.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.9%20Custom%20Data%20Structures.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Data Structures
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.10%20Import%20Statements.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Import Statements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.11%20Namespaces.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Namespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.12%20Pragma%20Directives.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pragma Directives
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adopted Features
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Adopted Features
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../3.%20Adopted%20Features.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adopted Features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4.%20Planned%20Features.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Planned Features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code Extension
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    VS Code Extension
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../6.%20VS%20Code%20Extension.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CKSP Tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5.%20Installation.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../index.html" class="md-path__link">
+        
+  <span class="md-ellipsis">
+    Home
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../2.%20The%20CKSP%20Syntax.html" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Syntax
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+  
+
+	
+                  
+
+
+  
+  
+
+
+<h1 id="language-structure">Language Structure</h1>
+<p>Comming from other languages, the structure of <code>cksp</code> may feel unusual at first, especially since it is build on top of <code>KSP</code>, keeping some of the unusual aspects of its syntax and execution model while adding features from modern languages. That is why this chapter is designed to give you a quick overview of the language structure and syntax, covering the core constructs of <code>CKSP</code>, including callbacks, variables, functions, control flow, custom data structures, imports, namespaces, and pragma directives.</p>
+<h2 id="callbacks-and-event-driven-programming">Callbacks and Event-Driven Programming</h2>
+<p>As <code>CKSP</code> is based on <code>KSP</code>, it is an event-driven language. A script does not start in a <code>main</code> function, but reacts to Kontakt events through callbacks. The primary entry point is usually <code>on init</code>, which runs once after compilation or engine restart and is typically used for declarations, UI setup, and initial state. All other callback types are triggered by specific events such as incoming MIDI data, UI interaction, timers, or asynchronous completion signals.</p>
+<div class="language-cksp highlight"><table class="highlighttable"><tr><th colspan="2" class="filename"><span class="filename">Minimal CKSP Script Structure</span></th></tr><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span>
+<span class="normal"><a href="#__codelineno-0-2">2</a></span>
+<span class="normal"><a href="#__codelineno-0-3">3</a></span>
+<span class="normal"><a href="#__codelineno-0-4">4</a></span>
+<span class="normal"><a href="#__codelineno-0-5">5</a></span>
+<span class="normal"><a href="#__codelineno-0-6">6</a></span>
+<span class="normal"><a href="#__codelineno-0-7">7</a></span>
+<span class="normal"><a href="#__codelineno-0-8">8</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="k">on</span> <span class="k k-Callback">init</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2"></a><span class="w">    </span><span class="kd">declare</span><span class="w"> </span><span class="k k-Builtin">ui_knob</span> <span class="nv">knb_volume</span><span class="w"> </span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1000000</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="w">    </span><span class="nf">set_knob_label</span><span class="p">(</span><span class="nv">knb_volume</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Volume&quot;</span><span class="p">)</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4"></a><span class="k">end on</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5"></a>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6"></a><span class="k">on</span> <span class="k k-Callback">ui_control</span><span class="w"> </span><span class="p">(</span><span class="nv">knb_volume</span><span class="p">)</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="w">    </span><span class="nf">set_engine_par</span><span class="p">(</span><span class="nb">ENGINE_PAR_VOLUME</span><span class="p">,</span><span class="w"> </span><span class="nv">knb_volume</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8"></a><span class="k">end on</span>
+</span></code></pre></div></td></tr></table></div>
+<h2 id="syntax-fundamentals">Syntax Fundamentals</h2>
+<p>Like <code>KSP</code>, <code>cksp</code> is line-oriented. In practice, one statement is written per line and semicolons are not required. Indentation is used for readability, not for defining scope. Blocks are opened with a keyword and closed with <code>end &lt;keyword&gt;</code>, for example <code>if ... end if</code>, <code>while ... end while</code>, or <code>on ... end on</code>.</p>
+<p>Assignments use <code>:=</code>, equality checks use <code>=</code>, and inequality checks use <code>#</code>. User-defined names must be declared before use. Multiline formatting is supported for function calls and initializers, which allows code to stay readable in larger expressions.</p>
+<div class="language-cksp highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nf">my_function</span><span class="p">(</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="nv">arg1</span><span class="p">,</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nv">arg2</span><span class="p">,</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nv">arg3</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="p">)</span>
+</span></code></pre></div>
+<p>If a statement or expression must continue on the next line, use the continuation marker <code>&lt;...&gt;</code> at the end of the current line.</p>
+<h2 id="execution-model">Execution Model</h2>
+<p>For each incoming event, Kontakt first sets the relevant built-ins for the active context, such as <code>$EVENT_NOTE</code>, <code>$EVENT_VELOCITY</code>, or <code>$NI_UI_ID</code>, and then invokes the matching callback. A callback runs sequentially until it reaches <code>end on</code>, exits early via <code>exit</code>, or pauses on <code>wait()</code>.</p>
+<p>The <code>wait()</code> case is essential for understanding runtime behavior. While one callback instance is paused, other callback instances may run. This is why scope rules and thread-safe local declarations matter, especially in combination with <code>#pragma max_callback_depth(...)</code>.</p>
+<h2 id="core-language-constructs">Core Language Constructs</h2>
+<h3 id="callbacks">Callbacks</h3>
+<p>Callbacks define the top-level structure of a script and always follow the <code>on &lt;callback_name&gt; ... end on</code> pattern. Most projects begin with <code>on init</code> and then add only the callback types they need, for example <code>on note</code>, <code>on release</code>, <code>on controller</code>, <code>on ui_controls</code>, <code>on ui_control(&lt;widget&gt;)</code>, <code>on persistence_changed</code>, <code>on listener</code>, and <code>on async_complete</code>.</p>
+<p><code>exit</code> can be used to stop a callback early. <code>stop_wait(&lt;callback_id&gt;, &lt;parameter&gt;)</code> can be used to cancel a pending wait.</p>
+<!-- <div class="grid cards" markdown>
+
+-   :material-lightning-bolt-outline:{ .lg .bottom } **Callbacks Reference**
+
+    -----
+
+    A complete reference for all callback types, execution timing, and common built-ins.
+
+    [:material-arrow-right: Callbacks](2.0.1%20Callbacks.md)
+
+</div> -->
+
+<h3 id="variables-arrays-and-declarations">Variables, Arrays, and Declarations</h3>
+<p><code>CKSP</code> provides primitive types such as <code>int</code>, <code>real</code>, <code>string</code>, and <code>bool</code>, as well as composite types such as arrays and multidimensional arrays (<code>int[]</code>, <code>real[][]</code>, ...). Pointer variables for user-defined structures are supported as well. Global state is commonly declared in <code>on init</code>, while local state can be introduced directly in the function, loop, or callback scope where it is needed.</p>
+<p>Immutable values can be declared with <code>const</code>. In larger scripts, separating declaration, assignment, and scope decisions early helps keep data flow and state lifetime predictable.</p>
+<div class="grid cards">
+<ul>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.41 3c1.39 2.71 1.94 5.84 1.59 9-.2 3.16-1.3 6.29-3.17 9l-1.53-1c1.61-2.43 2.55-5.2 2.7-8 .34-2.8-.11-5.57-1.3-8zM5.17 3 6.7 4C5.09 6.43 4.15 9.2 4 12c-.34 2.8.12 5.57 1.3 8l-1.69 1c-1.4-2.71-1.96-5.83-1.61-9 .2-3.16 1.3-6.29 3.17-9m6.91 7.68 2.32-3.23h2.53l-3.78 5 2.2 4.92h-2.26L11.71 14l-2.43 3.33H6.76l3.9-5.12-2.13-4.76h2.27z"/></svg></span> <strong>Variables and Arrays</strong></p>
+<hr />
+<p>Types, naming rules, arrays, multidimensional arrays, and indexing behavior.</p>
+<p><a href="2.1%20Variables%20and%20Arrays.html"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span> Variables and Arrays</a></p>
+</li>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 3h-4.18C14.25 1.44 12.53.64 11 1.2c-.86.3-1.5.96-1.82 1.8H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2m-7 0a1 1 0 0 1 1 1 1 1 0 0 1-1 1 1 1 0 0 1-1-1 1 1 0 0 1 1-1M7 7h10V5h2v14H5V5h2zm10 4H7V9h10zm-2 4H7v-2h8z"/></svg></span> <strong>Declarations</strong></p>
+<hr />
+<p>Declaration syntax, type annotations, constants, and persistent declarations.</p>
+<p><a href="2.3%20Declarations.html"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span> Declarations</a></p>
+</li>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 16v-2H7v2zm2-13a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5c0-1.11.89-2 2-2zm-2 7V8H7v2z"/></svg></span> <strong>Assignments</strong></p>
+<hr />
+<p>Assignment forms for variables, arrays, multidimensional arrays, and compound operators.</p>
+<p><a href="2.4%20Assignments.html"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span> Assignments</a></p>
+</li>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12 18.54 7.37-5.74L21 14.07l-9 7-9-7 1.62-1.26zM12 16 3 9l9-7 9 7zm0-11.47L6.26 9 12 13.47 17.74 9z"/></svg></span> <strong>Lexical Scope</strong></p>
+<hr />
+<p>Local/global scope rules and thread-safety behavior in asynchronous callbacks.</p>
+<p><a href="2.5%20Lexical%20Scope.html"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span> Lexical Scope</a></p>
+</li>
+</ul>
+</div>
+<h3 id="functions">Functions</h3>
+<p>Functions are defined in global scope and can be called from callbacks or other functions. Return values are produced via <code>return</code>. Parameter passing is by value by default. Reference semantics can be enabled per parameter with <code>ref</code>, or project-wide through <code>#pragma pass_by("reference")</code>.</p>
+<div class="language-cksp highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kd">function</span> <span class="o">&lt;</span><span class="nv">name</span><span class="o">&gt;</span><span class="p">(</span><span class="o">&lt;</span><span class="nv">params</span><span class="o">&gt;</span><span class="p">):</span><span class="w"> </span><span class="o">&lt;</span><span class="nv">type</span><span class="o">&gt;</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="err">...</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="kc">return</span><span class="w"> </span><span class="o">&lt;</span><span class="nv">value</span><span class="o">&gt;</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="kd">end function</span>
+</span></code></pre></div>
+<div class="grid cards">
+<ul>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.42 5.29c-1.1-.1-2.07.71-2.17 1.82L10 10h2.82v2h-3l-.44 5.07A4.001 4.001 0 0 1 2 18.83l1.5-1.5c.33 1.05 1.46 1.64 2.5 1.3.78-.24 1.33-.93 1.4-1.74L7.82 12h-3v-2H8l.27-3.07a4.01 4.01 0 0 1 4.33-3.65c1.26.11 2.4.81 3.06 1.89l-1.5 1.5c-.25-.77-.93-1.31-1.74-1.38M22 13.65l-1.41-1.41-2.83 2.83-2.83-2.83-1.43 1.41 2.85 2.85-2.85 2.81 1.43 1.41 2.83-2.83 2.83 2.83L22 19.31l-2.83-2.81z"/></svg></span> <strong>Functions</strong></p>
+<hr />
+<p>Function signatures, return values, parameter passing, and <code>ref</code> semantics.</p>
+<p><a href="2.6%20Functions.html"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span> Functions</a></p>
+</li>
+</ul>
+</div>
+<h3 id="control-flow-and-loops">Control Flow and Loops</h3>
+<p>Branching is expressed with <code>if / else if / else</code>, <code>select / case / default</code>, and ternary expressions (<code>condition ? a : b</code>). Iteration is expressed with <code>for</code>, <code>for ... in</code>, and <code>while</code>. Loop flow can be controlled using <code>break</code> and <code>continue</code>.</p>
+<div class="grid cards">
+<ul>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 14c-3.36 0-4.46 1.35-4.82 2.24C9.25 16.7 10 17.76 10 19a3 3 0 0 1-3 3 3 3 0 0 1-3-3c0-1.31.83-2.42 2-2.83V7.83A2.99 2.99 0 0 1 4 5a3 3 0 0 1 3-3 3 3 0 0 1 3 3c0 1.31-.83 2.42-2 2.83v5.29c.88-.65 2.16-1.12 4-1.12 2.67 0 3.56-1.34 3.85-2.23A3.01 3.01 0 0 1 14 7a3 3 0 0 1 3-3 3 3 0 0 1 3 3c0 1.34-.88 2.5-2.09 2.86C17.65 11.29 16.68 14 13 14m-6 4a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1M7 4a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1m10 2a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1"/></svg></span> <strong>Control Flow</strong></p>
+<hr />
+<p>Conditional expressions and branching with <code>if</code>, <code>select</code>, and ternary syntax.</p>
+<p><a href="2.8%20Control%20Flow.html"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span> Control Flow</a></p>
+</li>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18a6 6 0 0 1-6-6c0-1 .25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 0 0 4 12a8 8 0 0 0 8 8v3l4-4-4-4m0-11V1L8 5l4 4V6a6 6 0 0 1 6 6c0 1-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12a8 8 0 0 0-8-8"/></svg></span> <strong>Loops</strong></p>
+<hr />
+<p><code>for</code>, <code>for-each</code>, and <code>while</code> loops, including <code>break</code> and <code>continue</code>.</p>
+<p><a href="2.7%20Loops.html"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span> Loops</a></p>
+</li>
+</ul>
+</div>
+<h3 id="custom-data-structures">Custom Data Structures</h3>
+<p><code>struct</code> allows defining custom data types with fields and methods. They are placed in the global scope, outside of callbacks or functions. While not as fully featured as classes in object-oriented languages, they provide a way to group related data and behavior together, which is especially useful for more complex projects.
+Instances are handled through pointer semantics and can be created with <code>new</code>. Constructors (<code>__init__</code>) and, experimentally, operator overloading are supported.</p>
+<div class="language-cksp highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kd">struct</span> <span class="nc">Note</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="kd">declare</span><span class="w"> </span><span class="nv">pitch</span>: <span class="kt">int</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="kd">declare</span><span class="w"> </span><span class="nv">velocity</span>: <span class="kt">int</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="kd">function</span> <span class="nf">play</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>: <span class="kt">int</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">        </span><span class="kc">return</span><span class="w"> </span><span class="nf">play_note</span><span class="p">(</span><span class="bp">self</span>.<span class="nv">pitch</span><span class="p">,</span><span class="w"> </span><span class="bp">self</span>.<span class="nv">velocity</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="kd">end function</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="kd">end struct</span>
+</span></code></pre></div>
+<div class="grid cards">
+<ul>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6V5a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v1h-2V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v1H3v14h18V6m-2 12H5V8h14Z"/></svg></span> <strong>Custom Data Structures</strong></p>
+<hr />
+<p>Structs, methods, constructors, pointer semantics, and experimental overloading.</p>
+<p><a href="2.9%20Custom%20Data%20Structures.html"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span> Custom Data Structures</a></p>
+</li>
+</ul>
+</div>
+<h3 id="imports-and-namespaces">Imports and Namespaces</h3>
+<p>For modular code organization, files can be included with <code>import</code>. Paths can be resolved relative to the current file or to the project root. Namespaces organize global declarations and reduce naming collisions in larger projects.</p>
+<div class="language-cksp highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k k-Preproc">import</span> <span class="s2">&quot;path/to/module.cksp&quot;</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="kd">namespace</span> <span class="nc">Math</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="kd">declare</span><span class="w"> </span><span class="kd">const</span><span class="w"> </span><span class="nv">PI</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="mf">3.14159</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="kd">end namespace</span>
+</span></code></pre></div>
+<div class="grid cards">
+<ul>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.11.89 2 2 2h12c1.11 0 2-.89 2-2V8zm4 18H6V4h7v5h5zm-3-8.07V19H7.93l2.12-2.12-2.83-2.83 2.83-2.83 2.83 2.83z"/></svg></span> <strong>Import Statements</strong></p>
+<hr />
+<p>Path resolution, root-relative imports, and import usage inside constructs.</p>
+<p><a href="2.10%20Import%20Statements.html"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span> Import Statements</a></p>
+</li>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22 4a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h6l2 2zM2 6v14h18v2H2a2 2 0 0 1-2-2V6zm4 0v10h16V6z"/></svg></span> <strong>Namespaces</strong></p>
+<hr />
+<p>Name organization, nested namespaces, lookup order, and shadowing behavior.</p>
+<p><a href="2.11%20Namespaces.html"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span> Namespaces</a></p>
+</li>
+</ul>
+</div>
+<h3 id="pragma-directives">Pragma Directives</h3>
+<p>Pragmas define project-wide compiler behavior directly in source files. In practice, the most relevant directives are <code>#pragma output_path(...)</code>, <code>#pragma optimize(...)</code>, <code>#pragma pass_by(...)</code>, <code>#pragma combine_callbacks(...)</code>, and <code>#pragma max_callback_depth(...)</code>.</p>
+<div class="grid cards">
+<ul>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 13c-1.86 0-3.41 1.28-3.86 3H2v2h2.14c.45 1.72 2 3 3.86 3s3.41-1.28 3.86-3H22v-2H11.86c-.45-1.72-2-3-3.86-3m0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2M19.86 6c-.45-1.72-2-3-3.86-3s-3.41 1.28-3.86 3H2v2h10.14c.45 1.72 2 3 3.86 3s3.41-1.28 3.86-3H22V6zM16 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2"/></svg></span> <strong>Pragma Directives</strong></p>
+<hr />
+<p>Project-wide compiler directives for output, optimization, callback handling, and pass-by settings.</p>
+<p><a href="2.12%20Pragma%20Directives.html"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span> Pragma Directives</a></p>
+</li>
+</ul>
+</div>
+<h2 id="fast-start-guidance">Fast Start Guidance</h2>
+<p>A practical way to start is to define shared state and UI in <code>on init</code>, implement only the callbacks needed for the current behavior, and move reusable logic into global functions early. Prefer local declarations to avoid cross-instance side effects. As a script grows, <code>import</code>, <code>namespace</code> and <code>struct</code> are the main tools for keeping structure maintainable.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+
+  
+
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../2.%20The%20CKSP%20Syntax.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: The CKSP Syntax">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                The CKSP Syntax
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="2.1%20Variables%20and%20Arrays.html" class="md-footer__link md-footer__link--next" aria-label="Next: Variables and Arrays">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Variables and Arrays
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024 - 2026 Mathias Vatter – <a href="#__consent">Change cookie settings</a>
+
+    </div>
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+      <div class="md-consent" data-md-component="consent" id="__consent" hidden>
+        <div class="md-consent__overlay"></div>
+        <aside class="md-consent__inner">
+          <form class="md-consent__form md-grid md-typeset" name="consent">
+            
+
+
+  
+
+
+<h4>Cookie consent</h4>
+<p>This website uses cookies to recognize your repeated visits and preferences, as well as to measure the effectiveness of the documentation and whether users find what they're searching for. With your consent, you're helping me to make this documentation better.</p>
+<input class="md-toggle" type="checkbox" id="__settings" >
+<div class="md-consent__settings">
+  <ul class="task-list">
+    
+    
+      
+    
+    
+      
+        
+  
+  
+    
+    
+  
+  <li class="task-list-item">
+    <label class="task-list-control">
+      <input type="checkbox" name="github" checked>
+      <span class="task-list-indicator"></span>
+      GitHub
+    </label>
+  </li>
+
+      
+    
+    
+  </ul>
+</div>
+<div class="md-consent__controls">
+  
+    
+      <button class="md-button md-button--primary">Accept</button>
+    
+    
+    
+  
+    
+    
+    
+      <label class="md-button" for="__settings">Manage settings</label>
+    
+  
+</div>
+          </form>
+        </aside>
+      </div>
+      <script>var consent=__md_get("__consent");if(consent)for(var input of document.forms.consent.elements)input.name&&(input.checked=consent[input.name]||!1);else"file:"!==location.protocol&&setTimeout((function(){document.querySelector("[data-md-component=consent]").hidden=!1}),250);var form=document.forms.consent;for(var action of["submit","reset"])form.addEventListener(action,(function(e){if(e.preventDefault(),"reset"===e.type)for(var n of document.forms.consent.elements)n.name&&(n.checked=!1);__md_set("__consent",Object.fromEntries(Array.from(new FormData(form).keys()).map((function(e){return[e,!0]})))),location.hash="",location.reload()}))</script>
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy", "content.code.select", "content.code.annotate", "navigation.instant", "navigation.instant.prefetch", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.footer", "navigation.top", "navigation.path", "toc.follow", "toc.integrate", "search.suggest", "search.share", "announce.dismiss"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

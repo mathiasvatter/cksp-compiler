@@ -1,0 +1,1715 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://mathiasvatter.github.io/cksp-compiler/6.%20VS%20Code%20Extension.html">
+      
+      
+        <link rel="prev" href="4.%20Planned%20Features.html">
+      
+      
+        <link rel="next" href="5.%20Installation.html">
+      
+      
+        
+      
+      
+      <link rel="icon" href="assets/logos/logo.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>CKSP Tools - CKSP Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+  
+  
+  
+  
+  <style>:root{--md-annotation-icon:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M22%2012a10%2010%200%200%201-10%2010A10%2010%200%200%201%202%2012%2010%2010%200%200%201%2012%202a10%2010%200%200%201%2010%2010m-12%206%206-6-6-6-1.4%201.4%204.6%204.6-4.6%204.6z%22/%3E%3C/svg%3E');}</style>
+
+
+    
+    
+      
+        <script src="assets/external/unpkg.com/iframe-worker/shim.js"></script>
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="stylesheets/extra.css">
+    
+      <link rel="stylesheet" href="stylesheets/hero.css">
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="cksp" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#cksp-tools" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="index.html" title="CKSP Documentation" class="md-header__button md-logo" aria-label="CKSP Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.82 17 13 19.28V22H6c-1.11 0-2-.89-2-2V4a2 2 0 0 1 2-2h1v7l2.5-1.5L12 9V2h6a2 2 0 0 1 2 2v8.54l-1.5-.82zM24 17l-5.5-3-5.5 3 5.5 3zm-9 2.09v2L18.5 23l3.5-1.91v-2L18.5 21z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CKSP Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              CKSP Tools
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/mathiasvatter/cksp-compiler" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    CKSP Compiler
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="index.html" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="2.%20The%20CKSP%20Syntax.html" class="md-tabs__link">
+          
+  
+  
+  Syntax
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="3.%20Adopted%20Features.html" class="md-tabs__link">
+          
+  
+  
+  Adopted Features
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="6.%20VS%20Code%20Extension.html" class="md-tabs__link">
+          
+  
+  
+  VS Code Extension
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="5.%20Installation.html" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Installation
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+  
+        
+      
+	
+
+	<script>
+(function () {
+  let onScroll = null, onResize = null, onKeydown = null, mo = null;
+
+  function applySearchHint() {
+    const inputs = document.querySelectorAll('.md-search__input');
+    if (!inputs.length) return;
+    inputs.forEach((input) => {
+      const original = input.dataset.placeholderBase || input.getAttribute('placeholder') || 'Search';
+      input.dataset.placeholderBase = original;
+      input.setAttribute('placeholder', `${original} (Press F)`);
+      input.setAttribute('aria-label', `${original}. Press F to search`);
+    });
+  }
+
+  function openSearch() {
+    const toggle = document.getElementById('__search');
+    if (toggle && toggle.type === 'checkbox') toggle.checked = true;
+    const input = document.querySelector('.md-search__input');
+    if (input) {
+      input.focus();
+      input.select();
+    }
+  }
+
+  function shouldIgnoreShortcutTarget(target) {
+    if (!target) return false;
+    const tag = (target.tagName || '').toLowerCase();
+    return (
+      tag === 'input' ||
+      tag === 'textarea' ||
+      tag === 'select' ||
+      target.isContentEditable
+    );
+  }
+
+  function getOffset() {
+	const css   = getComputedStyle(document.documentElement);
+	const varPx = parseFloat(css.getPropertyValue('--hero-offset').trim());
+	if (!Number.isNaN(varPx) && varPx > 0) return varPx;
+
+	const header = document.querySelector('.md-header');
+	const tabs   = document.querySelector('.md-tabs');
+	const h = header ? header.getBoundingClientRect().height : 0;
+	const t = (tabs && getComputedStyle(tabs).display !== 'none') ? tabs.getBoundingClientRect().height : 0;
+	return h + t;
+  }
+
+  function updateHero() {
+	const root = document.documentElement;
+	const hero = document.querySelector('.hero-section');
+
+	// Pages without hero: ensure normal header state
+	if (!hero) {
+	  root.classList.remove('home-with-hero', 'over-hero');
+	  root.style.removeProperty('--hero-header-opacity');
+	  return;
+	}
+
+	root.classList.add('home-with-hero');
+
+	// Transparent while we are "over" the hero (before passing its bottom minus header/tabs)
+	const offset = getOffset();
+	const heroHeight = hero.offsetHeight || 0;
+	const limit  = Math.max(0, heroHeight - offset);    // scroll threshold
+	const isOver = window.scrollY < (limit - 1);        // tolerance
+	root.classList.toggle('over-hero', isOver);
+
+
+	// Smoothly fade the header background in before leaving the hero
+	const css = getComputedStyle(root);
+	let fadeFactor = parseFloat(css.getPropertyValue('--hero-header-fade-factor').trim());
+	// if (Number.isNaN(fadeFactor)) fadeFactor = 0.1;
+	fadeFactor = Math.min(Math.max(fadeFactor, 0), 0.95);
+	let fadeBuffer = parseFloat(css.getPropertyValue('--hero-header-fade-buffer').trim());
+	// if (Number.isNaN(fadeBuffer)) fadeBuffer = 0.35;
+	fadeBuffer = Math.min(Math.max(fadeBuffer, 0), 0.95);
+	const fadeEndBuffer = Math.max(12, offset * 0.1, heroHeight * fadeBuffer);
+	const fadeEnd = Math.max(0, limit - fadeEndBuffer);
+	const fadeStart = fadeEnd * fadeFactor;
+	const fadeWindow = Math.max(1, fadeEnd - fadeStart);
+	let headerOpacity = 1;
+
+	if (isOver) {
+	  if (fadeEnd <= 0 || window.scrollY <= fadeStart) {
+		headerOpacity = 0;
+	  } else if (window.scrollY >= fadeEnd) {
+		headerOpacity = 1;
+	  } else {
+		const progress = (window.scrollY - fadeStart) / fadeWindow;
+		headerOpacity = Math.min(1, Math.max(0, progress));
+	  }
+	}
+
+
+	root.style.setProperty('--hero-header-opacity', headerOpacity.toFixed(3));
+
+	// Optional: parallax / content fade
+	const content = hero.querySelector('.hero-content');
+	const vh = window.innerHeight;
+	const progress = Math.min(1, Math.max(0, window.scrollY / vh));
+	// hero.style.backgroundPositionY = `${progress * 40}%`;
+	// hero.style.setProperty('--hero-parallax', String(progress));
+	// Parallax: move the hero image slower than the page
+	const img = hero.querySelector('.hero-bg img');
+	if (img) {
+		// How far the hero's top edge is from the viewport top
+		const rect = hero.getBoundingClientRect();
+		// 0.25 = 25% of scroll speed => adjust to taste (0.15 … 0.35)
+		const offsetPx = rect.top * 0.21;
+		hero.style.setProperty('--hero-translate', `${offsetPx}px`);
+	}
+
+
+	if (content) {
+	  content.style.setProperty('--content-opacity', Math.max(0, 1 - progress * 2.5));
+	  content.style.setProperty('--content-shift', `${progress * 80}px`);
+	}
+	hero.style.setProperty('--fade-opacity', progress);
+  }
+
+  function attachListeners() {
+	detachListeners();
+	onScroll = () => updateHero();
+	onResize = () => updateHero();
+	onKeydown = (event) => {
+	  if (event.defaultPrevented) return;
+	  if (event.ctrlKey || event.metaKey || event.altKey) return;
+	  if (event.key !== 'f' && event.key !== 'F') return;
+	  if (shouldIgnoreShortcutTarget(event.target)) return;
+	  event.preventDefault();
+	  openSearch();
+	};
+	window.addEventListener('scroll', onScroll, { passive: true });
+	window.addEventListener('resize', onResize);
+	window.addEventListener('keydown', onKeydown);
+  }
+
+  function detachListeners() {
+	if (onScroll) window.removeEventListener('scroll', onScroll);
+	if (onResize) window.removeEventListener('resize', onResize);
+	if (onKeydown) window.removeEventListener('keydown', onKeydown);
+	onScroll = onResize = onKeydown = null;
+  }
+
+  function hardResetIfNoHero() {
+	if (!document.querySelector('.hero-section')) {
+	  const docEl = document.documentElement;
+	  docEl.classList.remove('home-with-hero', 'over-hero');
+	  docEl.style.removeProperty('--hero-header-opacity');
+	  const tabs = document.querySelector('.md-tabs');
+	  if (tabs) tabs.classList.remove('md-tabs--lifted');
+	}
+  }
+
+  function init() {
+	attachListeners();
+	applySearchHint();
+	// Run immediately and once more after layout settles
+	updateHero();
+	requestAnimationFrame(() => {
+	  updateHero();
+	  applySearchHint();
+	});
+  }
+
+  // ---- Initial load
+  hardResetIfNoHero();
+  init();
+
+  // ---- SPA navigation (Material for MkDocs)
+  if (typeof window.document$ !== 'undefined') {
+	window.document$.subscribe(() => {
+	  detachListeners();
+	  document.documentElement.classList.remove('home-with-hero', 'over-hero');
+	  document.documentElement.style.removeProperty('--hero-header-opacity');
+	  const tabs = document.querySelector('.md-tabs');
+	  if (tabs) tabs.classList.remove('md-tabs--lifted');
+	  init();
+	});
+  }
+
+  // ---- Optional: keep in sync if content mutates
+  const main = document.querySelector('main.md-main');
+  if (main && 'MutationObserver' in window) {
+	mo = new MutationObserver(() => requestAnimationFrame(updateHero));
+	mo.observe(main, { childList: true, subtree: true });
+  }
+
+
+})();
+</script>
+
+
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="index.html" title="CKSP Documentation" class="md-nav__button md-logo" aria-label="CKSP Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.82 17 13 19.28V22H6c-1.11 0-2-.89-2-2V4a2 2 0 0 1 2-2h1v7l2.5-1.5L12 9V2h6a2 2 0 0 1 2 2v8.54l-1.5-.82zM24 17l-5.5-3-5.5 3 5.5 3zm-9 2.09v2L18.5 23l3.5-1.91v-2L18.5 21z"/></svg>
+
+    </a>
+    CKSP Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/mathiasvatter/cksp-compiler" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    CKSP Compiler
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Syntax
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Syntax
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.%20The%20CKSP%20Syntax.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The CKSP Syntax
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.0%20Language%20Structure.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Language Structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.1%20Variables%20and%20Arrays.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Variables and Arrays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.2%20Literals%20and%20Expressions.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Literals and Expressions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.3%20Declarations.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Declarations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.4%20Assignments.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assignments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.5%20Lexical%20Scope.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lexical Scope
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.6%20Functions.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Functions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.7%20Loops.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loops
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.8%20Control%20Flow.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.9%20Custom%20Data%20Structures.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Data Structures
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.10%20Import%20Statements.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Import Statements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.11%20Namespaces.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Namespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.12%20Pragma%20Directives.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pragma Directives
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adopted Features
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Adopted Features
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="3.%20Adopted%20Features.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adopted Features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="4.%20Planned%20Features.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Planned Features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code Extension
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    VS Code Extension
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CKSP Tools
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="6.%20VS%20Code%20Extension.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CKSP Tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#language-and-editor-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Language and Editor Features
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compiler-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compiler Integration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Compiler Integration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#compiler-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compiler Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kontakt-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kontakt Integration
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="5.%20Installation.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="index.html" class="md-path__link">
+        
+  <span class="md-ellipsis">
+    Home
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="6.%20VS%20Code%20Extension.html" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    VS Code Extension
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+  
+
+	
+                  
+
+
+  
+  
+
+
+<h1 id="cksp-tools">CKSP Tools</h1>
+<p><img align="right" alt="CKSP Tools" src="assets/images/extension/vs-code-object.png" /></p>
+<p>To make working with <code>cksp</code> easier and more efficient, I have developed an extension for <strong>Visual Studio Code</strong>. This extension provides various IDE features designed to streamline development with <code>cksp</code>, as well as <strong>Kontakt</strong> scripts in general. It comes bundled with the compiler, makes managing different versions simple, and provides output and filtering of <strong>KSP</strong> messages directly within the editor.</p>
+<div class="grid cards" style="padding-bottom: 1.2rem; padding-top: 0.5rem">
+<ul>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 16.47V7.39l-6 4.54M2.22 9.19a.86.86 0 0 1-.02-1.15l1.2-1.11c.2-.18.69-.26 1.05 0l3.42 2.61 7.93-7.25c.32-.32.87-.45 1.5-.12l4 1.91c.36.21.7.54.7 1.15v13.5c0 .4-.29.83-.6 1l-4.4 2.1c-.32.13-.92.01-1.13-.2l-8.02-7.3-3.4 2.6c-.38.26-.85.19-1.05 0l-1.2-1.1c-.32-.33-.28-.87.05-1.2l3-2.7"/></svg></span> <strong>How to Install</strong></p>
+<hr />
+<p>The extension can be downloaded from the Microsoft Marketplace directly within Visual Studio Code by searching for <code>"CKSP Tools"</code> in the Extensions view. Alternatively, it can be installed manually by downloading the <code>.vsix</code> file from the Releases section of the public <code>cksp-tools-issues</code> repository.
+<a href="5.%20Installation.html"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Installation Instructions</a></p>
+</li>
+</ul>
+</div>
+<h2 id="language-and-editor-features">Language and Editor Features</h2>
+<p>The main features entail the language support for <em>.cksp and </em>.ksp files. This is still work in progress, but the features already implemented include:</p>
+<!-- 
+- **Syntax Highlighting:** Supports constructs from both `cksp` and `vanilla KSP` syntax.
+- **Signature Help:** Shows function signatures and expected arguments in real-time as you type.
+- **Hover Provider:** Displays usage details and documentation for built-in constants, commands, and your own function definitions.
+- **Definition Provider:** Allows you to jump to function, macro, and define definitions (++cmd+left-button++).
+- **Reference Provider:** Find all references to a function or macro from its definition.
+- **Document Symbols:** Navigate your code using document symbols (++cmd+shift+o++).
+- **Workspace Symbols:** Search for symbols across your workspace (++cmd+t++).
+- **Completion Provider:** Shows fitting name completions for variables and functions. -->
+
+<div class="grid cards">
+<ul>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.62 12 12 5.67 14.37 12M11 3 5.5 17h2.25l1.12-3h6.25l1.13 3h2.25L13 3z"/></svg></span> <strong>Syntax Highlighting</strong></p>
+<hr />
+<p>Supports constructs from both <strong><code>cksp</code></strong> and <strong>vanilla KSP</strong> syntax, providing rich token coloring and improved readability.</p>
+</li>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.42 5.29c-1.1-.1-2.07.71-2.17 1.82L10 10h2.82v2h-3l-.44 5.07A4.001 4.001 0 0 1 2 18.83l1.5-1.5c.33 1.05 1.46 1.64 2.5 1.3.78-.24 1.33-.93 1.4-1.74L7.82 12h-3v-2H8l.27-3.07a4.01 4.01 0 0 1 4.33-3.65c1.26.11 2.4.81 3.06 1.89l-1.5 1.5c-.25-.77-.93-1.31-1.74-1.38M22 13.65l-1.41-1.41-2.83 2.83-2.83-2.83-1.43 1.41 2.85 2.85-2.85 2.81 1.43 1.41 2.83-2.83 2.83 2.83L22 19.31l-2.83-2.81z"/></svg></span> <strong>Signature Help</strong></p>
+<hr />
+<p>Shows <strong>function signatures</strong> and expected arguments in real time while typing or hovering over function calls.</p>
+</li>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 9h2V7h-2m1 13c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8m0-18A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2m-1 15h2v-6h-2z"/></svg></span> <strong>Hover Provider</strong></p>
+<hr />
+<p>Displays <strong>documentation</strong> for built-in constants, commands, and your own function definitions directly inside the editor.</p>
+</li>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 1 4 4 4 4 0 0 1-4 4 4 4 0 0 1-4-4 4 4 0 0 1 4-4m-8.95 5H1v-2h2.05C3.5 6.83 6.83 3.5 11 3.05V1h2v2.05c4.17.45 7.5 3.78 7.95 7.95H23v2h-2.05c-.45 4.17-3.78 7.5-7.95 7.95V23h-2v-2.05C6.83 20.5 3.5 17.17 3.05 13M12 5a7 7 0 0 0-7 7 7 7 0 0 0 7 7 7 7 0 0 0 7-7 7 7 0 0 0-7-7"/></svg></span> <strong>Definition Provider</strong></p>
+<hr />
+<p>Jump directly to function, macro, or define definitions with <span class="keys"><kbd class="key-command">Cmd</kbd><span>+</span><kbd class="key-left-button">Left Button</kbd></span> or the context menu.</p>
+</li>
+</ul>
+</div>
+<div class="grid cards">
+<ul>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 22v-2h3v-3h2v3.5c0 .39-.16.74-.46 1.04s-.65.46-1.04.46zM7 22H3.5c-.39 0-.74-.16-1.04-.46S2 20.89 2 20.5V17h2v3h3zM17 2h3.5c.39 0 .74.16 1.04.46s.46.65.46 1.04V7h-2V4h-3zM7 2v2H4v3H2V3.5c0-.39.16-.74.46-1.04S3.11 2 3.5 2zm3.5 4C13 6 15 8 15 10.5c0 .88-.25 1.7-.69 2.4l3.26 3.26-1.41 1.41-3.26-3.26c-.7.44-1.52.69-2.4.69C8 15 6 13 6 10.5S8 6 10.5 6m0 2a2.5 2.5 0 0 0 0 5 2.5 2.5 0 0 0 0-5"/></svg></span> <strong>Reference Provider</strong></p>
+<hr />
+<p>Find all <strong>references</strong> to a function or macro from its definition, enabling fast code tracing and refactoring.</p>
+</li>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 3h6v4H3zm12 7h6v4h-6zm0 7h6v4h-6zm-2-4H7v5h6v2H5V9h2v2h6z"/></svg></span> <strong>Document Symbols</strong></p>
+<hr />
+<p>Navigate within a file using <strong>document symbols</strong> (e.g. functions, variables, macros or defines) via <span class="keys"><kbd class="key-command">Cmd</kbd><span>+</span><kbd class="key-shift">Shift</kbd><span>+</span><kbd class="key-o">O</kbd></span> or the Outline panel.</p>
+</li>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16.5 12c2.5 0 4.5 2 4.5 4.5 0 .88-.25 1.71-.69 2.4l3.08 3.1L22 23.39l-3.12-3.07c-.69.43-1.51.68-2.38.68-2.5 0-4.5-2-4.5-4.5s2-4.5 4.5-4.5m0 2a2.5 2.5 0 0 0-2.5 2.5 2.5 2.5 0 0 0 2.5 2.5 2.5 2.5 0 0 0 2.5-2.5 2.5 2.5 0 0 0-2.5-2.5M19 8H3v10h7.17c.17.72.46 1.39.83 2H3a2 2 0 0 1-2-2V6c0-1.11.89-2 2-2h6l2 2h8a2 2 0 0 1 2 2v3.81c-.58-.55-1.25-1-2-1.31z"/></svg></span> <strong>Workspace Symbols</strong></p>
+<hr />
+<p>Search for <strong>symbols across your entire workspace</strong> using <span class="keys"><kbd class="key-command">Cmd</kbd><span>+</span><kbd class="key-t">T</kbd></span> for instant project-wide lookup.</p>
+</li>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11h3v2h-3zM1 11h3v2H1zM13 1v3h-2V1zM4.92 3.5l2.13 2.14-1.42 1.41L3.5 4.93zm12.03 2.13 2.12-2.13 1.43 1.43-2.13 2.12zM12 6a6 6 0 0 1 6 6c0 2.22-1.21 4.16-3 5.2V19a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-1.8c-1.79-1.04-3-2.98-3-5.2a6 6 0 0 1 6-6m2 15v1a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-1zm-3-3h2v-2.13c1.73-.44 3-2.01 3-3.87a4 4 0 0 0-4-4 4 4 0 0 0-4 4c0 1.86 1.27 3.43 3 3.87z"/></svg></span> <strong>Completion Provider</strong></p>
+<hr />
+<p>Offers <strong>name completions</strong> for variables, functions, macros, defines and KSP built-in commands or constants in real-time.</p>
+</li>
+</ul>
+</div>
+<p><img alt="CKSP Signature Help" src="assets/images/extension/cksp_signature_help.gif" /></p>
+<h2 id="compiler-integration">Compiler Integration</h2>
+<p>The <strong>CKSP Tools</strong> extension comes bundled with the <code>cksp</code> compiler, allowing you to compile your scripts directly from within Visual Studio Code. 
+Moreover, the extension allows you to download and manage multiple versions of the <code>cksp</code> compiler, enabling you to switch between different versions as needed.</p>
+<div class="grid cards">
+<ul>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 19V7H4v12zm0-16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm-7 14v-2h5v2zm-3.42-4L5.57 9H8.4l3.3 3.3c.39.39.39 1.03 0 1.42L8.42 17H5.59z"/></svg></span> <strong>Compiling</strong></p>
+<hr />
+<p>Press <span class="keys"><kbd class="key-command">Cmd</kbd><span>+</span><kbd class="key-r">R</kbd></span> to compile the currently open file. You can also select a <strong>main file</strong> in your workspace to compile with <span class="keys"><kbd class="key-command">Cmd</kbd><span>+</span><kbd class="key-shift">Shift</kbd><span>+</span><kbd class="key-r">R</kbd></span>.</p>
+</li>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 22v-2h3v-3h2v3.5c0 .39-.16.74-.46 1.04s-.65.46-1.04.46zM7 22H3.5c-.39 0-.74-.16-1.04-.46S2 20.89 2 20.5V17h2v3h3zM17 2h3.5c.39 0 .74.16 1.04.46s.46.65.46 1.04V7h-2V4h-3zM7 2v2H4v3H2V3.5c0-.39.16-.74.46-1.04S3.11 2 3.5 2zm6 15.25 4-2.3v-4.59l-4 2.3zm-1-6.33 4-2.29-4-2.35-4 2.35zm-5 4.03 4 2.3v-4.59l-4-2.3zm11.23-7.36c.5.32.77.75.77 1.32v6.32c0 .57-.27 1-.77 1.32l-5.48 3.18q-.75.48-1.5 0l-5.48-3.18c-.5-.32-.77-.75-.77-1.32V8.91c0-.57.27-1 .77-1.32l5.48-3.18c.25-.13.5-.19.75-.19s.5.06.75.19z"/></svg></span> <strong>Compiler Management</strong></p>
+<hr />
+<p>Browse, download, and manage different <strong>compiler versions</strong> directly in the sidebar (via the <strong>Kontakt</strong> logo). The extension automatically notifies you when a new version is available.</p>
+</li>
+</ul>
+</div>
+<h3 id="compiler-management">Compiler Management</h3>
+<!-- ![CKSP Tools](assets/images/extension/compile_panel.png){align=right} -->
+
+<p>The <strong>CKSP Release Panel</strong> offers an overview of all available versions of the <code>cksp</code> compiler. Here, you can download, delete or reinstall specific versions locally, manage pre-release versions and read through the changelogs.
+You can open the panel by following these steps:</p>
+<ol>
+<li>
+<p>Click on the <strong>Kontakt</strong> logo in the sidebar (usually on the left side of the <strong>VS Code</strong> window).
+The CKSP Settings panel will open, where you can adjust your <strong>main file</strong> that will be used for compilation, as well as your current <strong>compiler version</strong>.</p>
+</li>
+<li>
+<p>Click on the <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6.5 20q-2.28 0-3.89-1.57Q1 16.85 1 14.58q0-1.95 1.17-3.48 1.18-1.53 3.08-1.95.58-2.02 2.14-3.4Q8.95 4.38 11 4.08v8.07L9.4 10.6 8 12l4 4 4-4-1.4-1.4-1.6 1.55V4.08q2.58.35 4.29 2.31T19 11q1.73.2 2.86 1.5 1.14 1.28 1.14 3 0 1.88-1.31 3.19T18.5 20Z"/></svg></span> icon to the right of the <strong>Compiler Version</strong> dropdown.
+This will open the <strong>CKSP Release Panel</strong>, where you can see all available versions of the <code>cksp</code> compiler.</p>
+</li>
+</ol>
+<div class="admonition info">
+<p class="admonition-title">Alpha Versions</p>
+<p>By default, pre-release (alpha) versions are hidden. However, they get released more frequently and may include new features and hot fixes that are not yet available in the stable releases. You can enable the display of alpha versions and their changelogs by toggling the <strong>Show Pre-Releases</strong> option at the top of the panel. Once activated, the extension will remember your preference and automatically notify you of new alpha releases in the future.</p>
+</div>
+<h2 id="kontakt-integration">Kontakt Integration</h2>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/pFL5f941a-s?si=bMXwaR_AKF1Aj9vw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+<p>VS Code also provides the option to launch <strong>Kontakt</strong> and read its output directly from the editor, eliminating the need to switch between applications. 
+With CKSP Tools, you can open <strong>Kontakt</strong> directly from the sidebar, where the extension automatically detects the latest version or allows you to select a specific one in the settings. The dedicated window for <strong>Kontakt’s</strong> log output makes it easier to debug, filter, and monitor your scripts, offering keyword and type-based filtering without relying on Creator Tools. 
+Additionally, when executing scripts through the Lua API, the output is displayed in the separate <strong>Kontakt Lua console</strong> within the bottom panel of VS Code.</p>
+<p><img alt="CKSP Kontakt Integration" src="assets/images/extension/cksp_kontakt_integration.gif" /></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+
+  
+
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="4.%20Planned%20Features.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Planned Features">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Planned Features
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="5.%20Installation.html" class="md-footer__link md-footer__link--next" aria-label="Next: Installation">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Installation
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024 - 2026 Mathias Vatter – <a href="#__consent">Change cookie settings</a>
+
+    </div>
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+      <div class="md-consent" data-md-component="consent" id="__consent" hidden>
+        <div class="md-consent__overlay"></div>
+        <aside class="md-consent__inner">
+          <form class="md-consent__form md-grid md-typeset" name="consent">
+            
+
+
+  
+
+
+<h4>Cookie consent</h4>
+<p>This website uses cookies to recognize your repeated visits and preferences, as well as to measure the effectiveness of the documentation and whether users find what they're searching for. With your consent, you're helping me to make this documentation better.</p>
+<input class="md-toggle" type="checkbox" id="__settings" >
+<div class="md-consent__settings">
+  <ul class="task-list">
+    
+    
+      
+    
+    
+      
+        
+  
+  
+    
+    
+  
+  <li class="task-list-item">
+    <label class="task-list-control">
+      <input type="checkbox" name="github" checked>
+      <span class="task-list-indicator"></span>
+      GitHub
+    </label>
+  </li>
+
+      
+    
+    
+  </ul>
+</div>
+<div class="md-consent__controls">
+  
+    
+      <button class="md-button md-button--primary">Accept</button>
+    
+    
+    
+  
+    
+    
+    
+      <label class="md-button" for="__settings">Manage settings</label>
+    
+  
+</div>
+          </form>
+        </aside>
+      </div>
+      <script>var consent=__md_get("__consent");if(consent)for(var input of document.forms.consent.elements)input.name&&(input.checked=consent[input.name]||!1);else"file:"!==location.protocol&&setTimeout((function(){document.querySelector("[data-md-component=consent]").hidden=!1}),250);var form=document.forms.consent;for(var action of["submit","reset"])form.addEventListener(action,(function(e){if(e.preventDefault(),"reset"===e.type)for(var n of document.forms.consent.elements)n.name&&(n.checked=!1);__md_set("__consent",Object.fromEntries(Array.from(new FormData(form).keys()).map((function(e){return[e,!0]})))),location.hash="",location.reload()}))</script>
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["content.code.copy", "content.code.select", "content.code.annotate", "navigation.instant", "navigation.instant.prefetch", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.footer", "navigation.top", "navigation.path", "toc.follow", "toc.integrate", "search.suggest", "search.share", "announce.dismiss"], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

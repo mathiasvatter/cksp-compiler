@@ -1,0 +1,254 @@
+
+/* ----- Hero-Basis ----- */
+/* Höhe der fixen Leiste(n) zentral definieren */
+:root{
+  /* Header-Höhe liefert das Theme; Tabs ggf. ergänzen */
+  --hero-offset: var(--md-header-height, 3.2rem);
+  /* Ziel-Farbe für den Header nach dem Hero (RGB, ohne Alpha) */
+  --hero-header-rgb: 48, 48, 48;
+  /* Dynamik-Wert (0..1), wird via JS gesetzt */
+  --hero-header-opacity: 1;
+  /* Anteil des Hero-Segments, ab dem der Header anfängt einzublenden */
+  --hero-header-fade-factor: 0.1;
+  /* Anteil des Hero-Segments, der vor dem Ende vollständig eingeblendet sein soll */
+  --hero-header-fade-buffer: 0.35;
+  /* Extra image bleed to avoid visible edges during parallax movement */
+  --hero-bg-bleed: 28px;
+  --hero-bg-bleed-2x: 56px;
+}
+
+/* Falls Tabs aktiv sind: Desktop-Tab-Leiste addieren */
+@media (min-width: 960px){
+  :root{ --hero-offset: calc(var(--md-header-height, 3.2rem) + 2.8rem); }
+}
+
+/* Hero: ohne margin/padding tricks – wir schieben das Element hoch */
+.hero-section{
+  position: relative;
+  min-height: 110vh;
+  display: flex; align-items: center; justify-content: center;
+  transform: translateY(calc(-1 * var(--hero-offset)));
+  margin: 0 !important;
+  padding: 1rem 0 2rem 0 !important; 
+  z-index: 0;
+  overflow: hidden;
+  /* background-size: cover;
+  background-position: center; */
+}
+
+/* Material switches to drawer/mobile nav around 76.25em */
+@media (max-width: 76.234375em) {
+  .hero-section {
+    min-height: calc(100vh + var(--hero-offset));
+    min-height: calc(100dvh + var(--hero-offset));
+    padding-top: 2rem !important;
+  }
+  /* Safari/mobile: disable parallax shift to avoid bottom white seams */
+  .hero-bg img {
+    transform: none !important;
+  }
+}
+
+/* Neues BG-Layer via <picture><img> statt background-image */
+.hero-bg,
+.hero-bg img {
+  position: absolute;
+  width: 100%;
+}
+.hero-bg {
+  inset: 0;
+  height: 100%;
+}
+.hero-bg img {
+  top: calc(-1 * var(--hero-bg-bleed));
+  left: 0;
+  right: 0;
+  height: calc(100% + var(--hero-bg-bleed-2x));
+}
+.hero-bg img {
+  object-fit: cover;
+  will-change: transform, opacity;
+  /* old: transform: translateY(calc(var(--hero-parallax, 0) * 40px)); */
+  transform: translateY(var(--hero-translate, 0));
+  /* Animation via JS-raf: avoid laggy transitions on transform */
+  transition: opacity 0.2s linear; /* drop transform from transition */
+  z-index: 0;
+}
+
+/* Optional: sanfter Fade/Blur bis Bild geladen (native Lazy) */
+.hero-bg img:not([src]) { opacity: 0; }
+.hero-bg img { opacity: 1; }
+
+/* Header-Farbverlauf weich einblenden */
+.home-with-hero .md-header {
+  background-color: rgba(var(--hero-header-rgb), var(--hero-header-opacity)) !important;
+  backdrop-filter: blur(calc(var(--hero-header-opacity) * 18px));
+  transition: background-color 0.3s ease, backdrop-filter 0.3s ease,
+              box-shadow 0.25s ease, border-color 0.25s ease,
+              color 0.2s ease, fill 0.2s ease;
+}
+
+.home-with-hero .md-header__inner,
+.home-with-hero .md-tabs__inner {
+  background: transparent !important;
+}
+
+.home-with-hero .md-tabs {
+  position: relative;
+  background: transparent !important;
+  backdrop-filter: none;
+  transition: background-color 0.3s ease, backdrop-filter 0.3s ease,
+              color 0.2s ease, fill 0.2s ease;
+}
+
+.home-with-hero .md-tabs.md-tabs--lifted {
+  background-color: rgba(var(--hero-header-rgb), var(--hero-header-opacity)) !important;
+  backdrop-filter: blur(calc(var(--hero-header-opacity) * 18px));
+}
+
+/* Header/Tabs NUR transparent solange wir über dem Hero sind */
+.home-with-hero.over-hero .md-header,
+.home-with-hero.over-hero .md-header__inner,
+.home-with-hero.over-hero .md-tabs {
+  box-shadow: none !important;
+  border: 0 !important;
+}
+
+/* Kontrast im Header nur in diesem Zustand */
+.home-with-hero.over-hero .md-header,
+.home-with-hero.over-hero .md-header a,
+.home-with-hero.over-hero .md-header .md-icon,
+.home-with-hero.over-hero .md-search__input,
+.home-with-hero.over-hero .md-tabs__link {
+  color: #fff !important;
+  fill: #fff !important;
+}
+.home-with-hero.over-hero .md-search__form {
+  background: rgba(255,255,255,.18) !important;
+  border: 1px solid rgba(255,255,255,.25) !important;
+}
+
+
+/* (Dein restliches Hero-/Header-Transparenz-CSS kann so bleiben) */
+
+.hero-content {
+  width: 100%;
+  max-width: 1200px;
+  box-sizing: border-box;
+  padding-inline: clamp(1rem, 4vw, 2.5rem);
+  opacity: var(--content-opacity, 1);
+  transform: translateY(var(--content-shift, 0px));
+  transition: opacity 0.2s linear, transform 0.2s linear;
+  z-index: 1;
+  position: relative;
+}
+
+.hero-text h1 {
+  font-size: 2.5rem;   /* größer als Standard-H1 */
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 .75rem 0;
+}
+
+.hero-text p {
+  font-size: 1rem;     /* exakt wie Bodytext */
+  line-height: 1.6;
+  color: rgba(255,255,255,.9);
+  margin: 0 0 1.25rem 0;
+}
+
+.hero-text code {
+  background: rgba(255,255,255,0.1);
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  color: rgba(255,255,255,.9);
+  font-size: 0.95em;
+}
+
+.hero-buttons { margin-top: 1.5rem; }
+.hero-buttons .md-button { margin-right: .75rem; }
+
+.home-with-hero.over-hero .hero-buttons .md-button {
+  border-color: rgba(255,255,255,.6);
+  color: #fff;
+}
+.home-with-hero.over-hero .hero-buttons .md-button--primary {
+  background: #fff;
+  color: #000;
+}
+
+.hero-buttons .md-button:hover {
+  background-color: rgba(255,255,255,0.15); /* leicht transparentes Weiß */
+  color: #fff;  /* Text bleibt weiß */
+}
+
+.home-with-hero .md-main__inner .md-content {
+  padding-top: 0 !important; /* kein Abstand über Content */
+  margin-top: 0 !important;
+}
+
+/* Hide first H1 inside content on homepage */
+.home-with-hero .md-content h1:first-of-type {
+  display: none !important;
+}
+
+/* Abstand Hero → Content etwas enger */
+.home-with-hero .md-content__inner { padding-top: 0 !important; }
+.hero-section { padding-bottom: .75rem !important; }
+
+/* 1/2/3 Spalten → 3 oben, 2 unten */
+#home-cards { display: grid; gap: .8rem; grid-template-columns: 1fr; }
+@media (min-width: 600px){ #home-cards { grid-template-columns: repeat(2,1fr); } }
+@media (min-width: 960px){ #home-cards { grid-template-columns: repeat(3,1fr); } }
+
+/* Material-Optik beibehalten, Linkfarbe neutralisieren */
+.md-typeset .grid.cards > .card { color: var(--md-typeset-color); }
+
+/* Titelzeile mit Icon + Trennlinie */
+.md-typeset .grid.cards > .card h3{
+  display:flex; align-items:center; gap:.45rem;
+  margin:.15rem 0 .6rem;
+  padding-bottom:.4rem;
+  border-bottom:1px solid var(--md-default-fg-color--lighter);
+}
+.card__icon svg{ width:1.3rem; height:1.3rem; fill:var(--md-primary-fg-color); }
+
+/* Basis: Material-Optik bleibt unverändert */
+
+/* Reveal-Setup nur wenn JS aktiv war */
+#home-cards.reveal-ready > .card {
+  opacity: 0;
+  transform: translateY(12px);
+  will-change: opacity, transform;
+}
+
+/* Sichtbar im Viewport */
+#home-cards.reveal-ready > .card.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity .5s ease, transform .5s ease;
+}
+
+/* Stagger (optional) */
+#home-cards.reveal-ready > .card:nth-child(2).is-visible { transition-delay: .06s; }
+#home-cards.reveal-ready > .card:nth-child(3).is-visible { transition-delay: .12s; }
+#home-cards.reveal-ready > .card:nth-child(4).is-visible { transition-delay: .18s; }
+#home-cards.reveal-ready > .card:nth-child(5).is-visible { transition-delay: .24s; }
+#home-cards.reveal-ready > .card:nth-child(6).is-visible { transition-delay: .30s; }
+
+
+
+.glance-section {
+  background-color: var(--md-default-bg-color--light); /* oder eine feste Farbe */
+  border-radius: .5rem; /* optional etwas abgerundet */
+  padding: 2.5rem 1.5rem;
+  margin: 2rem 0;
+}
+
+.home-with-hero .glance-section {
+  margin-top: 0;
+}
+
+.glance-section h1 {
+  margin-top: 0;
+}

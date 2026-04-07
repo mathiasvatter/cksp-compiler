@@ -1,0 +1,1963 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://mathiasvatter.github.io/cksp-compiler/Syntax/2.2%20Literals%20and%20Expressions.html">
+      
+      
+        <link rel="prev" href="2.1%20Variables%20and%20Arrays.html">
+      
+      
+        <link rel="next" href="2.3%20Declarations.html">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/logos/logo.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Literals and Expressions - CKSP Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+  
+  
+  
+  
+  <style>:root{--md-annotation-icon:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M22%2012a10%2010%200%200%201-10%2010A10%2010%200%200%201%202%2012%2010%2010%200%200%201%2012%202a10%2010%200%200%201%2010%2010m-12%206%206-6-6-6-1.4%201.4%204.6%204.6-4.6%204.6z%22/%3E%3C/svg%3E');}</style>
+
+
+    
+    
+      
+        <script src="../assets/external/unpkg.com/iframe-worker/shim.js"></script>
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+      <link rel="stylesheet" href="../stylesheets/hero.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="cksp" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#literals-and-expressions" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../index.html" title="CKSP Documentation" class="md-header__button md-logo" aria-label="CKSP Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.82 17 13 19.28V22H6c-1.11 0-2-.89-2-2V4a2 2 0 0 1 2-2h1v7l2.5-1.5L12 9V2h6a2 2 0 0 1 2 2v8.54l-1.5-.82zM24 17l-5.5-3-5.5 3 5.5 3zm-9 2.09v2L18.5 23l3.5-1.91v-2L18.5 21z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CKSP Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Literals and Expressions
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/mathiasvatter/cksp-compiler" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    CKSP Compiler
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../index.html" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../2.%20The%20CKSP%20Syntax.html" class="md-tabs__link">
+          
+  
+  
+  Syntax
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../3.%20Adopted%20Features.html" class="md-tabs__link">
+          
+  
+  
+  Adopted Features
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../6.%20VS%20Code%20Extension.html" class="md-tabs__link">
+          
+  
+  
+  VS Code Extension
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../5.%20Installation.html" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Installation
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+  
+        
+      
+	
+
+	<script>
+(function () {
+  let onScroll = null, onResize = null, onKeydown = null, mo = null;
+
+  function applySearchHint() {
+    const inputs = document.querySelectorAll('.md-search__input');
+    if (!inputs.length) return;
+    inputs.forEach((input) => {
+      const original = input.dataset.placeholderBase || input.getAttribute('placeholder') || 'Search';
+      input.dataset.placeholderBase = original;
+      input.setAttribute('placeholder', `${original} (Press F)`);
+      input.setAttribute('aria-label', `${original}. Press F to search`);
+    });
+  }
+
+  function openSearch() {
+    const toggle = document.getElementById('__search');
+    if (toggle && toggle.type === 'checkbox') toggle.checked = true;
+    const input = document.querySelector('.md-search__input');
+    if (input) {
+      input.focus();
+      input.select();
+    }
+  }
+
+  function shouldIgnoreShortcutTarget(target) {
+    if (!target) return false;
+    const tag = (target.tagName || '').toLowerCase();
+    return (
+      tag === 'input' ||
+      tag === 'textarea' ||
+      tag === 'select' ||
+      target.isContentEditable
+    );
+  }
+
+  function getOffset() {
+	const css   = getComputedStyle(document.documentElement);
+	const varPx = parseFloat(css.getPropertyValue('--hero-offset').trim());
+	if (!Number.isNaN(varPx) && varPx > 0) return varPx;
+
+	const header = document.querySelector('.md-header');
+	const tabs   = document.querySelector('.md-tabs');
+	const h = header ? header.getBoundingClientRect().height : 0;
+	const t = (tabs && getComputedStyle(tabs).display !== 'none') ? tabs.getBoundingClientRect().height : 0;
+	return h + t;
+  }
+
+  function updateHero() {
+	const root = document.documentElement;
+	const hero = document.querySelector('.hero-section');
+
+	// Pages without hero: ensure normal header state
+	if (!hero) {
+	  root.classList.remove('home-with-hero', 'over-hero');
+	  root.style.removeProperty('--hero-header-opacity');
+	  return;
+	}
+
+	root.classList.add('home-with-hero');
+
+	// Transparent while we are "over" the hero (before passing its bottom minus header/tabs)
+	const offset = getOffset();
+	const heroHeight = hero.offsetHeight || 0;
+	const limit  = Math.max(0, heroHeight - offset);    // scroll threshold
+	const isOver = window.scrollY < (limit - 1);        // tolerance
+	root.classList.toggle('over-hero', isOver);
+
+
+	// Smoothly fade the header background in before leaving the hero
+	const css = getComputedStyle(root);
+	let fadeFactor = parseFloat(css.getPropertyValue('--hero-header-fade-factor').trim());
+	// if (Number.isNaN(fadeFactor)) fadeFactor = 0.1;
+	fadeFactor = Math.min(Math.max(fadeFactor, 0), 0.95);
+	let fadeBuffer = parseFloat(css.getPropertyValue('--hero-header-fade-buffer').trim());
+	// if (Number.isNaN(fadeBuffer)) fadeBuffer = 0.35;
+	fadeBuffer = Math.min(Math.max(fadeBuffer, 0), 0.95);
+	const fadeEndBuffer = Math.max(12, offset * 0.1, heroHeight * fadeBuffer);
+	const fadeEnd = Math.max(0, limit - fadeEndBuffer);
+	const fadeStart = fadeEnd * fadeFactor;
+	const fadeWindow = Math.max(1, fadeEnd - fadeStart);
+	let headerOpacity = 1;
+
+	if (isOver) {
+	  if (fadeEnd <= 0 || window.scrollY <= fadeStart) {
+		headerOpacity = 0;
+	  } else if (window.scrollY >= fadeEnd) {
+		headerOpacity = 1;
+	  } else {
+		const progress = (window.scrollY - fadeStart) / fadeWindow;
+		headerOpacity = Math.min(1, Math.max(0, progress));
+	  }
+	}
+
+
+	root.style.setProperty('--hero-header-opacity', headerOpacity.toFixed(3));
+
+	// Optional: parallax / content fade
+	const content = hero.querySelector('.hero-content');
+	const vh = window.innerHeight;
+	const progress = Math.min(1, Math.max(0, window.scrollY / vh));
+	// hero.style.backgroundPositionY = `${progress * 40}%`;
+	// hero.style.setProperty('--hero-parallax', String(progress));
+	// Parallax: move the hero image slower than the page
+	const img = hero.querySelector('.hero-bg img');
+	if (img) {
+		// How far the hero's top edge is from the viewport top
+		const rect = hero.getBoundingClientRect();
+		// 0.25 = 25% of scroll speed => adjust to taste (0.15 … 0.35)
+		const offsetPx = rect.top * 0.21;
+		hero.style.setProperty('--hero-translate', `${offsetPx}px`);
+	}
+
+
+	if (content) {
+	  content.style.setProperty('--content-opacity', Math.max(0, 1 - progress * 2.5));
+	  content.style.setProperty('--content-shift', `${progress * 80}px`);
+	}
+	hero.style.setProperty('--fade-opacity', progress);
+  }
+
+  function attachListeners() {
+	detachListeners();
+	onScroll = () => updateHero();
+	onResize = () => updateHero();
+	onKeydown = (event) => {
+	  if (event.defaultPrevented) return;
+	  if (event.ctrlKey || event.metaKey || event.altKey) return;
+	  if (event.key !== 'f' && event.key !== 'F') return;
+	  if (shouldIgnoreShortcutTarget(event.target)) return;
+	  event.preventDefault();
+	  openSearch();
+	};
+	window.addEventListener('scroll', onScroll, { passive: true });
+	window.addEventListener('resize', onResize);
+	window.addEventListener('keydown', onKeydown);
+  }
+
+  function detachListeners() {
+	if (onScroll) window.removeEventListener('scroll', onScroll);
+	if (onResize) window.removeEventListener('resize', onResize);
+	if (onKeydown) window.removeEventListener('keydown', onKeydown);
+	onScroll = onResize = onKeydown = null;
+  }
+
+  function hardResetIfNoHero() {
+	if (!document.querySelector('.hero-section')) {
+	  const docEl = document.documentElement;
+	  docEl.classList.remove('home-with-hero', 'over-hero');
+	  docEl.style.removeProperty('--hero-header-opacity');
+	  const tabs = document.querySelector('.md-tabs');
+	  if (tabs) tabs.classList.remove('md-tabs--lifted');
+	}
+  }
+
+  function init() {
+	attachListeners();
+	applySearchHint();
+	// Run immediately and once more after layout settles
+	updateHero();
+	requestAnimationFrame(() => {
+	  updateHero();
+	  applySearchHint();
+	});
+  }
+
+  // ---- Initial load
+  hardResetIfNoHero();
+  init();
+
+  // ---- SPA navigation (Material for MkDocs)
+  if (typeof window.document$ !== 'undefined') {
+	window.document$.subscribe(() => {
+	  detachListeners();
+	  document.documentElement.classList.remove('home-with-hero', 'over-hero');
+	  document.documentElement.style.removeProperty('--hero-header-opacity');
+	  const tabs = document.querySelector('.md-tabs');
+	  if (tabs) tabs.classList.remove('md-tabs--lifted');
+	  init();
+	});
+  }
+
+  // ---- Optional: keep in sync if content mutates
+  const main = document.querySelector('main.md-main');
+  if (main && 'MutationObserver' in window) {
+	mo = new MutationObserver(() => requestAnimationFrame(updateHero));
+	mo.observe(main, { childList: true, subtree: true });
+  }
+
+
+})();
+</script>
+
+
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../index.html" title="CKSP Documentation" class="md-nav__button md-logo" aria-label="CKSP Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.82 17 13 19.28V22H6c-1.11 0-2-.89-2-2V4a2 2 0 0 1 2-2h1v7l2.5-1.5L12 9V2h6a2 2 0 0 1 2 2v8.54l-1.5-.82zM24 17l-5.5-3-5.5 3 5.5 3zm-9 2.09v2L18.5 23l3.5-1.91v-2L18.5 21z"/></svg>
+
+    </a>
+    CKSP Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/mathiasvatter/cksp-compiler" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    CKSP Compiler
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Syntax
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Syntax
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../2.%20The%20CKSP%20Syntax.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The CKSP Syntax
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.0%20Language%20Structure.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Language Structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.1%20Variables%20and%20Arrays.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Variables and Arrays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Literals and Expressions
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="2.2%20Literals%20and%20Expressions.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Literals and Expressions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#literals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Literals
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Literals">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#integer-literal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integer literal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#real-floating-point-literal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Real (floating point) literal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#string-literal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        String literal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#boolean-literal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Boolean literal
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#expressions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Expressions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Expressions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arithmetic-operators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Arithmetic Operators
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#real-specific-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Real-Specific Functions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bitwise-operators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bitwise Operators
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#string-concatenation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        String Concatenation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logical-operators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logical Operators
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#type-conversion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type Conversion
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-strings-formatted-strings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        f-Strings (Formatted Strings)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.3%20Declarations.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Declarations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.4%20Assignments.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assignments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.5%20Lexical%20Scope.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lexical Scope
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.6%20Functions.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Functions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.7%20Loops.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loops
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.8%20Control%20Flow.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.9%20Custom%20Data%20Structures.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Data Structures
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.10%20Import%20Statements.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Import Statements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.11%20Namespaces.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Namespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.12%20Pragma%20Directives.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pragma Directives
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adopted Features
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Adopted Features
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../3.%20Adopted%20Features.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adopted Features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4.%20Planned%20Features.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Planned Features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code Extension
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    VS Code Extension
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../6.%20VS%20Code%20Extension.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CKSP Tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5.%20Installation.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../index.html" class="md-path__link">
+        
+  <span class="md-ellipsis">
+    Home
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../2.%20The%20CKSP%20Syntax.html" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Syntax
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+  
+
+	
+                  
+
+
+  
+  
+
+
+<h1 id="literals-and-expressions">Literals and Expressions</h1>
+<h2 id="literals">Literals</h2>
+<p>A <strong>literal</strong> is a fixed value written directly into the source code.
+In <code>cksp</code>, literals can be of the following types:</p>
+<h3 id="integer-literal"><strong>Integer literal</strong></h3>
+<p>Integer literals are whole numbers without a decimal point.</p>
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span>
+<span class="normal"><a href="#__codelineno-0-2">2</a></span>
+<span class="normal"><a href="#__codelineno-0-3">3</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="mi">42</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2"></a><span class="o">-</span><span class="mi">7</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="mi">0</span>
+</span></code></pre></div></td></tr></table></div>
+<p>Integer literals can also be written in <strong>hexadecimal</strong> or <strong>binary</strong> form:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Hexadecimal</label><label for="__tabbed_1_2">Binary</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p><strong>Hexadecimal literals</strong> start with <code>0x</code> and use digits <code>0–9</code> and letters <code>A–F</code>:
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1">1</a></span>
+<span class="normal"><a href="#__codelineno-1-2">2</a></span>
+<span class="normal"><a href="#__codelineno-1-3">3</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1"></a><span class="nv">a</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="mh">0x77AAFF</span><span class="w">  </span><span class="c1">// assigns 7 742 559 in decimal</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2"></a><span class="nv">b</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="mh">0x10</span><span class="w">      </span><span class="c1">// assigns 16 in decimal</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3"></a><span class="nv">c</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="mh">0xFF</span><span class="w">      </span><span class="c1">// assigns 255 in decimal</span>
+</span></code></pre></div></td></tr></table></div></p>
+</div>
+<div class="tabbed-block">
+<p><strong>Binary literals</strong> can be written in two orientations:</p>
+<ul>
+<li>
+<p>With a <strong>trailing <code>b</code></strong>: bits are interpreted <strong>least-significant-bit (LSB) right</strong><br />
+    <div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-2-1">1</a></span>
+<span class="normal"><a href="#__codelineno-2-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1"></a><span class="nv">a</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="nv">1100b</span><span class="w">   </span><span class="c1">// assigns 12 decimal (binary 1100 → decimal 12)</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2"></a><span class="nv">b</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="nv">101b</span><span class="w">    </span><span class="c1">// assigns 5 decimal</span>
+</span></code></pre></div></td></tr></table></div></p>
+</li>
+<li>
+<p>With a <strong>leading <code>b</code></strong>: bits are interpreted <strong>least-significant-bit (LSB) left</strong><br />
+    <div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-3-1">1</a></span>
+<span class="normal"><a href="#__codelineno-3-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1"></a><span class="nv">a</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="nv">b1100</span><span class="w">   </span><span class="c1">// assigns 3 decimal (binary reversed 0011 → decimal 3)</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2"></a><span class="nv">b</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="nv">b101</span><span class="w">    </span><span class="c1">// assigns 5 decimal (reversed 101 → 101)</span>
+</span></code></pre></div></td></tr></table></div></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<h3 id="real-floating-point-literal"><strong>Real (floating point) literal</strong></h3>
+<p>Real literals represent numbers with a fractional part, indicated by a decimal point.</p>
+<p><div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-4-1">1</a></span>
+<span class="normal"><a href="#__codelineno-4-2">2</a></span>
+<span class="normal"><a href="#__codelineno-4-3">3</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1"></a><span class="mf">3.14</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2"></a><span class="mf">-0.5</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3"></a><span class="mf">2.0</span>
+</span></code></pre></div></td></tr></table></div>
+Real literals can also be expressed in scientific notation, allowing compact representation of very large or very small values.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:1"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Scientific Notation</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p><a href="#" title="Minimum CKSP Version" class="mdx-badge-link"><span class="mdx-badge mdx-badge--version"><span class="mdx-badge__icon"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"/></svg></span></span><span class="mdx-badge__text">0.0.8</span></span></a></p>
+<p><strong>Scientific notation</strong> uses the letter <code>e</code> or <code>E</code> to represent powers of ten.<br />
+The syntax follows this pattern:</p>
+<div class="language-cksp highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">[</span><span class="nv">integer</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="nv">decimal</span><span class="w"> </span><span class="nv">part</span><span class="p">]</span><span class="w"> </span><span class="nv">e</span><span class="w"> </span><span class="p">[</span><span class="nv">exponent</span><span class="p">]</span>
+</span></code></pre></div>
+<p>The exponent can be positive or negative, with or without a sign.<br />
+The following examples are all valid:</p>
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-6-1">1</a></span>
+<span class="normal"><a href="#__codelineno-6-2">2</a></span>
+<span class="normal"><a href="#__codelineno-6-3">3</a></span>
+<span class="normal"><a href="#__codelineno-6-4">4</a></span>
+<span class="normal"><a href="#__codelineno-6-5">5</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1"></a><span class="mf">1e3</span><span class="w">      </span><span class="c1">// 1 × 10³ = 1000.0</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2"></a><span class="mf">1.5e2</span><span class="w">    </span><span class="c1">// 1.5 × 10² = 150.0</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3"></a><span class="mf">3e-2</span><span class="w">     </span><span class="c1">// 3 × 10⁻² = 0.03</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4"></a><span class="err">.</span><span class="mf">5e2</span><span class="w">     </span><span class="c1">// 0.5 × 10² = 50.0</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5"></a><span class="mf">1.2e-10</span><span class="w">  </span><span class="c1">// 1.2 × 10⁻¹⁰ = 0.00000000012</span>
+</span></code></pre></div></td></tr></table></div>
+<p>You may use uppercase <code>E</code> interchangeably with lowercase <code>e</code>:</p>
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-7-1">1</a></span>
+<span class="normal"><a href="#__codelineno-7-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1"></a><span class="mf">6.022E23</span><span class="w">  </span><span class="c1">// Avogadro’s number</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2"></a><span class="mf">9.81E0</span><span class="w">    </span><span class="c1">// 9.81 × 10⁰ = 9.81</span>
+</span></code></pre></div></td></tr></table></div>
+<div class="admonition info">
+<p class="admonition-title">Precision and Type Inference</p>
+<p>All literals written in scientific notation are inferred as real values.
+They support the same precision and arithmetic operations as normal floating-point literals.</p>
+</div>
+</div>
+</div>
+</div>
+<h3 id="string-literal"><strong>String literal</strong></h3>
+<p>String literals are sequences of characters enclosed in double quotes (<code>"</code> ) or single quotes (<code>'</code>).</p>
+<p><div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-8-1">1</a></span>
+<span class="normal"><a href="#__codelineno-8-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1"></a><span class="s2">&quot;Hello World&quot;</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2"></a><span class="s1">&#39;Score: &#39;</span>
+</span></code></pre></div></td></tr></table></div>
+Strings can contain letters, digits, spaces, and special characters.</p>
+<div class="admonition tip">
+<p class="admonition-title">String Literal Escape Sequences</p>
+<p>String literals can contain escape sequences such as <code>\"</code> for quotes or <code>\n</code> for newlines.</p>
+</div>
+<h3 id="boolean-literal"><strong>Boolean literal</strong></h3>
+<p>Boolean literals represent truth values and can be either <code>true</code> or <code>false</code>.</p>
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-9-1">1</a></span>
+<span class="normal"><a href="#__codelineno-9-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1"></a><span class="no">true</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2"></a><span class="no">false</span>
+</span></code></pre></div></td></tr></table></div>
+<hr />
+<h2 id="expressions">Expressions</h2>
+<p>An <strong>expression</strong> is any valid combination of literals, variables, operators, and function calls that produces a value.
+They can not stand alone; they must be part of a larger statement, e.g. as an l-value in assignments or as arguments in function calls.</p>
+<p>Expressions in <code>CKSP</code> follow <code>KSP</code> semantics and support a wide range of operations.</p>
+<h3 id="arithmetic-operators">Arithmetic Operators</h3>
+<p>The following operators can be used with integer and real values:</p>
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-10-1">1</a></span>
+<span class="normal"><a href="#__codelineno-10-2">2</a></span>
+<span class="normal"><a href="#__codelineno-10-3">3</a></span>
+<span class="normal"><a href="#__codelineno-10-4">4</a></span>
+<span class="normal"><a href="#__codelineno-10-5">5</a></span>
+<span class="normal"><a href="#__codelineno-10-6">6</a></span>
+<span class="normal"><a href="#__codelineno-10-7">7</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1"></a><span class="o">+</span><span class="w">    </span><span class="c1">// addition</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2"></a><span class="o">-</span><span class="w">    </span><span class="c1">// subtraction or negation</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3"></a><span class="o">*</span><span class="w">    </span><span class="c1">// multiplication</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4"></a><span class="o">/</span><span class="w">    </span><span class="c1">// division (integer or real, depending on operands)</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5"></a><span class="o">**</span><span class="w">   </span><span class="c1">// exponentiation (real only)</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6"></a><span class="o">&gt;&gt;</span><span class="w">   </span><span class="c1">// right shift (integer only)</span>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7"></a><span class="o">&lt;&lt;</span><span class="w">   </span><span class="c1">// left shift (integer only)</span>
+</span></code></pre></div></td></tr></table></div>
+<p>In addition, <code>CKSP</code> supports:</p>
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-11-1">1</a></span>
+<span class="normal"><a href="#__codelineno-11-2">2</a></span>
+<span class="normal"><a href="#__codelineno-11-3">3</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1"></a><span class="ow">mod</span><span class="w">   </span><span class="c1">// remainder of integer division</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2"></a><span class="nf">abs</span><span class="p">()</span><span class="w"> </span><span class="c1">// absolute value</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3"></a><span class="nf">sgn</span><span class="p">()</span><span class="w"> </span><span class="c1">// returns -1, 0, or 1 depending on the sign</span>
+</span></code></pre></div></td></tr></table></div>
+<p>Increment and decrement functions are also available for integers:</p>
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-12-1">1</a></span>
+<span class="normal"><a href="#__codelineno-12-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1"></a><span class="nf">inc</span><span class="p">(</span><span class="nv">x</span><span class="p">)</span><span class="w">  </span><span class="c1">// equivalent to x += 1</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2"></a><span class="nf">dec</span><span class="p">(</span><span class="nv">x</span><span class="p">)</span><span class="w">  </span><span class="c1">// equivalent to x -= 1</span>
+</span></code></pre></div></td></tr></table></div>
+<hr />
+<h3 id="real-specific-functions">Real-Specific Functions</h3>
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-13-1">1</a></span>
+<span class="normal"><a href="#__codelineno-13-2">2</a></span>
+<span class="normal"><a href="#__codelineno-13-3">3</a></span>
+<span class="normal"><a href="#__codelineno-13-4">4</a></span>
+<span class="normal"><a href="#__codelineno-13-5">5</a></span>
+<span class="normal"><a href="#__codelineno-13-6">6</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1"></a><span class="nf">exp</span><span class="p">(</span><span class="nv">x</span><span class="p">),</span><span class="w"> </span><span class="nf">exp2</span><span class="p">(</span><span class="nv">x</span><span class="p">)</span><span class="w">           </span><span class="c1">// exponentials</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2"></a><span class="nf">log</span><span class="p">(</span><span class="nv">x</span><span class="p">),</span><span class="w"> </span><span class="nf">log2</span><span class="p">(</span><span class="nv">x</span><span class="p">),</span><span class="w"> </span><span class="nf">log10</span><span class="p">(</span><span class="nv">x</span><span class="p">)</span><span class="w"> </span><span class="c1">// logarithms</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3"></a><span class="nf">pow</span><span class="p">(</span><span class="nv">x</span><span class="p">,</span><span class="w"> </span><span class="nv">y</span><span class="p">)</span><span class="w">                 </span><span class="c1">// power function</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4"></a><span class="nf">sqrt</span><span class="p">(</span><span class="nv">x</span><span class="p">),</span><span class="w"> </span><span class="nf">cbrt</span><span class="p">(</span><span class="nv">x</span><span class="p">)</span><span class="w">          </span><span class="c1">// square and cube root</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5"></a><span class="nf">ceil</span><span class="p">(</span><span class="nv">x</span><span class="p">),</span><span class="w"> </span><span class="nf">floor</span><span class="p">(</span><span class="nv">x</span><span class="p">)</span><span class="w">         </span><span class="c1">// round up or down</span>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6"></a><span class="nf">round</span><span class="p">(</span><span class="nv">x</span><span class="p">)</span><span class="w">                  </span><span class="c1">// round to nearest integer</span>
+</span></code></pre></div></td></tr></table></div>
+<p>Trigonometric functions:</p>
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-14-1">1</a></span>
+<span class="normal"><a href="#__codelineno-14-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1"></a><span class="nf">sin</span><span class="p">(</span><span class="nv">x</span><span class="p">),</span><span class="w"> </span><span class="nf">cos</span><span class="p">(</span><span class="nv">x</span><span class="p">),</span><span class="w"> </span><span class="nf">tan</span><span class="p">(</span><span class="nv">x</span><span class="p">)</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2"></a><span class="nf">asin</span><span class="p">(</span><span class="nv">x</span><span class="p">),</span><span class="w"> </span><span class="nf">acos</span><span class="p">(</span><span class="nv">x</span><span class="p">),</span><span class="w"> </span><span class="nf">atan</span><span class="p">(</span><span class="nv">x</span><span class="p">)</span>
+</span></code></pre></div></td></tr></table></div>
+<hr />
+<h3 id="bitwise-operators">Bitwise Operators</h3>
+<p>For integer values:</p>
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-15-1">1</a></span>
+<span class="normal"><a href="#__codelineno-15-2">2</a></span>
+<span class="normal"><a href="#__codelineno-15-3">3</a></span>
+<span class="normal"><a href="#__codelineno-15-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1"></a><span class="err">.</span><span class="ow">and</span><span class="err">.</span><span class="w">   </span><span class="c1">// bitwise AND</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2"></a><span class="err">.</span><span class="ow">or</span><span class="err">.</span><span class="w">    </span><span class="c1">// bitwise OR</span>
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3"></a><span class="err">.</span><span class="ow">xor</span><span class="err">.</span><span class="w">   </span><span class="c1">// bitwise XOR</span>
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4"></a><span class="err">.</span><span class="ow">not</span><span class="err">.</span><span class="w">   </span><span class="c1">// bitwise NOT</span>
+</span></code></pre></div></td></tr></table></div>
+<p>Bit shifting:</p>
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-16-1">1</a></span>
+<span class="normal"><a href="#__codelineno-16-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1"></a><span class="nf">sh_left</span><span class="p">(</span><span class="nv">expr</span><span class="p">,</span><span class="w"> </span><span class="nv">bits</span><span class="p">)</span><span class="w"> </span><span class="c1">// shifts bits to the left, same as expr &lt;&lt; bits</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2"></a><span class="nf">sh_right</span><span class="p">(</span><span class="nv">expr</span><span class="p">,</span><span class="w"> </span><span class="nv">bits</span><span class="p">)</span><span class="w"> </span><span class="c1">// shifts bits to the right, same as expr &gt;&gt; bits</span>
+</span></code></pre></div></td></tr></table></div>
+<hr />
+<h3 id="string-concatenation">String Concatenation</h3>
+<p>Strings can be concatenated using the <code>&amp;</code> operator:</p>
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-17-1">1</a></span>
+<span class="normal"><a href="#__codelineno-17-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1"></a><span class="s2">&quot;Hello &quot;</span><span class="w"> </span><span class="err">&amp;</span><span class="w"> </span><span class="s2">&quot;World&quot;</span><span class="w">        </span><span class="c1">// → &quot;Hello World&quot;</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2"></a><span class="s2">&quot;Score: &quot;</span><span class="w"> </span><span class="err">&amp;</span><span class="w"> </span><span class="nv">score</span><span class="w">         </span><span class="c1">// converts score to string and appends</span>
+</span></code></pre></div></td></tr></table></div>
+<p>Concatenation is evaluated left to right and can be combined with other expressions:</p>
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-18-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1"></a><span class="s2">&quot;Result: &quot;</span><span class="w"> </span><span class="err">&amp;</span><span class="w"> </span><span class="p">(</span><span class="nv">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nv">b</span><span class="p">)</span>
+</span></code></pre></div></td></tr></table></div>
+<h3 id="logical-operators">Logical Operators</h3>
+<p>Logical operators work only in expressions using boolean types or values:</p>
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-19-1">1</a></span>
+<span class="normal"><a href="#__codelineno-19-2">2</a></span>
+<span class="normal"><a href="#__codelineno-19-3">3</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1"></a><span class="ow">and</span><span class="w">   </span><span class="c1">// logical AND</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2"></a><span class="ow">or</span><span class="w">    </span><span class="c1">// logical OR</span>
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3"></a><span class="ow">not</span><span class="w">   </span><span class="c1">// logical NOT</span>
+</span></code></pre></div></td></tr></table></div>
+<p>Examples:</p>
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-20-1"> 1</a></span>
+<span class="normal"><a href="#__codelineno-20-2"> 2</a></span>
+<span class="normal"><a href="#__codelineno-20-3"> 3</a></span>
+<span class="normal"><a href="#__codelineno-20-4"> 4</a></span>
+<span class="normal"><a href="#__codelineno-20-5"> 5</a></span>
+<span class="normal"><a href="#__codelineno-20-6"> 6</a></span>
+<span class="normal"><a href="#__codelineno-20-7"> 7</a></span>
+<span class="normal"><a href="#__codelineno-20-8"> 8</a></span>
+<span class="normal"><a href="#__codelineno-20-9"> 9</a></span>
+<span class="normal"><a href="#__codelineno-20-10">10</a></span>
+<span class="normal"><a href="#__codelineno-20-11">11</a></span>
+<span class="normal"><a href="#__codelineno-20-12">12</a></span>
+<span class="normal"><a href="#__codelineno-20-13">13</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1"></a><span class="kc">if</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="nv">b</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">5</span>
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2"></a><span class="w">    </span><span class="c1">// both conditions must be true</span>
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3"></a><span class="kc">end if</span>
+</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4"></a>
+</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5"></a><span class="kd">declare</span><span class="w"> </span><span class="nv">ready</span>: <span class="kt">bool</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="no">true</span>
+</span><span id="__span-20-6"><a id="__codelineno-20-6" name="__codelineno-20-6"></a>
+</span><span id="__span-20-7"><a id="__codelineno-20-7" name="__codelineno-20-7"></a><span class="kc">if</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="nv">ready</span>
+</span><span id="__span-20-8"><a id="__codelineno-20-8" name="__codelineno-20-8"></a><span class="w">    </span><span class="c1">// executes if ready = false</span>
+</span><span id="__span-20-9"><a id="__codelineno-20-9" name="__codelineno-20-9"></a><span class="kc">end if</span>
+</span><span id="__span-20-10"><a id="__codelineno-20-10" name="__codelineno-20-10"></a>
+</span><span id="__span-20-11"><a id="__codelineno-20-11" name="__codelineno-20-11"></a><span class="kc">while</span><span class="p">(</span><span class="no">true</span><span class="p">)</span>
+</span><span id="__span-20-12"><a id="__codelineno-20-12" name="__codelineno-20-12"></a><span class="w">    </span><span class="c1">// infinite loop</span>
+</span><span id="__span-20-13"><a id="__codelineno-20-13" name="__codelineno-20-13"></a><span class="kc">end while</span>
+</span></code></pre></div></td></tr></table></div>
+<hr />
+<h2 id="type-conversion">Type Conversion</h2>
+<p>Certain functions and operators require specific types.
+When mixing integers and reals, explicit type conversion can avoid errors:</p>
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-21-1">1</a></span>
+<span class="normal"><a href="#__codelineno-21-2">2</a></span>
+<span class="normal"><a href="#__codelineno-21-3">3</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1"></a><span class="nf">real</span><span class="p">(</span><span class="nv">value</span>: <span class="kt">int</span><span class="p">)</span><span class="w">  </span><span class="c1">// integer → real</span>
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2"></a><span class="nf">int</span><span class="p">(</span><span class="nv">value</span>: <span class="kt">real</span><span class="p">)</span><span class="w"> </span><span class="c1">// real → integer (truncates)</span>
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3"></a><span class="nf">bool</span><span class="p">(</span><span class="nv">value</span>: <span class="kt">number</span><span class="p">)</span><span class="w"> </span><span class="c1">// number → bool (0 = false, nonzero = true)</span>
+</span></code></pre></div></td></tr></table></div>
+<hr />
+<h2 id="f-strings-formatted-strings">f-Strings (Formatted Strings)</h2>
+<p><code>CKSP</code> supports <strong>formatted strings</strong>, also known as <strong>f-strings</strong>, for embedding variables or expressions directly into a string literal.</p>
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-22-1">1</a></span>
+<span class="normal"><a href="#__codelineno-22-2">2</a></span>
+<span class="normal"><a href="#__codelineno-22-3">3</a></span>
+<span class="normal"><a href="#__codelineno-22-4">4</a></span>
+<span class="normal"><a href="#__codelineno-22-5">5</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1"></a><span class="kd">declare</span><span class="w"> </span><span class="nv">name</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Alice&quot;</span>
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2"></a><span class="kd">declare</span><span class="w"> </span><span class="nv">score</span><span class="w"> </span><span class="p">:</span><span class="o">=</span><span class="w"> </span><span class="mi">42</span>
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3"></a>
+</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4"></a><span class="nf">message</span><span class="p">(</span><span class="si">f&quot;Player </span><span class="p">&lt;</span><span class="nv">name</span><span class="p">&gt;</span><span class="si"> scored </span><span class="p">&lt;</span><span class="nv">score</span><span class="p">&gt;</span><span class="si"> points.&quot;</span><span class="p">)</span>
+</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5"></a><span class="c1">// Output: Player Alice scored 42 points.</span>
+</span></code></pre></div></td></tr></table></div>
+<p>You can also embed expressions:</p>
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-23-1">1</a></span>
+<span class="normal"><a href="#__codelineno-23-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1"></a><span class="nf">message</span><span class="p">(</span><span class="si">f&quot;Sum is </span><span class="p">&lt;</span><span class="mi">3</span><span class="o">+</span><span class="mi">4</span><span class="o">+</span><span class="mi">5</span><span class="p">&gt;</span><span class="si">&quot;</span><span class="p">)</span>
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2"></a><span class="c1">// Output: Sum is 12</span>
+</span></code></pre></div></td></tr></table></div>
+<p>Function calls are allowed as well:</p>
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-24-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1"></a><span class="nf">message</span><span class="p">(</span><span class="si">f&quot;Elapsed: </span><span class="p">&lt;</span><span class="nv">time_elapsed</span><span class="p">()&gt;</span><span class="si"> seconds&quot;</span><span class="p">)</span>
+</span></code></pre></div></td></tr></table></div>
+<div class="admonition tip">
+<p class="admonition-title">Using f-Strings</p>
+<p><strong>f-strings</strong> let you avoid manual concatenation:
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-25-1">1</a></span>
+<span class="normal"><a href="#__codelineno-25-2">2</a></span>
+<span class="normal"><a href="#__codelineno-25-3">3</a></span>
+<span class="normal"><a href="#__codelineno-25-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1"></a><span class="c1">// Instead of:</span>
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2"></a><span class="nf">message</span><span class="p">(</span><span class="s2">&quot;Level &quot;</span><span class="w"> </span><span class="err">&amp;</span><span class="w"> </span><span class="nv">level</span><span class="w"> </span><span class="err">&amp;</span><span class="w"> </span><span class="s2">&quot; complete.&quot;</span><span class="p">)</span>
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3"></a><span class="c1">// Use:</span>
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4"></a><span class="nf">message</span><span class="p">(</span><span class="si">f&quot;Level </span><span class="p">&lt;</span><span class="nv">level</span><span class="p">&gt;</span><span class="si"> complete.&quot;</span><span class="p">)</span>
+</span></code></pre></div></td></tr></table></div></p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+
+  
+
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="2.1%20Variables%20and%20Arrays.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Variables and Arrays">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Variables and Arrays
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="2.3%20Declarations.html" class="md-footer__link md-footer__link--next" aria-label="Next: Declarations">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Declarations
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024 - 2026 Mathias Vatter – <a href="#__consent">Change cookie settings</a>
+
+    </div>
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+      <div class="md-consent" data-md-component="consent" id="__consent" hidden>
+        <div class="md-consent__overlay"></div>
+        <aside class="md-consent__inner">
+          <form class="md-consent__form md-grid md-typeset" name="consent">
+            
+
+
+  
+
+
+<h4>Cookie consent</h4>
+<p>This website uses cookies to recognize your repeated visits and preferences, as well as to measure the effectiveness of the documentation and whether users find what they're searching for. With your consent, you're helping me to make this documentation better.</p>
+<input class="md-toggle" type="checkbox" id="__settings" >
+<div class="md-consent__settings">
+  <ul class="task-list">
+    
+    
+      
+    
+    
+      
+        
+  
+  
+    
+    
+  
+  <li class="task-list-item">
+    <label class="task-list-control">
+      <input type="checkbox" name="github" checked>
+      <span class="task-list-indicator"></span>
+      GitHub
+    </label>
+  </li>
+
+      
+    
+    
+  </ul>
+</div>
+<div class="md-consent__controls">
+  
+    
+      <button class="md-button md-button--primary">Accept</button>
+    
+    
+    
+  
+    
+    
+    
+      <label class="md-button" for="__settings">Manage settings</label>
+    
+  
+</div>
+          </form>
+        </aside>
+      </div>
+      <script>var consent=__md_get("__consent");if(consent)for(var input of document.forms.consent.elements)input.name&&(input.checked=consent[input.name]||!1);else"file:"!==location.protocol&&setTimeout((function(){document.querySelector("[data-md-component=consent]").hidden=!1}),250);var form=document.forms.consent;for(var action of["submit","reset"])form.addEventListener(action,(function(e){if(e.preventDefault(),"reset"===e.type)for(var n of document.forms.consent.elements)n.name&&(n.checked=!1);__md_set("__consent",Object.fromEntries(Array.from(new FormData(form).keys()).map((function(e){return[e,!0]})))),location.hash="",location.reload()}))</script>
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy", "content.code.select", "content.code.annotate", "navigation.instant", "navigation.instant.prefetch", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.footer", "navigation.top", "navigation.path", "toc.follow", "toc.integrate", "search.suggest", "search.share", "announce.dismiss"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

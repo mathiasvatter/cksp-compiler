@@ -1,0 +1,1937 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://mathiasvatter.github.io/cksp-compiler/index.html">
+      
+      
+      
+        <link rel="next" href="2.%20The%20CKSP%20Syntax.html">
+      
+      
+        
+      
+      
+      <link rel="icon" href="assets/logos/logo.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>CKSP Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+  
+  
+  
+  
+  <style>:root{--md-annotation-icon:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M22%2012a10%2010%200%200%201-10%2010A10%2010%200%200%201%202%2012%2010%2010%200%200%201%2012%202a10%2010%200%200%201%2010%2010m-12%206%206-6-6-6-1.4%201.4%204.6%204.6-4.6%204.6z%22/%3E%3C/svg%3E');}</style>
+
+
+    
+    
+      
+        <script src="assets/external/unpkg.com/iframe-worker/shim.js"></script>
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="stylesheets/extra.css">
+    
+      <link rel="stylesheet" href="stylesheets/hero.css">
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="cksp" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#what-is-this" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="index.html" title="CKSP Documentation" class="md-header__button md-logo" aria-label="CKSP Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.82 17 13 19.28V22H6c-1.11 0-2-.89-2-2V4a2 2 0 0 1 2-2h1v7l2.5-1.5L12 9V2h6a2 2 0 0 1 2 2v8.54l-1.5-.82zM24 17l-5.5-3-5.5 3 5.5 3zm-9 2.09v2L18.5 23l3.5-1.91v-2L18.5 21z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CKSP Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Home
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/mathiasvatter/cksp-compiler" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    CKSP Compiler
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="index.html" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="2.%20The%20CKSP%20Syntax.html" class="md-tabs__link">
+          
+  
+  
+  Syntax
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="3.%20Adopted%20Features.html" class="md-tabs__link">
+          
+  
+  
+  Adopted Features
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="6.%20VS%20Code%20Extension.html" class="md-tabs__link">
+          
+  
+  
+  VS Code Extension
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="5.%20Installation.html" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Installation
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+  
+        
+      
+	
+	<section class="hero-section">
+		<picture class="hero-bg">
+			<img
+			src="assets/images/cksp_artwork.png"
+			alt=""
+			loading="eager"          
+			decoding="async"
+			fetchpriority="high"     
+			/>
+		</picture>
+
+		<div class="hero-content">
+			<div class="hero-text md-typeset">
+			<h1>Welcome to CKSP!</h1>
+			<div class="lead"><p><code>cksp</code> is a compiler and transpiler framework built in <code>C++</code>, designed to convert <strong>cKSP syntax</strong> into <strong>KSP syntax</strong> for <strong>Native Instruments' Kontakt</strong>.</p>
+<p>Its goal is to bring the feel of modern programming languages to <strong>Kontakt</strong> scripting, introducing modularity and abstractions while ensuring fast compilation. This makes writing and maintaining <strong>KSP</strong> scripts easier and more approachable—even for those new to Kontakt instrument development.</p>
+</div>
+			<div class="hero-buttons">
+				<a href="2.%20The%20CKSP%20Syntax.html" class="md-button md-button--primary">Learn more</a>
+				<a href="3.%20Adopted%20Features.html" class="md-button">Compare with SublimeKSP</a>
+				<a href="https://marketplace.visualstudio.com/items?itemName=mvatter.cksp-tools" class="md-button">Install in VS Code</a>
+			</div>
+			</div>
+		</div>
+	</section>
+	
+
+	<script>
+(function () {
+  let onScroll = null, onResize = null, onKeydown = null, mo = null;
+
+  function applySearchHint() {
+    const inputs = document.querySelectorAll('.md-search__input');
+    if (!inputs.length) return;
+    inputs.forEach((input) => {
+      const original = input.dataset.placeholderBase || input.getAttribute('placeholder') || 'Search';
+      input.dataset.placeholderBase = original;
+      input.setAttribute('placeholder', `${original} (Press F)`);
+      input.setAttribute('aria-label', `${original}. Press F to search`);
+    });
+  }
+
+  function openSearch() {
+    const toggle = document.getElementById('__search');
+    if (toggle && toggle.type === 'checkbox') toggle.checked = true;
+    const input = document.querySelector('.md-search__input');
+    if (input) {
+      input.focus();
+      input.select();
+    }
+  }
+
+  function shouldIgnoreShortcutTarget(target) {
+    if (!target) return false;
+    const tag = (target.tagName || '').toLowerCase();
+    return (
+      tag === 'input' ||
+      tag === 'textarea' ||
+      tag === 'select' ||
+      target.isContentEditable
+    );
+  }
+
+  function getOffset() {
+	const css   = getComputedStyle(document.documentElement);
+	const varPx = parseFloat(css.getPropertyValue('--hero-offset').trim());
+	if (!Number.isNaN(varPx) && varPx > 0) return varPx;
+
+	const header = document.querySelector('.md-header');
+	const tabs   = document.querySelector('.md-tabs');
+	const h = header ? header.getBoundingClientRect().height : 0;
+	const t = (tabs && getComputedStyle(tabs).display !== 'none') ? tabs.getBoundingClientRect().height : 0;
+	return h + t;
+  }
+
+  function updateHero() {
+	const root = document.documentElement;
+	const hero = document.querySelector('.hero-section');
+
+	// Pages without hero: ensure normal header state
+	if (!hero) {
+	  root.classList.remove('home-with-hero', 'over-hero');
+	  root.style.removeProperty('--hero-header-opacity');
+	  return;
+	}
+
+	root.classList.add('home-with-hero');
+
+	// Transparent while we are "over" the hero (before passing its bottom minus header/tabs)
+	const offset = getOffset();
+	const heroHeight = hero.offsetHeight || 0;
+	const limit  = Math.max(0, heroHeight - offset);    // scroll threshold
+	const isOver = window.scrollY < (limit - 1);        // tolerance
+	root.classList.toggle('over-hero', isOver);
+
+
+	// Smoothly fade the header background in before leaving the hero
+	const css = getComputedStyle(root);
+	let fadeFactor = parseFloat(css.getPropertyValue('--hero-header-fade-factor').trim());
+	// if (Number.isNaN(fadeFactor)) fadeFactor = 0.1;
+	fadeFactor = Math.min(Math.max(fadeFactor, 0), 0.95);
+	let fadeBuffer = parseFloat(css.getPropertyValue('--hero-header-fade-buffer').trim());
+	// if (Number.isNaN(fadeBuffer)) fadeBuffer = 0.35;
+	fadeBuffer = Math.min(Math.max(fadeBuffer, 0), 0.95);
+	const fadeEndBuffer = Math.max(12, offset * 0.1, heroHeight * fadeBuffer);
+	const fadeEnd = Math.max(0, limit - fadeEndBuffer);
+	const fadeStart = fadeEnd * fadeFactor;
+	const fadeWindow = Math.max(1, fadeEnd - fadeStart);
+	let headerOpacity = 1;
+
+	if (isOver) {
+	  if (fadeEnd <= 0 || window.scrollY <= fadeStart) {
+		headerOpacity = 0;
+	  } else if (window.scrollY >= fadeEnd) {
+		headerOpacity = 1;
+	  } else {
+		const progress = (window.scrollY - fadeStart) / fadeWindow;
+		headerOpacity = Math.min(1, Math.max(0, progress));
+	  }
+	}
+
+
+	root.style.setProperty('--hero-header-opacity', headerOpacity.toFixed(3));
+
+	// Optional: parallax / content fade
+	const content = hero.querySelector('.hero-content');
+	const vh = window.innerHeight;
+	const progress = Math.min(1, Math.max(0, window.scrollY / vh));
+	// hero.style.backgroundPositionY = `${progress * 40}%`;
+	// hero.style.setProperty('--hero-parallax', String(progress));
+	// Parallax: move the hero image slower than the page
+	const img = hero.querySelector('.hero-bg img');
+	if (img) {
+		// How far the hero's top edge is from the viewport top
+		const rect = hero.getBoundingClientRect();
+		// 0.25 = 25% of scroll speed => adjust to taste (0.15 … 0.35)
+		const offsetPx = rect.top * 0.21;
+		hero.style.setProperty('--hero-translate', `${offsetPx}px`);
+	}
+
+
+	if (content) {
+	  content.style.setProperty('--content-opacity', Math.max(0, 1 - progress * 2.5));
+	  content.style.setProperty('--content-shift', `${progress * 80}px`);
+	}
+	hero.style.setProperty('--fade-opacity', progress);
+  }
+
+  function attachListeners() {
+	detachListeners();
+	onScroll = () => updateHero();
+	onResize = () => updateHero();
+	onKeydown = (event) => {
+	  if (event.defaultPrevented) return;
+	  if (event.ctrlKey || event.metaKey || event.altKey) return;
+	  if (event.key !== 'f' && event.key !== 'F') return;
+	  if (shouldIgnoreShortcutTarget(event.target)) return;
+	  event.preventDefault();
+	  openSearch();
+	};
+	window.addEventListener('scroll', onScroll, { passive: true });
+	window.addEventListener('resize', onResize);
+	window.addEventListener('keydown', onKeydown);
+  }
+
+  function detachListeners() {
+	if (onScroll) window.removeEventListener('scroll', onScroll);
+	if (onResize) window.removeEventListener('resize', onResize);
+	if (onKeydown) window.removeEventListener('keydown', onKeydown);
+	onScroll = onResize = onKeydown = null;
+  }
+
+  function hardResetIfNoHero() {
+	if (!document.querySelector('.hero-section')) {
+	  const docEl = document.documentElement;
+	  docEl.classList.remove('home-with-hero', 'over-hero');
+	  docEl.style.removeProperty('--hero-header-opacity');
+	  const tabs = document.querySelector('.md-tabs');
+	  if (tabs) tabs.classList.remove('md-tabs--lifted');
+	}
+  }
+
+  function init() {
+	attachListeners();
+	applySearchHint();
+	// Run immediately and once more after layout settles
+	updateHero();
+	requestAnimationFrame(() => {
+	  updateHero();
+	  applySearchHint();
+	});
+  }
+
+  // ---- Initial load
+  hardResetIfNoHero();
+  init();
+
+  // ---- SPA navigation (Material for MkDocs)
+  if (typeof window.document$ !== 'undefined') {
+	window.document$.subscribe(() => {
+	  detachListeners();
+	  document.documentElement.classList.remove('home-with-hero', 'over-hero');
+	  document.documentElement.style.removeProperty('--hero-header-opacity');
+	  const tabs = document.querySelector('.md-tabs');
+	  if (tabs) tabs.classList.remove('md-tabs--lifted');
+	  init();
+	});
+  }
+
+  // ---- Optional: keep in sync if content mutates
+  const main = document.querySelector('main.md-main');
+  if (main && 'MutationObserver' in window) {
+	mo = new MutationObserver(() => requestAnimationFrame(updateHero));
+	mo.observe(main, { childList: true, subtree: true });
+  }
+
+
+})();
+</script>
+
+
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+                
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" hidden>
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="index.html" title="CKSP Documentation" class="md-nav__button md-logo" aria-label="CKSP Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.82 17 13 19.28V22H6c-1.11 0-2-.89-2-2V4a2 2 0 0 1 2-2h1v7l2.5-1.5L12 9V2h6a2 2 0 0 1 2 2v8.54l-1.5-.82zM24 17l-5.5-3-5.5 3 5.5 3zm-9 2.09v2L18.5 23l3.5-1.91v-2L18.5 21z"/></svg>
+
+    </a>
+    CKSP Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/mathiasvatter/cksp-compiler" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    CKSP Compiler
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="index.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Syntax
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Syntax
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.%20The%20CKSP%20Syntax.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The CKSP Syntax
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.0%20Language%20Structure.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Language Structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.1%20Variables%20and%20Arrays.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Variables and Arrays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.2%20Literals%20and%20Expressions.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Literals and Expressions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.3%20Declarations.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Declarations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.4%20Assignments.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assignments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.5%20Lexical%20Scope.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lexical Scope
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.6%20Functions.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Functions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.7%20Loops.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loops
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.8%20Control%20Flow.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.9%20Custom%20Data%20Structures.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Data Structures
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.10%20Import%20Statements.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Import Statements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.11%20Namespaces.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Namespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="Syntax/2.12%20Pragma%20Directives.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pragma Directives
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adopted Features
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Adopted Features
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="3.%20Adopted%20Features.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adopted Features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="4.%20Planned%20Features.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Planned Features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code Extension
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    VS Code Extension
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="6.%20VS%20Code%20Extension.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CKSP Tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="5.%20Installation.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+  
+
+
+
+  
+
+
+              
+              <article class="md-content__inner md-typeset">
+                
+  
+
+  <section class="glance-section">
+  <div class="glance-inner md-typeset">
+	<h1><strong>At a Glance</strong></h1>
+	<!-- Grid cards -->
+	<div id="home-cards" class="grid cards" markdown>
+
+		<a class="card" href="2.%20The%20CKSP%20Syntax.html">
+		<h3>
+			<span class="card__icon">
+				<span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 3a2 2 0 0 0-2 2v4a2 2 0 0 1-2 2H3v2h1a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2h2v-2H8v-5a2 2 0 0 0-2-2 2 2 0 0 0 2-2V5h2V3m6 0a2 2 0 0 1 2 2v4a2 2 0 0 0 2 2h1v2h-1a2 2 0 0 0-2 2v4a2 2 0 0 1-2 2h-2v-2h2v-5a2 2 0 0 1 2-2 2 2 0 0 1-2-2V5h-2V3z"/></svg></span>
+			</span>
+			A modern Syntax for KSP
+		</h3>
+		<p>
+		Introducing local variables, functions and data structures in a modern syntax - delivering cleaner, more readable, and maintainable code.
+		</p>
+		<span>Learn more →</span>
+		</a>
+
+		<a class="card" href="3.%20Adopted%20Features.html">
+		<h3>
+			<span class="card__icon">
+				<span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21 9-4-4v3h-7v2h7v3M7 11l-4 4 4 4v-3h7v-2H7z"/></svg></span>
+			</span>	
+			Easy Transition from Sublime
+		</h3>
+		<p>
+		Simplyfying migration by supporting most <code>Sublime KSP</code> features and ensuring compatibility as well as ease of integration with existing codebases.
+		</p>
+		<span>Learn more →</span>
+		</a>
+
+		<a class="card" href="6.%20VS%20Code%20Extension.html">
+		<h3>
+			<span class="card__icon">
+				<span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 16.47V7.39l-6 4.54M2.22 9.19a.86.86 0 0 1-.02-1.15l1.2-1.11c.2-.18.69-.26 1.05 0l3.42 2.61 7.93-7.25c.32-.32.87-.45 1.5-.12l4 1.91c.36.21.7.54.7 1.15v13.5c0 .4-.29.83-.6 1l-4.4 2.1c-.32.13-.92.01-1.13-.2l-8.02-7.3-3.4 2.6c-.38.26-.85.19-1.05 0l-1.2-1.1c-.32-.33-.28-.87.05-1.2l3-2.7"/></svg></span>
+			</span>
+			VS Code Extension
+		</h3>
+		<p>
+		Discover <strong>CKSP Tools</strong>, a <strong>VS Code Extension</strong> for syntax highlighting, go-to-definition, hover documentation, <strong>Kontakt</strong> log output, and more. It offers a seamless development experience for <strong>Kontakt</strong> scripts.
+		</p>
+		<span>Learn more →</span>
+		</a>
+
+		<a class="card" href="5.%20Installation.html">
+		<h3>
+			<span class="card__icon">
+				<span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 20h14v-2H5m14-9h-4V3H9v6H5l7 7z"/></svg></span>
+			</span>
+			How to Install
+		</h3>
+		<p>
+			Install the compiler as a build system in <strong>Sublime Text</strong>, use it in the command line or install the <strong>VS Code plugin</strong>.
+		</p>
+		<span>Learn more →</span>
+		</a>
+
+		<a class="card" href="https://github.com/mathiasvatter/cksp-compiler-issues/releases/latest">
+		<h3>
+			<span class="card__icon">
+				<span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 4c1.11 0 2 .89 2 2v12c0 1.11-.89 2-2 2H4c-1.11 0-2-.89-2-2V6c0-1.11.89-2 2-2zM8.5 15V9H7.25v3.5L4.75 9H3.5v6h1.25v-3.5L7.3 15zm5-4.74V9h-4v6h4v-1.25H11v-1.11h2.5v-1.26H11v-1.12zm7 3.74V9h-1.25v4.5h-1.12V10h-1.25v3.5h-1.13V9H14.5v5a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1"/></svg></span>
+			</span>
+			Get the Latest Version
+		</h3>
+		<p>
+			Download the latest stable release of <code>cksp</code> from the <strong>GitHub</strong> repository.<br>
+			Or stay up-to-date with the latest features and improvements with the current <code>alpha</code> release.
+		</p>
+		<span>Learn more →</span>
+		</a>
+
+		<a class="card" href="https://github.com/mathiasvatter/cksp-compiler-issues/issues">
+		<h3>
+			<span class="card__icon">
+				<span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 12h-4v-2h4m0 6h-4v-2h4m6-6h-2.81a6 6 0 0 0-1.82-1.96L17 4.41 15.59 3l-2.17 2.17a6 6 0 0 0-2.83 0L8.41 3 7 4.41l1.62 1.63C7.88 6.55 7.26 7.22 6.81 8H4v2h2.09c-.05.33-.09.66-.09 1v1H4v2h2v1c0 .34.04.67.09 1H4v2h2.81c1.04 1.79 2.97 3 5.19 3s4.15-1.21 5.19-3H20v-2h-2.09c.05-.33.09-.66.09-1v-1h2v-2h-2v-1c0-.34-.04-.67-.09-1H20z"/></svg></span>
+			</span>
+			Report a Bug
+		</h3>
+		<p>
+		If you encounter any issues or have suggestions for improvements, please report them on the <strong>GitHub</strong> repository. Your feedback is highly appreciated.
+		</p>
+		<span>Learn more →</span>
+		</a>
+
+	</div>
+
+	<!-- Reveal-Script NACH dem Markup -->
+<script>
+(function () {
+	function initCardReveal() {
+		const grid = document.getElementById('home-cards');
+		if (!grid) return;
+
+		const cards = Array.from(grid.querySelectorAll(':scope > .card'));
+		if (!cards.length) return;
+
+		// Progressive enhancement: erst jetzt "hidden"-Styles aktivieren
+		grid.classList.add('reveal-ready');
+
+		const io = new IntersectionObserver((entries, obs) => {
+			for (const e of entries) {
+				if (e.isIntersecting) {
+					e.target.classList.add('is-visible');
+					obs.unobserve(e.target);  // nur einmal
+				}
+			}
+		}, { threshold: 0.2, rootMargin: '0px 0px -10% 0px' });
+
+		cards.forEach(c => io.observe(c));
+	}
+
+	// sofort nach DOM-Insert
+	requestAnimationFrame(initCardReveal);
+
+	// SPA-Navigation von Material
+	if (typeof window.document$ !== 'undefined') {
+		window.document$.subscribe(() => { requestAnimationFrame(initCardReveal); });
+	}
+})();
+</script>
+	<div class="cards-separator" style="padding-top: 3rem;  
+	padding-bottom: 2rem;">
+	</div>
+</div>
+</section>
+
+
+<!-- ===== Performance Section: Chart left, copy right (with speed-up factors) ===== -->
+<section class="perf-section">
+  <div class="perf-inner md-typeset">
+    <h1><strong>Compilation Performance</strong></h1>
+
+    <div class="perf-grid">
+      <!-- Chart (left) -->
+      <div class="perf-chart">
+        <canvas id="compile-times" aria-label="CKSP compile time comparison"></canvas>
+      </div>
+
+      <!-- Copy (right) -->
+      <div class="perf-copy">
+        <!-- <h2 class="perf-headline">Blazing-fast compilation</h2> -->
+        <p id="perf-headline-sub">
+          Since a lot of <code>SublimeKSP</code> features are supported, 
+          <code>cksp</code> can also compile existing <code>sksp</code> projects with minimal changes. 
+          <p>
+            And it does so in <em>seconds</em> with an up to
+          <strong><span id="perf-top-factor">×</span> speed-up</strong> compared to <code>SublimeKSP</code>.
+		  Beneath are some real-world projects that have been benchmarked with both compilers
+		  (<em>big thanks to <a href="https://sonuscore.com" target="_blank" rel="noopener">Sonuscore</a> for providing these!</em>):
+      </p>
+        </p>
+        <ul id="perf-factors" class="perf-factors"></ul>
+        <p class="perf-footnote">
+          Benchmarks: 2021 MacBook Pro (M1 Max, 64&nbsp;GB RAM).
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Layout styles; gern in deine extra.css umziehen -->
+<style>
+  .perf-section { padding: 0 0 0; margin-bottom: 10rem; } /* mehr Platz unten */
+  /* .perf-inner   { margin: 0 auto; } */
+  .perf-grid {
+	margin-top: 0;
+	padding-top: 0;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 2rem;
+    align-items: center;
+  }
+  .perf-chart { min-height: 380px; }
+  .perf-chart canvas { width: 100% !important; height: 380px !important; }
+  .perf-headline { margin-top: 0; }
+  .perf-footnote { opacity: .75; font-size: .9em; }
+
+  /* Speed-up Liste */
+  .perf-factors { list-style: none; padding: 0; margin: 0 0 0; }
+  .perf-factors li {
+    display: grid; grid-template-columns: auto 1fr; gap: .6rem;
+    align-items: baseline; margin: .35rem 0;
+  }
+  .perf-factors .badge {
+    display: inline-block; padding: .2rem .5rem; border-radius: .6rem;
+    font-weight: 600; font-variant-numeric: tabular-nums;
+  }
+
+  /* Farben passend zum Chart */
+  .badge-cksp { background: rgba(52,152,219,.12); color: #3498db; }
+  .badge-sublime { background: rgba(231,76,60,.12); color: #e74c3c; }
+
+  @media (max-width: 960px) {
+    .perf-grid { grid-template-columns: 1fr; }
+    .perf-chart canvas { height: 320px !important; }
+  }
+</style>
+
+<script>
+  (function ensureChartJS(cb){
+    if (window.Chart) return cb();
+    const s = document.createElement('script');
+    s.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js";
+    s.onload = cb;
+    document.head.appendChild(s);
+  })(function initPerfChart(){
+
+    let chartInstance = null;   // gemerkt für Destroy/Neubau
+    let hasAnimated   = false;  // optional, falls du nur 1x animieren willst
+
+    function roundFactor(x) {
+      if (x >= 10) return Math.round(x);
+      return Math.round(x * 10) / 10;
+    }
+
+    // ---- Daten ----
+    const RAW = {
+      labels: [
+        ["Time Textures","Expanded"],
+        ["Action Strings 2"],
+        ["The Score"],
+        ["Horizon Leads"],
+        ["Nordic Spheres"],
+        ["The Orchestra","Complete 4"],
+      ],
+      sublime: [100, 74, 56, 17, 19, 12],
+      cksp:    [3.71, 2.89, 2.35, 1.6, 2.23, 0.772],
+      pretty:  [
+        "Time Textures Expanded",
+        "Action Strings 2",
+        "The Score",
+        "Horizon Leads",
+        "Nordic Spheres",
+        "The Orchestra Complete 4",
+      ]
+    };
+
+    function computeAndRenderBadges() {
+      const factors = RAW.sublime.map((s,i)=> s/RAW.cksp[i]);
+      const top = Math.max(...factors);
+      const topEl = document.getElementById('perf-top-factor');
+      if (topEl) topEl.textContent = '×' + roundFactor(top);
+
+      const listEl = document.getElementById('perf-factors');
+      if (listEl) {
+        listEl.innerHTML = '';
+        factors.forEach((f,i)=>{
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <span class="badge badge-cksp">×${roundFactor(f)}</span>
+            <span>${RAW.pretty[i]}</span>
+          `;
+          listEl.appendChild(li);
+        });
+      }
+    }
+
+    function buildChart() {
+      const el = document.getElementById('compile-times');
+      if (!el) return;
+
+      // Farben aus dem Theme
+      const css  = getComputedStyle(document.documentElement);
+      const fg   = css.getPropertyValue('--md-default-fg-color').trim() || '#222';
+      const grid = css.getPropertyValue('--md-default-fg-color--lighter').trim() || 'rgba(0,0,0,.15)';
+      const red  = '#3c3938';   // Sublime
+      const blue = '#3498db';   // CKSP
+
+      // evtl. voriges Chart zerstören (SPA Navigations)
+      if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+
+      // Reduced motion respektieren
+      const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      const animDuration = prefersReduced ? 0 : 700;
+
+      chartInstance = new Chart(el.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: RAW.labels,
+          datasets: [
+            {
+              label: 'SublimeKSP',
+              data: RAW.sublime,
+              backgroundColor: red,
+              borderSkipped: false,
+              borderRadius: 2
+            },
+            {
+              label: 'cksp v0.0.7',
+              data: RAW.cksp,
+              backgroundColor: blue,
+              borderSkipped: false,
+              borderRadius: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: animDuration, easing: 'easeOutCubic' },
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { labels: { color: fg } },
+            tooltip: {
+              callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(3)} s` }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: fg,
+                autoSkip: false,
+                maxRotation: 0,
+                minRotation: 0,
+                padding: 6,
+                font: { lineHeight: 1.1 }
+              },
+              grid:  { display: false },
+              border:{ color: grid }
+            },
+            y: {
+              type: 'linear',
+              min: 0,
+              ticks: { color: fg },
+              grid: {
+                color: (ctx) => {
+                  const v = ctx.tick.value;
+                  // 10er-Schritte ausblenden, andere leicht sichtbar lassen
+                  return (v % 10 === 0) ? 'transparent' : grid;
+                }
+              },
+              border:{ color: grid },
+              title: {
+                display: true,
+                text: 'Compile Time (seconds)',
+                color: fg,
+                font: { weight: '600', size: 14 }
+              }
+            }
+          }
+        }
+      });
+      hasAnimated = true;
+    }
+
+    // Lazy-Init erst wenn sichtbar
+    function setupLazyInit() {
+      const canvas = document.getElementById('compile-times');
+      if (!canvas) return;
+
+      // Badges können sofort (ohne Chart) gebaut werden
+      computeAndRenderBadges();
+
+      const io = new IntersectionObserver((entries, obs)=>{
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            buildChart();          // Chart erst jetzt erzeugen => Animation startet beim Eintritt
+            obs.unobserve(e.target);
+            break;
+          }
+        }
+      }, { threshold: 0.25, rootMargin: '0px 0px -10% 0px' });
+
+      io.observe(canvas);
+    }
+
+    // Initial (nach DOM)
+    setupLazyInit();
+
+    // Auf Palette-Wechsel reagieren: Nur aktualisieren, wenn Chart bereits existiert
+    const retheme = () => { if (chartInstance) buildChart(); };
+    document.addEventListener('palette-changed', retheme);
+
+    // SPA-Navigation in MkDocs Material
+    if (typeof window.document$ !== 'undefined') {
+      window.document$.subscribe(() => {
+        chartInstance && chartInstance.destroy();
+        chartInstance = null;
+        hasAnimated = false;
+        // Re-setup Lazy Init auf neuer Seite
+        setTimeout(setupLazyInit, 0);
+      });
+    }
+
+    // OS Theme Wechsel
+    const media = window.matchMedia?.('(prefers-color-scheme: dark)');
+    media && media.addEventListener('change', retheme);
+  });
+</script>
+
+  
+
+	
+                  
+  
+
+
+
+  
+  
+
+
+<!-- 
+<div class="grid cards" style="padding-bottom: 1.2rem; padding-top: 0.5rem" markdown>
+
+-   :fire:{ .lg .bottom } __A modern Syntax for KSP__ 
+
+    ---
+
+    Introducing local variables, functions and data structures in a modern syntax - delivering cleaner, more readable, and maintainable code.
+
+    [:octicons-arrow-right-24: Reference](2.%20The%20CKSP%20Syntax.md)
+
+-   :running_shoe:{ .lg .bottom } __Easy Transition from Sublime__
+
+    ---
+
+    Simplyfying migration by supporting most `Sublime KSP` features and ensuring compatibility as well as ease of integration with existing codebases.
+
+    [:octicons-arrow-right-24: Adopted Features](3.%20Adopted%20Features.md)
+
+-   :computer:{ .lg .bottom } __How to Install__
+
+    ---
+
+    Install the compiler as a build system in `Sublime Text` or wait for the upcoming `VS Code plugin`. Get started with `cksp` and streamline your workflow.
+
+    [:octicons-arrow-right-24: Installation](5.%20Installation.md)
+
+-   :sparkles:{ .lg .bottom } __Get the Latest Version__
+
+    ---
+
+    Download the latest stable release of `cksp` from the **GitHub** repository. Or stay up-to-date with the latest features and improvements with the current `alpha` release.
+
+    [:octicons-arrow-right-24: Releases](https://github.com/mathiasvatter/cksp-compiler-issues/releases/latest)
+
+-   :bug:{ .lg .bottom } __Report a Bug__
+
+    ---
+
+    If you encounter any issues or have suggestions for improvements, please report them on the **GitHub** repository. Your feedback is highly appreciated.
+
+    [:octicons-arrow-right-24: Issues](https://github.com/mathiasvatter/cksp-compiler-issues/issues)
+
+</div> -->
+
+<h1 id="what-is-this"><strong>What is this?</strong></h1>
+<!-- While it can also be used with the **vanilla KSP syntax**, it is designed to be used with the `cksp` syntax, which is a modified version of KSP with elements from lua, TypeScript and python.
+The compiler is fast taking at most a few seconds to compile big projects. The output is a standard *.txt file that can be loaded into Kontakt as usual, either through the GUI or updating the script file in the resources container. -->
+<p><img align="right" alt="CKSP Tools" src="assets/images/extension/vs-code-object.png" /></p>
+<p>This documentation serves as an introduction to the <strong>CKSP syntax</strong> and provides descriptions of basic language constructs. For the sake of completeness, the following descriptions and explanations also include constructs that already exist in <code>Vanilla KSP</code> or other iterations of <strong>KSP</strong> compilers. Notably, many syntax ideas and concepts have been adopted from <code>nojanath's</code> fork of <code>Nils Liberg's SublimeKSP plugin</code>. This fork has become a near replacement for the <code>Vanilla KSP</code> syntax, and to make the migration to CKSP as smooth as possible, most of the syntax features introduced by <code>SublimeKSP</code> have been adopted. Examples include most preprocessor functions, automatic type-casting, and <code>for-loops</code>. These features are further elaborated in the section <a href="3.%20Adopted%20Features.html">Adopted Features</a> and behave identically, while others have been extended or modified; these are detailed in the chapter dedicated to the <a href="2.%20The%20CKSP%20Syntax.html">CKSP Syntax</a>.</p>
+<p>Currently, <code>cksp</code> is under active development, just like the <strong>CKSP Tools</strong> extension for Visual Studio Code. While the extension already provides many useful features, there are still some missing functionalities that I plan to implement in the future. Since I am working on this project in my spare time, I cannot provide a specific timeline for when new features will be added or bugs will be fixed. However, I am committed to continuously improving the <code>cksp</code> project and making the compiler open-source eventually. If you have any suggestions or feature requests, please feel free to open an issue in the respective GitHub repositories.</p>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+  
+
+
+
+                
+
+  
+	<div class="cards-separator" style="padding-top: 3rem;  
+	padding-bottom: 2rem;">
+	</div>
+  
+
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+        
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+        
+          
+          <a href="2.%20The%20CKSP%20Syntax.html" class="md-footer__link md-footer__link--next" aria-label="Next: The CKSP Syntax">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                The CKSP Syntax
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024 - 2026 Mathias Vatter – <a href="#__consent">Change cookie settings</a>
+
+    </div>
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+      <div class="md-consent" data-md-component="consent" id="__consent" hidden>
+        <div class="md-consent__overlay"></div>
+        <aside class="md-consent__inner">
+          <form class="md-consent__form md-grid md-typeset" name="consent">
+            
+
+
+  
+
+
+<h4>Cookie consent</h4>
+<p>This website uses cookies to recognize your repeated visits and preferences, as well as to measure the effectiveness of the documentation and whether users find what they're searching for. With your consent, you're helping me to make this documentation better.</p>
+<input class="md-toggle" type="checkbox" id="__settings" >
+<div class="md-consent__settings">
+  <ul class="task-list">
+    
+    
+      
+    
+    
+      
+        
+  
+  
+    
+    
+  
+  <li class="task-list-item">
+    <label class="task-list-control">
+      <input type="checkbox" name="github" checked>
+      <span class="task-list-indicator"></span>
+      GitHub
+    </label>
+  </li>
+
+      
+    
+    
+  </ul>
+</div>
+<div class="md-consent__controls">
+  
+    
+      <button class="md-button md-button--primary">Accept</button>
+    
+    
+    
+  
+    
+    
+    
+      <label class="md-button" for="__settings">Manage settings</label>
+    
+  
+</div>
+          </form>
+        </aside>
+      </div>
+      <script>var consent=__md_get("__consent");if(consent)for(var input of document.forms.consent.elements)input.name&&(input.checked=consent[input.name]||!1);else"file:"!==location.protocol&&setTimeout((function(){document.querySelector("[data-md-component=consent]").hidden=!1}),250);var form=document.forms.consent;for(var action of["submit","reset"])form.addEventListener(action,(function(e){if(e.preventDefault(),"reset"===e.type)for(var n of document.forms.consent.elements)n.name&&(n.checked=!1);__md_set("__consent",Object.fromEntries(Array.from(new FormData(form).keys()).map((function(e){return[e,!0]})))),location.hash="",location.reload()}))</script>
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["content.code.copy", "content.code.select", "content.code.annotate", "navigation.instant", "navigation.instant.prefetch", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.footer", "navigation.top", "navigation.path", "toc.follow", "toc.integrate", "search.suggest", "search.share", "announce.dismiss"], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

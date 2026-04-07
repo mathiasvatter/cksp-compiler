@@ -1,0 +1,1950 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://mathiasvatter.github.io/cksp-compiler/Syntax/2.1%20Variables%20and%20Arrays.html">
+      
+      
+        <link rel="prev" href="2.0%20Language%20Structure.html">
+      
+      
+        <link rel="next" href="2.2%20Literals%20and%20Expressions.html">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/logos/logo.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Variables and Arrays - CKSP Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+  
+  
+  
+  
+  <style>:root{--md-annotation-icon:url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20d%3D%22M22%2012a10%2010%200%200%201-10%2010A10%2010%200%200%201%202%2012%2010%2010%200%200%201%2012%202a10%2010%200%200%201%2010%2010m-12%206%206-6-6-6-1.4%201.4%204.6%204.6-4.6%204.6z%22/%3E%3C/svg%3E');}</style>
+
+
+    
+    
+      
+        <script src="../assets/external/unpkg.com/iframe-worker/shim.js"></script>
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+      <link rel="stylesheet" href="../stylesheets/hero.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="cksp" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#variables-and-arrays" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../index.html" title="CKSP Documentation" class="md-header__button md-logo" aria-label="CKSP Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.82 17 13 19.28V22H6c-1.11 0-2-.89-2-2V4a2 2 0 0 1 2-2h1v7l2.5-1.5L12 9V2h6a2 2 0 0 1 2 2v8.54l-1.5-.82zM24 17l-5.5-3-5.5 3 5.5 3zm-9 2.09v2L18.5 23l3.5-1.91v-2L18.5 21z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CKSP Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Variables and Arrays
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/mathiasvatter/cksp-compiler" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    CKSP Compiler
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../index.html" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../2.%20The%20CKSP%20Syntax.html" class="md-tabs__link">
+          
+  
+  
+  Syntax
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../3.%20Adopted%20Features.html" class="md-tabs__link">
+          
+  
+  
+  Adopted Features
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../6.%20VS%20Code%20Extension.html" class="md-tabs__link">
+          
+  
+  
+  VS Code Extension
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../5.%20Installation.html" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Installation
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+  
+        
+      
+	
+
+	<script>
+(function () {
+  let onScroll = null, onResize = null, onKeydown = null, mo = null;
+
+  function applySearchHint() {
+    const inputs = document.querySelectorAll('.md-search__input');
+    if (!inputs.length) return;
+    inputs.forEach((input) => {
+      const original = input.dataset.placeholderBase || input.getAttribute('placeholder') || 'Search';
+      input.dataset.placeholderBase = original;
+      input.setAttribute('placeholder', `${original} (Press F)`);
+      input.setAttribute('aria-label', `${original}. Press F to search`);
+    });
+  }
+
+  function openSearch() {
+    const toggle = document.getElementById('__search');
+    if (toggle && toggle.type === 'checkbox') toggle.checked = true;
+    const input = document.querySelector('.md-search__input');
+    if (input) {
+      input.focus();
+      input.select();
+    }
+  }
+
+  function shouldIgnoreShortcutTarget(target) {
+    if (!target) return false;
+    const tag = (target.tagName || '').toLowerCase();
+    return (
+      tag === 'input' ||
+      tag === 'textarea' ||
+      tag === 'select' ||
+      target.isContentEditable
+    );
+  }
+
+  function getOffset() {
+	const css   = getComputedStyle(document.documentElement);
+	const varPx = parseFloat(css.getPropertyValue('--hero-offset').trim());
+	if (!Number.isNaN(varPx) && varPx > 0) return varPx;
+
+	const header = document.querySelector('.md-header');
+	const tabs   = document.querySelector('.md-tabs');
+	const h = header ? header.getBoundingClientRect().height : 0;
+	const t = (tabs && getComputedStyle(tabs).display !== 'none') ? tabs.getBoundingClientRect().height : 0;
+	return h + t;
+  }
+
+  function updateHero() {
+	const root = document.documentElement;
+	const hero = document.querySelector('.hero-section');
+
+	// Pages without hero: ensure normal header state
+	if (!hero) {
+	  root.classList.remove('home-with-hero', 'over-hero');
+	  root.style.removeProperty('--hero-header-opacity');
+	  return;
+	}
+
+	root.classList.add('home-with-hero');
+
+	// Transparent while we are "over" the hero (before passing its bottom minus header/tabs)
+	const offset = getOffset();
+	const heroHeight = hero.offsetHeight || 0;
+	const limit  = Math.max(0, heroHeight - offset);    // scroll threshold
+	const isOver = window.scrollY < (limit - 1);        // tolerance
+	root.classList.toggle('over-hero', isOver);
+
+
+	// Smoothly fade the header background in before leaving the hero
+	const css = getComputedStyle(root);
+	let fadeFactor = parseFloat(css.getPropertyValue('--hero-header-fade-factor').trim());
+	// if (Number.isNaN(fadeFactor)) fadeFactor = 0.1;
+	fadeFactor = Math.min(Math.max(fadeFactor, 0), 0.95);
+	let fadeBuffer = parseFloat(css.getPropertyValue('--hero-header-fade-buffer').trim());
+	// if (Number.isNaN(fadeBuffer)) fadeBuffer = 0.35;
+	fadeBuffer = Math.min(Math.max(fadeBuffer, 0), 0.95);
+	const fadeEndBuffer = Math.max(12, offset * 0.1, heroHeight * fadeBuffer);
+	const fadeEnd = Math.max(0, limit - fadeEndBuffer);
+	const fadeStart = fadeEnd * fadeFactor;
+	const fadeWindow = Math.max(1, fadeEnd - fadeStart);
+	let headerOpacity = 1;
+
+	if (isOver) {
+	  if (fadeEnd <= 0 || window.scrollY <= fadeStart) {
+		headerOpacity = 0;
+	  } else if (window.scrollY >= fadeEnd) {
+		headerOpacity = 1;
+	  } else {
+		const progress = (window.scrollY - fadeStart) / fadeWindow;
+		headerOpacity = Math.min(1, Math.max(0, progress));
+	  }
+	}
+
+
+	root.style.setProperty('--hero-header-opacity', headerOpacity.toFixed(3));
+
+	// Optional: parallax / content fade
+	const content = hero.querySelector('.hero-content');
+	const vh = window.innerHeight;
+	const progress = Math.min(1, Math.max(0, window.scrollY / vh));
+	// hero.style.backgroundPositionY = `${progress * 40}%`;
+	// hero.style.setProperty('--hero-parallax', String(progress));
+	// Parallax: move the hero image slower than the page
+	const img = hero.querySelector('.hero-bg img');
+	if (img) {
+		// How far the hero's top edge is from the viewport top
+		const rect = hero.getBoundingClientRect();
+		// 0.25 = 25% of scroll speed => adjust to taste (0.15 … 0.35)
+		const offsetPx = rect.top * 0.21;
+		hero.style.setProperty('--hero-translate', `${offsetPx}px`);
+	}
+
+
+	if (content) {
+	  content.style.setProperty('--content-opacity', Math.max(0, 1 - progress * 2.5));
+	  content.style.setProperty('--content-shift', `${progress * 80}px`);
+	}
+	hero.style.setProperty('--fade-opacity', progress);
+  }
+
+  function attachListeners() {
+	detachListeners();
+	onScroll = () => updateHero();
+	onResize = () => updateHero();
+	onKeydown = (event) => {
+	  if (event.defaultPrevented) return;
+	  if (event.ctrlKey || event.metaKey || event.altKey) return;
+	  if (event.key !== 'f' && event.key !== 'F') return;
+	  if (shouldIgnoreShortcutTarget(event.target)) return;
+	  event.preventDefault();
+	  openSearch();
+	};
+	window.addEventListener('scroll', onScroll, { passive: true });
+	window.addEventListener('resize', onResize);
+	window.addEventListener('keydown', onKeydown);
+  }
+
+  function detachListeners() {
+	if (onScroll) window.removeEventListener('scroll', onScroll);
+	if (onResize) window.removeEventListener('resize', onResize);
+	if (onKeydown) window.removeEventListener('keydown', onKeydown);
+	onScroll = onResize = onKeydown = null;
+  }
+
+  function hardResetIfNoHero() {
+	if (!document.querySelector('.hero-section')) {
+	  const docEl = document.documentElement;
+	  docEl.classList.remove('home-with-hero', 'over-hero');
+	  docEl.style.removeProperty('--hero-header-opacity');
+	  const tabs = document.querySelector('.md-tabs');
+	  if (tabs) tabs.classList.remove('md-tabs--lifted');
+	}
+  }
+
+  function init() {
+	attachListeners();
+	applySearchHint();
+	// Run immediately and once more after layout settles
+	updateHero();
+	requestAnimationFrame(() => {
+	  updateHero();
+	  applySearchHint();
+	});
+  }
+
+  // ---- Initial load
+  hardResetIfNoHero();
+  init();
+
+  // ---- SPA navigation (Material for MkDocs)
+  if (typeof window.document$ !== 'undefined') {
+	window.document$.subscribe(() => {
+	  detachListeners();
+	  document.documentElement.classList.remove('home-with-hero', 'over-hero');
+	  document.documentElement.style.removeProperty('--hero-header-opacity');
+	  const tabs = document.querySelector('.md-tabs');
+	  if (tabs) tabs.classList.remove('md-tabs--lifted');
+	  init();
+	});
+  }
+
+  // ---- Optional: keep in sync if content mutates
+  const main = document.querySelector('main.md-main');
+  if (main && 'MutationObserver' in window) {
+	mo = new MutationObserver(() => requestAnimationFrame(updateHero));
+	mo.observe(main, { childList: true, subtree: true });
+  }
+
+
+})();
+</script>
+
+
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../index.html" title="CKSP Documentation" class="md-nav__button md-logo" aria-label="CKSP Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8.82 17 13 19.28V22H6c-1.11 0-2-.89-2-2V4a2 2 0 0 1 2-2h1v7l2.5-1.5L12 9V2h6a2 2 0 0 1 2 2v8.54l-1.5-.82zM24 17l-5.5-3-5.5 3 5.5 3zm-9 2.09v2L18.5 23l3.5-1.91v-2L18.5 21z"/></svg>
+
+    </a>
+    CKSP Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/mathiasvatter/cksp-compiler" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    CKSP Compiler
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Syntax
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Syntax
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../2.%20The%20CKSP%20Syntax.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The CKSP Syntax
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.0%20Language%20Structure.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Language Structure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Variables and Arrays
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="2.1%20Variables%20and%20Arrays.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Variables and Arrays
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Variables
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Variables">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#naming-conventions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Naming Conventions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arrays" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Arrays
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Arrays">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#naming-and-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Naming and Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#referencing-array-elements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Referencing Array Elements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getting-the-size-of-an-array" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting the Size of an Array
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multidimensional-arrays" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multidimensional Arrays
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Multidimensional Arrays">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#referencing-ndarray-elements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Referencing NDArray Elements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wildcard-notation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wildcard Notation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#getting-the-size-of-a-specific-dimension" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting the Size of a Specific Dimension
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#searching-and-sorting-multidimensional-arrays" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Searching and Sorting Multidimensional Arrays
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.2%20Literals%20and%20Expressions.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Literals and Expressions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.3%20Declarations.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Declarations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.4%20Assignments.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Assignments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.5%20Lexical%20Scope.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lexical Scope
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.6%20Functions.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Functions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.7%20Loops.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loops
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.8%20Control%20Flow.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Control Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.9%20Custom%20Data%20Structures.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Data Structures
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.10%20Import%20Statements.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Import Statements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.11%20Namespaces.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Namespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="2.12%20Pragma%20Directives.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pragma Directives
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adopted Features
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Adopted Features
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../3.%20Adopted%20Features.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adopted Features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4.%20Planned%20Features.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Planned Features
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code Extension
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    VS Code Extension
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../6.%20VS%20Code%20Extension.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CKSP Tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5.%20Installation.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../index.html" class="md-path__link">
+        
+  <span class="md-ellipsis">
+    Home
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../2.%20The%20CKSP%20Syntax.html" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Syntax
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+  
+
+	
+                  
+
+
+  
+  
+
+
+<h1 id="variables-and-arrays">Variables and Arrays</h1>
+<h2 id="variables">Variables</h2>
+<p>Variables are placeholders for data values of a specific type. They allow you to store, access, and manipulate data throughout your script. Variables can hold values of five basic types: integers (<code>int</code>), real numbers (<code>real</code>), strings (<code>string</code>), booleans (<code>bool</code>), and objects (more on this <a href="2.9%20Custom%20Data%20Structures.html">here</a>). Their types influence the operations and functions they can interact with.</p>
+<p>Variables can contain both alphabetic (<code>a-z</code>, <code>A-Z</code>) and numeric (<code>0-9</code>) characters, as well as underscores (<code>_</code>) and dots (<code>.</code>). Additionally, they are <strong>case-sensitive</strong>, meaning <code>var1</code> and <code>Var1</code> are two different variables. This differs from <code>sKSP</code> and <code>vanilla KSP</code>, where variable names are case-insensitive.
+The following features also apply, with slight modifications, to arrays and multidimensional arrays.</p>
+<div class="grid cards">
+<ul>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.33 12.91c.09 1.55-.62 3.04-1.89 3.95l.77 1.49c.23.45.26.98.06 1.45-.19.47-.58.84-1.06 1l-.79.25a1.687 1.687 0 0 1-1.86-.55L14.44 18c-.89-.15-1.73-.53-2.44-1.1-.5.15-1 .23-1.5.23-.88 0-1.76-.27-2.5-.79-.53.16-1.07.23-1.62.22-.79.01-1.57-.15-2.3-.45a4.1 4.1 0 0 1-2.43-3.61c-.08-.72.04-1.45.35-2.11-.29-.75-.32-1.57-.07-2.33C2.3 7.11 3 6.32 3.87 5.82c.58-1.69 2.21-2.82 4-2.7 1.6-1.5 4.05-1.66 5.83-.37.42-.11.86-.17 1.3-.17 1.36-.03 2.65.57 3.5 1.64 2.04.53 3.5 2.35 3.58 4.47.05 1.11-.25 2.2-.86 3.13.07.36.11.72.11 1.09m-5-1.41c.57.07 1.02.5 1.02 1.07a1 1 0 0 1-1 1h-.63c-.32.9-.88 1.69-1.62 2.29.25.09.51.14.77.21 5.13-.07 4.53-3.2 4.53-3.25a2.59 2.59 0 0 0-2.69-2.49 1 1 0 0 1-1-1 1 1 0 0 1 1-1c1.23.03 2.41.49 3.33 1.3.05-.29.08-.59.08-.89-.06-1.24-.62-2.32-2.87-2.53-1.25-2.96-4.4-1.32-4.4-.4-.03.23.21.72.25.75a1 1 0 0 1 1 1c0 .55-.45 1-1 1-.53-.02-1.03-.22-1.43-.56-.48.31-1.03.5-1.6.56-.57.05-1.04-.35-1.07-.9a.97.97 0 0 1 .88-1.1c.16-.02.94-.14.94-.77 0-.66.25-1.29.68-1.79-.92-.25-1.91.08-2.91 1.29C6.75 5 6 5.25 5.45 7.2 4.5 7.67 4 8 3.78 9c1.08-.22 2.19-.13 3.22.25.5.19.78.75.59 1.29-.19.52-.77.78-1.29.59-.73-.32-1.55-.34-2.3-.06-.32.27-.32.83-.32 1.27 0 .74.37 1.43 1 1.83.53.27 1.12.41 1.71.4q-.225-.39-.39-.81a1.038 1.038 0 0 1 1.96-.68c.4 1.14 1.42 1.92 2.62 2.05 1.37-.07 2.59-.88 3.19-2.13.23-1.38 1.34-1.5 2.56-1.5m2 7.47-.62-1.3-.71.16 1 1.25zm-4.65-8.61a1 1 0 0 0-.91-1.03c-.71-.04-1.4.2-1.93.67-.57.58-.87 1.38-.84 2.19a1 1 0 0 0 1 1c.57 0 1-.45 1-1 0-.27.07-.54.23-.76.12-.1.27-.15.43-.15.55.03 1.02-.38 1.02-.92"/></svg></span> <strong>Dynamic Type Inference</strong></p>
+<hr />
+<p>While variables can have explicit type annotations, <code>cksp</code> allows the type to be inferred by the compiler.<br />
+Type annotations can only be used in declarations and function parameters, not in assignments or function calls.</p>
+<p><a href="2.3%20Declarations.html#declarations-and-variables"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span> Declarations and Variables</a></p>
+</li>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 4c2.1 0 4.1.8 5.6 2.3 3.1 3.1 3.1 8.2 0 11.3-1.8 1.9-4.3 2.6-6.7 2.3l.5-2c1.7.2 3.5-.4 4.8-1.7 2.3-2.3 2.3-6.1 0-8.5C15.1 6.6 13.5 6 12 6v4.6l-5-5 5-5zM6.3 17.6C3.7 15 3.3 11 5.1 7.9l1.5 1.5c-1.1 2.2-.7 5 1.2 6.8q.75.75 1.8 1.2l-.6 2q-1.5-.6-2.7-1.8"/></svg></span> <strong>Type-Neutral Initialization</strong></p>
+<hr />
+<p>Variables are always initialized with their type's neutral value if no initial value is provided.<br />
+Default values: <code>0</code> for integers, <code>0.0</code> for reals, <code>""</code> for strings. This is also true for local variables.</p>
+<p><a href="2.3%20Declarations.html#type-annotations"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span> Type-Neutral Declarations</a></p>
+</li>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12 18.54 7.37-5.74L21 14.07l-9 7-9-7 1.62-1.26zM12 16 3 9l9-7 9 7zm0-11.47L6.26 9 12 13.47 17.74 9z"/></svg></span> <strong>Local Scope</strong></p>
+<hr />
+<p>Variables can be declared independently of callbacks in any scope and are only valid within the scope in which they are declared.</p>
+<p><a href="2.5%20Lexical%20Scope.html"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span> Scoped Variables</a></p>
+</li>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 1-2-2c0-1.11.89-2 2-2a2 2 0 0 1 2 2 2 2 0 0 1-2 2m6 3V10H6v10zm0-12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10c0-1.11.89-2 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg></span> <strong>Constants</strong></p>
+<hr />
+<p>Variables are mutable by default but can be declared <code>const</code> to make them immutable after initialization.</p>
+<p><a href="2.3%20Declarations.html#constant-variables"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span> Constant Variables</a></p>
+</li>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m10 17-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9m-6-8L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z"/></svg></span> <strong>Thread Safety</strong></p>
+<hr />
+<p>Local variables are thread-safe and isolated to their scope.<br />
+Global variables can cause race conditions in asynchronous callbacks.</p>
+<p><a href="2.5%20Lexical%20Scope.html#thread-safety"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span> Lexical Scope</a></p>
+</li>
+</ul>
+</div>
+<h3 id="naming-conventions">Naming Conventions</h3>
+<p>Since the compiler internally works with certain internal variables and, for example, converts multidimensional arrays into raw arrays, variable names should generally not begin with an underscore.
+Variables like those listed below are therefore not recommended.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Recommended</label><label for="__tabbed_1_2">Not Recommended</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1">1</a></span>
+<span class="normal"><a href="#__codelineno-0-2">2</a></span>
+<span class="normal"><a href="#__codelineno-0-3">3</a></span>
+<span class="normal"><a href="#__codelineno-0-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1"></a><span class="nv">my_variable</span>: <span class="kt">int</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2"></a><span class="nv">var_1</span>: <span class="kt">real</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="nv">my_string</span>: <span class="kt">string</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4"></a><span class="nv">my_truth</span>: <span class="kt">bool</span>
+</span></code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-1-1">1</a></span>
+<span class="normal"><a href="#__codelineno-1-2">2</a></span>
+<span class="normal"><a href="#__codelineno-1-3">3</a></span>
+<span class="normal"><a href="#__codelineno-1-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1"></a><span class="nv">_my_variable</span>: <span class="kt">int</span><span class="w"> </span><span class="c1">// Underscore at the beginning</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2"></a><span class="nv">_var_1</span>: <span class="kt">real</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3"></a><span class="nv">_my_string</span>: <span class="kt">string</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4"></a><span class="nv">_my_truth</span>: <span class="kt">bool</span>
+</span></code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<div class="admonition info">
+<p class="admonition-title">Dots in Variable Names</p>
+<p>Since CKSP also supports the definition of custom data structures and access to their members via dot notation, it is recommended to avoid using dots in variable names for better code readability whenever possible.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Reserved Prefixes</p>
+<p>Additionally, there are some reserved prefixes used internally by <code>Kontakt</code> for internal variables. These are:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>$NI_
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>$CONTROL_PAR_
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>$EVENT_PAR_
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>$ENGINE_PAR_
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>$ZONE_PAR_
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>$LOOP_PAR_
+</span></code></pre></div></p>
+</div>
+<hr />
+<h2 id="arrays">Arrays</h2>
+<p>Arrays are data structures that group multiple elements of the same type into a single entity. This allows for efficient storage and manipulation of sequences of data, such as lists of numbers or strings. Therefore, arrays must always have a fixed size, which is specified at the time of declaration. This size can be defined either by an integer literal or a constant and is indicated in square brackets following the array name during declaration.</p>
+<div class="grid cards">
+<ul>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 17a2 2 0 0 1-2-2c0-1.11.89-2 2-2a2 2 0 0 1 2 2 2 2 0 0 1-2 2m6 3V10H6v10zm0-12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10c0-1.11.89-2 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg></span> <strong>Fixed Size</strong></p>
+<hr />
+<p>The size of an array is determined at declaration and cannot be changed later.<br />
+Maximum size: <strong>1,000,000</strong> elements.</p>
+<p><a href="2.3%20Declarations.html#declarations-and-arrays"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span> Array Declarations</a></p>
+</li>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 4h4v4H3zm6 1v2h12V5zm-6 5h4v4H3zm6 1v2h12v-2zm-6 5h4v4H3zm6 1v2h12v-2z"/></svg></span> <strong>Bulk Initialization</strong></p>
+<hr />
+<p>Arrays support operations across all elements, such as initialization with the same value or assignment from lists.</p>
+<p><a href="2.4%20Assignments.html#assignments-and-arrays"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span> Array Assignments</a></p>
+</li>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm-8 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zm0 2h2v6h-2z"/></svg></span> <strong>Zero-Based Indexing</strong></p>
+<hr />
+<p>All arrays in <code>cksp</code> are zero-based.<br />
+The first element has index <code>0</code>, the last has index <code class="language-cksp highlight"><span class="nf">num_elements</span><span class="p">(</span><span class="o">&lt;</span><span class="nv">array</span><span class="o">&gt;</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span></code>.</p>
+<p><a href="#referencing-array-elements"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span> Referencing Array Elements</a></p>
+</li>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 21H8V7h11m0-2H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2m-3-4H4a2 2 0 0 0-2 2v14h2V3h12z"/></svg></span> <strong>Copy Semantics</strong></p>
+<hr />
+<p>Assignments between arrays copy all elements.<br />
+Arrays are not reference types; each assignment creates an independent copy.</p>
+<p><a href="2.4%20Assignments.html"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span> Array Assignments</a></p>
+</li>
+</ul>
+</div>
+<h3 id="naming-and-types">Naming and Types</h3>
+<p>The naming rules for arrays are the same as those for variables.</p>
+<p>Arrays can be declared for any of the aforementioned three basic types. All elements of an array must be of the same type. The type annotations for arrays differ from those for variables in that arrays are composite types. This is indicated by appending <code>[]</code> to the base type.</p>
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-3-1">1</a></span>
+<span class="normal"><a href="#__codelineno-3-2">2</a></span>
+<span class="normal"><a href="#__codelineno-3-3">3</a></span>
+<span class="normal"><a href="#__codelineno-3-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1"></a><span class="nv">my_array</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span>: <span class="kt">int</span><span class="p">[]</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2"></a><span class="nv">arr_1</span><span class="p">[</span><span class="mi">11</span><span class="p">]</span>: <span class="kt">real</span><span class="p">[]</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3"></a><span class="nv">myarray</span><span class="p">[</span><span class="mi">34</span><span class="p">]</span>: <span class="kt">string</span><span class="p">[]</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4"></a><span class="nv">my_truths</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>: <span class="kt">bool</span><span class="p">[]</span>
+</span></code></pre></div></td></tr></table></div>
+<div class="admonition info">
+<p class="admonition-title">Maximum Array Size</p>
+<p>The maximum array size is limited by <code>KSP</code> and, as of <code>Kontakt 7.10.0</code>, is <strong>1000000</strong> elements.</p>
+</div>
+<h3 id="referencing-array-elements">Referencing Array Elements</h3>
+<p>To access individual indices, use the array name followed by square brackets containing the index. The index starts at <code>0</code> and ends at the size of the array minus <code>1</code>. For example, to access the third element of the previously declared array <code>my_array</code> with a size of <code>10</code>, use the following code:</p>
+<div class="language-cksp highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nv">my_array</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="w">  </span><span class="c1">// Accesses the third element of the array</span>
+</span></code></pre></div>
+<h3 id="getting-the-size-of-an-array">Getting the Size of an Array</h3>
+<p>To determine the size of an array at runtime, you can use the <code>num_elements()</code> function. This function returns the number of elements in the array. The array is passed as a reference without square brackets.</p>
+<div class="language-cksp highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nf">num_elements</span><span class="p">(</span><span class="nv">my_array</span><span class="p">)</span><span class="w">  </span><span class="c1">// Outputs the size of the array</span>
+</span></code></pre></div>
+<hr />
+<h2 id="multidimensional-arrays">Multidimensional Arrays</h2>
+<p>Multidimensional arrays (NDArrays) extend the concept of arrays to two or more dimensions, allowing for the representation of matrices, grids, or higher-dimensional data structures. These arrays are especially useful for organizing complex datasets.</p>
+<div class="grid cards">
+<ul>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 4v4h4V4zm6 0v4h4V4zm0 6v4h4v-4zm0 6v4h4v-4zm-2 4v-4h-4v4zm-6 0v-4H4v4zm0-6v-4H4v4zm0-6V4H4v4zm2 6h4v-4h-4zM4 2h16a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H4c-1.08 0-2-.9-2-2V4a2 2 0 0 1 2-2"/></svg></span> <strong>Multiple Dimensions</strong></p>
+<hr />
+<p>NDArray declarations allow arbitrary dimensions. Each dimension is specified explicitly, and indexing starts at <code>0</code>.</p>
+<p><a href="#multidimensional-arrays"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span> Multidimensional Array Declarations</a></p>
+</li>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 5h3v2h-3v3h-2V7h-3V5h3V2h2zm-2 14v-6h2v8H3V5h8v2H5v12z"/></svg></span> <strong>Internal Flattening</strong></p>
+<hr />
+<p>Internally, NDArrays are lowered into one-dimensional KSP arrays. <code>cksp</code> automatically calculates indices, so <code>a[i,j]</code> maps to the correct flat position.</p>
+<!-- <a href="#maximum-size-of-multidimensional-arrays">klzzwxh:0138 Internal Representation</a> -->
+</li>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13h-6.6l4.7 4.7-1.4 1.4-4.7-4.7V21h-2v-6.7L6.3 19l-1.4-1.4L9.4 13H3v-2h6.6L4.9 6.3l1.4-1.4L11 9.6V3h2v6.4l4.6-4.6L19 6.3 14.3 11H21z"/></svg></span> <strong>Wildcard Notation</strong></p>
+<hr />
+<p>Wildcards (<code>*</code>) allow fast access to entire dimensions and are compatible with built-in functions like <code>search</code> and <code>sort</code>.</p>
+<p><a href="#wildcard-notation"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span> Wildcard Notation</a></p>
+</li>
+<li>
+<p><span class="twemoji lg bottom"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2m0 2v12h7V6zm16 12V6h-1.24c.24.54.19 1.07.19 1.13-.07.67-.54 1.37-.71 1.62l-2.33 2.55 3.32-.02.01 1.22-5.2-.03-.04-1s3.05-3.23 3.2-3.52c.14-.28.71-1.95-.7-1.95-1.23.05-1.09 1.3-1.09 1.3l-1.54.01s.01-.66.38-1.31H13v12h2.58l-.01-.86.97-.01s.91-.16.92-1.05c.04-1-.81-1-.96-1-.13 0-1.07.05-1.07.87h-1.52s.04-2.06 2.59-2.06c2.6 0 2.46 2.02 2.46 2.02s.04 1.25-1.11 1.72l.52.37zM8.92 16h-1.5v-5.8l-1.8.56V9.53l3.14-1.12h.16z"/></svg></span> <strong>Dimension-Aware Size Retrieval</strong></p>
+<hr />
+<p>The <code class="language-cksp highlight"><span class="nf">num_elements</span><span class="p">()</span></code> function returns either the full flattened size or the size of a specific dimension.<br />
+Wildcards can also be used for size queries.</p>
+<p><a href="#getting-the-size-of-a-specific-dimension"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg></span> Getting the Size of a Specific Dimension</a></p>
+</li>
+</ul>
+</div>
+<p>The size of each dimension is specified by comma-separated constants or integer literals within the brackets during the declaration. In the optional type annotation, the number of opening and closing brackets represents the number of dimensions. As with one-dimensional arrays, multidimensional arrays can be declared for any of the basic types.</p>
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-6-1">1</a></span>
+<span class="normal"><a href="#__codelineno-6-2">2</a></span>
+<span class="normal"><a href="#__codelineno-6-3">3</a></span>
+<span class="normal"><a href="#__codelineno-6-4">4</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1"></a><span class="nv">my_ndarray</span><span class="p">[</span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">20</span><span class="p">]</span>: <span class="kt">int</span><span class="p">[][]</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2"></a><span class="nv">ndarr_1</span><span class="p">[</span><span class="mi">11</span><span class="p">,</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span><span class="w"> </span><span class="mi">13</span><span class="p">]</span>: <span class="kt">real</span><span class="p">[][][]</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3"></a><span class="nv">myndarray</span><span class="p">[</span><span class="mi">34</span><span class="p">,</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span><span class="w"> </span><span class="mi">56</span><span class="p">]</span>: <span class="kt">string</span><span class="p">[][][]</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4"></a><span class="nv">my_many_truths</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">6</span><span class="p">]</span>: <span class="kt">bool</span><span class="p">[][][][]</span>
+</span></code></pre></div></td></tr></table></div>
+<div class="admonition info">
+<p class="admonition-title">Maximum Size of Multidimensional Arrays</p>
+<p>Due to the limitation of <code>KSP</code> regarding the maximum array size and the internal representation of multidimensional arrays in <code>CKSP</code> as <code>Vanilla KSP Arrays</code>, the previously explained size restriction also applies to multidimensional arrays. The <em>multiplication of the sizes of the individual dimensions</em> must not exceed <strong>1000000</strong> elements.</p>
+</div>
+<h3 id="referencing-ndarray-elements">Referencing NDArray Elements</h3>
+<p>Referencing elements in multidimensional arrays is done by specifying the indices in square brackets, with the indices separated by commas. The index for each dimension starts at <code>0</code> and ends at the size of the dimension minus <code>1</code>. For example, to access the element in the third row and the fourth column of the previously declared NDArray <code>my_ndarray</code>, use the following code:</p>
+<div class="language-cksp highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nv">my_ndarray</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">]</span><span class="w">  </span><span class="c1">// Accesses the element in the third row and fourth column</span>
+</span></code></pre></div>
+<h3 id="wildcard-notation">Wildcard Notation</h3>
+<p><a href="#" title="Minimum CKSP Version" class="mdx-badge-link"><span class="mdx-badge mdx-badge--version"><span class="mdx-badge__icon"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"/></svg></span></span><span class="mdx-badge__text">0.0.7</span></span></a></p>
+<p>In the context of arrays, CKSP introduces a wildcard notation that allows you to access elements of specific dimensions quickly. Instead of an index, a <code>*</code> is used to access all elements of that dimension.</p>
+<div class="language-cksp highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nv">my_ndarray</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="p">]</span><span class="w">  </span><span class="c1">// Accesses all elements in the third row (1) </span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="nv">my_ndarray</span><span class="p">[</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="p">]</span><span class="w">  </span><span class="c1">// Accesses all elements in the entire array (2)</span>
+</span></code></pre></div>
+<ol>
+<li><img alt="🙋‍♂️" class="twemoji" src="../assets/external/cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f64b-200d-2642-fe0f.svg" title=":man_raising_hand:"> Here, the type of this multidimensional array temporarily becomes a one-dimensional array (<code>int[]</code>).</li>
+<li><img alt="🙋‍♂️" class="twemoji" src="../assets/external/cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/1f64b-200d-2642-fe0f.svg" title=":man_raising_hand:"> This notation is identical to <code>my_ndarray</code> without brackets.</li>
+</ol>
+<p>The wildcard notation can be used in various contexts, including copying individual dimensions from another array (<a href="2.4%20Assignments.html#assignments-and-multidimensional-arrays">Array Declarations</a>), searching within a specific dimension, or sorting certain parts of a multidimensional array (<a href="#searching-and-sorting-multidimensional-arrays">Searching and Sorting</a>).</p>
+<h3 id="getting-the-size-of-a-specific-dimension">Getting the Size of a Specific Dimension</h3>
+<p>To determine the size of a specific dimension or the total number of elements of an NDArray at runtime, you can also use the <code>num_elements()</code> function. The function can take two arguments in the case of multidimensional arrays: the array itself and the number of the dimension for which the size is to be determined. If no integer or <code>0</code> is specified, the total number of elements of the internal one-dimensional KSP array is returned.</p>
+<p>Another notation option to determine the size of individual dimensions is the wildcard notation, where the desired dimension is replaced by a <code>*</code>. Both variants are shown below.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">With Dimension Parameter</label><label for="__tabbed_2_2">With Wildcard Notation</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-9-1">1</a></span>
+<span class="normal"><a href="#__codelineno-9-2">2</a></span>
+<span class="normal"><a href="#__codelineno-9-3">3</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1"></a><span class="nf">num_elements</span><span class="p">(</span><span class="nv">my_ndarray</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w">  </span><span class="c1">// Outputs the number of rows (10)</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2"></a><span class="nf">num_elements</span><span class="p">(</span><span class="nv">my_ndarray</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w">  </span><span class="c1">// Outputs the number of columns (20)</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3"></a><span class="nf">num_elements</span><span class="p">(</span><span class="nv">my_ndarray</span><span class="p">)</span><span class="w">     </span><span class="c1">// Outputs total number of elements (10*20 in this case)</span>
+</span></code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-10-1">1</a></span>
+<span class="normal"><a href="#__codelineno-10-2">2</a></span>
+<span class="normal"><a href="#__codelineno-10-3">3</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1"></a><span class="nf">num_elements</span><span class="p">(</span><span class="nv">my_ndarray</span><span class="p">[</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">])</span><span class="w">  </span><span class="c1">// Outputs the number of rows (10)</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2"></a><span class="nf">num_elements</span><span class="p">(</span><span class="nv">my_ndarray</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="p">])</span><span class="w">  </span><span class="c1">// Outputs the number of columns (20)</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3"></a><span class="nf">num_elements</span><span class="p">(</span><span class="nv">my_ndarray</span><span class="p">[</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="p">])</span><span class="w">  </span><span class="c1">// Outputs total number of elements (10*20 in this case)</span>
+</span></code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Dimension Parameter out of bounds</p>
+<p>If the specified parameter for the dimension is greater than the number of dimensions of the multidimensional array, the size of the last dimension is returned without an error being issued. This behavior can occur, for example, when using variables as the second parameter.</p>
+</div>
+<h3 id="searching-and-sorting-multidimensional-arrays">Searching and Sorting Multidimensional Arrays</h3>
+<p><a href="#" title="Minimum CKSP Version" class="mdx-badge-link"><span class="mdx-badge mdx-badge--version"><span class="mdx-badge__icon"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42M13 20l-9-9V4h7l9 9M6.5 5A1.5 1.5 0 1 1 5 6.5 1.5 1.5 0 0 1 6.5 5"/></svg></span></span><span class="mdx-badge__text">0.0.7</span></span></a>
+<a href="#" title="Required Kontakt version" class="mdx-badge-link"><span class="mdx-badge mdx-badge--kontakt"><span class="mdx-badge__icon"><span class="twemoji"><?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff;
+      }
+    </style>
+  </defs>
+  <g id="Layer_1-2" data-name="Layer 1-2">
+    <path class="cls-1" d="M31.54,11.21l-16.94,4.7,16.93,3.98v4.15l-16.91-3.67v3.66h-4.49V6.97h4.45v4.2c3.87-.99,13.17-3.36,16.96-4.25v4.29Z"/>
+  </g>
+</svg></span></span><span class="mdx-badge__text">7.3</span></span></a></p>
+<p>For the array-specific functions <code>search</code> and <code>sort</code>, CKSP offers a specialized syntax using wildcard notation to apply these functions to multidimensional arrays. The wildcards <code>*</code> indicate that the function should be applied to all elements of the corresponding dimension.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Concerning <code>search</code></label><label for="__tabbed_3_2">Concerning <code>sort</code></label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-11-1">1</a></span>
+<span class="normal"><a href="#__codelineno-11-2">2</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1"></a><span class="w">  </span><span class="nf">search</span><span class="p">(</span><span class="nv">my_ndarray</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="p">],</span><span class="w"> </span><span class="mi">5</span><span class="p">)</span><span class="w">  </span><span class="c1">// Searches for the value 5 in the third row</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2"></a><span class="w">  </span><span class="nf">search</span><span class="p">(</span><span class="nv">ndarr_1</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="p">],</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w">  </span><span class="c1">// Searches the second and third dimension for the value 1</span>
+</span></code></pre></div></td></tr></table></div>
+</div>
+<div class="tabbed-block">
+<div class="language-cksp highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-12-1">1</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1"></a><span class="w">  </span><span class="nf">sort</span><span class="p">(</span><span class="nv">my_ndarray</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="p">],</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">    </span><span class="c1">// Sorts the fourth row in ascending order</span>
+</span></code></pre></div></td></tr></table></div>
+</div>
+</div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Limitations of Wildcard Notation in Built-in Functions</p>
+<p>Wildcards are only allowed in certain indices and specific order. Wildcards must always be at the end of the index list and cannot be in the middle or at the beginning. Once multiple wildcards are used, they must be directly next to each other and cannot have a number or other character in between.
+For example, <code>my_ndarray[*, 2]</code> is not allowed, as well as <code>ndarr_1[*, 2, *]</code> or <code>my_ndarray[*, 2, 3]</code>.</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+
+  
+
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="2.0%20Language%20Structure.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Language Structure">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Language Structure
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="2.2%20Literals%20and%20Expressions.html" class="md-footer__link md-footer__link--next" aria-label="Next: Literals and Expressions">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Literals and Expressions
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024 - 2026 Mathias Vatter – <a href="#__consent">Change cookie settings</a>
+
+    </div>
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+      <div class="md-consent" data-md-component="consent" id="__consent" hidden>
+        <div class="md-consent__overlay"></div>
+        <aside class="md-consent__inner">
+          <form class="md-consent__form md-grid md-typeset" name="consent">
+            
+
+
+  
+
+
+<h4>Cookie consent</h4>
+<p>This website uses cookies to recognize your repeated visits and preferences, as well as to measure the effectiveness of the documentation and whether users find what they're searching for. With your consent, you're helping me to make this documentation better.</p>
+<input class="md-toggle" type="checkbox" id="__settings" >
+<div class="md-consent__settings">
+  <ul class="task-list">
+    
+    
+      
+    
+    
+      
+        
+  
+  
+    
+    
+  
+  <li class="task-list-item">
+    <label class="task-list-control">
+      <input type="checkbox" name="github" checked>
+      <span class="task-list-indicator"></span>
+      GitHub
+    </label>
+  </li>
+
+      
+    
+    
+  </ul>
+</div>
+<div class="md-consent__controls">
+  
+    
+      <button class="md-button md-button--primary">Accept</button>
+    
+    
+    
+  
+    
+    
+    
+      <label class="md-button" for="__settings">Manage settings</label>
+    
+  
+</div>
+          </form>
+        </aside>
+      </div>
+      <script>var consent=__md_get("__consent");if(consent)for(var input of document.forms.consent.elements)input.name&&(input.checked=consent[input.name]||!1);else"file:"!==location.protocol&&setTimeout((function(){document.querySelector("[data-md-component=consent]").hidden=!1}),250);var form=document.forms.consent;for(var action of["submit","reset"])form.addEventListener(action,(function(e){if(e.preventDefault(),"reset"===e.type)for(var n of document.forms.consent.elements)n.name&&(n.checked=!1);__md_set("__consent",Object.fromEntries(Array.from(new FormData(form).keys()).map((function(e){return[e,!0]})))),location.hash="",location.reload()}))</script>
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy", "content.code.select", "content.code.annotate", "navigation.instant", "navigation.instant.prefetch", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.expand", "navigation.footer", "navigation.top", "navigation.path", "toc.follow", "toc.integrate", "search.suggest", "search.share", "announce.dismiss"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
