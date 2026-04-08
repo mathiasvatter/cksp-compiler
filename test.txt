@@ -1,42 +1,32 @@
-{ Compiled with cksp version 0.0.8 on Tue Apr 07 19:16:42 2026 }
+{ Compiled with cksp version 0.0.8 on Wed Apr 08 22:51:47 2026 }
 on init
-  declare $ret0
   declare $param10
-  declare $_ret00
-  declare $_ret10
+  declare $RETURN_FLAG00
 end on
-function return_sth
-  if(1 = $param10)
-    $ret0 := 1
-    exit
-  end if
-  if(2 = $param10)
-    $ret0 := 2
-    exit
-  end if
-  if(3 = $param10)
-    $ret0 := 3
-    exit
-  end if
-  if(5 = $param10)
-    $ret0 := 5
-    exit
-  end if
-  if(6 = $param10)
-    $ret0 := 6
-    exit
-  end if
-  $ret0 := -1
-  exit
-end function
 on note
   $param10 := 5
-  call return_sth
-  $_ret00 := $ret0
-  message($_ret00)
-  $param10 := 4
-  call return_sth
-  $_ret10 := $ret0
-  message($_ret10)
+  $RETURN_FLAG00 := 0
+  while($RETURN_FLAG00 = 0) 
+    if(1 = $param10)
+      $RETURN_FLAG00 := 1
+      continue
+    end if
+    if(2 = $param10)
+      $RETURN_FLAG00 := 1
+      continue
+    end if
+    if(3 = $param10)
+      $RETURN_FLAG00 := 1
+      continue
+    end if
+    if(5 = $param10)
+      $RETURN_FLAG00 := 1
+      continue
+    end if
+    if(6 = $param10)
+      $RETURN_FLAG00 := 1
+      continue
+    end if
+  end while
 end on
 

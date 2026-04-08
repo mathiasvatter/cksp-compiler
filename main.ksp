@@ -28,17 +28,15 @@ on init
 end on
 
 on note
-	message(return_sth(5))
-	message(return_sth(4))
-	
+	return_sth(5)
+	// return_sth(4)
 end on	
 
-function return_sth(param1: int) : int
+function return_sth(param1: int)
 	for i, el in pairs([1,2,3,5,6])
 		if (el = param1)
-			return i
+			exit
 		end if			
 	end for		
-	return -1
 end function	
 

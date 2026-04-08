@@ -16,7 +16,7 @@
 #include "../../Desugaring/DesugarParamList.h"
 #include "../../Desugaring/DesugarBinaryExpr.h"
 #include "../../Desugaring/DesugarFormatString.h"
-#include "../../Lowering/LoweringFunctionDef.h"
+#include "../../Lowering/LoweringFunctionDefReturnStmts.h"
 #include "../../Optimization/NilValidator.h"
 #include "../ASTVisitor/ReferenceManagement/ASTCollectReferences.h"
 #include "../ASTVisitor/ReferenceManagement/ASTRemoveReferences.h"

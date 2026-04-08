@@ -105,7 +105,11 @@ private:
 
 public:
 	static bool is_parameterstack_candidate(const NodeFunctionDefinition& def) {
-		if (def.call_sites.size() <= 1) return false;
+		// if only one call site -> inline because of code overhead if transformed into native ksp func
+		// HOWEVER, if func is called only once and has return statements -> not inlining and using exit is better
+		// but i cannot check num_return_stmts at this moment because I alter that afterwards
+		// plus get_function_strategy needs to be currently called in ASTPreemptiveFunctionInlining because of wildcard copy functions
+		if (def.call_sites.size() <= 1 /*and def.num_return_stmts == 0*/) return false;
 		for(const auto &param : def.header->params) {
 			if (param->variable->ty->is_union_type() ||
 				param->is_pass_by_ref) {
