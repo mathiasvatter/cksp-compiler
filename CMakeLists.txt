@@ -87,10 +87,10 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ASTCollectLowerings.cpp
         AST/ASTVisitor/ASTSemanticAnalysis.h
         AST/ASTVisitor/ASTSemanticAnalysis.cpp
-        AST/Types.h
-        AST/Types.cpp
-        AST/TypeRegistry.h
-        AST/TypeRegistry.cpp
+        AST/Types/Types.h
+        AST/Types/Types.cpp
+        AST/Types/TypeRegistry.h
+        AST/Types/TypeRegistry.cpp
         Interpreter/SimpleExprInterpreter.h
         Interpreter/SimpleExprInterpreter.cpp
         Preprocessor/PreAST/PreASTCombine.h
@@ -153,7 +153,6 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/FunctionHandling/ASTPreemptiveFunctionInlining.h
         Optimization/ConstantPropagation.h
         Optimization/VariablePruning.h
-        Optimization/ParameterMarking.h
         AST/ASTVisitor/ASTRelinkGlobalScope.h
         Optimization/ConstExprValidator.h
         Optimization/ConstExprPropagation.h
@@ -190,7 +189,7 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/FunctionHandling/FunctionDefinitionOrdering.h
         AST/ASTVisitor/ReturnFunctionRewriting/ReturnFunctionIsolation.h
         AST/ASTVisitor/FunctionHandling/FunctionInlining.h
-        Lowering/PostLowering/ArrayDimensionConstants.h
+        AST/ASTVisitor/ArrayDimensionConstants.h
         Lowering/LoweringSortSearch.h
         Lowering/PostLowering/PostLoweringSortSearch.h
         AST/ASTVisitor/GlobalScope/ASTDimensionExpansion.h

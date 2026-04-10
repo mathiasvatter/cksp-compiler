@@ -39,6 +39,10 @@ public:
 		}
 		node.reset_function_visited_flag();
 
+		m_def_provider->reserve_global_scope(
+			m_def_provider->get_all_data_structures().size() + m_def_provider->external_variables.size()
+		);
+
 		relink_global_scope();
 		resolve_case_collisions();
 
@@ -48,7 +52,7 @@ public:
 	void relink_global_scope() const {
 		for(auto & data_struct : m_def_provider->get_all_data_structures()) {
 			if (auto data = data_struct.lock()) {
-				data->clear_references();
+				// data->clear_references();
 				m_def_provider->set_declaration(data, true);
 			} else {
 				auto error = CompileError(ErrorType::InternalError, "", "", Token());
@@ -57,6 +61,7 @@ public:
 			}
 		}
 		for(auto & reference : m_def_provider->get_all_references()) {
+			if (reference->get_declaration()) continue;
 			auto new_declaration = m_def_provider->get_declaration(*reference);
 			if(!new_declaration) {
 				DefinitionProvider::throw_declaration_error(*reference).exit();
@@ -67,8 +72,11 @@ public:
 	}
 
 	void resolve_case_collisions() const {
+		const auto data_structure_count = m_def_provider->get_all_data_structures().size();
 		std::unordered_set<std::string> lower_case_names;
+		lower_case_names.reserve(data_structure_count);
 		std::vector<NodeDataStructure*> data_structures_to_rename;
+		data_structures_to_rename.reserve(data_structure_count);
 		for (auto & data_struct : m_def_provider->get_all_data_structures()) {
 			if (auto data = data_struct.lock()) {
 				std::string lower_case_name = StringUtils::to_lower(data->name);

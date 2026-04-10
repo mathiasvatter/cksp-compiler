@@ -58,6 +58,13 @@ public:
 	std::unordered_map<std::string, std::shared_ptr<NodeDataStructure>, StringHash, StringEqual> remove_scope();
 	/// removes all scopes and initializes again
 	bool refresh_scopes();
+	void reserve_global_scope(size_t capacity) {
+		if (m_declared_data_structures.empty()) {
+			add_scope();
+			add_external_variables_to_global_scope();
+		}
+		m_declared_data_structures[0].reserve(capacity);
+	}
     /// removes variable from current scope by their name value
 	std::shared_ptr<NodeDataStructure> remove_from_current_scope(const std::string& name);
 	/// copies last scope in current scope
@@ -504,5 +511,4 @@ public:
 
 
 };
-
 

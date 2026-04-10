@@ -6,7 +6,7 @@
 
 #include "ASTVisitor.h"
 #include "../ASTNodes/AST.h"
-#include "../../Lowering/PostLowering/ArrayDimensionConstants.h"
+#include "ArrayDimensionConstants.h"
 
 /**
  * @class ASTCollectPostLowerings

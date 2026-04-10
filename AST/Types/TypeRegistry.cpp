@@ -2,9 +2,9 @@
 // Created by Mathias Vatter on 27.05.24.
 //
 
-#include "TypeRegistry.h"
-#include "ASTNodes/ASTDataStructures.h"
-#include "ASTNodes/ASTReferences.h"
+#include "../Types/TypeRegistry.h"
+#include "../ASTNodes/ASTDataStructures.h"
+#include "../ASTNodes/ASTReferences.h"
 
 // Implementation of the initialization method
 void TypeRegistry::initialize() {

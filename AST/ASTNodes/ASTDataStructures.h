@@ -8,7 +8,7 @@
 
 #include "AST.h"
 #include "ASTInstructions.h"
-#include "../TypeRegistry.h"
+#include "../Types/TypeRegistry.h"
 
 struct NodeVariable final : NodeDataStructure {
 	NodeVariable(std::optional<Token> is_persistent, std::string name, Type* ty, const Token& tok, const DataType data_type)

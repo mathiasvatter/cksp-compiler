@@ -5,7 +5,7 @@
 #pragma once
 
 #include "AST.h"
-#include "../TypeRegistry.h"
+#include "../Types/TypeRegistry.h"
 #include <array>
 
 // can be assign_statement, if_statement etc.
