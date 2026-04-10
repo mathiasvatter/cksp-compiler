@@ -17,7 +17,6 @@
  * search(ndarray[0, *, *], 9, 3) // error, from and to parameters not allowed with wildcards
  */
 class LoweringSortSearch : public ASTLowering {
-private:
 public:
 	explicit LoweringSortSearch(NodeProgram *program) : ASTLowering(program) {}
 

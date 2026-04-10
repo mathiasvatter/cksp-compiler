@@ -111,8 +111,7 @@ struct NodeArray final : NodeComposite {
 		size->parent = this;
 		this->size = std::move(size);
 	}
-//	ASTLowering* get_lowering(NodeProgram *program) const override;
-	ASTLowering *get_data_lowering(NodeProgram *program) const override;
+	ASTLowering* get_lowering(NodeProgram *program) const override;
 
     std::unique_ptr<NodeReference> to_reference() override;
 	NodeType get_ref_node_type() override {return NodeType::ArrayRef;}

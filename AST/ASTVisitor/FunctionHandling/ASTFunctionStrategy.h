@@ -70,7 +70,7 @@ private:
 			if (definition->is_expression_function()) {
 				definition->is_inlined = true;
 				node.strategy = NodeFunctionCall::Strategy::ExpressionFunc;
-			} else if (is_initializer_function(node) or is_wildcard_function(node)) {
+			} else if (definition->has_local_dynamic_arrays or is_initializer_function(node) or is_wildcard_function(node)) {
 				definition->is_inlined = true;
 				node.strategy = NodeFunctionCall::Strategy::PreemptiveInlining;
 			} else if (is_callable_env and node.function->has_no_args() and definition->call_sites.size() > 1) {

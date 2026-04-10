@@ -127,7 +127,7 @@ NodeAST *NodeArray::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> ne
 	return nullptr;
 }
 
-ASTLowering* NodeArray::get_data_lowering(NodeProgram *program) const {
+ASTLowering* NodeArray::get_lowering(NodeProgram *program) const {
 	static ArrayDeclarationSyntaxValidator lowering(program);
 	return &lowering;
 }

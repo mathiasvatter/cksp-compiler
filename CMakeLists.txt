@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
-project(CKSP_Compiler VERSION 0.0.8)
-set(PRE_RELEASE_VERSION "")
+project(CKSP_Compiler VERSION 0.0.9)
+set(PRE_RELEASE_VERSION "-alpha.1")
 
 set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
 configure_file(
@@ -190,7 +190,7 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/FunctionHandling/FunctionDefinitionOrdering.h
         AST/ASTVisitor/ReturnFunctionRewriting/ReturnFunctionIsolation.h
         AST/ASTVisitor/FunctionHandling/FunctionInlining.h
-        Lowering/PostLowering/PostLoweringSingleDeclaration.h
+        Lowering/PostLowering/ArrayDimensionConstants.h
         Lowering/LoweringSortSearch.h
         Lowering/PostLowering/PostLoweringSortSearch.h
         AST/ASTVisitor/GlobalScope/ASTDimensionExpansion.h
@@ -241,6 +241,7 @@ add_executable(cksp main.cpp
         Lowering/LoweringComparisons.h
         Preprocessor/PreAST/PreASTImport.h
         Preprocessor/PreAST/PreASTConditions.h
+        Optimization/VariableCollector.h
 )
 add_dependencies(cksp generate_headers)
 

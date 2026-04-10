@@ -25,7 +25,6 @@
 #include "../../Lowering/LoweringUseCount.h"
 #include "../ASTVisitor/ReturnFunctionRewriting/ReturnFunctionCallHoisting.h"
 #include "../ASTVisitor/FunctionHandling/FunctionInlining.h"
-#include "../../Lowering/PostLowering/PostLoweringSingleDeclaration.h"
 #include "../../Lowering/LoweringSortSearch.h"
 #include "../../Lowering/PostLowering/PostLoweringSortSearch.h"
 #include "../../misc/CommandLineOptions.h"
@@ -669,14 +668,7 @@ ASTLowering* NodeSingleDeclaration::get_lowering(NodeProgram *program) const {
 	if(variable->get_node_type() == NodeType::List) {
 		return variable->get_lowering(program);
 	}
-//	static LoweringSingleDeclaration lowering(program);
-//	return &lowering;
 	return nullptr;
-}
-
-ASTLowering* NodeSingleDeclaration::get_post_lowering(NodeProgram *program) const {
-	static PostLoweringSingleDeclaration lowering(program);
-	return &lowering;
 }
 
 std::unique_ptr<NodeSingleAssignment> NodeSingleDeclaration::to_assign_stmt(NodeDataStructure* var) {
