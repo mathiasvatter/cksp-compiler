@@ -209,7 +209,18 @@ public:
 		}
 
 		return compile_error;
-	};
+	}
+
+	/// Checks for "CKSP" prefix in function name and throws a meaningful error if found
+	static bool check_engine_helper_function(const NodeFunctionHeader& node) {
+		if (node.kind != NodeDataStructure::Compiler and StringUtils::starts_with(node.name, "CKSP"+ OBJ_DELIMITER)) {
+			auto error = CompileError(ErrorType::VariableError, "", "", node.tok);
+			error.set_message("Functions starting with 'CKSP____' are reserved for internal use. Try renaming the function.");
+			error.exit();
+			return true;
+		}
+		return false;
+	}
 
 	[[nodiscard]] std::vector<std::string> misspelled_suggestions(const std::string& name, size_t max_results = 4) const {
 	    // Heuristik: dynamische Distanz-Schranke relativ zur Länge

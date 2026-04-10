@@ -72,6 +72,9 @@ function __bool__(x: int): int
   return -sh_right(x .xor. -x,31)
 end function
 
-
+/// Performs a logical right shift on x by n bits, filling with zeros on the left.
+function sh_right_logical(x: int, n: int): int
+    return (x >> n) .and. ((1 << ((32 - n) .and. 31)) - 1)
+end function
 
 

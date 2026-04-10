@@ -16,17 +16,25 @@
 
 on init
 
+	declare NUM_GROUPS := 1
+	declare v := -9 + NUM_GROUPS
+	declare dd := 1 + NUM_GROUPS
+	message(v >>> dd)
 	// the function has to be called to reproduce this
 	declare arr: int[] := (1,2,3,4,5)
 	declare arr2: int[] := (0,0,0,0,0)
 
 	// load_arrays(arr, arr2, 4)
 	// load_arrays(arr, arr2, 4)
-	message(arr2[0])
+	// message(arr2[0])
 
-	declare ndarr[4,5]
-	print_2d_array(ndarr)
+	// declare ndarr[4,5]
+	// print_2d_array(ndarr)
 end on
+
+// function CKSP______eq__(p1, p2)
+// 	return -34
+// end function
 
 function print_2d_array(arr)
     for i in range(num_elements(arr, 1))
