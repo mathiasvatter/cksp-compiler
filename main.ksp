@@ -5,14 +5,14 @@
 // #pragma optimize("none")
 
 
-function load_arrays(array1: int[], array2: int[], size: int)
-	// declare urmomsize[size, size+1]: int[][]
-	declare urmom[num_elements(array1), num_elements(array2)]: int[][]
-	for idx, val in pairs(array1)
-		array2[idx] := val
-		// message(urmom[0])
-	end for
-end function
+// function load_arrays(array1: int[], array2: int[], size: int)
+// 	// declare urmomsize[size, size+1]: int[][]
+// 	declare urmom[num_elements(array1), num_elements(array2)]: int[][]
+// 	for idx, val in pairs(array1)
+// 		array2[idx] := val
+// 		// message(urmom[0])
+// 	end for
+// end function
 
 on init
 
@@ -31,7 +31,7 @@ end on
 function print_2d_array(arr)
     for i in range(num_elements(arr, 1))
         for ii in range(num_elements(arr, 2))
-            message(i & "  " & arr[i])
+            message(i & "  " & arr[i, ii])
         end for
     end for
 end function

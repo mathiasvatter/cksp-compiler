@@ -176,6 +176,7 @@ struct NodeNDArray final : NodeComposite {
 		if (size->cast<NodeParamList>()) {
 			size -> parent = this;
 			sizes = unique_ptr_cast<NodeParamList>(std::move(size));
+			dimensions = sizes->size();
 		} else {
 			auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
 			error.m_message = "Tried setting NDArray size. NDArray size has to be a <ParamList>.";

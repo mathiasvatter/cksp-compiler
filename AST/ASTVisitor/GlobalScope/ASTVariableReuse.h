@@ -80,7 +80,17 @@ public:
 			if(!declaration) continue;
 			declaration->is_used = true;
 			if(local_ref->is_local) {
-				local_ref->name = declaration->name;
+				// the raw array stuff is only important if decl is not yet lowered an still NodeNDArray
+				// the handling of raw arrays is shit and should be completely rewritten.
+				if (declaration->cast<NodeNDArray>()) {
+					bool is_raw_array = false;
+					if (const auto arr_ref = local_ref->cast<NodeArrayRef>()) {
+						is_raw_array = arr_ref->is_raw_array();
+					}
+					local_ref->name = is_raw_array ? "_"+declaration->name : declaration->name;
+				} else {
+					local_ref->name = declaration->name;
+				}
 			}
 		}
 		return true;

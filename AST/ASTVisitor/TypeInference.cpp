@@ -198,7 +198,36 @@ NodeAST * TypeInference::visit(NodeArrayRef& node) {
 			if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
 		}
 	}
-    match_reference_declaration(node, node.get_declaration());
+
+	auto decl = node.get_declaration();
+    match_reference_declaration(node, decl);
+
+	if (decl) {
+		auto decl_type = decl->ty->cast<CompositeType>();
+		if (!decl_type and decl->ty != TypeRegistry::Unknown) {
+			auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+			error.m_message = "Reference <"+node.name+"> does not refer to a <Composite> type.";
+			error.exit();
+		}
+		// in case declaration has more dimensions and this node was written as e.g. arr[i]
+		if (decl_type and decl_type->get_dimensions() > 1 and node.index and !node.is_raw_array()) {
+			auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+			error.set_message("Reference <"+node.name+"> is notated with only one dimension but was declared with multiple dimensions.");
+			error.exit();
+		}
+		// swap out to ndarray
+		// in case declaration has more dimensions and this node is written as e.g. num_elements(arr, 3)
+		if (decl_type and decl_type->get_dimensions() > 1 and !node.index and !node.is_raw_array()) {
+			auto ndarray = node.to_ndarray_ref();
+			ndarray->match_data_structure(decl);
+			ndarray->ty = decl->ty;
+			auto new_node = node.replace_reference(std::move(ndarray));
+			if(m_def_provider) m_def_provider->add_to_references(new_node);
+			return new_node;
+
+		}
+	}
+
 	if(m_def_provider) m_def_provider->add_to_references(&node);
 	return &node;
 }
@@ -301,6 +330,13 @@ NodeAST * TypeInference::visit(NodeNumElements& node) {
 	if(node.dimension) {
 		node.dimension->accept(*this);
 		match_against(*node.dimension, TypeRegistry::Integer);
+		// dimension arg of num_elements is only given if node.array is multidimensional
+		// set dimension size to 0 if 1
+		// if (auto comp_type = node.array->ty->cast<CompositeType>()) {
+		// 	if (comp_type->get_dimensions() == 1) {
+		// 		node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, comp_type->get_element_type(), 0);
+		// 	}
+		// }
 	}
 	match_against(node, TypeRegistry::Integer);
 	return &node;
