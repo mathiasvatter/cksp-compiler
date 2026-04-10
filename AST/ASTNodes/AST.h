@@ -9,7 +9,7 @@
 #include <optional>
 
 #include "ASTHelper.h"
-#include "../Types.h"
+#include "../Types/Types.h"
 #include "../../misc/HashFunctions.h"
 #include "../../utils/StringUtils.h"
 

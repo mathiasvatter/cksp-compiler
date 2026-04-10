@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "../ASTLowering.h"
+#include "../../Lowering/ASTLowering.h"
 
 /**
  * Adds declaration stmts for dimension constants above all array declarations

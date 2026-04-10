@@ -6,7 +6,7 @@
 
 #include <functional>
 #include "AST.h"
-#include "../TypeRegistry.h"
+#include "../Types/TypeRegistry.h"
 
 struct NodeNumElements;
 

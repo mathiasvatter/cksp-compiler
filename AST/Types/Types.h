@@ -7,7 +7,7 @@
 #include <utility>
 #include <memory>
 #include <typeindex>
-#include "../Tokenizer/Tokens.h"
+#include "../../Tokenizer/Tokens.h"
 
 inline static std::string type_kind_names[] = {"Basic", "Composite", "Object", "Function"};
 enum class TypeKind {Basic, Composite, Object, Function};

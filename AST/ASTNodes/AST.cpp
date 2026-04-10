@@ -3,7 +3,7 @@
 //
 
 #include "AST.h"
-#include "../TypeRegistry.h"
+#include "../Types/TypeRegistry.h"
 #include "ASTInstructions.h"
 #include "ASTDataStructures.h"
 #include "ASTReferences.h"

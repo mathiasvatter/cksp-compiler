@@ -291,7 +291,6 @@ public:
 
 		static TypeInference infer_types(ast.get());
 		infer_types.do_complete_traversal(*ast);
-		ast->collect_call_sites(m_program); // collect call sites for ui controls param stuff
 		ast->debug_print();
 
 		static UniqueParameterNamesProvider unique_names_provider(m_program);
@@ -304,9 +303,10 @@ public:
 
 		static ASTPointerScope pointer_scope(m_program);
 		ast->accept(pointer_scope);
-		ast->collect_references();
+		ast->collect_references();  //>> actually needed when pointers are used -> LUX
 		ast->debug_print();
 
+		ast->collect_call_sites(m_program); // collect call sites for UIControlParamHandling
 		static ASTCollectLowerings lowering(m_program);
 		ast->accept(lowering);
 		static ASTHandleStringRepresentations hsr(&m_definition_provider);
@@ -343,18 +343,18 @@ public:
 		{
 			variable_checking.do_reachable_traversal(*ast, true);
 			ast->remove_references();
-			ast->collect_references();
+			ast->collect_references(); // >> those two are also only needed for LUX???
 			infer_types.do_reachable_traversal(*ast);
 			ast->debug_print();
 
 			// then do parameter promotion directly to global or successively
 			// eliminate function-local variables
-			ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
 			ASTParameterPromotion param_promotion(m_program);
 			param_promotion.do_param_promotion(*ast);
 
 			ast->debug_print();
 
+			ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
 			static ParameterAssignmentTransformation assignment_transformation(m_program);
 			assignment_transformation.do_parameter_assignment(*m_program);
 			ast->debug_print();
@@ -380,7 +380,7 @@ public:
 
 		// Data Structure Lowering of NDArrays and Array assignments
 		// so that replace datastruct works
-		ast->remove_references();
+		// ast->remove_references();
 		ast->collect_references();
 		ASTDataStructureLowering data_structure_lowering(m_program);
 		ast->accept(data_structure_lowering);
