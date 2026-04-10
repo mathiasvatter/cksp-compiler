@@ -8,6 +8,8 @@
 #include "ReferenceManagement/ASTCollectDeclarations.h"
 #include <chrono>
 
+#include "../../Optimization/VariableCollector.h"
+
 class TypeInference final : public ASTVisitor {
 	DefinitionProvider* m_def_provider;
 	std::vector<NodeFunctionCall*> m_func_calls;
@@ -15,7 +17,7 @@ class TypeInference final : public ASTVisitor {
 	void do_monomorphization() {
 		// copy m_func_calls to avoid modification during iteration (especially when visiting nodes again
 		// and collecting the same function call twice!!)
-		std::vector<NodeFunctionCall*> calls = m_func_calls;
+		const std::vector<NodeFunctionCall*> calls = m_func_calls;
 		for (const auto& call : calls) {
 			if (call->kind != NodeFunctionCall::Kind::UserDefined) continue;
 			auto const def = call->get_definition();
@@ -47,6 +49,15 @@ class TypeInference final : public ASTVisitor {
 				def->accept(*this);
 				def->visited = true;
 			}
+			// static VariableCollector var_collector;
+			// var_collector.collect(*def);
+			// for (const auto& ref : var_collector.get_reference_vec()) {
+			// 	if (auto declaration = ref->get_declaration()) {
+			// 		match_reference_declaration(*ref, declaration);
+			// 	}
+			// }
+
+
 			if (def->header->has_union_params()) {
 				auto new_header = clone_as<NodeFunctionHeader>(def->header.get());
 				int method_idx = call->is_in_access_chain() ? 1 : 0;
@@ -125,63 +136,74 @@ class TypeInference final : public ASTVisitor {
 	}
 
 	void apply_types_to_data_structures() const {
-		parallel_for_each(m_def_provider->m_all_data_structures.begin(),
-			m_def_provider->m_all_data_structures.end(),
-			[](const std::weak_ptr<NodeDataStructure>& data_struct_weak) {
-				auto data_ptr = data_struct_weak.lock();
-				if (!data_ptr) {
-					return;
-				}
-				if (auto comp_type = data_ptr->ty->cast<CompositeType>()) {
-					if (comp_type->get_dimensions() == 0) {
-						data_ptr->ty = TypeRegistry::add_composite_type(CompoundKind::Array,
-							comp_type->get_element_type(), 1);
-					}
-					std::unique_ptr<NodeDataStructure> new_node = nullptr;
-					// if node is variable -> array or ndarray
-					if (data_ptr->cast<NodeVariable>()) {
-						auto dims = std::max(1, comp_type->get_dimensions());
-						if (dims == 1) {
-							new_node = data_ptr->to_array(nullptr);
-						} else {
-							new_node = data_ptr->to_ndarray();
-						}
-					}
-					if (new_node != nullptr) {
-						new_node -> ty = data_ptr->ty;
-						data_ptr->replace_datastruct(std::move(new_node));
-					}
-				}
-			});
-		// for (int i = 0; i < m_def_provider->m_all_data_structures.size(); i++) {
-		//
-		// 	auto data_struct = m_def_provider->m_all_data_structures[i];
-		// 	auto data_ptr = data_struct.lock();
-		// 	if (!data_ptr) {
-		// 		continue;
-		// 	}
-		//
-		// 	if (auto comp_type = data_ptr->ty->cast<CompositeType>()) {
-		// 		if (comp_type->get_dimensions() == 0) {
-		// 			data_ptr->ty = TypeRegistry::add_composite_type(CompoundKind::Array,
-		// 				comp_type->get_element_type(), 1);
+		// parallel_for_each(m_def_provider->m_all_data_structures.begin(),
+		// 	m_def_provider->m_all_data_structures.end(),
+		// 	[&](const std::weak_ptr<NodeDataStructure>& data_struct_weak) {
+		// 		auto data_ptr = data_struct_weak.lock();
+		// 		if (!data_ptr) {
+		// 			return;
 		// 		}
-		// 		std::unique_ptr<NodeDataStructure> new_node = nullptr;
-		// 		// if node is variable -> array or ndarray
-		// 		if (data_ptr->cast<NodeVariable>()) {
-		// 			auto dims = std::max(1, comp_type->get_dimensions());
-		// 			if (dims == 1) {
-		// 				new_node = data_ptr->to_array(nullptr);
-		// 			} else {
+		// 		if (auto comp_type = data_ptr->ty->cast<CompositeType>()) {
+		// 			if (comp_type->get_dimensions() == 0) {
+		// 				data_ptr->ty = TypeRegistry::add_composite_type(CompoundKind::Array,
+		// 					comp_type->get_element_type(), 1);
+		// 			}
+		// 			std::unique_ptr<NodeDataStructure> new_node = nullptr;
+		// 			// if node is variable -> array or ndarray
+		// 			if (data_ptr->cast<NodeVariable>()) {
+		// 				auto dims = std::max(1, comp_type->get_dimensions());
+		// 				if (dims == 1) {
+		// 					new_node = data_ptr->to_array(nullptr);
+		// 				} else {
+		// 					new_node = data_ptr->to_ndarray();
+		// 				}
+		// 			}
+		// 			if (data_ptr->cast<NodeArray>() and comp_type->get_dimensions() > 1) {
 		// 				new_node = data_ptr->to_ndarray();
 		// 			}
+		// 			if (new_node != nullptr) {
+		// 				new_node -> ty = data_ptr->ty;
+		// 				{
+		// 					// std::lock_guard<std::mutex> lock(m_mutex);
+		// 					data_ptr->replace_datastruct(std::move(new_node));
+		// 				}
+		// 			}
 		// 		}
-		// 		if (new_node != nullptr) {
-		// 			new_node -> ty = data_ptr->ty;
-		// 			data_ptr->replace_datastruct(std::move(new_node));
-		// 		}
-		// 	}
-		// }
+		// 	});
+		for (int i = 0; i < m_def_provider->m_all_data_structures.size(); i++) {
+
+			auto data_struct = m_def_provider->m_all_data_structures[i];
+			auto data_ptr = data_struct.lock();
+			if (!data_ptr) {
+				continue;
+			}
+
+			if (auto comp_type = data_ptr->ty->cast<CompositeType>()) {
+				if (comp_type->get_dimensions() == 0) {
+					data_ptr->ty = TypeRegistry::add_composite_type(CompoundKind::Array,
+						comp_type->get_element_type(), 1);
+				}
+				std::unique_ptr<NodeDataStructure> new_node = nullptr;
+				// if node is variable -> array or ndarray
+				if (data_ptr->cast<NodeVariable>()) {
+					auto dims = std::max(1, comp_type->get_dimensions());
+					if (dims == 1) {
+						new_node = data_ptr->to_array(nullptr);
+					} else {
+						new_node = data_ptr->to_ndarray();
+						new_node->cast<NodeNDArray>()->dimensions = dims;
+					}
+				}
+				if (data_ptr->cast<NodeArray>() and comp_type->get_dimensions() > 1) {
+					new_node = data_ptr->to_ndarray();
+					new_node->cast<NodeNDArray>()->dimensions = comp_type->get_dimensions();
+				}
+				if (new_node != nullptr) {
+					new_node -> ty = data_ptr->ty;
+					data_ptr->replace_datastruct(std::move(new_node));
+				}
+			}
+		}
 
 		m_program->def_provider->m_all_data_structures.clear();
 	}
@@ -203,8 +225,16 @@ public:
 		m_program = &node;
 		node.accept(*this);
 
+		node.debug_print();
 		cast_data_structure_types(&node, true);
+		node.debug_print();
+
 		do_monomorphization();
+		node.debug_print();
+
+		// cast_data_structure_types(&node, true);
+		// node.debug_print();
+
 
 		// its important that the visiting of unused function definitions is done after the monomorphization
 		// because m_func_calls is gonna collect and monorphization could happen in an already replaced function

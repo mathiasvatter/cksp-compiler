@@ -35,12 +35,16 @@ public:
 		node.accept(*this);
 	}
 
-	std::unordered_set<NodeFunctionDefinition*> get_visited_functions() {
-		return std::move(m_visited_functions);
+	std::unordered_set<NodeFunctionDefinition*>& get_visited_functions() {
+		return m_visited_functions;
 	}
 
 	bool contains_local_references() const {
 		return m_contains_local_references;
+	}
+
+	std::vector<NodeReference*>& get_reference_vec() {
+		return m_reference_vec;
 	}
 
 private:
