@@ -143,7 +143,7 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::set_declaration(const std
 	if (auto data_struct = get_scoped_data_structure(var->name, global_scope)) {
 		auto compile_error = CompileError(ErrorType::VariableError, "", "", var->tok);
 		compile_error.m_message = "Data Structure has already been declared in this scope. Variables with different types but same names are not allowed. ";
-		if (data_struct->is_engine) {
+		if (data_struct->kind == NodeDataStructure::Compiler or var->kind == NodeDataStructure::Compiler) {
 			compile_error.m_message = "A variable of this name is needed internally by cksp. ";
 		} else {
 			compile_error.m_message += var->name + " is a redeclaration of " + data_struct->tok.val + " in line " + std::to_string(data_struct->tok.line) +". ";

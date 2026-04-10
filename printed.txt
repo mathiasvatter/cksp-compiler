@@ -1,26 +1,58 @@
+// Global Declarations:
+declare _iter0 : int {Reuses: 0}
+declare const MAX::STRUCTS : int := 1000000 {Reuses: 0}
+declare const MEM::WARNING : string := "Memory Error: No more free space available to allocate objects of type" {Reuses: 0}
 on init
-	declare i0 : int {Reuses: 0}
-	declare _step10 : int {Reuses: 0}
-	declare _stop10 : int {Reuses: 0}
-	declare ii0 : int {Reuses: 0}
-	declare _step00 : int {Reuses: 0}
-	declare _stop00 : int {Reuses: 0}
-	declare arr2[5] : int[] := [0, 0, 0, 0, 0] {Reuses: 0}
-	message(arr2[0]{int} {arr2} ){Builtin, None, message}
-	declare _ndarr[20] : int[] {Reuses: 0}
-	i0{int} {i0}  := 0
-	_step10{int} {_step10}  := 1
-	_stop10{int} {_stop10}  := 4
-	while(((i0{int} {i0}  < _stop10{int} {_stop10} ) and (_step10{int} {_step10}  > 0)) or ((i0{int} {i0}  > _stop10{int} {_stop10} ) and (_step10{int} {_step10}  < 0))) 
-		ii0{int} {ii0}  := 0
-		_step00{int} {_step00}  := 1
-		_stop00{int} {_stop00}  := 5
-		while(((ii0{int} {ii0}  < _stop00{int} {_stop00} ) and (_step00{int} {_step00}  > 0)) or ((ii0{int} {ii0}  > _stop00{int} {_stop00} ) and (_step00{int} {_step00}  < 0))) 
-			message(i0{int} {i0}  & "  " & _ndarr[(i0{int} {i0}  * 5) + ii0{int} {ii0} ]{int} {_ndarr} ){Builtin, None, message}
-			ii0{int} {ii0}  := ii0{int} {ii0}  + _step00{int} {_step00} 
-		end while
-		i0{int} {i0}  := i0{int} {i0}  + _step10{int} {_step10} 
-	end while
+declare NUM_GROUPS : unknown := 1 {Reuses: 0}
+declare v : unknown := - 9 + NUM_GROUPS{unknown} {no declaration}  {Reuses: 0}
+declare dd : unknown := 1 + NUM_GROUPS{unknown} {no declaration}  {Reuses: 0}
+message(CKSP::sh_right_logical(v{unknown} {no declaration} , dd{unknown} {no declaration} ){Undefined, None}){Builtin, None, message}
+declare arr : int[] := [1, 2, 3, 4, 5] {Reuses: 0}
+declare arr2 : int[] := [0, 0, 0, 0, 0] {Reuses: 0}
 end on
+
+function CKSP______eq__(p1 : unknown, p2 : unknown)
+	return (- 34)
+end function
+
+function print_2d_array(arr : unknown)
+	for i : unknown in range(0, num_elements[arr{unknown} {no declaration} , 1], 1)
+	for ii : unknown in range(0, num_elements[arr{unknown} {no declaration} , 2], 1)
+	message(i{unknown} {no declaration}  & "  " & arr[i{unknown} {no declaration} , ii{unknown} {no declaration} ]{unknown} {no declaration} ){Builtin, None, message}
+	end for
+	end for
+end function
+
+function CKSP::sh_right_logical(x : int, n : int)
+	return (sh_right(x{unknown} {no declaration} , n{unknown} {no declaration} ){Undefined, None} .and. (sh_left(1, (32 - n{unknown} {no declaration} ) .and. 31){Undefined, None} - 1))
+end function
+
+function CKSP::__bool__(x : int)
+	return (- sh_right(x{unknown} {no declaration}  .xor. - x{unknown} {no declaration} , 31){Builtin, None, sh_right})
+end function
+
+function CKSP::__ge__(a : int, b : int)
+	return (sh_right(a{unknown} {no declaration}  - b{unknown} {no declaration} , 31){Builtin, None, sh_right} + 1)
+end function
+
+function CKSP::__lt__(a : int, b : int)
+	return (- sh_right(a{unknown} {no declaration}  - b{unknown} {no declaration} , 31){Builtin, None, sh_right})
+end function
+
+function CKSP::__ne__(a : int, b : int)
+	return (1 - - sh_right(abs(a{unknown} {no declaration}  - b{unknown} {no declaration} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
+end function
+
+function CKSP::__eq__(a : int, b : int)
+	return (- sh_right(abs(a{unknown} {no declaration}  - b{unknown} {no declaration} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
+end function
+
+function CKSP::__le__(a : int, b : int)
+	return (1 + sh_right(b{unknown} {no declaration}  - a{unknown} {no declaration} , 31){Builtin, None, sh_right})
+end function
+
+function CKSP::__gt__(a : int, b : int)
+	return (- sh_right(b{unknown} {no declaration}  - a{unknown} {no declaration} , 31){Builtin, None, sh_right})
+end function
 
 

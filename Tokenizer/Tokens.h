@@ -43,6 +43,7 @@
 	XX(BIT_NOT, "bit_not") \
 	XX(SHIFT_LEFT, "sh_left") \
 	XX(SHIFT_RIGHT, "sh_right") \
+	XX(SHIFT_RIGHT_LOGICAL, "sh_right_logical") \
 	XX(FSTRING_EXPR_START, "<") \
 	XX(FSTRING_EXPR_STOP, ">") \
 	XX(FSTRING_START, "format") \
@@ -242,7 +243,7 @@ inline std::unordered_map<token, std::pair<std::string, int>> BOOLEAN_FUNCTIONS 
 };
 
 /// string->Token operator maps
-inline std::unordered_map<std::string, token> BITWISE_OPERATORS = {{".and.", token::BIT_AND}, {".or.", token::BIT_OR}, {".not.", token::BIT_NOT}, {".xor.", token::BIT_XOR}, {"<<", token::SHIFT_LEFT}, {">>", token::SHIFT_RIGHT}};
+inline std::unordered_map<std::string, token> BITWISE_OPERATORS = {{".and.", token::BIT_AND}, {".or.", token::BIT_OR}, {".not.", token::BIT_NOT}, {".xor.", token::BIT_XOR}, {"<<", token::SHIFT_LEFT}, {">>", token::SHIFT_RIGHT}, {">>>", token::SHIFT_RIGHT_LOGICAL}};
 inline std::unordered_map<std::string, token> BOOL_OPERATORS = {{"and", token::BOOL_AND}, {"or", token::BOOL_OR}, {"not", token::BOOL_NOT}, {"xor", token::BOOL_XOR}};
 inline std::unordered_map<std::string, token> MATH_OPERATORS = {{"-", token::SUB}, {"+", token::ADD}, {"/", token::DIV}, {"*", token::MULT}, {"mod", token::MODULO}, {"**", token::EXP}};
 inline std::unordered_map<std::string, token> UNARY_OPERATORS = {{"-", token::SUB}, {".not.", token::BIT_NOT}, {"not", token::BOOL_NOT}};

@@ -1,26 +1,9 @@
-{ Compiled with cksp version 0.0.9-alpha.1 on Fri Apr 10 17:44:36 2026 }
+{ Compiled with cksp version 0.0.9-alpha.1 on Fri Apr 10 20:38:47 2026 }
 on init
-  declare $i0
-  declare $_step10
-  declare $_stop10
-  declare $ii0
-  declare $_step00
-  declare $_stop00
-  declare %arr2[5] := (0, 0, 0, 0, 0)
-  message(%arr2[0])
-  declare %_ndarr[20]
-  $i0 := 0
-  $_step10 := 1
-  $_stop10 := 4
-  while((($i0 < $_stop10) and ($_step10 > 0)) or (($i0 > $_stop10) and ($_step10 < 0))) 
-    $ii0 := 0
-    $_step00 := 1
-    $_stop00 := 5
-    while((($ii0 < $_stop00) and ($_step00 > 0)) or (($ii0 > $_stop00) and ($_step00 < 0))) 
-      message($i0 & "  " & %_ndarr[($i0 * 5) + $ii0])
-      $ii0 := $ii0 + $_step00
-    end while
-    $i0 := $i0 + $_step10
-  end while
+  declare $v
+  $v := -9 + $NUM_GROUPS
+  declare $dd
+  $dd := 1 + $NUM_GROUPS
+  message(sh_right($v, $dd) .and. (sh_left(1, (32 - $dd) .and. 31) - 1))
 end on
 
