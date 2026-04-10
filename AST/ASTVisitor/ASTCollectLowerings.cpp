@@ -163,7 +163,7 @@ NodeAST * ASTCollectLowerings::visit(NodeArray& node) {
 	//TRACE();
     if(node.size) node.size->accept(*this);
 	if(node.num_elements) node.num_elements->accept(*this);
-	return node.data_lower(m_program);
+	return node.lower(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeNDArray& node) {

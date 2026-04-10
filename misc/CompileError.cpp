@@ -234,6 +234,7 @@ void CompileError::set_expected(const std::string &expected) {
 
 void CompileError::set_token(const Token &token) {
     m_line_number = token.line; m_file_name = token.file; m_got = token.val; m_line_position = token.pos;
+    m_marker_length = token.val.length();
 }
 
 #if defined(__APPLE__) || defined(__linux__)

@@ -6,11 +6,14 @@
 
 #include "ASTVisitor.h"
 #include "../ASTNodes/AST.h"
+#include "../../Lowering/PostLowering/ArrayDimensionConstants.h"
 
 /**
  * @class ASTCollectPostLowerings
  */
 class ASTCollectPostLowerings: public ASTVisitor {
+	DefinitionProvider* m_def_provider;
+
 public:
 	explicit ASTCollectPostLowerings(NodeProgram *main) : m_def_provider(main->def_provider) {
 		m_program = main;
@@ -46,8 +49,9 @@ public:
 	NodeAST * visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		if(node.bind_definition(m_program)) {
-			if(!node.get_definition()->visited) node.get_definition()->accept(*this);
-			node.get_definition()->visited = true;
+			const auto& def = node.get_definition();
+			if(!def->visited) def->accept(*this);
+			def->visited = true;
 		}
 		return &node;
 	}
@@ -55,7 +59,8 @@ public:
 	NodeAST * visit(NodeSingleDeclaration& node) override {
 		node.variable->accept(*this);
 		if(node.value) node.value->accept(*this);
-		return node.post_lower(m_program);
+		static ArrayDimensionConstants lowering(m_program);
+		return node.accept(lowering);
 	}
 
 //	NodeAST * visit(NodeArray& node) override {
@@ -76,10 +81,8 @@ public:
 		if(node.from) node.from->accept(*this);
 		if(node.to) node.to->accept(*this);
 		return node.post_lower(m_program)->accept(*this);
-	};
+	}
 
-private:
-	DefinitionProvider* m_def_provider;
 };
 
 

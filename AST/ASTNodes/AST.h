@@ -820,6 +820,10 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	/// tagged when there is at least one call to this function that is inlined (e.g. on init). In which case
 	/// exit cannot be used to prematurely leave the function
 	bool is_inlined = false;
+	/// tagged when a local array is declared whose size is dependent on the size of a parameter or another
+	/// local array. This has implications on function strategy -> will not be promoted and has to be preemptively
+	/// inlined. Later on in PostLoweringNumElements the substituted size has to be inserted directly
+	bool has_local_dynamic_arrays = false;
     bool is_used = false;
     bool is_compiled = false;
 	bool visited = false;

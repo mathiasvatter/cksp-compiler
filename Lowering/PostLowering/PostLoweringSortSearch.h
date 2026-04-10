@@ -8,7 +8,7 @@
 
 /**
  * Second Lowering Phase of search
- * has to happen after function inlining
+ * ??has to happen after function inlining >> WHY? I do not think so
  * transformation of separate Node NodeSortSearch into NodeFunctionCall
  */
 class PostLoweringSortSearch final : public ASTLowering {

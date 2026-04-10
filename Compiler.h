@@ -126,7 +126,7 @@ public:
 		auto pre_ast = std::move(pre_ast_result.unwrap());
 		std::unordered_set<std::string> imported_files{};
 		std::unordered_map<std::string, std::string> basename_map{};
-		pre_ast->do_preprocessing(m_cli_config->input_filename.value(), m_cli_config->input_filename.value(), imported_files, basename_map);
+		pre_ast->do_import_processing(m_cli_config->input_filename.value(), m_cli_config->input_filename.value(), imported_files, basename_map);
 
 		m_timer.stop("Import");
 		std::cout << m_timer.print_timer("Import") << std::endl;
@@ -367,6 +367,7 @@ public:
 
 		ASTPreemptiveFunctionInlining pre_inlining(m_program);
 		ast->accept(pre_inlining);
+		ast -> debug_print();
 
 		m_timer.stop("Return Function Rewriting");
 		std::cout << m_timer.print_timer("Return Function Rewriting") << "\n";

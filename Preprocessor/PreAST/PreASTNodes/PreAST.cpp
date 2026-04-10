@@ -26,7 +26,7 @@ void PreNodeAST::debug_print(const std::string &path) {
 #endif
 }
 
-PreNodeAST * PreNodeAST::do_preprocessing(
+PreNodeAST * PreNodeAST::do_import_processing(
 	const std::string &base_file,
 	const std::string &current_file,
 	std::unordered_set<std::string> &imported_files,

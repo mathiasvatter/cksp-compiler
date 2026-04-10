@@ -1,33 +1,45 @@
+// Global Declarations:
+	declare const MAX::CB::STACK : int := 420 {Reuses: 0}
+	declare _iter0 : int {Reuses: 0}
+	declare const MAX::STRUCTS : int := 1000000 {Reuses: 0}
+	declare const MEM::WARNING : string := "Memory Error: No more free space available to allocate objects of type" {Reuses: 0}
+	declare i0 : int {Reuses: 0}
+	declare _step10 : int {Reuses: 0}
+	declare _stop10 : int {Reuses: 0}
+	declare ii0 : int {Reuses: 0}
+	declare _step00 : int {Reuses: 0}
+	declare _stop00 : int {Reuses: 0}
 on init
-	declare param10 : int {Reuses: 0}
-	declare RETURN_FLAG00 : int {Reuses: 0}
+	declare arr[5] : int[] := [1, 2, 3, 4, 5] {Reuses: 0}
+	declare arr2[5] : int[] := [0, 0, 0, 0, 0] {Reuses: 0}
+	message(arr2[0]{int} {arr2} ){Builtin, None, message}
+	declare ndarr[4, 5] : int[][] {Reuses: 0}
+		declare local i0 : int {Reuses: 0}
+		declare local _step10 : int {Reuses: 0}
+		declare local _stop10 : int {Reuses: 0}
+		declare local ii0 : int {Reuses: 0}
+		declare local _step00 : int {Reuses: 0}
+		declare local _stop00 : int {Reuses: 0}
+		print_2d_array(ndarr{int[][]} {ndarr} ){UserDefined, Inlining, print_2d_array}
+
 end on
 
-on note
-	param10{int} {param10}  := 5
-	RETURN_FLAG00{int} {RETURN_FLAG00}  := 0
-	while(RETURN_FLAG00{int} {RETURN_FLAG00}  = 0) 
-		if(1 = param10{int} {param10} )
-			RETURN_FLAG00{int} {RETURN_FLAG00}  := 1
-			continue{Builtin, None, continue}
-		end if
-		if(2 = param10{int} {param10} )
-			RETURN_FLAG00{int} {RETURN_FLAG00}  := 1
-			continue{Builtin, None, continue}
-		end if
-		if(3 = param10{int} {param10} )
-			RETURN_FLAG00{int} {RETURN_FLAG00}  := 1
-			continue{Builtin, None, continue}
-		end if
-		if(5 = param10{int} {param10} )
-			RETURN_FLAG00{int} {RETURN_FLAG00}  := 1
-			continue{Builtin, None, continue}
-		end if
-		if(6 = param10{int} {param10} )
-			RETURN_FLAG00{int} {RETURN_FLAG00}  := 1
-			continue{Builtin, None, continue}
-		end if
-	end while
-end on
+function print_2d_array(ref arr0 : int[][])
+		i0{int} {i0}  := 0
+		_step10{int} {_step10}  := 1
+		_stop10{int} {_stop10}  := num_elements[arr0{int[]} {arr0} , 1]
+		while(((i0{int} {i0}  < _stop10{int} {_stop10} ) and (_step10{int} {_step10}  > 0)) or ((i0{int} {i0}  > _stop10{int} {_stop10} ) and (_step10{int} {_step10}  < 0))) 
+				ii0{int} {ii0}  := 0
+				_step00{int} {_step00}  := 1
+				_stop00{int} {_stop00}  := num_elements[arr0{int[]} {arr0} , 2]
+				while(((ii0{int} {ii0}  < _stop00{int} {_stop00} ) and (_step00{int} {_step00}  > 0)) or ((ii0{int} {ii0}  > _stop00{int} {_stop00} ) and (_step00{int} {_step00}  < 0))) 
+					message(i0{int} {i0}  & "  " & arr0[i0{int} {i0} ]{int} {arr0} ){Builtin, None, message}
+					ii0{int} {ii0}  := ii0{int} {ii0}  + _step00{int} {_step00} 
+				end while
+
+			i0{int} {i0}  := i0{int} {i0}  + _step10{int} {_step10} 
+		end while
+
+end function
 
 

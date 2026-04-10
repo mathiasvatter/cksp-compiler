@@ -86,6 +86,7 @@ public:
 			// m_size_is_constant = true;
 			node.size->accept(*this);
 			if(!node.size->is_constant()) {
+				error.set_token(node.size->tok);
 				error.m_message = "Size of <Array> has to be a constant expression with constant <Variables> and/or <Integers>.";
 				error.m_got = node.size->get_string();
 				error.exit();

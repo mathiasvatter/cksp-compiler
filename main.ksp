@@ -2,41 +2,65 @@
 #pragma combine_callbacks(true)
 #pragma max_callback_depth(420)
 
+// #pragma optimize("none")
 
 
-
-
-// function load_arrays(array1: int[], array2: int[])
-// 	declare urmom[50]: int[] := (0,0,0,0,0)
-// 	urmom := array1
-// 	sort(urmom, 0)
-// 	for idx, val in pairs(array1)
-// 		array2[idx] := val
-// 	end for
-// end function
+function load_arrays(array1: int[], array2: int[], size: int)
+	// declare urmomsize[size, size+1]: int[][]
+	declare urmom[num_elements(array1), num_elements(array2)]: int[][]
+	for idx, val in pairs(array1)
+		array2[idx] := val
+		// message(urmom[0])
+	end for
+end function
 
 on init
-	
-	// declare arr: int[] := (1,2,3,4,5)
-	// declare arr2: int[] := (0,0,0,0,0)
-	// arr2 := arr
-	// load_arrays(arr, arr2)
-	// message(arr2[0])
 
-	// message(return_sth(5))
+	// the function has to be called to reproduce this
+	declare arr: int[] := (1,2,3,4,5)
+	declare arr2: int[] := (0,0,0,0,0)
 
+	// load_arrays(arr, arr2, 4)
+	// load_arrays(arr, arr2, 4)
+	message(arr2[0])
+
+	declare ndarr[4,5]
+	print_2d_array(ndarr)
 end on
 
-on note
-	return_sth(5)
-	// return_sth(4)
-end on	
+function print_2d_array(arr)
+    for i in range(num_elements(arr, 1))
+        for ii in range(num_elements(arr, 2))
+            message(i & "  " & arr[i])
+        end for
+    end for
+end function
 
-function return_sth(param1: int)
-	for i, el in pairs([1,2,3,5,6])
-		if (el = param1)
-			exit
-		end if			
-	end for		
-end function	
+// on init
+	
+// 	// declare arr: int[] := (1,2,3,4,5)
+// 	// declare arr2: int[] := (0,0,0,0,0)
+// 	// arr2 := arr
+// 	// load_arrays(arr, arr2)
+// 	// message(arr2[0])
+
+// 	// message(return_sth(5))
+
+// end on
+
+// on note
+// 	declare array[234, 4] := [1,2,5]
+// 	return_sth(5, array)
+// 	// return_sth(4)
+// end on	
+
+// function return_sth(param1: int, array: int[][])
+// 	message(search(array[4, *], 1))
+// 	message(num_elements(array))
+// 	for i, el in pairs([1,2,3,5,6])
+// 		if (el = param1)
+// 			exit
+// 		end if			
+// 	end for		
+// end function	
 

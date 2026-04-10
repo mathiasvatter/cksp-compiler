@@ -1,32 +1,31 @@
-{ Compiled with cksp version 0.0.8 on Wed Apr 08 22:51:47 2026 }
+{ Compiled with cksp version 0.0.9-alpha.1 on Fri Apr 10 14:08:12 2026 }
 on init
-  declare $param10
-  declare $RETURN_FLAG00
-end on
-on note
-  $param10 := 5
-  $RETURN_FLAG00 := 0
-  while($RETURN_FLAG00 = 0) 
-    if(1 = $param10)
-      $RETURN_FLAG00 := 1
-      continue
-    end if
-    if(2 = $param10)
-      $RETURN_FLAG00 := 1
-      continue
-    end if
-    if(3 = $param10)
-      $RETURN_FLAG00 := 1
-      continue
-    end if
-    if(5 = $param10)
-      $RETURN_FLAG00 := 1
-      continue
-    end if
-    if(6 = $param10)
-      $RETURN_FLAG00 := 1
-      continue
-    end if
+  declare $_iter0
+  declare $idx0
+  declare $idx00
+  declare %_urmom00[25]
+  declare %arr[5] := (1, 2, 3, 4, 5)
+  declare %arr2[5] := (0, 0, 0, 0, 0)
+  $_iter0 := 0
+  while($_iter0 <= (num_elements(%_urmom00) - 1)) 
+    %_urmom00[$_iter0] := 0
+    inc($_iter0)
   end while
+  $idx0 := 0
+  while($idx0 <= (num_elements(%arr) - 1)) 
+    %arr2[$idx0] := %arr[$idx0]
+    inc($idx0)
+  end while
+  $_iter0 := 0
+  while($_iter0 <= (num_elements(%_urmom00) - 1)) 
+    %_urmom00[$_iter0] := 0
+    inc($_iter0)
+  end while
+  $idx00 := 0
+  while($idx00 <= (num_elements(%arr) - 1)) 
+    %arr2[$idx00] := %arr[$idx00]
+    inc($idx00)
+  end while
+  message(%arr2[0])
 end on
 
