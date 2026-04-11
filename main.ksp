@@ -16,7 +16,6 @@
 
 on init
 
-	declare NUM_GROUPS := 1
 	declare v := -9 + NUM_GROUPS
 	declare dd := 1 + NUM_GROUPS
 	message(v >>> dd)
@@ -24,8 +23,8 @@ on init
 	declare arr: int[] := (1,2,3,4,5)
 	declare arr2: int[] := (0,0,0,0,0)
 
-	// load_arrays(arr, arr2, 4)
-	// load_arrays(arr, arr2, 4)
+	load_arrays(arr, arr2, 4)
+	load_arrays(arr, arr2, 4)
 	// message(arr2[0])
 
 	// declare ndarr[4,5]
@@ -36,13 +35,13 @@ end on
 // 	return -34
 // end function
 
-function print_2d_array(arr)
-    for i in range(num_elements(arr, 1))
-        for ii in range(num_elements(arr, 2))
-            message(i & "  " & arr[i, ii])
-        end for
-    end for
-end function
+// function print_2d_array(arr)
+//     for i in range(num_elements(arr, 1))
+//         for ii in range(num_elements(arr, 2))
+//             message(i & "  " & arr[i, ii])
+//         end for
+//     end for
+// end function
 
 // on init
 	

@@ -281,7 +281,12 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 			const auto msg = "When referencing a struct method, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
 			DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
 		}
-		DefinitionProvider::throw_declaration_error(node, "", m_def_provider).exit();
+		if (!node.parent -> cast<NodeFunctionCall>()) {
+			// when declaration is missing, throw this error only if this node is used as a function variable
+			// if it is used in a call and the function is not found, the official missing function error will be
+			// handled after type checking
+			DefinitionProvider::throw_declaration_error(node, "", m_def_provider).exit();
+		}
 		return &node;
 	}
 	node.match_data_structure(node_declaration);
