@@ -1,67 +1,42 @@
-{ Compiled with cksp version 0.0.9-alpha.1 on Sat Apr 11 13:41:51 2026 }
+{ Compiled with cksp version 0.0.9-alpha.1 on Sat Apr 11 13:56:19 2026 }
 on init
-  declare $_iter0
-  declare $size0
-  declare $idx0
-  declare $idx00
-  declare %_urmom00[25]
-  declare %_array0[936]
-  declare $v
-  $v := -9 + $NUM_GROUPS
-  declare $dd
-  $dd := 1 + $NUM_GROUPS
-  message(sh_right($v, $dd) .and. (sh_left(1, (32 - $dd) .and. 31) - 1))
-  declare %arr[5] := (1, 2, 3, 4, 5)
-  $size0 := 4
-  $_iter0 := 0
-  while($_iter0 <= (num_elements(%_urmom00) - 1)) 
-    %_urmom00[$_iter0] := 0
-    inc($_iter0)
-  end while
-  $idx0 := 0
-  while($idx0 <= (num_elements(%arr) - 1)) 
-    inc($idx0)
-  end while
-  $size0 := 4
-  $_iter0 := 0
-  while($_iter0 <= (num_elements(%_urmom00) - 1)) 
-    %_urmom00[$_iter0] := 0
-    inc($_iter0)
-  end while
-  $idx00 := 0
-  while($idx00 <= (num_elements(%arr) - 1)) 
-    inc($idx00)
-  end while
+  declare $ret0
+  declare $param10
+  declare $_ret00
+  declare $_ret10
 end on
+function return_sth
+  if(1 = $param10)
+    $ret0 := 0
+    exit
+  end if
+  if(2 = $param10)
+    $ret0 := 1
+    exit
+  end if
+  if(3 = $param10)
+    $ret0 := 2
+    exit
+  end if
+  if(5 = $param10)
+    $ret0 := 3
+    exit
+  end if
+  if(6 = $param10)
+    $ret0 := 4
+    exit
+  end if
+  $ret0 := -1
+  exit
+end function
 on note
-  %_array0[0] := 1
-  %_array0[1] := 2
-  %_array0[2] := 5
-  $idx0 := 5
-  $size0 := 0
-  while($size0 = 0) 
-    message(search(%_array0, 1, 16, 19))
-    message(936)
-    if(1 = $idx0)
-      $size0 := 1
-      continue
-    end if
-    if(2 = $idx0)
-      $size0 := 1
-      continue
-    end if
-    if(3 = $idx0)
-      $size0 := 1
-      continue
-    end if
-    if(5 = $idx0)
-      $size0 := 1
-      continue
-    end if
-    if(6 = $idx0)
-      $size0 := 1
-      continue
-    end if
-  end while
+  $param10 := 5
+  call return_sth
+  $_ret00 := $ret0
+  message($_ret00)
+  $param10 := 4
+  call return_sth
+  $_ret10 := $ret0
+  message($_ret10)
 end on
 
