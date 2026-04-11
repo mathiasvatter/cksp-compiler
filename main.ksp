@@ -16,15 +16,12 @@
 
 on init
 
-	declare v := -9 + NUM_GROUPS
-	declare dd := 1 + NUM_GROUPS
-	message(v >>> dd)
 	// the function has to be called to reproduce this
 	declare arr: int[] := (1,2,3,4,5)
 	declare arr2: int[] := (0,0,0,0,0)
 
-	load_arrays(arr, arr2, 4)
-	load_arrays(arr, arr2, 4)
+	// load_arrays(arr, arr2, 4)
+	// load_arrays(arr, arr2, 4)
 	// message(arr2[0])
 
 	// declare ndarr[4,5]
@@ -55,19 +52,18 @@ end on
 
 // end on
 
-// on note
-// 	declare array[234, 4] := [1,2,5]
-// 	return_sth(5, array)
-// 	// return_sth(4)
-// end on	
+on note
+	message(return_sth(5))
+	message(return_sth(4))
+	
+end on	
 
-// function return_sth(param1: int, array: int[][])
-// 	message(search(array[4, *], 1))
-// 	message(num_elements(array))
-// 	for i, el in pairs([1,2,3,5,6])
-// 		if (el = param1)
-// 			exit
-// 		end if			
-// 	end for		
-// end function	
+function return_sth(param1: int) : int
+	for i, el in pairs([1,2,3,5,6])
+		if (el = param1)
+			return i
+		end if			
+	end for		
+	return -1
+end function
 
