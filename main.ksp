@@ -14,18 +14,25 @@
 // 	end for
 // end function
 
+struct Position
+	declare x: int
+	declare y: int
+end struct
+
 on init
 
-	// the function has to be called to reproduce this
-	declare arr: int[] := (1,2,3,4,5)
-	declare arr2: int[] := (0,0,0,0,0)
+	family Categories
+		declare const positions: Position[] := [Position(410+1, 297), Position(0, 0), Position(280, 0), Position(560, 0), Position(510, 290), Position(150, 307)]
+	end family
 
-	// load_arrays(arr, arr2, 4)
-	// load_arrays(arr, arr2, 4)
-	// message(arr2[0])
+	declare ui_panel pnl_category[15]
 
-	// declare ndarr[4,5]
-	// print_2d_array(ndarr)
+	for i, pos in pairs(Categories.positions)
+		pnl_category[i] -> pos_x := pos.x
+		pnl_category[i] -> pos_y := pos.y
+		declare local pos
+	end for
+
 end on
 
 // function CKSP______eq__(p1, p2)
@@ -52,18 +59,4 @@ end on
 
 // end on
 
-on note
-	message(return_sth(5))
-	message(return_sth(4))
-	
-end on	
-
-function return_sth(param1: int) : int
-	for i, el in pairs([1,2,3,5,6])
-		if (el = param1)
-			return i
-		end if			
-	end for		
-	return -1
-end function
 

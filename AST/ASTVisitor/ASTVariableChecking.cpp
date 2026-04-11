@@ -88,7 +88,7 @@ NodeAST* ASTVariableChecking::visit(NodeBlock &node) {
 		// }
 	}
 	// if body is in function definition, copy over last scope of header variables
-	if(node.parent->cast<NodeFunctionDefinition>()) {
+	if(node.parent->cast<NodeFunctionDefinition>() or node.parent->cast<NodeForEach>()) {
 		m_def_provider->copy_last_scope();
 	}
 	for(auto & stmt : node.statements) {

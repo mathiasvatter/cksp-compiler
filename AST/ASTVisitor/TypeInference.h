@@ -263,7 +263,6 @@ public:
 		// not doing that causes issue #95 because infering types from r_value to l_value of assignments
 		// only happens in cast_data_structure_types
 		cast_data_structure_types(&node, true);
-		// do_monomorphization();
 
 		node.reset_function_visited_flag();
 		return &node;

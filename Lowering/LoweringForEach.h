@@ -45,7 +45,7 @@ private:
 
     std::unordered_map<std::string, std::unique_ptr<NodeAST>> m_value_substitution;
     std::unique_ptr<NodeAST> get_value_substitute(const std::string& name) {
-		auto it = m_value_substitution.find(name);
+		const auto it = m_value_substitution.find(name);
 		if(it != m_value_substitution.end()) {
 			return clone_as<NodeAST>(it->second.get());
 		}
