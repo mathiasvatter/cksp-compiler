@@ -1,84 +1,30 @@
-// Global Declarations:
-declare _iter0 : int {Reuses: 0}
-declare const MAX::STRUCTS : int := 1000000 {Reuses: 0}
-declare const MEM::WARNING : string := "Memory Error: No more free space available to allocate objects of type" {Reuses: 0}
-struct Position
-declare self{Ptr} : Position {Reuses: 0}
-declare Position::x : int {Reuses: 0}
-declare Position::y : int {Reuses: 0}
 
-	function Position::__init__(x : int, y : int)
-		Position::x{int} {Position::x}  := x{int} {x} 
-		Position::y{int} {Position::y}  := y{int} {y} 
-	end function
 
-	function Position::__repr__(self{Ptr} : Position)
-		return ("<Position> Object: " & self{Ptr}{Position} {self} )
-	end function
 
-end struct
+
+
+
+
+
+
+
+
+
+
 
 on init
-declare const Categories.positions : Position[] := [Position::__init__(410 + 1, 297){Constructor, None, Position::__init__}, Position::__init__(0, 0){Constructor, None, Position::__init__}, Position::__init__(280, 0){Constructor, None, Position::__init__}, Position::__init__(560, 0){Constructor, None, Position::__init__}, Position::__init__(510, 290){Constructor, None, Position::__init__}, Position::__init__(150, 307){Constructor, None, Position::__init__}] {Reuses: 0}
-declare pnl_category[15] : unknown {Reuses: 0}
-declare ui_panel pnl_category0 : int  {Reuses: 0}
-declare ui_panel pnl_category1 : int  {Reuses: 0}
-declare ui_panel pnl_category2 : int  {Reuses: 0}
-declare ui_panel pnl_category3 : int  {Reuses: 0}
-declare ui_panel pnl_category4 : int  {Reuses: 0}
-declare ui_panel pnl_category5 : int  {Reuses: 0}
-declare ui_panel pnl_category6 : int  {Reuses: 0}
-declare ui_panel pnl_category7 : int  {Reuses: 0}
-declare ui_panel pnl_category8 : int  {Reuses: 0}
-declare ui_panel pnl_category9 : int  {Reuses: 0}
-declare ui_panel pnl_category10 : int  {Reuses: 0}
-declare ui_panel pnl_category11 : int  {Reuses: 0}
-declare ui_panel pnl_category12 : int  {Reuses: 0}
-declare ui_panel pnl_category13 : int  {Reuses: 0}
-declare ui_panel pnl_category14 : int  {Reuses: 0}
-	_iter0{int} {_iter0}  := 0
-	while(_iter0{int} {_iter0}  <= (15 - 1)) 
-		pnl_category[_iter0{int} {_iter0} ]{int} {no declaration}  := get_ui_id(pnl_category0{int} {variable_name} ){Builtin, None} + _iter0{int} {_iter0} 
-		inc(_iter0{int} {_iter0} ){Builtin, None}
-	end while
-
-for i : unknown, pos : unknown in pairs(Categories.positions{unknown} {no declaration} )
-pnl_category[i{unknown} {no declaration} ]{unknown} {no declaration}  -> pos_x := pos.x{unknown} {no declaration} 
-pnl_category[i{unknown} {no declaration} ]{unknown} {no declaration}  -> pos_y := pos.y{unknown} {no declaration} 
-declare local pos : unknown {Reuses: 0}
-end for
+message(return_sth(5))
 end on
 
-function CKSP::sh_right_logical(x : int, n : int)
-	return (sh_right(x{unknown} {no declaration} , n{unknown} {no declaration} ){Undefined, None} .and. (sh_left(1, (32 - n{unknown} {no declaration} ) .and. 31){Undefined, None} - 1))
-end function
-
-function CKSP::__bool__(x : int)
-	return (- sh_right(x{unknown} {no declaration}  .xor. - x{unknown} {no declaration} , 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__ge__(a : int, b : int)
-	return (sh_right(a{unknown} {no declaration}  - b{unknown} {no declaration} , 31){Builtin, None, sh_right} + 1)
-end function
-
-function CKSP::__lt__(a : int, b : int)
-	return (- sh_right(a{unknown} {no declaration}  - b{unknown} {no declaration} , 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__ne__(a : int, b : int)
-	return (1 - - sh_right(abs(a{unknown} {no declaration}  - b{unknown} {no declaration} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__eq__(a : int, b : int)
-	return (- sh_right(abs(a{unknown} {no declaration}  - b{unknown} {no declaration} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__le__(a : int, b : int)
-	return (1 + sh_right(b{unknown} {no declaration}  - a{unknown} {no declaration} , 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__gt__(a : int, b : int)
-	return (- sh_right(b{unknown} {no declaration}  - a{unknown} {no declaration} , 31){Builtin, None, sh_right})
+functionreturn_sth(param1:int):int
+foriin(1,2,3,5,6)
+if(i=param1)
+returni
+end if
+end for
+return-1
 end function
 
 
+
+ 

@@ -1,149 +1,42 @@
-{ Compiled with cksp version 0.0.9-alpha.1 on Sat Apr 11 14:49:15 2026 }
+{ Compiled with cksp version 0.0.9-alpha.1 on Sat Apr 11 15:05:54 2026 }
 on init
-  declare $_iter0
   declare $ret0
-  declare $x0
-  declare $y0
+  declare $param10
+  declare $RETURN_FLAG00
   declare $_ret00
-  declare $_ret10
-  declare $_ret20
-  declare $_ret30
-  declare $_ret40
-  declare $_ret50
-  declare $i0
-  declare $Position____free_idx
-  declare %Position____allocation[6]
-  declare %Position____x[6]
-  declare %Position____y[6]
-  $x0 := 411
-  $y0 := 297
-  $Position____free_idx := search(%Position____allocation, 0, $Position____free_idx, 5)
-  if($Position____free_idx = -1)
-    message("Error: No more free space available to allocate objects of type 'Position'")
-  end if
-  %Position____allocation[$Position____free_idx] := 1
-  %Position____x[$Position____free_idx] := $x0
-  %Position____y[$Position____free_idx] := $y0
-  $ret0 := $Position____free_idx
+  $param10 := 5
+  $RETURN_FLAG00 := 0
+  while($RETURN_FLAG00 = 0) 
+    if(1 = $param10)
+      $ret0 := 1
+      $RETURN_FLAG00 := 1
+      continue
+    end if
+    if(2 = $param10)
+      $ret0 := 2
+      $RETURN_FLAG00 := 1
+      continue
+    end if
+    if(3 = $param10)
+      $ret0 := 3
+      $RETURN_FLAG00 := 1
+      continue
+    end if
+    if(5 = $param10)
+      $ret0 := 5
+      $RETURN_FLAG00 := 1
+      continue
+    end if
+    if(6 = $param10)
+      $ret0 := 6
+      $RETURN_FLAG00 := 1
+      continue
+    end if
+    $ret0 := -1
+    $RETURN_FLAG00 := 1
+    continue
+  end while
   $_ret00 := $ret0
-  $x0 := 0
-  $y0 := 0
-  $Position____free_idx := search(%Position____allocation, 0, $Position____free_idx, 5)
-  if($Position____free_idx = -1)
-    message("Error: No more free space available to allocate objects of type 'Position'")
-  end if
-  %Position____allocation[$Position____free_idx] := 1
-  %Position____x[$Position____free_idx] := $x0
-  %Position____y[$Position____free_idx] := $y0
-  $ret0 := $Position____free_idx
-  $_ret10 := $ret0
-  $x0 := 280
-  $y0 := 0
-  $Position____free_idx := search(%Position____allocation, 0, $Position____free_idx, 5)
-  if($Position____free_idx = -1)
-    message("Error: No more free space available to allocate objects of type 'Position'")
-  end if
-  %Position____allocation[$Position____free_idx] := 1
-  %Position____x[$Position____free_idx] := $x0
-  %Position____y[$Position____free_idx] := $y0
-  $ret0 := $Position____free_idx
-  $_ret20 := $ret0
-  $x0 := 560
-  $y0 := 0
-  $Position____free_idx := search(%Position____allocation, 0, $Position____free_idx, 5)
-  if($Position____free_idx = -1)
-    message("Error: No more free space available to allocate objects of type 'Position'")
-  end if
-  %Position____allocation[$Position____free_idx] := 1
-  %Position____x[$Position____free_idx] := $x0
-  %Position____y[$Position____free_idx] := $y0
-  $ret0 := $Position____free_idx
-  $_ret30 := $ret0
-  $x0 := 510
-  $y0 := 290
-  $Position____free_idx := search(%Position____allocation, 0, $Position____free_idx, 5)
-  if($Position____free_idx = -1)
-    message("Error: No more free space available to allocate objects of type 'Position'")
-  end if
-  %Position____allocation[$Position____free_idx] := 1
-  %Position____x[$Position____free_idx] := $x0
-  %Position____y[$Position____free_idx] := $y0
-  $ret0 := $Position____free_idx
-  $_ret40 := $ret0
-  $x0 := 150
-  $y0 := 307
-  $Position____free_idx := search(%Position____allocation, 0, $Position____free_idx, 5)
-  if($Position____free_idx = -1)
-    message("Error: No more free space available to allocate objects of type 'Position'")
-  end if
-  %Position____allocation[$Position____free_idx] := 1
-  %Position____x[$Position____free_idx] := $x0
-  %Position____y[$Position____free_idx] := $y0
-  $ret0 := $Position____free_idx
-  $_ret50 := $ret0
-  declare %Categories__positions[6]
-  %Categories__positions[0] := $_ret00
-  %Categories__positions[1] := $_ret10
-  %Categories__positions[2] := $_ret20
-  %Categories__positions[3] := $_ret30
-  %Categories__positions[4] := $_ret40
-  %Categories__positions[5] := $_ret50
-  $y0 := %Categories__positions[0]
-  $x0 := 1
-  if(%Categories__positions[0] # -1)
-    %Position____allocation[$y0] := %Position____allocation[$y0] + $x0
-  end if
-  $y0 := %Categories__positions[1]
-  $x0 := 1
-  if(%Categories__positions[1] # -1)
-    %Position____allocation[$y0] := %Position____allocation[$y0] + $x0
-  end if
-  $y0 := %Categories__positions[2]
-  $x0 := 1
-  if(%Categories__positions[2] # -1)
-    %Position____allocation[$y0] := %Position____allocation[$y0] + $x0
-  end if
-  $y0 := %Categories__positions[3]
-  $x0 := 1
-  if(%Categories__positions[3] # -1)
-    %Position____allocation[$y0] := %Position____allocation[$y0] + $x0
-  end if
-  $y0 := %Categories__positions[4]
-  $x0 := 1
-  if(%Categories__positions[4] # -1)
-    %Position____allocation[$y0] := %Position____allocation[$y0] + $x0
-  end if
-  $y0 := %Categories__positions[5]
-  $x0 := num_elements(%Categories__positions) - 5
-  if(%Categories__positions[5] # -1)
-    %Position____allocation[$y0] := %Position____allocation[$y0] + $x0
-  end if
-  declare %pnl_category[15]
-  declare ui_panel $pnl_category0 
-  declare ui_panel $pnl_category1 
-  declare ui_panel $pnl_category2 
-  declare ui_panel $pnl_category3 
-  declare ui_panel $pnl_category4 
-  declare ui_panel $pnl_category5 
-  declare ui_panel $pnl_category6 
-  declare ui_panel $pnl_category7 
-  declare ui_panel $pnl_category8 
-  declare ui_panel $pnl_category9 
-  declare ui_panel $pnl_category10 
-  declare ui_panel $pnl_category11 
-  declare ui_panel $pnl_category12 
-  declare ui_panel $pnl_category13 
-  declare ui_panel $pnl_category14 
-  $_iter0 := 0
-  while($_iter0 <= 14) 
-    %pnl_category[$_iter0] := get_ui_id($pnl_category0) + $_iter0
-    inc($_iter0)
-  end while
-  $i0 := 0
-  while($i0 <= (num_elements(%Categories__positions) - 1)) 
-    set_control_par(%pnl_category[$i0], $CONTROL_PAR_POS_X, %Position____x[%Categories__positions[$i0]])
-    set_control_par(%pnl_category[$i0], $CONTROL_PAR_POS_Y, %Position____y[%Categories__positions[$i0]])
-    inc($i0)
-  end while
+  message($_ret00)
 end on
 
