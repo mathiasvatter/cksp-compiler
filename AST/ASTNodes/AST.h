@@ -53,8 +53,9 @@ struct NodeAST {
     virtual void update_parents(NodeAST* new_parent) {
         parent = new_parent;
     }
-	virtual void set_child_parents() {};
+	virtual void set_child_parents() {}
     virtual std::string get_string() = 0;
+	virtual std::string get_token_string() { return tok.val; }
     virtual void update_token_data(const Token& token) {
         tok.line = token.line; tok.file = token.file;
     }
@@ -143,6 +144,7 @@ struct NodeDeadCode final : NodeAST {
     NodeDeadCode(const NodeDeadCode& other) : NodeAST(other) {}
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     std::string get_string() override {return "";}
+	std::string get_token_string() override { return ""; }
 };
 
 struct NodeReference : NodeAST {
@@ -164,6 +166,9 @@ struct NodeReference : NodeAST {
     std::string get_string() override {
         return name;
     }
+	std::string get_token_string() override {
+		return name;
+	}
 	virtual std::unique_ptr<struct NodeArrayRef> to_array_ref(std::unique_ptr<NodeAST> index) {return nullptr;}
 	virtual std::unique_ptr<struct NodeVariableRef> to_variable_ref() {return nullptr;}
 	virtual std::unique_ptr<struct NodePointerRef> to_pointer_ref() {return nullptr;}
@@ -257,6 +262,9 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 	std::string get_string() override {
 		return name;
 	}
+	std::string get_token_string() override {
+		return name;
+	}
     virtual std::unique_ptr<NodeReference> to_reference();
 	/// determines if current data structure is local variable and sets is_local flag
 	bool determine_locality(const NodeProgram* program, const NodeBlock* current_block);
@@ -320,14 +328,16 @@ struct NodeInstruction : NodeAST {
     NodeInstruction(const NodeInstruction& other) : NodeAST(other), kind(other.kind) {};
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	std::string get_string() override {return "";}
+	std::string get_token_string() override { return ""; }
 };
 
-struct NodeExpression final : NodeAST {
+struct NodeExpression : NodeAST {
     explicit NodeExpression(const NodeType node_type, const Token& tok) : NodeAST(tok, node_type) {};
     ~NodeExpression() override = default;
     NodeExpression(const NodeExpression& other) : NodeAST(other) {};
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	std::string get_string() override {return "";}
+	std::string get_token_string() override { return tok.val; }
 };
 
 struct NodeWildcard final : NodeAST {
@@ -340,6 +350,9 @@ struct NodeWildcard final : NodeAST {
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	std::string get_string() override {
 		return value;
+	}
+	std::string get_token_string() override {
+		return tok.val;
 	}
 	[[nodiscard]] bool check_semantic() const;
 };
@@ -355,6 +368,9 @@ struct NodeInt final : NodeAST {
 	std::string get_string() override {
 		return std::to_string(value);
 	}
+	std::string get_token_string() override {
+		return tok.val;
+	}
 };
 
 struct NodeReal final : NodeAST {
@@ -366,6 +382,9 @@ struct NodeReal final : NodeAST {
     std::string get_string() override {
         return std::to_string(value);
     }
+	std::string get_token_string() override {
+		return tok.val;
+	}
 };
 
 struct NodeBoolean final : NodeAST {
@@ -376,6 +395,9 @@ struct NodeBoolean final : NodeAST {
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	std::string get_string() override {
 		return std::to_string(value);
+	}
+	std::string get_token_string() override {
+		return tok.val;
 	}
 };
 
@@ -390,6 +412,9 @@ struct NodeString final : NodeAST {
     std::string get_string() override {
         return value;
     }
+	std::string get_token_string() override {
+		return tok.val;
+	}
 	/**
 	 * @brief Überprüft die Korrektheit eines geparsten Strings.
 	 *
@@ -457,6 +482,11 @@ struct NodeFormatString final : NodeAST {
 		if(elements.empty()) return str;
 		return StringUtils::join_apply(elements, [&str](auto& elem) {elem->get_string(); return elem->get_string();}, " ");
 	}
+	std::string get_token_string() override {
+		std::string str;
+		if(elements.empty()) return str;
+		return StringUtils::join_apply(elements, [](auto& elem) { return elem->get_token_string(); }, " ");
+	}
 	void add_element(std::unique_ptr<NodeAST> elem) {
 		elem->parent = this;
 		elements.push_back(std::move(elem));
@@ -498,6 +528,12 @@ struct NodeReferenceList final : NodeAST {
 		std::string str;
 		if(references.empty()) return str;
 		for(const auto & ref : references) str += ref->get_string() + ", ";
+		return str.erase(str.size() - 2);
+	}
+	std::string get_token_string() override {
+		std::string str;
+		if(references.empty()) return str;
+		for(const auto& ref : references) str += ref->get_token_string() + ", ";
 		return str.erase(str.size() - 2);
 	}
 	void update_token_data(const Token& token) override {
@@ -567,6 +603,14 @@ struct NodeParamList final : NodeAST {
         }
         return str.erase(str.size() - 2);
     }
+	std::string get_token_string() override {
+		std::string str;
+		if(params.empty()) return str;
+		for (const auto& p : params) {
+			str += p->get_token_string() + ", ";
+		}
+		return str.erase(str.size() - 2);
+	}
     void update_token_data(const Token& token) override {
         for(auto &p : params) p->update_token_data(token);
     }
@@ -647,6 +691,11 @@ struct NodeInitializerList final : NodeAST {
 		if (elements.empty()) return str;
 		return StringUtils::join_apply(elements, [](auto& el){return el->get_string();});
 	}
+	std::string get_token_string() override {
+		std::string str;
+		if (elements.empty()) return str;
+		return StringUtils::join_apply(elements, [](auto& el){ return el->get_token_string(); });
+	}
 
 	void update_token_data(const Token &token) override {
 		for (const auto &el : elements) el->update_token_data(token);
@@ -712,8 +761,11 @@ struct NodeUnaryExpr final : NodeAST {
 		if(operand) operand->parent = this;
 	}
     std::string get_string() override {
-        return get_token_string(op) + operand->get_string();
+        return ::get_token_string(op) + operand->get_string();
     }
+	std::string get_token_string() override {
+		return ::get_token_string(op) + operand->get_token_string();
+	}
     void update_token_data(const Token& token) override {
         operand -> update_token_data(token);
     }
@@ -751,8 +803,11 @@ struct NodeBinaryExpr final : NodeAST {
 		if(right) right->parent = this;
 	}
     std::string get_string() override {
-        return left->get_string() + get_token_string(op) + right->get_string();
+        return left->get_string() + ::get_token_string(op) + right->get_string();
     }
+	std::string get_token_string() override {
+		return left->get_token_string() + ::get_token_string(op) + right->get_token_string();
+	}
     void update_token_data(const Token& token) override {
         left -> update_token_data(token);
         right -> update_token_data(token);
@@ -794,6 +849,7 @@ struct NodeCallback final : NodeAST {
     void update_parents(NodeAST* new_parent) override;
 	void set_child_parents() override;;
     std::string get_string() override { return ""; }
+	std::string get_token_string() override { return tok.val; }
     void update_token_data(const Token& token) override;
 };
 
@@ -806,6 +862,11 @@ struct NodeImport final : NodeAST {
     NodeImport(const NodeImport& other);
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     std::string get_string() override { return ""; }
+	std::string get_token_string() override {
+		std::string str = "import " + filepath;
+		if (!alias.empty()) str += " as " + alias;
+		return str;
+	}
     void update_token_data(const Token& token) override {}
 };
 
@@ -846,6 +907,7 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
     void update_parents(NodeAST* new_parent) override;
 	void set_child_parents() override;
     std::string get_string() override {return "";}
+	std::string get_token_string() override { return tok.val; }
     void update_token_data(const Token& token) override;
 	[[nodiscard]] ASTLowering *get_lowering(NodeProgram *program) const override;
 	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
@@ -899,6 +961,7 @@ struct NodeProgram final : NodeAST {
     void update_parents(NodeAST* new_parent) override;
 	void set_child_parents() override;
     std::string get_string() override {return "";}
+	std::string get_token_string() override { return tok.val; }
     void update_token_data(const Token& token) override {}
 	/// update function lookup table
 	void update_function_lookup();
@@ -936,6 +999,4 @@ struct NodeProgram final : NodeAST {
 	std::shared_ptr<NodeVariable> get_tmp_var(Type* ty, DataType data=DataType::Mutable);
 	std::shared_ptr<NodePointer> get_tmp_ptr(Type* ty, DataType data=DataType::Mutable);
 };
-
-
 

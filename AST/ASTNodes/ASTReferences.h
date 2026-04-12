@@ -28,6 +28,9 @@ struct NodeVariableRef final : NodeReference {
 	std::string get_string() override {
 		return name;
 	}
+	std::string get_token_string() override {
+		return name;
+	}
 	std::unique_ptr<NodeArrayRef> to_array_ref(std::unique_ptr<NodeAST> index) override;
 	/// this_list.next.next
 	std::unique_ptr<NodeAccessChain> to_method_chain() override;
@@ -89,6 +92,9 @@ struct NodeArrayRef final : NodeCompositeRef {
 	}
 	std::string get_string() override {
 		return name;
+	}
+	std::string get_token_string() override {
+		return name + (index ? "[" + index->get_token_string() + "]" : "");
 	}
 //    ASTLowering* get_lowering(NodeProgram *program) const override;
 	std::unique_ptr<NodeNDArrayRef> to_ndarray_ref() override;
@@ -155,6 +161,9 @@ struct NodeNDArrayRef final : NodeCompositeRef {
 	};
 	std::string get_string() override {
 		return name;
+	}
+	std::string get_token_string() override {
+		return name + (indexes ? "["+indexes->get_token_string()+"]" : "");
 	}
 //    ASTLowering* get_lowering(NodeProgram *program) const override;
 	ASTLowering *get_data_lowering(NodeProgram *program) const override;
@@ -243,6 +252,9 @@ struct NodeFunctionHeaderRef final : NodeReference {
 	std::string get_string() override {
 		return name + "(" + (args ? args->get_string() : "") + ")";
 	}
+	std::string get_token_string() override {
+		return name + "(" + (args ? args->get_token_string() : "") + ")";
+	}
 	void set_child_parents() override;
 	[[nodiscard]] int get_num_args() const;
 	[[nodiscard]] bool has_no_args() const;
@@ -286,6 +298,9 @@ struct NodeListRef final : NodeReference {
 	}
 	std::string get_string() override {
 		return name;
+	}
+	std::string get_token_string() override {
+		return name + "[" + (indexes ? indexes->get_token_string() : "") + "]";
 	}
 	void set_child_parents() override {
 		if(indexes) indexes->parent = this;
@@ -365,6 +380,13 @@ struct NodeAccessChain final : NodeReference {
 		}
 		return str.erase(str.size() - 1);
 	}
+	std::string get_token_string() override {
+		std::string str;
+		for (const auto& c : chain) {
+			str += c->get_token_string() + ".";
+		}
+		return str.empty() ? str : str.erase(str.size() - 1);
+	}
 	void flatten() {
 		std::vector<std::unique_ptr<NodeAST>> flat_list;
 		// Rekursive Funktion, um die Parameterliste abzuflachen
@@ -413,6 +435,9 @@ struct NodeGetControl final : NodeReference {
 	std::string get_string() override {
 		return ui_id->get_string() + " -> " + control_param;
 	}
+	std::string get_token_string() override {
+		return ui_id->get_token_string() + " -> " + control_param;
+	}
 	void update_token_data(const Token& token) override {
 		ui_id -> update_token_data(token);
 	}
@@ -449,10 +474,12 @@ struct NodeSetControl final : NodeReference {
 	std::string get_string() override {
 		return ui_id->get_string() + " -> " + control_param + " := " + value->get_string();
 	}
+	std::string get_token_string() override {
+		return ui_id->get_token_string() + " -> " + control_param + " := " + value->get_token_string();
+	}
 	void update_token_data(const Token& token) override {
 		ui_id -> update_token_data(token);
 		value -> update_token_data(token);
 	}
 	ASTLowering* get_lowering(struct NodeProgram *program) const override;
 };
-

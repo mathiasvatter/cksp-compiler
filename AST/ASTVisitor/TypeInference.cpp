@@ -463,7 +463,10 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 			auto prev_ptr = node.chain[prev].get();
 			auto prev_type = node.chain[prev]->ty;
 			if(prev_type->get_type_kind() != TypeKind::Object) {
-				error.m_message = "Method chaining can only be used on <Object> types.";
+				if (auto ref = prev_ptr->is_reference()) {
+					error = DefinitionProvider::throw_declaration_error(*ref, "", m_program->def_provider);
+				}
+				error.add_message("Method chaining can only be used on <Object> types, got '" + prev_ptr->get_token_string() + ": " + prev_type->to_string() + "' instead.");
 				error.exit();
 			}
 			auto prev_obj = prev_type->to_string();
@@ -472,7 +475,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				if(prev_type == TypeRegistry::Nil) {
 					error.m_message = "Method chaining can not be used on <Nil> types.";
 				} else if(prev_ptr->cast<NodeFunctionCall>()) {
-					error.m_message = prev_ptr->get_string()+" does not return <Object> type.";
+					error.m_message = prev_ptr->get_token_string()+" does not return <Object> type.";
 				} else {
 					error.m_message = "Struct "+prev_obj+" does not exist.";
 				}
