@@ -1618,12 +1618,12 @@ void NodeProgram::order_function_definitions() {
 	ordering.order_functions(*this);
 }
 
-std::shared_ptr<NodeVariable> NodeProgram::get_tmp_var(Type *ty, DataType data) {
+std::shared_ptr<NodeVariable> NodeProgram::get_tmp_var(Type *ty, DataType data, Token token) {
 	auto tmp = std::make_shared<NodeVariable>(
 		std::nullopt,
 		def_provider->get_fresh_name("tmp"),
 		ty,
-		tok,
+		token == Token() ? tok : token,
 		data
 	);
 	tmp->is_local = true;

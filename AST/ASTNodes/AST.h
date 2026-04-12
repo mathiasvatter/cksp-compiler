@@ -996,7 +996,7 @@ struct NodeProgram final : NodeAST {
 	void remove_unused_functions();
 	void order_function_definitions();
 
-	std::shared_ptr<NodeVariable> get_tmp_var(Type* ty, DataType data=DataType::Mutable);
+	std::shared_ptr<NodeVariable> get_tmp_var(Type* ty, DataType data=DataType::Mutable, Token token = Token());
 	std::shared_ptr<NodePointer> get_tmp_ptr(Type* ty, DataType data=DataType::Mutable);
 };
 

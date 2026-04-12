@@ -640,9 +640,38 @@ NodeAST * TypeInference::visit(NodeSingleDeclaration& node) {
 			}
 		}
 
+
+
 		match_assignment_types(*node.variable, *node.value);
 		node.variable->accept(*this);
 	}
+
+	// check if variable is array/ndarray and has no size. In this case, the value part
+	// has to be eiher initializer list, or array/ndarray (issue #38)
+	// declare var: int[] -> this is not allowed
+	auto array = node.variable->cast<NodeArray>();
+	auto ndarray = node.variable->cast<NodeNDArray>();
+	if ((array and !array->size) or (ndarray and !ndarray->sizes))  {
+		if(node.value) {
+			if(node.value->cast<NodeInitializerList>() or node.value->cast<NodeRange>()) {
+				// ok
+			} else if(node.value->cast<NodeArrayRef>()) {
+				// ok
+			} else if(node.value->cast<NodeNDArrayRef>()) {
+				// ok
+			} else {
+				auto error = CompileError(ErrorType::TypeError, "", "", node.value->tok);
+				error.m_message = "Variables of type <Array> or <NDArray> without size can only be initialized with an <Initializer List>, <Array> or <NDArray>.";
+				error.exit();
+			}
+		} else {
+			auto error = CompileError(ErrorType::TypeError, "", "", node.variable->tok);
+			error.m_message = "Variables of type <Array> or <NDArray> without size need to be initialized with an <Initializer List>, <Array> or <NDArray>.";
+			error.exit();
+		}
+
+	}
+
 	m_def_provider->add_to_declarations(&node);
 
 	// if declaration is pointer -> always initialize with nil!
