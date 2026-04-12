@@ -17,7 +17,7 @@ public:
 		m_def_provider = program->def_provider;
 	}
 
-	inline NodeAST * visit(NodeInitializerList &node) override {
+	NodeAST * visit(NodeInitializerList &node) override {
 		node.flatten();
 		if(node.parent->cast<NodeForEach>() or node.parent->parent->cast<NodeForEach>()) {
 			if(auto range = node.transform_to_range()) {

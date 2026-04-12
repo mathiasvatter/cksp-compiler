@@ -241,6 +241,7 @@ add_executable(cksp main.cpp
         Preprocessor/PreAST/PreASTImport.h
         Preprocessor/PreAST/PreASTConditions.h
         Optimization/VariableCollector.h
+        Lowering/LoweringNDArray.h
 )
 add_dependencies(cksp generate_headers)
 

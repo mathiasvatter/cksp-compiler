@@ -159,6 +159,10 @@ struct NodeNDArrayRef final : NodeCompositeRef {
 //    ASTLowering* get_lowering(NodeProgram *program) const override;
 	ASTLowering *get_data_lowering(NodeProgram *program) const override;
 
+	/// returns size = 1 if indexes given and no wildcard
+	/// ndarray[3,4,5] -> size 1
+	/// ndarray[3, *,*] -> size [num_elements(ndarray, 2), num_elements(ndarray, 3)]
+	/// ndarray -> size num_elements(ndarray)
 	std::unique_ptr<NodeAST> get_size() override;
 	std::unique_ptr<NodeAST> get_size(std::unique_ptr<NodeAST> dim);
 	void set_sizes(std::unique_ptr<NodeParamList> new_sizes) {

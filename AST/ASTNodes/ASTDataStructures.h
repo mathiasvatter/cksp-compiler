@@ -158,7 +158,7 @@ struct NodeNDArray final : NodeComposite {
 	void update_token_data(const Token& token) override {
 		if(sizes) sizes->update_token_data(token);
 	}
-//	ASTLowering* get_lowering(NodeProgram *program) const override;
+	ASTLowering* get_lowering(NodeProgram *program) const override;
 	ASTLowering *get_data_lowering(NodeProgram *program) const override;
 
     std::unique_ptr<NodeReference> to_reference() override;

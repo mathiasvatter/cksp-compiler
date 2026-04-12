@@ -170,7 +170,7 @@ NodeAST * ASTCollectLowerings::visit(NodeNDArray& node) {
 	//TRACE();
 	if(node.sizes) node.sizes->accept(*this);
 	if(node.num_elements) node.num_elements->accept(*this);
-	return &node;
+	return node.lower(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeNDArrayRef& node) {

@@ -155,7 +155,7 @@ std::unique_ptr<NodeAccessChain> NodeArrayRef::to_method_chain() {
 
 std::unique_ptr<NodeAST> NodeArrayRef::get_size() {
 	auto new_ref = clone_as<NodeArrayRef>(this);
-	new_ref->index = nullptr;
+	new_ref->remove_index();
 	new_ref->ty = get_declaration()->ty;
 	return DefinitionProvider::num_elements(std::move(new_ref));
 }
@@ -214,9 +214,26 @@ ASTLowering* NodeNDArrayRef::get_data_lowering(NodeProgram *program) const {
 
 std::unique_ptr<NodeAST> NodeNDArrayRef::get_size() {
 	// if indexes are set and no wildcards -> size is 1
-	if(indexes and num_wildcards() == 0) {
+	auto const num_wildcards = this->num_wildcards();
+	if(indexes and num_wildcards == 0) {
 		return std::make_unique<NodeInt>(1, tok);
 	}
+	if (indexes and num_wildcards > 0 ) {
+		auto w = get_wildcard_dimensions();
+		auto nsizes = std::make_unique<NodeParamList>(tok);
+		for (int i = w.first; i <= w.second; i++) {
+			auto ref = clone_as<NodeNDArrayRef>(this);
+			ref->ty = get_declaration()->ty;
+			ref->remove_index();
+			auto num_elements = std::make_unique<NodeNumElements>(std::move(ref), std::make_unique<NodeInt>(i+1, tok), tok);
+			nsizes->add_param(std::move(num_elements));
+		}
+		if (nsizes->size() == 1) {
+			return std::move(nsizes->param(0));
+		}
+		return nsizes;
+	}
+	// if !indexes
 	auto ref = clone_as<NodeNDArrayRef>(this);
 	ref->ty = get_declaration()->ty;
 	return std::make_unique<NodeNumElements>(std::move(ref), nullptr, tok);

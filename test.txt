@@ -1,42 +1,13 @@
-{ Compiled with cksp version 0.0.9-alpha.1 on Sat Apr 11 15:05:54 2026 }
+{ Compiled with cksp version 0.0.9-alpha.1 on Sun Apr 12 14:23:42 2026 }
 on init
-  declare $ret0
-  declare $param10
-  declare $RETURN_FLAG00
-  declare $_ret00
-  $param10 := 5
-  $RETURN_FLAG00 := 0
-  while($RETURN_FLAG00 = 0) 
-    if(1 = $param10)
-      $ret0 := 1
-      $RETURN_FLAG00 := 1
-      continue
-    end if
-    if(2 = $param10)
-      $ret0 := 2
-      $RETURN_FLAG00 := 1
-      continue
-    end if
-    if(3 = $param10)
-      $ret0 := 3
-      $RETURN_FLAG00 := 1
-      continue
-    end if
-    if(5 = $param10)
-      $ret0 := 5
-      $RETURN_FLAG00 := 1
-      continue
-    end if
-    if(6 = $param10)
-      $ret0 := 6
-      $RETURN_FLAG00 := 1
-      continue
-    end if
-    $ret0 := -1
-    $RETURN_FLAG00 := 1
-    continue
+  declare $_iter0
+  declare %_ndarr[6] := (1, 2, 3, 4, 5, 4)
+  declare %arr2[3]
+  $_iter0 := 0
+  while($_iter0 <= (num_elements(%arr2) - 1)) 
+    %arr2[$_iter0] := %_ndarr[12 + $_iter0]
+    inc($_iter0)
   end while
-  $_ret00 := $ret0
-  message($_ret00)
+  message(%arr2[3])
 end on
 

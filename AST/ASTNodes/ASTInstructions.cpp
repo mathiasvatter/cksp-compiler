@@ -662,10 +662,13 @@ ASTDesugaring * NodeSingleDeclaration::get_desugaring(NodeProgram *program) cons
 }
 
 ASTLowering* NodeSingleDeclaration::get_lowering(NodeProgram *program) const {
-	if(variable->get_node_type() == NodeType::UIControl) {
+	if(variable->cast<NodeUIControl>()) {
 		return variable->get_lowering(program);
-	}
-	if(variable->get_node_type() == NodeType::List) {
+	} else if(variable->cast<NodeList>()) {
+		return variable->get_lowering(program);
+	} else if (variable->cast<NodeArray>()) {
+		return variable->get_lowering(program);
+	} else if (variable->cast<NodeNDArray>()) {
 		return variable->get_lowering(program);
 	}
 	return nullptr;
