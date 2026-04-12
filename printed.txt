@@ -1,23 +1,9 @@
 on init
-	declare local i0 : int {Reuses: 2}
-	declare var : int := 5 {Reuses: 0}
+	declare local i0 : int {Reuses: 0}
 	i0{int} {i0}  := 0
-	while(i0{int} {i0}  < var{int} {var} ) 
+	while(i0{int} {i0}  < 40) 
 		message(i0{int} {i0} ){Builtin, None, message}
-		i0{int} {i0}  := i0{int} {i0}  + 1
-	end while
-	i0{int} {i0}  := 0
-	while(i0{int} {i0}  < 45) 
-		message(i0{int} {i0} ){Builtin, None, message}
-		i0{int} {i0}  := i0{int} {i0}  + 1
-	end while
-end on
-
-on note
-	i0{int} {i0}  := 0
-	while(i0{int} {i0}  < 30) 
-		message(i0{int} {i0} ){Builtin, None, message}
-		i0{int} {i0}  := i0{int} {i0}  + 1
+		inc(i0{int} {i0} ){Builtin, None, inc}
 	end while
 end on
 
