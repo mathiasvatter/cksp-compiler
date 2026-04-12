@@ -216,6 +216,10 @@ std::string NodeFunctionCall::get_string() {
 	return function->get_string();
 }
 
+std::string NodeFunctionCall::get_token_string() {
+	return function->get_token_string();
+}
+
 void NodeFunctionCall::update_token_data(const Token &token) {
 	function -> update_token_data(token);
 }

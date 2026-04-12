@@ -225,7 +225,11 @@ void CompileError::set_message(const std::string &message) {
 }
 
 void CompileError::add_message(const std::string &message) {
-    m_message += " "+ message;
+    if (!m_message.empty()) {
+        m_message += "\n" + message;
+    } else {
+        m_message += message;
+    }
 }
 
 void CompileError::set_expected(const std::string &expected) {

@@ -97,6 +97,9 @@ struct NodeArray final : NodeComposite {
 	std::string get_string() override {
 		return name + "[" + (size ? size->get_string() : "") + "]";
 	}
+	std::string get_token_string() override {
+		return name + "[" + (size ? size->get_token_string() : "") + "]";
+	}
 	void update_parents(NodeAST* new_parent) override {
 		parent = new_parent;
 		if (size) size->update_parents(this);
@@ -154,6 +157,9 @@ struct NodeNDArray final : NodeComposite {
 	}
 	std::string get_string() override {
 		return name + "[" + (sizes ? sizes->get_string() : "") + "]";
+	}
+	std::string get_token_string() override {
+		return name + "[" + (sizes ? sizes->get_token_string() : "") + "]";
 	}
 	void update_token_data(const Token& token) override {
 		if(sizes) sizes->update_token_data(token);
@@ -219,6 +225,12 @@ struct NodeFunctionHeader final : NodeDataStructure {
 		std::string output = name + "(";
 		for(const auto &param : params) output += param->get_string() + ", ";
 		output.erase(output.size() - 2);
+		return output + ")";
+	}
+	std::string get_token_string() override {
+		std::string output = name + "(";
+		for (const auto& param : params) output += param->get_token_string() + ", ";
+		if (!params.empty()) output.erase(output.size() - 2);
 		return output + ")";
 	}
 	void update_token_data(const Token& token) override {
@@ -299,6 +311,12 @@ struct NodeUIControl final : NodeDataStructure {
 	std::string get_string() override {
 		return control_var->get_string();
 	}
+	std::string get_token_string() override {
+		std::string str = ui_control_type;
+		if (control_var) str += " " + control_var->get_token_string();
+		if (params) str += " " + params->get_token_string();
+		return str;
+	}
 	void update_token_data(const Token& token) override {
 		control_var -> update_token_data(token);
 		params -> update_token_data(token);
@@ -341,6 +359,14 @@ struct NodeList final : NodeDataStructure {
 		}
 	}
 	std::string get_string() override { return ""; }
+	std::string get_token_string() override {
+		std::string str = name;
+		for (const auto& b : body) {
+			if (!str.empty()) str += " ";
+			str += b->get_token_string();
+		}
+		return str;
+	}
 	void update_token_data(const Token& token) override {
 		for(const auto &b : body) {
 			b->update_token_data(token);
@@ -373,6 +399,14 @@ struct NodeConst final : NodeDataStructure {
         constants->parent = this;
     }
     std::string get_string() override { return ""; }
+	std::string get_token_string() override {
+		std::string str = name;
+		if (constants) {
+			if (!str.empty()) str += " ";
+			str += constants->get_token_string();
+		}
+		return str;
+	}
     void update_token_data(const Token& token) override {
         constants->update_token_data(token);
     }
@@ -426,6 +460,12 @@ struct NodeStruct final : NodeDataStructure {
 		}
 	}
 	std::string get_string() override { return ""; }
+	std::string get_token_string() override {
+		std::string str = name;
+		if (members) str += " " + members->get_token_string();
+		for (const auto& method : methods) str += " " + method->get_token_string();
+		return str;
+	}
 	void update_token_data(const Token& token) override {
 		members->update_token_data(token);
 		for(auto& m : methods) {

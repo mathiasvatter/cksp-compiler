@@ -180,7 +180,7 @@ public:
 	[[nodiscard]] std::shared_ptr<NodeDataStructure> get_scoped_data_structure(const std::string& data, bool global_scope) const;
 
 	/// variable error handling
-	static CompileError throw_declaration_error(NodeReference &node, const std::string& add_msg="", const DefinitionProvider* ctx = nullptr) {
+	static CompileError throw_declaration_error(NodeReference &node, const std::string& add_msg="", const DefinitionProvider* ctx = nullptr, const std::string& alternate_name = "") {
 		auto compile_error = CompileError(ErrorType::VariableError, "", "", node.tok);
 		std::string type = "<Variable>";
 		if(node.cast<NodeArrayRef>()) type = "<Array>";
@@ -201,7 +201,8 @@ public:
 		}
 
 		if (ctx) {
-			auto suggestions = ctx->misspelled_suggestions(node.name);
+			auto name = alternate_name.empty() ? node.tok.val : alternate_name;
+			auto suggestions = ctx->misspelled_suggestions(name);
 			if (!suggestions.empty()) {
 				compile_error.m_message += " Did you mean: "
 					+ StringUtils::join(suggestions, ',') + "?";
@@ -255,7 +256,7 @@ public:
 	            // Grobfilter: Längendifferenz > (max_dist+1) überspringen
 	            if (key.size() + (max_dist + 1) < L || L + (max_dist + 1) < key.size()) continue;
 
-	            size_t d = levenshtein_ci(name, key);
+	            size_t d = StringUtils::get_levenshtein_distance(name, key);
 	            if (d == 0) continue; // wäre „gleich“ – dann gäbe es keinen Fehler
 	            if (d <= max_dist) {
 	                int score = suggestion_score(name, key, d);
@@ -268,9 +269,23 @@ public:
 	    auto consider_map = [&](const auto& mp) {
 	        for (const auto& [key, _] : mp) {
 	            if (key.size() + (max_dist + 1) < L || L + (max_dist + 1) < key.size()) continue;
-	            size_t d = levenshtein_ci(name, key);
+	            size_t d = StringUtils::get_levenshtein_distance(name, key);
 	            if (d > 0 && d <= max_dist) {
 	                int score = suggestion_score(name, key, d) + 2; // leichter Malus ggü. lokalen Scopes
+	                cands.push_back({key, score});
+	            }
+	        }
+	    };
+	    auto consider_all_data_structures = [&]() {
+	        for (const auto& weak_data_struct : m_all_data_structures) {
+	            const auto data_struct = weak_data_struct.lock();
+	            if (!data_struct) continue;
+	            const auto& key = data_struct->name;
+	            if (key.empty()) continue;
+	            if (key.size() + (max_dist + 1) < L || L + (max_dist + 1) < key.size()) continue;
+	            size_t d = StringUtils::get_levenshtein_distance(name, key);
+	            if (d > 0 && d <= max_dist) {
+	                int score = suggestion_score(name, key, d) + 2;
 	                cands.push_back({key, score});
 	            }
 	        }
@@ -278,6 +293,9 @@ public:
 	    consider_map(builtin_variables);
 	    consider_map(builtin_arrays);
 	    consider_map(builtin_widgets);
+		if (m_declared_data_structures.size() == 1 && m_declared_data_structures[0].empty()) {
+			consider_all_data_structures();
+		}
 	    // property_functions / builtin_functions haben Signaturen – fürs Var-Suggest meist weglassen
 
 	    // Deduplizieren und sortieren
@@ -495,13 +513,6 @@ public:
 		return std::move(func_call);
 	}
 
-	// Case-insensitive Distance
-	static size_t levenshtein_ci(std::string a, std::string b) {
-		a = StringUtils::to_lower(std::move(a));
-		b = StringUtils::to_lower(std::move(b));
-		return StringUtils::get_levenshtein_distance(a, b);
-	}
-
 	// Einfaches Score-Ranking: Levenshtein + kleine Boni/Mali
 	static int suggestion_score(std::string_view needle, std::string_view cand, size_t dist_ci) {
 		int score = static_cast<int>(dist_ci) * 10; // Basis: Distanz zählt am meisten
@@ -528,4 +539,3 @@ public:
 
 
 };
-
