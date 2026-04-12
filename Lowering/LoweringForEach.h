@@ -191,8 +191,10 @@ public:
 		// declare _step and _stop
 		auto _step_var = m_program->get_tmp_var(range->step->ty);
 		_step_var->name = m_def_provider->get_fresh_name("_step");
+		_step_var->data_type = DataType::Const;
 		auto _stop_var = m_program->get_tmp_var(range->stop->ty);
 		_stop_var->name = m_def_provider->get_fresh_name("_stop");
+		_stop_var->data_type = DataType::Const;
 		auto _step = std::make_unique<NodeSingleDeclaration>(
 			std::move(_step_var),
 			std::move(range->step),

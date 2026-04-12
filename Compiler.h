@@ -46,7 +46,6 @@
 #include "AST/ASTVisitor/GlobalScope/MarkThreadSafe.h"
 #include "AST/ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 #include "JSON/parser/JSONParser.h"
-#include "Lowering/LoweringTernaryOperator.h"
 #include "Optimization/ArrayInitializationRaising.h"
 #include "Preprocessor/PreAST/PreASTConditions.h"
 
@@ -430,7 +429,6 @@ public:
 		ast->inline_global_variables();
 		ast->debug_print();
 
-		ASTOptimizations optimizations;
 		ASTOptimizations::optimize(*ast, m_final_config->optimization_level);
 		ast->debug_print();
 
