@@ -218,10 +218,24 @@ std::unique_ptr<NodeAST> NodeNDArrayRef::get_size() {
 	if(indexes and num_wildcards == 0) {
 		return std::make_unique<NodeInt>(1, tok);
 	}
-	if (indexes and num_wildcards > 0 ) {
-		auto w = get_wildcard_dimensions();
+	// if (indexes) {
+		auto decl = this->get_declaration();
+		if (!decl) DefinitionProvider::internal_missing_declaration_error(*this).exit();
+		auto nd_array = decl->cast<NodeNDArray>();
+		if (!nd_array) DefinitionProvider::internal_missing_declaration_error(*this).exit();
+		if (!nd_array->sizes) {
+			auto error = CompileError(ErrorType::InternalError, "", "", nd_array->tok);
+			error.set_message("Could not determine size of <NDArrayRef>. Declaration might be function param. This should not happen, please report this error.");
+			error.exit();
+		}
+		auto& ndarray_sizes = nd_array->sizes;
+		int start = 0; int end  = ndarray_sizes->size()-1;
+		if (num_wildcards > 0) {
+			auto w = get_wildcard_dimensions();
+			start = w.first; end = w.second;
+		}
 		auto nsizes = std::make_unique<NodeParamList>(tok);
-		for (int i = w.first; i <= w.second; i++) {
+		for (int i = start; i <= end; i++) {
 			auto ref = clone_as<NodeNDArrayRef>(this);
 			ref->ty = get_declaration()->ty;
 			ref->remove_index();
@@ -232,11 +246,11 @@ std::unique_ptr<NodeAST> NodeNDArrayRef::get_size() {
 			return std::move(nsizes->param(0));
 		}
 		return nsizes;
-	}
-	// if !indexes
-	auto ref = clone_as<NodeNDArrayRef>(this);
-	ref->ty = get_declaration()->ty;
-	return std::make_unique<NodeNumElements>(std::move(ref), nullptr, tok);
+	// }
+	// // if !indexes
+	// auto ref = clone_as<NodeNDArrayRef>(this);
+	// ref->ty = get_declaration()->ty;
+	// return std::make_unique<NodeNumElements>(std::move(ref), nullptr, tok);
 }
 
 std::unique_ptr<NodeAST> NodeNDArrayRef::get_size(std::unique_ptr<NodeAST> dim) {
@@ -253,9 +267,7 @@ std::unique_ptr<NodeArrayRef> NodeNDArrayRef::to_array_ref(std::unique_ptr<NodeA
 
 bool NodeNDArrayRef::determine_sizes() {
 	if(!get_declaration()) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-		error.m_message = "NDArray reference has no declaration.";
-		error.exit();
+		DefinitionProvider::internal_missing_declaration_error(*this).exit();
 		return false;
 	}
 	if(get_declaration()->get_node_type() != NodeType::NDArray) {

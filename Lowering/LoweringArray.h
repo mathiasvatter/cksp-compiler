@@ -88,12 +88,12 @@ public:
 			} else if (auto array_ref = node_declaration->value->cast<NodeArrayRef>()) {
 				// get the size from decl of array_ref
 				auto assign_del = array_ref->get_declaration();
-				if (!assign_del) DefinitionProvider::internal_missing_declaration_error(*array_ref);
+				if (!assign_del) DefinitionProvider::internal_missing_declaration_error(*array_ref).exit();
 				auto ref = assign_del->to_reference();
 				node.set_size(ref->get_size());
 			} else if (auto ndarray_ref = node_declaration->value->cast<NodeNDArrayRef>()) {
 				auto assign_del = ndarray_ref->get_declaration();
-				if (!assign_del) DefinitionProvider::internal_missing_declaration_error(*ndarray_ref);
+				if (!assign_del) DefinitionProvider::internal_missing_declaration_error(*ndarray_ref).exit();
 				node.set_size(ndarray_ref->get_size());
 			}
 		// array has size -> check if it is a constant variable

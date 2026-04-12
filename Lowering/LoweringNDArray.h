@@ -80,22 +80,23 @@ public:
 			// 	declare ndarr: int[][] := [[1,2,3],[4,5, 4]]
 			if (const auto init_list = node_declaration->value->cast<NodeInitializerList>()) {
 				auto dims = init_list->get_dimensions();
+				if (dims.size() == 1) {
+					auto error2 = CompileError(ErrorType::SyntaxError, "", "", init_list->tok);
+					error2.set_message("When declaring an <NDArray> without it sizes, the Initializer List for <NDArray> has to be multi-dimensional. For one-dimensional arrays, use <Array> instead.");
+					error2.exit();
+				}
 				auto node_dims = std::make_unique<NodeParamList>(node.tok);
 				for (auto dim : dims) {
 					node_dims->add_param(std::make_unique<NodeInt>(dim, node.tok));
 				}
 				node.set_size(std::move(node_dims));
-			// in case declare narr: int[][] := arr -> error!
-			// } else if (auto array_ref = node_declaration->value->cast<NodeArrayRef>()) {
-			// 	// get the size from decl of array_ref
-			// 	auto assign_del = array_ref->get_declaration();
-			// 	if (!assign_del) DefinitionProvider::internal_missing_declaration_error(*array_ref);
-			// 	auto ref = assign_del->to_reference();
-			// 	node.set_size(ref->get_size());
-			// } else if (auto ndarray_ref = node_declaration->value->cast<NodeNDArrayRef>()) {
-			// 	auto assign_del = ndarray_ref->get_declaration();
-			// 	if (!assign_del) DefinitionProvider::internal_missing_declaration_error(*ndarray_ref);
-			// 	node.set_size(ndarray_ref->get_size());
+			} else if (auto ndarray_ref = node_declaration->value->cast<NodeNDArrayRef>()) {
+				auto assign_del = ndarray_ref->get_declaration();
+				if (!assign_del) DefinitionProvider::internal_missing_declaration_error(*ndarray_ref);
+				if (!ndarray_ref->sizes) {
+					ndarray_ref->determine_sizes();
+				}
+				node.set_size(ndarray_ref->get_size());
 			}
 		}
 		if (node_declaration) {
@@ -106,26 +107,26 @@ public:
 	}
 
 	/// if we have a declaration as entry point in CollectLowerings we enter this after we already entered
-	/// visit NodeArray. If r_value is array or ndarray ref -> need to split up to assignment to
-	/// benefit from NormalizeNDArrayAssign and NormalizeArrayAssign
+	/// visit NodeNDArray. If r_value is ndarray ref -> need to split up to assignment to
+	/// benefit from NormalizeNDArrayAssign
 	/// pre: 	declare ndarr2[1,2]: int[][] := ndarr3
 	/// port:   declare ndarr2[1,2]: int[][]
 	///         ndarr2 := ndarr3
-	// NodeAST* visit(NodeSingleDeclaration& node) override {
-	// 	if (!node.value) return &node;
-	//
-	// 	if (node.value->cast<NodeArrayRef>() || node.value->cast<NodeNDArrayRef>()) {
-	// 		auto assignment = node.to_assign_stmt();
-	// 		auto new_declaration = std::make_unique<NodeSingleDeclaration>(
-	// 			std::move(node.variable), nullptr, node.tok);
-	// 		auto block = std::make_unique<NodeBlock>(node.tok);
-	// 		block->add_as_stmt(std::move(new_declaration));
-	// 		block->add_as_stmt(std::move(assignment));
-	// 		return node.replace_with(std::move(block));
-	// 	}
-	//
-	// 	return &node;
-	// }
+	NodeAST* visit(NodeSingleDeclaration& node) override {
+		if (!node.value) return &node;
+
+		if (node.value->cast<NodeNDArrayRef>()) {
+			auto assignment = node.to_assign_stmt();
+			auto new_declaration = std::make_unique<NodeSingleDeclaration>(
+				std::move(node.variable), nullptr, node.tok);
+			auto block = std::make_unique<NodeBlock>(node.tok);
+			block->add_as_stmt(std::move(new_declaration));
+			block->add_as_stmt(std::move(assignment));
+			return node.replace_with(std::move(block));
+		}
+
+		return &node;
+	}
 
 
 };
