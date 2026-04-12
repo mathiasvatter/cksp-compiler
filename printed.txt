@@ -1,10 +1,4 @@
 on init
-	declare local i0 : int {Reuses: 0}
-	i0{int} {i0}  := 0
-	while(i0{int} {i0}  < 40) 
-		message(i0{int} {i0} ){Builtin, None, message}
-		inc(i0{int} {i0} ){Builtin, None, inc}
-	end while
 end on
 
 

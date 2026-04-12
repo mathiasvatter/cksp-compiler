@@ -1,66 +1,24 @@
-# Changelog
+# Changelog from v0.0.8 to HEAD
 
-## [0.0.8] – 2026-03-14
-
->This release summarizes all changes in pre-release versions leading up to `0.0.8`. It introduces major improvements to the CKSP compiler, including a fully restructured preprocessor, support for overriding callbacks, scientific notation, and numerous stability fixes.
-
->With this version, the `cksp-compiler` repository will be **public** under the **Apache-2.0 License**, allowing for open-source contributions.
-
-### Language
-
-- Added support for **`import` statements in any scope**, mirroring `sksp` behaviour.
-- Added support for **overriding callbacks**.
-- Introduced **scientific notation** support for numeric literals (e.g. `1.2e-10`, `.5e2`).
-- Added support to **declare arrays without brackets** when used as variables.
-- The **`declare` keyword is now optional** for struct member declarations.
-
-### Compiler
-
-- Introduced new pragma directives:
-  - `combine_callbacks`
-  - `max_callback_depth(<value>)`
-- Added CLI options for:
-  - `--combine_callbacks`
-  - `--pass_by`
-  - multiple output files (`-o`) and `#pragma output_path()`.
-- Added validation for:
-  - invalid variable names still containing `#` after preprocessing
-  - constants declared without initialization
-  - usage of built-in variables inside restricted callbacks
-- Added new built-in constants introduced with **Kontakt 8.3**.
-
-### Improvements
-
-- Improved **TypeInference** and **ReturnFunctionRewriting** passes.
-- Improved parser efficiency.
-- Improved efficiency of `import` handling in the preprocessor
-- Improved error and warning messages for duplicate callbacks.
-- Improved short-circuit evaluation transformation logic in regards to function calls in conditions.
-
-### Fixes
-
-Fixed multiple compiler issues affecting language correctness and runtime behavior:
-  - Fix incorrect evaluation of comparisons inside message functions [#26](https://github.com/mathiasvatter/cksp-compiler-issues/issues/26)
-  - Fix incorrect transformation of single-quoted strings [#83](https://github.com/mathiasvatter/cksp-compiler-issues/issues/83)
-  - Fix incorrect lowering of compound assignments when using `get_control` shorthands [#72](https://github.com/mathiasvatter/cksp-compiler-issues/issues/72)
-  - Fix local variables inside ternary expressions causing `UndeclaredVariable` errors [#84](https://github.com/mathiasvatter/cksp-compiler-issues/issues/84)
-  - Fix parsing errors for empty namespaces [#81](https://github.com/mathiasvatter/cksp-compiler-issues/issues/81)
-  - Fix namespace restrictions preventing multiple `ui_control` declarations [#77](https://github.com/mathiasvatter/cksp-compiler-issues/issues/77)
-  - Fix segmentation fault during monomorphization
-  - Fix substring substitutions in `#define` parameters [#51](https://github.com/mathiasvatter/cksp-compiler-issues/issues/51)
-  - Fix incorrect validation of `ndarray` size expressions
-  - Fix initializer lists without commas not producing errors [#52](https://github.com/mathiasvatter/cksp-compiler-issues/issues/52)
-  - Fix multidimensional array declarations with empty brackets [#58](https://github.com/mathiasvatter/cksp-compiler-issues/issues/58)
-  - Fix incorrect f-string lowering with single quotes [#66](https://github.com/mathiasvatter/cksp-compiler-issues/issues/66)
-  - Fix optimization pass removing assignments still used inside functions [#63](https://github.com/mathiasvatter/cksp-compiler-issues/issues/63)
-  - Fix incorrect dead-code elimination behavior
-  - Fix `.txt` files being incorrectly flagged as unsupported
-  - Fix missing warning when `set_num_user_zones` is used outside `on init` [#75](https://github.com/mathiasvatter/cksp-compiler-issues/issues/75)
-  - Fix issue where `struct`, `macro`, or `function` at file position 0 caused a `PreprocessorError` [#45](https://github.com/mathiasvatter/cksp-compiler-issues/issues/45)
-
-### Preprocessor
-
-Major restructuring of the preprocessor:
-  - Rewritten handling of `import`, `macro`, and `define`.
-  - Reintroduced `set_condition`, `reset_condition`, `use_code_if`, and `import` as dedicated AST nodes.
-
+- Fix #38 incorrectly initializing an array variable in a struct would cause a segfault error -> compiler checks early on now if an array/ndarray declared without size has initializer list/array/ndarray as r_value; Fix issues with previous fix of issue #30
+- Implement feature #30 to further optimize foreach loops by making start and stop iterator variable const
+- Added get_token_string() method to all NodeAST classes for a string representation closer to the code source that can be shown in CompileError messages; Improve error messages in faulty access chains (issue #32) by issuing UndeclaredVariable error;
+- Implement copying an nd array upon declaration; Fix/implement declaring multidimensional arrays without size and infering it from r_value (array/ndarray/initializer list)
+- Fix issue #4 where copying an array upon declaration was not working -> fixed r_value array ref was put in initializer list and not turned into array declaration and assignment; Fixed issue where declaring an array without size would lead to segfault when no initializer list and only array or ndarray ref was assigned;
+- Add meaningful error message to parse_reference_chain if no token::KEYWORD was detected; Fix issue #94 where using an initializer list with parentheses instead of brackets would throw a cryptic error -> error reporting improved
+- Fix variable shadowing problems in foreach loops; previously it was possible to re-declare key, value variables in the loop body -> this now throws a redeclaration error
+- Fix issue #95 where under certain conditions type identifier of return variables would remain empty by re-enabling cast_data_structures func in second type inference pass
+- Update placement of missing function definition error
+- Add check and error for user-defined function headers that have the CKSP prefix used by internal cksp helper functions; Add #91: unsigned right shift operator for logical shifts a la Java `>>>`
+- Update folder structure; Make RelinkGlobalScope more efficient; Remove some unnecessary compiler passes
+- Update TypeInference to deal with ndarrays as function parameters that are not annotated as such and have no clear ndarray syntax reference in the function body; Update UniqueParameterNamesProvider and VariableReuse to keep raw arrays while renaming (still ugly tho); This fixes issue #23
+- Fix #5: function local arrays with a size dependent on other local arrays/params are now possible by not promoting them and preemptively inlining the function. After substituting the size variable with the arg and promoting the decl to global declarations, this num_elements node will be directly substituted in PostLoweringNumElements
+- Add lowering of exit command to "return" stmt inside user functions;, this fixes issue #20 where user functions with exit could be inlined causing the outer callback to terminate early
+- Reordering of function strategy and thread-safe env analysis passes; Added feature #29: if return function is never inlined, exit is used instead of while+break transformation
+- Remove submodule cksp-compiler-issues
+- Update generate_github_issue_url to work with new github issue templates
+- deactivate automatic github workflow on push to master branch; Update bug report and feature request templates
+- Update passing of token struct in ast nodes to const reference; Update order of passes slightly
+- Update CmakeLists.txt to update cached python3 path upon not finding it; Add error message when exit is used in the on init callback
+- Update README.md, add "why cksp" section, add badges
+- Merge branch 'master' into development
