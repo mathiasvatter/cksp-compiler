@@ -1,42 +1,18 @@
-// Global Declarations:
-	declare _iter0 : int {Reuses: 0}
-	declare const MAX::STRUCTS : int := 1000000 {Reuses: 0}
-	declare const MEM::WARNING : string := "Memory Error: No more free space available to allocate objects of type" {Reuses: 0}
 on init
-	declare arr : int[] := [33, 4, 5] {Reuses: 0}
-	declare ndarr : int[][] := [arr{unknown} {arr} ] {Reuses: 0}
+	declare _iter1 : int {Reuses: 0}
+	declare _iter0 : int {Reuses: 0}
+	declare _arr[120] : int[] := [3, 4, 5, 6, 78] {Reuses: 0}
+	declare _ndarr[30] : int[] {Reuses: 0}
+	_iter0{int} {_iter0}  := 0
+	while(_iter0{int} {_iter0}  <= 4) 
+		_iter1{int} {_iter1}  := 0
+		while(_iter1{int} {_iter1}  <= 5) 
+			_ndarr[(_iter0{int} {_iter0}  * 6) + _iter1{int} {_iter1} ]{int} {_ndarr}  := _arr[90 + ((_iter0{int} {_iter0}  * 6) + _iter1{int} {_iter1} )]{int} {_arr} 
+			inc(_iter1{int} {_iter1} ){Builtin, None, inc}
+		end while
+		inc(_iter0{int} {_iter0} ){Builtin, None, inc}
+	end while
+	message(_ndarr[21]{int} {_ndarr} ){Builtin, None, message}
 end on
-
-function CKSP::sh_right_logical(x : int, n : int)
-	return (sh_right(x{unknown} {x} , n{unknown} {n} ){Builtin, None, sh_right} .and. (sh_left(1, (32 - n{unknown} {n} ) .and. 31){Builtin, None, sh_left} - 1))
-end function
-
-function CKSP::__bool__(x : int)
-	return (- sh_right(x{unknown} {x}  .xor. - x{unknown} {x} , 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__ge__(a : int, b : int)
-	return (sh_right(a{unknown} {a}  - b{unknown} {b} , 31){Builtin, None, sh_right} + 1)
-end function
-
-function CKSP::__lt__(a : int, b : int)
-	return (- sh_right(a{unknown} {a}  - b{unknown} {b} , 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__ne__(a : int, b : int)
-	return (1 - - sh_right(abs(a{unknown} {a}  - b{unknown} {b} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__eq__(a : int, b : int)
-	return (- sh_right(abs(a{unknown} {a}  - b{unknown} {b} ){Builtin, None, abs} - 1, 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__le__(a : int, b : int)
-	return (1 + sh_right(b{unknown} {b}  - a{unknown} {a} , 31){Builtin, None, sh_right})
-end function
-
-function CKSP::__gt__(a : int, b : int)
-	return (- sh_right(b{unknown} {b}  - a{unknown} {a} , 31){Builtin, None, sh_right})
-end function
 
 
