@@ -9,11 +9,12 @@
 #include "../../Lowering/DataLowering/DataLoweringNDArray.h"
 #include "../../Lowering/LoweringList.h"
 #include "../../Desugaring/DesugarConst.h"
-#include "../../Lowering/DataLowering/ArrayDeclarationSyntaxValidator.h"
+#include "../../Lowering/LoweringArray.h"
 #include "../../Desugaring/DesugarStruct.h"
 #include "../../Lowering/LoweringStruct.h"
 #include "../../Lowering/LoweringPointer.h"
 #include "NodeStructCreateRefCountFunctions.h"
+#include "../../Lowering/LoweringNDArray.h"
 
 // ************* NodeVariable ***************
 NodeAST *NodeVariable::accept(ASTVisitor &visitor) {
@@ -128,7 +129,7 @@ NodeAST *NodeArray::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> ne
 }
 
 ASTLowering* NodeArray::get_lowering(NodeProgram *program) const {
-	static ArrayDeclarationSyntaxValidator lowering(program);
+	static LoweringArray lowering(program);
 	return &lowering;
 }
 
@@ -173,6 +174,11 @@ NodeNDArray::NodeNDArray(const NodeNDArray& other)
 }
 std::unique_ptr<NodeAST> NodeNDArray::clone() const {
 	return std::make_unique<NodeNDArray>(*this);
+}
+
+ASTLowering * NodeNDArray::get_lowering(NodeProgram *program) const {
+	static LoweringNDArray lowering(program);
+	return &lowering;
 }
 
 ASTLowering* NodeNDArray::get_data_lowering(NodeProgram *program) const {

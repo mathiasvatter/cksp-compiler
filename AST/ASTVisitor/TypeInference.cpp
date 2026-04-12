@@ -625,6 +625,18 @@ NodeAST * TypeInference::visit(NodeSingleDeclaration& node) {
 	node.variable->accept(*this);
 	if(node.value) {
 		node.value->accept(*this);
+
+		// case issue #4: declare arr2: int[] := arr where arr is also array. but right now,
+		// r_value will be wrapped in initializer list
+		auto init_list = node.value->cast<NodeInitializerList>();
+		if (init_list and init_list ->size() == 1) {
+			auto& elem = init_list->elem(0);
+			if (elem->ty->get_type_kind() == node.variable->ty->get_type_kind()) {
+				node.set_value(std::move(elem));
+				node.value->accept(*this);
+			}
+		}
+
 		match_assignment_types(*node.variable, *node.value);
 		node.variable->accept(*this);
 	}
