@@ -387,6 +387,9 @@ struct NodeAccessChain final : NodeReference {
 		}
 		return str.empty() ? str : str.erase(str.size() - 1);
 	}
+	std::unique_ptr<NodeAST>& member(const int idx) {
+		return chain[idx];
+	}
 	void flatten() {
 		std::vector<std::unique_ptr<NodeAST>> flat_list;
 		// Rekursive Funktion, um die Parameterliste abzuflachen
