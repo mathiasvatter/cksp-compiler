@@ -4,40 +4,18 @@
 
 // #pragma optimize("none")
 
-
-// function load_arrays(array1: int[], array2: int[], size: int)
-// 	// declare urmomsize[size, size+1]: int[][]
-// 	declare urmom[num_elements(array1), num_elements(array2)]: int[][]
-// 	for idx, val in pairs(array1)
-// 		array2[idx] := val
-// 		// message(urmom[0])
-// 	end for
-// end function
-
-namespace Foo
-
-	declare num_presets[5]: int[]
-	declare data[5]: Expansion[] := [nil]
-	declare num: int := 0
-
-	function bar()		
-		for i in range(10)
-			declare exp := new Expansion("Expansion 1", 100)
-			message(data[expansion_idx].num_presets)			
-		end for
-	end function	
-	
-end namespace
+function load(array1: int[])
+    declare tmp[num_elements(array1)]: int[]
+    for idx, val in pairs(array1)
+        tmp[idx] := val
+    end for
+	return tmp
+end function
 
 
-struct Expansion	
-	name: string
-	num_presets: int
-
-	function __init__(self, _name: string, _num_presets: int)
-		self.name := _name
-		self.num_presets := _num_presets
-	end function
-end struct
-
+on init
+	declare arr: int[] := [1,2,3,4]
+	declare arr2: int[]
+	load(arr)
+end on
 
