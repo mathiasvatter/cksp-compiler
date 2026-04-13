@@ -186,24 +186,38 @@ std::string CompileError::get_os_architecture() {
 }
 
 std::string CompileError::generate_github_issue_url(const std::string &username, const std::string &repo) const {
-    // Fehlermeldung und Code-Snippet für das Issue vorbereiten
-    std::stringstream ss; // Added this line
-    ss << error_type_to_string(m_type) << ": " << m_message; // Added this line
-    std::string issue_title = ss.str(); // Changed this line
+    std::stringstream title_stream;
+    title_stream << "[BUG] " << error_type_to_string(m_type) << ": " << m_message;
+    std::string issue_title = title_stream.str();
 
-    std::stringstream issue_body; // Added this line
-    issue_body << "**Error Message**\n\n" << m_message << "\n\n"
-               << "**Code Snippet**\n\n```\n" << get_line_from_file() << "\n```\n\n"
-               << "**Actual Behavior**\n\nGot: " << m_got << "\n\n**Expected Behavior**\n\nExpected: " << m_expected << "\n\n"
-               << "**CKSP Version**\n\nv" << COMPILER_VERSION << "\n\n"
-               << "**Environment**\n\n- OS Version: " << get_os_version() << "\n- Architecture: " << get_os_architecture() << "\n\n";
+    std::stringstream description_stream;
+    description_stream << m_message;
+    if (!m_expected.empty()) {
+        description_stream << "\nExpected: " << m_expected;
+    }
+    if (!m_got.empty()) {
+        description_stream << "\nGot: " << m_got;
+    }
+    if (!m_file_name.empty()) {
+        description_stream << "\nFile: " << m_file_name;
+    }
+    if (m_line_number != static_cast<size_t>(-1)) {
+        description_stream << "\nLine: " << m_line_number;
+    }
 
-    std::string encoded_title = StringUtils::percent_encode_uri(issue_title);
-    std::string encoded_body = StringUtils::percent_encode_uri(issue_body.str()); // Changed this line
-    std::string encoded_labels = StringUtils::percent_encode_uri("bug");
+    std::stringstream reproduce_stream;
+    reproduce_stream << "```cksp\n" << get_line_from_file() << "\n```";
 
-    std::string issueUrl = "https://github.com/" + username + "/" + repo + "/issues/new?labels=" + encoded_labels + "&title=" + encoded_title + "&body=" + encoded_body; // Changed this line
-    return issueUrl;
+    std::string issue_url = "https://github.com/" + username + "/" + repo + "/issues/new";
+    issue_url += "?template=" + StringUtils::percent_encode_uri("bug_report.yml");
+    issue_url += "&title=" + StringUtils::percent_encode_uri(issue_title);
+    issue_url += "&description=" + StringUtils::percent_encode_uri(description_stream.str());
+    issue_url += "&reproduce=" + StringUtils::percent_encode_uri(reproduce_stream.str());
+    issue_url += "&cksp_version=" + StringUtils::percent_encode_uri(COMPILER_VERSION);
+    issue_url += "&os=" + StringUtils::percent_encode_uri(get_os_version());
+    issue_url += "&arch=" + StringUtils::percent_encode_uri(get_os_architecture());
+
+    return issue_url;
 }
 
 void CompileError::set_message(const std::string &message) {
@@ -211,7 +225,11 @@ void CompileError::set_message(const std::string &message) {
 }
 
 void CompileError::add_message(const std::string &message) {
-    m_message += " "+ message;
+    if (!m_message.empty()) {
+        m_message += "\n" + message;
+    } else {
+        m_message += message;
+    }
 }
 
 void CompileError::set_expected(const std::string &expected) {
@@ -220,6 +238,7 @@ void CompileError::set_expected(const std::string &expected) {
 
 void CompileError::set_token(const Token &token) {
     m_line_number = token.line; m_file_name = token.file; m_got = token.val; m_line_position = token.pos;
+    m_marker_length = token.val.length();
 }
 
 #if defined(__APPLE__) || defined(__linux__)

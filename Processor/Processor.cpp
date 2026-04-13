@@ -3,7 +3,7 @@
 //
 
 #include "Processor.h"
-#include "../AST/TypeRegistry.h"
+#include "../AST/Types/TypeRegistry.h"
 
 Processor::Processor(std::vector<Token> tokens) : m_tokens(std::move(tokens)) {
 	if(!m_tokens.empty()) {

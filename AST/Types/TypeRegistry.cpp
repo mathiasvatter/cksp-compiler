@@ -2,9 +2,9 @@
 // Created by Mathias Vatter on 27.05.24.
 //
 
-#include "TypeRegistry.h"
-#include "ASTNodes/ASTDataStructures.h"
-#include "ASTNodes/ASTReferences.h"
+#include "../Types/TypeRegistry.h"
+#include "../ASTNodes/ASTDataStructures.h"
+#include "../ASTNodes/ASTReferences.h"
 
 // Implementation of the initialization method
 void TypeRegistry::initialize() {
@@ -98,7 +98,7 @@ Type *TypeRegistry::get_type_from_identifier(const char identifier) {
 }
 
 char TypeRegistry::get_identifier_from_type(Type *ty) {
-    auto it = type_to_identifier.find(ty);
+    const auto it = type_to_identifier.find(ty);
     if (it != type_to_identifier.end()) {
         return it->second;
     }
@@ -114,18 +114,11 @@ std::unique_ptr<NodeAST> TypeRegistry::get_neutral_element_from_type(const Type*
 		return std::make_unique<NodeString>("\"\"", Token());
 	} else if (ty == Boolean) {
 		return std::make_unique<NodeString>("false", Token());
-	} else if (ty == ArrayOfInt) {
-        return std::make_unique<NodeInitializerList>(Token(), std::make_unique<NodeInt>(0, Token()));
-    } else if (ty == ArrayOfReal) {
-        return std::make_unique<NodeInitializerList>(Token(), std::make_unique<NodeReal>(0.0, Token()));
-    } else if (ty == ArrayOfString) {
-        return std::make_unique<NodeInitializerList>(Token(), std::make_unique<NodeInt>(0, Token()));
-    } else if (ty == ArrayOfBool) {
-        return std::make_unique<NodeInitializerList>(Token(), std::make_unique<NodeString>("false", Token()));
     } else if (ty->get_type_kind() == TypeKind::Object) {
 		return std::make_unique<NodeNil>(Token());
-	} else if (ty->get_element_type()->get_type_kind() == TypeKind::Object) {
-		return std::make_unique<NodeInitializerList>(Token(), std::make_unique<NodeNil>(Token()));
+	} else if (ty->cast<CompositeType>()) {
+		// recursive if composite type
+		return std::make_unique<NodeInitializerList>(Token(), get_neutral_element_from_type(ty->get_element_type()));
 	}
 	return nullptr;
 }

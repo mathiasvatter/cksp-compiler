@@ -11,6 +11,7 @@
  */
 class FunctionInlining final : public ASTVisitor {
 	// std::vector<NodeSingleAssignment*> m_immutable_param_stack_assignments; // assignments like 0 := param -> to be removed
+	std::unordered_map<std::string, std::shared_ptr<NodeDataStructure>> m_local_arrays;
 public:
 	explicit FunctionInlining(NodeProgram* main) {
 		m_program = main;
@@ -22,6 +23,7 @@ public:
 	}
 
 	NodeAST * visit(NodeFunctionCall& node) override {
+		m_local_arrays.clear();
 		node.function->accept(*this);
 		if(node.is_builtin_kind()) {
 			auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
@@ -63,7 +65,7 @@ public:
 		// 	assignment->remove_node();
 		// }
 		// m_immutable_param_stack_assignments.clear();
-
+		m_local_arrays.clear();
 		return node.replace_with(std::move(node_func_body));
 	}
 
@@ -79,14 +81,41 @@ private:
 		return nullptr;
 	}
 
+	bool get_local_array_decl(NodeCompositeRef& ref) {
+		if (ref.get_declaration()) return true;
+		const auto it = m_local_arrays.find(ref.name);
+		if(it != m_local_arrays.end()) {
+			ref.declaration = it->second;
+			return true;
+		}
+		auto error = CompileError(ErrorType::InternalError, "", "", ref.tok);
+		error.set_message("Unable to find local array declaration for reference <"+ref.name+"> during function inlining.");
+		error.exit();
+		return false;
+	}
+
+	NodeAST *visit(NodeArray &node) override {
+		ASTVisitor::visit(node);
+		m_local_arrays[node.name] = std::move(node.get_shared());
+		return &node;
+	}
+
+	NodeAST *visit(NodeNDArray &node) override {
+		ASTVisitor::visit(node);
+		m_local_arrays[node.name] = std::move(node.get_shared());
+		return &node;
+	}
+
 	/// do substitution
 	NodeAST *visit(NodeNDArrayRef &node) override {
+		get_local_array_decl(node);
 		if(node.indexes) node.indexes->accept(*this);
 		if(node.sizes) node.sizes->accept(*this);
 		return do_substitution(&node);
 	}
 	/// do substitution
 	NodeAST *visit(NodeArrayRef &node) override {
+		get_local_array_decl(node);
 		if(node.index) node.index->accept(*this);
 		return do_substitution(&node);
 	}

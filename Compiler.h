@@ -46,7 +46,6 @@
 #include "AST/ASTVisitor/GlobalScope/MarkThreadSafe.h"
 #include "AST/ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 #include "JSON/parser/JSONParser.h"
-#include "Lowering/LoweringTernaryOperator.h"
 #include "Optimization/ArrayInitializationRaising.h"
 #include "Preprocessor/PreAST/PreASTConditions.h"
 
@@ -126,7 +125,7 @@ public:
 		auto pre_ast = std::move(pre_ast_result.unwrap());
 		std::unordered_set<std::string> imported_files{};
 		std::unordered_map<std::string, std::string> basename_map{};
-		pre_ast->do_preprocessing(m_cli_config->input_filename.value(), m_cli_config->input_filename.value(), imported_files, basename_map);
+		pre_ast->do_import_processing(m_cli_config->input_filename.value(), m_cli_config->input_filename.value(), imported_files, basename_map);
 
 		m_timer.stop("Import");
 		std::cout << m_timer.print_timer("Import") << std::endl;
@@ -291,7 +290,6 @@ public:
 
 		static TypeInference infer_types(ast.get());
 		infer_types.do_complete_traversal(*ast);
-		ast->collect_call_sites(m_program); // collect call sites for ui controls param stuff
 		ast->debug_print();
 
 		static UniqueParameterNamesProvider unique_names_provider(m_program);
@@ -304,9 +302,10 @@ public:
 
 		static ASTPointerScope pointer_scope(m_program);
 		ast->accept(pointer_scope);
-		ast->collect_references();
+		ast->collect_references();  //>> actually needed when pointers are used -> LUX
 		ast->debug_print();
 
+		ast->collect_call_sites(m_program); // collect call sites for UIControlParamHandling
 		static ASTCollectLowerings lowering(m_program);
 		ast->accept(lowering);
 		static ASTHandleStringRepresentations hsr(&m_definition_provider);
@@ -324,35 +323,37 @@ public:
 		std::cout << m_timer.print_timer("Lowering") << "\n";
 		m_timer.start("Return Function Rewriting");
 
+		// that should also work here and then I can do the returnstmt lowering in ASTReturnFunctionRewriting???
+		static MarkThreadSafe marker(m_program);
+		marker.mark_environments(*ast);
+
+		ASTFunctionStrategy function_strategy(m_program, m_pragma_config->parameter_passing);
+		function_strategy.determine_function_strategies(*m_program);
+
 		ASTReturnFunctionRewriting return_function_rewriting(m_program);
 		return_function_rewriting.do_rewriting(*ast);
 		ast->debug_print();
 
-		static MarkThreadSafe marker(m_program);
-		marker.mark_environments(*ast);
 		static MarkThreadSafeVars mark_vars(m_program);
 		mark_vars.mark_variables(*ast);
 		ast->debug_print();
 
+
 		{
 			variable_checking.do_reachable_traversal(*ast, true);
 			ast->remove_references();
-			ast->collect_references();
+			ast->collect_references(); // >> those two are also only needed for LUX???
 			infer_types.do_reachable_traversal(*ast);
 			ast->debug_print();
 
 			// then do parameter promotion directly to global or successively
 			// eliminate function-local variables
-			ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
 			ASTParameterPromotion param_promotion(m_program);
 			param_promotion.do_param_promotion(*ast);
 
-			// static ASTParameterQualifier parameter_qualifier(m_program);
-			// ast->accept(parameter_qualifier);
 			ast->debug_print();
-			ASTFunctionStrategy function_strategy(m_program, m_pragma_config->parameter_passing);
-			function_strategy.determine_function_strategies(*m_program);
 
+			ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
 			static ParameterAssignmentTransformation assignment_transformation(m_program);
 			assignment_transformation.do_parameter_assignment(*m_program);
 			ast->debug_print();
@@ -365,6 +366,7 @@ public:
 
 		ASTPreemptiveFunctionInlining pre_inlining(m_program);
 		ast->accept(pre_inlining);
+		ast -> debug_print();
 
 		m_timer.stop("Return Function Rewriting");
 		std::cout << m_timer.print_timer("Return Function Rewriting") << "\n";
@@ -377,7 +379,7 @@ public:
 
 		// Data Structure Lowering of NDArrays and Array assignments
 		// so that replace datastruct works
-		ast->remove_references();
+		// ast->remove_references();
 		ast->collect_references();
 		ASTDataStructureLowering data_structure_lowering(m_program);
 		ast->accept(data_structure_lowering);
@@ -427,7 +429,6 @@ public:
 		ast->inline_global_variables();
 		ast->debug_print();
 
-		ASTOptimizations optimizations;
 		ASTOptimizations::optimize(*ast, m_final_config->optimization_level);
 		ast->debug_print();
 

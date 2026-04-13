@@ -8,10 +8,16 @@
 
 /**
  * Second Lowering Phase of num_elements
- * has to happen after function inlining
+ * has to happen after function inlining because we need the actual name of the array we are getting
+ * the size of, so the first arg needs to have been substituted
  * if num_elements member in array declaration is given -> create declaration for num_elements array
  * 	declare ndarray::num_elements[3] := (3*3, 3, 3)
  * if no dimension is given -> was array -> call to num_elements
+ * >> special case: a local function array has a size that depends on a substituted function parameter.
+ * -> declare urmom[num_elements(arr)]
+ * it will have been put at the end of global declaration by VariableReuse even though arr
+ * might have been declared elsewhere. In this case we will just get the size of the declaration of arr
+ * and replace NodeNumElements with it. This works also with ndarrays (that are already lowered here)
  */
 class PostLoweringNumElements final : public ASTLowering {
 
@@ -49,7 +55,9 @@ public:
 					node.tok
 				);
 				return node.replace_with(std::move(num_elements_call));
-
+			} else if (node.array->is_local) {
+				// checks if the array node is local which means we need to do substitute the this size node
+				return node.replace_with(decl->get_size());
 			} else {
 				// use builtin num_elements function
 				return node.replace_with(DefinitionProvider::num_elements(std::move(node.array)));

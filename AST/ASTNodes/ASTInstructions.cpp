@@ -25,7 +25,6 @@
 #include "../../Lowering/LoweringUseCount.h"
 #include "../ASTVisitor/ReturnFunctionRewriting/ReturnFunctionCallHoisting.h"
 #include "../ASTVisitor/FunctionHandling/FunctionInlining.h"
-#include "../../Lowering/PostLowering/PostLoweringSingleDeclaration.h"
 #include "../../Lowering/LoweringSortSearch.h"
 #include "../../Lowering/PostLowering/PostLoweringSortSearch.h"
 #include "../../misc/CommandLineOptions.h"
@@ -217,6 +216,10 @@ std::string NodeFunctionCall::get_string() {
 	return function->get_string();
 }
 
+std::string NodeFunctionCall::get_token_string() {
+	return function->get_token_string();
+}
+
 void NodeFunctionCall::update_token_data(const Token &token) {
 	function -> update_token_data(token);
 }
@@ -280,7 +283,7 @@ bool NodeFunctionCall::has_side_effects(const std::unordered_set<std::string> &f
 		return true;
 	}
 	static FreeVarCollector free_var;
-	const auto vars = free_var.collect(*this);
+	const auto& vars = free_var.collect(*this);
 	// iterate the smaller set to minimize hash lookups
 	if (vars.size() <= free_vars.size()) {
 		for (const auto& v : vars) {
@@ -663,20 +666,16 @@ ASTDesugaring * NodeSingleDeclaration::get_desugaring(NodeProgram *program) cons
 }
 
 ASTLowering* NodeSingleDeclaration::get_lowering(NodeProgram *program) const {
-	if(variable->get_node_type() == NodeType::UIControl) {
+	if(variable->cast<NodeUIControl>()) {
+		return variable->get_lowering(program);
+	} else if(variable->cast<NodeList>()) {
+		return variable->get_lowering(program);
+	} else if (variable->cast<NodeArray>()) {
+		return variable->get_lowering(program);
+	} else if (variable->cast<NodeNDArray>()) {
 		return variable->get_lowering(program);
 	}
-	if(variable->get_node_type() == NodeType::List) {
-		return variable->get_lowering(program);
-	}
-//	static LoweringSingleDeclaration lowering(program);
-//	return &lowering;
 	return nullptr;
-}
-
-ASTLowering* NodeSingleDeclaration::get_post_lowering(NodeProgram *program) const {
-	static PostLoweringSingleDeclaration lowering(program);
-	return &lowering;
 }
 
 std::unique_ptr<NodeSingleAssignment> NodeSingleDeclaration::to_assign_stmt(NodeDataStructure* var) {

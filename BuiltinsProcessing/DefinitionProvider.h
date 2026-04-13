@@ -58,6 +58,13 @@ public:
 	std::unordered_map<std::string, std::shared_ptr<NodeDataStructure>, StringHash, StringEqual> remove_scope();
 	/// removes all scopes and initializes again
 	bool refresh_scopes();
+	void reserve_global_scope(size_t capacity) {
+		if (m_declared_data_structures.empty()) {
+			add_scope();
+			add_external_variables_to_global_scope();
+		}
+		m_declared_data_structures[0].reserve(capacity);
+	}
     /// removes variable from current scope by their name value
 	std::shared_ptr<NodeDataStructure> remove_from_current_scope(const std::string& name);
 	/// copies last scope in current scope
@@ -173,7 +180,7 @@ public:
 	[[nodiscard]] std::shared_ptr<NodeDataStructure> get_scoped_data_structure(const std::string& data, bool global_scope) const;
 
 	/// variable error handling
-	static CompileError throw_declaration_error(NodeReference &node, const std::string& add_msg="", const DefinitionProvider* ctx = nullptr) {
+	static CompileError throw_declaration_error(NodeReference &node, const std::string& add_msg="", const DefinitionProvider* ctx = nullptr, const std::string& alternate_name = "") {
 		auto compile_error = CompileError(ErrorType::VariableError, "", "", node.tok);
 		std::string type = "<Variable>";
 		if(node.cast<NodeArrayRef>()) type = "<Array>";
@@ -194,7 +201,8 @@ public:
 		}
 
 		if (ctx) {
-			auto suggestions = ctx->misspelled_suggestions(node.name);
+			auto name = alternate_name.empty() ? node.tok.val : alternate_name;
+			auto suggestions = ctx->misspelled_suggestions(name);
 			if (!suggestions.empty()) {
 				compile_error.m_message += " Did you mean: "
 					+ StringUtils::join(suggestions, ',') + "?";
@@ -202,7 +210,24 @@ public:
 		}
 
 		return compile_error;
-	};
+	}
+
+	static CompileError internal_missing_declaration_error(const NodeReference& node) {
+		auto compile_error = CompileError(ErrorType::InternalError, "", "", node.tok);
+		compile_error.m_message = "Internal Error: No declaration found for reference: " + node.tok.val + ". This should not happen. Please report this error to the developers.";
+		return compile_error;
+	}
+
+	/// Checks for "CKSP" prefix in function name and throws a meaningful error if found
+	static bool check_engine_helper_function(const NodeFunctionHeader& node) {
+		if (node.kind != NodeDataStructure::Compiler and StringUtils::starts_with(node.name, "CKSP"+ OBJ_DELIMITER)) {
+			auto error = CompileError(ErrorType::VariableError, "", "", node.tok);
+			error.set_message("Functions starting with 'CKSP____' are reserved for internal use. Try renaming the function.");
+			error.exit();
+			return true;
+		}
+		return false;
+	}
 
 	[[nodiscard]] std::vector<std::string> misspelled_suggestions(const std::string& name, size_t max_results = 4) const {
 	    // Heuristik: dynamische Distanz-Schranke relativ zur Länge
@@ -231,7 +256,7 @@ public:
 	            // Grobfilter: Längendifferenz > (max_dist+1) überspringen
 	            if (key.size() + (max_dist + 1) < L || L + (max_dist + 1) < key.size()) continue;
 
-	            size_t d = levenshtein_ci(name, key);
+	            size_t d = StringUtils::get_levenshtein_distance(name, key);
 	            if (d == 0) continue; // wäre „gleich“ – dann gäbe es keinen Fehler
 	            if (d <= max_dist) {
 	                int score = suggestion_score(name, key, d);
@@ -244,9 +269,23 @@ public:
 	    auto consider_map = [&](const auto& mp) {
 	        for (const auto& [key, _] : mp) {
 	            if (key.size() + (max_dist + 1) < L || L + (max_dist + 1) < key.size()) continue;
-	            size_t d = levenshtein_ci(name, key);
+	            size_t d = StringUtils::get_levenshtein_distance(name, key);
 	            if (d > 0 && d <= max_dist) {
 	                int score = suggestion_score(name, key, d) + 2; // leichter Malus ggü. lokalen Scopes
+	                cands.push_back({key, score});
+	            }
+	        }
+	    };
+	    auto consider_all_data_structures = [&]() {
+	        for (const auto& weak_data_struct : m_all_data_structures) {
+	            const auto data_struct = weak_data_struct.lock();
+	            if (!data_struct) continue;
+	            const auto& key = data_struct->name;
+	            if (key.empty()) continue;
+	            if (key.size() + (max_dist + 1) < L || L + (max_dist + 1) < key.size()) continue;
+	            size_t d = StringUtils::get_levenshtein_distance(name, key);
+	            if (d > 0 && d <= max_dist) {
+	                int score = suggestion_score(name, key, d) + 2;
 	                cands.push_back({key, score});
 	            }
 	        }
@@ -254,6 +293,9 @@ public:
 	    consider_map(builtin_variables);
 	    consider_map(builtin_arrays);
 	    consider_map(builtin_widgets);
+		if (m_declared_data_structures.size() == 1 && m_declared_data_structures[0].empty()) {
+			consider_all_data_structures();
+		}
 	    // property_functions / builtin_functions haben Signaturen – fürs Var-Suggest meist weglassen
 
 	    // Deduplizieren und sortieren
@@ -420,6 +462,25 @@ public:
 		return func_call;
 	}
 
+	/// exit
+	static std::unique_ptr<NodeFunctionCall> exit(Token &tok) {
+		auto func_call = std::make_unique<NodeFunctionCall>(
+			false,
+			std::make_unique<NodeFunctionHeaderRef>(
+				"exit",
+				std::make_unique<NodeParamList>(
+					tok
+				),
+				tok
+			),
+			tok
+		);
+		func_call->function->has_forced_parenth = false;
+		func_call->kind = NodeFunctionCall::Kind::Builtin;
+		func_call->ty = TypeRegistry::Void;
+		return func_call;
+	}
+
 	/// sh_right(a, b)
 	static std::unique_ptr<NodeFunctionCall> sh_right(std::unique_ptr<NodeAST> a, std::unique_ptr<NodeAST> b) {
 		auto func_call = std::make_unique<NodeFunctionCall>(
@@ -452,13 +513,6 @@ public:
 		return std::move(func_call);
 	}
 
-	// Case-insensitive Distance
-	static size_t levenshtein_ci(std::string a, std::string b) {
-		a = StringUtils::to_lower(std::move(a));
-		b = StringUtils::to_lower(std::move(b));
-		return StringUtils::get_levenshtein_distance(a, b);
-	}
-
 	// Einfaches Score-Ranking: Levenshtein + kleine Boni/Mali
 	static int suggestion_score(std::string_view needle, std::string_view cand, size_t dist_ci) {
 		int score = static_cast<int>(dist_ci) * 10; // Basis: Distanz zählt am meisten
@@ -485,5 +539,3 @@ public:
 
 
 };
-
-

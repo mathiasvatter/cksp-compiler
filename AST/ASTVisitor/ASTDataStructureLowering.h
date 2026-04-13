@@ -28,11 +28,6 @@ public:
 		return &node;
 	}
 
-	// NodeAST* visit(NodeFor& node) override {
-	// 	node.body->accept(*this);
-	// 	return node.lower(m_program)->accept(*this);
-	// }
-
 	NodeAST* visit(NodeSingleDeclaration &node) override {
 		node.variable->accept(*this);
 		if(node.value) node.value ->accept(*this);
@@ -49,13 +44,13 @@ public:
 		if(node.size) node.size->accept(*this);
 		if(node.num_elements) node.num_elements->accept(*this);
 		return &node;
-		// return node.data_lower(m_program);
 	}
 
 	NodeAST * visit(NodeNDArray& node) override {
 		if(node.sizes) node.sizes->accept(*this);
 		if(node.num_elements) node.num_elements->accept(*this);
-		return node.data_lower(m_program)->data_lower(m_program);
+		// data lowering turns it into array -> lowering then checks the size bounds of the array
+		return node.data_lower(m_program)->lower(m_program);
 	}
 
 	NodeAST * visit(NodeNDArrayRef& node) override {
@@ -67,7 +62,7 @@ public:
 	NodeAST* visit(NodeArrayRef& node) override {
 		if(node.index) node.index->accept(*this);
 		return &node;
-	};
+	}
 
 	NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
@@ -79,5 +74,6 @@ public:
 			definition->visited = true;
 		}
 		return &node;
-	};
+	}
+
 };

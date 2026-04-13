@@ -12,8 +12,6 @@
  * This visitor desugars the following statements:
  * - NodeDeclaration: desugar into single declare statements
  * - NodeAssignment: desugar into single assign statements
- * - NodeForEach: desugar for each loops to for loops
- * - NodeFor: alter for loops to while loops
  * Additionally, it desugars NodeFamily into single declare statements.
  */
 class ASTDesugar final : public ASTVisitor {

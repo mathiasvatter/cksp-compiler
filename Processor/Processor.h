@@ -6,7 +6,7 @@
 
 #include "../Tokenizer/Tokenizer.h"
 #include "../Tokenizer/Tokens.h"
-#include "../AST/Types.h"
+#include "../AST/Types/Types.h"
 
 /// Base Class for all parsing related classes like:
 /// - Parser

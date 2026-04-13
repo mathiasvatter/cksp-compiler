@@ -1,66 +1,82 @@
 # Changelog
 
-## [0.0.8] – 2026-03-14
+## [0.0.9-alpha.1] – 2026-04-13
 
->This release summarizes all changes in pre-release versions leading up to `0.0.8`. It introduces major improvements to the CKSP compiler, including a fully restructured preprocessor, support for overriding callbacks, scientific notation, and numerous stability fixes.
+>This release makes working with arrays and ndarrays more predictable, especially when declaring them without explicit sizes or copying them on declaration. It also improves how `exit` behaves inside user-defined functions and return functions, adds better optimization of `foreach`loops, resulting smaller generated KSP code.  
+>In addition, there were improvements to error reporting in common failure cases such as faulty access chains or missing function definitions. A new unsigned right shift operator `>>>` has also been added for logical bit operations.
 
->With this version, the `cksp-compiler` repository will be **public** under the **Apache-2.0 License**, allowing for open-source contributions.
 
-### Language
+### Added
 
-- Added support for **`import` statements in any scope**, mirroring `sksp` behaviour.
-- Added support for **overriding callbacks**.
-- Introduced **scientific notation** support for numeric literals (e.g. `1.2e-10`, `.5e2`).
-- Added support to **declare arrays without brackets** when used as variables.
-- The **`declare` keyword is now optional** for struct member declarations.
+- Added **unsigned right shift operator** `>>>` for logical shifts, similar to Java and JavaScript [#91](https://github.com/mathiasvatter/cksp-compiler/issues/91)
+    ```cksp
+    on init
+        declare x := -1
+        declare y := x >>> 1
+        message(y)
+    end on
+    ```
 
-### Compiler
+### Improved
 
-- Introduced new pragma directives:
-  - `combine_callbacks`
-  - `max_callback_depth(<value>)`
-- Added CLI options for:
-  - `--combine_callbacks`
-  - `--pass_by`
-  - multiple output files (`-o`) and `#pragma output_path()`.
-- Added validation for:
-  - invalid variable names still containing `#` after preprocessing
-  - constants declared without initialization
-  - usage of built-in variables inside restricted callbacks
-- Added new built-in constants introduced with **Kontakt 8.3**.
+- Improved handling of **arrays and ndarrays**
+  - multidimensional arrays can now infer their dimensions from initializer expressions: `declare matrix: int[][] := [[1,2,3], [4,5,6]]`
+  - `ndarray` parameters in functions are handled more robustly, even when not explicitly annotated [#23](https://github.com/mathiasvatter/cksp-compiler/issues/23)
 
-### Improvements
+- Improved **error reporting**
+  - faulty access chains now emit `UndeclaredVariable` and suggestions for similar, already declared variables in more cases instead of less precise failures [#32](https://github.com/mathiasvatter/cksp-compiler/issues/32)
+  - the **missing function definition** error is now reported more clearly
 
-- Improved **TypeInference** and **ReturnFunctionRewriting** passes.
-- Improved parser efficiency.
-- Improved efficiency of `import` handling in the preprocessor
-- Improved error and warning messages for duplicate callbacks.
-- Improved short-circuit evaluation transformation logic in regards to function calls in conditions.
+- Improved **control-flow lowering** and **code-size optimizations**
+  - if a return function is not inlined, CKSP now uses native KSP `exit` instead of the previous `while + break` lowering, reducing generated code size [#29](https://github.com/mathiasvatter/cksp-compiler/issues/29)
+  - `exit` inside user-defined functions is now handled more safely, preventing incorrect termination of outer callbacks in some cases when functions are inlined [#20](https://github.com/mathiasvatter/cksp-compiler/issues/20)
+  - `foreach` loop lowering now enables better optimization opportunities and can reduce the size of generated code [#30](https://github.com/mathiasvatter/cksp-compiler/issues/30)
 
-### Fixes
+    ```cksp
+    for i in range(0, 10)
+        message(i)
+    end for
+    ```
 
-Fixed multiple compiler issues affecting language correctness and runtime behavior:
-  - Fix incorrect evaluation of comparisons inside message functions [#26](https://github.com/mathiasvatter/cksp-compiler-issues/issues/26)
-  - Fix incorrect transformation of single-quoted strings [#83](https://github.com/mathiasvatter/cksp-compiler-issues/issues/83)
-  - Fix incorrect lowering of compound assignments when using `get_control` shorthands [#72](https://github.com/mathiasvatter/cksp-compiler-issues/issues/72)
-  - Fix local variables inside ternary expressions causing `UndeclaredVariable` errors [#84](https://github.com/mathiasvatter/cksp-compiler-issues/issues/84)
-  - Fix parsing errors for empty namespaces [#81](https://github.com/mathiasvatter/cksp-compiler-issues/issues/81)
-  - Fix namespace restrictions preventing multiple `ui_control` declarations [#77](https://github.com/mathiasvatter/cksp-compiler-issues/issues/77)
-  - Fix segmentation fault during monomorphization
-  - Fix substring substitutions in `#define` parameters [#51](https://github.com/mathiasvatter/cksp-compiler-issues/issues/51)
-  - Fix incorrect validation of `ndarray` size expressions
-  - Fix initializer lists without commas not producing errors [#52](https://github.com/mathiasvatter/cksp-compiler-issues/issues/52)
-  - Fix multidimensional array declarations with empty brackets [#58](https://github.com/mathiasvatter/cksp-compiler-issues/issues/58)
-  - Fix incorrect f-string lowering with single quotes [#66](https://github.com/mathiasvatter/cksp-compiler-issues/issues/66)
-  - Fix optimization pass removing assignments still used inside functions [#63](https://github.com/mathiasvatter/cksp-compiler-issues/issues/63)
-  - Fix incorrect dead-code elimination behavior
-  - Fix `.txt` files being incorrectly flagged as unsupported
-  - Fix missing warning when `set_num_user_zones` is used outside `on init` [#75](https://github.com/mathiasvatter/cksp-compiler-issues/issues/75)
-  - Fix issue where `struct`, `macro`, or `function` at file position 0 caused a `PreprocessorError` [#45](https://github.com/mathiasvatter/cksp-compiler-issues/issues/45)
+- Improved **compile-time performance**
+  - `RelinkGlobalScope` compiler pass is now more efficient
+  - several unnecessary compiler passes were removed
+  - handling of raw arrays during renaming in `UniqueParameterNamesProvider` and `VariableReuse` was improved
 
-### Preprocessor
+### Fixed
 
-Major restructuring of the preprocessor:
-  - Rewritten handling of `import`, `macro`, and `define`.
-  - Reintroduced `set_condition`, `reset_condition`, `use_code_if`, and `import` as dedicated AST nodes.
+- Fixed issues related to **array declarations and copying**
+  - array variables in structs are now validated more safely, preventing cases that could previously fail silently or lead to later crashes [#38](https://github.com/mathiasvatter/cksp-compiler/issues/38)
+  - arrays and ndarrays declared without explicit size can now correctly infer their dimensions from initializer lists, array references, or ndarray references [#38](https://github.com/mathiasvatter/cksp-compiler/issues/38)
+  - copying an **array on declaration** now works correctly [#4](https://github.com/mathiasvatter/cksp-compiler/issues/4)
+  - copying an **ndarray on declaration** now works correctly
 
+    ```cksp
+    declare arr: int[] := [1,2,3,4,5]
+    declare arr2: int[] := arr
+    ```
+
+- Fixed issues related to **local arrays and loop variables**
+  - local function arrays whose size depends on parameters or other local arrays are now handled correctly [#5](https://github.com/mathiasvatter/cksp-compiler/issues/5)
+    ```cksp
+    function foo(array1: int[])
+        declare tmp[num_elements(array1)]: int[]
+        ...
+    end function
+    ```
+  - redeclaring key or value variables inside a `foreach` loop body now correctly throws a redeclaration error
+    ```cksp
+    for i in range(10)
+        message(i)
+        declare i
+    end for
+    ```
+
+- Fixed namespace prefixes being incorrectly added to **members inside access chains** [#21](https://github.com/mathiasvatter/cksp-compiler/issues/21)
+- Fixed an issue where the **type identifier of return variables** could remain empty under certain conditions [#95](https://github.com/mathiasvatter/cksp-compiler/issues/95)
+- Fixed a misleading syntax error when using an **initializer list directly in a `for` loop** [#94](https://github.com/mathiasvatter/cksp-compiler/issues/94)
+    ```cksp
+    for i in [1,2,3,5,6]
+        message(i)
+    end for
+    ```

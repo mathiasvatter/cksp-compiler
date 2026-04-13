@@ -3,7 +3,7 @@
 //
 
 #include "AST.h"
-#include "../TypeRegistry.h"
+#include "../Types/TypeRegistry.h"
 #include "ASTInstructions.h"
 #include "ASTDataStructures.h"
 #include "ASTReferences.h"
@@ -16,7 +16,7 @@
 #include "../../Desugaring/DesugarParamList.h"
 #include "../../Desugaring/DesugarBinaryExpr.h"
 #include "../../Desugaring/DesugarFormatString.h"
-#include "../../Lowering/LoweringFunctionDef.h"
+#include "../../Lowering/LoweringFunctionDefReturnStmts.h"
 #include "../../Optimization/NilValidator.h"
 #include "../ASTVisitor/ReferenceManagement/ASTCollectReferences.h"
 #include "../ASTVisitor/ReferenceManagement/ASTRemoveReferences.h"
@@ -1028,9 +1028,9 @@ std::unique_ptr<NodeAST> NodeBinaryExpr::calculate_index_expression(const std::v
 }
 
 // ************* NodeCallback ***************
-NodeCallback::NodeCallback(Token tok) : NodeAST(std::move(tok), NodeType::Callback) {}
-NodeCallback::NodeCallback(std::string begin_callback, std::unique_ptr<NodeBlock> statements, std::string end_callback, Token tok)
-: NodeAST(std::move(tok), NodeType::Callback), begin_callback(std::move(begin_callback)), statements(std::move(statements)), end_callback(std::move(end_callback)) {
+NodeCallback::NodeCallback(const Token& tok) : NodeAST(tok, NodeType::Callback) {}
+NodeCallback::NodeCallback(std::string begin_callback, std::unique_ptr<NodeBlock> statements, std::string end_callback, const Token& tok)
+: NodeAST(tok, NodeType::Callback), begin_callback(std::move(begin_callback)), statements(std::move(statements)), end_callback(std::move(end_callback)) {
     NodeCallback::set_child_parents();
 }
 // NodeCallback::~NodeCallback() = default;
@@ -1091,11 +1091,11 @@ std::unique_ptr<NodeAST> NodeImport::clone() const {
 }
 
 // ************* NodeFunctionDefinition ***************
-NodeFunctionDefinition::NodeFunctionDefinition(Token tok) : NodeAST(std::move(tok), NodeType::FunctionDefinition) {}
+NodeFunctionDefinition::NodeFunctionDefinition(const Token& tok) : NodeAST(tok, NodeType::FunctionDefinition) {}
 NodeFunctionDefinition::NodeFunctionDefinition(std::unique_ptr<NodeFunctionHeader> header,
 											   std::optional<std::unique_ptr<NodeDataStructure>> returnVariable,
-											   const bool override, std::unique_ptr<NodeBlock> body, Token tok)
-        : NodeAST(std::move(tok), NodeType::FunctionDefinition), header(std::move(header)),
+											   const bool override, std::unique_ptr<NodeBlock> body, const Token& tok)
+        : NodeAST(tok, NodeType::FunctionDefinition), header(std::move(header)),
 		return_variable(std::move(returnVariable)), override(override),body(std::move(body)) {
     NodeFunctionDefinition::set_child_parents();
 }
@@ -1106,7 +1106,8 @@ NodeAST *NodeFunctionDefinition::accept(ASTVisitor &visitor) {
 }
 
 NodeFunctionDefinition::NodeFunctionDefinition(const NodeFunctionDefinition& other)
-        : NodeAST(other), is_restricted(other.is_restricted), is_thread_safe(other.is_thread_safe), is_used(other.is_used), is_compiled(other.is_compiled), visited(other.visited),
+        : NodeAST(other), is_restricted(other.is_restricted), is_thread_safe(other.is_thread_safe),
+		is_inlined(other.is_inlined), has_local_dynamic_arrays(other.has_local_dynamic_arrays), is_used(other.is_used), is_compiled(other.is_compiled), visited(other.visited),
           num_return_params(other.num_return_params), num_return_stmts(other.num_return_stmts),
           return_stmts(other.return_stmts), call_sites(other.call_sites),
 		  header(clone_shared(other.header)), override(other.override),
@@ -1140,7 +1141,7 @@ ASTDesugaring *NodeFunctionDefinition::get_desugaring(NodeProgram *program) cons
 }
 
 ASTLowering *NodeFunctionDefinition::get_lowering(NodeProgram *program) const {
-	static LoweringFunctionDef lowering(program);
+	static LoweringFunctionDefReturnStmts lowering(program);
 	return &lowering;
 }
 
@@ -1229,15 +1230,15 @@ void NodeFunctionDefinition::mark_threadsafety(NodeProgram *program) {
 }
 
 // ************* NodeProgramm ***************
-NodeProgram::NodeProgram(Token tok) : NodeAST(std::move(tok), NodeType::Program) {
+NodeProgram::NodeProgram(const Token& tok) : NodeAST(tok, NodeType::Program) {
 	global_declarations = std::make_unique<NodeBlock>(Token());
 	set_child_parents();
 }
 
 NodeProgram::NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
 						 std::vector<std::shared_ptr<NodeFunctionDefinition>> functionDefinitions,
-						 Token tok)
-	: NodeAST(std::move(tok), NodeType::Program), callbacks(std::move(callbacks)), function_definitions(std::move(functionDefinitions)) {
+						 const Token& tok)
+	: NodeAST(tok, NodeType::Program), callbacks(std::move(callbacks)), function_definitions(std::move(functionDefinitions)) {
 	global_declarations = std::make_unique<NodeBlock>(Token());
 	set_child_parents();
 }
@@ -1617,12 +1618,12 @@ void NodeProgram::order_function_definitions() {
 	ordering.order_functions(*this);
 }
 
-std::shared_ptr<NodeVariable> NodeProgram::get_tmp_var(Type *ty, DataType data) {
+std::shared_ptr<NodeVariable> NodeProgram::get_tmp_var(Type *ty, DataType data, const Token& token) const {
 	auto tmp = std::make_shared<NodeVariable>(
 		std::nullopt,
 		def_provider->get_fresh_name("tmp"),
 		ty,
-		tok,
+		token == Token() ? tok : token,
 		data
 	);
 	tmp->is_local = true;
@@ -1630,12 +1631,12 @@ std::shared_ptr<NodeVariable> NodeProgram::get_tmp_var(Type *ty, DataType data) 
 	return tmp;
 }
 
-std::shared_ptr<NodePointer> NodeProgram::get_tmp_ptr(Type *ty, DataType data) {
+std::shared_ptr<NodePointer> NodeProgram::get_tmp_ptr(Type *ty, DataType data, const Token& token) const {
 	auto tmp = std::make_shared<NodePointer>(
 		std::nullopt,
 		def_provider->get_fresh_name("tmp"),
 		ty,
-		tok,
+		token == Token() ? tok : token,
 		data
 	);
 	tmp->is_local = true;

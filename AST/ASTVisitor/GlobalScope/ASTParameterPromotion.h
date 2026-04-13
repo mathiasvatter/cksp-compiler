@@ -6,15 +6,18 @@
 
 #include "../ASTVisitor.h"
 #include "ASTVariableReuse.h"
+#include "../../../Optimization/VariableCollector.h"
 #include "../FunctionHandling/ParameterAssignmentTransformation.h"
 
 /**
  * @brief Promotes parameters for all functions until all variables are in callbacks.
  *
- * - Visits each function call up to the last nested call, adds local declarations as new parameters,
- *   and maps pointers to the next higher function definitions.
+ * - Visits each function call up to the last nested call,
+ * - calls variable reuse
+ * - adds local declarations as new parameters, and maps pointers to the next higher function definitions.
  * - Repeats this process until the function call stack is empty and inserts the declarations into the callback.
  * - these declarations in callbacks are marked as promoted, to be removed later
+ * --> important: NOT promoted: Composite Types and thread-unsafe variables. Those are directly moved to the global scope
  */
 class ASTParameterPromotion final : public ASTVisitor {
 	DefinitionProvider* m_def_provider;
@@ -38,6 +41,13 @@ public:
 	}
 
 private:
+
+	static bool has_local_var_as_size(NodeAST& size) {
+		static VariableCollector var_collector;
+		var_collector.collect(size);
+		return var_collector.contains_local_references();
+	}
+
 	NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
 		node.reset_function_visited_flag();
@@ -78,7 +88,7 @@ private:
 				m_function_call_stack.push_back(&node);
 				definition->accept(*this);
 				definition->visited = true;
-				const auto func_local_vars = std::move(definition->do_variable_reuse(m_program));
+				const auto& func_local_vars = definition->do_variable_reuse(m_program);
 
 				// promote if no composite type
 				for (auto &var : func_local_vars) {
@@ -88,12 +98,23 @@ private:
 						error.exit();
 					}
 					auto assignment = ASTVariableReuse::to_assign_statement(*declaration);
-
-					if (!var->ty->cast<CompositeType>() and var->is_thread_safe) {
+					auto node_array = var->cast<NodeArray>();
+					auto node_ndarray = var->cast<NodeNDArray>();
+					NodeAST* size = nullptr;
+					if (node_array) size = node_array->size.get();
+					else if (node_ndarray) size = node_ndarray->sizes.get();
+					if (!size and var->is_thread_safe) {
 						// add local declarations of function definition to parameters
 						definition->header->add_param(var);
 						definition->header->params.back()->kind = NodeInstruction::Promoted;
 						m_local_var_declarations[definition.get()].push_back(var.get());
+						declaration->replace_with(std::move(assignment));
+
+					} else if (size and has_local_var_as_size(*size)) {
+						// if local function array then leave it there but make function preemptiveInlining
+						// because in case size of array is depended on a param!!
+						// and if we move it, the size declaration will be nullptr
+						definition->has_local_dynamic_arrays = true;
 					} else {
 						auto global_decl = std::make_unique<NodeSingleDeclaration>(var, nullptr, var->tok);
 						var->to_global();
@@ -105,8 +126,9 @@ private:
 							// add to global declarations
 							m_program->init_callback->statements->add_as_stmt(std::move(global_decl));
 						}
+						declaration->replace_with(std::move(assignment));
 					}
-					declaration->replace_with(std::move(assignment));
+
 				}
 				m_function_call_stack.pop_back();
 			}

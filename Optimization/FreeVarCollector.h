@@ -28,7 +28,7 @@ class FreeVarCollector final : public ASTVisitor {
 	}
 
 public:
-	std::unordered_set<std::string> collect(NodeAST &node) {
+	std::unordered_set<std::string>& collect(NodeAST &node) {
 		m_free_vars.clear();
 		m_free_var_names.clear();
 		m_bound_var_decls.clear();
@@ -36,7 +36,7 @@ public:
 		m_bound_var_decls.emplace_back(); // global scope
 		node.accept(*this);
 		m_bound_var_decls.clear();
-		return std::move(m_free_var_names);
+		return m_free_var_names;
 	}
 
 	std::unordered_set<NodeFunctionDefinition*> get_visited_functions() {

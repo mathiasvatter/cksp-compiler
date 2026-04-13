@@ -19,6 +19,7 @@ class DesugarBinaryExpr final : public ASTDesugaring {
 		{token::SHIFT_RIGHT, "sh_right"},
 		{token::SHIFT_LEFT, "sh_left"},
 		{token::EXP, "pow"},
+		{token::SHIFT_RIGHT_LOGICAL, "CKSP::sh_right_logical"},
 	};
 
 public:
