@@ -1,24 +1,82 @@
-# Changelog from v0.0.8 to HEAD
+# Changelog
 
-- Fix #38 incorrectly initializing an array variable in a struct would cause a segfault error -> compiler checks early on now if an array/ndarray declared without size has initializer list/array/ndarray as r_value; Fix issues with previous fix of issue #30
-- Implement feature #30 to further optimize foreach loops by making start and stop iterator variable const
-- Added get_token_string() method to all NodeAST classes for a string representation closer to the code source that can be shown in CompileError messages; Improve error messages in faulty access chains (issue #32) by issuing UndeclaredVariable error;
-- Implement copying an nd array upon declaration; Fix/implement declaring multidimensional arrays without size and infering it from r_value (array/ndarray/initializer list)
-- Fix issue #4 where copying an array upon declaration was not working -> fixed r_value array ref was put in initializer list and not turned into array declaration and assignment; Fixed issue where declaring an array without size would lead to segfault when no initializer list and only array or ndarray ref was assigned;
-- Add meaningful error message to parse_reference_chain if no token::KEYWORD was detected; Fix issue #94 where using an initializer list with parentheses instead of brackets would throw a cryptic error -> error reporting improved
-- Fix variable shadowing problems in foreach loops; previously it was possible to re-declare key, value variables in the loop body -> this now throws a redeclaration error
-- Fix issue #95 where under certain conditions type identifier of return variables would remain empty by re-enabling cast_data_structures func in second type inference pass
-- Update placement of missing function definition error
-- Add check and error for user-defined function headers that have the CKSP prefix used by internal cksp helper functions; Add #91: unsigned right shift operator for logical shifts a la Java `>>>`
-- Update folder structure; Make RelinkGlobalScope more efficient; Remove some unnecessary compiler passes
-- Update TypeInference to deal with ndarrays as function parameters that are not annotated as such and have no clear ndarray syntax reference in the function body; Update UniqueParameterNamesProvider and VariableReuse to keep raw arrays while renaming (still ugly tho); This fixes issue #23
-- Fix #5: function local arrays with a size dependent on other local arrays/params are now possible by not promoting them and preemptively inlining the function. After substituting the size variable with the arg and promoting the decl to global declarations, this num_elements node will be directly substituted in PostLoweringNumElements
-- Add lowering of exit command to "return" stmt inside user functions;, this fixes issue #20 where user functions with exit could be inlined causing the outer callback to terminate early
-- Reordering of function strategy and thread-safe env analysis passes; Added feature #29: if return function is never inlined, exit is used instead of while+break transformation
-- Remove submodule cksp-compiler-issues
-- Update generate_github_issue_url to work with new github issue templates
-- deactivate automatic github workflow on push to master branch; Update bug report and feature request templates
-- Update passing of token struct in ast nodes to const reference; Update order of passes slightly
-- Update CmakeLists.txt to update cached python3 path upon not finding it; Add error message when exit is used in the on init callback
-- Update README.md, add "why cksp" section, add badges
-- Merge branch 'master' into development
+## [0.0.9-alpha.1] – 2026-04-13
+
+>This release makes working with arrays and ndarrays more predictable, especially when declaring them without explicit sizes or copying them on declaration. It also improves how `exit` behaves inside user-defined functions and return functions, adds better optimization of `foreach`loops, resulting smaller generated KSP code.  
+>In addition, there were improvements to error reporting in common failure cases such as faulty access chains or missing function definitions. A new unsigned right shift operator `>>>` has also been added for logical bit operations.
+
+
+### Added
+
+- Added **unsigned right shift operator** `>>>` for logical shifts, similar to Java and JavaScript [#91](https://github.com/mathiasvatter/cksp-compiler/issues/91)
+    ```cksp
+    on init
+        declare x := -1
+        declare y := x >>> 1
+        message(y)
+    end on
+    ```
+
+### Improved
+
+- Improved handling of **arrays and ndarrays**
+  - multidimensional arrays can now infer their dimensions from initializer expressions: `declare matrix: int[][] := [[1,2,3], [4,5,6]]`
+  - `ndarray` parameters in functions are handled more robustly, even when not explicitly annotated [#23](https://github.com/mathiasvatter/cksp-compiler/issues/23)
+
+- Improved **error reporting**
+  - faulty access chains now emit `UndeclaredVariable` and suggestions for similar, already declared variables in more cases instead of less precise failures [#32](https://github.com/mathiasvatter/cksp-compiler/issues/32)
+  - the **missing function definition** error is now reported more clearly
+
+- Improved **control-flow lowering** and **code-size optimizations**
+  - if a return function is not inlined, CKSP now uses native KSP `exit` instead of the previous `while + break` lowering, reducing generated code size [#29](https://github.com/mathiasvatter/cksp-compiler/issues/29)
+  - `exit` inside user-defined functions is now handled more safely, preventing incorrect termination of outer callbacks in some cases when functions are inlined [#20](https://github.com/mathiasvatter/cksp-compiler/issues/20)
+  - `foreach` loop lowering now enables better optimization opportunities and can reduce the size of generated code [#30](https://github.com/mathiasvatter/cksp-compiler/issues/30)
+
+    ```cksp
+    for i in range(0, 10)
+        message(i)
+    end for
+    ```
+
+- Improved **compile-time performance**
+  - `RelinkGlobalScope` compiler pass is now more efficient
+  - several unnecessary compiler passes were removed
+  - handling of raw arrays during renaming in `UniqueParameterNamesProvider` and `VariableReuse` was improved
+
+### Fixed
+
+- Fixed issues related to **array declarations and copying**
+  - array variables in structs are now validated more safely, preventing cases that could previously fail silently or lead to later crashes [#38](https://github.com/mathiasvatter/cksp-compiler/issues/38)
+  - arrays and ndarrays declared without explicit size can now correctly infer their dimensions from initializer lists, array references, or ndarray references [#38](https://github.com/mathiasvatter/cksp-compiler/issues/38)
+  - copying an **array on declaration** now works correctly [#4](https://github.com/mathiasvatter/cksp-compiler/issues/4)
+  - copying an **ndarray on declaration** now works correctly
+
+    ```cksp
+    declare arr: int[] := [1,2,3,4,5]
+    declare arr2: int[] := arr
+    ```
+
+- Fixed issues related to **local arrays and loop variables**
+  - local function arrays whose size depends on parameters or other local arrays are now handled correctly [#5](https://github.com/mathiasvatter/cksp-compiler/issues/5)
+    ```cksp
+    function foo(array1: int[])
+        declare tmp[num_elements(array1)]: int[]
+        ...
+    end function
+    ```
+  - redeclaring key or value variables inside a `foreach` loop body now correctly throws a redeclaration error
+    ```cksp
+    for i in range(10)
+        message(i)
+        declare i
+    end for
+    ```
+
+- Fixed namespace prefixes being incorrectly added to **members inside access chains** [#21](https://github.com/mathiasvatter/cksp-compiler/issues/21)
+- Fixed an issue where the **type identifier of return variables** could remain empty under certain conditions [#95](https://github.com/mathiasvatter/cksp-compiler/issues/95)
+- Fixed a misleading syntax error when using an **initializer list directly in a `for` loop** [#94](https://github.com/mathiasvatter/cksp-compiler/issues/94)
+    ```cksp
+    for i in [1,2,3,5,6]
+        message(i)
+    end for
+    ```
