@@ -6,7 +6,7 @@
 
 #include <string>
 #include "../AST/ASTNodes/ASTHelper.h"
-#include "../AST/Types.h"
+#include "../AST/Types/Types.h"
 
 /// Used for Reference Manager and including weak pointers in unordered_map
 struct WeakPtrHash {

@@ -79,7 +79,12 @@ private:
 		}
 
 		return &node;
-	};
+	}
+
+	NodeAST* visit(NodeCallback& node) override {
+		m_program->current_callback = &node;
+		return ASTVisitor::visit(node);
+	}
 
 	NodeAST* visit(NodeFunctionDefinition& node) override {
 		node.do_return_param_promotion(m_program);
@@ -132,9 +137,12 @@ private:
 		if(node.bind_definition(m_program)) {
 			const auto definition = node.get_definition();
 			if(!definition->visited) {
+				definition->visited = true;
+				// only do return statement lowering if NONE of the calls has Inlining as strategy. for this to work
+				// all fucntion call sites will have to be examined
+				definition->lower(m_program);
 				definition->accept(*this);
 			}
-			definition->visited = true;
 
 
 			// add throwaway variable ref to params

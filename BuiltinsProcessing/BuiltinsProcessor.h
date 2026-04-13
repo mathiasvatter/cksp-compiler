@@ -18,7 +18,7 @@ public:
     Result<SuccessTag> parse_builtin_variables(const std::string &file);
     Result<SuccessTag> parse_builtin_functions(const std::string &file);
 	Result<SuccessTag> parse_builtin_widgets(const std::string &file);
-	Result<SuccessTag> parse_boolean_functions(const std::string &file);
+	Result<SuccessTag> parse_cksp_helper_functions(const std::string &file);
 
     Result<std::shared_ptr<NodeVariable>> parse_builtin_variable(DataType data_type);
     Result<std::shared_ptr<NodeArray>> parse_builtin_array();
@@ -32,7 +32,7 @@ private:
     std::unordered_map<std::string, std::shared_ptr<NodeVariable>> m_builtin_variables;
     std::unordered_map<std::string, std::shared_ptr<NodeArray>> m_builtin_arrays;
     std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_builtin_functions;
-	std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_boolean_functions;
+	std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_cksp_helper_functions;
 
     std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> m_property_functions;
     std::unordered_map<std::string, std::shared_ptr<NodeUIControl>> m_builtin_widgets;

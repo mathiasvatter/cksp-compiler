@@ -35,6 +35,7 @@ inline static std::map<token, int> operator_precedence = {
         {token::BIT_OR, 9},
         {token::BIT_AND, 10},
 		{token::SHIFT_RIGHT, 11},
+		{token::SHIFT_RIGHT_LOGICAL, 11},
 		{token::SHIFT_LEFT, 11},
         {token::BIT_NOT, 12},
         {token::ADD, 13},

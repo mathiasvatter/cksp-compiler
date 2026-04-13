@@ -12,6 +12,7 @@
 
 NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	m_program = &node;
+	m_program->function_call_stack = {};
 
 	// move all namespaces into global declarations block before inlining them in visitor
 	for (auto& ns : node.namespaces) {
@@ -41,6 +42,7 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	for(const auto & callback : node.callbacks) {
 		callback->accept(*this);
 	}
+	m_program->function_call_stack = {};
 	// Merge function here before visiting them again so that newly added functions (to additional_functions)
 	// are also visited and lowered -> ternary functions -> short-circuiting
 	node.merge_function_definitions();
@@ -107,8 +109,7 @@ NodeAST * ASTCollectLowerings::visit(NodeFunctionDefinition& node) {
 	if (node.return_variable.has_value())
 		node.return_variable.value()->accept(*this);
 	node.body->accept(*this);
-
-	return node.lower(m_program);
+	return &node;
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeSingleDeclaration &node) {
@@ -149,7 +150,9 @@ NodeAST * ASTCollectLowerings::visit(NodeFunctionCall& node) {
 	node.bind_definition(m_program, true);
 	if (const auto& definition = node.get_definition()) {
 		if(!definition->visited) {
+			m_program->function_call_stack.emplace(definition);
 			definition->accept(*this);
+			m_program->function_call_stack.pop();
 		}
 		definition->visited = true;
 	}
@@ -160,14 +163,14 @@ NodeAST * ASTCollectLowerings::visit(NodeArray& node) {
 	//TRACE();
     if(node.size) node.size->accept(*this);
 	if(node.num_elements) node.num_elements->accept(*this);
-	return node.data_lower(m_program);
+	return node.lower(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeNDArray& node) {
 	//TRACE();
 	if(node.sizes) node.sizes->accept(*this);
 	if(node.num_elements) node.num_elements->accept(*this);
-	return &node;
+	return node.lower(m_program);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeNDArrayRef& node) {

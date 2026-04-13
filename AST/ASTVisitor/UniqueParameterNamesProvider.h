@@ -21,7 +21,8 @@ class UniqueParameterNamesProvider final : public ASTVisitor {
 	static void rename_func_param_ref(NodeReference& node) {
 		if (const auto decl = node.get_declaration()) {
 			if (decl->is_function_param() or is_function_return(decl)) {
-				node.name = decl->name;
+				const bool is_raw = node.cast<NodeArrayRef>() and node.is_raw_array();
+				node.name = is_raw ? "_"+decl->name : decl->name;
 			}
 		}
 	}

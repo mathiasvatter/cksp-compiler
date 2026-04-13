@@ -4,14 +4,18 @@
 
 #pragma once
 
-#include "../ASTLowering.h"
+#include "ASTLowering.h"
 
 /**
  * Determining the size of the array if possible
+ *  - when r_value is initializer list
+ *  - when r_value is array ref
+ *  - when r_value is ndarray re
  * Throwing necessary errors if the array is not declared correctly
  * e.g. if size is not a constant or not able to be determined at compile time
+ *
  */
-class ArrayDeclarationSyntaxValidator final : public ASTLowering {
+class LoweringArray final : public ASTLowering {
 	NodeArray* m_current_array = nullptr;
 	bool m_size_is_constant = true;
 
@@ -46,7 +50,7 @@ class ArrayDeclarationSyntaxValidator final : public ASTLowering {
 	}
 
 public:
-	explicit ArrayDeclarationSyntaxValidator(NodeProgram* program) : ASTLowering(program) {}
+	explicit LoweringArray(NodeProgram* program) : ASTLowering(program) {}
 
 	/// Determining array size at compile time -> not of references!
 	NodeAST * visit(NodeArray& node) override {
@@ -78,14 +82,26 @@ public:
 				error.m_expected = "<Initializer List>";
 				error.exit();
 			}
-			if (const auto init_list = cast_node<NodeInitializerList>(node_declaration->value.get())) {
+			if (const auto init_list = node_declaration->value->cast<NodeInitializerList>()) {
 				node.size = std::make_unique<NodeInt>((int32_t) init_list->size(), node.tok);
+			// in case declare array: int[] := arr
+			} else if (auto array_ref = node_declaration->value->cast<NodeArrayRef>()) {
+				// get the size from decl of array_ref
+				auto assign_del = array_ref->get_declaration();
+				if (!assign_del) DefinitionProvider::internal_missing_declaration_error(*array_ref).exit();
+				auto ref = assign_del->to_reference();
+				node.set_size(ref->get_size());
+			} else if (auto ndarray_ref = node_declaration->value->cast<NodeNDArrayRef>()) {
+				auto assign_del = ndarray_ref->get_declaration();
+				if (!assign_del) DefinitionProvider::internal_missing_declaration_error(*ndarray_ref).exit();
+				node.set_size(ndarray_ref->get_size());
 			}
 		// array has size -> check if it is a constant variable
 		} else {
 			// m_size_is_constant = true;
 			node.size->accept(*this);
 			if(!node.size->is_constant()) {
+				error.set_token(node.size->tok);
 				error.m_message = "Size of <Array> has to be a constant expression with constant <Variables> and/or <Integers>.";
 				error.m_got = node.size->get_string();
 				error.exit();
@@ -93,6 +109,28 @@ public:
 		}
 		if (node_declaration) {
 			check_size_against_initializer_list(*node_declaration);
+		}
+
+		return &node;
+	}
+
+	/// if we have a declaration as entry point in CollectLowerings we enter this after we already entered
+	/// visit NodeArray. If r_value is array or ndarray ref -> need to split up to assignment to
+	/// benefit from NormalizeNDArrayAssign and NormalizeArrayAssign
+	/// pre: 	declare arr2[num_elements(arr)]: int[] := arr[*]
+	/// port:   declare arr2[num_elements(arr)]: int[]
+	///         arr2 := arr[*]
+	NodeAST* visit(NodeSingleDeclaration& node) override {
+		if (!node.value) return &node;
+
+		if (node.value->cast<NodeArrayRef>() || node.value->cast<NodeNDArrayRef>()) {
+			auto assignment = node.to_assign_stmt();
+			auto new_declaration = std::make_unique<NodeSingleDeclaration>(
+				std::move(node.variable), nullptr, node.tok);
+			auto block = std::make_unique<NodeBlock>(node.tok);
+			block->add_as_stmt(std::move(new_declaration));
+			block->add_as_stmt(std::move(assignment));
+			return node.replace_with(std::move(block));
 		}
 
 		return &node;

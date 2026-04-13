@@ -198,7 +198,36 @@ NodeAST * TypeInference::visit(NodeArrayRef& node) {
 			if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
 		}
 	}
-    match_reference_declaration(node, node.get_declaration());
+
+	auto decl = node.get_declaration();
+    match_reference_declaration(node, decl);
+
+	if (decl) {
+		auto decl_type = decl->ty->cast<CompositeType>();
+		if (!decl_type and decl->ty != TypeRegistry::Unknown) {
+			auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+			error.m_message = "Reference <"+node.name+"> does not refer to a <Composite> type.";
+			error.exit();
+		}
+		// in case declaration has more dimensions and this node was written as e.g. arr[i]
+		if (decl_type and decl_type->get_dimensions() > 1 and node.index and !node.is_raw_array()) {
+			auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
+			error.set_message("Reference <"+node.name+"> is notated with only one dimension but was declared with multiple dimensions.");
+			error.exit();
+		}
+		// swap out to ndarray
+		// in case declaration has more dimensions and this node is written as e.g. num_elements(arr, 3)
+		if (decl_type and decl_type->get_dimensions() > 1 and !node.index and !node.is_raw_array()) {
+			auto ndarray = node.to_ndarray_ref();
+			ndarray->match_data_structure(decl);
+			ndarray->ty = decl->ty;
+			auto new_node = node.replace_reference(std::move(ndarray));
+			if(m_def_provider) m_def_provider->add_to_references(new_node);
+			return new_node;
+
+		}
+	}
+
 	if(m_def_provider) m_def_provider->add_to_references(&node);
 	return &node;
 }
@@ -301,6 +330,13 @@ NodeAST * TypeInference::visit(NodeNumElements& node) {
 	if(node.dimension) {
 		node.dimension->accept(*this);
 		match_against(*node.dimension, TypeRegistry::Integer);
+		// dimension arg of num_elements is only given if node.array is multidimensional
+		// set dimension size to 0 if 1
+		// if (auto comp_type = node.array->ty->cast<CompositeType>()) {
+		// 	if (comp_type->get_dimensions() == 1) {
+		// 		node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, comp_type->get_element_type(), 0);
+		// 	}
+		// }
 	}
 	match_against(node, TypeRegistry::Integer);
 	return &node;
@@ -427,7 +463,10 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 			auto prev_ptr = node.chain[prev].get();
 			auto prev_type = node.chain[prev]->ty;
 			if(prev_type->get_type_kind() != TypeKind::Object) {
-				error.m_message = "Method chaining can only be used on <Object> types.";
+				if (auto ref = prev_ptr->is_reference()) {
+					error = DefinitionProvider::throw_declaration_error(*ref, "", m_program->def_provider);
+				}
+				error.add_message("Method chaining can only be used on <Object> types, got '" + prev_ptr->get_token_string() + ": " + prev_type->to_string() + "' instead.");
 				error.exit();
 			}
 			auto prev_obj = prev_type->to_string();
@@ -436,7 +475,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				if(prev_type == TypeRegistry::Nil) {
 					error.m_message = "Method chaining can not be used on <Nil> types.";
 				} else if(prev_ptr->cast<NodeFunctionCall>()) {
-					error.m_message = prev_ptr->get_string()+" does not return <Object> type.";
+					error.m_message = prev_ptr->get_token_string()+" does not return <Object> type.";
 				} else {
 					error.m_message = "Struct "+prev_obj+" does not exist.";
 				}
@@ -589,9 +628,50 @@ NodeAST * TypeInference::visit(NodeSingleDeclaration& node) {
 	node.variable->accept(*this);
 	if(node.value) {
 		node.value->accept(*this);
+
+		// case issue #4: declare arr2: int[] := arr where arr is also array. but right now,
+		// r_value will be wrapped in initializer list
+		auto init_list = node.value->cast<NodeInitializerList>();
+		if (init_list and init_list ->size() == 1) {
+			auto& elem = init_list->elem(0);
+			if (elem->ty->get_type_kind() == node.variable->ty->get_type_kind()) {
+				node.set_value(std::move(elem));
+				node.value->accept(*this);
+			}
+		}
+
+
+
 		match_assignment_types(*node.variable, *node.value);
 		node.variable->accept(*this);
 	}
+
+	// check if variable is array/ndarray and has no size. In this case, the value part
+	// has to be eiher initializer list, or array/ndarray (issue #38)
+	// declare var: int[] -> this is not allowed
+	auto array = node.variable->cast<NodeArray>();
+	auto ndarray = node.variable->cast<NodeNDArray>();
+	if ((array and !array->size) or (ndarray and !ndarray->sizes))  {
+		if(node.value) {
+			if(node.value->cast<NodeInitializerList>() or node.value->cast<NodeRange>()) {
+				// ok
+			} else if(node.value->cast<NodeArrayRef>()) {
+				// ok
+			} else if(node.value->cast<NodeNDArrayRef>()) {
+				// ok
+			} else {
+				auto error = CompileError(ErrorType::TypeError, "", "", node.value->tok);
+				error.m_message = "Variables of type <Array> or <NDArray> without size can only be initialized with an <Initializer List>, <Array> or <NDArray>.";
+				error.exit();
+			}
+		} else {
+			auto error = CompileError(ErrorType::TypeError, "", "", node.variable->tok);
+			error.m_message = "Variables of type <Array> or <NDArray> without size need to be initialized with an <Initializer List>, <Array> or <NDArray>.";
+			error.exit();
+		}
+
+	}
+
 	m_def_provider->add_to_declarations(&node);
 
 	// if declaration is pointer -> always initialize with nil!

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
-project(CKSP_Compiler VERSION 0.0.8)
-set(PRE_RELEASE_VERSION "")
+project(CKSP_Compiler VERSION 0.0.9)
+set(PRE_RELEASE_VERSION "-alpha.1")
 
 set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
 configure_file(
@@ -11,6 +11,12 @@ configure_file(
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+# CLion/CMake can cache a Python path from an older local installation.
+# If that interpreter no longer exists, drop the cached value and re-discover.
+if(DEFINED Python3_EXECUTABLE AND NOT EXISTS "${Python3_EXECUTABLE}")
+    unset(Python3_EXECUTABLE CACHE)
+endif()
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
@@ -81,10 +87,10 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/ASTCollectLowerings.cpp
         AST/ASTVisitor/ASTSemanticAnalysis.h
         AST/ASTVisitor/ASTSemanticAnalysis.cpp
-        AST/Types.h
-        AST/Types.cpp
-        AST/TypeRegistry.h
-        AST/TypeRegistry.cpp
+        AST/Types/Types.h
+        AST/Types/Types.cpp
+        AST/Types/TypeRegistry.h
+        AST/Types/TypeRegistry.cpp
         Interpreter/SimpleExprInterpreter.h
         Interpreter/SimpleExprInterpreter.cpp
         Preprocessor/PreAST/PreASTCombine.h
@@ -147,7 +153,6 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/FunctionHandling/ASTPreemptiveFunctionInlining.h
         Optimization/ConstantPropagation.h
         Optimization/VariablePruning.h
-        Optimization/ParameterMarking.h
         AST/ASTVisitor/ASTRelinkGlobalScope.h
         Optimization/ConstExprValidator.h
         Optimization/ConstExprPropagation.h
@@ -167,7 +172,7 @@ add_executable(cksp main.cpp
         Desugaring/DesugarParamList.h
         Desugaring/DesugarBinaryExpr.h
         Lowering/LoweringWhile.h
-        Lowering/LoweringFunctionDef.h
+        Lowering/LoweringFunctionDefReturnStmts.h
         AST/ASTNodes/NodeStructCreateRefCountFunctions.h
         Lowering/PreLoweringStruct.h
         Lowering/LoweringMemAlloc.h
@@ -184,7 +189,7 @@ add_executable(cksp main.cpp
         AST/ASTVisitor/FunctionHandling/FunctionDefinitionOrdering.h
         AST/ASTVisitor/ReturnFunctionRewriting/ReturnFunctionIsolation.h
         AST/ASTVisitor/FunctionHandling/FunctionInlining.h
-        Lowering/PostLowering/PostLoweringSingleDeclaration.h
+        AST/ASTVisitor/ArrayDimensionConstants.h
         Lowering/LoweringSortSearch.h
         Lowering/PostLowering/PostLoweringSortSearch.h
         AST/ASTVisitor/GlobalScope/ASTDimensionExpansion.h
@@ -235,6 +240,8 @@ add_executable(cksp main.cpp
         Lowering/LoweringComparisons.h
         Preprocessor/PreAST/PreASTImport.h
         Preprocessor/PreAST/PreASTConditions.h
+        Optimization/VariableCollector.h
+        Lowering/LoweringNDArray.h
 )
 add_dependencies(cksp generate_headers)
 

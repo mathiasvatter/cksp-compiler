@@ -10,14 +10,14 @@
 #include "engine_variables.h"
 #include "engine_constants.h"
 #include "engine_functions.h"
-#include "engine_bool.h"
+#include "engine_helper_functions.h"
 #include "../AST/ASTVisitor/FunctionHandling/BuiltinRestrictionValidator.h"
 
 BuiltinsProcessor::BuiltinsProcessor(DefinitionProvider* definition_provider)
 : Processor(), m_def_provider(definition_provider), m_builtin_variables_file("engine_variables.h"),
 m_builtin_constants_file("engine_constants.h"),
 m_builtin_functions_file("engine_functions.h"), m_builtin_widgets_file("engine_widgets.h"),
-m_boolean_functions_file("engine_bool.h") {
+m_boolean_functions_file("engine_helper_functions.h") {
     m_pos = 0;
 }
 
@@ -38,7 +38,7 @@ void BuiltinsProcessor::process() {
 	if(builtin_widgets.is_error())
 		builtin_widgets.get_error().exit();
 
-	auto boolean_functions = parse_boolean_functions(m_boolean_functions_file);
+	auto boolean_functions = parse_cksp_helper_functions(m_boolean_functions_file);
 	if(boolean_functions.is_error())
 		boolean_functions.get_error().exit();
 
@@ -47,7 +47,7 @@ void BuiltinsProcessor::process() {
 	m_def_provider->set_builtin_functions(std::move(m_builtin_functions));
 	m_def_provider->set_builtin_widgets(std::move(m_builtin_widgets));
 	m_def_provider->set_property_functions(std::move(m_property_functions));
-	m_def_provider->set_boolean_functions(std::move(m_boolean_functions));
+	m_def_provider->set_boolean_functions(std::move(m_cksp_helper_functions));
 }
 
 Result<SuccessTag> BuiltinsProcessor::parse_builtin_variables(const std::string &file) {
@@ -164,19 +164,20 @@ Result<SuccessTag> BuiltinsProcessor::parse_builtin_widgets(const std::string &f
 	return Result<SuccessTag>(SuccessTag{});
 }
 
-Result<SuccessTag> BuiltinsProcessor::parse_boolean_functions(const std::string &file) {
-	std::string data(reinterpret_cast<char*>(engine_bool), engine_bool_len);
+Result<SuccessTag> BuiltinsProcessor::parse_cksp_helper_functions(const std::string &file) {
+	std::string data(reinterpret_cast<char*>(engine_helper_functions), engine_helper_functions_len);
 	Tokenizer tokenizer(data, file);
 	m_tokens = tokenizer.tokenize();
 	m_pos = 0;
 	Parser parser(m_tokens);
-	auto bool_prog = parser.parse();
-	if (bool_prog.is_error()) return Result<SuccessTag>(bool_prog.get_error());
-	auto bool_program = std::move(bool_prog.unwrap());
-	for (const auto& def : bool_program->function_definitions) {
-		auto node_function = std::move(def);
+	auto helper_prog = parser.parse();
+	if (helper_prog.is_error()) return Result<SuccessTag>(helper_prog.get_error());
+	auto helper_program = std::move(helper_prog.unwrap());
+	for (const auto& def : helper_program->function_definitions) {
+		auto node_function = def;
+		node_function->header->kind = NodeDataStructure::Compiler;
 		node_function->header->name = "CKSP"+OBJ_DELIMITER+node_function->header->name;
-		m_boolean_functions[{node_function->header->name, (int)node_function->header->params.size()}] = std::move(node_function);
+		m_cksp_helper_functions[{node_function->header->name, (int)node_function->header->params.size()}] = std::move(node_function);
 	}
 	return Result<SuccessTag>(SuccessTag{});
 }
@@ -196,6 +197,7 @@ Result<std::shared_ptr<NodeVariable>> BuiltinsProcessor::parse_builtin_variable(
     auto node_variable = std::make_shared<NodeVariable>(std::optional<Token>(), var_name, type_annotation.unwrap(), name, data_type);
     node_variable->is_local = false;
     node_variable->is_engine = true;
+	node_variable->kind = NodeDataStructure::Builtin;
 	BuiltinRestrictionValidator::write_builtin_variable_restrictions(*node_variable);
     return Result<std::shared_ptr<NodeVariable>>(std::move(node_variable));
 }
@@ -219,6 +221,7 @@ Result<std::shared_ptr<NodeArray>> BuiltinsProcessor::parse_builtin_array() {
 	node_array->data_type = DataType::Const;
     node_array->is_local = false;
     node_array->is_engine = true;
+	node_array->kind = NodeDataStructure::Builtin;
 	BuiltinRestrictionValidator::write_builtin_variable_restrictions(*node_array);
     return Result<std::shared_ptr<NodeArray>>(std::move(node_array));
 }
@@ -264,7 +267,7 @@ Result<std::shared_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin
         );
 	node_function_header->create_function_type(ret_type);
     node_function_header->has_forced_parenth = has_forced_parenth;
-
+	node_function_header->kind = NodeDataStructure::Builtin;
     auto node_function = std::make_shared<NodeFunctionDefinition>(
             std::move(node_function_header),
             std::nullopt,

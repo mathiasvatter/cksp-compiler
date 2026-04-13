@@ -454,8 +454,13 @@ void Tokenizer::get_comparison_operators() {
 		} else if(peek(1) == '>') {
 			tok = token::SHIFT_RIGHT;
 			consume();
-        } else
+			if (peek(1) == '>') {
+				tok = token::SHIFT_RIGHT_LOGICAL;
+				consume();
+			}
+        } else {
             tok = token::GREATER_THAN;
+        }
     } else if (peek() == '<') {
         if (peek(1) == '=') {
 			tok = token::LESS_EQUAL;

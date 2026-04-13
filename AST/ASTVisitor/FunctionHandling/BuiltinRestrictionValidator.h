@@ -41,6 +41,11 @@ public:
 		 allowed.erase("init");
 		 return allowed;
 		})() },
+		{ "exit", ([]() -> std::unordered_set<std::string> {
+		 std::unordered_set<std::string> allowed(CALLBACKS.begin(), CALLBACKS.end());
+		 allowed.erase("init");
+		 return allowed;
+		})() },
 	};
 
 	inline static const std::unordered_map<std::string, std::unordered_set<std::string>> m_restricted_variables = {

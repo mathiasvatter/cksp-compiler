@@ -63,7 +63,7 @@ public:
 			import_program->program->chunk.pop_back();
 
 			// recursively preprocess imports in the imported program to handle nested imports
-			import_program->do_preprocessing(m_base_file, import_path, m_imported_files, m_basename_map);
+			import_program->do_import_processing(m_base_file, import_path, m_imported_files, m_basename_map);
 
 			for (auto& macro_def : import_program->macro_definitions) {
 				macro_def->parent = m_program;

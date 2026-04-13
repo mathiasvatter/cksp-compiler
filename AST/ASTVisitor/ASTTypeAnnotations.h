@@ -136,6 +136,7 @@ public:
 
 	NodeAST* visit(NodeFunctionHeader& node) override {
 		desanitize_data_name(node);
+		DefinitionProvider::check_engine_helper_function(node);
 		for(const auto &param : node.params) param->accept(*this);
 //		check_annotation_with_expected(node, TypeRegistry::Unknown);
 //		return apply_type_annotations(node.get_shared());

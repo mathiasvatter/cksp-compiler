@@ -31,7 +31,8 @@ public:
 			// check if node is array ref -> no extra dimension allowed
 			if(node.array->cast<NodeArrayRef>()) {
 				auto error = CompileError(ErrorType::TypeError, "", "", node.array->tok);
-				error.m_message = "The <dimension> parameter of <num_elements> can not be used with <ArrayRef>.";
+				error.m_message = "The <dimension> parameter of <num_elements> can not be used with <ArrayRef> since it "
+					  "cannot have more than a single dimension.";
 				error.exit();
 			}
 			if (!node.dimension->is_constant()) {

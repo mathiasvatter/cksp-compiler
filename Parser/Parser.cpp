@@ -382,6 +382,15 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_binary_expr(NodeAST* parent) {
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_reference_chain(NodeAST *parent) {
 	auto chain = std::make_unique<NodeAccessChain>(peek());
+	if (peek().type != token::KEYWORD) {
+		auto error = CompileError(
+			ErrorType::SyntaxError,
+			"Expected identifier at start of reference chain.",
+			"identifier",
+			peek()
+		);
+		return Result<std::unique_ptr<NodeAST>>(error);
+	}
 	while(peek().type == token::KEYWORD) {
 		std::unique_ptr<NodeAST> stmt = nullptr;
 		if (peek().type == token::KEYWORD) {
@@ -2132,16 +2141,21 @@ Result<std::unique_ptr<NodeForEach>> Parser::parse_for_each_statement(NodeAST* p
                                                                  "Incorrect Syntax for range-based <for-loop>.", "in", peek()));
     Token in = consume(); //consume in
 	std::unique_ptr<NodeAST> node_range;
-	if(peek().type == token::OPEN_PARENTH) {
-		auto range = parse_param_list(node_for_statement.get());
+	const auto error_msg = "\nIn a foreach loop, the expression after 'in' must be an array, an initializer list (enclosed in '[', ']'), or a range expression. \nTo iterate over numbers, use range(stop), range(start, stop), or range(start, stop, step), for example: `for num in range(10)` or `for num in range(10, 0, -1)`.";
+	if(peek().type == token::OPEN_BRACKET) {
+		auto range = parse_init_list(node_for_statement.get());
 		if(range.is_error()) {
-			return Result<std::unique_ptr<NodeForEach>>(range.get_error());
+			auto error = range.get_error();
+			error.add_message(error_msg);
+			return Result<std::unique_ptr<NodeForEach>>(error);
 		}
 		node_range = std::move(range.unwrap());
 	} else {
 		auto range = parse_reference_chain(node_for_statement.get());
 		if(range.is_error()) {
-			return Result<std::unique_ptr<NodeForEach>>(range.get_error());
+			auto error = range.get_error();
+			error.add_message(error_msg);
+			return Result<std::unique_ptr<NodeForEach>>(error);
 		}
 		node_range = std::move(range.unwrap());
 	}

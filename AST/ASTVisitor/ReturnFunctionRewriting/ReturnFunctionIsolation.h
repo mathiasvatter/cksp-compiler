@@ -124,8 +124,8 @@ private:
 			func_call->bind_definition(m_program);
 			const auto definition = func_call->get_definition();
 			if (!definition) return &node;
-			if (definition->is_expression_function()) return &node;
 			if (func_call->is_builtin_kind()) return &node;
+			if (definition->is_expression_function()) return &node;
 			if (definition->num_return_params > 0) {
 				func_call->function->prepend_arg(node.variable->to_reference());
 				node.remove_references();

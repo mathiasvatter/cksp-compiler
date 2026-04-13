@@ -63,7 +63,7 @@ struct PreNodeAST {
 	}
 	void debug_print(const std::string &path = PRINTER_OUTPUT);
 	// does import passes
-	PreNodeAST* do_preprocessing(const std::string& base_file, const std::string& current_file, std::unordered_set<std::string> &imported_files, std::unordered_map<std::string, std::string> &basename_map);
+	PreNodeAST* do_import_processing(const std::string& base_file, const std::string& current_file, std::unordered_set<std::string> &imported_files, std::unordered_map<std::string, std::string> &basename_map);
 };
 
 // Template-Funktion für sicheren Cast
