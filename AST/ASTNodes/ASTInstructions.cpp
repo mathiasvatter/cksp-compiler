@@ -694,6 +694,13 @@ std::unique_ptr<NodeSingleAssignment> NodeSingleDeclaration::to_assign_stmt(Node
     return node_assign_statement;
 }
 
+void NodeSingleDeclaration::remove_type_neutral_assignment() {
+	if (!value) return;
+	if (variable->data_type == DataType::Const) return;
+	if (TypeRegistry::is_type_neutral_element(variable->ty, value)) {
+		this->value = nullptr;
+	}
+}
 
 // ************* NodeFunctionParam ***************
 NodeAST *NodeFunctionParam::accept(struct ASTVisitor &visitor) {

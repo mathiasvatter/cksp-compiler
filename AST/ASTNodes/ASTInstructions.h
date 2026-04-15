@@ -663,6 +663,11 @@ struct NodeSingleDeclaration final : NodeInstruction {
 			error.exit();
 		}
 	}
+	/// optimization pass: checks if r_value is type neutral assignment and removes it since Kontakt always initializes
+	/// its variables upon declaration. Important: will not do this if variable is const
+	/// pre: declare i: int := 0
+	/// post: declare i : int
+	void remove_type_neutral_assignment();
 };
 
 struct NodeFunctionParam final : NodeInstruction {
