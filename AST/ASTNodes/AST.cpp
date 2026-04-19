@@ -338,13 +338,13 @@ NodeDataStructure *NodeDataStructure::replace_datastruct(std::unique_ptr<NodeDat
 	auto new_data = new_data_struct->get_shared();
 
 	// new_data->references = std::move(old_data->references);
-//	for(auto const &ref : new_data->references) {
-//		ref->declaration = new_data;
-//	}
-	parallel_for_each(old_data->references.begin(), old_data->references.end(),
-				  [&new_data](auto const& ref) {
-					ref->declaration = new_data;
-				  });
+	for(auto const &ref : old_data->references) {
+		ref->declaration = new_data;
+	}
+	// parallel_for_each(old_data->references.begin(), old_data->references.end(),
+	// 			  [&new_data](auto const& ref) {
+	// 				ref->declaration = new_data;
+	// 			  });
 	new_data->references.insert(old_data->references.begin(), old_data->references.end());
 	if(const auto strct = new_data->is_member()) {
 		strct->replace_member_in_table(old_data, new_data);
@@ -1107,7 +1107,8 @@ NodeAST *NodeFunctionDefinition::accept(ASTVisitor &visitor) {
 
 NodeFunctionDefinition::NodeFunctionDefinition(const NodeFunctionDefinition& other)
         : NodeAST(other), is_restricted(other.is_restricted), is_thread_safe(other.is_thread_safe),
-		is_inlined(other.is_inlined), has_local_dynamic_arrays(other.has_local_dynamic_arrays), is_used(other.is_used), is_compiled(other.is_compiled), visited(other.visited),
+		is_inlined(other.is_inlined), has_local_dynamic_arrays(other.has_local_dynamic_arrays), is_used(other.is_used),
+		visited(other.visited), has_exit_command(other.has_exit_command),
           num_return_params(other.num_return_params), num_return_stmts(other.num_return_stmts),
           return_stmts(other.return_stmts), call_sites(other.call_sites),
 		  header(clone_shared(other.header)), override(other.override),
@@ -1588,16 +1589,18 @@ void NodeProgram::reset_function_visited_flag() {
 			  });
 }
 
-void NodeProgram::reset_function_used_flag() {
-//	for(const auto & def : function_definitions) def->is_used = false;
-	parallel_for_each(function_definitions.begin(), function_definitions.end(),
-				  [](auto const& def) {
-					def->is_used = false;
-				  });
-	parallel_for_each(additional_function_definitions.begin(), additional_function_definitions.end(),
-			  [](auto const& def) {
-				def->is_used = false;
-			  });
+void NodeProgram::reset_function_used_flag() const {
+	for(const auto & def : function_definitions) def->is_used = false;
+	for (const auto & def : additional_function_definitions) def->is_used = false;
+	// parallel_for_each(function_definitions.begin(), function_definitions.end(),
+	// 			  [](auto const& def) {
+	// 				def->is_used = false;
+	// 			  });
+	// parallel_for_each(additional_function_definitions.begin(), additional_function_definitions.end(),
+	// 		  [](auto const& def) {
+	// 			def->is_used = false;
+	// 		  });
+
 }
 
 void NodeProgram::remove_unused_functions() {

@@ -13,9 +13,35 @@ function load(array1: int[])
 end function
 
 
-on init
-	declare arr: int[] := [1,2,3,4]
-	declare arr2: int[]
-	load(arr)
-end on
+// on init
+// 	declare arr: int[] := [1,2,3,4]
+// 	declare arr2: int[]
+// 	load(arr)
+// end on
 
+namespace BrowserFont
+	declare types: int[] := [ ...
+		CONTROL_PAR_FONT_TYPE, ... 
+		CONTROL_PAR_FONT_TYPE_ON, ... 
+		CONTROL_PAR_FONT_TYPE_OFF_PRESSED, ... 
+		CONTROL_PAR_FONT_TYPE_ON_PRESSED, ... 
+		CONTROL_PAR_FONT_TYPE_OFF_HOVER, ... 
+		CONTROL_PAR_FONT_TYPE_ON_HOVER ...
+	]
+	declare ty: int[] := types
+end namespace
+
+// on init
+// 	message(BrowserFont.ty[0])
+// end on
+
+
+on init
+
+	if (0 > 1 and ...
+1=1)
+message("Hello World")
+end if
+
+
+end on

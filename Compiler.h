@@ -327,6 +327,7 @@ public:
 		static MarkThreadSafe marker(m_program);
 		marker.mark_environments(*ast);
 
+		// ast->collect_call_sites(m_program); // collect call sites
 		ASTFunctionStrategy function_strategy(m_program, m_pragma_config->parameter_passing);
 		function_strategy.determine_function_strategies(*m_program);
 
@@ -337,7 +338,6 @@ public:
 		static MarkThreadSafeVars mark_vars(m_program);
 		mark_vars.mark_variables(*ast);
 		ast->debug_print();
-
 
 		{
 			variable_checking.do_reachable_traversal(*ast, true);
@@ -421,6 +421,8 @@ public:
 
 		ASTRelinkGlobalScope relink_global_scope(m_program);
 		ast->accept(relink_global_scope);
+		ast->collect_references(); // collect refs for all datastructures again
+
 
 		m_timer.stop("Post Lowering");
 		std::cout << m_timer.print_timer("Post Lowering") << "\n";

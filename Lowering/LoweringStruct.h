@@ -248,6 +248,7 @@ public:
 			}
 			lower_init_method(&node);
 		}
+		// node.update_parents(node.parent);
 		return &node;
 	}
 
@@ -331,7 +332,7 @@ private:
 		node_block->add_as_stmt(std::move(node_if_stmt));
 
 		auto node_allocation = m_current_struct->allocation_var->to_reference();
-		node_allocation->cast<NodeArrayRef>()->index = m_current_struct->free_idx_var->to_reference();
+		node_allocation->cast<NodeArrayRef>()->set_index(m_current_struct->free_idx_var->to_reference());
 		auto node_assign_allocation = std::make_unique<NodeSingleAssignment>(
 			std::move(node_allocation),
 			std::make_unique<NodeInt>(1, init->tok),

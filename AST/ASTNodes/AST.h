@@ -885,8 +885,10 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	/// local array. This has implications on function strategy -> will not be promoted and has to be preemptively
 	/// inlined. Later on in PostLoweringNumElements the substituted size has to be inserted directly
 	bool has_local_dynamic_arrays = false;
+	/// tagged when the function has one or more calls to builtin exit function -> not used yet butpossibly tricky
+	/// for inlining behavior because then exit will prematurely leave the callback
+	bool has_exit_command = false;
     bool is_used = false;
-    bool is_compiled = false;
 	bool visited = false;
 	int num_return_params = 0;
 	int num_return_stmts = 0;
@@ -989,7 +991,7 @@ struct NodeProgram final : NodeAST {
 	void inline_global_variables();
 	void inline_structs();
 	void reset_function_visited_flag();
-	void reset_function_used_flag();
+	void reset_function_used_flag() const;
 	bool is_init_callback(const NodeCallback* curr_callback) const {
 		return curr_callback == init_callback;
 	}

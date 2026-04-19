@@ -10,6 +10,7 @@
 #include "../../Optimization/ConstExprPropagation.h"
 #include "../../Optimization/DeadCodeElimination.h"
 #include "../../Optimization/ConstantPromotion.h"
+#include "../../Optimization/ScalarVarToArray.h"
 
 bool ASTOptimizations::optimize(NodeProgram &node, const OptimizationLevel optimize) {
 	int iterations = 0;
@@ -47,6 +48,11 @@ bool ASTOptimizations::optimize(NodeProgram &node, const OptimizationLevel optim
 	static DeadCodeElimination dead_code_elimination;
 	node.accept(dead_code_elimination);
 	node.debug_print();
+	if (optimize == OptimizationLevel::Aggressive) {
+		static ScalarVarToArray scalar_var_to_array;
+		node.accept(scalar_var_to_array);
+		node.debug_print();
+	}
 
 	return true;
 }
