@@ -71,6 +71,9 @@ public:
 		return &node;
 	}
 	virtual NodeAST* visit(NodeVariableRef& node) {
+		if (node.parent->cast<NodeSingleDeclaration>()) {
+
+		}
 		return &node;
 	}
 	virtual NodeAST* visit(NodePointerRef& node) {
