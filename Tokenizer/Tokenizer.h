@@ -82,6 +82,7 @@ protected:
 
     bool is_pragma() const;
 //	void get_pragma();
+	bool is_line_continuation() const;
     void get_line_continuation();
     /// removes linebrk if there was a line_continuation before. Needs to be inserted right after linbrk isnert
     void fix_line_continuation();

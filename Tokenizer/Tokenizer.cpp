@@ -86,7 +86,7 @@ void Tokenizer::token_loop() {
 			get_comparison_operators();
 		} else if (peek() == '.' && peek(1) != '.') {
 			get_bitwise_operator();
-		} else if (peek() == '.' && peek(1) == '.' && peek(2) == '.') {
+		} else if (is_line_continuation()) {
 			get_line_continuation();
 		} else if (peek() == ',') {
 			get_comma();
@@ -171,6 +171,9 @@ bool Tokenizer::is_pragma() const {
 	return workaround_pragma;
 }
 
+bool Tokenizer::is_line_continuation() const {
+	return peek() == '.' && peek(1) == '.' && peek(2) == '.';
+}
 
 void Tokenizer::get_comment() {
 	flush_buffer();
@@ -362,17 +365,20 @@ void Tokenizer::get_keyword_or_num() {
     	while (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
     		consume();
     	}
-    	while (peek() == '.') {
-    		consume();
-    		if (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
-    			while(std::isalnum(peek()) || peek() == '_' || peek() == '#') {
-    				consume();
+    	// here could come a single dot or a line continuation 'and...'
+    	if (!is_line_continuation()) {
+    		while (peek() == '.') {
+    			consume();
+    			if (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
+    				while(std::isalnum(peek()) || peek() == '_' || peek() == '#') {
+    					consume();
+    				}
+    			} else {
+    				auto err_msg = "Found unknown keyword.";
+    				CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).exit();
     			}
-    		} else {
-    			auto err_msg = "Found unknown keyword.";
-    			CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).exit();
     		}
-    	}
+		}
     	if (is_hexadecimal(m_buffer)) {
     		add_token(token::HEXADECIMAL, m_buffer);
     	} else if (is_binary(m_buffer)) {
