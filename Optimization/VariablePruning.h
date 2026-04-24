@@ -32,7 +32,7 @@ public:
 		node.reset_function_visited_flag();
 		prune_unused_variables();
 		return &node;
-	};
+	}
 
 	/// deletes unused variables by removing declarations and assignments
 	void prune_unused_variables() const {

@@ -38,7 +38,7 @@ public:
 	}
 
 	// do renaming by visiting all program functions
-	NodeAST* do_renaming(NodeProgram& node) {
+	NodeAST* do_parallel_renaming(NodeProgram& node) {
 		parallel_for_each(node.function_lookup.begin(), node.function_lookup.end(),
 			[&](const auto & func_pair) {
 				for (auto& func_def : func_pair.second) {

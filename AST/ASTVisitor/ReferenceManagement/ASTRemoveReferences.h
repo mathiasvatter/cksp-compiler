@@ -9,15 +9,6 @@
 /// Works only when declarations of every reference are already set
 /// Removes references and their connected data structures and data structures from the reference manager class (map)
 class ASTRemoveReferences final : public ASTVisitor {
-	static void check_for_valid_declaration(const NodeReference& ref) {
-		if(!ref.get_declaration()) {
-			auto error = CompileError(ErrorType::InternalError, "", "", ref.tok);
-			error.m_message = "Declaration was not set.";
-			error.m_got = ref.name;
-			error.exit();
-		}
-	}
-
 	static void remove_reference(NodeReference* ref) {
 		if(const auto decl = ref->get_declaration()) {
 			decl->remove_reference(ref);
@@ -60,7 +51,6 @@ public:
 	}
 	NodeAST *visit(NodeArrayRef &node) override {
 		if(node.index) node.index->accept(*this);
-//		check_for_valid_declaration(node);
 		remove_reference(&node);
 		return &node;
 	}
@@ -69,7 +59,6 @@ public:
 		return &node;
 	}
 	NodeAST *visit(NodeVariableRef &node) override {
-//		check_for_valid_declaration(node);
 		remove_reference(&node);
 		return &node;
 	}
@@ -80,7 +69,6 @@ public:
 	}
 	NodeAST *visit(NodeFunctionHeaderRef &node) override {
 		if(node.args) node.args->accept(*this);
-//		check_for_valid_declaration(node);
 		remove_reference(&node);
 		return &node;
 	}
@@ -93,7 +81,6 @@ public:
 	NodeAST *visit(NodeNDArrayRef &node) override {
 		if(node.indexes) node.indexes->accept(*this);
 		if(node.sizes) node.sizes->accept(*this);
-//		check_for_valid_declaration(node);
 		remove_reference(&node);
 		return &node;
 	}
@@ -102,7 +89,6 @@ public:
 		return &node;
 	}
 	NodeAST *visit(NodePointerRef &node) override {
-//		check_for_valid_declaration(node);
 		remove_reference(&node);
 		return &node;
 	}
@@ -113,7 +99,6 @@ public:
 	}
 	NodeAST *visit(NodeListRef &node) override {
 		node.indexes->accept(*this);
-//		check_for_valid_declaration(node);
 		remove_reference(&node);
 		return &node;
 	}
