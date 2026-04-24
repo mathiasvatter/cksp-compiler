@@ -199,7 +199,7 @@ NodeFunctionDefinition *NodeAST::get_current_function() const {
 
 void NodeAST::do_constant_folding() {
 	static ConstantFolding constant_folding;
-	accept(constant_folding);
+	constant_folding.do_local_traversal(*this);
 }
 
 NodeFunctionHeaderRef* NodeAST::is_func_arg() const {

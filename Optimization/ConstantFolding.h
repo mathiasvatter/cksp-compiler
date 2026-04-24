@@ -8,6 +8,15 @@
 #include "../AST/ASTVisitor/ASTOptimizations.h"
 
 class ConstantFolding final : public ASTOptimizations {
+	// if it is a pass over the whole program, this will be set to true
+	// if it is only locally over a node, this pass will not visit functions as to
+	// not set function definitions to visited in another pass
+	bool m_visit_functions = false;
+	// if this is set to true, it is an optimization pass over the whole program
+	// when visiting a variableRef, it will NOT try to do a constant value replacement
+	// since that is the task of another optimization pass
+	bool m_complete_traversal = false;
+	std::mutex m_mutex;
 	static bool is_zero(const NodeInt* node) {
 		return node && node->value == 0;
 	}
@@ -25,8 +34,34 @@ class ConstantFolding final : public ASTOptimizations {
 	}
 
 public:
+	NodeAST *do_parallel_traversal(NodeProgram &node) {
+		m_visit_functions = false;
+		m_complete_traversal = true;
+		m_program = &node;
+		m_program->global_declarations->accept(*this);
+		parallel_for_each(node.callbacks.begin(), node.callbacks.end(),
+		[this](const auto& callback) {
+				callback->accept(*this);
+		});
+		parallel_for_each(node.function_definitions.begin(), node.function_definitions.end(),
+		[this](const auto& func) {
+			func->accept(*this);
+		});
+		node.reset_function_visited_flag();
+		return &node;
+	}
+
+	NodeAST* do_local_traversal(NodeAST& node) {
+		m_visit_functions = false;
+		m_complete_traversal = false;
+		return node.accept(*this);
+	}
+
+private:
 
 	NodeAST* visit(NodeProgram& node) override {
+		m_visit_functions = true;
+		m_complete_traversal = true;
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
 		for(const auto & callback : node.callbacks) {
@@ -38,12 +73,22 @@ public:
 
 	// check if variable reference is constant and can be substituted
 	NodeAST* visit(NodeVariableRef& node) override {
-		return node.try_constant_value_replace();
+		// only try to substitute variable references with constants if we are doing
+		// this pass locally
+		if (!m_complete_traversal) {
+			return node.try_constant_value_replace();
+		}
+		return &node;
 	}
 
 	NodeAST* visit(NodeFunctionCall& node) override {
-		if (const auto definition = node.get_definition()) {
-			definition->accept(*this);
+		if (m_visit_functions) {
+			if (const auto definition = node.get_definition()) {
+				if (!definition->visited) {
+					definition->accept(*this);
+					definition->visited = true;
+				}
+			}
 		}
 		// return immediately if the function is not a builtin function to save time
 		if(node.kind != NodeFunctionCall::Kind::Builtin) return &node;

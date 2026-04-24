@@ -27,12 +27,51 @@ class ScalarVarToArray final : public ASTOptimizations {
 	/// maps the variable names to their assigned index in the global int vars array
 	std::unordered_map<std::string, int> m_variable_to_index;
 	std::unique_ptr<NodeSingleDeclaration> m_int_var_array;
-	int m_counter = 0;
-
+	std::atomic_int m_counter = 0;
+	std::mutex m_mutex;
 public:
 
 	explicit ScalarVarToArray() {
 		m_counter = 0;
+	}
+
+	NodeAST* do_parallel_traversal(NodeProgram& node) {
+		m_counter = 0;
+		m_int_var_array = nullptr;
+		m_program = &node;
+
+		m_int_var_array = std::make_unique<NodeSingleDeclaration>(
+			std::make_shared<NodeArray>(
+				std::nullopt,
+				m_program->def_provider->get_fresh_name("__vars"),
+				TypeRegistry::ArrayOfInt,
+				nullptr,
+				node.tok,
+				DataType::Mutable
+			),
+			nullptr,
+			node.tok
+		);
+
+		m_program->global_declarations->accept(*this);
+		m_program->init_callback->accept(*this);
+		parallel_for_each(node.callbacks.begin(), node.callbacks.end(),
+			[this](const auto & callback) {
+				  if (callback.get() == m_program->init_callback) return;
+				callback->accept(*this);
+			}
+		);
+		parallel_for_each(node.function_definitions.begin(), node.function_definitions.end(),
+			[this](const auto & func) {
+				func->accept(*this);
+			}
+		);
+		node.reset_function_visited_flag();
+
+		auto size = std::make_unique<NodeInt>(m_counter, node.tok);
+		m_int_var_array->variable->cast<NodeArray>()->set_size(std::move(size));
+		node.init_callback->statements->prepend_as_stmt(std::move(m_int_var_array));
+		return &node;
 	}
 
 	NodeAST* visit(NodeProgram& node) override {
@@ -54,8 +93,6 @@ public:
 		);
 
 		m_program->global_declarations->accept(*this);
-		visit_all(node.namespaces, *this);
-		visit_all(node.struct_definitions, *this);
 		visit_all(node.callbacks, *this);
 		visit_all(node.function_definitions, *this);
 		node.reset_function_visited_flag();
@@ -115,7 +152,10 @@ public:
 				array_ref->ty = node.ty;
 				auto index = std::make_unique<NodeInt>(it->second, node.tok);
 				array_ref->cast<NodeArrayRef>()->set_index(std::move(index));
-				return node.replace_reference(std::move(array_ref));
+				{
+					std::lock_guard<std::mutex> lock(m_mutex);
+					return node.replace_reference(std::move(array_ref));
+				}
 			}
 		}
 		return &node;
@@ -139,21 +179,24 @@ public:
 				auto index = std::move(array_ref->index);
 				array_ref->remove_index();
 				array_ref->ty = m_int_var_array->variable->ty;
-				array_ref->remove_references();
-				auto watch_array_idx = DefinitionProvider::create_builtin_call("watch_array_idx", std::move(arg), std::move(index));
-				watch_array_idx->collect_references();
-				return node.replace_with(std::move(watch_array_idx));
+				{
+					std::lock_guard<std::mutex> lock(m_mutex);
+					array_ref->remove_references();
+					auto watch_array_idx = DefinitionProvider::create_builtin_call("watch_array_idx", std::move(arg), std::move(index));
+					watch_array_idx->collect_references();
+					return node.replace_with(std::move(watch_array_idx));
+				}
 			}
 			return &node;
 		}
-		if (const auto& definition = node.get_definition()) {
-			if(!definition->visited) {
-				m_program->function_call_stack.emplace(definition);
-				definition->accept(*this);
-				m_program->function_call_stack.pop();
-			}
-			definition->visited = true;
-		}
+		// if (const auto& definition = node.get_definition()) {
+		// 	if(!definition->visited) {
+		// 		m_program->function_call_stack.emplace(definition);
+		// 		definition->accept(*this);
+		// 		m_program->function_call_stack.pop();
+		// 	}
+		// 	definition->visited = true;
+		// }
 		return &node;
 	}
 

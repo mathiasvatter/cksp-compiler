@@ -176,7 +176,7 @@ public:
 		// input_filename = "/Users/mathias/Scripting/legato-dev/one-shot.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score-essentials/the-score-essentials.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
-		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
+		input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Ensemble.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Single.ksp";
 		// input_filename = "/Users/mathias/Scripting/toc-single-instruments/legato.ksp";
@@ -293,7 +293,7 @@ public:
 		ast->debug_print();
 
 		static UniqueParameterNamesProvider unique_names_provider(m_program);
-		unique_names_provider.do_renaming(*m_program);
+		unique_names_provider.do_parallel_renaming(*m_program);
 		ast->debug_print();
 
 		m_timer.stop("Type Checking");
