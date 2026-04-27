@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.9-alpha.2 on Mon Apr 27 18:50:19 2026 }
+{ Compiled with cksp version 0.0.9-alpha.2 on Mon Apr 27 18:56:17 2026 }
 on init
   declare $_iter0
   declare %BrowserFont__types[6] := ($CONTROL_PAR_FONT_TYPE, $CONTROL_PAR_FONT_TYPE_ON, $CONTROL_PAR_FONT_TYPE_OFF_PRESSED, $CONTROL_PAR_FONT_TYPE_ON_PRESSED, $CONTROL_PAR_FONT_TYPE_OFF_HOVER, $CONTROL_PAR_FONT_TYPE_ON_HOVER)

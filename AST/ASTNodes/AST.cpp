@@ -555,6 +555,16 @@ std::unique_ptr<NodeAST> NodeString::clone() const {
     return std::make_unique<NodeString>(*this);
 }
 
+bool NodeString::check_string_length() const {
+	if (value.length() > 320) {
+		auto warning = CompileError(ErrorType::CompileWarning, "", "", tok);
+		warning.set_message("The length of this String Literal exceeds the maximum of 320 characters and will not be displayed properly by Kontakt.");
+		warning.print();
+		return false;
+	}
+	return true;
+}
+
 // ************* NodeFormatString ***************
 NodeAST *NodeFormatString::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);
