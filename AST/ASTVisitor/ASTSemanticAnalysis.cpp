@@ -203,6 +203,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeArrayRef &node) {
 }
 
 NodeAST * ASTSemanticAnalysis::visit(NodeString &node) {
+	node.check_string_length();
 	if (!node.is_valid_string()) {
 		auto error = ASTVisitor::get_raw_compile_error(ErrorType::CompileError, node);
 		error.add_message("Invalid string literal: " + node.value);

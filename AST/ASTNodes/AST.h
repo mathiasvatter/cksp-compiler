@@ -453,6 +453,8 @@ struct NodeString final : NodeAST {
     	return true;
     }
 
+	/// issue #101: strings in Kontakt can have a maximum of 320 characters
+	bool check_string_length() const;
 };
 
 struct NodeFormatString final : NodeAST {
