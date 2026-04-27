@@ -243,6 +243,7 @@ add_executable(cksp main.cpp
         Optimization/VariableCollector.h
         Lowering/LoweringNDArray.h
         Optimization/ScalarVarToArray.h
+        AST/ASTVisitor/FunctionHandling/FunctionExitCheck.h
 )
 add_dependencies(cksp generate_headers)
 

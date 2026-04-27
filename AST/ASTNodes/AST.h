@@ -926,6 +926,7 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	std::vector<std::shared_ptr<NodeDataStructure>> do_variable_reuse(NodeProgram *program);
 	void do_return_param_promotion(NodeProgram* program);
 	bool do_return_path_validation();
+	void sanitize_exit_commands();
 	void mark_threadsafety(NodeProgram *program);
 };
 

@@ -31,8 +31,8 @@ bool ASTOptimizations::optimize(NodeProgram &node, const OptimizationLevel optim
 //	node.accept(constant_promotion);
 	for(int i = 0; i<iterations; i++) {
 		static ConstantPropagation constant_propagation;
-		// node.accept(constant_propagation);
-		constant_propagation.do_parallel_traversal(node);
+		node.accept(constant_propagation);
+		// constant_propagation.do_parallel_traversal(node);
 		node.debug_print();
 		if(do_const_expr_propagation) {
 			static ConstExprPropagation const_expr_propagation;
@@ -52,9 +52,9 @@ bool ASTOptimizations::optimize(NodeProgram &node, const OptimizationLevel optim
 	node.debug_print();
 	if (optimize == OptimizationLevel::Aggressive) {
 		static ScalarVarToArray scalar_var_to_array;
-		// node.accept(scalar_var_to_array);
-		scalar_var_to_array.do_parallel_traversal(node);
-		// node.debug_print();
+		node.accept(scalar_var_to_array);
+		// scalar_var_to_array.do_parallel_traversal(node);
+		node.debug_print();
 	}
 
 	return true;
