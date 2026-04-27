@@ -37,11 +37,21 @@ end namespace
 
 
 on init
-
-	if (0 > 1 and..
-1=1)
-message("Hello World")
-end if
-
+	
 
 end on
+
+on note
+	dodododo()
+	dodododo()
+end on
+
+function dodododo()
+
+	for i in range(340)
+		message(i)
+		if (i = 4)
+			exit
+		end if			
+	end for		
+end function	

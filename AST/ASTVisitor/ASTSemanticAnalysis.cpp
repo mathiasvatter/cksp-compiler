@@ -21,7 +21,11 @@ NodeAST * ASTSemanticAnalysis::visit(NodeProgram& node) {
     }
 	// visit func defs that are not called. because of replacing incorrectly node params with array
     for(const auto & func_def : node.function_definitions) {
-		if(!func_def->visited) func_def->accept(*this);
+		if(!func_def->visited) {
+			m_program->function_call_stack.push(func_def->weak_from_this());
+			func_def->accept(*this);
+			m_program->function_call_stack.pop();
+		}
 	}
 	node.reset_function_visited_flag();
 	return &node;
@@ -128,15 +132,11 @@ NodeAST * ASTSemanticAnalysis::visit(NodeSingleDeclaration &node) {
 
 NodeAST * ASTSemanticAnalysis::visit(NodeFunctionDefinition &node) {
 	m_functions_in_use.insert(&node);
-	m_program->function_call_stack.push(node.weak_from_this());
-	// check all return paths
-	node.do_return_path_validation();
 	node.visited = true;
     node.header ->accept(*this);
     if (node.return_variable.has_value())
         node.return_variable.value()->accept(*this);
     node.body->accept(*this);
-	m_program->function_call_stack.pop();
 	m_functions_in_use.erase(&node);
 	return &node;
 }
@@ -155,9 +155,27 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 	node.function->accept(*this);
 
 	node.bind_definition(m_program);
-	if(const auto definition = node.get_definition(); node.kind == NodeFunctionCall::UserDefined and definition) {
+	const auto definition = node.get_definition();
+	// set has_exit_command of function definition node if we are in a function definition
+	if (definition and node.is_builtin_kind() and !m_program->function_call_stack.empty()) {
+		if (node.function->name == "exit") {
+			auto func = m_program->function_call_stack.top().lock();
+			func->has_exit_command = true;
+		}
+	}
+
+	// visit the function definition
+	if(definition and node.kind == NodeFunctionCall::UserDefined) {
 		check_recursion(definition.get());
-		if(!definition->visited) definition->accept(*this);
+		if(!definition->visited) {
+			m_program->function_call_stack.push(definition);
+			// check all return paths
+			definition->do_return_path_validation();
+			definition->accept(*this);
+			definition->sanitize_exit_commands();
+			definition->visited = true;
+			m_program->function_call_stack.pop();
+		}
 	}
 
 	// checks for restricted functions and allowed callbacks -> throws error

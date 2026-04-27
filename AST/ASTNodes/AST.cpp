@@ -31,6 +31,7 @@
 #include "../ASTVisitor/ASTVariableChecking.h"
 #include "../ASTVisitor/TypeInference.h"
 #include "../ASTVisitor/FunctionHandling/BuiltinRestrictionValidator.h"
+#include "../ASTVisitor/FunctionHandling/FunctionExitCheck.h"
 #include "../ASTVisitor/FunctionHandling/ReturnPathValidator.h"
 #include "../ASTVisitor/GlobalScope/MarkThreadSafe.h"
 #include "../ASTVisitor/ReferenceManagement/ASTCollectCallSites.h"
@@ -1223,6 +1224,11 @@ void NodeFunctionDefinition::do_return_param_promotion(NodeProgram* program) {
 bool NodeFunctionDefinition::do_return_path_validation() {
 	static ReturnPathValidator return_validator;
 	return return_validator.do_return_path_validation(*this);
+}
+
+void NodeFunctionDefinition::sanitize_exit_commands() {
+	static FunctionExitCheck exit_check;
+	exit_check.sanitize_exit(*this);
 }
 
 void NodeFunctionDefinition::mark_threadsafety(NodeProgram *program) {

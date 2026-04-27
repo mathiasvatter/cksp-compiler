@@ -10,6 +10,9 @@ class ConstantPropagation final : public ASTVisitor {
 	std::unordered_map<std::string, std::unique_ptr<NodeAST>> m_constants;
 	std::mutex m_constants_mutex;
 public:
+	// this seems to cause segfault errors under certain circumstances... -> switched back to one thread
+	// segfault maybe originates from NodeReference destructor that accesses reference set of connected
+	// NodeDataStructure
 	NodeAST *do_parallel_traversal(NodeProgram &node) {
 		m_program = &node;
 		m_constants.clear();
