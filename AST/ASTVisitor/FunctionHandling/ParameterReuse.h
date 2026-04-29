@@ -131,7 +131,7 @@ private:
 						ref->name = reused->name;
 					}
 
-					reused->references.insert(param->references.begin(), param->references.end());
+					reused->add_references(param->references);
 					const auto decl = param->parent->cast<NodeSingleDeclaration>();
 					if (!decl) {
 						auto error = CompileError(ErrorType::InternalError, "", "", param->tok);

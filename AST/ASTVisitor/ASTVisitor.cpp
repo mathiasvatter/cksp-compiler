@@ -47,3 +47,10 @@ std::unique_ptr<NodeIf> ASTVisitor::make_nil_check(std::unique_ptr<NodeReference
 	);
 }
 
+std::unique_ptr<NodeFunctionCall> ASTVisitor::get_cksp_kontakt_warning(const std::string &msg, Token tok) {
+	auto message = std::make_unique<NodeString>("\"CKSP " + COMPILER_VERSION + " Error: " + msg + "\"", tok);
+	auto call = DefinitionProvider::create_builtin_call("message", message);
+	call->ty = TypeRegistry::Void;
+	return call;
+}
+

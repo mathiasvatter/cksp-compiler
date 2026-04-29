@@ -41,8 +41,9 @@ public:
 		// iter->is_engine = true;
 		return iter;
 	}
+	static std::unique_ptr<NodeFunctionCall> get_cksp_kontakt_warning(const std::string& msg, Token tok = Token());
 
-//	explicit ASTVisitor(NodeProgram* program) : m_program(program) {}
+	//	explicit ASTVisitor(NodeProgram* program) : m_program(program) {}
 
     virtual NodeAST* visit(NodeDeadCode& node) {return &node;}
 	virtual NodeAST* visit(NodeWildcard& node) {

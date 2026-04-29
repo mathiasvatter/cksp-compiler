@@ -42,16 +42,20 @@ on init
 end on
 
 on note
-	dodododo()
-	dodododo()
+	if (dodododo())
+		message("df")
+	end if		
+	// dodododo()
+	// dodododo()
 end on
 
-function dodododo()
+function dodododo(): boolean
 
 	for i in range(340)
 		message(i)
 		if (i = 4)
-			exit
+			return true
 		end if			
-	end for		
+	end for
+	return false
 end function	

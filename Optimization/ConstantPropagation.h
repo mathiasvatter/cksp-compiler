@@ -78,7 +78,7 @@ public:
 			if (auto substitute = get_constant(node->name)) {
 				if (substitute->ty->is_compatible(node->ty)) {
 					{
-						std::lock_guard<std::mutex> lock(m_constants_mutex);
+						// std::lock_guard<std::mutex> lock(m_constants_mutex);
 						return node->replace_with(std::move(substitute));
 					}
 				}

@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 #include <optional>
+#include <mutex>
 
 #include "ASTHelper.h"
 #include "../Types/Types.h"
@@ -252,6 +253,7 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 	DataType data_type = DataType::Mutable;
 	std::string name;
 	std::unordered_set<NodeReference*> references;
+	mutable std::mutex references_mutex;
 	NodeDataStructure(std::string name, Type* ty, const Token& tok, const NodeType node_type, const DataType data_type) : NodeAST(tok, node_type), data_type(data_type), name(std::move(name)) {
         this->ty = ty;
     }
@@ -303,10 +305,21 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 		return !weak_from_this().expired();
 	}
 	void add_reference(NodeReference* ref) {
+		std::lock_guard<std::mutex> lock(references_mutex);
 		references.insert(ref);
 	}
 	void remove_reference(NodeReference* ref) {
+		std::lock_guard<std::mutex> lock(references_mutex);
 		references.erase(ref);
+	}
+	void add_references(const std::unordered_set<NodeReference*>& refs) {
+		std::lock_guard<std::mutex> lock(references_mutex);
+		references.insert(refs.begin(), refs.end());
+	}
+	void replace_reference(NodeReference* old_ref, NodeReference* new_ref) {
+		std::lock_guard<std::mutex> lock(references_mutex);
+		references.erase(old_ref);
+		references.insert(new_ref);
 	}
 	void clear_references();
 	void to_global() {
@@ -1004,4 +1017,3 @@ struct NodeProgram final : NodeAST {
 	std::shared_ptr<NodeVariable> get_tmp_var(Type* ty, DataType data=DataType::Mutable, const Token& token = Token()) const;
 	std::shared_ptr<NodePointer> get_tmp_ptr(Type* ty, DataType data=DataType::Mutable, const Token& token = Token()) const;
 };
-
