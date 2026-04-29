@@ -148,7 +148,7 @@ private:
 			for (const auto &decl : m_local_var_declarations[definition.get()]) {
 				auto var = clone_as<NodeDataStructure>(decl);
 				// var->name = m_def_provider->get_fresh_name(var->name);
-				var->references.clear();
+				var->clear_references();
 				auto promoted_decl = std::make_unique<NodeSingleDeclaration>(std::move(var), decl->tok);
 				promoted_decl->kind = NodeSingleDeclaration::Kind::Promoted;
 				// add references to those local variables in the function call
@@ -192,5 +192,4 @@ private:
     }
 
 };
-
 

@@ -346,7 +346,7 @@ NodeDataStructure *NodeDataStructure::replace_datastruct(std::unique_ptr<NodeDat
 	// 			  [&new_data](auto const& ref) {
 	// 				ref->declaration = new_data;
 	// 			  });
-	new_data->references.insert(old_data->references.begin(), old_data->references.end());
+	new_data->add_references(old_data->references);
 	if(const auto strct = new_data->is_member()) {
 		strct->replace_member_in_table(old_data, new_data);
 	}
@@ -362,13 +362,14 @@ void NodeDataStructure::match_metadata(const std::shared_ptr<NodeDataStructure>&
 }
 
 void NodeDataStructure::clear_references() {
+	std::lock_guard<std::mutex> lock(references_mutex);
 	references.clear();
 }
 
 // ************* NodeReference ***************
 NodeReference::~NodeReference() {
 	if(const auto decl = declaration.lock()) {
-		decl->references.erase(this);
+		decl->remove_reference(this);
 	}
 }
 
@@ -458,8 +459,7 @@ NodeReference *NodeReference::replace_reference(std::unique_ptr<NodeReference> n
 	new_node->match_data_structure(decl);
 	const auto old_ref = this;
 	const auto new_ref = static_cast<NodeReference*>(replace_with(std::move(new_node)));
-	decl->references.erase(old_ref);
-	decl->references.insert(new_ref);
+	decl->replace_reference(old_ref, new_ref);
 	return new_ref;
 }
 
@@ -1662,7 +1662,6 @@ std::shared_ptr<NodePointer> NodeProgram::get_tmp_ptr(Type *ty, DataType data, c
 	// tmp->is_engine = true;
 	return tmp;
 }
-
 
 
 

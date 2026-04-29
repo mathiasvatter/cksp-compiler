@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.9-alpha.2 on Mon Apr 27 18:56:17 2026 }
+{ Compiled with cksp version 0.0.9-alpha.2 on Wed Apr 29 18:15:44 2026 }
 on init
   declare $_iter0
   declare %BrowserFont__types[6] := ($CONTROL_PAR_FONT_TYPE, $CONTROL_PAR_FONT_TYPE_ON, $CONTROL_PAR_FONT_TYPE_OFF_PRESSED, $CONTROL_PAR_FONT_TYPE_ON_PRESSED, $CONTROL_PAR_FONT_TYPE_OFF_HOVER, $CONTROL_PAR_FONT_TYPE_ON_HOVER)
@@ -6,21 +6,34 @@ on init
   while($_iter0 <= (num_elements(%BrowserFont__types) - 1)) 
     inc($_iter0)
   end while
+  declare $ret0
+  declare $RETURN_FLAG00
   declare $i0
+  declare $_ret00
 end on
-function dodododo
-  $i0 := 0
-  while($i0 < 340) 
-    message($i0)
-    if($i0 = 4)
-      exit
-    end if
-    inc($i0)
-  end while
-  exit
-end function
 on note
-  call dodododo
-  call dodododo
+  $RETURN_FLAG00 := 0
+  while($RETURN_FLAG00 = 0) 
+    $i0 := 0
+    while(($i0 < 340) and ($RETURN_FLAG00 = 0)) 
+      message($i0)
+      if($i0 = 4)
+        $ret0 := 1
+        $RETURN_FLAG00 := 1
+        continue
+      end if
+      inc($i0)
+    end while
+    if($RETURN_FLAG00 = 1)
+      continue
+    end if
+    $ret0 := 0
+    $RETURN_FLAG00 := 1
+    continue
+  end while
+  $_ret00 := $ret0
+  if($_ret00 # 0)
+    message("df")
+  end if
 end on
 
