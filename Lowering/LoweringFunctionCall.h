@@ -5,6 +5,7 @@
 #pragma once
 
 #include "ASTLowering.h"
+#include "../AST/ASTVisitor/FunctionHandling/BuiltinRestrictionValidator.h"
 
 ///
 class LoweringFunctionCall final : public ASTLowering {
@@ -42,10 +43,8 @@ public:
 					node.collect_references();
 					node.definition = m_program->def_provider->get_boolean_function(node.function->name, 1);
 				}
-			}
-
+			} else if (node.function->get_num_args() == 0 and node.function->name == "exit") {
         	// check if we are in a user function, then replace exit function call with return stmt
-        	if (node.function->get_num_args() == 0 and node.function->name == "exit") {
         		if (!m_program->function_call_stack.empty()) {
         			const auto& current_func = m_program->function_call_stack.top();
         			if (auto func = current_func.lock()) {
@@ -57,6 +56,18 @@ public:
         				func->return_stmts.push_back(return_stmt);
         				return node.replace_with(std::move(block));
         			}
+        		}
+        	}
+        	else if (node.function->get_num_args() > 0 and node.function->get_arg(0)->ty->get_type_kind() == TypeKind::Composite and
+        		BuiltinRestrictionValidator::is_load_save_function(node.function->name)) {
+        		// check if we have a load/save array function -> check if first param is local array
+        		// -> issue error since those function can only be used with global arrays
+        		const auto arr_ref = node.function->get_arg(0)->is_reference();
+        		if (arr_ref and arr_ref->is_local and !arr_ref->is_func_arg()) {
+        			auto error = CompileError(ErrorType::SyntaxError, "", "", arr_ref->tok);
+        			error.set_message("load/save functions can only be used with global arrays. Place the array declaration"
+							 " into the global scope or use the <global> keyword.");
+        			error.exit();
         		}
         	}
 

@@ -179,8 +179,9 @@ bool NodeFunctionCall::bind_definition(NodeProgram* program, const bool fail, co
 	} else if(find_constructor_definition(program)) {
 		return true;
     } else if(fail) {
-    	// check for function header reference
-    	if (this->function->get_declaration()) {
+    	// check for function header reference in case of higher order functions
+    	auto decl = this->function->get_declaration();
+    	if (decl and decl->is_function_param()) {
     		return true;
     	}
         CompileError(ErrorType::SyntaxError,"A function with this signature has not been declared.", tok.line, "", function->name, tok.file).exit();
