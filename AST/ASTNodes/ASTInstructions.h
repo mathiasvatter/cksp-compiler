@@ -1336,9 +1336,9 @@ struct NodeNamespace final : NodeInstruction {
 	std::unique_ptr<NodeBlock> members;
 	std::vector<std::shared_ptr<NodeFunctionDefinition>> function_definitions{};
 
-	explicit NodeNamespace(Token tok) : NodeInstruction(NodeType::Namespace, std::move(tok)) {}
+	explicit NodeNamespace(const Token& tok) : NodeInstruction(NodeType::Namespace, tok) {}
 	NodeNamespace(std::string prefix, std::unique_ptr<NodeBlock> members, std::vector<std::shared_ptr<NodeFunctionDefinition>> funcs, Token tok)
-			: NodeInstruction(NodeType::Namespace, std::move(tok)), prefix(std::move(prefix)), members(std::move(members)),
+			: NodeInstruction(NodeType::Namespace, tok), prefix(std::move(prefix)), members(std::move(members)),
 			function_definitions(std::move(funcs)) {
 		NodeNamespace::set_child_parents();
 	}

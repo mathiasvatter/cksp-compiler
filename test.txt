@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.9-alpha.2 on Sat May 02 11:50:40 2026 }
+{ Compiled with cksp version 0.0.9-alpha.2 on Sat May 02 14:28:01 2026 }
 on init
   declare $_iter0
   declare %BrowserFont__types[6] := ($CONTROL_PAR_FONT_TYPE, $CONTROL_PAR_FONT_TYPE_ON, $CONTROL_PAR_FONT_TYPE_OFF_PRESSED, $CONTROL_PAR_FONT_TYPE_ON_PRESSED, $CONTROL_PAR_FONT_TYPE_OFF_HOVER, $CONTROL_PAR_FONT_TYPE_ON_HOVER)
@@ -6,11 +6,15 @@ on init
   while($_iter0 <= (num_elements(%BrowserFont__types) - 1)) 
     inc($_iter0)
   end while
-  declare $ret0
   declare $RETURN_FLAG00
   declare $i0
   declare $_ret00
   declare %array[25]
+  $RETURN_FLAG00 := 3
+  message("getting it!!!!!")
+  $i0 := %BrowserFont__types[$RETURN_FLAG00]
+  $_ret00 := $i0
+  message($_ret00)
 end on
 on persistence_changed
   $RETURN_FLAG00 := 0
@@ -20,7 +24,6 @@ on persistence_changed
     while(($i0 < 340) and ($RETURN_FLAG00 = 0)) 
       message($i0)
       if($i0 = 4)
-        $ret0 := 1
         $RETURN_FLAG00 := 1
         continue
       end if
@@ -29,13 +32,8 @@ on persistence_changed
     if($RETURN_FLAG00 = 1)
       continue
     end if
-    $ret0 := 0
     $RETURN_FLAG00 := 1
     continue
   end while
-  $_ret00 := $ret0
-  if($_ret00 # 0)
-    message("df")
-  end if
 end on
 

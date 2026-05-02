@@ -159,7 +159,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 	// set has_exit_command of function definition node if we are in a function definition
 	if (definition and node.is_builtin_kind() and !m_program->function_call_stack.empty()) {
 		if (node.function->name == "exit") {
-			auto func = m_program->function_call_stack.top().lock();
+			auto func = m_program->get_curr_function();
 			func->has_exit_command = true;
 		}
 	}

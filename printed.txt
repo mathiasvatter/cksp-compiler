@@ -5,11 +5,15 @@ on init
 	while(_iter0{int} {_iter0}  <= (num_elements(BrowserFont.types{int[]} {BrowserFont.types} ){Builtin, None, num_elements} - 1)) 
 		inc(_iter0{int} {_iter0} ){Builtin, None, inc}
 	end while
-	declare ret0 : int {Reuses: 0}
-	declare RETURN_FLAG00 : int {Reuses: 0}
-	declare i0 : int {Reuses: 0}
-	declare _ret00 : int {Reuses: 0}
+	declare RETURN_FLAG00 : int {Reuses: 1}
+	declare i0 : int {Reuses: 1}
+	declare local _ret00 : int {Reuses: 0}
 	declare array[25] : int[] {Reuses: 0}
+	RETURN_FLAG00{int} {RETURN_FLAG00}  := 3
+	message("getting it!!!!!"){Builtin, None, message}
+	i0{int} {i0}  := BrowserFont.types[RETURN_FLAG00{int} {RETURN_FLAG00} ]{int} {BrowserFont.types} 
+	_ret00{int} {_ret00}  := i0{int} {i0} 
+	message(_ret00{int} {_ret00} ){Builtin, None, message}
 end on
 
 on persistence_changed
@@ -20,7 +24,6 @@ on persistence_changed
 		while((i0{int} {i0}  < 340) and (RETURN_FLAG00{int} {RETURN_FLAG00}  = 0)) 
 			message(i0{int} {i0} ){Builtin, None, message}
 			if(i0{int} {i0}  = 4)
-				ret0{int} {ret0}  := 1
 				RETURN_FLAG00{int} {RETURN_FLAG00}  := 1
 				continue{Builtin, None, continue}
 			end if
@@ -29,14 +32,9 @@ on persistence_changed
 		if(RETURN_FLAG00{int} {RETURN_FLAG00}  = 1)
 			continue{Builtin, None, continue}
 		end if
-		ret0{int} {ret0}  := 0
 		RETURN_FLAG00{int} {RETURN_FLAG00}  := 1
 		continue{Builtin, None, continue}
 	end while
-	_ret00{int} {_ret00}  := ret0{int} {ret0} 
-	if(_ret00{int} {_ret00}  # 0)
-		message("df"){Builtin, None, message}
-	end if
 end on
 
 

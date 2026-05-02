@@ -107,11 +107,17 @@ NodeAST* ASTDesugar::visit(NodeConst &node) {
 }
 
 NodeAST * ASTDesugar::visit(NodeNamespace &node) {
-	node.members->accept(*this);
-	for(const auto & fun: node.function_definitions) {
-		fun->accept(*this);
-		m_program->function_lookup[{fun->header->name, (int)fun->get_num_params()}].push_back(fun);
+	// node.members->accept(*this);
+	// for(const auto & fun: node.function_definitions) {
+	// 	fun->accept(*this);
+	// 	m_program->function_lookup[{fun->header->name, (int)fun->get_num_params()}].push_back(fun);
+	// }
+	ASTVisitor::visit(node);
+	for(auto & func: node.function_definitions) {
+		m_program->add_function_or_override(func);
 	}
+	node.function_definitions.clear();
+	return node.replace_with(std::move(node.members));
 	return &node;
 }
 
