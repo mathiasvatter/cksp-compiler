@@ -40,12 +40,12 @@ on init
 	declare stringggg: string := "sdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfja sdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasldkfja sldkfja sldkfja sldkfj asldkfj alsdkfj alskfj "
 
 	
+	declare array[25]: int[]
 	
 end on
 
 on persistence_changed
 	
-	declare array[25]: int[]
 	if (dodododo(array))
 		message("df")
 	end if		

@@ -73,6 +73,7 @@ public:
 		// rename local passive_vars with gensym and add to global scope
 		for(auto & local_var : m_all_local_vars) {
 			local_var->name = m_def_provider->get_fresh_name(local_var->name);
+			local_var->renamed = true;
 		}
 		// rename all local references with their new passive_var names
 		for(auto & local_ref : m_all_local_references) {

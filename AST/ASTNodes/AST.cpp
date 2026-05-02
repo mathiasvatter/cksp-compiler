@@ -41,14 +41,14 @@
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, const NodeType node_type) : range(SourceRange(tok)),
-	tok(std::move(tok)), ty(TypeRegistry::Unknown), node_type(node_type) {}
+                                                        tok(std::move(tok)), ty(TypeRegistry::Unknown), node_type(node_type) {}
+
+NodeAST::NodeAST(const NodeAST& other) : range(other.range), tok(other.tok), ty(other.ty),
+                                         node_type(other.node_type), parent(other.parent) {}
 
 NodeAST *NodeAST::accept(ASTVisitor &visitor) {
 	return nullptr;
 }
-
-NodeAST::NodeAST(const NodeAST& other) : range(other.range), tok(other.tok), ty(other.ty),
-    node_type(other.node_type), parent(other.parent) {}
 
 NodeAST *NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
 	if (parent) {
@@ -56,52 +56,6 @@ NodeAST *NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
 		return parent->replace_child(this, std::move(newNode));
 	}
 	return nullptr;
-}
-
-Type* NodeAST::set_element_type(Type *element_type) {
-	if(ty->get_type_kind() == TypeKind::Composite and (element_type->get_type_kind() == TypeKind::Basic or element_type->get_type_kind() == TypeKind::Object)) {
-        // if composite type does not yet exist -> create it without throwing error
-        ty = TypeRegistry::add_composite_type(ty->cast<CompositeType>()->get_compound_type(), element_type, ty->get_dimensions());
-		return ty;
-	}
-	if(ty->get_type_kind() == TypeKind::Basic and element_type->get_type_kind() == TypeKind::Basic) {
-		ty = element_type;
-		return ty;
-	}
-	if (element_type->get_type_kind() == TypeKind::Object and TypeRegistry::get_object_type(element_type->to_string())) {
-		ty = element_type;
-		return ty;
-	}
-	if (ty->get_type_kind() == TypeKind::Object and element_type->get_type_kind() == TypeKind::Basic) {
-		ty = element_type;
-		return ty;
-	}
-	if(ty->get_type_kind() == TypeKind::Composite and element_type->get_type_kind() == TypeKind::Composite) {
-		ty = TypeRegistry::add_composite_type(ty->cast<CompositeType>()->get_compound_type(),
-											  element_type->get_element_type(),
-											  ty->get_dimensions());
-		return ty;
-	}
-	if(ty->get_type_kind() == TypeKind::Object and element_type->get_type_kind() != TypeKind::Object) {
-		auto error = CompileError(ErrorType::TypeError, "", "", tok);
-		error.m_message = "Failed to set element type. Object of type <"+element_type->to_string()+"> has not been defined.";
-		error.m_expected = "valid <Object> type";
-		error.m_got = element_type->to_string();
-		error.exit();
-	} else {
-		ty = element_type;
-		return ty;
-	}
-	return nullptr;
-}
-
-void NodeAST::debug_print(const std::string &path) {
-	// only print stuff if we are in debug mode
-#ifndef NDEBUG
-	static ASTPrinter printer;
-	this->accept(printer);
-	printer.generate(path);
-#endif
 }
 
 NodeAST *NodeAST::desugar(NodeProgram *program) {
@@ -132,6 +86,52 @@ NodeAST *NodeAST::data_lower(NodeProgram *program) {
 	return this;
 }
 
+Type* NodeAST::set_element_type(Type *element_type) {
+	if(ty->get_type_kind() == TypeKind::Composite and (element_type->get_type_kind() == TypeKind::Basic or element_type->get_type_kind() == TypeKind::Object)) {
+		// if composite type does not yet exist -> create it without throwing error
+		ty = TypeRegistry::add_composite_type(ty->cast<CompositeType>()->get_compound_type(), element_type, ty->get_dimensions());
+		return ty;
+	}
+	if(ty->get_type_kind() == TypeKind::Basic and element_type->get_type_kind() == TypeKind::Basic) {
+		ty = element_type;
+		return ty;
+	}
+	if (element_type->get_type_kind() == TypeKind::Object and TypeRegistry::get_object_type(element_type->to_string())) {
+		ty = element_type;
+		return ty;
+	}
+	if (ty->get_type_kind() == TypeKind::Object and element_type->get_type_kind() == TypeKind::Basic) {
+		ty = element_type;
+		return ty;
+	}
+	if(ty->get_type_kind() == TypeKind::Composite and element_type->get_type_kind() == TypeKind::Composite) {
+		ty = TypeRegistry::add_composite_type(ty->cast<CompositeType>()->get_compound_type(),
+		                                      element_type->get_element_type(),
+		                                      ty->get_dimensions());
+		return ty;
+	}
+	if(ty->get_type_kind() == TypeKind::Object and element_type->get_type_kind() != TypeKind::Object) {
+		auto error = CompileError(ErrorType::TypeError, "", "", tok);
+		error.m_message = "Failed to set element type. Object of type <"+element_type->to_string()+"> has not been defined.";
+		error.m_expected = "valid <Object> type";
+		error.m_got = element_type->to_string();
+		error.exit();
+	} else {
+		ty = element_type;
+		return ty;
+	}
+	return nullptr;
+}
+
+void NodeAST::debug_print(const std::string &path) {
+	// only print stuff if we are in debug mode
+#ifndef NDEBUG
+	static ASTPrinter printer;
+	this->accept(printer);
+	printer.generate(path);
+#endif
+}
+
 bool NodeAST::is_constant() {
 	static ConstExprValidator const_validator;
 	return const_validator.is_constant(*this);
@@ -147,6 +147,10 @@ bool NodeAST::is_nil() {
 	return nil_validator.is_nil(*this);
 }
 
+NodeAST *NodeAST::remove_node() {
+	return replace_with(std::make_unique<NodeDeadCode>(tok));
+}
+
 void NodeAST::collect_references() {
 	static ASTCollectReferences ref_collect;
 	accept(ref_collect);
@@ -160,10 +164,6 @@ void NodeAST::remove_references() {
 std::unordered_set<std::string> NodeAST::collect_free_vars() {
 	FreeVarCollector free_var;
 	return free_var.collect(*this);
-}
-
-NodeAST *NodeAST::remove_node() {
-	return replace_with(std::make_unique<NodeDeadCode>(tok));
 }
 
 NodeBlock *NodeAST::get_parent_block() const {
@@ -203,6 +203,26 @@ void NodeAST::do_constant_folding() {
 	constant_folding.do_local_traversal(*this);
 }
 
+void NodeAST::do_type_inference(NodeProgram *program) {
+	static TypeInference inference(program);
+	accept(inference);
+}
+
+NodeAST * NodeAST::do_lowering(NodeProgram *program) {
+	static ASTCollectLowerings collect_lowerings(program);
+	return accept(collect_lowerings);
+}
+
+NodeAST * NodeAST::collect_declarations(NodeProgram *program) {
+	static ASTCollectDeclarations collect(program);
+	return collect.do_collect_declarations(*this);
+}
+
+NodeAST * NodeAST::collect_call_sites(NodeProgram *program) {
+	static ASTCollectCallSites call_sites(program);
+	return call_sites.do_collect_call_sites(*this);
+}
+
 NodeFunctionHeaderRef* NodeAST::is_func_arg() const {
 	if(!this->parent) return nullptr;
 	if(!this->parent->parent) return nullptr;
@@ -234,24 +254,63 @@ bool NodeAST::is_literal() {
 	return cast<NodeInt>() or cast<NodeReal>() or cast<NodeString>() or cast<NodeInitializerList>();
 }
 
-void NodeAST::do_type_inference(NodeProgram *program) {
-	static TypeInference inference(program);
-	accept(inference);
+// ************* NodeReference ***************
+NodeReference::~NodeReference() {
+	if(const auto decl = declaration.lock()) {
+		decl->remove_reference(this);
+	}
 }
 
-NodeAST * NodeAST::do_lowering(NodeProgram *program) {
-	static ASTCollectLowerings collect_lowerings(program);
-	return accept(collect_lowerings);
+NodeReference::NodeReference(const NodeReference& other)
+	: NodeAST(other), name(other.name), declaration(other.declaration),
+	  is_engine(other.is_engine), is_local(other.is_local),
+	  kind(other.kind),
+	  data_type(other.data_type) {
+	NodeReference::set_child_parents();
 }
 
-NodeAST * NodeAST::collect_declarations(NodeProgram *program) {
-	static ASTCollectDeclarations collect(program);
-	return collect.do_collect_declarations(*this);
+std::unique_ptr<NodeAST> NodeReference::clone() const {
+	return std::make_unique<NodeReference>(*this);
 }
 
-NodeAST * NodeAST::collect_call_sites(NodeProgram *program) {
-	static ASTCollectCallSites call_sites(program);
-	return call_sites.do_collect_call_sites(*this);
+void NodeReference::match_data_structure(const std::shared_ptr<NodeDataStructure>& data_structure) {
+	declaration = data_structure;
+	is_engine = data_structure->is_engine;
+	is_local = data_structure->is_local;
+	data_type = data_structure->data_type;
+	//	ty = data_structure->ty;
+}
+
+NodeStruct* NodeReference::is_member_ref() const {
+	if ( auto decl = get_declaration()) {
+		return decl->is_member();
+	}
+	return nullptr;
+}
+
+NodeStruct *NodeReference::get_object_ptr(NodeProgram* program, const std::string& obj) {
+	if(const auto it = program->struct_lookup.find(obj); it != program->struct_lookup.end()) {
+		return it->second;
+	}
+	return nullptr;
+}
+
+NodeReference* NodeReference::lower_type() {
+	if (ty -> get_element_type() == TypeRegistry::Boolean) {
+		set_element_type(TypeRegistry::Integer);
+	} else if(ty->get_element_type()->get_type_kind() == TypeKind::Object) {
+		set_element_type(TypeRegistry::Integer);
+	}
+	return this;
+}
+
+NodeSingleAssignment* NodeReference::is_l_value() const {
+	if(const auto assignment = parent->cast<NodeSingleAssignment>()) {
+		if(assignment->l_value.get() == this) {
+			return assignment;
+		}
+	}
+	return nullptr;
 }
 
 // ************* NodeDataStructure ***************
@@ -260,7 +319,8 @@ NodeDataStructure::NodeDataStructure(const NodeDataStructure& other)
 	  is_used(other.is_used), is_engine(other.is_engine), persistence(other.persistence),
 	  is_local(other.is_local), is_global(other.is_global), kind(other.kind),
 	  has_obj_assigned(other.has_obj_assigned), is_thread_safe(other.is_thread_safe),
-	  is_restricted(other.is_restricted), num_reuses(other.num_reuses), data_type(other.data_type),
+	  is_restricted(other.is_restricted), num_reuses(other.num_reuses),
+	  renamed(other.renamed), data_type(other.data_type),
 	  name(other.name), references(other.references) {
 	NodeDataStructure::set_child_parents();
 }
@@ -295,6 +355,19 @@ NodeFunctionParam* NodeDataStructure::is_function_param() const {
 	return nullptr;
 }
 
+NodeStruct* NodeDataStructure::is_member() const {
+	if(parent and parent->cast<NodeSingleDeclaration>()) {
+		if(const auto decl = parent; decl->parent and decl->parent->cast<NodeStatement>()) {
+			if(const auto stmt = decl->parent; stmt->parent and stmt->parent->cast<NodeBlock>()) {
+				if(const auto body = stmt->parent; body->parent and body->parent->cast<NodeStruct>()) {
+					return body->parent->cast<NodeStruct>();
+				}
+			}
+		}
+	}
+	return nullptr;
+}
+
 Type* NodeDataStructure::cast_type() {
 	const Type* type = ty->get_element_type();
 	if(type == TypeRegistry::Number || type == TypeRegistry::Unknown || type == TypeRegistry::Any || type == TypeRegistry::Comparison) {
@@ -311,17 +384,12 @@ Type* NodeDataStructure::cast_type() {
 	return ty;
 }
 
-NodeStruct* NodeDataStructure::is_member() const {
-	if(parent and parent->cast<NodeSingleDeclaration>()) {
-		if(const auto decl = parent; decl->parent and decl->parent->cast<NodeStatement>()) {
-			if(const auto stmt = decl->parent; stmt->parent and stmt->parent->cast<NodeBlock>()) {
-				if(const auto body = stmt->parent; body->parent and body->parent->cast<NodeStruct>()) {
-					return body->parent->cast<NodeStruct>();
-				}
-			}
-		}
-	}
-	return nullptr;
+void NodeDataStructure::match_metadata(const std::shared_ptr<NodeDataStructure>& data_structure) {
+	is_engine = data_structure->is_engine;
+	is_local = data_structure->is_local;
+	is_global = data_structure->is_global;
+	data_type = data_structure->data_type;
+	is_thread_safe = data_structure->is_thread_safe;
 }
 
 NodeDataStructure* NodeDataStructure::lower_type() {
@@ -353,76 +421,9 @@ NodeDataStructure *NodeDataStructure::replace_datastruct(std::unique_ptr<NodeDat
 	return new_data_struct;
 }
 
-void NodeDataStructure::match_metadata(const std::shared_ptr<NodeDataStructure>& data_structure) {
-	is_engine = data_structure->is_engine;
-	is_local = data_structure->is_local;
-	is_global = data_structure->is_global;
-	data_type = data_structure->data_type;
-	is_thread_safe = data_structure->is_thread_safe;
-}
-
 void NodeDataStructure::clear_references() {
 	std::lock_guard<std::mutex> lock(references_mutex);
 	references.clear();
-}
-
-// ************* NodeReference ***************
-NodeReference::~NodeReference() {
-	if(const auto decl = declaration.lock()) {
-		decl->remove_reference(this);
-	}
-}
-
-NodeReference::NodeReference(const NodeReference& other)
-	: NodeAST(other), name(other.name), declaration(other.declaration),
-    is_engine(other.is_engine), is_local(other.is_local),
-    kind(other.kind),
-	data_type(other.data_type) {
-	NodeReference::set_child_parents();
-}
-
-std::unique_ptr<NodeAST> NodeReference::clone() const {
-	return std::make_unique<NodeReference>(*this);
-}
-
-void NodeReference::match_data_structure(const std::shared_ptr<NodeDataStructure>& data_structure) {
-	declaration = data_structure;
-	is_engine = data_structure->is_engine;
-	is_local = data_structure->is_local;
-	data_type = data_structure->data_type;
-//	ty = data_structure->ty;
-}
-
-NodeStruct* NodeReference::is_member_ref() const {
-	if ( auto decl = get_declaration()) {
-		return decl->is_member();
-	}
-	return nullptr;
-}
-
-NodeStruct *NodeReference::get_object_ptr(NodeProgram* program, const std::string& obj) {
-	if(const auto it = program->struct_lookup.find(obj); it != program->struct_lookup.end()) {
-		return it->second;
-	}
-	return nullptr;
-}
-
-NodeReference* NodeReference::lower_type() {
-	if (ty -> get_element_type() == TypeRegistry::Boolean) {
-		set_element_type(TypeRegistry::Integer);
-	} else if(ty->get_element_type()->get_type_kind() == TypeKind::Object) {
-		set_element_type(TypeRegistry::Integer);
-	}
-	return this;
-}
-
-NodeSingleAssignment* NodeReference::is_l_value() const {
-	if(const auto assignment = parent->cast<NodeSingleAssignment>()) {
-		if(assignment->l_value.get() == this) {
-			return assignment;
-		}
-	}
-	return nullptr;
 }
 
 // bool NodeReference::needs_get_ui_id() const {
