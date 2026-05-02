@@ -505,6 +505,8 @@ struct NodeStruct final : NodeDataStructure {
 		return method;
 	}
 
+	void add_method_or_override(const std::shared_ptr<NodeFunctionDefinition>& method);
+
 	void rebuild_lookup_sets() {
 		method_set.clear();
 		for(const auto& method : methods) {
@@ -520,6 +522,14 @@ struct NodeStruct final : NodeDataStructure {
 		const auto member = member_table.find(ref_name);
 		if(member != member_table.end()) {
 			return member->second.lock();
+		}
+		return nullptr;
+	}
+
+	std::shared_ptr<NodeFunctionDefinition> get_method(const StringIntKey &hash) {
+		const auto it = method_table.find(hash);
+		if(it != method_table.end()) {
+			return it->second.lock();
 		}
 		return nullptr;
 	}

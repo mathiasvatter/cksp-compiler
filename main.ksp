@@ -3,21 +3,18 @@
 #pragma max_callback_depth(420)
 
 // #pragma optimize("none")
+struct Note
+	pitch: int
+	velo: int
 
-function load(array1: int[])
-    declare tmp[num_elements(array1)]: int[]
-    for idx, val in pairs(array1)
-        tmp[idx] := val
-    end for
-	return tmp
-end function
+	function get_velo(self)
+		return self.velo
+	end function
 
-
-// on init
-// 	declare arr: int[] := [1,2,3,4]
-// 	declare arr2: int[]
-// 	load(arr)
-// end on
+	function get_velo(self) override
+		return self.pitch
+	end function
+end struct
 
 namespace BrowserFont
 	declare types: int[] := [ ...
@@ -29,37 +26,43 @@ namespace BrowserFont
 		CONTROL_PAR_FONT_TYPE_ON_HOVER ...
 	]
 	declare ty: int[] := types
+
+	function get_type(idx: int) : int 
+		return types[idx]
+	end function
+
+	function get_type(dd: int) : int override
+		message("getting it!!!!!")
+		return types[dd]
+	end function
 end namespace
 
-// on init
-// 	message(BrowserFont.ty[0])
-// end on
 
 
 on init
 	declare stringggg: string := "sdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfja sdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasldkfja sldkfja sldkfja sldkfj asldkfj alsdkfj alskfj "
 
-	
 	declare array[25]: int[]
-	
+
+	message(BrowserFont.get_type(3))
 end on
 
 on persistence_changed
 	
-	if (dodododo(array))
-		message("df")
-	end if		
-	// dodododo()
-	// dodododo()
+	// if (dodododo(array))
+	// 	message("df")
+	// end if		
+	dodododo(array)
+
 end on
 
-function dodododo(ref array: int[]): boolean
+function dodododo(ref array: int[])
 	load_array(array, 2)
 	for i in range(340)
 		message(i)
 		if (i = 4)
-			return true
+			exit
 		end if			
 	end for
-	return false
+	
 end function	

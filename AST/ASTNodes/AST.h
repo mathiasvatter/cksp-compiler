@@ -985,6 +985,8 @@ struct NodeProgram final : NodeAST {
 	/// update function lookup table
 	void update_function_lookup();
 	NodeFunctionDefinition *add_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def);
+	// adds a function definition or replaces one if the new def is marked override -> throws error if not and fun signature already exists
+	void add_function_or_override(const std::shared_ptr<NodeFunctionDefinition> &def);
 	void remove_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def);
 	static NodeFunctionDefinition *replace_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def, const std::shared_ptr<NodeFunctionDefinition> &replacement);
 	void update_struct_lookup();

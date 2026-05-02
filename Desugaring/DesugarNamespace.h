@@ -32,7 +32,7 @@ class DesugarNamespace final : public ASTDesugaring {
 		const std::string base = basename_of(var.name, prefix);
 		m_namespace_variables.back().insert(base);
 
-		auto it = namespace_data.find(prefix.back());
+		const auto it = namespace_data.find(prefix.back());
 		if (it == namespace_data.end()) {
 			// create new namespace data for this prefix
 			auto data = std::make_unique<NamespaceData>();
@@ -229,92 +229,4 @@ public:
 		return StringUtils::join(splits, '.');
 	}
 
-	// // English: Given the current full prefix chain (e.g. ["A","B"]) and a possibly
-	// // partially qualified name (e.g. "B.x"), prepend the *missing outer head*
-	// // so that it becomes fully-qualified inside this nesting ("A.B.x").
-	// // If the name already starts with the entire chain ("A.B.x"), it's left unchanged.
-	// // If the name starts with a different root ("C.x"), it's treated as absolute and left unchanged.
-	// static std::string complete_outer_prefix(const std::vector<std::string>& chain,
-	//                                          const std::string& name) {
-	//     if (chain.empty()) return name;
-	//
-	//     auto nameSegs = split_segments(name);
-	//     if (nameSegs.empty()) return name;
-	//
-	//     // Try to match the *longest* suffix of 'chain' against the *beginning* of 'nameSegs'.
-	//     // Example: chain=["A","B"], name="B.x"  => match suffix ["B"] (k=1) -> prepend ["A"].
-	//     //          chain=["A","B"], name="A.B.x" => match suffix ["A","B"] (k=0) -> prepend [].
-	//     //          chain=["A","B"], name="C.x"   => no match -> leave unchanged.
-	//     for (size_t k = 0; k < chain.size(); ++k) {
-	//         const size_t suffixLen = chain.size() - k;            // length of chain[k..end]
-	//         if (nameSegs.size() < suffixLen) continue;
-	//
-	//         bool matches = true;
-	//         for (size_t i = 0; i < suffixLen; ++i) {
-	//             if (nameSegs[i] != chain[k + i]) { matches = false; break; }
-	//         }
-	//         if (!matches) continue;
-	//
-	//         // Build completed = head(chain[0..k-1]) + nameSegs
-	//         if (k == 0) {
-	//             // Already has the full chain as prefix -> unchanged
-	//             return name;
-	//         }
-	//         std::vector<std::string> completed;
-	//         completed.reserve(chain.size() + nameSegs.size());
-	//         // missing head
-	//         for (size_t i = 0; i < k; ++i) completed.push_back(chain[i]);
-	//         // existing name
-	//         completed.insert(completed.end(), nameSegs.begin(), nameSegs.end());
-	//         return join_segments(completed);
-	//     }
-	//
-	//     // No suffix of current chain matches the start of 'name' -> treat as absolute; leave unchanged.
-	//     return name;
-	// }
-
-
 };
-//
-// class UnnestNamespaces final : public ASTNoVisitor {
-// 	std::string m_prefixes;
-// 	void add_prefix(const std::string& prefix) {
-// 		if (!m_prefixes.empty()) {
-// 			m_prefixes += ".";
-// 		}
-// 		m_prefixes += prefix;
-// 	}
-// 	std::stack<NodeNamespace*> m_stack;
-// public:
-// 	explicit UnnestNamespaces(NodeProgram* program) {
-// 		m_program = program;
-// 	}
-//
-// 	NodeAST* unnest(NodeNamespace& node) {
-// 		m_prefixes = "";
-// 		return node.accept(*this);
-// 	}
-//
-// private:
-// 	NodeAST* visit(NodeNamespace& node) override {
-// 		add_prefix(node.prefix);
-// 		node.prefix = m_prefixes;
-// 		node.members->accept(*this);
-// 		return &node;
-// 	}
-//
-// 	NodeAST* visit(NodeStatement &node) override {
-// 		if (auto ns = node.statement->cast<NodeNamespace>()) {
-// 			node.statement->accept(*this);
-// 			m_program->namespaces.push_back(unique_ptr_cast<NodeNamespace>(std::move(node.statement)));
-// 			node.statement = std::make_unique<NodeDeadCode>(node.tok);
-// 		}
-// 		return &node;
-// 	}
-//
-// 	NodeAST* visit(NodeBlock &node) override {
-// 		return ASTVisitor::visit(node);
-// 	}
-//
-//
-// };

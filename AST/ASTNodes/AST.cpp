@@ -1310,6 +1310,33 @@ NodeFunctionDefinition *NodeProgram::add_function_definition(const std::shared_p
 	return def.get();
 }
 
+void NodeProgram::add_function_or_override(const std::shared_ptr<NodeFunctionDefinition> &def) {
+	if (auto func = look_up_exact({def->header->name, (int)def->header->params.size()}, def->header->ty)) {
+		// was already declared, see if it overrides
+		if (def->override) {
+			if (func->override and def->override) {
+				auto error = CompileError(ErrorType::SyntaxError,"", "", def->header->tok);
+				error.set_message( "Found duplicate function definition with the same name and parameter count at position "+func->tok.get_position()+".\nBoth have been marked"
+						 " as <override>. The compiler will use the last encountered definition that has been marked as <override>.\n"
+						 "Consider removing the <override> keyword from one of the definitions.");
+				error.print();
+			}
+			NodeProgram::replace_function_definition(func, def);
+		} else if (func->override and !def->override) {
+			// function in map is already override and encountered function is not
+			// pass
+		} else {
+			auto error = CompileError(ErrorType::SyntaxError,"", "", def->header->tok);
+			error.set_message( "A function with this name and parameter count already exists at position "+func->tok.get_position()+". \n"
+					 "To override it, use the <override> keyword. \n"
+					 "To overload it, use <Union> types instead to define function templates accepting multiple types.");
+			error.exit();
+		}
+	} else {
+		add_function_definition(def);
+	}
+}
+
 void NodeProgram::remove_function_definition(const std::shared_ptr<NodeFunctionDefinition>& def) {
 	auto remove_from_vector = [&](std::vector<std::shared_ptr<NodeFunctionDefinition>>& vec) {
 		for (size_t i = 0; i < vec.size(); ) {

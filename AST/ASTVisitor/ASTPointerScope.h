@@ -107,11 +107,6 @@ public:
 		return &node;
 	}
 
-	NodeAST* visit(NodeNamespace& node) override {
-		node.members->accept(*this);
-		return &node;
-	}
-
 	NodeAST* visit(NodeStruct& node)  override {
 		node.members->accept(*this);
 		return &node;
