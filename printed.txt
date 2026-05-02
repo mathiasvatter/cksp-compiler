@@ -8,19 +8,14 @@ on init
 	declare ret0 : int {Reuses: 0}
 	declare RETURN_FLAG00 : int {Reuses: 0}
 	declare i0 : int {Reuses: 0}
-	declare array2[25] : int[] {Reuses: 0}
 	declare _ret00 : int {Reuses: 0}
+	declare array[25] : int[] {Reuses: 0}
 end on
 
 on persistence_changed
-	_iter0{int} {_iter0}  := 0
-	while(_iter0{int} {_iter0}  <= (num_elements(array2{int[]} {array2} ){Builtin, None, num_elements} - 1)) 
-		array2[_iter0{int} {_iter0} ]{int[]} {array2}  := 0
-		inc(_iter0{int} {_iter0} ){Builtin, None, inc}
-	end while
 	RETURN_FLAG00{int} {RETURN_FLAG00}  := 0
 	while(RETURN_FLAG00{int} {RETURN_FLAG00}  = 0) 
-		load_array(array2{int[]} {array2} , 2){Builtin, None, load_array}
+		load_array(array{int[]} {array} , 2){Builtin, None, load_array}
 		i0{int} {i0}  := 0
 		while((i0{int} {i0}  < 340) and (RETURN_FLAG00{int} {RETURN_FLAG00}  = 0)) 
 			message(i0{int} {i0} ){Builtin, None, message}

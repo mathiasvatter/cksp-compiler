@@ -250,6 +250,7 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 	bool is_thread_safe = true; // gets set to false, if dimension inflation needs to be used because of unsafe declaration environment
 	bool is_restricted = false;
 	int num_reuses = 0;
+	bool renamed = false; // tagged when variable got renamed during VariableReuse
 	DataType data_type = DataType::Mutable;
 	std::string name;
 	std::unordered_set<NodeReference*> references;
