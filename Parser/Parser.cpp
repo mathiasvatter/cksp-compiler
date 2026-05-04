@@ -1204,7 +1204,9 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 			auto struct_def = parse_struct(node_program.get());
 			if(struct_def.is_error())
 				return Result<std::unique_ptr<NodeProgram>>(struct_def.get_error());
-			node_program->struct_definitions.push_back(std::move(struct_def.unwrap()));
+			// node_program->struct_definitions.push_back(std::move(struct_def.unwrap()));
+			auto stmt = node_program->global_declarations->add_as_stmt(std::move(struct_def.unwrap()));
+			node_program->struct_definitions.push_back(stmt->statement->cast<NodeStruct>());
 		} else if (peek().type == token::CONST) {
 			auto const_def = parse_const_statement(node_program->global_declarations.get());
 			if (const_def.is_error()) {

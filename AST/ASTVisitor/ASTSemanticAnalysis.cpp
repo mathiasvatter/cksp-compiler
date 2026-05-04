@@ -13,9 +13,9 @@ NodeAST * ASTSemanticAnalysis::visit(NodeProgram& node) {
 	m_program->current_callback = nullptr;
 	m_program->global_declarations->accept(*this);
 	visit_all(node.namespaces, *this);
-	for(const auto & s : node.struct_definitions) {
-		s->accept(*this);
-	}
+	// for(const auto & s : node.struct_definitions) {
+	// 	s->accept(*this);
+	// }
     for(const auto & callback : node.callbacks) {
         callback->accept(*this);
     }

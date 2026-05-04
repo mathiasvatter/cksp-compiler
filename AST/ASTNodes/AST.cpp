@@ -1272,7 +1272,8 @@ NodeProgram::NodeProgram(const NodeProgram& other) : NodeAST(other), init_callba
     function_definitions = other.function_definitions;
 	additional_function_definitions = other.additional_function_definitions;
 	global_declarations = std::make_unique<NodeBlock>(*other.global_declarations);
-	struct_definitions = clone_vector<NodeStruct>(other.struct_definitions);
+	// struct_definitions = clone_vector<NodeStruct>(other.struct_definitions);
+	struct_definitions = other.struct_definitions;
 	function_lookup = other.function_lookup;
 	set_child_parents();
 }
@@ -1419,7 +1420,7 @@ void NodeProgram::merge_function_definitions() {
 void NodeProgram::update_struct_lookup() {
 	struct_lookup.clear();
 	for(const auto & def : struct_definitions) {
-		struct_lookup.insert({def->name, def.get()});
+		struct_lookup.insert({def->name, def});
 	}
 }
 
