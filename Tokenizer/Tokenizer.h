@@ -50,18 +50,31 @@ static std::optional<token> get_token_type(const std::unordered_map<std::string,
     return std::nullopt;
 }
 
+struct LinesProcessed {
+	size_t lines_total = 0;
+	size_t lines_comment = 0;
+	size_t lines_blank = 0;
 
+	std::string get_report() const {
+		auto l = "Lexer lines processed: " + std::to_string(lines_total-lines_comment-lines_blank);
+		auto further_info = " (" + std::to_string(lines_total) + " including comment and blank lines)";
+		return l + further_info;
+	}
+};
 
 /*
  * Tokenizer Class
  */
 class Tokenizer {
 public:
-	Tokenizer(const std::string& input, const std::string& file, FileType file_type = FileType::ksp);
+	Tokenizer(const std::string& input, const std::string& file);
 	~Tokenizer() = default;
 	std::vector<Token> tokenize();
 	void token_loop();
 
+	LinesProcessed get_lines_processed() const {
+		return LinesProcessed({m_line, m_line_comment, m_line_blank});
+	}
 protected:
     std::string m_input;
     std::string m_current_file;
@@ -69,18 +82,21 @@ protected:
     size_t m_pos;
     char m_current_char;
     size_t m_line;
-    size_t m_line_pos;
+    size_t m_line_pos; // column in line
+	size_t m_line_comment = 0;
+	size_t m_line_blank = 0;
     std::string m_buffer;
     std::vector<Token> m_tokens;
 	bool is_in_fstring = false;
 	std::stack<char> fstring_starting_char;
 
-    // bool m_is_json = false;
     [[nodiscard]] char peek(int ahead = 0) const;
     char consume();
     void flush_buffer();
 	void add_token(token type, std::string val);
 	void skip_whitespace();
+
+
 
 	static bool is_space(const char& ch);
 	[[nodiscard]] bool is_string() const;

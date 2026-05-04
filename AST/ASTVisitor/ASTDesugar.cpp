@@ -27,7 +27,6 @@ NodeAST* ASTDesugar::visit(NodeProgram& node) {
 	is_global_declaration = true;
 	m_program->global_declarations->accept(*this);
 	is_global_declaration = false;
-	m_program->global_declarations->prepend_body(NodeStruct::declare_struct_constants());
 	m_program->add_global_iterator();
 
 

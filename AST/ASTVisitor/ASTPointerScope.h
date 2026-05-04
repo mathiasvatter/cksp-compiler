@@ -236,8 +236,10 @@ public:
 	//------- Nodes for struct instance analysis -------
 	bool is_linear_environment() const {
 		if (!m_program->function_call_stack.empty()) return false;
-		if (!m_program->current_callback) return false;
-		return m_program->current_callback == m_program->init_callback or m_program->current_callback->begin_callback == "on persistence_changed";
+		if (!m_program->current_callback) return true; // this is the case if we are in global_declarations
+		if (m_program->current_callback == m_program->init_callback) return true;
+		if (m_program->current_callback->begin_callback == "on persistence_changed") return true;
+		return false;
 	}
 
 	NodeAST* visit(NodeCallback& node) override {

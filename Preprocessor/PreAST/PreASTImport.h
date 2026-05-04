@@ -17,15 +17,17 @@ class PreASTImport final : public PreASTVisitor {
 	std::string m_root_directory;
 	std::unordered_set<std::string> &m_imported_files; // Um zirkuläre Abhängigkeiten zu vermeiden
 	std::unordered_map<std::string, std::string> &m_basename_map; // Map to store basename to full path mapping
+	LinesProcessed *m_lines_processed;
 
 public:
 	// root directory is the base directory of the main file
 	PreASTImport(const std::string &base_file,
 				 const std::string &current_file,
 	             std::unordered_set<std::string> &imported_files,
-	             std::unordered_map<std::string, std::string> &basename_map)
+	             std::unordered_map<std::string, std::string> &basename_map,
+	             LinesProcessed* lines_collect)
 		: PreASTVisitor(), m_current_file(current_file), m_base_file(base_file),
-		m_imported_files(imported_files), m_basename_map(basename_map) {
+		m_imported_files(imported_files), m_basename_map(basename_map), m_lines_processed(lines_collect) {
 		m_root_directory = std::filesystem::path(m_base_file).parent_path().string();
 	}
 
@@ -54,7 +56,7 @@ public:
 			m_basename_map[basename] = import_path;
 
 			// parse
-			auto program_result = Compiler::preproc_parse(import_path, m_program->def_provider);
+			auto program_result = Compiler::preproc_parse(import_path, m_program->def_provider, m_lines_processed);
 			if (program_result.is_error()) {
 				program_result.get_error().exit();
 			}
@@ -63,7 +65,7 @@ public:
 			import_program->program->chunk.pop_back();
 
 			// recursively preprocess imports in the imported program to handle nested imports
-			import_program->do_import_processing(m_base_file, import_path, m_imported_files, m_basename_map);
+			import_program->do_import_processing(m_base_file, import_path, m_imported_files, m_basename_map, m_lines_processed);
 
 			for (auto& macro_def : import_program->macro_definitions) {
 				macro_def->parent = m_program;

@@ -16,14 +16,17 @@ struct Note
 	end function
 end struct
 
+// declare Note := new Note(60, 127)
+
 namespace BrowserFont
-	declare types: int[] := [ ...
-		CONTROL_PAR_FONT_TYPE, ... 
-		CONTROL_PAR_FONT_TYPE_ON, ... 
-		CONTROL_PAR_FONT_TYPE_OFF_PRESSED, ... 
-		CONTROL_PAR_FONT_TYPE_ON_PRESSED, ... 
-		CONTROL_PAR_FONT_TYPE_OFF_HOVER, ... 
-		CONTROL_PAR_FONT_TYPE_ON_HOVER ...
+	declare types: int[] := [
+		CONTROL_PAR_FONT_TYPE, 
+		CONTROL_PAR_FONT_TYPE_ON, 
+		CONTROL_PAR_FONT_TYPE_OFF_PRESSED, 
+		
+		CONTROL_PAR_FONT_TYPE_ON_PRESSED, 
+		CONTROL_PAR_FONT_TYPE_OFF_HOVER, 
+		CONTROL_PAR_FONT_TYPE_ON_HOVER
 	]
 	declare ty: int[] := types
 
@@ -36,7 +39,6 @@ namespace BrowserFont
 		return types[dd]
 	end function
 end namespace
-
 
 
 on init

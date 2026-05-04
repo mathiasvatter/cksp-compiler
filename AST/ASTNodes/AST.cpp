@@ -1604,13 +1604,14 @@ void NodeProgram::inline_global_variables() {
 	global_declarations->parent = this;
 }
 
-void NodeProgram::inline_structs() {
+void NodeProgram::inline_structs_and_constants() {
 	for(const auto & obj : struct_definitions) {
 		obj->inline_struct(this);
 	}
 	struct_definitions.clear();
 	update_struct_lookup();
 	reset_function_visited_flag();
+	global_declarations->prepend_body(NodeStruct::declare_struct_constants());
 }
 
 void NodeProgram::reset_function_visited_flag() {
