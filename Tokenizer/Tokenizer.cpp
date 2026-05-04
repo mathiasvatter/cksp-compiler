@@ -23,7 +23,7 @@ std::ostream &operator<<(std::ostream &os, const Token &tok) {
 /*
  * Tokenizer Functions
  */
-Tokenizer::Tokenizer(const std::string& input, const std::string& file, FileType file_type)
+Tokenizer::Tokenizer(const std::string& input, const std::string& file)
     : m_pos(0), m_line(1), m_line_pos(1) {
     m_current_file = file;
 
@@ -182,7 +182,7 @@ void Tokenizer::get_comment() {
         nesting_level++;
         while (nesting_level > 0) {
             consume();
-            if (peek() == '\n') {m_line++; m_line_pos = 1;}
+            if (peek() == '\n') {m_line++; m_line_pos = 1; m_line_comment++;}
             if (peek() == '{') {
                 nesting_level++;
             } else if (peek() == '}') {
@@ -196,12 +196,13 @@ void Tokenizer::get_comment() {
             while (peek() != '\n') {
 				consume();
             }
+        	m_line_comment++;
             // skip nex_char(); so that the \n can be tokenized
             // if multi-line comment c++ style
         } else if (peek(1) == '*') {
             while (peek() != '*' or peek(1) != '/') {
 				consume();
-                if (peek() == '\n') {m_line++; m_line_pos = 1;}
+                if (peek() == '\n') {m_line++; m_line_pos = 1; m_line_comment++;}
             }
 			consume();
             consume();
@@ -443,6 +444,11 @@ void Tokenizer::get_keyword_or_num() {
 
 void Tokenizer::get_linebreak() {
     flush_buffer();
+
+	if (!m_tokens.empty() and m_tokens.back().type == token::LINEBRK) {
+		m_line_blank++;
+	}
+
 	consume();
     add_token(token::LINEBRK, m_buffer);
     m_line++; m_line_pos = 1;

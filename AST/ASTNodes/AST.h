@@ -1008,7 +1008,7 @@ struct NodeProgram final : NodeAST {
 	std::shared_ptr<NodeVariable> add_global_iterator();
 	std::shared_ptr<NodeVariable> get_global_iterator(size_t idx = 0);
 	void inline_global_variables();
-	void inline_structs();
+	void inline_structs_and_constants();
 	void reset_function_visited_flag();
 	void reset_function_used_flag() const;
 	bool is_init_callback(const NodeCallback* curr_callback) const {

@@ -1,13 +1,13 @@
-{ Compiled with cksp version 0.0.9-alpha.2 on Sat May 02 14:28:01 2026 }
+{ Compiled with cksp version 0.0.9-alpha.2 on Mon May 04 17:03:02 2026 }
 on init
+  declare $RETURN_FLAG00
+  declare $i0
   declare $_iter0
   declare %BrowserFont__types[6] := ($CONTROL_PAR_FONT_TYPE, $CONTROL_PAR_FONT_TYPE_ON, $CONTROL_PAR_FONT_TYPE_OFF_PRESSED, $CONTROL_PAR_FONT_TYPE_ON_PRESSED, $CONTROL_PAR_FONT_TYPE_OFF_HOVER, $CONTROL_PAR_FONT_TYPE_ON_HOVER)
   $_iter0 := 0
   while($_iter0 <= (num_elements(%BrowserFont__types) - 1)) 
     inc($_iter0)
   end while
-  declare $RETURN_FLAG00
-  declare $i0
   declare $_ret00
   declare %array[25]
   $RETURN_FLAG00 := 3

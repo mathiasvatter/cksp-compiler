@@ -1199,7 +1199,7 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 			if (function.is_error())
 				return Result<std::unique_ptr<NodeProgram>>(function.get_error());
 			auto node_function = std::move(function.unwrap());
-        	node_program->add_function_or_override(std::move(node_function));
+        	node_program->add_function_or_override(node_function);
 		} else if(peek().type == token::STRUCT) {
 			auto struct_def = parse_struct(node_program.get());
 			if(struct_def.is_error())
