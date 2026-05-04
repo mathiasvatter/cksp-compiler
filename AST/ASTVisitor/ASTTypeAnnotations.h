@@ -47,7 +47,7 @@ public:
 		m_program->global_declarations->accept(*this);
 		visit_all(node.namespaces, *this);
 		m_program->init_callback->accept(*this);
-		visit_all(node.struct_definitions, *this);
+		// visit_all(node.struct_definitions, *this);
 		for(const auto & callback : node.callbacks) {
 			if(callback.get() != m_program->init_callback) callback->accept(*this);
 		}

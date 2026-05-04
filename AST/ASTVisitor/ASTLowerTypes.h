@@ -19,9 +19,9 @@ public:
 		// most func defs will be visited when called, keeping local scopes in mind
 		m_program->global_declarations->accept(*this);
 		m_program->init_callback->accept(*this);
-		for(const auto & s : node.struct_definitions) {
-			s->accept(*this);
-		}
+		// for(const auto & s : node.struct_definitions) {
+		// 	s->accept(*this);
+		// }
 		for(const auto & callback : node.callbacks) {
 			if(callback.get() != m_program->init_callback) callback->accept(*this);
 		}

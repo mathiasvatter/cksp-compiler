@@ -543,10 +543,10 @@ void NodeStruct::inline_struct(NodeProgram *program) {
 	auto self = this->node_self->parent->cast<NodeSingleDeclaration>();
 	self->remove_node();
 	node_self.reset();
-	program->global_declarations->append_body(std::move(members));
-	// program->init_callback->statements->prepend_body(std::move(members));
-	members = std::make_unique<NodeBlock>(Token());
-	set_child_parents();
+	// program->global_declarations->append_body(std::move(members));
+	// // program->init_callback->statements->prepend_body(std::move(members));
+	// members = std::make_unique<NodeBlock>(Token());
+	// set_child_parents();
 }
 
 std::shared_ptr<NodeFunctionDefinition> NodeStruct::get_overloaded_method(token op) {

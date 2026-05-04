@@ -38,7 +38,7 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	node.debug_print();
 
 	m_program->global_declarations->accept(*this);
-	visit_all(node.struct_definitions, *this);
+	// visit_all(node.struct_definitions, *this);
 	for(const auto & callback : node.callbacks) {
 		callback->accept(*this);
 	}
@@ -51,8 +51,11 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	}
 	node.reset_function_visited_flag();
 
-	node.debug_print();
 
+	node.struct_definitions.clear();
+	node.update_struct_lookup();
+	// node.reset_function_visited_flag();
+	node.global_declarations->prepend_body(NodeStruct::declare_struct_constants());
 	return &node;
 }
 
@@ -96,6 +99,12 @@ NodeAST * ASTCollectLowerings::visit(NodeStruct& node) {
 	//TRACE();
 	node.members->accept(*this);
 	visit_all(node.methods, *this);
+	node.inline_struct(m_program);
+	// program->global_declarations->append_body(std::move(members));
+	// // program->init_callback->statements->prepend_body(std::move(members));
+	node.replace_with(std::move(node.members));
+	node.members = std::make_unique<NodeBlock>(Token());
+	node.set_child_parents();
 	return &node;
 }
 

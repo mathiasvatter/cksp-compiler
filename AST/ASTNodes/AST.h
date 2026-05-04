@@ -964,7 +964,7 @@ struct NodeProgram final : NodeAST {
     std::vector<std::shared_ptr<NodeFunctionDefinition>> function_definitions;
 	std::vector<std::shared_ptr<NodeFunctionDefinition>> additional_function_definitions;
 	std::unordered_map<StringIntKey, std::vector<std::weak_ptr<NodeFunctionDefinition>>, StringIntKeyHash> function_lookup;
-	std::vector<std::unique_ptr<NodeStruct>> struct_definitions;
+	std::vector<NodeStruct*> struct_definitions;
 	std::unordered_map<std::string, NodeStruct*> struct_lookup;
 	std::unique_ptr<NodeBlock> global_declarations;
 	std::shared_ptr<NodeVariable> max_cb_stack;

@@ -1,8 +1,19 @@
-{ Compiled with cksp version 0.0.9-alpha.2 on Mon May 04 17:03:02 2026 }
+{ Compiled with cksp version 0.0.9-alpha.2 on Mon May 04 17:44:55 2026 }
 on init
+  declare $velo0
   declare $RETURN_FLAG00
   declare $i0
   declare $_iter0
+  declare $Note____free_idx
+  declare %Note____allocation[1]
+  $i0 := 60
+  $velo0 := 127
+  $Note____free_idx := search(%Note____allocation, 0, $Note____free_idx, 0)
+  if($Note____free_idx = -1)
+    message("CKSP 0.0.9-alpha.2 Error: No more free space available to allocate objects of type 'Note'")
+  end if
+  %Note____allocation[$Note____free_idx] := 1
+  $RETURN_FLAG00 := $Note____free_idx
   declare %BrowserFont__types[6] := ($CONTROL_PAR_FONT_TYPE, $CONTROL_PAR_FONT_TYPE_ON, $CONTROL_PAR_FONT_TYPE_OFF_PRESSED, $CONTROL_PAR_FONT_TYPE_ON_PRESSED, $CONTROL_PAR_FONT_TYPE_OFF_HOVER, $CONTROL_PAR_FONT_TYPE_ON_HOVER)
   $_iter0 := 0
   while($_iter0 <= (num_elements(%BrowserFont__types) - 1)) 

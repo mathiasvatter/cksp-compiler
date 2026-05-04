@@ -16,7 +16,7 @@ struct Note
 	end function
 end struct
 
-// declare Note := new Note(60, 127)
+declare Note := new Note(60, 127)
 
 namespace BrowserFont
 	declare types: int[] := [
