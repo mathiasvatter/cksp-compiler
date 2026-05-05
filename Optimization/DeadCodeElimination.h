@@ -10,6 +10,8 @@
 /**
  * Removes Dead Code:
  * - Assignments that are reassigned without being used
+ * Also removes type neutral assignments from Declarations since Kontakt automatically initializes all variables to
+ * their type neutral value, rendering manually assigning them redundant
  */
 class DeadCodeElimination final : public ASTOptimizations {
 
@@ -30,6 +32,13 @@ public:
 		visit_all(node.callbacks, *this);
 		visit_all(node.function_definitions, *this);
 		node.reset_function_visited_flag();
+		return &node;
+	}
+
+	NodeAST* visit(NodeSingleDeclaration& node) override {
+		node.remove_type_neutral_assignment();
+		node.variable->accept(*this);
+		if(node.value) node.value->accept(*this);
 		return &node;
 	}
 

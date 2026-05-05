@@ -29,6 +29,8 @@ class ParameterAssignmentTransformation final : public ASTVisitor {
 	std::unordered_map<NodeFunctionDefinition*, std::unordered_set<NodeFunctionDefinition*>> m_subcalls_per_function;
 	std::unordered_map<NodeFunctionDefinition*, std::vector<NodeDataStructure*>> m_param_decl_per_function;
 
+	std::unique_ptr<NodeBlock> m_global_declarations_block = nullptr; // nodeblock to later put in global declarations
+
 public:
 	explicit ParameterAssignmentTransformation(NodeProgram* main) {
 		m_program = main;
@@ -39,7 +41,11 @@ public:
 	NodeAST* do_parameter_assignment(NodeProgram& node) {
 		node.current_callback = nullptr;
 		node.reset_function_visited_flag();
+
+		m_global_declarations_block = std::make_unique<NodeBlock>(node.tok);
 		auto n = node.accept(*this);
+		node.global_declarations->prepend_body(std::move(m_global_declarations_block));
+		m_global_declarations_block = nullptr;
 		m_function_call_stack.clear();
 		m_global_declarations.clear();
 		node.debug_print();
@@ -289,7 +295,8 @@ private:
 					// if (m_program->current_callback == m_program->init_callback) {
 					// 	m_global_declarations[m_function_call_stack[0]].push_back(std::move(decl));
 					// } else {
-						m_program->global_declarations->add_as_stmt(std::move(decl));
+						m_global_declarations_block->add_as_stmt(std::move(decl));
+						// m_program->global_declarations->add_as_stmt(std::move(decl));
 					// }
 
 				}

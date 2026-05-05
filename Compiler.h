@@ -57,6 +57,7 @@ class Compiler {
 	NodeProgram* m_program = nullptr;
 	std::vector<Token> m_tokens{};
 	Timer m_timer;
+	LinesProcessed m_lines_processed{};
 
 //	bool tokenize();
 //	bool preprocess();
@@ -65,14 +66,19 @@ class Compiler {
 //	bool generate();
 public:
 
-	static std::vector<Token> tokenize(const std::string &input_filename) {
+	static std::vector<Token> tokenize(const std::string &input_filename, LinesProcessed* lines_collect) {
 		const FileHandler file_handler(input_filename);
-		Tokenizer tokenizer(file_handler.get_output(), input_filename, file_handler.get_file_type());
-		return tokenizer.tokenize();
+		Tokenizer tokenizer(file_handler.get_output(), input_filename);
+		auto tokens = tokenizer.tokenize();
+		auto l = tokenizer.get_lines_processed();
+		lines_collect->lines_total += l.lines_total;
+		lines_collect->lines_comment += l.lines_comment;
+		lines_collect->lines_blank += l.lines_blank;
+		return tokens;
 	}
 
-	static Result<std::unique_ptr<PreNodeProgram>> preproc_parse(const std::string &input_filename, DefinitionProvider* definition_provider) {
-		const auto& tokens = Compiler::tokenize(input_filename);
+	static Result<std::unique_ptr<PreNodeProgram>> preproc_parse(const std::string &input_filename, DefinitionProvider* definition_provider, LinesProcessed* lines_collect) {
+		const auto& tokens = Compiler::tokenize(input_filename, lines_collect);
 		PreprocessorParser parser(tokens, definition_provider);
 		return parser.parse_program(nullptr);
 	}
@@ -116,7 +122,7 @@ public:
 		// auto pre_ast = std::move(result_parse.unwrap());
 
 
-		auto pre_ast_result = Compiler::preproc_parse(m_cli_config->input_filename.value(), &m_definition_provider);
+		auto pre_ast_result = Compiler::preproc_parse(m_cli_config->input_filename.value(), &m_definition_provider, &m_lines_processed);
 		if(pre_ast_result.is_error()) {
 			auto error = pre_ast_result.get_error();
 			error.m_message += " Preprocessor parsing failed.";
@@ -125,10 +131,10 @@ public:
 		auto pre_ast = std::move(pre_ast_result.unwrap());
 		std::unordered_set<std::string> imported_files{};
 		std::unordered_map<std::string, std::string> basename_map{};
-		pre_ast->do_import_processing(m_cli_config->input_filename.value(), m_cli_config->input_filename.value(), imported_files, basename_map);
+		pre_ast->do_import_processing(m_cli_config->input_filename.value(), m_cli_config->input_filename.value(), imported_files, basename_map, &m_lines_processed);
 
 		m_timer.stop("Import");
-		std::cout << m_timer.print_timer("Import") << std::endl;
+		m_timer.start("Preprocessor");
 
 		PreASTConditions conditions_processor;
 		pre_ast->accept(conditions_processor);
@@ -140,8 +146,8 @@ public:
 		pre_ast->accept(defines);
 		pre_ast->debug_print();
 
-		PreASTMacros desugar;
-		pre_ast->accept(desugar);
+		PreASTMacros macros;
+		pre_ast->accept(macros);
 		pre_ast->debug_print();
 
 		PreASTIncrementer incrementer;
@@ -153,6 +159,7 @@ public:
 		combine.debug_print_tokens();
 
 		m_tokens = std::move(combine.m_tokens);
+		m_timer.stop("Preprocessor");
 	}
 
 	explicit Compiler(std::unique_ptr<CompilerConfig> config) : m_cli_config(std::move(config)) {
@@ -228,11 +235,11 @@ public:
 		} else {
 			std::cout << ColorCode::Bold << "Output Files: " << ColorCode::Reset << StringUtils::join(m_final_config->outputs, ' ') << "\n";
 		}
-		std::cout << std::endl;
+		std::cout << "\n";
 		std::filesystem::path curr_path = __FILE__;
 
-		m_timer.stop("Preprocessor");
-		// std::cout << m_timer.print_timer("Import") << "\n";
+		std::cout << m_timer.print_timer("Import") << "\n";
+		std::cout << m_lines_processed.get_report() << "\n";
 		std::cout << m_timer.print_timer("Preprocessor") << "\n";
 		m_timer.start("Parsing");
 
@@ -293,7 +300,7 @@ public:
 		ast->debug_print();
 
 		static UniqueParameterNamesProvider unique_names_provider(m_program);
-		unique_names_provider.do_renaming(*m_program);
+		unique_names_provider.do_parallel_renaming(*m_program);
 		ast->debug_print();
 
 		m_timer.stop("Type Checking");
@@ -317,7 +324,8 @@ public:
 		ast->debug_print();
 
 		// inline here so inlined struct vars get their declaration for register reuse later on
-		ast->inline_structs();
+		// the struct constants are also declared
+		ast->inline_structs_and_constants();
 
 		m_timer.stop("Lowering");
 		std::cout << m_timer.print_timer("Lowering") << "\n";
@@ -327,6 +335,7 @@ public:
 		static MarkThreadSafe marker(m_program);
 		marker.mark_environments(*ast);
 
+		// ast->collect_call_sites(m_program); // collect call sites
 		ASTFunctionStrategy function_strategy(m_program, m_pragma_config->parameter_passing);
 		function_strategy.determine_function_strategies(*m_program);
 
@@ -337,7 +346,6 @@ public:
 		static MarkThreadSafeVars mark_vars(m_program);
 		mark_vars.mark_variables(*ast);
 		ast->debug_print();
-
 
 		{
 			variable_checking.do_reachable_traversal(*ast, true);
@@ -421,6 +429,8 @@ public:
 
 		ASTRelinkGlobalScope relink_global_scope(m_program);
 		ast->accept(relink_global_scope);
+		ast->collect_references(); // collect refs for all datastructures again
+
 
 		m_timer.stop("Post Lowering");
 		std::cout << m_timer.print_timer("Post Lowering") << "\n";
@@ -452,14 +462,14 @@ public:
 		std::cout << m_timer.print_timer("Generator") << "\n";
 		m_timer.stop("Total Time");
 
-		// std::cout << compile_time.report() << std::endl;
+		// std::cout << compile_time.report() << "\n";
 		std::cout << "---------------------------" << "\n";
 		std::cout << ColorCode::Bold << m_timer.print_timer("Total Time") << ColorCode::Reset << "\n";
 
 		if (m_final_config->outputs.size() == 1)
-			std::cout << ColorCode::Green << ColorCode::Bold << "Saved compiled file to: " << ColorCode::Reset << m_final_config->outputs.front() << std::endl;
+			std::cout << ColorCode::Green << ColorCode::Bold << "Saved compiled file to: " << ColorCode::Reset << m_final_config->outputs.front() << "\n";
 		else {
-			std::cout << ColorCode::Green << ColorCode::Bold << "Saved compiled file to: " << ColorCode::Reset << StringUtils::join(m_final_config->outputs, ' ') << std::endl;
+			std::cout << ColorCode::Green << ColorCode::Bold << "Saved compiled file to: " << ColorCode::Reset << StringUtils::join(m_final_config->outputs, ' ') << "\n";
 		}
 	}
 };

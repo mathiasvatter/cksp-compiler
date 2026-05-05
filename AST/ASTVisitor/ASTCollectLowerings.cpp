@@ -234,18 +234,6 @@ NodeAST * ASTCollectLowerings::visit(NodeConst &node) {
     return node.replace_with(std::move(node.constants));
 }
 
-NodeAST * ASTCollectLowerings::visit(NodeNamespace &node) {
-	//TRACE();
-	ASTVisitor::visit(node);
-	for(auto & func: node.function_definitions) {
-		m_program->add_function_definition(func);
-		// func->parent = m_program;
-		// m_program->function_definitions.push_back(func);
-	}
-	node.function_definitions.clear();
-	return node.replace_with(std::move(node.members));
-}
-
 NodeAST * ASTCollectLowerings::visit(NodeWhile& node) {
 	//TRACE();
 	return ASTVisitor::visit(node)->lower(m_program);

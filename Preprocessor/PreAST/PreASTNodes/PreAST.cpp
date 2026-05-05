@@ -30,8 +30,9 @@ PreNodeAST * PreNodeAST::do_import_processing(
 	const std::string &base_file,
 	const std::string &current_file,
 	std::unordered_set<std::string> &imported_files,
-	std::unordered_map<std::string, std::string> &basename_map) {
-	PreASTImport import_processor(base_file, current_file, imported_files, basename_map);
+	std::unordered_map<std::string, std::string> &basename_map,
+	LinesProcessed* lines_collect) {
+	PreASTImport import_processor(base_file, current_file, imported_files, basename_map, lines_collect);
 	return accept(import_processor);
 }
 

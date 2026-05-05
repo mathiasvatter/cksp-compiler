@@ -248,6 +248,7 @@ public:
 			}
 			lower_init_method(&node);
 		}
+		// node.update_parents(node.parent);
 		return &node;
 	}
 
@@ -302,20 +303,22 @@ private:
 		);
 		node_block->add_as_stmt(std::move(node_assign_search));
 
-		auto node_error_message = std::make_unique<NodeFunctionCall>(
-			false,
-			std::make_unique<NodeFunctionHeaderRef>(
-				"message",
-				std::make_unique<NodeParamList>(
-					init->tok,
-					std::make_unique<NodeString>(
-						"\"Error: No more free space available to allocate objects of type '"+ m_current_struct->name + "'\"",
-						init->tok)
-				),
-				init->tok
-			),
-			init->tok
-		);
+		// auto node_error_message = std::make_unique<NodeFunctionCall>(
+		// 	false,
+		// 	std::make_unique<NodeFunctionHeaderRef>(
+		// 		"message",
+		// 		std::make_unique<NodeParamList>(
+		// 			init->tok,
+		// 			std::make_unique<NodeString>(
+		// 				"\"Error: No more free space available to allocate objects of type '"+ m_current_struct->name + "'\"",
+		// 				init->tok)
+		// 		),
+		// 		init->tok
+		// 	),
+		// 	init->tok
+		// );
+		auto const msg = "No more free space available to allocate objects of type '"+ m_current_struct->name + "'";
+		auto node_error_message = ASTVisitor::get_cksp_kontakt_warning(msg, init->tok);
 		node_error_message->kind = NodeFunctionCall::Kind::Builtin;
 		auto node_if_stmt = std::make_unique<NodeIf>(
 			std::make_unique<NodeBinaryExpr>(token::EQUAL,
@@ -331,7 +334,7 @@ private:
 		node_block->add_as_stmt(std::move(node_if_stmt));
 
 		auto node_allocation = m_current_struct->allocation_var->to_reference();
-		node_allocation->cast<NodeArrayRef>()->index = m_current_struct->free_idx_var->to_reference();
+		node_allocation->cast<NodeArrayRef>()->set_index(m_current_struct->free_idx_var->to_reference());
 		auto node_assign_allocation = std::make_unique<NodeSingleAssignment>(
 			std::move(node_allocation),
 			std::make_unique<NodeInt>(1, init->tok),

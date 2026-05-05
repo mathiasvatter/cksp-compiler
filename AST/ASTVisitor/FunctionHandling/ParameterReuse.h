@@ -121,13 +121,17 @@ private:
 
 					params_reused_in_function.push_back(std::move(reused_param));
 					// set new declaration pointer to reused param in param references
-					parallel_for_each(param->references.begin(), param->references.end(),
-					  [&reused](auto const& ref) {
+					// parallel_for_each(param->references.begin(), param->references.end(),
+					//   [&reused](auto const& ref) {
+					// 	ref->declaration = reused;
+					//   	ref->name = reused->name;
+					// });
+					for (auto & ref : param->references) {
 						ref->declaration = reused;
-					  	ref->name = reused->name;
-					});
+						ref->name = reused->name;
+					}
 
-					reused->references.insert(param->references.begin(), param->references.end());
+					reused->add_references(param->references);
 					const auto decl = param->parent->cast<NodeSingleDeclaration>();
 					if (!decl) {
 						auto error = CompileError(ErrorType::InternalError, "", "", param->tok);

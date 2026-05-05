@@ -10,12 +10,15 @@
 #include "../../Optimization/MemoryExhaustedNesting.h"
 #include "../../Lowering/LoweringFunctionCall.h"
 #include "../../SyntaxChecks/KSPConditions.h"
+#include "FunctionHandling/BuiltinRestrictionValidator.h"
+
 
 /**
  * Adds persistence functions to variables that are declared with a persistence keyword.
  * Is assigned value to a declaration statement is not constant, split the declaration into a declaration and an assignment statement.
- * CAREFUL: This visitor will mess up the declaration pointers of the references.
+ * CAREFUL: This visitor will mess up the declaration pointers of the references. ??? I do not think that is true anymore..
  * Does the following ksp vanilla specific syntax transformations and checks:
+ * - Checks for issue #59 if a local array was used in load/save array function and throws an error if so
  * - Adds persistence functions to variables that are declared with a persistence keyword.
  * - Splits declaration and assignment statements if the assignment is not constant.
  * - Checks if the maximum number of UI controls is exceeded.
@@ -41,7 +44,7 @@ class ASTKSPSyntaxCheck final : public ASTVisitor {
 		}
 	}
 
-	void check_max_ui_controls(NodeUIControl& node) {
+	void check_max_ui_controls(const NodeUIControl& node) {
 		if(m_ui_control_count[node.ui_control_type] > MAX_UI_CONTROLS) {
 			auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, node);
 			error.m_message = "Maximum number of UI controls exceeded for <"+node.ui_control_type+">. Counted "+std::to_string(m_ui_control_count[node.ui_control_type])+" controls.";
@@ -74,7 +77,7 @@ public:
 		node.variable->accept(*this);
 		if (TypeRegistry::get_identifier_from_type(node.variable->ty) == ' ') {
 			auto error = ASTVisitor::get_raw_compile_error(ErrorType::InternalError, node);
-			error.m_message = "Type identifier for variable '" + node.variable->name + "' is empty. This should not happen.";
+			error.set_message("Type identifier for variable '" + node.variable->name + "' is empty. This should not happen.");
 			error.exit();
 		}
 		if(node.value) node.value->accept(*this);
@@ -85,9 +88,35 @@ public:
 		return new_node->accept(persistency);
 	}
 
+	NodeAST* visit(NodeFunctionCall& node) override {
+		if (node.function->get_num_args() > 0 and node.function->get_arg(0)->ty->get_type_kind() == TypeKind::Composite and
+				BuiltinRestrictionValidator::is_load_save_function(node.function->name)) {
+			// check if we have a load/save array function -> check if first param is local array
+			// -> issue error since those function can only be used with global arrays
+			const auto arr_ref = node.function->get_arg(0)->is_reference();
+			if (!arr_ref) {
+				auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, node);
+				error.set_message("First argument of load/save functions must be an array reference.");
+				error.exit();
+			}
+			auto decl = arr_ref->get_declaration();
+			if (!decl) {
+				auto error = DefinitionProvider::internal_missing_declaration_error(*arr_ref);
+				error.exit();
+			}
+			if (decl->renamed) {
+				auto error = CompileError(ErrorType::SyntaxError, "", "", arr_ref->tok);
+				error.set_message("<load/save_array> functions can only be used with global arrays. Place the array declaration"
+						 " into the global scope or add the <global> keyword when declaring.");
+				error.exit();
+			}
+		}
+		return ASTVisitor::visit(node);
+	}
+
 	NodeAST* visit(NodeWildcard& node) override {
 		auto error = ASTVisitor::get_raw_compile_error(ErrorType::InternalError, node);
-		error.m_message = "<wildcard> node should not exist anymore in AST.";
+		error.set_message("<wildcard> node should not exist anymore in AST.");
 		error.exit();
 		return &node;
 	}

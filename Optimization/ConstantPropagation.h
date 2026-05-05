@@ -8,26 +8,31 @@
 
 class ConstantPropagation final : public ASTVisitor {
 	std::unordered_map<std::string, std::unique_ptr<NodeAST>> m_constants;
+	std::mutex m_constants_mutex;
 public:
+	// this seems to cause segfault errors under certain circumstances... -> switched back to one thread
+	// segfault maybe originates from NodeReference destructor that accesses reference set of connected
+	// NodeDataStructure
+	NodeAST *do_parallel_traversal(NodeProgram &node) {
+		m_program = &node;
+		m_constants.clear();
+		m_program->global_declarations->accept(*this);
+		m_program->init_callback->accept(*this);
+		parallel_for_each(node.callbacks.begin(), node.callbacks.end(),
+			[this](const auto & callback) {
+          		if (callback.get() == m_program->init_callback) return;
+				callback->accept(*this);
+			}
+		);
+		parallel_for_each(node.function_definitions.begin(), node.function_definitions.end(),
+			[this](const auto & func) {
+				func->accept(*this);
+			}
+		);
 
-	// NodeAST* visit(NodeProgram& node) override {
-	// 	m_program = &node;
-	// 	m_program->global_declarations->accept(*this);
-	// 	for(const auto & callback : node.callbacks) {
-	// 		callback->accept(*this);
-	// 	}
-	// 	node.reset_function_visited_flag();
-	// 	return &node;
-	// }
-	//
-	// NodeAST* visit(NodeFunctionCall& node) override {
-	// 	node.function->accept(*this);
-	// 	if (const auto definition = node.get_definition()) {
-	// 		if (!definition->visited) definition->accept(*this);
-	// 		definition->visited = true;
-	// 	}
-	// 	return &node;
-	// }
+		node.reset_function_visited_flag();
+		return &node;
+	}
 
 	NodeAST* visit(NodeSingleDeclaration& node) override {
 		node.variable->accept(*this);
@@ -35,8 +40,11 @@ public:
 			node.value->accept(*this);
 			// when declared as const -> replace with dead code node
 			if(node.variable->data_type == DataType::Const and node.variable->get_node_type() == NodeType::Variable) {
-				m_constants[node.variable->name] = std::move(node.value);
-				return node.remove_node();
+				{
+					// std::lock_guard<std::mutex> lock(m_constants_mutex);
+					m_constants[node.variable->name] = std::move(node.value);
+					return node.remove_node();
+				}
 			}
 		}
 		return &node;
@@ -69,7 +77,10 @@ public:
 		if (!m_constants.empty()) {
 			if (auto substitute = get_constant(node->name)) {
 				if (substitute->ty->is_compatible(node->ty)) {
-					return node->replace_with(std::move(substitute));
+					{
+						// std::lock_guard<std::mutex> lock(m_constants_mutex);
+						return node->replace_with(std::move(substitute));
+					}
 				}
 			}
 		}
@@ -81,7 +92,7 @@ private:
 		auto it = m_constants.find(name);
 		if(it != m_constants.end()) {
 			auto constant = it->second->clone();
-			constant->update_parents(nullptr);
+			// constant->update_parents(nullptr);
 			return constant;
 		}
 		return nullptr;
