@@ -41,6 +41,11 @@ namespace BrowserFont
 end namespace
 
 
+function update_keyrange_disp()
+	declare const NUM_KEES := 128
+	declare SLOT_KEY_COLOR[NUM_KEES]
+end function
+
 on init
 	declare stringggg: string := "sdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfja sdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasldkfja sldkfja sldkfja sldkfj asldkfj alsdkfj alskfj "
 
@@ -50,7 +55,7 @@ on init
 end on
 
 on persistence_changed
-	
+	update_keyrange_disp()
 	// if (dodododo(array))
 	// 	message("df")
 	// end if		

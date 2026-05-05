@@ -1,4 +1,4 @@
-{ Compiled with cksp version 0.0.9-alpha.2 on Mon May 04 17:03:02 2026 }
+{ Compiled with cksp version 0.0.9-alpha.2 on Tue May 05 22:54:38 2026 }
 on init
   declare $RETURN_FLAG00
   declare $i0
@@ -9,6 +9,7 @@ on init
     inc($_iter0)
   end while
   declare $_ret00
+  declare %SLOT_KEY_COLOR00[128]
   declare %array[25]
   $RETURN_FLAG00 := 3
   message("getting it!!!!!")
@@ -17,6 +18,11 @@ on init
   message($_ret00)
 end on
 on persistence_changed
+  $_iter0 := 0
+  while($_iter0 <= (num_elements(%SLOT_KEY_COLOR00) - 1)) 
+    %SLOT_KEY_COLOR00[$_iter0] := 0
+    inc($_iter0)
+  end while
   $RETURN_FLAG00 := 0
   while($RETURN_FLAG00 = 0) 
     load_array(%array, 2)
