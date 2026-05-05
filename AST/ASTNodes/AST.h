@@ -7,6 +7,7 @@
 #include <utility>
 #include <vector>
 #include <optional>
+#include <mutex>
 
 #include "ASTHelper.h"
 #include "../Types/Types.h"
@@ -249,9 +250,11 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 	bool is_thread_safe = true; // gets set to false, if dimension inflation needs to be used because of unsafe declaration environment
 	bool is_restricted = false;
 	int num_reuses = 0;
+	bool renamed = false; // tagged when variable got renamed during VariableReuse
 	DataType data_type = DataType::Mutable;
 	std::string name;
 	std::unordered_set<NodeReference*> references;
+	mutable std::mutex references_mutex;
 	NodeDataStructure(std::string name, Type* ty, const Token& tok, const NodeType node_type, const DataType data_type) : NodeAST(tok, node_type), data_type(data_type), name(std::move(name)) {
         this->ty = ty;
     }
@@ -303,10 +306,21 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 		return !weak_from_this().expired();
 	}
 	void add_reference(NodeReference* ref) {
+		std::lock_guard<std::mutex> lock(references_mutex);
 		references.insert(ref);
 	}
 	void remove_reference(NodeReference* ref) {
+		std::lock_guard<std::mutex> lock(references_mutex);
 		references.erase(ref);
+	}
+	void add_references(const std::unordered_set<NodeReference*>& refs) {
+		std::lock_guard<std::mutex> lock(references_mutex);
+		references.insert(refs.begin(), refs.end());
+	}
+	void replace_reference(NodeReference* old_ref, NodeReference* new_ref) {
+		std::lock_guard<std::mutex> lock(references_mutex);
+		references.erase(old_ref);
+		references.insert(new_ref);
 	}
 	void clear_references();
 	void to_global() {
@@ -453,6 +467,8 @@ struct NodeString final : NodeAST {
     	return true;
     }
 
+	/// issue #101: strings in Kontakt can have a maximum of 320 characters
+	bool check_string_length() const;
 };
 
 struct NodeFormatString final : NodeAST {
@@ -885,8 +901,10 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	/// local array. This has implications on function strategy -> will not be promoted and has to be preemptively
 	/// inlined. Later on in PostLoweringNumElements the substituted size has to be inserted directly
 	bool has_local_dynamic_arrays = false;
+	/// tagged when the function has one or more calls to builtin exit function -> not used yet butpossibly tricky
+	/// for inlining behavior because then exit will prematurely leave the callback
+	bool has_exit_command = false;
     bool is_used = false;
-    bool is_compiled = false;
 	bool visited = false;
 	int num_return_params = 0;
 	int num_return_stmts = 0;
@@ -924,6 +942,7 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	std::vector<std::shared_ptr<NodeDataStructure>> do_variable_reuse(NodeProgram *program);
 	void do_return_param_promotion(NodeProgram* program);
 	bool do_return_path_validation();
+	void sanitize_exit_commands();
 	void mark_threadsafety(NodeProgram *program);
 };
 
@@ -966,6 +985,8 @@ struct NodeProgram final : NodeAST {
 	/// update function lookup table
 	void update_function_lookup();
 	NodeFunctionDefinition *add_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def);
+	// adds a function definition or replaces one if the new def is marked override -> throws error if not and fun signature already exists
+	void add_function_or_override(const std::shared_ptr<NodeFunctionDefinition> &def);
 	void remove_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def);
 	static NodeFunctionDefinition *replace_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def, const std::shared_ptr<NodeFunctionDefinition> &replacement);
 	void update_struct_lookup();
@@ -987,9 +1008,9 @@ struct NodeProgram final : NodeAST {
 	std::shared_ptr<NodeVariable> add_global_iterator();
 	std::shared_ptr<NodeVariable> get_global_iterator(size_t idx = 0);
 	void inline_global_variables();
-	void inline_structs();
+	void inline_structs_and_constants();
 	void reset_function_visited_flag();
-	void reset_function_used_flag();
+	void reset_function_used_flag() const;
 	bool is_init_callback(const NodeCallback* curr_callback) const {
 		return curr_callback == init_callback;
 	}
@@ -999,4 +1020,3 @@ struct NodeProgram final : NodeAST {
 	std::shared_ptr<NodeVariable> get_tmp_var(Type* ty, DataType data=DataType::Mutable, const Token& token = Token()) const;
 	std::shared_ptr<NodePointer> get_tmp_ptr(Type* ty, DataType data=DataType::Mutable, const Token& token = Token()) const;
 };
-

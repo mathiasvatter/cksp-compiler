@@ -8,7 +8,6 @@
 
 ///
 class LoweringFunctionCall final : public ASTLowering {
-private:
 public:
 	explicit LoweringFunctionCall(NodeProgram *program) : ASTLowering(program) {}
 
@@ -42,10 +41,8 @@ public:
 					node.collect_references();
 					node.definition = m_program->def_provider->get_boolean_function(node.function->name, 1);
 				}
-			}
-
+			} else if (node.function->get_num_args() == 0 and node.function->name == "exit") {
         	// check if we are in a user function, then replace exit function call with return stmt
-        	if (node.function->get_num_args() == 0 and node.function->name == "exit") {
         		if (!m_program->function_call_stack.empty()) {
         			const auto& current_func = m_program->function_call_stack.top();
         			if (auto func = current_func.lock()) {

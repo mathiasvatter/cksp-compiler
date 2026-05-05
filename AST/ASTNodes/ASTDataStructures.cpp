@@ -405,6 +405,34 @@ ASTLowering* NodeStruct::get_lowering(NodeProgram *program) const {
 	return &lowering;
 }
 
+void NodeStruct::add_method_or_override(const std::shared_ptr<NodeFunctionDefinition> &method) {
+	if (auto exists = get_method({method->header->name, (int)method->get_num_params()})) {
+		// was already declared, see if it overrides
+		if (method->override) {
+			if (exists->override and method->override) {
+				auto error = CompileError(ErrorType::SyntaxError,"", "", method->header->tok);
+				error.set_message( "Found duplicate method definition with the same name and parameter count at position "+exists->tok.get_position()+".\nBoth have been marked"
+					" as <override>. The compiler will use the last encountered definition that has been marked as <override>.\n"
+					"Consider removing the <override> keyword from one of the definitions.");
+				error.print();
+			}
+			NodeProgram::replace_function_definition(exists, method);
+		} else if (exists->override and !method->override) {
+			// function in map is already override and encountered function is not
+			// pass
+		} else {
+			auto error = CompileError(ErrorType::SyntaxError,"", "", method->header->tok);
+			error.set_message( "A method with this name and parameter count already exists in this <struct> at position "+exists->tok.get_position()+". \n"
+				"To override it, use the <override> keyword. \n"
+				"To overload it, use <Union> types instead to define method templates accepting multiple types.");
+			error.exit();
+		}
+	} else {
+		// add new method
+		add_method(method);
+	}
+}
+
 std::unique_ptr<NodeBlock> NodeStruct::declare_struct_constants() {
 	auto node_block = std::make_unique<NodeBlock>(Token());
 	auto node_max_structs = std::make_unique<NodeVariable>(std::nullopt, "MAX::STRUCTS", TypeRegistry::Integer, Token(), DataType::Const);
@@ -515,7 +543,8 @@ void NodeStruct::inline_struct(NodeProgram *program) {
 	auto self = this->node_self->parent->cast<NodeSingleDeclaration>();
 	self->remove_node();
 	node_self.reset();
-	program->init_callback->statements->prepend_body(std::move(members));
+	program->global_declarations->append_body(std::move(members));
+	// program->init_callback->statements->prepend_body(std::move(members));
 	members = std::make_unique<NodeBlock>(Token());
 	set_child_parents();
 }

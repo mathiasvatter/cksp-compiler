@@ -29,6 +29,8 @@ public:
     static char get_identifier_from_type(Type* ty);
     /// returns the neutral element from the type (Integer -> 0, Real -> 0.0, ...)
     static std::unique_ptr<struct NodeAST> get_neutral_element_from_type(const Type* ty);
+	/// returns true if for the given Type ty the node 'value' is its neutral value
+	static bool is_type_neutral_element(const Type* ty, const std::unique_ptr<NodeAST>& value);
     /// adds a new object type to the registry, if object type already exists, the existing type is returned
     static ObjectType* add_object_type(const std::string& name);
     /// returns the object type from the name, if no object type with the name exists, nullptr is returned

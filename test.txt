@@ -1,4 +1,45 @@
-{ Compiled with cksp version 0.0.9-alpha.1 on Sun Apr 12 23:05:12 2026 }
+{ Compiled with cksp version 0.0.9-alpha.2 on Tue May 05 22:54:38 2026 }
 on init
+  declare $RETURN_FLAG00
+  declare $i0
+  declare $_iter0
+  declare %BrowserFont__types[6] := ($CONTROL_PAR_FONT_TYPE, $CONTROL_PAR_FONT_TYPE_ON, $CONTROL_PAR_FONT_TYPE_OFF_PRESSED, $CONTROL_PAR_FONT_TYPE_ON_PRESSED, $CONTROL_PAR_FONT_TYPE_OFF_HOVER, $CONTROL_PAR_FONT_TYPE_ON_HOVER)
+  $_iter0 := 0
+  while($_iter0 <= (num_elements(%BrowserFont__types) - 1)) 
+    inc($_iter0)
+  end while
+  declare $_ret00
+  declare %SLOT_KEY_COLOR00[128]
+  declare %array[25]
+  $RETURN_FLAG00 := 3
+  message("getting it!!!!!")
+  $i0 := %BrowserFont__types[$RETURN_FLAG00]
+  $_ret00 := $i0
+  message($_ret00)
+end on
+on persistence_changed
+  $_iter0 := 0
+  while($_iter0 <= (num_elements(%SLOT_KEY_COLOR00) - 1)) 
+    %SLOT_KEY_COLOR00[$_iter0] := 0
+    inc($_iter0)
+  end while
+  $RETURN_FLAG00 := 0
+  while($RETURN_FLAG00 = 0) 
+    load_array(%array, 2)
+    $i0 := 0
+    while(($i0 < 340) and ($RETURN_FLAG00 = 0)) 
+      message($i0)
+      if($i0 = 4)
+        $RETURN_FLAG00 := 1
+        continue
+      end if
+      inc($i0)
+    end while
+    if($RETURN_FLAG00 = 1)
+      continue
+    end if
+    $RETURN_FLAG00 := 1
+    continue
+  end while
 end on
 

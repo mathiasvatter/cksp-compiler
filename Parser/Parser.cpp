@@ -1046,8 +1046,14 @@ Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) 
 		}
 		stmt = std::move(delete_stmt.unwrap());
     } else {
-        return Result<std::unique_ptr<NodeStatement>>(CompileError(ErrorType::SyntaxError,
-         "Found invalid Statement Syntax.", "Statement",peek()));
+    	auto error = CompileError(ErrorType::SyntaxError,
+		 "Found invalid Statement Syntax.", "<statement>",peek());
+    	if (peek().type == token::NAMESPACE) {
+    		error.add_message("A <namespace> can only be declared in the global scope or nested in other namespaces.");
+    	} else if (peek().type == token::FUNCTION) {
+    		error.add_message("A <function> definition is not allowed here. Functions can only be declared in the global scope, inside namespaces or structs.");
+    	}
+        return Result<std::unique_ptr<NodeStatement>>(error);
     }
     if (peek().type != token::LINEBRK) {
         return Result<std::unique_ptr<NodeStatement>>(CompileError(ErrorType::SyntaxError,
@@ -1193,29 +1199,7 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 			if (function.is_error())
 				return Result<std::unique_ptr<NodeProgram>>(function.get_error());
 			auto node_function = std::move(function.unwrap());
-        	if (auto func = node_program->look_up_exact({node_function->header->name, (int)node_function->header->params.size()}, node_function->header->ty)) {
-        		// was already declared, see if it overrides
-        		if (node_function->override) {
-        			NodeProgram::replace_function_definition(func, node_function);
-        		} else if (func->override and !node_function->override) {
-        			// function in map is already override and encountered function is not
-        			// pass
-        		} else if (func->override and node_function->override) {
-        			auto error = CompileError(ErrorType::SyntaxError,"", "", node_function->header->tok);
-        			error.set_message( "Found duplicate function definition with the same name and parameter count. Both have been marked"
-							 "as <override>. The compiler will use the last encountered definition that has been marked as <override>.\n"
-        					 "Consider removing the <override> keyword from one of the definitions.");
-        			error.print();
-        		} else {
-        			auto error = CompileError(ErrorType::SyntaxError,"", "", node_function->header->tok);
-        			error.set_message( "A function with this name and parameter count already exists. \n"
-							 "To override it, use the <override> keyword. \n"
-							 "To overload it, use <Union> types instead to define function templates accepting multiple types.");
-        			return Result<std::unique_ptr<NodeProgram>>(error);
-        		}
-        	} else {
-        		node_program->add_function_definition(node_function);
-        	}
+        	node_program->add_function_or_override(node_function);
 		} else if(peek().type == token::STRUCT) {
 			auto struct_def = parse_struct(node_program.get());
 			if(struct_def.is_error())
@@ -2327,7 +2311,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_family_statement(NodeAST* parent)
 
 Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 	auto start_token = consume(); //consume struct
-	token end_construct = token::END_STRUCT;
+	auto end_construct = token::END_STRUCT;
 	if(peek().type != token::KEYWORD) {
 		return Result<std::unique_ptr<NodeStruct>>(CompileError(ErrorType::SyntaxError,
 															 "Found unknown <struct> syntax.", "valid <struct> name", peek()));
@@ -2336,8 +2320,16 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 	auto l = consume_linebreak("<struct>");
 	if(l.is_error())
 		return Result<std::unique_ptr<NodeStruct>>(l.get_error());
-	auto node_member_block = std::make_unique<NodeBlock>(start_token);
-	std::vector<std::shared_ptr<NodeFunctionDefinition>> node_methods;
+
+	auto node_struct = std::make_unique<NodeStruct>(
+		name.val,
+		std::make_unique<NodeBlock>(start_token),
+		std::vector<std::shared_ptr<NodeFunctionDefinition>>(),
+		name
+	);
+
+	auto& node_member_block = node_struct->members;
+
 	while(peek().type != end_construct) {
 		_skip_linebreaks();
 		if(peek().type == end_construct) break;
@@ -2356,11 +2348,12 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 			}
 			node_member_block->add_stmt(std::make_unique<NodeStatement>(std::move(declare_stmt.unwrap()), start_token));
 		} else if (peek().type == token::FUNCTION) {
-			auto func = parse_function_definition(node_member_block.get());
+			auto func = parse_function_definition(node_struct.get());
 			if(func.is_error()) {
 				return Result<std::unique_ptr<NodeStruct>>(func.get_error());
 			}
-			node_methods.push_back(std::move(func.unwrap()));
+			auto method = std::move(func.unwrap());
+			node_struct->add_method_or_override(std::move(method));
 		} else {
 			return Result<std::unique_ptr<NodeStruct>>(CompileError(ErrorType::SyntaxError,
 							 "Found unknown <struct> syntax.", "valid <struct> member or method", peek()));
@@ -2368,14 +2361,10 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 		_skip_linebreaks();
 	}
 	auto end_token = consume(); // consume end struct
-	auto node_struct = std::make_unique<NodeStruct>(
-		name.val,
-		std::move(node_member_block),
-		std::move(node_methods),
-		name);
+
 	node_struct->set_range(start_token, end_token);
 	node_struct -> parent = parent;
-	node_struct->rebuild_method_table();
+	// node_struct->rebuild_method_table();
 	node_struct->rebuild_lookup_sets();
 	return Result<std::unique_ptr<NodeStruct>>(std::move(node_struct));
 }

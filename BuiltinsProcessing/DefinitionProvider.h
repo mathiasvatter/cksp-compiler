@@ -369,7 +369,7 @@ public:
 				name,
 				std::make_unique<NodeParamList>(
 					Token(),
-					std::forward<Args>(std::move(args))... // Pack expansion hier
+					std::forward<Args>(args)... // Pack expansion hier
 				),
 				Token()
 			),

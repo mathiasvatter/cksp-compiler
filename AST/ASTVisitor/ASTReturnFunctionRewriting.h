@@ -25,7 +25,7 @@ public:
 		if (!m_is_expression_chain) return &node;
 
 		node.function->accept(*this);
-		auto definition = node.get_definition();
+		const auto definition = node.get_definition();
 		if (!definition) {
 			m_is_expression_chain = false;
 			return &node;
@@ -43,7 +43,7 @@ public:
 
 class ASTReturnFunctionRewriting final : public ASTVisitor {
 	DefinitionProvider *m_def_provider;
-	NodeAST* m_just_hoisted = nullptr;
+	// NodeAST* m_just_hoisted = nullptr;
 public:
 	explicit ASTReturnFunctionRewriting(NodeProgram *main) : m_def_provider(main->def_provider) {
 		m_program = main;

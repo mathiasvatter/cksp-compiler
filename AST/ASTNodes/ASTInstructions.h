@@ -663,6 +663,11 @@ struct NodeSingleDeclaration final : NodeInstruction {
 			error.exit();
 		}
 	}
+	/// optimization pass: checks if r_value is type neutral assignment and removes it since Kontakt always initializes
+	/// its variables upon declaration. Important: will not do this if variable is const
+	/// pre: declare i: int := 0
+	/// post: declare i : int
+	void remove_type_neutral_assignment();
 };
 
 struct NodeFunctionParam final : NodeInstruction {
@@ -1331,9 +1336,9 @@ struct NodeNamespace final : NodeInstruction {
 	std::unique_ptr<NodeBlock> members;
 	std::vector<std::shared_ptr<NodeFunctionDefinition>> function_definitions{};
 
-	explicit NodeNamespace(Token tok) : NodeInstruction(NodeType::Namespace, std::move(tok)) {}
+	explicit NodeNamespace(const Token& tok) : NodeInstruction(NodeType::Namespace, tok) {}
 	NodeNamespace(std::string prefix, std::unique_ptr<NodeBlock> members, std::vector<std::shared_ptr<NodeFunctionDefinition>> funcs, Token tok)
-			: NodeInstruction(NodeType::Namespace, std::move(tok)), prefix(std::move(prefix)), members(std::move(members)),
+			: NodeInstruction(NodeType::Namespace, tok), prefix(std::move(prefix)), members(std::move(members)),
 			function_definitions(std::move(funcs)) {
 		NodeNamespace::set_child_parents();
 	}

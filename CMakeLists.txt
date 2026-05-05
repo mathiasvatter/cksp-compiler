@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 project(CKSP_Compiler VERSION 0.0.9)
-set(PRE_RELEASE_VERSION "-alpha.1")
+set(PRE_RELEASE_VERSION "-alpha.2")
 
 set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
 configure_file(
@@ -242,6 +242,8 @@ add_executable(cksp main.cpp
         Preprocessor/PreAST/PreASTConditions.h
         Optimization/VariableCollector.h
         Lowering/LoweringNDArray.h
+        Optimization/ScalarVarToArray.h
+        AST/ASTVisitor/FunctionHandling/FunctionExitCheck.h
 )
 add_dependencies(cksp generate_headers)
 

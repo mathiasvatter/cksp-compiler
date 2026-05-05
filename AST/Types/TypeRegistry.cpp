@@ -123,6 +123,31 @@ std::unique_ptr<NodeAST> TypeRegistry::get_neutral_element_from_type(const Type*
 	return nullptr;
 }
 
+bool TypeRegistry::is_type_neutral_element(const Type *ty, const std::unique_ptr<NodeAST> &value) {
+	if (ty == Integer) {
+		const auto node_int = value->cast<NodeInt>();
+		return node_int and node_int->value == 0;
+	} else if (ty == Real) {
+		const auto node_real = value->cast<NodeReal>();
+		return node_real and node_real->value == 0.0;
+	} else if (ty == String) {
+		const auto node_string = value->cast<NodeString>();
+		return node_string and node_string->value == "\"\"";
+	} else if (ty == Boolean) {
+		const auto node_bool = value->cast<NodeBoolean>();
+		return node_bool and node_bool->value == false;
+	} else if (ty->get_type_kind() == TypeKind::Object) {
+		return value->cast<NodeNil>() != nullptr;
+	} else if (ty->cast<CompositeType>()) {
+		if (const auto init_list = value->cast<NodeInitializerList>()) {
+			if (init_list->size() != 1) {
+				return false;
+			}
+			return is_type_neutral_element(ty->get_element_type(), init_list->elements[0]);
+		}
+	}
+	return false;
+}
 
 ObjectType *TypeRegistry::add_object_type(const std::string &name) {
     if(auto obj_ty = get_object_type(name)) {

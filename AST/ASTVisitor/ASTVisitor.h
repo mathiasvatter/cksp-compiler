@@ -18,12 +18,6 @@ class ASTVisitor {
 protected:
 	NodeProgram* m_program = nullptr;
 
-	/// map value will be reset after ref is in one of these functions, because they have side-effects and
-	/// alter the value (variable) put in
-	inline static const std::unordered_set<std::string> destructive_functions = {
-		"inc", "dec",
-	};
-
 public:
 	virtual ~ASTVisitor() = default;
 	static CompileError get_raw_compile_error(ErrorType err_type, const NodeAST& node);
@@ -41,8 +35,9 @@ public:
 		// iter->is_engine = true;
 		return iter;
 	}
+	static std::unique_ptr<NodeFunctionCall> get_cksp_kontakt_warning(const std::string& msg, Token tok = Token());
 
-//	explicit ASTVisitor(NodeProgram* program) : m_program(program) {}
+	//	explicit ASTVisitor(NodeProgram* program) : m_program(program) {}
 
     virtual NodeAST* visit(NodeDeadCode& node) {return &node;}
 	virtual NodeAST* visit(NodeWildcard& node) {
@@ -71,6 +66,9 @@ public:
 		return &node;
 	}
 	virtual NodeAST* visit(NodeVariableRef& node) {
+		if (node.parent->cast<NodeSingleDeclaration>()) {
+
+		}
 		return &node;
 	}
 	virtual NodeAST* visit(NodePointerRef& node) {

@@ -64,8 +64,6 @@ public:
 	NodeAST * visit(NodeVariableRef& node) override;
 	/// move node block of const out of const construct
 	NodeAST * visit(NodeConst& node) override;
-	NodeAST * visit(NodeNamespace& node) override;
-//    void visit(NodeFamily& node) override;
 	/// transform break stmts
 	NodeAST * visit(NodeWhile& node) override;
 	NodeAST * visit(NodeIf& node) override;
