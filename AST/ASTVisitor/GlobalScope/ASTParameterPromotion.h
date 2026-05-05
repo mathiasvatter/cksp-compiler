@@ -92,6 +92,8 @@ private:
 
 				// promote if no composite type
 				for (auto &var : func_local_vars) {
+					if (var->data_type == DataType::Const) continue; // ignore const vars, they got already promoted to global
+					// declarations by variable reuse
 					const auto declaration = var->parent->cast<NodeSingleDeclaration>();
 					if (!declaration) {
 						auto error = CompileError(ErrorType::InternalError, "Variable not in declaration.", "", var->tok);
