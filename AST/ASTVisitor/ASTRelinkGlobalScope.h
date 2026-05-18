@@ -44,6 +44,7 @@ public:
 		);
 
 		relink_global_scope();
+		m_program->collect_references(); // collect all references again
 		resolve_case_collisions();
 
 		return &node;
