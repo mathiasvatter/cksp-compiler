@@ -95,6 +95,9 @@ public:
 		node.name = add_struct_prefix(node.name);
 		m_structs.push(&node);
 
+		node.ty = TypeRegistry::add_object_type(node.name);
+		node.node_self->ty = node.ty;
+
 		////// check for existing init and repr methods -> generate if not present
 		bool has_init_method = false;
 		bool has_repr_method = false;

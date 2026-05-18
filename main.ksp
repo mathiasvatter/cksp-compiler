@@ -3,6 +3,14 @@
 #pragma max_callback_depth(420)
 
 // #pragma optimize("none")
+namespace bb
+	struct Point
+		x: int, y: int
+	end struct
+end namespace
+
+declare p := new bb.Point(1,2)
+
 struct Note
 	pitch: int
 	velo: int
