@@ -17,10 +17,10 @@ NodeAST* ASTDesugar::visit(NodeProgram& node) {
 
 	// first desugar namespaces to assign correct prefixes
 	static DesugarNamespace ns_desugar(m_program);
-	visit_all(node.namespaces, ns_desugar);
+	// visit_all(node.namespaces, ns_desugar);
 	// move all namespaces into global declarations block
 	for (auto & ns : node.namespaces) {
-		m_program->global_declarations->add_as_stmt(std::move(ns));
+		ns->accept(ns_desugar);
 	}
 	node.namespaces.clear();
 
