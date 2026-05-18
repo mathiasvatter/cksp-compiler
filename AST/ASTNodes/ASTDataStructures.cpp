@@ -538,6 +538,11 @@ void NodeStruct::inline_struct(NodeProgram *program) {
 	}
 	methods.clear();
 	constructor.reset();
+	auto &struct_definitions = program->struct_definitions;
+	struct_definitions.erase(
+		std::remove(struct_definitions.begin(), struct_definitions.end(), this),
+		struct_definitions.end()
+	);
 //	program->update_function_lookup();
 	// remove self node
 	auto self = this->node_self->parent->cast<NodeSingleDeclaration>();
