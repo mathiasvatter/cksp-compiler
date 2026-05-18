@@ -1218,7 +1218,9 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 			if (namespace_def.is_error()) {
 				return Result<std::unique_ptr<NodeProgram>>(namespace_def.get_error());
 			}
-			node_program->namespaces.push_back(std::move(namespace_def.unwrap()));
+			// node_program->namespaces.push_back(std::move(namespace_def.unwrap()));
+			auto stmt = node_program->global_declarations->add_as_stmt(std::move(namespace_def.unwrap()));
+			node_program->namespaces.push_back(stmt->statement->cast<NodeNamespace>());
 		} else if (peek().type == token::DECLARE) {
 			auto declare_stmt = parse_declare_statement(node_program->global_declarations.get());
 			if (declare_stmt.is_error()) {

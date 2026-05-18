@@ -45,7 +45,7 @@ public:
 	NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
-		visit_all(node.namespaces, *this);
+		// visit_all(node.namespaces, *this);
 		m_program->init_callback->accept(*this);
 		// visit_all(node.struct_definitions, *this);
 		for(const auto & callback : node.callbacks) {

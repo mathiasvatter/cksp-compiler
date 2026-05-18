@@ -328,7 +328,7 @@ public:
     virtual NodeAST* visit(NodeProgram& node) {
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
-		visit_all(node.namespaces, *this);
+		// visit_all(node.namespaces, *this);
 		// visit_all(node.struct_definitions, *this);
 		visit_all(node.callbacks, *this);
 		visit_all(node.function_definitions, *this);

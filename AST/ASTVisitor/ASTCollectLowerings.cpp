@@ -15,10 +15,10 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	m_program->function_call_stack = {};
 
 	// move all namespaces into global declarations block before inlining them in visitor
-	for (auto& ns : node.namespaces) {
-		m_program->global_declarations->add_as_stmt(std::move(ns));
-	}
-	node.namespaces.clear();
+	// for (auto& ns : node.namespaces) {
+	// 	m_program->global_declarations->add_as_stmt(std::move(ns));
+	// }
+	// node.namespaces.clear();
 
 	for(const auto & struct_def : node.struct_definitions) {
 		static PreLoweringStruct pre_lowering_struct(m_program);
