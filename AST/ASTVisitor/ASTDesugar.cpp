@@ -38,7 +38,7 @@ NodeAST* ASTDesugar::visit(NodeProgram& node) {
 	// update because function parameters might have been added which might cause problems in typechecking
 //	m_program->update_function_lookup();
 //	m_program->global_declarations->append_body(declare_compiler_variables());
-	m_program->global_declarations->append_body(std::move(m_global_variable_declarations));
+	m_program->global_declarations->prepend_body(std::move(m_global_variable_declarations));
 	return &node;
 }
 

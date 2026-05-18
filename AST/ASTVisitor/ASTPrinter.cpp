@@ -632,10 +632,10 @@ NodeAST * ASTPrinter::visit(NodeProgram &node) {
 		s->accept(*this);
 		os << std::endl;
 	}
-	for(auto& s : node.struct_definitions) {
-		s->accept(*this);
-		os << std::endl;
-	}
+	// for(auto& s : node.struct_definitions) {
+	// 	s->accept(*this);
+	// 	os << std::endl;
+	// }
     for(auto& callback: node.callbacks) {
         callback->accept(*this);
 		os << std::endl;

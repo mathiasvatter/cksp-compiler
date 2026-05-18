@@ -1,32 +1,145 @@
-{ Compiled with cksp version 0.0.9-alpha.2 on Mon May 04 17:44:55 2026 }
+{ Compiled with cksp version 0.0.9-alpha.2 on Mon May 18 14:42:32 2026 }
 on init
+  declare $_iter6
   declare $velo0
+  declare $self6
+  declare $num_refs1
+  declare $num_refs0
+  declare $current0
+  declare $ret1
+  declare $_iter10
   declare $RETURN_FLAG00
   declare $i0
-  declare $_iter0
   declare $Note____free_idx
-  declare %Note____allocation[1]
-  $i0 := 60
+  declare %Note____allocation[4]
+  $RETURN_FLAG00 := 60
   $velo0 := 127
-  $Note____free_idx := search(%Note____allocation, 0, $Note____free_idx, 0)
+  call Note______init__
+  declare $Chord____free_idx
+  declare %Chord____allocation[1]
+  declare %_Chord____notes[3] := (-1)
+  declare $_ret00
+  declare $_ret10
+  declare $_ret20
+  declare $current000
+  $RETURN_FLAG00 := 1
+  $velo0 := 1
+  $Note____free_idx := search(%Note____allocation, 0, $Note____free_idx, 3)
   if($Note____free_idx = -1)
     message("CKSP 0.0.9-alpha.2 Error: No more free space available to allocate objects of type 'Note'")
   end if
   %Note____allocation[$Note____free_idx] := 1
-  $RETURN_FLAG00 := $Note____free_idx
-  declare %BrowserFont__types[6] := ($CONTROL_PAR_FONT_TYPE, $CONTROL_PAR_FONT_TYPE_ON, $CONTROL_PAR_FONT_TYPE_OFF_PRESSED, $CONTROL_PAR_FONT_TYPE_ON_PRESSED, $CONTROL_PAR_FONT_TYPE_OFF_HOVER, $CONTROL_PAR_FONT_TYPE_ON_HOVER)
-  $_iter0 := 0
-  while($_iter0 <= (num_elements(%BrowserFont__types) - 1)) 
-    inc($_iter0)
-  end while
-  declare $_ret00
-  declare %array[25]
-  $RETURN_FLAG00 := 3
-  message("getting it!!!!!")
-  $i0 := %BrowserFont__types[$RETURN_FLAG00]
+  $i0 := $Note____free_idx
   $_ret00 := $i0
-  message($_ret00)
+  $RETURN_FLAG00 := 1
+  $velo0 := 1
+  $Note____free_idx := search(%Note____allocation, 0, $Note____free_idx, 3)
+  if($Note____free_idx = -1)
+    message("CKSP 0.0.9-alpha.2 Error: No more free space available to allocate objects of type 'Note'")
+  end if
+  %Note____allocation[$Note____free_idx] := 1
+  $i0 := $Note____free_idx
+  $_ret10 := $i0
+  $RETURN_FLAG00 := 1
+  $velo0 := 1
+  $Note____free_idx := search(%Note____allocation, 0, $Note____free_idx, 3)
+  if($Note____free_idx = -1)
+    message("CKSP 0.0.9-alpha.2 Error: No more free space available to allocate objects of type 'Note'")
+  end if
+  %Note____allocation[$Note____free_idx] := 1
+  $i0 := $Note____free_idx
+  $_ret20 := $i0
+  declare %notes[3]
+  %notes[0] := $_ret00
+  %notes[1] := $_ret10
+  %notes[2] := $_ret20
+  $self6 := %notes[0]
+  $num_refs1 := 1
+  if($self6 # -1)
+    %Note____allocation[$self6] := %Note____allocation[$self6] + $num_refs1
+  end if
+  $self6 := %notes[1]
+  $num_refs1 := 1
+  if($self6 # -1)
+    %Note____allocation[$self6] := %Note____allocation[$self6] + $num_refs1
+  end if
+  $self6 := %notes[2]
+  $num_refs1 := num_elements(%notes) - 2
+  if($self6 # -1)
+    %Note____allocation[$self6] := %Note____allocation[$self6] + $num_refs1
+  end if
+  $Chord____free_idx := search(%Chord____allocation, 0, $Chord____free_idx, 0)
+  if($Chord____free_idx = -1)
+    message("CKSP 0.0.9-alpha.2 Error: No more free space available to allocate objects of type 'Chord'")
+  end if
+  %Chord____allocation[$Chord____free_idx] := 1
+  $_iter10 := 0
+  while($_iter10 <= 2) 
+    $velo0 := %_Chord____notes[($Chord____free_idx * 3) + $_iter10]
+    $num_refs0 := 1
+    $current0 := $velo0
+    while($current0 # -1) 
+      %Note____allocation[$current0] := %Note____allocation[$current0] - $num_refs0
+      if(%Note____allocation[$current0] > 0)
+        $current0 := -1
+        continue
+      else
+        %Note____allocation[$current0] := 0
+      end if
+      $velo0 := $current0
+      $current0 := -1
+      $RETURN_FLAG00 := $velo0
+      $i0 := 0
+      if($RETURN_FLAG00 # -1)
+        $Note____free_idx := (($Note____free_idx + $RETURN_FLAG00) - abs($Note____free_idx - $RETURN_FLAG00)) / 2
+      end if
+    end while
+    inc($_iter10)
+  end while
+  $_iter6 := 0
+  while($_iter6 <= 2) 
+    %_Chord____notes[($Chord____free_idx * 3) + $_iter6] := %notes[$_iter6]
+    inc($_iter6)
+  end while
+  $_iter10 := 0
+  while($_iter10 <= 2) 
+    $self6 := %_Chord____notes[($Chord____free_idx * 3) + $_iter10]
+    $num_refs1 := 1
+    if($self6 # -1)
+      %Note____allocation[$self6] := %Note____allocation[$self6] + $num_refs1
+    end if
+    inc($_iter10)
+  end while
+  $ret1 := $Chord____free_idx
+  declare %array[25]
 end on
+function Note______init__
+  $Note____free_idx := search(%Note____allocation, 0, $Note____free_idx, 3)
+  if($Note____free_idx = -1)
+    message("CKSP 0.0.9-alpha.2 Error: No more free space available to allocate objects of type 'Note'")
+  end if
+  %Note____allocation[$Note____free_idx] := 1
+  $i0 := $Note____free_idx
+end function
+function Note______decr__
+  $current0 := $velo0
+  while($current0 # -1) 
+    %Note____allocation[$current0] := %Note____allocation[$current0] - $num_refs0
+    if(%Note____allocation[$current0] > 0)
+      $current0 := -1
+      continue
+    else
+      %Note____allocation[$current0] := 0
+    end if
+    $velo0 := $current0
+    $current0 := -1
+    $RETURN_FLAG00 := $velo0
+    $i0 := 0
+    if($RETURN_FLAG00 # -1)
+      $Note____free_idx := (($Note____free_idx + $RETURN_FLAG00) - abs($Note____free_idx - $RETURN_FLAG00)) / 2
+    end if
+  end while
+end function
 on persistence_changed
   $RETURN_FLAG00 := 0
   while($RETURN_FLAG00 = 0) 
@@ -45,6 +158,13 @@ on persistence_changed
     end if
     $RETURN_FLAG00 := 1
     continue
+  end while
+  $current000 := 0
+  while($current000 <= (num_elements(%notes) - 1)) 
+    $velo0 := %notes[$current000]
+    $num_refs0 := 1
+    call Note______decr__
+    inc($current000)
   end while
 end on
 
