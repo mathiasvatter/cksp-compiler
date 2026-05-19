@@ -325,7 +325,7 @@ public:
 
 		// inline here so inlined struct vars get their declaration for register reuse later on
 		// the struct constants are also declared
-		ast->inline_structs_and_constants();
+		// ast->inline_structs_and_constants();
 
 		m_timer.stop("Lowering");
 		std::cout << m_timer.print_timer("Lowering") << "\n";

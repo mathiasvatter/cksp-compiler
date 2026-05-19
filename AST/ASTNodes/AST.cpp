@@ -1267,12 +1267,12 @@ NodeAST *NodeProgram::accept(ASTVisitor &visitor) {
 }
 
 NodeProgram::NodeProgram(const NodeProgram& other) : NodeAST(other), init_callback(other.init_callback) {
-	namespaces = clone_vector(other.namespaces);
+	namespaces = other.namespaces;
     callbacks = clone_vector(other.callbacks);
     function_definitions = other.function_definitions;
 	additional_function_definitions = other.additional_function_definitions;
 	global_declarations = std::make_unique<NodeBlock>(*other.global_declarations);
-	struct_definitions = clone_vector<NodeStruct>(other.struct_definitions);
+	struct_definitions = other.struct_definitions;
 	function_lookup = other.function_lookup;
 	set_child_parents();
 }
@@ -1283,7 +1283,7 @@ std::unique_ptr<NodeAST> NodeProgram::clone() const {
 
 void NodeProgram::set_child_parents() {
 	global_declarations->parent = this;
-	for(const auto& s : struct_definitions) s->parent = this;
+	// for(const auto& s : struct_definitions) s->parent = this;
 	for(const auto& c : callbacks) c->parent = this;
 	for(const auto& f : function_definitions) f->parent = this;
 }
@@ -1291,7 +1291,7 @@ void NodeProgram::set_child_parents() {
 void NodeProgram::update_parents(NodeAST *new_parent) {
 	parent = new_parent;
 	global_declarations->update_parents(this);
-	for(const auto& s : struct_definitions) s->update_parents(this);
+	// for(const auto& s : struct_definitions) s->update_parents(this);
 	for(const auto & c : callbacks) c->update_parents(this);
 	for(const auto & f : function_definitions) f->update_parents(this);
 }
@@ -1419,7 +1419,7 @@ void NodeProgram::merge_function_definitions() {
 void NodeProgram::update_struct_lookup() {
 	struct_lookup.clear();
 	for(const auto & def : struct_definitions) {
-		struct_lookup.insert({def->name, def.get()});
+		struct_lookup.insert({def->name, def});
 	}
 }
 

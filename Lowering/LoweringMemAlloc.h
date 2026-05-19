@@ -38,7 +38,8 @@ public:
 			auto array_ref = static_cast<NodeCompositeRef*>(node.ptr.get());
 			auto new_block = std::make_unique<NodeBlock>(node.tok);
 			auto inner_block = array_ref->iterate_over(new_block, m_program);
-			inner_block->prepend_as_stmt(get_ref_count_function_call("__decr__", std::move(node.ptr), std::move(node.num)));
+			auto num = node.num ? std::move(node.num) : std::make_unique<NodeInt>(1, node.tok);
+			inner_block->prepend_as_stmt(get_ref_count_function_call("__decr__", std::move(node.ptr), std::move(num)));
 			return node.replace_with(std::move(new_block));
 		}
 
