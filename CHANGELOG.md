@@ -1,18 +1,22 @@
 # Changelog
 
-## [0.0.9-alpha.2] - 2026-05-05
+## [0.0.9-alpha.3] - 2026-05-20
+
+> Note: `namespaces` and `struct` definitions are now processed in the order they appear in the global scope. Any global variables used by them must be declared first. If your `struct` methods currently rely on variables declared inside `on init`, move those variable declarations to the global scope before the affected `struct` definition.
 
 ### Added
-- Added support for **overriding functions and methods** in namespaces and structs.
-- Added compiler warning for **`exit` commands used inside function definitions**, notifying that this will always only exit the called function. The compiler will suggest using `return` statements in functions.
-- Added compiler warning when **string literals exceed Kontakt’s 320-character string length limit** ([#101](https://github.com/mathiasvatter/cksp-compiler/issues/101)).
-- Added a **`Lexer lines processed` report** to stdout to make compiler processing output more transparent.
-- Added optional optimization pass to **reduce declaration statements** by transforming scalar variables into array references where possible.
-- Added parallelization of some optimization passes, speeding up compile times slightly.
+
+- Added support for **struct definitions nested inside namespaces**.
+- Added support for **namespaces as statements** in the global scope.
+
+### Changed
+
+- Updated **struct parsing and lowering** so structs are handled as global statements and inlined **in declaration order**.
+- Improved compiler handling for **namespaces and structs** across parsing and compiler passes.
 
 ### Fixed
-- Fixed [#104](https://github.com/mathiasvatter/cksp-compiler/issues/104), where using **local constants in function definitions** could incorrectly produce a compiler error.
-- Fixed [#59](https://github.com/mathiasvatter/cksp-compiler/issues/59) by reporting a compile error when **local arrays are used with save/load array built-in commands**.
-- Fixed [#98](https://github.com/mathiasvatter/cksp-compiler/issues/98), where using **`exit` commands inside function definitions** could cause infinite loops in some cases.
-- Fixed [#102](https://github.com/mathiasvatter/cksp-compiler/issues/102), where **line continuation syntax** (`...`) directly after a keyword, such as `and...`, could incorrectly produce a token error.
-- Fixed potential **segmentation faults during parallel compiler traversals**.
+
+- Fixed **case collision resolution** so references to data structures are handled correctly.
+- Fixed an issue where the generated **`__decr__` method** could receive an incorrect `nullptr` reference count when an **ndarray** was passed.
+- Fixed incorrect lowering of **`delete` statements** when deleting an **array of objects**.
+- Fixed a compiler stability issue caused by **dangling pointers** during struct inlining.
