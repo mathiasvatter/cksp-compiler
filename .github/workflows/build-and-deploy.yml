@@ -1,9 +1,9 @@
 name: Build and Deploy CKSP Compiler
 
 on:
-  # push:
-  #   branches:
-  #     - master # Trigger on push to the main branch
+  push:
+    branches:
+      - master # Trigger on push to the main branch
   workflow_dispatch: # Allow manual triggering of the workflow
 
 jobs:
