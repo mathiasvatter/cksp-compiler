@@ -3,6 +3,14 @@
 #pragma max_callback_depth(420)
 
 // #pragma optimize("none")
+namespace bb
+	struct Point
+		x: int, y: int
+	end struct
+end namespace
+
+declare p := new bb.Point(1,2)
+
 struct Note
 	pitch: int
 	velo: int
@@ -16,29 +24,15 @@ struct Note
 	end function
 end struct
 
-// declare Note := new Note(60, 127)
+declare Note := new Note(60, 127)
 
-namespace BrowserFont
-	declare types: int[] := [
-		CONTROL_PAR_FONT_TYPE, 
-		CONTROL_PAR_FONT_TYPE_ON, 
-		CONTROL_PAR_FONT_TYPE_OFF_PRESSED, 
-		
-		CONTROL_PAR_FONT_TYPE_ON_PRESSED, 
-		CONTROL_PAR_FONT_TYPE_OFF_HOVER, 
-		CONTROL_PAR_FONT_TYPE_ON_HOVER
-	]
-	declare ty: int[] := types
+struct Chord
+	notes[3]: Note[]
 
-	function get_type(idx: int) : int 
-		return types[idx]
+	function search_note(self, note: Note)
+		return search(self.notes, note)
 	end function
-
-	function get_type(dd: int) : int override
-		message("getting it!!!!!")
-		return types[dd]
-	end function
-end namespace
+end struct
 
 
 function update_keyrange_disp()
@@ -47,11 +41,12 @@ function update_keyrange_disp()
 end function
 
 on init
+	declare notes[3] := [new Note(1,1), new Note(1,1), new Note(1,1)]
+	declare ch := new Chord(notes)
+	// declare Chord := new Chord([new Note(1,1), new Note(1,1), new Note(1,1)])
 	declare stringggg: string := "sdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfja sdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasldkfja sldkfja sldkfja sldkfj asldkfj alsdkfj alskfj "
 
 	declare array[25]: int[]
-
-	message(BrowserFont.get_type(3))
 end on
 
 on persistence_changed
@@ -60,6 +55,7 @@ on persistence_changed
 	// 	message("df")
 	// end if		
 	dodododo(array)
+	delete notes
 
 end on
 

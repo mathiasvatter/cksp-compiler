@@ -1165,6 +1165,13 @@ Result<std::unique_ptr<NodeNamespace>> Parser::parse_namespace(NodeAST *parent) 
 				return Result<std::unique_ptr<NodeNamespace>>(namespace_def.get_error());
 			}
 			node_declarations->add_as_stmt(std::move(namespace_def.unwrap()));
+		} else if (peek().type == token::STRUCT) {
+			auto struct_def = parse_struct(node_declarations.get());
+			if(struct_def.is_error()) {
+				return Result<std::unique_ptr<NodeNamespace>>(struct_def.get_error());
+			}
+			auto stmt = node_declarations->add_as_stmt(std::move(struct_def.unwrap()));
+			m_program->struct_definitions.push_back(stmt->statement->cast<NodeStruct>());
 		} else {
 			error.add_message("<namespaces> can only contain <declare> statements or <function> definitions that get added to the global scope.");
 			error.set_token(peek());
@@ -1204,7 +1211,9 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 			auto struct_def = parse_struct(node_program.get());
 			if(struct_def.is_error())
 				return Result<std::unique_ptr<NodeProgram>>(struct_def.get_error());
-			node_program->struct_definitions.push_back(std::move(struct_def.unwrap()));
+			// node_program->struct_definitions.push_back(std::move(struct_def.unwrap()));
+			auto stmt = node_program->global_declarations->add_as_stmt(std::move(struct_def.unwrap()));
+			node_program->struct_definitions.push_back(stmt->statement->cast<NodeStruct>());
 		} else if (peek().type == token::CONST) {
 			auto const_def = parse_const_statement(node_program->global_declarations.get());
 			if (const_def.is_error()) {
@@ -1216,7 +1225,9 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 			if (namespace_def.is_error()) {
 				return Result<std::unique_ptr<NodeProgram>>(namespace_def.get_error());
 			}
-			node_program->namespaces.push_back(std::move(namespace_def.unwrap()));
+			// node_program->namespaces.push_back(std::move(namespace_def.unwrap()));
+			auto stmt = node_program->global_declarations->add_as_stmt(std::move(namespace_def.unwrap()));
+			node_program->namespaces.push_back(stmt->statement->cast<NodeNamespace>());
 		} else if (peek().type == token::DECLARE) {
 			auto declare_stmt = parse_declare_statement(node_program->global_declarations.get());
 			if (declare_stmt.is_error()) {
@@ -1255,7 +1266,6 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 		node_program->init_callback = node_program->callbacks.back().get();
 	}
 	node_program->merge_function_definitions();
-	node_program->update_struct_lookup();
     return Result<std::unique_ptr<NodeProgram>>(std::move(node_program));
 }
 
@@ -2353,7 +2363,7 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 				return Result<std::unique_ptr<NodeStruct>>(func.get_error());
 			}
 			auto method = std::move(func.unwrap());
-			node_struct->add_method_or_override(std::move(method));
+			node_struct->add_method_or_override(method);
 		} else {
 			return Result<std::unique_ptr<NodeStruct>>(CompileError(ErrorType::SyntaxError,
 							 "Found unknown <struct> syntax.", "valid <struct> member or method", peek()));

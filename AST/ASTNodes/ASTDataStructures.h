@@ -418,7 +418,7 @@ struct NodeConst final : NodeDataStructure {
 struct NodeStruct final : NodeDataStructure {
 	inline static std::string CONSTRUCTOR = "__init__";
 	inline static std::string DESTRUCTOR = "__del__";
-	std::shared_ptr<NodePointer> node_self = std::make_shared<NodePointer>(std::nullopt, "self", TypeRegistry::add_object_type(this->name), this->tok);
+	std::shared_ptr<NodePointer> node_self = std::make_shared<NodePointer>(std::nullopt, "self", TypeRegistry::Unknown, this->tok);
 	std::unique_ptr<NodeBlock> members;
 	std::unordered_map<std::string, std::weak_ptr<NodeDataStructure>> member_table;
 	std::set<std::string> member_set;
@@ -436,9 +436,9 @@ struct NodeStruct final : NodeDataStructure {
 	std::unordered_map<token, std::weak_ptr<NodeFunctionDefinition>> overloaded_operators;
 	std::unordered_set<NodeStruct*> recursive_structs;
 	inline static std::unordered_set<NodeType> allowed_member_node_types = {NodeType::Variable, NodeType::Pointer, NodeType::NDArray, NodeType::Array};
-	explicit NodeStruct(const std::string& name, const Token& tok) : NodeDataStructure(name, TypeRegistry::add_object_type(name), tok, NodeType::Struct, DataType::Mutable) {}
+	explicit NodeStruct(const std::string& name, const Token& tok) : NodeDataStructure(name, TypeRegistry::Unknown, tok, NodeType::Struct, DataType::Mutable) {}
 	NodeStruct(const std::string& name, std::unique_ptr<NodeBlock> members, std::vector<std::shared_ptr<NodeFunctionDefinition>> methods, const Token& tok)
-		: NodeDataStructure(name, TypeRegistry::add_object_type(name), tok, NodeType::Struct, DataType::Mutable), members(std::move(members)), methods(std::move(methods)) {
+		: NodeDataStructure(name, TypeRegistry::Unknown, tok, NodeType::Struct, DataType::Mutable), members(std::move(members)), methods(std::move(methods)) {
 		set_child_parents();
 	}
 	NodeAST * accept(ASTVisitor &visitor) override;
