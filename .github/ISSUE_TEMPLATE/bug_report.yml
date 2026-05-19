@@ -44,28 +44,23 @@ body:
     validations:
       required: true
 
-  - type: dropdown
+  - type: input
     id: os
     attributes:
       label: Operating System
-      options:
-        - All
-        - macOS
-        - Windows
-        - Linux
+      description: Your operating system.
+      placeholder: macOS / Windows / Linux
     validations:
-      required: true
+      required: false
 
-  - type: dropdown
+  - type: input
     id: arch
     attributes:
       label: OS Architecture
-      options:
-        - All
-        - arm64
-        - x86_64
+      description: Your operating system architecture.
+      placeholder: arm64 / x86_64
     validations:
-      required: true
+      required: false
 
   - type: checkboxes
     id: tooling
