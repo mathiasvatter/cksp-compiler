@@ -1,0 +1,103 @@
+[data-md-color-scheme="cksp"] {
+	--md-primary-fg-color:        hsl(0, 0%, 19%);
+	--md-primary-fg-color--light: hsl(0, 0%, 19%);
+	--md-primary-fg-color--dark:  #606060;
+	--md-primary-bg-color:        hsl(0, 0%, 100%);
+}
+
+/* .md-header {
+	min-height: 1rem;
+} */
+
+/* Alle H1 im Content-Bereich */
+.md-typeset h1 {
+  font-weight: 800 !important;   /* richtig fett */
+  /* font-size: 2.2rem;              */
+  letter-spacing: -0.02em;       /* optional: enger zusammen */
+}
+
+
+@keyframes heart {
+		0%, 40%, 80%, 100% {
+			transform: scale(1);
+		}
+		20%, 60% {
+			transform: scale(1.15);
+		}
+	}
+	.heart {
+		animation: heart 1000ms infinite;
+	}
+
+.grid.cards .lg {
+	margin-right: 0.5rem; /* Abstand zwischen Icon und Titel */
+}
+
+/* Korrigiert die vertikale Ausrichtung der Icons in den Grid Cards (Version 2) */
+/* LÖSUNG A: Die beste Methode (falls sie von deinem System unterstützt wird) */
+/* Wendet die Ausrichtung nur auf Absätze an, die auch wirklich ein Icon enthalten. */
+.md-typeset .grid.cards li > p:first-child:has(span.twemoji) {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.md-typeset__table {
+   min-width: 100%;
+}
+
+.md-typeset table:not([class]) {
+    display: table;
+}
+
+
+/* conventions */
+/* docs/stylesheets/extra.css - FINALE VERSION MIT FESTEN FARBEN */
+
+/* ----------------------------------------------------------- */
+/* 1. Basis-Styling (gilt für alle Modi)                       */
+/* ----------------------------------------------------------- */
+/* docs/stylesheets/extra.css - DEZENTE VERSION FÜR CKSP-THEME */
+
+/* ----------------------------------------------------------- */
+/* 1. Basis-Styling                                            */
+/* ----------------------------------------------------------- */
+.mdx-badge-link,
+.mdx-badge-link:hover {
+	text-decoration: none; /* Verhindert die Link-Unterstreichung */
+	border-bottom: none;
+	color: inherit;
+}
+
+.mdx-badge {
+	/* Wir nutzen jetzt direkt die Haupttextfarbe deines Themes als Hintergrund */
+	--md-badge-bg-color: var(--md-primary-fg-color--dark);
+
+	display: inline-flex;
+	align-items: center;
+	margin-left: 0.25em;
+	font-size: 0.7em;
+	font-weight: 700;
+	vertical-align: middle;
+	border-radius: 4px;
+	overflow: hidden;
+	color: #ffffff; /* Weiße Schrift für Kontrast auf dem dunklen Hintergrund */
+	background-color: var(--md-badge-bg-color);
+}
+
+.mdx-badge__icon {
+	display: inline-flex;
+	padding: 0.35em;
+	/* Ein leicht abgedunkelter Hintergrund für den Icon-Bereich */
+	/* background-color: rgba(0, 0, 0, 0.15);  */
+}
+
+.mdx-badge__icon .md-icon {
+	color: currentColor;
+}
+
+.mdx-badge__text {
+	padding: 0.35em 0.6em;
+	box-shadow: 0 0 0 1px inset var(--md-badge-bg-color);
+	background-color: transparent; /* Transparenter Hintergrund für den Textbereich */
+}

@@ -1,0 +1,568 @@
+
+/* ----- Hero-Basis ----- */
+/* Höhe der fixen Leiste(n) zentral definieren */
+:root{
+  /* Header-Höhe liefert das Theme; Tabs ggf. ergänzen */
+  --hero-offset: var(--md-header-height, 3.2rem);
+  /* Ziel-Farbe für den Header nach dem Hero (RGB, ohne Alpha) */
+  --hero-header-rgb: 48, 48, 48;
+  /* Dynamik-Wert (0..1), wird via JS gesetzt */
+  --hero-header-opacity: 1;
+  /* Anteil des Hero-Segments, ab dem der Header anfängt einzublenden */
+  --hero-header-fade-factor: 0.1;
+  /* Anteil des Hero-Segments, der vor dem Ende vollständig eingeblendet sein soll */
+  --hero-header-fade-buffer: 0.35;
+  /* Extra image bleed to avoid visible edges during parallax movement */
+  --hero-bg-bleed: clamp(120px, 16vh, 240px);
+  --hero-bg-parallax: clamp(70px, 10vh, 150px);
+}
+
+/* Falls Tabs aktiv sind: Desktop-Tab-Leiste addieren */
+@media (min-width: 960px){
+  :root{ --hero-offset: calc(var(--md-header-height, 3.2rem) + 2.8rem); }
+}
+
+/* Hero: ohne margin/padding tricks – wir schieben das Element hoch */
+.hero-section{
+  position: relative;
+  min-height: 110vh;
+  display: flex; align-items: center; justify-content: center;
+  transform: translateY(calc(-1 * var(--hero-offset)));
+  margin: 0 !important;
+  padding: 1rem 0 2rem 0 !important; 
+  z-index: 0;
+  overflow: hidden;
+  /* background-size: cover;
+  background-position: center; */
+}
+
+/* Material switches to drawer/mobile nav around 76.25em */
+@media (max-width: 76.234375em) {
+  .hero-section {
+    min-height: calc(100vh + var(--hero-offset));
+    min-height: calc(100dvh + var(--hero-offset));
+    padding-top: 2rem !important;
+  }
+  /* Safari/mobile: disable parallax shift to avoid bottom white seams */
+  .hero-bg img,
+  video.hero-bg {
+    transform: none !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .hero-video {
+    display: none;
+  }
+}
+
+/* Neues BG-Layer via <picture><img> statt background-image */
+.hero-bg,
+.hero-bg img,
+video.hero-bg {
+  position: absolute;
+  width: 100%;
+}
+.hero-bg {
+  inset: 0;
+  height: 100%;
+}
+.hero-bg img,
+video.hero-bg {
+  top: calc(-1 * var(--hero-bg-bleed));
+  left: 0;
+  right: 0;
+  height: calc(100% + var(--hero-bg-bleed) + var(--hero-bg-bleed));
+}
+.hero-bg img,
+video.hero-bg {
+  object-fit: cover;
+  will-change: transform, opacity;
+  /* old: transform: translateY(calc(var(--hero-parallax, 0) * 40px)); */
+  transform: translateY(var(--hero-translate, 0));
+  /* Animation via JS-raf: avoid laggy transitions on transform */
+  transition: opacity 0.2s linear; /* drop transform from transition */
+  z-index: 0;
+}
+
+/* Optional: sanfter Fade/Blur bis Bild geladen (native Lazy) */
+.hero-bg img:not([src]) { opacity: 0; }
+.hero-bg img,
+video.hero-bg { opacity: 1; }
+
+.hero-video {
+  z-index: 0;
+}
+
+.hero-poster {
+  z-index: 0;
+}
+
+.hero-video-ready .hero-poster {
+  opacity: 0;
+}
+
+/* Header-Farbverlauf weich einblenden */
+.home-with-hero .md-header {
+  background-color: rgba(var(--hero-header-rgb), var(--hero-header-opacity)) !important;
+  backdrop-filter: blur(calc(var(--hero-header-opacity) * 18px));
+  transition: background-color 0.3s ease, backdrop-filter 0.3s ease,
+              box-shadow 0.25s ease, border-color 0.25s ease,
+              color 0.2s ease, fill 0.2s ease;
+}
+
+.home-with-hero .md-header__inner,
+.home-with-hero .md-tabs__inner {
+  background: transparent !important;
+}
+
+.home-with-hero .md-tabs {
+  position: relative;
+  background: transparent !important;
+  backdrop-filter: none;
+  transition: background-color 0.3s ease, backdrop-filter 0.3s ease,
+              color 0.2s ease, fill 0.2s ease;
+}
+
+.home-with-hero .md-tabs.md-tabs--lifted {
+  background-color: rgba(var(--hero-header-rgb), var(--hero-header-opacity)) !important;
+  backdrop-filter: blur(calc(var(--hero-header-opacity) * 18px));
+}
+
+/* Header/Tabs NUR transparent solange wir über dem Hero sind */
+.home-with-hero.over-hero .md-header,
+.home-with-hero.over-hero .md-header__inner,
+.home-with-hero.over-hero .md-tabs {
+  box-shadow: none !important;
+  border: 0 !important;
+}
+
+/* Kontrast im Header nur in diesem Zustand */
+.home-with-hero.over-hero .md-header,
+.home-with-hero.over-hero .md-header a,
+.home-with-hero.over-hero .md-header .md-icon,
+.home-with-hero.over-hero .md-search__input,
+.home-with-hero.over-hero .md-tabs__link {
+  color: #fff !important;
+  fill: #fff !important;
+}
+.home-with-hero.over-hero .md-search__form {
+  background: rgba(255,255,255,.18) !important;
+  border: 1px solid rgba(255,255,255,.25) !important;
+}
+
+
+/* (Dein restliches Hero-/Header-Transparenz-CSS kann so bleiben) */
+
+.hero-content {
+  width: 100%;
+  max-width: 1200px;
+  box-sizing: border-box;
+  padding-inline: clamp(1rem, 4vw, 2.5rem);
+  opacity: var(--content-opacity, 1);
+  transform: translateY(var(--content-shift, 0px));
+  transition: opacity 0.2s linear, transform 0.2s linear;
+  z-index: 1;
+  position: relative;
+}
+
+.hero-text h1 {
+  font-size: 2.5rem;   /* größer als Standard-H1 */
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 .75rem 0;
+}
+
+.hero-text p {
+  font-size: 1rem;     /* exakt wie Bodytext */
+  line-height: 1.6;
+  color: rgba(255,255,255,.9);
+  margin: 0 0 1.25rem 0;
+}
+
+.hero-text code {
+  background: rgba(255,255,255,0.1);
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  color: rgba(255,255,255,.9);
+  font-size: 0.95em;
+}
+
+.hero-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+  margin-top: 1.5rem;
+}
+
+.hero-buttons .md-button { margin: 0; }
+
+.home-with-hero.over-hero .hero-buttons .md-button {
+  border-color: rgba(255,255,255,.6);
+  color: #fff;
+}
+.home-with-hero.over-hero .hero-buttons .md-button--primary {
+  background: #fff;
+  color: #000;
+}
+
+.hero-buttons .md-button:hover {
+  background-color: rgba(255,255,255,0.15); /* leicht transparentes Weiß */
+  color: #fff;  /* Text bleibt weiß */
+}
+
+.home-with-hero .md-main__inner .md-content {
+  padding-top: 0 !important; /* kein Abstand über Content */
+  margin-top: 0 !important;
+}
+
+/* Hide the generated page title on the homepage, but keep section headings visible. */
+.home-with-hero .md-content__inner > h1:first-of-type {
+  display: none !important;
+}
+
+/* Abstand Hero → Content etwas enger */
+.home-with-hero .md-content__inner { padding-top: 0 !important; }
+.hero-section { padding-bottom: 0 !important; }
+
+/* 1/2/3 Spalten → 3 oben, 2 unten */
+#home-cards { display: grid; gap: .8rem; grid-template-columns: 1fr; }
+@media (min-width: 600px){ #home-cards { grid-template-columns: repeat(2,1fr); } }
+@media (min-width: 960px){ #home-cards { grid-template-columns: repeat(3,1fr); } }
+
+/* Material-Optik beibehalten, Linkfarbe neutralisieren */
+.md-typeset .grid.cards > .card { color: var(--md-typeset-color); }
+
+/* Titelzeile mit Icon + Trennlinie */
+.md-typeset .grid.cards > .card h3{
+  display:flex; align-items:center; gap:.45rem;
+  margin:.15rem 0 .6rem;
+  padding-bottom:.4rem;
+  border-bottom:1px solid var(--md-default-fg-color--lighter);
+}
+.card__icon svg{ width:1.3rem; height:1.3rem; fill:var(--md-primary-fg-color); }
+
+/* Basis: Material-Optik bleibt unverändert */
+
+/* Reveal-Setup nur wenn JS aktiv war */
+#home-cards.reveal-ready > .card {
+  opacity: 0;
+  transform: translateY(12px);
+  will-change: opacity, transform;
+}
+
+/* Sichtbar im Viewport */
+#home-cards.reveal-ready > .card.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity .5s ease, transform .5s ease;
+}
+
+/* Stagger (optional) */
+#home-cards.reveal-ready > .card:nth-child(2).is-visible { transition-delay: .06s; }
+#home-cards.reveal-ready > .card:nth-child(3).is-visible { transition-delay: .12s; }
+#home-cards.reveal-ready > .card:nth-child(4).is-visible { transition-delay: .18s; }
+#home-cards.reveal-ready > .card:nth-child(5).is-visible { transition-delay: .24s; }
+#home-cards.reveal-ready > .card:nth-child(6).is-visible { transition-delay: .30s; }
+
+
+
+.glance-section {
+  background-color: var(--md-default-bg-color--light);
+  border-radius: .5rem;
+  padding: 1.75rem 1.5rem 2.5rem;
+  margin: 2rem 0 0;
+}
+
+.home-with-hero .glance-section {
+  margin-top: 0;
+}
+
+.glance-section h1 {
+  margin-top: 0;
+}
+
+.perf-section {
+  --perf-chart-fg: rgba(255,255,255,.92);
+  --perf-chart-grid: rgba(255,255,255,.14);
+  --perf-bg-bleed: clamp(140px, 18vh, 260px);
+  --perf-bg-parallax: clamp(80px, 12vh, 160px);
+  --perf-bg-translate: 0px;
+  position: relative;
+  width: 100vw;
+  margin: 0 0 0 calc(50% - 50vw);
+  padding: clamp(3rem, 7vw, 5.5rem) 0;
+  background: #22272e;
+  color: rgba(255,255,255,.88);
+  overflow: hidden;
+}
+
+.perf-bg,
+.perf-bg img {
+  position: absolute;
+  width: 100%;
+}
+
+.perf-bg {
+  inset: calc(0px - var(--perf-bg-bleed)) 0;
+  z-index: 0;
+  height: auto;
+}
+
+.perf-bg img {
+  top: 0;
+  left: 0;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: .58;
+  filter: saturate(.9) contrast(1.05);
+  transform: translateY(var(--perf-bg-translate));
+  will-change: transform;
+}
+
+.perf-inner {
+  position: relative;
+  z-index: 1;
+  width: min(100% - 2rem, 1220px);
+  margin: 0 auto;
+}
+
+.perf-section h1,
+.perf-section h2,
+.perf-section p,
+.perf-section li,
+.perf-section strong,
+.perf-section em {
+  color: inherit;
+}
+
+.perf-section a {
+  color: #7cc8ff;
+}
+
+.perf-section code {
+  background: rgba(255,255,255,.1);
+  color: rgba(255,255,255,.94);
+}
+
+.perf-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: clamp(1.5rem, 4vw, 3rem);
+  align-items: center;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.perf-chart {
+  min-height: 380px;
+}
+
+.perf-chart canvas {
+  width: 100% !important;
+  height: 380px !important;
+}
+
+.perf-headline {
+  margin-top: 0;
+}
+
+.perf-footnote {
+  opacity: .75;
+  font-size: .9em;
+}
+
+.perf-factors {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.perf-factors li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: .6rem;
+  align-items: baseline;
+  margin: .35rem 0;
+}
+
+.perf-factors .badge {
+  display: inline-block;
+  padding: .2rem .5rem;
+  border-radius: .6rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.badge-cksp {
+  background: rgba(77,179,255,.16);
+  color: #7cc8ff;
+}
+
+.badge-sublime {
+  background: rgba(208,106,93,.16);
+  color: #f09a90;
+}
+
+@media (max-width: 960px) {
+  .perf-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .perf-chart canvas {
+    height: 320px !important;
+  }
+}
+
+.faq-section {
+  width: 100vw;
+  margin: 0 0 4rem calc(50% - 50vw);
+  padding: clamp(3rem, 6vw, 4.5rem) 0;
+  background: var(--md-default-bg-color);
+}
+
+.faq-inner {
+  width: min(100% - 2rem, 1220px);
+  margin: 0 auto;
+}
+
+.faq-header {
+  margin-bottom: 1.35rem;
+}
+
+.faq-section h1 {
+  margin-top: 0;
+}
+
+.faq-header p {
+  margin-bottom: 0;
+}
+
+#faq-list.faq-list {
+  display: grid;
+  align-items: start;
+  gap: .8rem;
+  grid-template-columns: 1fr !important;
+  margin: 0;
+}
+
+@media (min-width: 960px) {
+  #faq-list.faq-list {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.md-typeset #faq-list.faq-list > details.faq-item {
+  background: var(--md-default-bg-color);
+  border: .05rem solid var(--md-default-fg-color--lightest);
+  border-radius: .1rem;
+  box-shadow: none;
+  color: var(--md-typeset-color);
+  margin: 0 !important;
+  min-width: 0;
+  padding: .8rem;
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.md-typeset #faq-list.faq-list > details.faq-item:hover,
+.md-typeset #faq-list.faq-list > details.faq-item:focus-within {
+  border-color: transparent;
+  box-shadow: var(--md-shadow-z2);
+  transform: translateY(-1px);
+}
+
+.md-typeset #faq-list.faq-list > details.faq-item > summary {
+  background: transparent;
+  border: 0;
+  border-bottom: 0 solid transparent;
+  box-shadow: none;
+  color: inherit;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: .75rem;
+  align-items: center;
+  cursor: pointer;
+  font-size: 1.25em;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  margin: .15rem 0 0;
+  min-height: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.md-typeset #faq-list.faq-list > details.faq-item[open] > summary {
+  padding-bottom: .4rem;
+  border-bottom-color: var(--md-default-fg-color--lighter);
+  border-bottom-width: 1px;
+}
+
+.md-typeset #faq-list.faq-list > details.faq-item > summary::-webkit-details-marker {
+  display: none;
+}
+
+.md-typeset #faq-list.faq-list > details.faq-item > summary::before {
+  content: none;
+  display: none;
+}
+
+.md-typeset #faq-list.faq-list > details.faq-item > summary::after {
+  content: "";
+  width: .75rem;
+  height: .75rem;
+  border-right: 2.5px solid currentColor;
+  border-bottom: 2.5px solid currentColor;
+  opacity: .55;
+  transform: rotate(45deg);
+  transition: transform .18s ease, opacity .18s ease;
+}
+
+.md-typeset #faq-list.faq-list > details.faq-item[open] > summary::after {
+  opacity: .8;
+  transform: rotate(225deg);
+}
+
+.md-typeset #faq-list.faq-list > details.faq-item > summary:focus-visible {
+  outline: 2px solid var(--md-accent-fg-color);
+  outline-offset: .25rem;
+  border-radius: .25rem;
+}
+
+.md-typeset #faq-list.faq-list > details.faq-item > .faq-answer {
+  font-size: .7rem;
+  line-height: 1.6;
+  margin-top: .75rem;
+}
+
+.faq-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+}
+
+.faq-icon .twemoji,
+.faq-icon svg {
+  width: 1.6rem;
+  height: 1.6rem;
+  fill: var(--md-primary-fg-color);
+}
+
+.faq-answer p {
+  margin-top: 0;
+  color: var(--md-typeset-color);
+}
+
+.faq-answer p:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 760px) {
+  .perf-inner,
+  .faq-inner {
+    width: min(100% - 1.6rem, 1220px);
+  }
+}
