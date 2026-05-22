@@ -2,7 +2,7 @@
 
 ## [0.0.9-alpha.3] - 2026-05-20
 
-> Note: `namespaces` and `struct` definitions are now processed in the order they appear in the global scope. Any global variables used by them must be declared first. If your `struct` methods currently rely on variables declared inside `on init`, move those variable declarations to the global scope before the affected `struct` definition.
+> Note: `namespaces` and `struct` definitions are now processed in the order they appear in the global scope. Any global variables used by them must be declared first. If your `struct` methods currently rely on variables declared inside `on init`, move those variable declarations outside to the global scope before the affected methods in the `struct` definition. Nothing changes for free function definitions: they can still access variables declared in `on init`.
 
 ### Added
 

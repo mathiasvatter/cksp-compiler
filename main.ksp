@@ -41,6 +41,7 @@ function update_keyrange_disp()
 end function
 
 on init
+	SET_CONDITION(NO_SYS_SCRIPT_PEDAL)
 	declare notes[3] := [new Note(1,1), new Note(1,1), new Note(1,1)]
 	declare ch := new Chord(notes)
 	// declare Chord := new Chord([new Note(1,1), new Note(1,1), new Note(1,1)])
