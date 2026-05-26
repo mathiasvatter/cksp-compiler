@@ -3,6 +3,8 @@
 ## [0.0.9-alpha.3] - 2026-05-20
 
 > Note: `namespaces` and `struct` definitions are now processed in the order they appear in the global scope. Any global variables used by them must be declared first. If your `struct` methods currently rely on variables declared inside `on init`, move those variable declarations outside to the global scope before the affected methods in the `struct` definition. Nothing changes for free function definitions: they can still access variables declared in `on init`.
+![scope-hierarchy](https://mathiasvatter.github.io/cksp-assets/assets/cksp_scope_hierarchy.png)
+
 
 ### Added
 
@@ -20,3 +22,4 @@
 - Fixed an issue where the generated **`__decr__` method** could receive an incorrect `nullptr` reference count when an **ndarray** was passed.
 - Fixed incorrect lowering of **`delete` statements** when deleting an **array of objects**.
 - Fixed a compiler stability issue caused by **dangling pointers** during struct inlining.
+- Fixed issue [#105](https://github.com/mathiasvatter/cksp-compiler/issues/105) where builtin ksp preprocessor directives would be removed from the compiled code.

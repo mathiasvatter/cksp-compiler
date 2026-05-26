@@ -1,0 +1,46 @@
+<mxfile host="65bd71144e">
+    <diagram id="zP5a5zgZ1eIyYV8aqAC1" name="Page-1">
+        <mxGraphModel dx="1114" dy="622" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" background="#ffffff" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="16" value="CKSP Scope Hierarchy" style="text;html=1;align=center;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=16;" vertex="1" parent="1">
+                    <mxGeometry x="160" y="40" width="390" height="390" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="Global Scope" style="swimlane;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="170" y="90" width="370" height="330" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="s&lt;span style=&quot;color: rgb(63, 63, 63); background-color: transparent;&quot;&gt;tructs, namespaces, const blocks, variable declarations&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="3">
+                    <mxGeometry x="10" y="30" width="360" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="5" value="&lt;font face=&quot;Courier New&quot;&gt;on init&lt;/font&gt; Scope" style="swimlane;whiteSpace=wrap;html=1;" vertex="1" parent="3">
+                    <mxGeometry x="10" y="60" width="350" height="260" as="geometry"/>
+                </mxCell>
+                <mxCell id="9" value="&lt;span style=&quot;color: rgb(63, 63, 63); background-color: transparent;&quot;&gt;const blocks, variable declarations&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="5">
+                    <mxGeometry x="10" y="30" width="350" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="14" value="Function Scope" style="swimlane;whiteSpace=wrap;html=1;" vertex="1" parent="5">
+                    <mxGeometry x="10" y="170" width="330" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="15" value="&lt;span style=&quot;color: rgb(63, 63, 63); background-color: transparent;&quot;&gt;local variable declarations&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="14">
+                    <mxGeometry x="10" y="30" width="340" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="19" value="Local Scopes" style="swimlane;whiteSpace=wrap;html=1;" vertex="1" parent="14">
+                    <mxGeometry x="160" y="30" width="140" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" value="Callback Scope" style="swimlane;whiteSpace=wrap;html=1;" vertex="1" parent="5">
+                    <mxGeometry x="10" y="80" width="330" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="&lt;span style=&quot;color: rgb(63, 63, 63); background-color: transparent;&quot;&gt;local variable declarations&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="10">
+                    <mxGeometry x="10" y="30" width="340" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="17" value="Local Scopes" style="swimlane;whiteSpace=wrap;html=1;" vertex="1" parent="10">
+                    <mxGeometry x="165" y="30" width="140" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="20" value="Local Scopes" style="swimlane;whiteSpace=wrap;html=1;" vertex="1" parent="5">
+                    <mxGeometry x="200" y="30" width="140" height="40" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
