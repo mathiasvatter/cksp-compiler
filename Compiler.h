@@ -228,6 +228,8 @@ public:
 #endif
 
 		m_final_config = combine_configs(m_cli_config, m_pragma_config);
+		// m_final_config->optimization_level = OptimizationLevel::Aggressive;
+
 		std::cout << "\n";
 		std::cout << "Input File: " << m_final_config->input_filename.value() << "\n";
 		if (m_final_config->outputs.size() == 1) {
@@ -335,7 +337,7 @@ public:
 		static MarkThreadSafe marker(m_program);
 		marker.mark_environments(*ast);
 
-		// ast->collect_call_sites(m_program); // collect call sites
+		// ast->collect_call_sites(m_program); // collect call sites (functions might have been duplicated after monomorphization and more call sites now!
 		ASTFunctionStrategy function_strategy(m_program, m_pragma_config->parameter_passing);
 		function_strategy.determine_function_strategies(*m_program);
 

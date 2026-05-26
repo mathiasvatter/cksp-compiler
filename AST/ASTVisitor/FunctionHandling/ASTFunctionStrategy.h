@@ -73,7 +73,7 @@ private:
 			} else if (definition->has_local_dynamic_arrays or is_initializer_function(node) or is_wildcard_function(node)) {
 				definition->is_inlined = true;
 				node.strategy = NodeFunctionCall::Strategy::PreemptiveInlining;
-			} else if (is_callable_env and node.function->has_no_args() and definition->call_sites.size() > 1) {
+			} else if (is_callable_env and node.function->has_no_args() /*and definition->call_sites.size() > 1*/) {
 				node.strategy = NodeFunctionCall::Strategy::Call;
 			} else if (is_callable_env and is_parameterstack_candidate(*definition)) {
 				node.strategy = NodeFunctionCall::Strategy::ParameterStack;
@@ -109,7 +109,7 @@ public:
 		// HOWEVER, if func is called only once and has return statements -> not inlining and using exit is better
 		// but i cannot check num_return_stmts at this moment because I alter that afterwards
 		// plus get_function_strategy needs to be currently called in ASTPreemptiveFunctionInlining because of wildcard copy functions
-		if (def.call_sites.size() <= 1 /*and def.num_return_stmts == 0*/) return false;
+		// if (def.call_sites.size() <= 1 /*and def.num_return_stmts == 0*/) return false;
 		for(const auto &param : def.header->params) {
 			if (param->variable->ty->is_union_type() ||
 				param->is_pass_by_ref) {
