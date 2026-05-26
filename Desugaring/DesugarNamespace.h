@@ -183,6 +183,11 @@ public:
 		return &node;
 	}
 
+	NodeAST * visit(NodeStruct& node) override {
+		add_namespace_prefix(node);
+		return &node;
+	}
+
 	// ---------- helpers ----------
 
 	/// returns true if ref node is within access chain but not first member

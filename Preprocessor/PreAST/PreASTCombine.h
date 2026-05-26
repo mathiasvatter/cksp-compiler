@@ -15,6 +15,25 @@ public:
         return &node;
     }
 
+    PreNodeAST *visit(PreNodeSetCondition &node) override {
+        auto reference_token = node.tok;
+        m_tokens.push_back(std::move(node.tok));
+        auto open_parenthesis = reference_token;
+        open_parenthesis.type = token::OPEN_PARENTH;
+        open_parenthesis.val = "(";
+        auto closed_parenthesis = reference_token;
+        closed_parenthesis.type = token::CLOSED_PARENTH;
+        closed_parenthesis.val = ")";
+        auto new_line = reference_token;
+        new_line.type = token::LINEBRK;
+        new_line.val = "\n";
+        m_tokens.push_back(open_parenthesis);
+        node.condition->accept(*this);
+        m_tokens.push_back(closed_parenthesis);
+        m_tokens.push_back(new_line);
+        return &node;
+    }
+
     PreNodeAST *visit(PreNodeNumber &node) override {
         m_tokens.push_back(std::move(node.tok));
         return &node;

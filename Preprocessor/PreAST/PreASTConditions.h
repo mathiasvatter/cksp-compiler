@@ -25,8 +25,11 @@ public:
 	}
 
 	PreNodeAST *visit(PreNodeSetCondition &node) override {
-		set_condition(node.condition, true);
-		return node.replace_with(std::make_unique<PreNodeDeadCode>(node.tok, node.parent));
+		if (!is_builtin_condition(node.condition->tok)) {
+			set_condition(node.condition, true);
+			return node.replace_with(std::make_unique<PreNodeDeadCode>(node.tok, node.parent));
+		}
+		return &node;
 	}
 
 	PreNodeAST *visit(PreNodeResetCondition &node) override {

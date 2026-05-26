@@ -17,10 +17,10 @@ NodeAST* ASTDesugar::visit(NodeProgram& node) {
 
 	// first desugar namespaces to assign correct prefixes
 	static DesugarNamespace ns_desugar(m_program);
-	visit_all(node.namespaces, ns_desugar);
+	// visit_all(node.namespaces, ns_desugar);
 	// move all namespaces into global declarations block
 	for (auto & ns : node.namespaces) {
-		m_program->global_declarations->add_as_stmt(std::move(ns));
+		ns->accept(ns_desugar);
 	}
 	node.namespaces.clear();
 
@@ -31,14 +31,16 @@ NodeAST* ASTDesugar::visit(NodeProgram& node) {
 
 
 	// m_program->global_declarations->prepend_as_stmt(m_program->declare_global_iterators());
-	visit_all(node.struct_definitions, *this);
+	// visit_all(node.struct_definitions, *this);
 	visit_all(node.callbacks, *this);
 	visit_all(node.function_definitions, *this);
 
 	// update because function parameters might have been added which might cause problems in typechecking
 //	m_program->update_function_lookup();
 //	m_program->global_declarations->append_body(declare_compiler_variables());
-	m_program->global_declarations->append_body(std::move(m_global_variable_declarations));
+	m_program->global_declarations->prepend_body(std::move(m_global_variable_declarations));
+
+	m_program->update_struct_lookup(); // in case a struct is in a namespace and changed its typename
 	return &node;
 }
 
@@ -51,8 +53,10 @@ NodeAST* ASTDesugar::visit(NodeBlock& node) {
 }
 
 NodeAST* ASTDesugar::visit(NodeFunctionDefinition& node) {
+	m_program->function_call_stack.push(node.weak_from_this());
 	node.header->accept(*this);
 	node.body->accept(*this);
+	m_program->function_call_stack.pop();
 	return node.desugar(m_program);
 }
 
@@ -71,7 +75,7 @@ NodeAST* ASTDesugar::visit(NodeSingleDeclaration& node) {
     if(node.value) node.value->accept(*this);
 
 	// if var is global -> make assignment and move declaration to global declarations
-    if(node.variable->is_global and !is_global_declaration) {
+    if(node.variable->is_global and (!is_global_declaration or !m_program->function_call_stack.empty())) {
     	node.variable->is_global = true;
         m_global_variable_declarations->add_as_stmt(
 			std::make_unique<NodeSingleDeclaration>(node.variable, std::move(node.value), node.tok)
