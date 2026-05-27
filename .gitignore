@@ -41,6 +41,8 @@ build/*
 *.zip
 tests/logs/
 _Releases/
+_Deployed/
+windows-release/
+macos-release/
 test.txt
 printed.txt
-
