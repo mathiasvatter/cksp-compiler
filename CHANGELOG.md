@@ -1,25 +1,13 @@
-# Changelog
-
-## [0.0.9-alpha.3] - 2026-05-20
-
-> Note: `namespaces` and `struct` definitions are now processed in the order they appear in the global scope. Any global variables used by them must be declared first. If your `struct` methods currently rely on variables declared inside `on init`, move those variable declarations outside to the global scope before the affected methods in the `struct` definition. Nothing changes for free function definitions: they can still access variables declared in `on init`.
-![scope-hierarchy](https://mathiasvatter.github.io/cksp-assets/assets/cksp_scope_hierarchy.png)
-
+## [0.0.9-alpha.4] - 2026-06-02
 
 ### Added
 
-- Added support for **struct definitions nested inside namespaces**.
-- Added support for **namespaces as statements** in the global scope.
+- Added built-in **NI constants for UI widget types** ([#106](https://github.com/mathiasvatter/cksp-compiler/issues/106)).
 
 ### Changed
 
-- Updated **struct parsing and lowering** so structs are handled as global statements and inlined **in declaration order**.
-- Improved compiler handling for **namespaces and structs** across parsing and compiler passes.
+- Improved **function inlining logic** so cksp now always attempts to call or transform function parameters, even when a function appears to be called only once. This reduces the size of the resulting codebase by up to 46x as shown underneath.
 
 ### Fixed
 
-- Fixed **case collision resolution** so references to data structures are handled correctly.
-- Fixed an issue where the generated **`__decr__` method** could receive an incorrect `nullptr` reference count when an **ndarray** was passed.
-- Fixed incorrect lowering of **`delete` statements** when deleting an **array of objects**.
-- Fixed a compiler stability issue caused by **dangling pointers** during struct inlining.
-- Fixed issue [#105](https://github.com/mathiasvatter/cksp-compiler/issues/105) where builtin ksp preprocessor directives would be removed from the compiled code.
+- Fixed an issue in **DimensionExpansion** where the right-hand side of a **thread-unsafe declaration** could be visited twice, causing dimensions to be expanded twice and leading to later compiler errors from mismatching parent types.

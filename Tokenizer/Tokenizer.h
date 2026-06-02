@@ -56,7 +56,7 @@ struct LinesProcessed {
 	size_t lines_blank = 0;
 
 	std::string get_report() const {
-		auto l = "Lexer lines processed: " + std::to_string(lines_total-lines_comment-lines_blank);
+		auto l = "Lexer lines processed: " + std::to_string(lines_total-lines_comment-lines_blank) + " " + std::to_string(lines_blank);
 		auto further_info = " (" + std::to_string(lines_total) + " including comment and blank lines)";
 		return l + further_info;
 	}
@@ -84,7 +84,7 @@ protected:
     size_t m_line;
     size_t m_line_pos; // column in line
 	size_t m_line_comment = 0;
-	size_t m_line_blank = 0;
+	size_t m_line_blank = 1;
     std::string m_buffer;
     std::vector<Token> m_tokens;
 	bool is_in_fstring = false;

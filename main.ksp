@@ -3,70 +3,70 @@
 #pragma max_callback_depth(420)
 
 // #pragma optimize("none")
-namespace bb
-	struct Point
-		x: int, y: int
-	end struct
-end namespace
+// namespace bb
+// 	struct Point
+// 		x: int, y: int
+// 	end struct
+// end namespace
 
-declare p := new bb.Point(1,2)
+// declare p := new bb.Point(1,2)
 
-struct Note
-	pitch: int
-	velo: int
+// struct Note
+// 	pitch: int
+// 	velo: int
 
-	function get_velo(self)
-		return self.velo
-	end function
+// 	function get_velo(self)
+// 		return self.velo
+// 	end function
 
-	function get_velo(self) override
-		return self.pitch
-	end function
-end struct
+// 	function get_velo(self) override
+// 		return self.pitch
+// 	end function
+// end struct
 
-declare Note := new Note(60, 127)
+// declare Note := new Note(60, 127)
 
-struct Chord
-	notes[3]: Note[]
+// struct Chord
+// 	notes[3]: Note[]
 
-	function search_note(self, note: Note)
-		return search(self.notes, note)
-	end function
-end struct
+// 	function search_note(self, note: Note)
+// 		return search(self.notes, note)
+// 	end function
+// end struct
 
 
-function update_keyrange_disp()
-	declare const NUM_KEES := 128
-	declare SLOT_KEY_COLOR[NUM_KEES]
-end function
+// function update_keyrange_disp()
+// 	declare const NUM_KEES := 128
+// 	declare SLOT_KEY_COLOR[NUM_KEES]
+// end function
 
-on init
-	SET_CONDITION(NO_SYS_SCRIPT_PEDAL)
-	declare notes[3] := [new Note(1,1), new Note(1,1), new Note(1,1)]
-	declare ch := new Chord(notes)
-	// declare Chord := new Chord([new Note(1,1), new Note(1,1), new Note(1,1)])
-	declare stringggg: string := "sdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfja sdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasldkfja sldkfja sldkfja sldkfj asldkfj alsdkfj alskfj "
+// on init
+// 	SET_CONDITION(NO_SYS_SCRIPT_PEDAL)
+// 	declare notes[3] := [new Note(1,1), new Note(1,1), new Note(1,1)]
+// 	declare ch := new Chord(notes)
+// 	// declare Chord := new Chord([new Note(1,1), new Note(1,1), new Note(1,1)])
+// 	declare stringggg: string := "sdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfja sdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasldkfja sldkfja sldkfja sldkfj asldkfj alsdkfj alskfj "
 
-	declare array[25]: int[]
-end on
+// 	declare array[25]: int[]
+// end on
 
-on persistence_changed
-	update_keyrange_disp()
-	// if (dodododo(array))
-	// 	message("df")
-	// end if		
-	dodododo(array)
-	delete notes
+// on persistence_changed
+// 	update_keyrange_disp()
+// 	// if (dodododo(array))
+// 	// 	message("df")
+// 	// end if		
+// 	dodododo(array)
+// 	delete notes
 
-end on
+// end on
 
-function dodododo(ref array: int[])
-	load_array(array, 2)
-	for i in range(340)
-		message(i)
-		if (i = 4)
-			exit
-		end if			
-	end for
+// function dodododo(ref array: int[])
+// 	load_array(array, 2)
+// 	for i in range(340)
+// 		message(i)
+// 		if (i = 4)
+// 			exit
+// 		end if			
+// 	end for
 	
-end function	
+// end function	
