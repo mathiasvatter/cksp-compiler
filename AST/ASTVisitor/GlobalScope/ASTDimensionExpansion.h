@@ -112,11 +112,9 @@ public:
 	}
 
 	NodeAST* visit(NodeSingleDeclaration& node) override {
-		if(node.value) node.value->accept(*this);
-
-		// const bool is_thread_safe = is_thread_safe_env();
-		// node.variable->is_thread_safe = is_thread_safe;
-		if(!node.variable->is_thread_safe) {
+		if (node.variable->is_thread_safe) {
+			if(node.value) node.value->accept(*this);
+		} else {
 			// if value -> change to assignment
 			std::unique_ptr<NodeBlock> block = nullptr;
 			std::unique_ptr<NodeSingleAssignment> assignment = nullptr;

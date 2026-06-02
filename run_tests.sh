@@ -48,6 +48,7 @@ DEFAULT_FILES=(
   "/Users/mathias/Scripting/dark-matter/Dark Horizon.ksp"
   "/Users/mathias/Scripting/fragments-modern-percussion/Fragments.ksp"
   "/Users/mathias/Scripting/sonu-northern-spheres/Nordic Spheres.ksp"
+  "/Users/mathias/Scripting/the-sculpture/sculpture-engine.cksp"
 )
 
 # Effective file selection (computed from CLI args)
