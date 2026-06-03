@@ -486,8 +486,6 @@ struct NodeAssignment final : NodeInstruction {
 struct NodeSingleAssignment final : NodeInstruction {
     std::unique_ptr<NodeReference> l_value;
     std::unique_ptr<NodeAST> r_value;
-	bool has_object = false;
-	bool is_parameter_stack = false; // if true, the assignment is a parameter stack assignment and the l_value is mutable
     explicit NodeSingleAssignment(Token tok) : NodeInstruction(NodeType::SingleAssignment, std::move(tok)) {}
     NodeSingleAssignment(std::unique_ptr<NodeReference> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
             : NodeInstruction(NodeType::SingleAssignment, std::move(tok)), l_value(std::move(arrayVariable)), r_value(std::move(assignee)) {

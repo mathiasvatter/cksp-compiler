@@ -626,6 +626,7 @@ NodeAST * TypeInference::visit(NodeFunctionParam& node) {
 
 NodeAST * TypeInference::visit(NodeSingleDeclaration& node) {
 	node.variable->accept(*this);
+
 	if(node.value) {
 		node.value->accept(*this);
 
@@ -639,8 +640,6 @@ NodeAST * TypeInference::visit(NodeSingleDeclaration& node) {
 				node.value->accept(*this);
 			}
 		}
-
-
 
 		match_assignment_types(*node.variable, *node.value);
 		node.variable->accept(*this);

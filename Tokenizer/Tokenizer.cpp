@@ -41,8 +41,6 @@ std::vector<Token> Tokenizer::tokenize() {
 	token_loop();
 
     add_token(token::LINEBRK, "\n");
-    // m_tokens.emplace_back(token::LINEBRK, "\n", m_line, m_line_pos-std::string("\n").length(), m_current_file);
-    // m_tokens.emplace_back(token::END_TOKEN, "", 0, m_line_pos, m_current_file);
     add_token(token::END_TOKEN, m_buffer);
     return m_tokens;
 }
@@ -198,7 +196,7 @@ void Tokenizer::get_comment() {
             }
         	m_line_comment++;
             // skip nex_char(); so that the \n can be tokenized
-            // if multi-line comment c++ style
+        // if multi-line comment c++ style
         } else if (peek(1) == '*') {
             while (peek() != '*' or peek(1) != '/') {
 				consume();
@@ -208,8 +206,8 @@ void Tokenizer::get_comment() {
             consume();
         }
     }
-//    if (not m_buffer.empty())
-//	    m_tokens.emplace_back(COMMENT, m_buffer, this->m_line_pos-m_buffer.length(), m_line);
+    // if (not m_buffer.empty())
+	   //  add_token(token::COMMENT, m_buffer);
 	skip_whitespace();
 }
 
@@ -445,7 +443,7 @@ void Tokenizer::get_keyword_or_num() {
 void Tokenizer::get_linebreak() {
     flush_buffer();
 
-	if (!m_tokens.empty() and m_tokens.back().type == token::LINEBRK) {
+	if (peek(1) == '\n') {
 		m_line_blank++;
 	}
 

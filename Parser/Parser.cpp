@@ -1196,6 +1196,7 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 	// int init_callback_idx = 0;
     while (peek().type != token::END_TOKEN) {
         _skip_linebreaks();
+    	if (peek().type == token::END_TOKEN) break;
         if (peek().type == token::BEGIN_CALLBACK) {
             auto callback = parse_callback(node_program.get());
             if (callback.is_error())
