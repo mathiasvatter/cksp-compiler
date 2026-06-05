@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "../ASTLifeTimeAnalysis.h"
 #include "../ASTVisitor.h"
 
 /**
@@ -20,6 +21,26 @@
  *   "passive variable" has the same name as a variable in the scope.
  */
 class ASTVariableReuse final : public ASTVisitor {
+	DefinitionProvider* m_def_provider;
+	std::stack<NodeBlock*> m_current_block;
+	[[nodiscard]] NodeBlock* get_current_block() const {
+		if (m_current_block.empty()) return nullptr;
+		return m_current_block.top();
+	}
+	/// vector for all local declarations in callbacks
+	std::unordered_map<NodeCallback*, std::vector<NodeSingleDeclaration*>> m_all_callback_decl = {};
+	/// vector for all local vars in functions -> do not get moved into on init
+	std::vector<std::shared_ptr<NodeDataStructure>> m_all_local_vars = {};
+	/// hash values are the types
+	std::unordered_map<std::size_t, std::vector<std::shared_ptr<NodeDataStructure>>> m_passive_vars_map;
+	std::unordered_map<NodeBlock*, std::vector<std::shared_ptr<NodeDataStructure>>> m_used_passive_vars;
+	/// map for old datastructure name (as keys) that get replaced by new datastructures (passive_vars) (as values)
+	std::vector<std::unordered_map<std::string, std::shared_ptr<NodeDataStructure>>> m_passive_vars_replace;
+	/// vector for all local references that have been replaced by passive_var references
+	std::vector<NodeReference*> m_all_local_references;
+
+	std::unique_ptr<ASTLifeTimeAnalysis> m_lifetime_analysis;
+	std::unordered_map<NodeStatement*, std::vector<std::shared_ptr<NodeDataStructure>>> m_lifetime_end_per_var;
 public:
 	explicit ASTVariableReuse(NodeProgram* main) : m_def_provider(main->def_provider) {
 		m_program = main;
@@ -28,6 +49,9 @@ public:
 	}
 
 	std::vector<std::shared_ptr<NodeDataStructure>> do_variable_reuse(NodeFunctionDefinition& def) {
+		m_lifetime_analysis = std::make_unique<ASTLifeTimeAnalysis>(m_program);
+		m_lifetime_end_per_var.clear();
+		m_current_block = {};
 		m_program->current_callback = nullptr;
 		m_def_provider->refresh_scopes();
 		def.accept(*this);
@@ -38,6 +62,9 @@ public:
 	}
 
 	void do_variable_reuse(NodeProgram& program) {
+		m_lifetime_analysis = std::make_unique<ASTLifeTimeAnalysis>(m_program);
+		m_lifetime_end_per_var.clear();
+		m_current_block = {};
 		m_program = &program;
 		m_program->current_callback = nullptr;
 		m_def_provider->refresh_scopes();
@@ -186,6 +213,10 @@ private:
 	}
 
 	NodeAST* visit(NodeBlock &node) override {
+		// do lifetime analysis
+		if (m_current_block.empty()) {
+			m_lifetime_analysis->run(node);
+		}
 		m_current_block.push(&node);
 		if(node.scope) {
 			m_def_provider->add_scope();
@@ -196,11 +227,8 @@ private:
 		}
 		if(node.scope) {
 			const auto new_passive_vars = m_def_provider->remove_scope();
-			// only add new passive vars on thread_safe callbacks and functions not using 'wait'
-			// if(is_thread_safe_env()) {
-				// add free memory vars which dynamic extent has ended to passive_vars vector
-				add_passive_vars(new_passive_vars);
-			// }
+			// add free memory vars which dynamic extent has ended to passive_vars vector
+			// add_passive_vars(new_passive_vars);
 			// add used vars to passive_vars map
 			const auto passive_used_vars = std::move(m_used_passive_vars[get_current_block()]);
 			for(auto & passive_var : passive_used_vars) {
@@ -211,6 +239,16 @@ private:
 		}
 		m_current_block.pop();
 		node.flatten();
+		return &node;
+	}
+
+	NodeAST* visit(NodeStatement& node) override {
+		node.statement->accept(*this);
+		const auto it = m_lifetime_end_per_var.find(&node);
+		if(it != m_lifetime_end_per_var.end()) {
+			add_passive_vars(it->second);
+			m_lifetime_end_per_var.erase(it);
+		}
 		return &node;
 	}
 
@@ -298,6 +336,14 @@ private:
 				m_program->global_declarations->add_as_stmt(std::move(node_decl));
 				return node.replace_with(std::move(replacement));
 			}
+
+			auto l = m_lifetime_analysis->get_lifetime(node.variable.get());
+			if (!l) {
+				auto error = CompileError(ErrorType::InternalError, "Variable has no lifetime", "", node.tok);
+				error.exit();
+			}
+			m_lifetime_end_per_var[l->end].push_back(node.variable);
+
 			// add local vars w/o free_passive_var to lists for later renaming
 			if(m_program->current_callback)
 				m_all_callback_decl[m_program->current_callback].push_back(&node);
@@ -418,30 +464,19 @@ private:
 	}
 
 private:
-	DefinitionProvider* m_def_provider;
-	std::stack<NodeBlock*> m_current_block;
-	[[nodiscard]] NodeBlock* get_current_block() const {
-		if (m_current_block.empty()) return nullptr;
-		return m_current_block.top();
-	}
-	/// vector for all local declarations in callbacks
-	std::unordered_map<NodeCallback*, std::vector<NodeSingleDeclaration*>> m_all_callback_decl = {};
-	/// vector for all local vars in functions -> do not get moved into on init
-	std::vector<std::shared_ptr<NodeDataStructure>> m_all_local_vars = {};
-	/// hash values are the types
-	std::unordered_map<std::size_t, std::vector<std::shared_ptr<NodeDataStructure>>> m_passive_vars_map;
-	std::unordered_map<NodeBlock*, std::vector<std::shared_ptr<NodeDataStructure>>> m_used_passive_vars;
+
 	void add_passive_vars(const std::unordered_map<std::string, std::shared_ptr<NodeDataStructure>, StringHash, StringEqual>& map2) {
 		for(auto & var : map2) {
 			if(var.second->data_type == DataType::Mutable)
 				m_passive_vars_map[get_passive_var_hash(*var.second)].push_back(var.second);
 		}
 	}
-
-	/// map for old datastructure name (as keys) that get replaced by new datastructures (passive_vars) (as values)
-	std::vector<std::unordered_map<std::string, std::shared_ptr<NodeDataStructure>>> m_passive_vars_replace;
-	/// vector for all local references that have been replaced by passive_var references
-	std::vector<NodeReference*> m_all_local_references;
+	void add_passive_vars(const std::vector<std::shared_ptr<NodeDataStructure>>& vec) {
+		for (auto & var : vec) {
+			if(var->data_type == DataType::Mutable)
+				m_passive_vars_map[get_passive_var_hash(*var)].push_back(var);
+		}
+	}
 
 	/// get next free passive_var for given type
 	std::shared_ptr<NodeDataStructure> get_free_passive_var(NodeDataStructure& data) {

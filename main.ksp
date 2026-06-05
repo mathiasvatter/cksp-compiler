@@ -70,3 +70,11 @@
 // 	end for
 	
 // end function	
+on note
+    declare note := 1 + NUM_GROUPS
+    message(note)
+
+    declare pups := 5 + NUM_GROUPS
+    message(pups)
+
+end on

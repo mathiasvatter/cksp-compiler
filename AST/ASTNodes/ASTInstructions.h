@@ -1040,9 +1040,9 @@ struct NodeFor final : NodeLoop {
     std::unique_ptr<NodeAST> iterator_end;
     std::unique_ptr<NodeAST> step = nullptr;
     std::unique_ptr<NodeBlock> body;
-    explicit NodeFor(Token tok) : NodeLoop(NodeType::For, std::move(tok)) {}
-    NodeFor(std::unique_ptr<NodeSingleAssignment> iterator, token to, std::unique_ptr<NodeAST> iterator_end, std::unique_ptr<NodeBlock> statements, Token tok)
-            : NodeLoop(NodeType::For, std::move(tok)), iterator(std::move(iterator)), to(std::move(to)), iterator_end(std::move(iterator_end)), body(std::move(statements)) {
+    explicit NodeFor(const Token& tok) : NodeLoop(NodeType::For, tok) {}
+    NodeFor(std::unique_ptr<NodeSingleAssignment> iterator, token to, std::unique_ptr<NodeAST> iterator_end, std::unique_ptr<NodeBlock> statements, const Token& tok)
+            : NodeLoop(NodeType::For, tok), iterator(std::move(iterator)), to(std::move(to)), iterator_end(std::move(iterator_end)), body(std::move(statements)) {
         set_child_parents();
     }
     NodeAST * accept(ASTVisitor &visitor) override;
@@ -1061,7 +1061,7 @@ struct NodeFor final : NodeLoop {
         iterator_end->parent = this;
         if(step) step->parent = this;
         body->parent = this;
-    };
+    }
     std::string get_string() override { return ""; }
 	std::string get_token_string() override {
 		std::string str = "for ";
@@ -1091,8 +1091,8 @@ struct NodeForEach final : NodeLoop {
     std::unique_ptr<NodeFunctionParam> value;
     std::unique_ptr<NodeAST> range;
     std::unique_ptr<NodeBlock> body;
-    explicit NodeForEach(Token tok) : NodeLoop(NodeType::ForEach, std::move(tok)) {}
-    NodeForEach(std::unique_ptr<NodeFunctionParam> key, std::unique_ptr<NodeAST> range, std::unique_ptr<NodeBlock> statements, Token tok)
+    explicit NodeForEach(const Token& tok) : NodeLoop(NodeType::ForEach, std::move(tok)) {}
+    NodeForEach(std::unique_ptr<NodeFunctionParam> key, std::unique_ptr<NodeAST> range, std::unique_ptr<NodeBlock> statements, const Token& tok)
             : NodeLoop(NodeType::ForEach, std::move(tok)), key(std::move(key)), range(std::move(range)), body(std::move(statements)) {
         set_child_parents();
     }
