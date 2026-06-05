@@ -25,10 +25,11 @@
  */
 class ConstExprValidator final : public ASTVisitor {
 	bool m_is_constant = true;
-
+	bool all_builtins_are_constant = false;
 public:
-	bool is_constant(NodeAST& node) {
+	bool is_constant(NodeAST& node, bool builtins_are_constant = false) {
 		m_is_constant = true;
+		all_builtins_are_constant = builtins_are_constant;
 		node.accept(*this);
 		return m_is_constant;
 	}
@@ -37,7 +38,13 @@ public:
 		if(node.data_type == DataType::Const) {
 			m_is_constant &= true;
 		} else {
-			m_is_constant &= false;
+			if (all_builtins_are_constant) {
+				if (node.kind == NodeReference::Kind::Builtin) {
+					m_is_constant &= true;
+				}
+			} else {
+				m_is_constant &= false;
+			}
 		}
 		return &node;
 	}
@@ -47,6 +54,11 @@ public:
 		if(node.data_type == DataType::Const) {
 			m_is_constant &= true;
 			return &node;
+		}
+		if (all_builtins_are_constant) {
+			if (node.kind == NodeReference::Kind::Builtin) {
+				m_is_constant &= true;
+			}
 		}
 		// if it is of type composite it references the size -> which is constant
 		if(node.ty->get_type_kind() == TypeKind::Composite) {

@@ -77,4 +77,9 @@ on note
     declare pups := 5 + NUM_GROUPS
     message(pups)
 
+    for i in range(0, 4)
+        declare sdf := 555
+        message(sdf)
+    end for        
+
 end on
