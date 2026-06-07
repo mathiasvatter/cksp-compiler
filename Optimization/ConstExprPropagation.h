@@ -72,7 +72,8 @@ public:
 		if(!m_constant_expressions.empty()) {
 			if(auto substitute = get_constant_expression(node)) {
 				if(substitute->ty->is_compatible(node->ty)) {
-					return node->replace_with(std::move(substitute));
+					auto repl = node->replace_with(std::move(substitute));
+					repl->collect_references();
 				}
 			}
 		}

@@ -228,7 +228,7 @@ public:
 #endif
 
 		m_final_config = combine_configs(m_cli_config, m_pragma_config);
-		// m_final_config->optimization_level = OptimizationLevel::Aggressive;
+		m_final_config->optimization_level = OptimizationLevel::Aggressive;
 
 		std::cout << "\n";
 		std::cout << "Input File: " << m_final_config->input_filename.value() << "\n";
