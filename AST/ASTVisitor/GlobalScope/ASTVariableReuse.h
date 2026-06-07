@@ -216,6 +216,7 @@ private:
 		// do lifetime analysis
 		if (m_current_block.empty()) {
 			m_lifetime_analysis->run(node);
+			m_lifetime_analysis->remove_unused_local_variables();
 		}
 		m_current_block.push(&node);
 		if(node.scope) {

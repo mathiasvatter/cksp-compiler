@@ -16,6 +16,10 @@ class ASTLifeTimeAnalysis : public ASTVisitor {
 		[[nodiscard]] bool is_valid() const {
 			return start != nullptr and end != nullptr;
 		}
+		/// checks if variable life ends immediately after it starts -> dead storage
+		bool is_unused() const {
+			return is_valid() and start == end;
+		}
 	};
 	std::unordered_map<NodeDataStructure*, Life> m_life_times;
 	std::unordered_set<NodeBlock*> m_visited_blocks;
@@ -24,13 +28,23 @@ class ASTLifeTimeAnalysis : public ASTVisitor {
 	std::unordered_set<Life*> m_variables_in_while;
 
 	void add_lifetime_end(const NodeReference& ref, NodeStatement* stmt) {
-		if (is_in_while_loop) return; // if we are still in a while loop, we cannot determine the end of life of
+		// if (is_in_while_loop) return; // if we are still in a while loop, we cannot determine the end of life of
 		// a variable for sure -> the end will then be the end of the scope it was declared in.
 		if (const auto data = ref.get_declaration()) {
 			const auto it = m_life_times.find(data.get());
 			if (it != m_life_times.end()) {
-				it->second.end = stmt;
+				if (is_in_while_loop) {
+					it->second.end = m_end_of_current_block.top();
+				} else {
+					it->second.end = stmt;
+				}
 			}
+		}
+	}
+
+	void add_lifetime_start(NodeDataStructure* data, NodeStatement* stmt) {
+		if (data->is_local) {
+			m_life_times[data] = {stmt, stmt};
 		}
 	}
 
@@ -46,6 +60,22 @@ public:
 		m_visited_blocks.clear();
 		block.accept(*this);
 		return m_life_times;
+	}
+
+	/// can be called after run() -> deletes all declaration nodes with variables where
+	/// start and end member in Life are the same
+	int remove_unused_local_variables() {
+		int num_unused = 0;
+		for (auto & [data, life] : m_life_times) {
+			if (life.is_unused()) {
+				if (auto decl = data->parent->cast<NodeSingleDeclaration>()) {
+					if (decl->value and decl->value->cast<NodeFunctionCall>()) continue; // do not delete if r_value is func call
+					decl->remove_node();
+					num_unused++;
+				}
+			}
+		}
+		return num_unused;
 	}
 
 	const Life *get_lifetime(NodeDataStructure *data) const {
@@ -94,9 +124,10 @@ protected:
 		}
 
 		// if node variable is local, it starts its life -> add to alive_vars set
-		if (node.variable->is_local) {
-			// m_alive_vars.insert(node.variable.get());
-			m_life_times[node.variable.get()] = {m_current_statement, m_end_of_current_block.top()};
+		add_lifetime_start(node.variable.get(), m_current_statement);
+
+		if (node.value) {
+			node.value->accept(*this);
 		}
 
 		return &node;
