@@ -157,7 +157,8 @@ std::unique_ptr<NodeAST> NodeArrayRef::get_size() {
 	auto new_ref = clone_as<NodeArrayRef>(this);
 	new_ref->remove_index();
 	new_ref->ty = get_declaration()->ty;
-	return DefinitionProvider::num_elements(std::move(new_ref));
+	return std::make_unique<NodeNumElements>(std::move(new_ref), nullptr, tok);
+	// return DefinitionProvider::num_elements(std::move(new_ref));
 }
 
 bool NodeArrayRef::is_list_sizes() const {
