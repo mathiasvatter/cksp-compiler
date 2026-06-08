@@ -28,7 +28,6 @@ class ASTLifeTimeAnalysis : public ASTVisitor {
 	std::unordered_set<Life*> m_variables_in_while;
 
 	void add_lifetime_end(const NodeReference& ref, NodeStatement* stmt) {
-		// if (is_in_while_loop) return; // if we are still in a while loop, we cannot determine the end of life of
 		// a variable for sure -> the end will then be the end of the scope it was declared in.
 		if (const auto data = ref.get_declaration()) {
 			const auto it = m_life_times.find(data.get());
