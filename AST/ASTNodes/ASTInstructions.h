@@ -898,8 +898,14 @@ struct NodeBlock final : NodeInstruction {
 	[[nodiscard]] std::unique_ptr<NodeAST>& get_last_statement() const {
 		return statements.back()->statement;
 	}
-	std::unique_ptr<NodeAST>& get_first_statement() const {
+	[[nodiscard]] std::unique_ptr<NodeAST>& get_first_statement() const {
 		return statements.front()->statement;
+	}
+	NodeStatement* front() const {
+		return empty() ? nullptr : statements.front().get();
+	}
+	NodeStatement* back() const {
+		return empty() ? nullptr : statements.back().get();
 	}
 };
 

@@ -39,6 +39,7 @@
 #include "AST/ASTVisitor/FunctionHandling/ASTPreemptiveFunctionInlining.h"
 #include "AST/ASTVisitor/GlobalScope/ASTDimensionExpansion.h"
 #include "AST/ASTVisitor/ASTLowerTypes.h"
+#include "AST/ASTVisitor/ASTThreadSafeAnalysis.h"
 #include "AST/ASTVisitor/UniqueParameterNamesProvider.h"
 #include "AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
 #include "AST/ASTVisitor/FunctionHandling/ParameterAssignmentTransformation.h"
@@ -183,7 +184,7 @@ public:
 		// input_filename = "/Users/mathias/Scripting/legato-dev/one-shot.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score-essentials/the-score-essentials.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
-		input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
+		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Ensemble.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Single.ksp";
 		// input_filename = "/Users/mathias/Scripting/toc-single-instruments/legato.ksp";
@@ -228,7 +229,7 @@ public:
 #endif
 
 		m_final_config = combine_configs(m_cli_config, m_pragma_config);
-		m_final_config->optimization_level = OptimizationLevel::Aggressive;
+		// m_final_config->optimization_level = OptimizationLevel::Aggressive;
 
 		std::cout << "\n";
 		std::cout << "Input File: " << m_final_config->input_filename.value() << "\n";
@@ -345,9 +346,13 @@ public:
 		return_function_rewriting.do_rewriting(*ast);
 		ast->debug_print();
 
-		static MarkThreadSafeVars mark_vars(m_program);
-		mark_vars.mark_variables(*ast);
+		ASTThreadSafeAnalysis thread_safe_analysis(m_program);
+		thread_safe_analysis.run(*m_program);
+		thread_safe_analysis.mark_variables();
 		ast->debug_print();
+		// static MarkThreadSafeVars mark_vars(m_program);
+		// mark_vars.mark_variables(*ast);
+		// ast->debug_print();
 
 		{
 			variable_checking.do_reachable_traversal(*ast, true);

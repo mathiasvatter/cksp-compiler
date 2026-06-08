@@ -35,9 +35,14 @@ class ASTKSPSyntaxCheck final : public ASTVisitor {
 
 	static void check_max_array_size(const NodeArray& node) {
 		if(auto node_int = node.size->cast<NodeInt>()) {
+			
 			if(node_int->value > MAX_ARRAY_ELEMENTS) {
 				auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, node);
 				error.m_message = "Array size exceeds maximum of " + std::to_string(MAX_ARRAY_ELEMENTS) + ".";
+				if (!node.is_thread_safe) {
+					error.add_message("Since the array was declared locally in environment of asynchronous function calls,"
+					   " this might have been caused by the compiler and can be prevented by either declaring the array globally or reducing <max_callback_depth> via #pragma.");
+				}
 				error.m_got = std::to_string(node_int->value);
 				error.exit();
 			}

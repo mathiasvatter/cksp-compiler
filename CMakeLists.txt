@@ -245,6 +245,7 @@ add_executable(cksp main.cpp
         Optimization/ScalarVarToArray.h
         AST/ASTVisitor/FunctionHandling/FunctionExitCheck.h
         AST/ASTVisitor/ASTLifeTimeAnalysis.h
+        AST/ASTVisitor/ASTThreadSafeAnalysis.h
 )
 add_dependencies(cksp generate_headers)
 
