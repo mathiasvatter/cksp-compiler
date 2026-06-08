@@ -359,6 +359,14 @@ public:
         if (first && !second) {
             return first;
         }
+    	if (first == TypeRegistry::Unknown || second == TypeRegistry::Unknown || !has_more_than_two_types) {
+    		// if one of the two found types is unknown, that is ok -> might be a misspelled variable
+    		if (first == TypeRegistry::Unknown) {
+    			return second;
+    		} else {
+    			return first;
+    		}
+    	}
 
         // exactly two different types -> only allowed if they are <String> and <Integer>/<Real>
         if (!has_more_than_two_types && first && second) {

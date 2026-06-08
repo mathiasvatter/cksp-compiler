@@ -65,24 +65,34 @@ end on
 	
 // end function	
 on note
-    declare note := 1 + NUM_GROUPS
-    message(note)
+    declare async_ids[10]
+    // declare note := 1 + NUM_GROUPS
+    // message(note)
 
-    declare pups := 5 + NUM_GROUPS
-    message(pups)
+    // declare pups := 5 + NUM_GROUPS
+    // message(pups)
 
-    pupupupu()
+    // pupupupu()
 
-    for i in range(0, 4)
-        declare sdf := 555
-        message(sdf)
-        wait(1)
+    for id in async_ids
+        message(id)
+        wait_async(id)
     end for    
 
-    declare varr := 34
-    set_controller(1, varr)
-    message(varr)
+    // declare varr := 34
+    // set_controller(1, varr)
+    // message(varr)
+declare const FX_AHDSR_XX := 60
+declare const FX_EQ_X := 300
+declare const FX_COLOR_X := 760
+declare const FX_DELAY_X := 60
+declare const FX_CONVO_X := 370
+declare const FX_MICS_X := 550
 
+declare const fx_sli_x[]: int[][] :=  [
+    [FX_AHDSR_X, FX_AHDSR_X, FX_EQ_X, FX_EQ_X,  FX_EQ_X*2,  FX_EQ_X*3,  FX_EQ_X*4,      FX_COLOR_X, FX_COLOR_X],  
+    [FX_DELAY_X, FX_DELAY_X, FX_DELAY_X*2,      FX_CONVO_X, FX_MICS_X,  FX_MICS_X,  FX_MICS_X*2,    FX_MICS_X*3, FX_MICS_X*4],   
+]
 end on
 
 function pupupupu()
