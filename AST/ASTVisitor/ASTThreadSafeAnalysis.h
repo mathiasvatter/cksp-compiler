@@ -13,24 +13,23 @@ class ASTThreadSafeVariableMarking : public ASTVisitor {
 	NodeStatement* m_start = nullptr;
 	NodeStatement* m_end = nullptr;
 	ASTLifeTimeAnalysis m_lifetime_analysis;
-	std::unordered_map<NodeStatement*, std::unordered_set<NodeDataStructure*>> m_end_of_life;
+	std::unordered_map<NodeStatement*, std::vector<NodeDataStructure*>> m_end_of_life;
 
 	bool determine_thread_safety(NodeDataStructure& node) const {
 		// the following data types can be thread unsafe and might need to be handled
-		static const std::unordered_set<DataType> thread_unsafe_data_types = {
-			DataType::Mutable, DataType::Return, DataType::Param
-		};
-		if (!m_is_thread_safe_environment) {
-			if (thread_unsafe_data_types.contains(node.data_type)) {
-				node.is_thread_safe = false;
-			}
+		const bool is_potentially_thread_unsafe =
+			node.data_type == DataType::Mutable or
+			node.data_type == DataType::Return or
+			node.data_type == DataType::Param;
+		if (!m_is_thread_safe_environment and is_potentially_thread_unsafe) {
+			node.is_thread_safe = false;
 		}
 		return node.is_thread_safe;
 	}
 
 	bool add_end_of_life(NodeDataStructure* data) {
 		if (auto l = m_lifetime_analysis.get_lifetime(data)) {
-			m_end_of_life[l->end].insert(data);
+			m_end_of_life[l->end].push_back(data);
 			return true;
 		}
 		return false;
@@ -116,8 +115,8 @@ class ASTThreadSafeAnalysis : public ASTVisitor {
 	};
 
 	std::stack<ThreadUnsafeRange*> m_thread_unsafe_ranges;
-	std::unordered_map<NodeFunctionDefinition*, std::unique_ptr<ThreadUnsafeRange>> m_function_thread_unsafe_ranges;
-	std::unordered_map<NodeCallback*, std::unique_ptr<ThreadUnsafeRange>> m_callback_thread_unsafe_ranges;
+	std::unordered_map<NodeFunctionDefinition*, ThreadUnsafeRange> m_function_thread_unsafe_ranges;
+	std::unordered_map<NodeCallback*, ThreadUnsafeRange> m_callback_thread_unsafe_ranges;
 
 public:
 	explicit ASTThreadSafeAnalysis(NodeProgram* main) : m_def_provider(main->def_provider), m_variable_marking(main) {
@@ -130,6 +129,8 @@ public:
 		m_current_statement = nullptr;
 		m_function_thread_unsafe_ranges.clear();
 		m_callback_thread_unsafe_ranges.clear();
+		m_function_thread_unsafe_ranges.reserve(node.function_definitions.size());
+		m_callback_thread_unsafe_ranges.reserve(node.callbacks.size());
 		for(const auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
@@ -149,8 +150,8 @@ public:
 		// 	}
 		// );
 		for (auto& [func, range] : m_function_thread_unsafe_ranges) {
-			if (range->is_valid() and !range->is_thread_safe) {
-				m_variable_marking.run(*func, range->start, range->end);
+			if (range.is_valid() and !range.is_thread_safe) {
+				m_variable_marking.run(*func, range.start, range.end);
 			}
 		}
 		// parallel_for_each(m_callback_thread_unsafe_ranges.begin(), m_callback_thread_unsafe_ranges.end(),
@@ -163,15 +164,15 @@ public:
 		// 	}
 		// );
 		for (auto& [cb, range] : m_callback_thread_unsafe_ranges) {
-			if (range->is_valid() and !range->is_thread_safe) {
-				m_variable_marking.run(*cb, range->start, range->end);
+			if (range.is_valid() and !range.is_thread_safe) {
+				m_variable_marking.run(*cb, range.start, range.end);
 			}
 		}
 	}
 
 	void print() {
 		for (auto& [cb, range] : m_callback_thread_unsafe_ranges) {
-			std::cout << range->start->tok.file << ":" << range->start->tok.line << " - " << range->end->tok.file << ":" << range->end->tok.line << std::endl;
+			std::cout << range.start->tok.file << ":" << range.start->tok.line << " - " << range.end->tok.file << ":" << range.end->tok.line << std::endl;
 		}
 	}
 
@@ -189,7 +190,7 @@ protected:
 		m_current_callback = &node;
 		const auto first_stmt = node.statements->front();
 		const auto last_stmt = node.statements->back();
-		m_callback_thread_unsafe_ranges[&node] = std::make_unique<ThreadUnsafeRange>(true, first_stmt, last_stmt);
+		m_callback_thread_unsafe_ranges[&node] = ThreadUnsafeRange{true, first_stmt, last_stmt};
 		// auto & r = m_callback_thread_unsafe_ranges[&node];
 		node.statements->accept(*this);
 		m_current_callback = nullptr;
@@ -208,13 +209,13 @@ protected:
 				// we are in the function call stack
 				if (auto curr_func = m_program->get_curr_function()) {
 					auto& range = m_function_thread_unsafe_ranges[curr_func.get()];
-					range->end = m_current_statement;
-					range->is_thread_safe = definition->is_thread_safe;
+					range.end = m_current_statement;
+					range.is_thread_safe = definition->is_thread_safe;
 				} else {
 					// we are in a callback
 					auto& range = m_callback_thread_unsafe_ranges[m_current_callback];
-					range->end = m_current_statement;
-					range->is_thread_safe = definition->is_thread_safe;
+					range.end = m_current_statement;
+					range.is_thread_safe = definition->is_thread_safe;
 				}
 			}
 		}
@@ -223,9 +224,9 @@ protected:
 		if(!node.is_builtin_kind() and definition) {
 			if (definition and definition->body->empty()) return &node; // if function body is empty, there are no thread-unsafe statements to mark
 			if(!definition->visited) {
-				m_function_thread_unsafe_ranges[definition.get()] = std::make_unique<ThreadUnsafeRange>(true,
+				m_function_thread_unsafe_ranges[definition.get()] = ThreadUnsafeRange{true,
 					definition->body->statements.front().get(), definition->body->statements.back().get()
-				);
+				};
 				m_program->function_call_stack.push(definition);
 				definition->accept(*this);
 				m_program->function_call_stack.pop();
@@ -239,5 +240,4 @@ protected:
 
 
 };
-
 

@@ -50,15 +50,9 @@
 // 	declare array[25]: int[]
 // end on
 
-// on persistence_changed
-// 	update_keyrange_disp()
-// 	// if (dodododo(array))
-// 	// 	message("df")
-// 	// end if		
-// 	dodododo(array)
-// 	delete notes
-
-// end on
+on persistence_changed
+    pupupupu()
+end on
 
 // function dodododo(ref array: int[])
 // 	load_array(array, 2)
@@ -77,9 +71,21 @@ on note
     declare pups := 5 + NUM_GROUPS
     message(pups)
 
+    pupupupu()
+
     for i in range(0, 4)
         declare sdf := 555
         message(sdf)
-    end for        
+        wait(1)
+    end for    
+
+    declare varr := 34
+    set_controller(1, varr)
+    message(varr)
 
 end on
+
+function pupupupu()
+    declare var := 9
+    message(var)
+end function
