@@ -82,7 +82,7 @@ struct NodeAST {
 	Type* set_element_type(Type *element_type);
 	void debug_print(const std::string &path = PRINTER_OUTPUT);
 	virtual std::unique_ptr<struct NodeAccessChain> to_method_chain() {return nullptr;}
-	bool is_constant(bool builtins_are_constant = false);
+	bool is_constant(bool builtins_are_constant = false, bool arrayref_can_be_const = true);
 	int get_bison_tokens();
 	bool is_nil();
 	/// removes node from AST and all references from data_structs

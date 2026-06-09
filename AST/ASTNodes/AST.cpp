@@ -132,9 +132,9 @@ void NodeAST::debug_print(const std::string &path) {
 #endif
 }
 
-bool NodeAST::is_constant(bool builtins_are_constant) {
+bool NodeAST::is_constant(bool builtins_are_constant, bool arrayref_can_be_const) {
 	static ConstExprValidator const_validator;
-	return const_validator.is_constant(*this, builtins_are_constant);
+	return const_validator.is_constant(*this, builtins_are_constant, arrayref_can_be_const);
 }
 
 int NodeAST::get_bison_tokens() {
