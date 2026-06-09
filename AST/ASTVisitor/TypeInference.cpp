@@ -790,6 +790,7 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 					match_type(*func_arg, *param, error_message);
 				} else {
 					match_type(*func_arg, *param);
+
 				}
 			}
 
@@ -838,9 +839,11 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 			definition->visited = true;
 
 			// apply references to function params
-			for (auto &param : definition->header->params) {
-				for(auto & ref : param->variable->references) {
-					match_reference_declaration(*ref, param->variable);
+			for (int i = 0; i < node.function->get_num_args(); i++) {
+				// auto &func_arg = node.function->get_arg(i);
+				auto &param = definition->get_param(i);
+				for(auto & ref : param->references) {
+					match_reference_declaration(*ref, param);
 				}
             }
 		}
@@ -1017,6 +1020,7 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	if (MATH_TOKENS.contains(node.op)) {
 		// can only be int op int || float op float
 		is_compatible = node.left->ty->is_compatible(TypeRegistry::Integer) and node.right->ty->is_compatible(TypeRegistry::Integer);
+		is_compatible |= node.left->ty->is_compatible(TypeRegistry::Real) and node.right->ty->is_compatible(TypeRegistry::Real);
 		if(node.left->ty->get_element_type() == TypeRegistry::String || node.right->ty->get_element_type() == TypeRegistry::String) {
 			error.m_message += "<Mathematical Operators> can only be used in between <Integer> or <Real> values.";
 			error.exit();

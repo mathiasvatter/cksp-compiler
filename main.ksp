@@ -50,9 +50,9 @@
 // 	declare array[25]: int[]
 // end on
 
-on persistence_changed
-    pupupupu()
-end on
+// on persistence_changed
+//     pupupupu()
+// end on
 
 // function dodododo(ref array: int[])
 // 	load_array(array, 2)
@@ -65,7 +65,12 @@ end on
 	
 // end function	
 on note
-    declare async_ids[10]
+    declare bums: real := 3.0
+    declare a := pow(bums, 4.0)
+    pupu()
+    // message(bums + NUM_GROUPS)
+
+    // declare async_ids[10]
     // declare note := 1 + NUM_GROUPS
     // message(note)
 
@@ -74,28 +79,17 @@ on note
 
     // pupupupu()
 
-    for id in async_ids
-        message(id)
-        wait_async(id)
-    end for    
+    // for id in async_ids
+    //     message(id)
+    //     wait_async(id)
+    // end for    
 
     // declare varr := 34
     // set_controller(1, varr)
     // message(varr)
-declare const FX_AHDSR_XX := 60
-declare const FX_EQ_X := 300
-declare const FX_COLOR_X := 760
-declare const FX_DELAY_X := 60
-declare const FX_CONVO_X := 370
-declare const FX_MICS_X := 550
 
-declare const fx_sli_x[]: int[][] :=  [
-    [FX_AHDSR_X, FX_AHDSR_X, FX_EQ_X, FX_EQ_X,  FX_EQ_X*2,  FX_EQ_X*3,  FX_EQ_X*4,      FX_COLOR_X, FX_COLOR_X],  
-    [FX_DELAY_X, FX_DELAY_X, FX_DELAY_X*2,      FX_CONVO_X, FX_MICS_X,  FX_MICS_X,  FX_MICS_X*2,    FX_MICS_X*3, FX_MICS_X*4],   
-]
 end on
 
-function pupupupu()
-    declare var := 9
-    message(var)
+function pupu()
+    message(2)
 end function
