@@ -64,7 +64,8 @@
 // 	end for
 	
 // end function	
-
+USE_CODE_IF(PUPU)
+END_USE_CODE(PUPU)
 on init
     declare event_id
     declare array: int[], array2: int[] := [1,2,3]
