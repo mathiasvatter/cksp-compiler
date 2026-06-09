@@ -137,7 +137,12 @@ struct NodeArrayRef final : NodeCompositeRef {
 	std::unique_ptr<NodeAST> take_index(size_t i) override {
 		return std::move(index);
 	}
-
+	NodeInt *index_is_number_literal() const {
+		if (!has_index()) return nullptr;
+		return index->cast<NodeInt>();
+	}
+	/// if it is a constant array, tries to return the constant value at the current index
+	NodeAST* get_const_value_at_this_index() const;
 };
 
 struct NodeNDArrayRef final : NodeCompositeRef {

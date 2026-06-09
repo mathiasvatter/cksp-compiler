@@ -108,7 +108,7 @@ struct NodeAST {
 	[[nodiscard]] NodeBlock* get_outmost_block() const;
 	[[nodiscard]] struct NodeCallback* get_current_callback() const;
 	[[nodiscard]] struct NodeFunctionDefinition* get_current_function() const;
-	void do_constant_folding();
+	NodeAST *do_constant_folding();
 	void do_type_inference(NodeProgram *program);
 	NodeAST* do_lowering(NodeProgram* program);
 	NodeAST* collect_declarations(NodeProgram* program);
@@ -332,6 +332,7 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 	virtual std::unique_ptr<NodeAST> get_size() {
 		return nullptr;
 	}
+	class NodeSingleDeclaration* is_in_declaration() const;
 };
 
 struct NodeInstruction : NodeAST {
@@ -725,7 +726,11 @@ struct NodeInitializerList final : NodeAST {
 		param->parent = this;
 		elements.insert(elements.begin(), std::move(param));
 	}
+	/// if the given idx is bigger than init list size, will return the last element
 	std::unique_ptr<NodeAST>& elem(const int idx) {
+		if (idx < 0 || idx >= elements.size()) {
+			return elements.back();
+		}
 		return elements.at(idx);
 	}
 	[[nodiscard]] size_t size() const {
