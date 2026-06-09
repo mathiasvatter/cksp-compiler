@@ -312,8 +312,8 @@ public:
 
 	static CompileError throw_type_error(const NodeAST& node1, const NodeAST& node2, const std::string& message="") {
     	auto error = CompileError(ErrorType::TypeError,"", "", node1.tok);
-    	error.m_message = "Type mismatch: The types of '"+ node1.tok.val+"' (<" + node1.ty->to_string() + ">) and '"+
-    		node2.tok.val+"' (<" + node2.ty->to_string()+">) are incompatible.";
+    	error.m_message = "Type mismatch: The types of '"+ node1.get_token_string() +"' (<" + node1.ty->to_string() + ">) and '"+
+    		node2.get_token_string() +"' (<" + node2.ty->to_string()+">) are incompatible.";
     	error.m_got = node1.ty->to_string();
     	error.m_expected = node2.ty->to_string();
     	error.m_message += message;

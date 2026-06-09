@@ -66,21 +66,12 @@
 // end function	
 
 on init
-    declare EVENT_MARKS: int[] := [MARK_1, MARK_2, MARK_3]
-    declare EVENT_MARKS2: int[] := [MARK_1, MARK_2, MARK_3]
-    message(custom_get_event_mark(4))
+    declare const grain_param_ScaleToMin: int[][] := [
+        [5.0, 5.0, 10.0, 10.0, 0.0, 0.0],
+        [-64000.0, 5.0, -1.0, -1.0, 0.0, 0.0],
+    ]
 end on
 
-function custom_get_event_mark(id)
-    declare mark := -1
-    if get_event_mark(id, EVENT_MARKS[0]) = true
-        mark := 1
-    end if
-    if pgs_key_exists(BABABA) and pgs_key_exists(BABABe)
-        mark := 1
-    end if
-    return mark
-end function
 
 
 on note
