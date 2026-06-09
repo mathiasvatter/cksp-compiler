@@ -137,6 +137,11 @@ public:
 		bool booleans = m_kind == Kind::Boolean && other->get_kind() == Kind::Boolean;
 		if(booleans) return true;
 
+    	// boolean shall also be compatible with int (implicit conversion)
+    	bool implicit_bool_int = m_kind == Kind::Boolean && other->get_kind() == Kind::Integer;
+		implicit_bool_int |= m_kind == Kind::Integer && other->get_kind() == Kind::Boolean;
+		if(implicit_bool_int) return true;
+
         // comparison is compatible with boolean and vice versa
         bool comparison = m_kind == Kind::Comparison && other->get_kind() == Kind::Boolean ||
                 m_kind == Kind::Boolean && other->get_kind() == Kind::Comparison;

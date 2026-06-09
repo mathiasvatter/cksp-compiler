@@ -66,40 +66,13 @@
 // end function	
 
 on init
-    declare const grain_param_ScaleToMin: int[][] := [
-        [5.0, 5.0, 10.0, 10.0, 0.0, 0.0],
-        [-64000.0, 5.0, -1.0, -1.0, 0.0, 0.0],
-    ]
-end on
+    declare event_id
+    declare array: int[], array2: int[] := [1,2,3]
 
+    // //This compiles:
+    set_event_par_arr(event_id, EVENT_PAR_ALLOW_GROUP, 1, array[array2] + 1)
 
-
-on note
-
-  
-
-    // message(bums + NUM_GROUPS)
-
-    // declare async_ids[10]
-    // declare note := 1 + NUM_GROUPS
-    // message(note)
-
-    // declare pups := 5 + NUM_GROUPS
-    // message(pups)
-
-    // pupupupu()
-
-    // for id in async_ids
-    //     message(id)
-    //     wait_async(id)
-    // end for    
-
-    // declare varr := 34
-    // set_controller(1, varr)
-    // message(varr)
+    //This is the correct version:
+    // set_event_par_arr(event_id, EVENT_PAR_ALLOW_GROUP, 1, array[array2[3]]+1)
 
 end on
-
-function pupu()
-    message(2)
-end function
