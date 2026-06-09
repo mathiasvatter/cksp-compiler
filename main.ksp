@@ -66,11 +66,21 @@
 // end function	
 
 on init
-    declare n[10]
-    declare ndarray3[10,10,10,10]
-    message(ndarray3[3, 4, *, *])
-    message(n[*])
+    declare EVENT_MARKS: int[] := [MARK_1, MARK_2, MARK_3]
+    declare EVENT_MARKS2: int[] := [MARK_1, MARK_2, MARK_3]
+    message(custom_get_event_mark(4))
 end on
+
+function custom_get_event_mark(id)
+    declare mark := -1
+    if get_event_mark(id, EVENT_MARKS[0]) = true
+        mark := 1
+    end if
+    if pgs_key_exists(BABABA) and pgs_key_exists(BABABe)
+        mark := 1
+    end if
+    return mark
+end function
 
 
 on note

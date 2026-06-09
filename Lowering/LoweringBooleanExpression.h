@@ -8,7 +8,7 @@
 
 /**
  * This class lowers expressions with comparisons and booleans into integer expressions by using the
- * provided boolean functions und substituing the operators.
+ * provided boolean functions und substituting the operators.
  * For example:
  * a > b and c < d
  * -->
