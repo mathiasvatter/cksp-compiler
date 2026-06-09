@@ -64,10 +64,19 @@
 // 	end for
 	
 // end function	
+
+on init
+    declare n[10]
+    declare ndarray3[10,10,10,10]
+    message(ndarray3[3, 4, *, *])
+    message(n[*])
+end on
+
+
 on note
-    declare bums: real := 3.0
-    declare a := pow(bums, 4.0)
-    pupu()
+
+  
+
     // message(bums + NUM_GROUPS)
 
     // declare async_ids[10]
