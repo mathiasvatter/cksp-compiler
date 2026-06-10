@@ -27,7 +27,6 @@ class ConstantPropagation final : public ASTOptimizations {
 		auto it = m_constants.find(get_hash_value(node));
 		if(it != m_constants.end()) {
 			auto constant = it->second->clone();
-			// constant->update_parents(nullptr);
 			return constant;
 		}
 		return nullptr;
