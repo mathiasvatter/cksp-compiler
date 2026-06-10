@@ -5,10 +5,33 @@
 #pragma once
 
 #include "../AST/ASTVisitor/ASTVisitor.h"
+#include "../AST/ASTVisitor/ASTOptimizations.h"
 
-class ConstantPropagation final : public ASTVisitor {
-	std::unordered_map<std::string, std::unique_ptr<NodeAST>> m_constants;
+class ConstantPropagation final : public ASTOptimizations {
+	std::unordered_map<StringTypeKey, std::unique_ptr<NodeAST>, StringTypeKeyHash> m_constants;
+
 	std::mutex m_constants_mutex;
+
+	void add_constant(NodeDataStructure& data, const NodeAST* value) {
+		if(data.data_type == DataType::Const) {
+			m_constants[get_hash_value(data)] = value->clone();
+		}
+	}
+	void add_constant(NodeArrayRef& ref, const NodeAST* value) {
+		if(ref.data_type == DataType::Const) {
+			m_constants[get_hash_value(ref)] = value->clone();
+		}
+	}
+
+	std::unique_ptr<NodeAST> get_constant(NodeAST& node) {
+		auto it = m_constants.find(get_hash_value(node));
+		if(it != m_constants.end()) {
+			auto constant = it->second->clone();
+			return constant;
+		}
+		return nullptr;
+	}
+
 public:
 	// this seems to cause segfault errors under certain circumstances... -> switched back to one thread
 	// segfault maybe originates from NodeReference destructor that accesses reference set of connected
@@ -39,11 +62,25 @@ public:
 		if(node.value) {
 			node.value->accept(*this);
 			// when declared as const -> replace with dead code node
-			if(node.variable->data_type == DataType::Const and node.variable->get_node_type() == NodeType::Variable) {
-				{
-					// std::lock_guard<std::mutex> lock(m_constants_mutex);
-					m_constants[node.variable->name] = std::move(node.value);
+			if(node.variable->data_type == DataType::Const) {
+				if (node.variable->cast<NodeVariable>()) {
+					add_constant(*node.variable, node.value.get());
 					return node.remove_node();
+				} else if (auto node_array = node.variable->cast<NodeArray>()) {
+					// split the const array up into its references
+					node_array->size->do_constant_folding();
+					if (auto size = node_array->get_size()) {
+						if (auto s = size->cast<NodeInt>()) {
+							auto init_list = node.value->cast<NodeInitializerList>();
+							if (!init_list) return &node;
+							auto node_array_ref = unique_ptr_cast<NodeArrayRef>(node.variable->to_reference());
+							node_array_ref->ty = node_array->ty->get_element_type();
+							for (int i = 0; i < s->value; ++i) {
+								node_array_ref->set_index(std::make_unique<NodeInt>(i, Token()));
+								add_constant(*node_array_ref, init_list->elem(i).get());
+							}
+						}
+					}
 				}
 			}
 		}
@@ -51,6 +88,11 @@ public:
 	}
 
 	NodeAST* visit(NodeVariableRef& node) override {
+		return do_constant_propagation(&node);
+	}
+
+	NodeAST* visit(NodeArrayRef& node) override {
+		ASTVisitor::visit(node);
 		return do_constant_propagation(&node);
 	}
 
@@ -75,7 +117,7 @@ public:
 		if(node->is_l_value()) return node;
 
 		if (!m_constants.empty()) {
-			if (auto substitute = get_constant(node->name)) {
+			if (auto substitute = get_constant(*node)) {
 				if (substitute->ty->is_compatible(node->ty)) {
 					{
 						// std::lock_guard<std::mutex> lock(m_constants_mutex);
@@ -86,17 +128,5 @@ public:
 		}
 		return node;
 	}
-
-private:
-	std::unique_ptr<NodeAST> get_constant(const std::string& name) {
-		auto it = m_constants.find(name);
-		if(it != m_constants.end()) {
-			auto constant = it->second->clone();
-			// constant->update_parents(nullptr);
-			return constant;
-		}
-		return nullptr;
-	}
-
 
 };

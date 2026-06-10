@@ -56,7 +56,7 @@ struct LinesProcessed {
 	size_t lines_blank = 0;
 
 	std::string get_report() const {
-		auto l = "Lexer lines processed: " + std::to_string(lines_total-lines_comment-lines_blank) + " " + std::to_string(lines_blank);
+		auto l = "Lexer lines processed: " + std::to_string(lines_total-lines_comment-lines_blank);
 		auto further_info = " (" + std::to_string(lines_total) + " including comment and blank lines)";
 		return l + further_info;
 	}

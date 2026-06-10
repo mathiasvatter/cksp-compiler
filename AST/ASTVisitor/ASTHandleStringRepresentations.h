@@ -183,13 +183,13 @@ private:
 			error.exit();
 		}
 		std::string func_name = node.ty->to_string()+OBJ_DELIMITER+"__repr__";
-		if(m_program->function_lookup.find({func_name, 1}) != m_program->function_lookup.end()) {
+		if(m_program->function_lookup.contains({func_name, 1})) {
 			return false;
 		}
 
 		auto node_self = shared_ptr_cast<NodeNDArray>(clone_shared(node.get_declaration()));
 		node_self->name = "self";
-		node_self->ty = node.get_declaration()->ty;
+		node_self->ty = node.ty;
 		node_self->sizes = nullptr;
 		auto self_ref = node_self->to_reference();
 		auto message = std::make_unique<NodeString>(

@@ -85,4 +85,24 @@ private:
 		return &node;
 	}
 
+	/// IMPORTANT: Kontakt does not accept comparisons on builtin functions that have a boolean return type
+	/// such as array_equal(arr1, arr2) or pgs_key_exists
+	/// so we need to throw an error if the user does use a comparison here! -> pgs_key_exists(PGS) = 1 <- KSP error!
+	NodeAST *visit(NodeFunctionCall &node) override {
+		auto bin_exp = node.parent->cast<NodeBinaryExpr>();
+		if (!bin_exp) return &node;
+
+		if (not COMPARISON_TOKENS.contains(bin_exp->op)) {
+			return &node;
+		}
+
+		if (node.is_builtin_kind() and node.ty->get_element_type() == TypeRegistry::Boolean) {
+			auto other = bin_exp->left.get() == &node ? bin_exp->right.get() : bin_exp->left.get();
+			auto error = CompileError(ErrorType::SyntaxError, "", "", other->tok);
+			error.m_message = "Comparison operators cannot be used on builtin functions that return boolean values such as <"+node.function->name+">.";
+			error.exit();
+		}
+		return ASTVisitor::visit(node);
+	}
+
 };

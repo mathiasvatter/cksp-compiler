@@ -25,10 +25,13 @@
  */
 class ConstExprValidator final : public ASTVisitor {
 	bool m_is_constant = true;
-
+	bool all_builtins_are_constant = false;
+	bool arrayref_can_be_constants = true; // true by default, but Kontakt does not accept const custom arrays so has to be able to set to false sometimes
 public:
-	bool is_constant(NodeAST& node) {
+	bool is_constant(NodeAST& node, bool builtins_are_const = false, bool arrayref_can_be_const = true) {
 		m_is_constant = true;
+		all_builtins_are_constant = builtins_are_const;
+		arrayref_can_be_constants = arrayref_can_be_const;
 		node.accept(*this);
 		return m_is_constant;
 	}
@@ -37,16 +40,29 @@ public:
 		if(node.data_type == DataType::Const) {
 			m_is_constant &= true;
 		} else {
-			m_is_constant &= false;
+			if (all_builtins_are_constant) {
+				if (node.kind == NodeReference::Kind::Builtin) {
+					m_is_constant &= true;
+				}
+			} else {
+				m_is_constant &= false;
+			}
 		}
 		return &node;
 	}
 
 	NodeAST * visit(NodeArrayRef& node) override {
 		if(node.index) node.index->accept(*this);
-		if(node.data_type == DataType::Const) {
-			m_is_constant &= true;
-			return &node;
+		if (arrayref_can_be_constants) {
+			if(node.data_type == DataType::Const) {
+				m_is_constant &= true;
+				return &node;
+			}
+		}
+		if (all_builtins_are_constant) {
+			if (node.kind == NodeReference::Kind::Builtin) {
+				m_is_constant &= true;
+			}
 		}
 		// if it is of type composite it references the size -> which is constant
 		if(node.ty->get_type_kind() == TypeKind::Composite) {

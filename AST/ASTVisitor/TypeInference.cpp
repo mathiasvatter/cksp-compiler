@@ -196,6 +196,7 @@ NodeAST * TypeInference::visit(NodeArrayRef& node) {
 			// not handed over as array element
 			// handed over as array element -> set to element type
 			if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
+			match_against(*node.index, TypeRegistry::Integer, "Array index has to be of type <Integer>.");
 		}
 	}
 
@@ -267,6 +268,7 @@ NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
 		} else {
         	if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
 		}
+		match_against(*node.indexes, TypeRegistry::Integer, "Array index has to be of type <Integer>.");
     }
     match_reference_declaration(node, node.get_declaration());
 	if(m_def_provider) m_def_provider->add_to_references(&node);
@@ -790,6 +792,7 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 					match_type(*func_arg, *param, error_message);
 				} else {
 					match_type(*func_arg, *param);
+
 				}
 			}
 
@@ -838,9 +841,11 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 			definition->visited = true;
 
 			// apply references to function params
-			for (auto &param : definition->header->params) {
-				for(auto & ref : param->variable->references) {
-					match_reference_declaration(*ref, param->variable);
+			for (int i = 0; i < node.function->get_num_args(); i++) {
+				// auto &func_arg = node.function->get_arg(i);
+				auto &param = definition->get_param(i);
+				for(auto & ref : param->references) {
+					match_reference_declaration(*ref, param);
 				}
             }
 		}
@@ -1007,18 +1012,26 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	bool is_compatible = true;
 	auto error = throw_type_error(*node.left, node.right->ty);
 
-	node.left->ty = specialize_type(node.left->ty, node.ty);
-	node.right->ty = specialize_type(node.right->ty, node.ty);
+	// node.left->ty = specialize_type(node.left->ty, node.ty);
+	// node.right->ty = specialize_type(node.right->ty, node.ty);
+	//
+	// node.left->ty = specialize_type(node.left->ty, node.right->ty);
+	// node.right->ty = specialize_type(node.right->ty, node.left->ty);
 
-	node.left->ty = specialize_type(node.left->ty, node.right->ty);
-	node.right->ty = specialize_type(node.right->ty, node.left->ty);
+	node.left->set_element_type(specialize_type(node.left->ty, node.ty));
+	node.right->set_element_type(specialize_type(node.right->ty, node.ty));
+
+	node.left->set_element_type(specialize_type(node.left->ty, node.right->ty));
+	node.right->set_element_type(specialize_type(node.right->ty, node.left->ty));
 
 	// check type of this node by looking at operator and node.left and node.right
 	if (MATH_TOKENS.contains(node.op)) {
 		// can only be int op int || float op float
-		is_compatible = node.left->ty->is_compatible(TypeRegistry::Integer) and node.right->ty->is_compatible(TypeRegistry::Integer);
+		is_compatible = node.left->ty->is_compatible(node.right->ty) and node.right->ty->is_compatible(node.left->ty);
+		// is_compatible = node.left->ty->is_compatible(TypeRegistry::Integer) and node.right->ty->is_compatible(TypeRegistry::Integer);
+		// is_compatible |= node.left->ty->is_compatible(TypeRegistry::Real) and node.right->ty->is_compatible(TypeRegistry::Real);
 		if(node.left->ty->get_element_type() == TypeRegistry::String || node.right->ty->get_element_type() == TypeRegistry::String) {
-			error.m_message += "<Mathematical Operators> can only be used in between <Integer> or <Real> values.";
+			error.add_message("<Mathematical Operators> can only be used in between <Integer> or <Real> values.");
 			error.exit();
 		}
 
@@ -1030,29 +1043,29 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 		}
 		if(node.left->ty != node.right->ty)
 			is_compatible = false;
-		error.m_message += "Please use real() and int() to use <Real> and <Integer> numbers in a single expression.";
+		error.add_message("Please use real() and int() to use <Real> and <Integer> numbers in a single expression.");
 
 	} else if (BITWISE_TOKENS.contains(node.op)) {
 		node.ty = TypeRegistry::Integer;
 		is_compatible = node.left->ty->is_compatible(node.ty) and node.right->ty->is_compatible(node.ty);
-		error.m_message += "<Bitwise Operators> can only be used in between <Integer> values.";
+		error.add_message("<Bitwise Operators> can only be used in between <Integer> values.");
 	} else if (BOOL_TOKENS.contains(node.op)) {
 		node.ty = TypeRegistry::Boolean;
 		is_compatible = node.left->ty->is_compatible(node.ty) and node.right->ty->is_compatible(node.ty);
-		error.m_message += "<Bool Operators> can only be used in between <Boolean> or <Comparison> values.";
+		error.add_message("<Bool Operators> can only be used in between <Boolean> or <Comparison> values.");
 
 	} else if (COMPARISON_TOKENS.contains(node.op)) {
 		node.ty = TypeRegistry::Comparison;
 		is_compatible = node.left->ty->is_compatible(node.ty) and node.right->ty->is_compatible(node.ty);
 		is_compatible |= is_object;
-		error.m_message += "<Comparison Operators> can only be used in between <Integer> or <Real> values.";
+		error.add_message("<Comparison Operators> can only be used in between <Integer> or <Real> values.");
 
 	} else {
 		error.exit();
 	}
 
 	if (is_object) {
-		error.m_message += " Operator <"+ get_token_string(node.op) +"> has not been overloaded for type "+node.left->ty->to_string()+".";
+		error.add_message(" Operator <"+ get_token_string(node.op) +"> has not been overloaded for type "+node.left->ty->to_string()+".");
 	}
 
 	if(!is_compatible) {
@@ -1065,7 +1078,7 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 
 NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 	// match_type(node, *node.parent);
-	node.operand->ty = specialize_type(node.operand->ty, node.ty);
+	node.operand->set_element_type(specialize_type(node.operand->ty, node.ty));
 	node.operand->accept(*this);
 
 	bool is_object = false;
@@ -1102,20 +1115,20 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 		} else if(is_compatible and node.operand->ty == TypeRegistry::Real) {
 			node.ty = TypeRegistry::Real;
 		}
-		error.m_message += "Please use real() and int() to use <Real> and <Integer> numbers in a single expression.";
+		error.add_message("Please use real() and int() to use <Real> and <Integer> numbers in a single expression.");
 	} else if (node.op == token::BIT_NOT) {
 		node.ty = TypeRegistry::Integer;
 		is_compatible = node.operand->ty->is_compatible(node.ty);
 	} else if(node.op == token::BOOL_NOT) {
 		node.ty = TypeRegistry::Boolean;
 		is_compatible = node.operand->ty->is_compatible(node.ty) || is_object;
-		error.m_message += "<Bool Operators> can only be used in between <Boolean> or <Comparison> values. Be sure to use correct parentheses.";
+		error.add_message("<Bool Operators> can only be used in between <Boolean> or <Comparison> values. Be sure to use correct parentheses.");
 	} else {
 		error.exit();
 	}
 
 	if (is_object) {
-		error.m_message += " Operator <"+get_token_string(node.op) +"> has not been overloaded for type "+node.operand->ty->to_string()+".";
+		error.add_message(" Operator <"+get_token_string(node.op) +"> has not been overloaded for type "+node.operand->ty->to_string()+".");
 	}
 
 	if(!is_compatible)

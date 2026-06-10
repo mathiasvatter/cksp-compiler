@@ -31,7 +31,7 @@ struct NodeStatement final : NodeInstruction {
     std::string get_string() override {
         return statement->get_string();
     }
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		return statement ? statement->get_token_string() : "";
 	}
     void update_token_data(const Token& token) override {
@@ -65,7 +65,7 @@ struct NodeFunctionCall final : NodeInstruction {
     void update_parents(NodeAST* new_parent) override;
     void set_child_parents() override;
     std::string get_string() override;
-	std::string get_token_string() override;
+	std::string get_token_string() const override;
 	[[nodiscard]] std::string get_kind_as_string() const {
 		if (static_cast<size_t>(kind) < KindStrings.size()) {
 			return KindStrings[static_cast<size_t>(kind)];
@@ -159,7 +159,7 @@ struct NodeSortSearch final : NodeInstruction {
 		}
 		return search += "]";
 	}
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		std::string search = name + "[" + array->get_token_string();
 		search += ", " + value->get_token_string();
 		if (from) search += ", " + from->get_token_string();
@@ -214,7 +214,7 @@ struct NodeNumElements final : NodeInstruction {
 		}
 		return num_elements;
 	}
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		std::string num_elements = "num_elements[" + array->get_token_string();
 		if (dimension) num_elements += ", " + dimension->get_token_string();
 		return num_elements + "]";
@@ -254,7 +254,7 @@ struct NodeUseCount final : NodeInstruction {
 		const std::string use_count = "use_count[" + ref->get_string();
 		return use_count + "]";
 	}
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		return "use_count[" + ref->get_token_string() + "]";
 	}
 	void update_token_data(const Token& token) override {
@@ -299,7 +299,7 @@ struct NodeDelete final : NodeInstruction {
 		}
 		return del;
 	}
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		std::string del = "delete ";
 		for (const auto& d : ptrs) del += d->get_token_string() + ", ";
 		return del;
@@ -344,7 +344,7 @@ struct NodeSingleDelete final : NodeInstruction {
 	std::string get_string() override {
 		return "delete " + ptr->get_string();
 	}
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		std::string str = "delete " + ptr->get_token_string();
 		if (num) str += ", " + num->get_token_string();
 		return str;
@@ -387,7 +387,7 @@ struct NodeSingleRetain final : NodeInstruction {
 	std::string get_string() override {
 		return "retain " + ptr->get_string() + ", " + num->get_string();
 	}
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		return "retain " + ptr->get_token_string() + ", " + num->get_token_string();
 	}
 	void update_token_data(const Token& token) override {
@@ -428,7 +428,7 @@ struct NodeRetain final : NodeInstruction {
 		for(const auto & ptr: ptrs) output += ptr->get_string() + ", ";
 		return output;
 	}
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		std::string output = "delete ";
 		for (const auto& ptr : ptrs) output += ptr->get_token_string() + ", ";
 		return output;
@@ -470,7 +470,7 @@ struct NodeAssignment final : NodeInstruction {
 		for(const auto& l_val : l_values) output += l_val->get_string();
         return output + " := " + r_values->get_string();
     }
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		std::string output;
 		for (const auto& l_val : l_values) output += l_val->get_token_string();
 		return output + " := " + r_values->get_token_string();
@@ -509,7 +509,7 @@ struct NodeSingleAssignment final : NodeInstruction {
     std::string get_string() override {
         return l_value->get_string() + " := " + r_value->get_string();
     }
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		return l_value->get_token_string() + " := " + r_value->get_token_string();
 	}
     void update_token_data(const Token& token) override {
@@ -546,7 +546,7 @@ struct NodeCompoundAssignment final : NodeInstruction {
 	std::string get_string() override {
 		return l_value->get_string() + " " + ::get_token_string(op) + "= " + r_value->get_string();
 	}
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		return l_value->get_token_string() + " " + ::get_token_string(op) + "= " + r_value->get_token_string();
 	}
 	void update_token_data(const Token& token) override {
@@ -583,7 +583,7 @@ struct NodeDeclaration final : NodeInstruction {
         }
         return str.erase(str.size() - 2) + value->get_string();
     }
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		std::string str = "declare ";
 		for (const auto& decl : variable) str += decl->get_token_string() + ", ";
 		if (!variable.empty()) str.erase(str.size() - 2);
@@ -634,7 +634,7 @@ struct NodeSingleDeclaration final : NodeInstruction {
             string += " := " + value->get_string();
         return string;
     }
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		auto string = variable->get_token_string();
 		if (value) string += " := " + value->get_token_string();
 		return string;
@@ -704,7 +704,7 @@ struct NodeFunctionParam final : NodeInstruction {
 			string += " := " + value->get_string();
 		return string;
 	}
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		auto string = variable->get_token_string();
 		if (value) string += " := " + value->get_token_string();
 		return string;
@@ -761,7 +761,7 @@ struct NodeReturn final : NodeInstruction {
 		}
 		return str.erase(str.size() - 2);
 	}
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		std::string str = "return ";
 		for (const auto& ret : return_variables) str += ret->get_token_string() + ", ";
 		return return_variables.empty() ? str : str.erase(str.size() - 2);
@@ -792,7 +792,7 @@ struct NodeSingleReturn final : NodeInstruction {
 	std::string get_string() override {
 		return "return " + return_variable->get_string();
 	}
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		return "return " + return_variable->get_token_string();
 	}
 	void update_parents(NodeAST* new_parent) override {
@@ -842,7 +842,7 @@ struct NodeBlock final : NodeInstruction {
         }
         return str;
     }
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		std::string str;
 		for (const auto& stmt : statements) str += stmt->get_token_string();
 		return str;
@@ -898,8 +898,14 @@ struct NodeBlock final : NodeInstruction {
 	[[nodiscard]] std::unique_ptr<NodeAST>& get_last_statement() const {
 		return statements.back()->statement;
 	}
-	std::unique_ptr<NodeAST>& get_first_statement() const {
+	[[nodiscard]] std::unique_ptr<NodeAST>& get_first_statement() const {
 		return statements.front()->statement;
+	}
+	NodeStatement* front() const {
+		return empty() ? nullptr : statements.front().get();
+	}
+	NodeStatement* back() const {
+		return empty() ? nullptr : statements.back().get();
 	}
 };
 
@@ -924,7 +930,7 @@ struct NodeFamily final : NodeInstruction {
         members->parent = this;
     }
     std::string get_string() override { return ""; }
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		return "family " + prefix + " " + members->get_token_string();
 	}
     void update_token_data(const Token& token) override {
@@ -962,7 +968,7 @@ struct NodeIf final : NodeInstruction {
         else_body->parent = this;
     }
     std::string get_string() override { return ""; }
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		std::string str = "if " + condition->get_token_string();
 		if (if_body) str += " " + if_body->get_token_string();
 		if (else_body && !else_body->empty()) str += " else " + else_body->get_token_string();
@@ -1013,7 +1019,7 @@ struct NodeTernary final : NodeInstruction {
         else_branch->parent = this;
     }
     std::string get_string() override { return ""; }
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		return condition->get_token_string() + " ? " + if_branch->get_token_string() + " : " + else_branch->get_token_string();
 	}
     void update_token_data(const Token& token) override {
@@ -1040,9 +1046,9 @@ struct NodeFor final : NodeLoop {
     std::unique_ptr<NodeAST> iterator_end;
     std::unique_ptr<NodeAST> step = nullptr;
     std::unique_ptr<NodeBlock> body;
-    explicit NodeFor(Token tok) : NodeLoop(NodeType::For, std::move(tok)) {}
-    NodeFor(std::unique_ptr<NodeSingleAssignment> iterator, token to, std::unique_ptr<NodeAST> iterator_end, std::unique_ptr<NodeBlock> statements, Token tok)
-            : NodeLoop(NodeType::For, std::move(tok)), iterator(std::move(iterator)), to(std::move(to)), iterator_end(std::move(iterator_end)), body(std::move(statements)) {
+    explicit NodeFor(const Token& tok) : NodeLoop(NodeType::For, tok) {}
+    NodeFor(std::unique_ptr<NodeSingleAssignment> iterator, token to, std::unique_ptr<NodeAST> iterator_end, std::unique_ptr<NodeBlock> statements, const Token& tok)
+            : NodeLoop(NodeType::For, tok), iterator(std::move(iterator)), to(std::move(to)), iterator_end(std::move(iterator_end)), body(std::move(statements)) {
         set_child_parents();
     }
     NodeAST * accept(ASTVisitor &visitor) override;
@@ -1061,9 +1067,9 @@ struct NodeFor final : NodeLoop {
         iterator_end->parent = this;
         if(step) step->parent = this;
         body->parent = this;
-    };
+    }
     std::string get_string() override { return ""; }
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		std::string str = "for ";
 		if (iterator) str += iterator->get_token_string();
 		str += " " + tok.val + " ";
@@ -1091,8 +1097,8 @@ struct NodeForEach final : NodeLoop {
     std::unique_ptr<NodeFunctionParam> value;
     std::unique_ptr<NodeAST> range;
     std::unique_ptr<NodeBlock> body;
-    explicit NodeForEach(Token tok) : NodeLoop(NodeType::ForEach, std::move(tok)) {}
-    NodeForEach(std::unique_ptr<NodeFunctionParam> key, std::unique_ptr<NodeAST> range, std::unique_ptr<NodeBlock> statements, Token tok)
+    explicit NodeForEach(const Token& tok) : NodeLoop(NodeType::ForEach, std::move(tok)) {}
+    NodeForEach(std::unique_ptr<NodeFunctionParam> key, std::unique_ptr<NodeAST> range, std::unique_ptr<NodeBlock> statements, const Token& tok)
             : NodeLoop(NodeType::ForEach, std::move(tok)), key(std::move(key)), range(std::move(range)), body(std::move(statements)) {
         set_child_parents();
     }
@@ -1114,7 +1120,7 @@ struct NodeForEach final : NodeLoop {
         body->parent = this;
     }
     std::string get_string() override { return ""; }
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		std::string str = "for ";
 		if (key) str += key->get_token_string();
 		if (value) str += ", " + value->get_token_string();
@@ -1155,7 +1161,7 @@ struct NodePairs final : NodeInstruction {
 		range->parent = this;
 	}
 	std::string get_string() override { return "pairs"; }
-	std::string get_token_string() override { return "pairs(" + range->get_token_string() + ")"; }
+	std::string get_token_string() const override { return "pairs(" + range->get_token_string() + ")"; }
 	void update_token_data(const Token& token) override {
 		range -> update_token_data(token);
 	}
@@ -1187,7 +1193,7 @@ struct NodeRange final : NodeInstruction {
 		if(step) step->parent = this;
 	}
 	std::string get_string() override { return "range"; }
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		std::string str = "range(";
 		if (start) str += start->get_token_string() + ", ";
 		str += stop->get_token_string();
@@ -1235,7 +1241,7 @@ struct NodeWhile final : NodeLoop {
         body->parent = this;
     }
     std::string get_string() override { return ""; }
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		return "while " + condition->get_token_string() + " " + body->get_token_string();
 	}
     void update_token_data(const Token& token) override {
@@ -1281,7 +1287,7 @@ struct NodeSelect final : NodeInstruction {
         }
     }
     std::string get_string() override { return ""; }
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		std::string str = "select " + expression->get_token_string();
 		for (const auto& pair : cases) {
 			str += " case ";
@@ -1312,7 +1318,7 @@ struct NodeBreak final : NodeInstruction {
 	std::string get_string() override {
 		return "break";
 	}
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		return "break";
 	}
 	NodeWhile* get_nearest_loop() const {
@@ -1357,7 +1363,7 @@ struct NodeNamespace final : NodeInstruction {
 		}
 	}
 	std::string get_string() override { return ""; }
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		std::string str = "namespace " + prefix;
 		if (members) str += " " + members->get_token_string();
 		for (const auto& func_def : function_definitions) str += " " + func_def->get_token_string();

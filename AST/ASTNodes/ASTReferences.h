@@ -28,7 +28,7 @@ struct NodeVariableRef final : NodeReference {
 	std::string get_string() override {
 		return name;
 	}
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		return name;
 	}
 	std::unique_ptr<NodeArrayRef> to_array_ref(std::unique_ptr<NodeAST> index) override;
@@ -93,7 +93,7 @@ struct NodeArrayRef final : NodeCompositeRef {
 	std::string get_string() override {
 		return name;
 	}
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		return name + (index ? "[" + index->get_token_string() + "]" : "");
 	}
 //    ASTLowering* get_lowering(NodeProgram *program) const override;
@@ -137,7 +137,12 @@ struct NodeArrayRef final : NodeCompositeRef {
 	std::unique_ptr<NodeAST> take_index(size_t i) override {
 		return std::move(index);
 	}
-
+	NodeInt *index_is_number_literal() const {
+		if (!has_index()) return nullptr;
+		return index->cast<NodeInt>();
+	}
+	/// if it is a constant array, tries to return the constant value at the current index
+	NodeAST* get_const_value_at_this_index() const;
 };
 
 struct NodeNDArrayRef final : NodeCompositeRef {
@@ -162,7 +167,7 @@ struct NodeNDArrayRef final : NodeCompositeRef {
 	std::string get_string() override {
 		return name;
 	}
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		return name + (indexes ? "["+indexes->get_token_string()+"]" : "");
 	}
 //    ASTLowering* get_lowering(NodeProgram *program) const override;
@@ -252,7 +257,7 @@ struct NodeFunctionHeaderRef final : NodeReference {
 	std::string get_string() override {
 		return name + "(" + (args ? args->get_string() : "") + ")";
 	}
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		return name + "(" + (args ? args->get_token_string() : "") + ")";
 	}
 	void set_child_parents() override;
@@ -299,7 +304,7 @@ struct NodeListRef final : NodeReference {
 	std::string get_string() override {
 		return name;
 	}
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		return name + "[" + (indexes ? indexes->get_token_string() : "") + "]";
 	}
 	void set_child_parents() override {
@@ -380,7 +385,7 @@ struct NodeAccessChain final : NodeReference {
 		}
 		return str.erase(str.size() - 1);
 	}
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		std::string str;
 		for (const auto& c : chain) {
 			str += c->get_token_string() + ".";
@@ -438,7 +443,7 @@ struct NodeGetControl final : NodeReference {
 	std::string get_string() override {
 		return ui_id->get_string() + " -> " + control_param;
 	}
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		return ui_id->get_token_string() + " -> " + control_param;
 	}
 	void update_token_data(const Token& token) override {
@@ -477,7 +482,7 @@ struct NodeSetControl final : NodeReference {
 	std::string get_string() override {
 		return ui_id->get_string() + " -> " + control_param + " := " + value->get_string();
 	}
-	std::string get_token_string() override {
+	std::string get_token_string() const override {
 		return ui_id->get_token_string() + " -> " + control_param + " := " + value->get_token_string();
 	}
 	void update_token_data(const Token& token) override {

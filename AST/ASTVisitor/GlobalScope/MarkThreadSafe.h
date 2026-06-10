@@ -114,6 +114,7 @@ private:
  *
  * There need to be special array handlings for local arrays that are used in builtin commands that
  * have array types as arguments such as e.g. save_array -> these need to be marked as thread safe!
+ * @MVA --> this might be handled now, since cksp prohibits the use of local arrays in save_array now!
  */
 class MarkThreadSafeVars final : public ASTVisitor {
 	DefinitionProvider* m_def_provider = nullptr;

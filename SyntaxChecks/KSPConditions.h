@@ -5,7 +5,6 @@
 #pragma once
 
 #include "../AST/ASTVisitor/ASTVisitor.h"
-#include "../AST/ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 
 /**
  * Sanitizes conditions in if and while statements that are NOT unary or binary expressions to be valid KSP expressions.
@@ -38,12 +37,12 @@ public:
 			return;
 		}
 		if (auto call = condition->cast<NodeFunctionCall>()) {
-			// condition is a builtin function call -> do nothing
-			if (call->is_builtin_kind()) return;
+			// condition is a builtin function call -> do nothing IF return type is bool
+			// if return type is not bool, Kontakt wants a comparison
+			if (call->is_builtin_kind() and call->ty->get_element_type() == TypeRegistry::Boolean) {
+				return;
+			}
 		}
-		// if (not(condition->is_literal() || condition->is_reference())) {
-		// 	return;
-		// }
 
 		auto condition_type = condition->ty;
 		if (condition_type == TypeRegistry::Unknown) {

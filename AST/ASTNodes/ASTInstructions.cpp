@@ -217,7 +217,7 @@ std::string NodeFunctionCall::get_string() {
 	return function->get_string();
 }
 
-std::string NodeFunctionCall::get_token_string() {
+std::string NodeFunctionCall::get_token_string() const {
 	return function->get_token_string();
 }
 

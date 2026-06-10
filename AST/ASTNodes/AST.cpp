@@ -132,9 +132,9 @@ void NodeAST::debug_print(const std::string &path) {
 #endif
 }
 
-bool NodeAST::is_constant() {
+bool NodeAST::is_constant(bool builtins_are_constant, bool arrayref_can_be_const) {
 	static ConstExprValidator const_validator;
-	return const_validator.is_constant(*this);
+	return const_validator.is_constant(*this, builtins_are_constant, arrayref_can_be_const);
 }
 
 int NodeAST::get_bison_tokens() {
@@ -198,9 +198,9 @@ NodeFunctionDefinition *NodeAST::get_current_function() const {
 	return nullptr;
 }
 
-void NodeAST::do_constant_folding() {
+NodeAST *NodeAST::do_constant_folding() {
 	static ConstantFolding constant_folding;
-	constant_folding.do_local_traversal(*this);
+	return constant_folding.do_local_traversal(*this);
 }
 
 void NodeAST::do_type_inference(NodeProgram *program) {
@@ -426,20 +426,12 @@ void NodeDataStructure::clear_references() {
 	references.clear();
 }
 
-// bool NodeReference::needs_get_ui_id() const {
-// 	bool wrap_it = this->data_type == DataType::UIControl and this->is_func_arg();
-// 	if(parent and parent->parent and parent->parent->parent
-// 	and parent->parent->parent->get_node_type() == NodeType::FunctionCall) {
-// 		const auto func_call = this->parent->parent->parent->cast<NodeFunctionCall>();
-// 		wrap_it &= func_call->kind == NodeFunctionCall::Kind::Builtin;
-// 		wrap_it &= contains(func_call->function->name, "control_par");
-// 		// check if reference is first argument -> then wrap it
-// 		wrap_it &= func_call->function->get_arg(0).get() == this;
-// 	}
-// 	wrap_it &= this->data_type != DataType::UIArray;
-// 	return wrap_it;
-// }
-
+NodeSingleDeclaration * NodeDataStructure::is_in_declaration() const {
+	if (this->parent) {
+		return this->parent->cast<NodeSingleDeclaration>();
+	}
+	return nullptr;
+}
 
 
 NodeSingleAssignment *NodeReference::is_r_value() const {

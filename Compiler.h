@@ -39,6 +39,7 @@
 #include "AST/ASTVisitor/FunctionHandling/ASTPreemptiveFunctionInlining.h"
 #include "AST/ASTVisitor/GlobalScope/ASTDimensionExpansion.h"
 #include "AST/ASTVisitor/ASTLowerTypes.h"
+#include "AST/ASTVisitor/ASTThreadSafeAnalysis.h"
 #include "AST/ASTVisitor/UniqueParameterNamesProvider.h"
 #include "AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
 #include "AST/ASTVisitor/FunctionHandling/ParameterAssignmentTransformation.h"
@@ -246,20 +247,20 @@ public:
 		m_timer.start("Parsing");
 
 
-		static Parser parser(m_tokens);
+		Parser parser(m_tokens);
 		auto ast_result = parser.parse();
 		if (ast_result.is_error()) {
 			ast_result.get_error().exit();
 		}
 		auto ast = std::move(ast_result.unwrap());
 		{
-				m_program = ast.get();
-				m_program->def_provider = &m_definition_provider;
-				m_program->compiler_config = m_final_config.get();
-				m_program->apply_callback_overrides();
-				if (m_pragma_config->combine_callbacks) {
-					m_program->combine_callbacks();
-				}
+			m_program = ast.get();
+			m_program->def_provider = &m_definition_provider;
+			m_program->compiler_config = m_final_config.get();
+			m_program->apply_callback_overrides();
+			if (m_pragma_config->combine_callbacks) {
+				m_program->combine_callbacks();
+			}
 			m_program->check_unique_callbacks();
 			m_program->init_callback = m_program->move_on_init_callback();
 		}
@@ -268,7 +269,7 @@ public:
 		std::cout << m_timer.print_timer("Parsing") << "\n";
 		m_timer.start("Desugaring");
 
-		static ASTDesugar desugar;
+		ASTDesugar desugar;
 		ast->accept(desugar);
 		ast->debug_print();
 
@@ -276,10 +277,10 @@ public:
 		std::cout << m_timer.print_timer("Desugaring") << "\n";
 		m_timer.start("Lexical Scope");
 
-		static ASTTypeAnnotations type_annotations(m_program);
+		ASTTypeAnnotations type_annotations(m_program);
 		ast->accept(type_annotations);
 
-		static ASTVariableChecking variable_checking(m_program);
+		ASTVariableChecking variable_checking(m_program);
 		variable_checking.do_complete_traversal(*ast, false);
 		ast->collect_references();
 		ast->debug_print();
@@ -289,7 +290,7 @@ public:
 		std::cout << m_timer.print_timer("Lexical Scope") << "\n";
 		m_timer.start("Semantic Analysis");
 
-		static ASTSemanticAnalysis data_structures(ast.get());
+		ASTSemanticAnalysis data_structures(ast.get());
 		ast->accept(data_structures);
 		ast->debug_print();
 
@@ -297,11 +298,11 @@ public:
 		std::cout << m_timer.print_timer("Semantic Analysis") << "\n";
 		m_timer.start("Type Checking");
 
-		static TypeInference infer_types(ast.get());
+		TypeInference infer_types(ast.get());
 		infer_types.do_complete_traversal(*ast);
 		ast->debug_print();
 
-		static UniqueParameterNamesProvider unique_names_provider(m_program);
+		UniqueParameterNamesProvider unique_names_provider(m_program);
 		unique_names_provider.do_parallel_renaming(*m_program);
 		ast->debug_print();
 
@@ -309,19 +310,19 @@ public:
 		std::cout << m_timer.print_timer("Type Checking") << "\n";
 		m_timer.start("Lowering");
 
-		static ASTPointerScope pointer_scope(m_program);
+		ASTPointerScope pointer_scope(m_program);
 		ast->accept(pointer_scope);
 		ast->collect_references();  //>> actually needed when pointers are used -> LUX
 		ast->debug_print();
 
 		ast->collect_call_sites(m_program); // collect call sites for UIControlParamHandling
-		static ASTCollectLowerings lowering(m_program);
+		ASTCollectLowerings lowering(m_program);
 		ast->accept(lowering);
-		static ASTHandleStringRepresentations hsr(&m_definition_provider);
+		ASTHandleStringRepresentations hsr(&m_definition_provider);
 		ast->accept(hsr);
 		ast->debug_print();
 
-		static ASTLowerTypes lowering_types(m_program);
+		ASTLowerTypes lowering_types(m_program);
 		ast->accept(lowering_types);
 		ast->debug_print();
 
@@ -334,7 +335,7 @@ public:
 		m_timer.start("Return Function Rewriting");
 
 		// that should also work here and then I can do the returnstmt lowering in ASTReturnFunctionRewriting???
-		static MarkThreadSafe marker(m_program);
+		MarkThreadSafe marker(m_program);
 		marker.mark_environments(*ast);
 
 		// ast->collect_call_sites(m_program); // collect call sites (functions might have been duplicated after monomorphization and more call sites now!
@@ -345,9 +346,13 @@ public:
 		return_function_rewriting.do_rewriting(*ast);
 		ast->debug_print();
 
-		static MarkThreadSafeVars mark_vars(m_program);
-		mark_vars.mark_variables(*ast);
+		ASTThreadSafeAnalysis thread_safe_analysis(m_program);
+		thread_safe_analysis.run(*m_program);
+		thread_safe_analysis.mark_variables();
 		ast->debug_print();
+		// static MarkThreadSafeVars mark_vars(m_program);
+		// mark_vars.mark_variables(*ast);
+		// ast->debug_print();
 
 		{
 			variable_checking.do_reachable_traversal(*ast, true);
@@ -364,7 +369,7 @@ public:
 			ast->debug_print();
 
 			ast->collect_call_sites(m_program); // collect call sites for parameter stack transformation
-			static ParameterAssignmentTransformation assignment_transformation(m_program);
+			ParameterAssignmentTransformation assignment_transformation(m_program);
 			assignment_transformation.do_parameter_assignment(*m_program);
 			ast->debug_print();
 

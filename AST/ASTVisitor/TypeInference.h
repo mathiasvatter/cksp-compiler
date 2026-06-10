@@ -299,24 +299,24 @@ public:
     /// error if composite type was not added to the type registry
     static CompileError throw_composite_error(NodeReference* node) {
         auto error = CompileError(ErrorType::TypeError,"", "", node->tok);
-        error.m_message = "Composite Type is referenced but does not exist: "+node->name;
+        error.set_message("Composite Type is referenced but does not exist: "+node->name);
         return error;
     }
 
     static CompileError throw_type_error(const NodeAST& node1, const Type* type, const std::string& message="") {
         auto error = CompileError(ErrorType::TypeError,"", "", node1.tok);
-        error.m_message = "Type mismatch: " + node1.ty->to_string() + " and " + type->to_string()+". ";
-		error.m_message += message;
+        error.set_message("Type mismatch: " + node1.ty->to_string() + " and " + type->to_string()+". ");
+		error.add_message(message);
         return error;
     }
 
 	static CompileError throw_type_error(const NodeAST& node1, const NodeAST& node2, const std::string& message="") {
     	auto error = CompileError(ErrorType::TypeError,"", "", node1.tok);
-    	error.m_message = "Type mismatch: The types of '"+ node1.tok.val+"' (<" + node1.ty->to_string() + ">) and '"+
-    		node2.tok.val+"' (<" + node2.ty->to_string()+">) are incompatible.";
+    	error.set_message("Type mismatch: The types of '"+ node1.get_token_string() +"' (<" + node1.ty->to_string() + ">) and '"+
+    		node2.get_token_string() +"' (<" + node2.ty->to_string()+">) are incompatible.");
     	error.m_got = node1.ty->to_string();
     	error.m_expected = node2.ty->to_string();
-    	error.m_message += message;
+    	error.add_message(message);
     	return error;
     }
 
@@ -359,6 +359,14 @@ public:
         if (first && !second) {
             return first;
         }
+    	if (first == TypeRegistry::Unknown || second == TypeRegistry::Unknown || !has_more_than_two_types) {
+    		// if one of the two found types is unknown, that is ok -> might be a misspelled variable
+    		if (first == TypeRegistry::Unknown) {
+    			return second;
+    		} else {
+    			return first;
+    		}
+    	}
 
         // exactly two different types -> only allowed if they are <String> and <Integer>/<Real>
         if (!has_more_than_two_types && first && second) {

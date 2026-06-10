@@ -51,6 +51,9 @@ public:
 	virtual bool is_same_type(const Type* other) const {
 		return get_type_kind() == other->get_type_kind();
 	}
+	bool is_number_type() const {
+		return m_kind == Kind::Number || m_kind == Kind::Integer || m_kind == Kind::Real;
+	}
 	// Template method for casting
 	template <typename TargetType>
 	const TargetType* cast() const {
@@ -86,9 +89,9 @@ public:
 		if(string_number) return true;
 		return is_compatible(other);
 	}
-	bool is_string_int_assignment(const Type* other) const override {
-    	return m_kind == Kind::String && (other->get_kind() == Kind::Number || other->get_kind() == Kind::Integer || other->get_kind() == Kind::Real);
-    }
+	// bool is_string_int_assignment(const Type* other) const override {
+ //    	return m_kind == Kind::String && (other->get_kind() == Kind::Number || other->get_kind() == Kind::Integer || other->get_kind() == Kind::Real);
+ //    }
 	bool is_same_type(const Type *other) const override {
 	    return get_type_kind() == other->get_type_kind() && m_kind == other->get_kind();
     }
@@ -107,10 +110,20 @@ public:
 		bool type_kind = this->get_type_kind() == other->get_type_kind();
 		if(!type_kind) return false;
 
-		// number, integer, real are compatible with each other
-		bool numbers = (m_kind == Kind::Number || m_kind == Kind::Integer || m_kind == Kind::Real) and
-			(other->get_kind() == Kind::Number || other->get_kind() == Kind::Integer || other->get_kind() == Kind::Real);
-		if(numbers) return true;
+  //   	bool numbers = m_kind == Kind::Number && other->get_kind() == Kind::Number;
+		// if(numbers) return true;
+
+    	bool reals = m_kind == Kind::Real && other->get_kind() == Kind::Real;
+    	if (reals) return true;
+
+    	bool integers = m_kind == Kind::Integer && other->get_kind() == Kind::Integer;
+    	if (integers) return true;
+
+    	// number, integer, real are compatible with each other
+    	bool number1 = m_kind == Kind::Number and other->is_number_type();
+    	if(number1) return true;
+    	bool number2 = is_number_type() and other->get_kind() == Kind::Number;
+    	if(number2) return true;
 
 		// string is compatible with string
 		bool strings = m_kind == Kind::String && other->get_kind() == Kind::String;
@@ -123,6 +136,11 @@ public:
 		// boolean is compatible with boolean
 		bool booleans = m_kind == Kind::Boolean && other->get_kind() == Kind::Boolean;
 		if(booleans) return true;
+
+    	// boolean shall also be compatible with int (implicit conversion)
+    	bool implicit_bool_int = m_kind == Kind::Boolean && other->get_kind() == Kind::Integer;
+		implicit_bool_int |= m_kind == Kind::Integer && other->get_kind() == Kind::Boolean;
+		if(implicit_bool_int) return true;
 
         // comparison is compatible with boolean and vice versa
         bool comparison = m_kind == Kind::Comparison && other->get_kind() == Kind::Boolean ||

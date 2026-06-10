@@ -51,13 +51,7 @@
 // end on
 
 // on persistence_changed
-// 	update_keyrange_disp()
-// 	// if (dodododo(array))
-// 	// 	message("df")
-// 	// end if		
-// 	dodododo(array)
-// 	delete notes
-
+//     pupupupu()
 // end on
 
 // function dodododo(ref array: int[])
@@ -70,3 +64,11 @@
 // 	end for
 	
 // end function	
+on init
+    declare const eins := 1
+    declare const arr : int[] := [4,5]
+    declare arr2[5]: int[] := [arr[0] * 3, arr[1] + 3, 0]
+
+    message(arr2[2], eins)
+
+end on

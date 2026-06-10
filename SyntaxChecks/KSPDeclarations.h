@@ -17,7 +17,7 @@ public:
 
 	NodeAST* visit(NodeSingleDeclaration& node) override {
 		if(node.value) {
-			if(!node.value->is_constant() or node.value->ty->get_element_type() == TypeRegistry::String) {
+			if(!node.value->is_constant(false, false) or node.value->ty->get_element_type() == TypeRegistry::String) {
 				auto body = std::make_unique<NodeBlock>(node.tok);
 
 				// get correct declarations and stuff

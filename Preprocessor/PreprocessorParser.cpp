@@ -880,6 +880,7 @@ Result<std::unique_ptr<PreNodeUseCodeIf>> PreprocessorParser::parse_use_code_if(
     if (peek().type != token::LINEBRK) {
         auto error = CompileError(ErrorType::PreprocessorError, error_msg, "linebreak", peek());
         error.set_message("Missing linebreak after <END_USE_CODE> statement.");
+        error.add_message("CKSP uses <END_USE_CODE> as a closing directive only. Please make sure the statement is followed by a linebreak and does not have any additional tokens after it.");
         return Result<std::unique_ptr<PreNodeUseCodeIf>>(error);
     }
     consume(); // consume linebreak

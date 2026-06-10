@@ -157,7 +157,8 @@ std::unique_ptr<NodeAST> NodeArrayRef::get_size() {
 	auto new_ref = clone_as<NodeArrayRef>(this);
 	new_ref->remove_index();
 	new_ref->ty = get_declaration()->ty;
-	return DefinitionProvider::num_elements(std::move(new_ref));
+	return std::make_unique<NodeNumElements>(std::move(new_ref), nullptr, tok);
+	// return DefinitionProvider::num_elements(std::move(new_ref));
 }
 
 bool NodeArrayRef::is_list_sizes() const {
@@ -192,6 +193,24 @@ NodeBlock* NodeArrayRef::iterate_over(std::unique_ptr<NodeBlock>& for_loop_block
 	return for_loop_block->wrap_in_loop(std::move(iterator), std::make_unique<NodeInt>(0, tok), get_size());
 }
 
+NodeAST* NodeArrayRef::get_const_value_at_this_index() const {
+	if (data_type != DataType::Const) return nullptr;
+	auto int_index = index_is_number_literal();
+	if (!int_index) return nullptr;
+
+	if (auto decl = get_declaration()) {
+		if (auto declaration = decl->is_in_declaration()) {
+			if (!declaration->value) return nullptr;
+			if (auto initlist = declaration->value->cast<NodeInitializerList>()) {
+				return initlist->elem(int_index->value).get();
+			}
+		}
+	} else {
+		DefinitionProvider::internal_missing_declaration_error(*this).exit();
+	}
+	return nullptr;
+}
+
 // ************* NodeNDArrayRef ***************
 NodeAST *NodeNDArrayRef::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);
@@ -199,7 +218,7 @@ NodeAST *NodeNDArrayRef::accept(ASTVisitor &visitor) {
 
 NodeNDArrayRef::NodeNDArrayRef(const NodeNDArrayRef& other)
 	: NodeCompositeRef(other), indexes(clone_unique(other.indexes)),
-	sizes(clone_unique(other.sizes)) {
+	  sizes(clone_unique(other.sizes)) {
 	set_child_parents();
 }
 
@@ -208,8 +227,8 @@ std::unique_ptr<NodeAST> NodeNDArrayRef::clone() const {
 }
 
 ASTLowering* NodeNDArrayRef::get_data_lowering(NodeProgram *program) const {
-    static DataLoweringNDArray lowering(program);
-    return &lowering;
+	static DataLoweringNDArray lowering(program);
+	return &lowering;
 }
 
 std::unique_ptr<NodeAST> NodeNDArrayRef::get_size() {
@@ -219,33 +238,33 @@ std::unique_ptr<NodeAST> NodeNDArrayRef::get_size() {
 		return std::make_unique<NodeInt>(1, tok);
 	}
 	// if (indexes) {
-		auto decl = this->get_declaration();
-		if (!decl) DefinitionProvider::internal_missing_declaration_error(*this).exit();
-		auto nd_array = decl->cast<NodeNDArray>();
-		if (!nd_array) DefinitionProvider::internal_missing_declaration_error(*this).exit();
-		if (!nd_array->sizes) {
-			auto error = CompileError(ErrorType::InternalError, "", "", nd_array->tok);
-			error.set_message("Could not determine size of <NDArrayRef>. Declaration might be function param. This should not happen, please report this error.");
-			error.exit();
-		}
-		auto& ndarray_sizes = nd_array->sizes;
-		int start = 0; int end  = ndarray_sizes->size()-1;
-		if (num_wildcards > 0) {
-			auto w = get_wildcard_dimensions();
-			start = w.first; end = w.second;
-		}
-		auto nsizes = std::make_unique<NodeParamList>(tok);
-		for (int i = start; i <= end; i++) {
-			auto ref = clone_as<NodeNDArrayRef>(this);
-			ref->ty = get_declaration()->ty;
-			ref->remove_index();
-			auto num_elements = std::make_unique<NodeNumElements>(std::move(ref), std::make_unique<NodeInt>(i+1, tok), tok);
-			nsizes->add_param(std::move(num_elements));
-		}
-		if (nsizes->size() == 1) {
-			return std::move(nsizes->param(0));
-		}
-		return nsizes;
+	auto decl = this->get_declaration();
+	if (!decl) DefinitionProvider::internal_missing_declaration_error(*this).exit();
+	auto nd_array = decl->cast<NodeNDArray>();
+	if (!nd_array) DefinitionProvider::internal_missing_declaration_error(*this).exit();
+	if (!nd_array->sizes) {
+		auto error = CompileError(ErrorType::InternalError, "", "", nd_array->tok);
+		error.set_message("Could not determine size of <NDArrayRef>. Declaration might be function param. This should not happen, please report this error.");
+		error.exit();
+	}
+	auto& ndarray_sizes = nd_array->sizes;
+	int start = 0; int end  = ndarray_sizes->size()-1;
+	if (num_wildcards > 0) {
+		auto w = get_wildcard_dimensions();
+		start = w.first; end = w.second;
+	}
+	auto nsizes = std::make_unique<NodeParamList>(tok);
+	for (int i = start; i <= end; i++) {
+		auto ref = clone_as<NodeNDArrayRef>(this);
+		ref->ty = get_declaration()->ty;
+		ref->remove_index();
+		auto num_elements = std::make_unique<NodeNumElements>(std::move(ref), std::make_unique<NodeInt>(i+1, tok), tok);
+		nsizes->add_param(std::move(num_elements));
+	}
+	if (nsizes->size() == 1) {
+		return std::move(nsizes->param(0));
+	}
+	return nsizes;
 	// }
 	// // if !indexes
 	// auto ref = clone_as<NodeNDArrayRef>(this);
@@ -263,6 +282,29 @@ std::unique_ptr<NodeAST> NodeNDArrayRef::get_size(std::unique_ptr<NodeAST> dim) 
 
 std::unique_ptr<NodeArrayRef> NodeNDArrayRef::to_array_ref(std::unique_ptr<NodeAST> index) {
 	return std::make_unique<NodeArrayRef>(name, index ? std::move(index) : nullptr, tok);
+}
+
+std::unique_ptr<NodeAccessChain> NodeNDArrayRef::to_method_chain() {
+	auto ptr_strings = this->get_ptr_chain();
+	auto method_chain = std::make_unique<NodeAccessChain>(tok);
+	auto array_ref = clone_as<NodeNDArrayRef>(this);
+	array_ref->name = ptr_strings.back();
+	ptr_strings.pop_back();
+	for(auto &str : ptr_strings) {
+		method_chain->add_method(std::make_unique<NodeVariableRef>(str, tok));
+	}
+	method_chain->add_method(std::move(array_ref));
+	method_chain->parent = this->parent;
+	return method_chain;
+}
+
+int NodeNDArrayRef::num_wildcards() const {
+	int count = 0;
+	if(indexes) {
+		for(auto & idx: indexes->params)
+			if(idx->cast<NodeWildcard>()) count++;
+	}
+	return count;
 }
 
 bool NodeNDArrayRef::determine_sizes() {
@@ -288,44 +330,11 @@ bool NodeNDArrayRef::determine_sizes() {
 			}
 			set_sizes(std::move(n_sizes));
 		}
-//		return false;
+		//		return false;
 	} else {
 		set_sizes(clone_as<NodeParamList>(node_ndarray->sizes.get()));
 	}
 	return true;
-}
-
-std::unique_ptr<NodeAccessChain> NodeNDArrayRef::to_method_chain() {
-	auto ptr_strings = this->get_ptr_chain();
-	auto method_chain = std::make_unique<NodeAccessChain>(tok);
-	auto array_ref = clone_as<NodeNDArrayRef>(this);
-	array_ref->name = ptr_strings.back();
-	ptr_strings.pop_back();
-	for(auto &str : ptr_strings) {
-		method_chain->add_method(std::make_unique<NodeVariableRef>(str, tok));
-	}
-	method_chain->add_method(std::move(array_ref));
-	method_chain->parent = this->parent;
-	return method_chain;
-}
-
-std::unique_ptr<NodeReference> NodeNDArrayRef::expand_dimension(std::unique_ptr<NodeAST> new_index) {
-	determine_sizes();
-	// if array has no indexes -> everything should be copied -> wildcards for every index of size
-	if (!indexes) {
-		add_wildcards();
-	}
-	if(new_index) indexes->prepend_param(std::move(new_index));
-	return clone_as<NodeReference>(this);
-}
-
-int NodeNDArrayRef::num_wildcards() const {
-	int count = 0;
-	if(indexes) {
-		for(auto & idx: indexes->params)
-			if(idx->cast<NodeWildcard>()) count++;
-	}
-	return count;
 }
 
 bool NodeNDArrayRef::add_wildcards() {
@@ -340,6 +349,16 @@ bool NodeNDArrayRef::add_wildcards() {
 		this->indexes->add_param(std::move(wildcard));
 	}
 	return true;
+}
+
+std::unique_ptr<NodeReference> NodeNDArrayRef::expand_dimension(std::unique_ptr<NodeAST> new_index) {
+	determine_sizes();
+	// if array has no indexes -> everything should be copied -> wildcards for every index of size
+	if (!indexes) {
+		add_wildcards();
+	}
+	if(new_index) indexes->prepend_param(std::move(new_index));
+	return clone_as<NodeReference>(this);
 }
 
 std::pair<int, int> NodeNDArrayRef::get_wildcard_dimensions() const {
@@ -381,6 +400,20 @@ std::pair<int, int> NodeNDArrayRef::get_wildcard_dimensions() const {
 	return {wildcard_start, wildcard_end};
 }
 
+void NodeNDArrayRef::replace_next_wildcard_with_index(std::unique_ptr<NodeInt> new_index) const {
+	if(!indexes) throw_missing_indexes_error().exit();
+	if(!sizes) throw_missing_sizes_error().exit();
+	if(num_wildcards() == 0) return;
+
+	auto [fst, snd] = get_wildcard_dimensions();
+	indexes->param(fst)->replace_with(std::move(new_index));
+	if(snd != fst) {
+		for(int i = fst+1; i<=snd; i++) {
+			indexes->param(i)->replace_with(std::make_unique<NodeInt>(0, indexes->param(i)->tok));
+		}
+	}
+}
+
 NodeBlock* NodeNDArrayRef::iterate_over(std::unique_ptr<NodeBlock> &body, NodeProgram* program) {
 	if(!indexes) {
 		determine_sizes();
@@ -414,28 +447,14 @@ NodeBlock* NodeNDArrayRef::iterate_over(std::unique_ptr<NodeBlock> &body, NodePr
 
 }
 
-void NodeNDArrayRef::replace_next_wildcard_with_index(std::unique_ptr<NodeInt> new_index) const {
-	if(!indexes) throw_missing_indexes_error().exit();
-	if(!sizes) throw_missing_sizes_error().exit();
-	if(num_wildcards() == 0) return;
-
-	auto [fst, snd] = get_wildcard_dimensions();
-	indexes->param(fst)->replace_with(std::move(new_index));
-	if(snd != fst) {
-		for(int i = fst+1; i<=snd; i++) {
-			indexes->param(i)->replace_with(std::make_unique<NodeInt>(0, indexes->param(i)->tok));
-		}
-	}
+NodeAST *NodeFunctionHeaderRef::accept(ASTVisitor &visitor) {
+	return visitor.visit(*this);
 }
 
 // ************* NodeFunctionHeaderRef ***************
 NodeFunctionHeaderRef::NodeFunctionHeaderRef(const NodeFunctionHeaderRef& other)
 	: NodeReference(other), args(clone_unique(other.args)), has_forced_parenth(other.has_forced_parenth) {
 	set_child_parents();
-}
-
-NodeAST *NodeFunctionHeaderRef::accept(ASTVisitor &visitor) {
-	return visitor.visit(*this);
 }
 
 std::unique_ptr<NodeAST> NodeFunctionHeaderRef::clone() const {
@@ -486,7 +505,7 @@ NodeAST *NodeListRef::accept(ASTVisitor &visitor) {
 
 NodeListRef::NodeListRef(const NodeListRef& other)
 	: NodeReference(other), indexes(clone_unique(other.indexes)), sizes(other.sizes),
-	pos(other.pos) {
+	  pos(other.pos) {
 	set_child_parents();
 }
 
@@ -557,10 +576,6 @@ NodeAccessChain::NodeAccessChain(const NodeAccessChain& other)
 	set_child_parents();
 }
 
-std::unique_ptr<NodeAST> NodeAccessChain::clone() const {
-	return std::make_unique<NodeAccessChain>(*this);
-}
-
 NodeAST *NodeAccessChain::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	for (auto& c : chain) {
 		if (c.get() == oldChild) {
@@ -569,6 +584,10 @@ NodeAST *NodeAccessChain::replace_child(NodeAST* oldChild, std::unique_ptr<NodeA
 		}
 	}
 	return nullptr;
+}
+
+std::unique_ptr<NodeAST> NodeAccessChain::clone() const {
+	return std::make_unique<NodeAccessChain>(*this);
 }
 
 ASTLowering* NodeAccessChain::get_lowering(NodeProgram *program) const {
