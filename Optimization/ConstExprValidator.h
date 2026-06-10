@@ -40,10 +40,8 @@ public:
 		if(node.data_type == DataType::Const) {
 			m_is_constant &= true;
 		} else {
-			if (all_builtins_are_constant) {
-				if (node.kind == NodeReference::Kind::Builtin) {
-					m_is_constant &= true;
-				}
+			if (all_builtins_are_constant and node.kind == NodeReference::Kind::Builtin) {
+				m_is_constant &= true;
 			} else {
 				m_is_constant &= false;
 			}

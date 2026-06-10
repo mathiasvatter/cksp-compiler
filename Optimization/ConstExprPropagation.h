@@ -128,9 +128,6 @@ public:
 	}
 
 	NodeAST* visit(NodeSingleAssignment& node) override {
-		if (node.l_value->name == "reduced_note0000") {
-
-		}
 		node.r_value->accept(*this);
 		// remove constant from constant expression map when it gets reassigned
 		remove_constant_expression(node.l_value.get());
