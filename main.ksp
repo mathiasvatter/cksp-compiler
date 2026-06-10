@@ -64,11 +64,24 @@
 // 	end for
 	
 // end function	
-on init
-    declare const eins := 1
-    declare const arr : int[] := [4,5]
-    declare arr2[5]: int[] := [arr[0] * 3, arr[1] + 3, 0]
+declare read decode[2]: int[]
 
-    message(arr2[2], eins)
+on init
+ 	declare decode_path := find_key_nka(decode, "decode", 081202, "", 4)
 
 end on
+
+function find_key_nka(array: any[], nka: string, key: int, parent_folder: string, search_depth: int): string
+    array[0] := -1
+    declare local @path
+    declare local it
+    declare _id := load_array_str(array, get_folder(GET_FOLDER_PATCH_DIR) & path & parent_folder & nka & ".nka")
+
+    while (_id # -1 and it < search_depth and array[0] # key)
+        array[0] := -1
+        path := path & "../"
+        _id := load_array_str(array, get_folder(GET_FOLDER_PATCH_DIR) & path & parent_folder & nka & ".nka")
+        inc(it)
+    end while
+    return get_folder(GET_FOLDER_PATCH_DIR) & path & nka & ".nka"
+end function
