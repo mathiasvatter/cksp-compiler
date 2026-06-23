@@ -45,16 +45,16 @@ public:
 		m_end_of_life.clear();
 		m_start = start;
 		m_end = end;
-		m_is_thread_safe_environment = true;
+		m_is_thread_safe_environment = false;
 		return node.accept(*this);
 	}
 
 	NodeAST* run(NodeFunctionDefinition& node, NodeStatement* start, NodeStatement* end) {
-		m_lifetime_analysis.run(*node.body);
+		m_lifetime_analysis.run(node);
 		m_end_of_life.clear();
 		m_start = start;
 		m_end = end;
-		m_is_thread_safe_environment = true;
+		m_is_thread_safe_environment = false;
 		return node.accept(*this);
 	}
 
@@ -224,6 +224,9 @@ protected:
 		if(!node.is_builtin_kind() and definition) {
 			if (definition and definition->body->empty()) return &node; // if function body is empty, there are no thread-unsafe statements to mark
 			if(!definition->visited) {
+				// important! function parameter are not marked here since we are only looking at statements
+				// so there has to be taken extra care in later stages to mark them as thread unsafe if the
+				// function definition is also thread unsafe
 				m_function_thread_unsafe_ranges[definition.get()] = ThreadUnsafeRange{true,
 					definition->body->statements.front().get(), definition->body->statements.back().get()
 				};

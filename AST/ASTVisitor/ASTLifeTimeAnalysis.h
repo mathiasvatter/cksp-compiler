@@ -6,6 +6,15 @@
 
 #include "ASTVisitor.h"
 
+/**
+ * This pass analysis lifetimes of variables by using Life structs with the first statement
+ * and the last statement they are used in.
+ * It parses stmt by stmt, assigns a lifetime object with the current stmt as start and end
+ * upon visiting a declaration and assignes a new end stmt every time a reference to this var is
+ * visited
+ * - variables declared in a while loop (since all other loop forms are transformed at this point)
+ *   are always assigned the full lifetime of the while loop body
+ */
 class ASTLifeTimeAnalysis : public ASTVisitor {
 	DefinitionProvider* m_def_provider = nullptr;
 	NodeStatement* m_current_statement = nullptr;
@@ -61,6 +70,18 @@ public:
 		return m_life_times;
 	}
 
+	// this is not used in variable reuse because all relevant function parameters are already
+	// transformed into assignment statements by parameter transform pass
+	std::unordered_map<NodeDataStructure*, Life>& run(NodeFunctionDefinition& def) {
+		m_variables_in_while.clear();
+		is_in_while_loop = false;
+		m_life_times.clear();
+		m_visited_blocks.clear();
+		m_current_statement = def.body->front();
+		def.accept(*this);
+		return m_life_times;
+	}
+
 	/// can be called after run() -> deletes all declaration nodes with variables where
 	/// start and end member in Life are the same
 	int remove_unused_local_variables() {
@@ -101,7 +122,7 @@ protected:
 
 	NodeAST *visit(NodeBlock &node) override {
 		m_visited_blocks.insert(&node);
-		m_end_of_current_block.push(node.statements.empty() ? nullptr : node.statements.back().get());
+		m_end_of_current_block.push(node.back());
 		ASTVisitor::visit(node);
 		m_end_of_current_block.pop();
 		return &node;
@@ -129,6 +150,17 @@ protected:
 			node.value->accept(*this);
 		}
 
+		return &node;
+	}
+
+	NodeAST* visit(NodeFunctionParam & node) override {
+		node.variable->accept(*this);
+		// have to do this extra if-check because function param nodes are also used for
+		// foreach key, value
+		if (node.variable->is_function_param()) {
+			add_lifetime_start(node.variable.get(), m_current_statement);
+		}
+		if (node.value) node.value->accept(*this);
 		return &node;
 	}
 
