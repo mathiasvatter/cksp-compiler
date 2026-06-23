@@ -79,6 +79,16 @@ public:
 			auto &temp_ptr = node.function->get_arg(0);
 			if(auto ref = temp_ptr->cast<NodeVariableRef>()) {
 				auto decr_func = get_decr_func_call(node.function->name, temp_ptr->clone(), std::make_unique<NodeInt>(1, node.tok));
+				decr_func->bind_definition(m_program);
+				auto decl = decr_func->get_definition();
+				if (!decl) {
+					DefinitionProvider::internal_missing_definition_error(*decr_func);
+				}
+				// ref count methods need to be type lowered here
+				// -> do not have a handle to them in ASTLowerTypes at this point and with temporary pointers
+				// a situation can arise where decrease methods do not get visited by type lowering
+				decl->do_type_lowering(m_program);
+				// -> this pass will not go through the same function twice because of visited flag set previously
 				m_pointer_scope_stack.back().try_emplace({ref->name, ref->ty}, std::move(decr_func));
 			} else {
 				auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
@@ -96,8 +106,8 @@ private:
 	 * creates call to any ref count function __decr__
 	 */
 	static std::unique_ptr<NodeFunctionCall> get_decr_func_call(const std::string& object, std::unique_ptr<NodeAST> var, std::unique_ptr<NodeAST> num) {
-		std::string func_name = object+OBJ_DELIMITER+"__decr__";
-		return std::make_unique<NodeFunctionCall>(
+		std::string func_name = StringUtils::remove(object, OBJ_DELIMITER+"__init__")+OBJ_DELIMITER+"__decr__";
+		auto call = std::make_unique<NodeFunctionCall>(
 			false,
 			std::make_unique<NodeFunctionHeaderRef>(
 				func_name,
@@ -106,6 +116,8 @@ private:
 			),
 			Token()
 		);
+		call->strategy = NodeFunctionCall::Strategy::ParameterStack;
+		return call;
 	}
 
 };

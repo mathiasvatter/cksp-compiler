@@ -6,6 +6,11 @@
 #include "ASTLifeTimeAnalysis.h"
 #include "ASTVisitor.h"
 
+/**
+ * Marks all variables in the program as thread unsafe if they are used in a non-thread-safe
+ * environment. This is determined by thread unsafe ranges (ranges from function or callback
+ * start until the first asynchronous (wait) builtin command or until the next wait command
+ */
 class ASTThreadSafeVariableMarking : public ASTVisitor {
 	DefinitionProvider* m_def_provider = nullptr;
 
@@ -96,7 +101,12 @@ protected:
 
 };
 
-
+/**
+ * Adds ThreadUnsafeRange objects with a start and end statement to make thread safe analysis
+ * of variables more fine-grained.
+ * Every callback and every function definition get a range assigned where the thread unsafe range
+ * is -> inside those ranges, variables will be marked as thread unsafe
+ */
 class ASTThreadSafeAnalysis : public ASTVisitor {
 	DefinitionProvider* m_def_provider = nullptr;
 	NodeStatement* m_current_statement = nullptr;

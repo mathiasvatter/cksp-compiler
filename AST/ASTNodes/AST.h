@@ -109,7 +109,10 @@ struct NodeAST {
 	[[nodiscard]] struct NodeCallback* get_current_callback() const;
 	[[nodiscard]] struct NodeFunctionDefinition* get_current_function() const;
 	NodeAST *do_constant_folding();
+	/// calls TypeInference pass
 	void do_type_inference(NodeProgram *program);
+	/// calls ASTLowerTypes pass
+	NodeAST* do_type_lowering(NodeProgram *program);
 	NodeAST* do_lowering(NodeProgram* program);
 	NodeAST* collect_declarations(NodeProgram* program);
 	NodeAST* collect_call_sites(NodeProgram* program);

@@ -208,7 +208,6 @@ add_executable(cksp main.cpp
         Desugaring/DesugarUIControlArray.h
         AST/ASTVisitor/UniqueArrayNamesProvider.h
         AST/ASTVisitor/UniqueParameterNamesProvider.h
-        AST/ASTVisitor/ASTParameterQualifier.h
         AST/ASTVisitor/FunctionHandling/ParameterAssignmentTransformation.h
         AST/ASTVisitor/FunctionHandling/ParameterReuse.h
         Optimization/ReferenceValidator.h
@@ -217,7 +216,6 @@ add_executable(cksp main.cpp
         Desugaring/DesugarCompoundAssignment.h
         Desugaring/DesugarNamespace.h
         Lowering/LoweringRange.h
-        Optimization/PreConstantPropagation.h
         AST/ASTVisitor/FunctionHandling/FunctionShortCircuit.h
         Desugaring/DesugarFormatString.h
         Preprocessor/PreAST/PreASTNodes/PreASTHelper.h
