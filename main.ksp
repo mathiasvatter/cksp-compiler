@@ -18,3 +18,10 @@ end struct
 
 declare new_point := new Point(1,2).move_by(1,2)
 
+on init
+    do_sth(new Point(1,2).move_by(1,2))
+end on
+
+function do_sth(p: Point)
+    message(p)
+end function
