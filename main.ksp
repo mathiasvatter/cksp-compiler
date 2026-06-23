@@ -1,27 +1,39 @@
 #pragma output_path("test.txt")
 #pragma combine_callbacks(true)
 #pragma max_callback_depth(420)
-// #pragma optimize("none")
 
 
+declare labels: int[] := [1,2,3,4]
+declare sliders: int[] := [1,2,3,4]
+declare last_time_sli
 
-
-struct Point
-    x: int, y: int
-
-    function move_by(self, x: int, y: int)
-        self.x += x
-        self.y += y
-        return new Point(x, y)
-    end function        
-end struct    
-
-declare new_point := new Point(1,2).move_by(1,2)
-
-on init
-    do_sth(new Point(1,2).move_by(1,2))
+on ui_controls
+    update_fx_sli(NI_UI_ID)
 end on
 
-function do_sth(p: Point)
-    message(p)
+function update_fx_sli(uiid: int)
+	declare idx := search(sliders, uiid)
+	if idx # -1
+		fx_sli(idx)
+	end if
 end function
+
+function fx_sli(idx)
+		declare page := idx / 5
+		declare disp_val
+
+		last_time_sli := ENGINE_UPTIME
+
+		select idx
+            case 0 to 4
+                disp_val := 4
+            case default
+                disp_val := 5
+		end select
+		
+		labels[idx] -> text := disp_val
+		wait(800 * 1000)
+		if(ENGINE_UPTIME - last_time_sli > 800 -5)
+			// labels[idx] -> text := "hello"
+		end if
+end function	

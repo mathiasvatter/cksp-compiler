@@ -343,7 +343,7 @@ public:
 		// to know which functions will be inlined and which ones won't
 		ASTFunctionStrategy function_strategy(m_program, m_pragma_config->parameter_passing);
 		function_strategy.determine_function_strategies(*m_program);
-		
+
 		ASTReturnFunctionRewriting return_function_rewriting(m_program);
 		return_function_rewriting.do_rewriting(*ast);
 		ast->debug_print();
