@@ -6,6 +6,11 @@
 #include "ASTLifeTimeAnalysis.h"
 #include "ASTVisitor.h"
 
+/**
+ * Marks all variables in the program as thread unsafe if they are used in a non-thread-safe
+ * environment. This is determined by thread unsafe ranges (ranges from function or callback
+ * start until the first asynchronous (wait) builtin command or until the next wait command
+ */
 class ASTThreadSafeVariableMarking : public ASTVisitor {
 	DefinitionProvider* m_def_provider = nullptr;
 
@@ -45,16 +50,16 @@ public:
 		m_end_of_life.clear();
 		m_start = start;
 		m_end = end;
-		m_is_thread_safe_environment = true;
+		m_is_thread_safe_environment = false;
 		return node.accept(*this);
 	}
 
 	NodeAST* run(NodeFunctionDefinition& node, NodeStatement* start, NodeStatement* end) {
-		m_lifetime_analysis.run(*node.body);
+		m_lifetime_analysis.run(node);
 		m_end_of_life.clear();
 		m_start = start;
 		m_end = end;
-		m_is_thread_safe_environment = true;
+		m_is_thread_safe_environment = false;
 		return node.accept(*this);
 	}
 
@@ -96,7 +101,12 @@ protected:
 
 };
 
-
+/**
+ * Adds ThreadUnsafeRange objects with a start and end statement to make thread safe analysis
+ * of variables more fine-grained.
+ * Every callback and every function definition get a range assigned where the thread unsafe range
+ * is -> inside those ranges, variables will be marked as thread unsafe
+ */
 class ASTThreadSafeAnalysis : public ASTVisitor {
 	DefinitionProvider* m_def_provider = nullptr;
 	NodeStatement* m_current_statement = nullptr;
@@ -224,6 +234,9 @@ protected:
 		if(!node.is_builtin_kind() and definition) {
 			if (definition and definition->body->empty()) return &node; // if function body is empty, there are no thread-unsafe statements to mark
 			if(!definition->visited) {
+				// important! function parameter are not marked here since we are only looking at statements
+				// so there has to be taken extra care in later stages to mark them as thread unsafe if the
+				// function definition is also thread unsafe
 				m_function_thread_unsafe_ranges[definition.get()] = ThreadUnsafeRange{true,
 					definition->body->statements.front().get(), definition->body->statements.back().get()
 				};

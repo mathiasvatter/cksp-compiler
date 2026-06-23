@@ -91,10 +91,13 @@ private:
 		return &node;
 	}
 
+	// when param var is thread-unsafe -> pass by ref also
 	void decide_by_ref_or_value(const NodeFunctionHeader& header) const {
 		for (size_t i = 0; i < header.get_num_params(); i++) {
 			auto& formal_param = header.params[i];
 			if (formal_param->variable->ty->cast<CompositeType>()) {
+				formal_param->is_pass_by_ref = true;
+			} else if (!formal_param->variable->is_thread_safe) {
 				formal_param->is_pass_by_ref = true;
 			} else if (pass_by == ParameterPassing::ByReference) {
 				formal_param->is_pass_by_ref = true;

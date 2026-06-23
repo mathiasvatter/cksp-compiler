@@ -218,6 +218,12 @@ public:
 		return compile_error;
 	}
 
+	static CompileError internal_missing_definition_error(const NodeFunctionCall& node) {
+		auto compile_error = CompileError(ErrorType::InternalError, "", "", node.tok);
+		compile_error.m_message = "Internal Error: No definition found for function: " + node.tok.val + ". This should not happen. Please report this error to the developers.";
+		return compile_error;
+	}
+
 	/// Checks for "CKSP" prefix in function name and throws a meaningful error if found
 	static bool check_engine_helper_function(const NodeFunctionHeader& node) {
 		if (node.kind != NodeDataStructure::Compiler and StringUtils::starts_with(node.name, "CKSP"+ OBJ_DELIMITER)) {

@@ -30,6 +30,7 @@
 #include "../ASTVisitor/ASTCollectLowerings.h"
 #include "../ASTVisitor/ASTVariableChecking.h"
 #include "../ASTVisitor/TypeInference.h"
+#include "../ASTVisitor/ASTLowerTypes.h"
 #include "../ASTVisitor/FunctionHandling/BuiltinRestrictionValidator.h"
 #include "../ASTVisitor/FunctionHandling/FunctionExitCheck.h"
 #include "../ASTVisitor/FunctionHandling/ReturnPathValidator.h"
@@ -206,6 +207,11 @@ NodeAST *NodeAST::do_constant_folding() {
 void NodeAST::do_type_inference(NodeProgram *program) {
 	static TypeInference inference(program);
 	accept(inference);
+}
+
+NodeAST * NodeAST::do_type_lowering(NodeProgram *program) {
+	static ASTLowerTypes lowering_types(program);
+	return accept(lowering_types);
 }
 
 NodeAST * NodeAST::do_lowering(NodeProgram *program) {

@@ -329,7 +329,6 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_expression(NodeAST* parent) {
 	auto concat_done = _parse_string_expr_rhs(std::move(lhs.unwrap()), parent);
 	if (concat_done.is_error()) return Result<std::unique_ptr<NodeAST>>(concat_done.get_error());
 
-	// NEW: attach ternary tail with lowest precedence
 	return _parse_ternary_rhs(std::move(concat_done.unwrap()), parent);
 }
 
@@ -381,6 +380,19 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_binary_expr(NodeAST* parent) {
 }
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_reference_chain(NodeAST *parent) {
+	if (peek().type == token::NEW) {
+		consume();
+		if (peek().type != token::KEYWORD and peek(1).type != token::OPEN_PARENTH) {
+			auto error = CompileError(
+				ErrorType::SyntaxError,
+				"Expected constructor after <new>.",
+				"call to __init__ method",
+				peek()
+			);
+			return Result<std::unique_ptr<NodeAST>>(error);
+		}
+	}
+
 	auto chain = std::make_unique<NodeAccessChain>(peek());
 	if (peek().type != token::KEYWORD) {
 		auto error = CompileError(
@@ -458,7 +470,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr(NodeAST* parent) {
 	if(peek().type == token::RETURN) {
 		m_tokens[m_pos].type = token::KEYWORD;
 	}
-    if(peek().type == token::KEYWORD) {
+    if(peek().type == token::KEYWORD || peek().type == token::NEW) {
 		return parse_reference_chain(parent);
     // is expression in brackets
     } else if (peek().type == token::OPEN_PARENTH) {
@@ -474,12 +486,6 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr(NodeAST* parent) {
 		return parse_boolean(parent);
 	} else if (peek().type == token::NIL) {
 		return parse_nil(parent);
-	} else if (peek().type == token::NEW) {
-		auto var_method = parse_function_call(parent);
-		if (!var_method.is_error()) {
-			return Result<std::unique_ptr<NodeAST>>(std::move(var_method.unwrap()));
-		}
-		return Result<std::unique_ptr<NodeAST>>(var_method.get_error());
 	} else if(peek().type == token::MULT) {
 		return parse_wildcard(parent);
     } else {

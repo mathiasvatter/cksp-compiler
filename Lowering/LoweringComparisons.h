@@ -5,6 +5,7 @@
 #pragma once
 
 #include "ASTLowering.h"
+#include "../SyntaxChecks/KSPConditions.h"
 
 /**
  * This class is for lowering comparisons in if and while conditions by bringing single booleans that are not

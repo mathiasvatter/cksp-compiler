@@ -38,6 +38,7 @@ public:
 		program.accept(*this);
 		m_local_var_declarations.clear();
 		m_global_declarations.clear();
+		program.reset_function_visited_flag();
 	}
 
 private:
@@ -50,7 +51,7 @@ private:
 
 	NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
-		node.reset_function_visited_flag();
+		m_program->global_declarations->accept(*this);
 		for(const auto & callback : node.callbacks) {
 			callback->accept(*this);
 		}
@@ -82,6 +83,9 @@ private:
 		}
 
 		const auto definition = node.get_definition();
+		if (!definition) {
+			DefinitionProvider::internal_missing_definition_error(node);
+		}
 		if(definition) {
 			// only visit definition if not already visited
 			if (!definition->visited) {

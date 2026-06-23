@@ -326,10 +326,6 @@ public:
 		ast->accept(lowering_types);
 		ast->debug_print();
 
-		// inline here so inlined struct vars get their declaration for register reuse later on
-		// the struct constants are also declared
-		// ast->inline_structs_and_constants();
-
 		m_timer.stop("Lowering");
 		std::cout << m_timer.print_timer("Lowering") << "\n";
 		m_timer.start("Return Function Rewriting");
@@ -337,22 +333,20 @@ public:
 		// that should also work here and then I can do the returnstmt lowering in ASTReturnFunctionRewriting???
 		MarkThreadSafe marker(m_program);
 		marker.mark_environments(*ast);
-
-		// ast->collect_call_sites(m_program); // collect call sites (functions might have been duplicated after monomorphization and more call sites now!
-		ASTFunctionStrategy function_strategy(m_program, m_pragma_config->parameter_passing);
-		function_strategy.determine_function_strategies(*m_program);
-
-		ASTReturnFunctionRewriting return_function_rewriting(m_program);
-		return_function_rewriting.do_rewriting(*ast);
-		ast->debug_print();
-
 		ASTThreadSafeAnalysis thread_safe_analysis(m_program);
 		thread_safe_analysis.run(*m_program);
 		thread_safe_analysis.mark_variables();
 		ast->debug_print();
-		// static MarkThreadSafeVars mark_vars(m_program);
-		// mark_vars.mark_variables(*ast);
-		// ast->debug_print();
+
+		// ast->collect_call_sites(m_program); // collect call sites (functions might have been duplicated after monomorphization and more call sites now!
+		// this has to be placed here because the function definition lowering in function rewriting demands
+		// to know which functions will be inlined and which ones won't
+		ASTFunctionStrategy function_strategy(m_program, m_pragma_config->parameter_passing);
+		function_strategy.determine_function_strategies(*m_program);
+		
+		ASTReturnFunctionRewriting return_function_rewriting(m_program);
+		return_function_rewriting.do_rewriting(*ast);
+		ast->debug_print();
 
 		{
 			variable_checking.do_reachable_traversal(*ast, true);

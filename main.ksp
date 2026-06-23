@@ -1,87 +1,27 @@
 #pragma output_path("test.txt")
 #pragma combine_callbacks(true)
 #pragma max_callback_depth(420)
-
 // #pragma optimize("none")
-// namespace bb
-// 	struct Point
-// 		x: int, y: int
-// 	end struct
-// end namespace
-
-// declare p := new bb.Point(1,2)
-
-// struct Note
-// 	pitch: int
-// 	velo: int
-
-// 	function get_velo(self)
-// 		return self.velo
-// 	end function
-
-// 	function get_velo(self) override
-// 		return self.pitch
-// 	end function
-// end struct
-
-// declare Note := new Note(60, 127)
-
-// struct Chord
-// 	notes[3]: Note[]
-
-// 	function search_note(self, note: Note)
-// 		return search(self.notes, note)
-// 	end function
-// end struct
 
 
-// function update_keyrange_disp()
-// 	declare const NUM_KEES := 128
-// 	declare SLOT_KEY_COLOR[NUM_KEES]
-// end function
 
-// on init
-// 	SET_CONDITION(NO_SYS_SCRIPT_PEDAL)
-// 	declare notes[3] := [new Note(1,1), new Note(1,1), new Note(1,1)]
-// 	declare ch := new Chord(notes)
-// 	// declare Chord := new Chord([new Note(1,1), new Note(1,1), new Note(1,1)])
-// 	declare stringggg: string := "sdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfja sdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasdfljlfjrlfiajrslfkasdjlfkasjdflaksjdflaksdjflaskdjfalskdjf alsdkfj asldkfja sldkfja sldkfja sldkfjasldkfja sldkfja sldkfja sldkfj asldkfj alsdkfj alskfj "
 
-// 	declare array[25]: int[]
-// end on
+struct Point
+    x: int, y: int
 
-// on persistence_changed
-//     pupupupu()
-// end on
+    function move_by(self, x: int, y: int)
+        self.x += x
+        self.y += y
+        return new Point(x, y)
+    end function        
+end struct    
 
-// function dodododo(ref array: int[])
-// 	load_array(array, 2)
-// 	for i in range(340)
-// 		message(i)
-// 		if (i = 4)
-// 			exit
-// 		end if			
-// 	end for
-	
-// end function	
-declare read decode[2]: int[]
+declare new_point := new Point(1,2).move_by(1,2)
 
 on init
- 	declare decode_path := find_key_nka(decode, "decode", 081202, "", 4)
-
+    do_sth(new Point(1,2).move_by(1,2))
 end on
 
-function find_key_nka(array: any[], nka: string, key: int, parent_folder: string, search_depth: int): string
-    array[0] := -1
-    declare local @path
-    declare local it
-    declare _id := load_array_str(array, get_folder(GET_FOLDER_PATCH_DIR) & path & parent_folder & nka & ".nka")
-
-    while (_id # -1 and it < search_depth and array[0] # key)
-        array[0] := -1
-        path := path & "../"
-        _id := load_array_str(array, get_folder(GET_FOLDER_PATCH_DIR) & path & parent_folder & nka & ".nka")
-        inc(it)
-    end while
-    return get_folder(GET_FOLDER_PATCH_DIR) & path & nka & ".nka"
+function do_sth(p: Point)
+    message(p)
 end function

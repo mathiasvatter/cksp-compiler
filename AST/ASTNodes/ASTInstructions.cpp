@@ -276,7 +276,12 @@ void NodeFunctionCall::determine_function_strategy(NodeProgram *program, NodeCal
 }
 
 bool NodeFunctionCall::is_in_access_chain() const {
-	return parent and parent->cast<NodeAccessChain>();
+	if (!parent) return false;
+	if (auto chain = parent->cast<NodeAccessChain>()) {
+		if (chain->member(0).get() == this) return false;
+		return true;
+	}
+	return false;
 }
 
 bool NodeFunctionCall::has_side_effects(const std::unordered_set<std::string> &free_vars) {

@@ -111,6 +111,8 @@ struct NodeFunctionCall final : NodeInstruction {
 	bool is_destructive_builtin_func() const;
 	bool check_restricted_environment(NodeCallback *current_callback) const;
 	void determine_function_strategy(NodeProgram* program, NodeCallback* current_callback);
+	/// returns true if the function call is inside an access chain. NOT if it is the first member of
+	/// the chain
 	bool is_in_access_chain() const;
 	/// Checks if the function call or any of its arguments has side effects
 	/// this gets checked by giving a set of free variables that are being modified inside

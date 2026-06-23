@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Usage: ./build_only.sh [release|debug]
+# Usage: ./build.sh [release|debug]
 BUILD_TYPE="${1:-release}"  # Default: release
 
 # Validation
