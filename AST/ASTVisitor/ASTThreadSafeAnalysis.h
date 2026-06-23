@@ -71,6 +71,9 @@ protected:
 				m_is_thread_safe_environment = false;
 			}
 			stmt->accept(*this);
+			if (stmt.get() == m_end) {
+				m_is_thread_safe_environment = true;
+			}
 			// check if any vars lifetime ends here -> if we are still in thread-unsafe env -> var is thread-safe
 			if (!m_is_thread_safe_environment) {
 				auto it = m_end_of_life.find(stmt.get());
@@ -79,9 +82,6 @@ protected:
 						data->is_thread_safe = true;
 					}
 				}
-			}
-			if (stmt.get() == m_end) {
-				m_is_thread_safe_environment = true;
 			}
 		}
 		return &node;
