@@ -240,9 +240,9 @@ protected:
 				m_function_thread_unsafe_ranges[definition.get()] = ThreadUnsafeRange{true,
 					definition->body->statements.front().get(), definition->body->statements.back().get()
 				};
-				m_program->function_call_stack.push(definition);
+				m_program->function_definition_stack.push(definition);
 				definition->accept(*this);
-				m_program->function_call_stack.pop();
+				m_program->function_definition_stack.pop();
 				definition->visited = true;
 			}
 		}

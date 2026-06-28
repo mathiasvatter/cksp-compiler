@@ -43,8 +43,8 @@ public:
 				}
 			} else if (node.function->get_num_args() == 0 and node.function->name == "exit") {
         	// check if we are in a user function, then replace exit function call with return stmt
-        		if (!m_program->function_call_stack.empty()) {
-        			const auto& current_func = m_program->function_call_stack.top();
+        		if (!m_program->function_definition_stack.empty()) {
+        			const auto& current_func = m_program->function_definition_stack.top();
         			if (auto func = current_func.lock()) {
 						func->num_return_stmts++;
         				auto block = std::make_unique<NodeBlock>(node.tok);

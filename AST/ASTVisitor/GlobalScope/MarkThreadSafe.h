@@ -35,9 +35,9 @@ public:
 	NodeAST* mark_function(NodeFunctionDefinition& node) {
 		node.visited = false;
 		m_program->current_callback = nullptr;
-		m_program->function_call_stack.push(node.get_shared());
+		m_program->function_definition_stack.push(node.get_shared());
 		node.accept(*this);
-		m_program->function_call_stack.pop();
+		m_program->function_definition_stack.pop();
 		m_program->reset_function_visited_flag();
 		return &node;
 	}
@@ -59,9 +59,9 @@ private:
 		auto const definition = node.get_definition();
 		if(!node.is_builtin_kind() and definition) {
 			if(!definition->visited) {
-				m_program->function_call_stack.push(definition);
+				m_program->function_definition_stack.push(definition);
 				definition->accept(*this);
-				m_program->function_call_stack.pop();
+				m_program->function_definition_stack.pop();
 				definition->visited = true;
 				definition->is_used = true;
 			}
@@ -69,8 +69,8 @@ private:
 
 		// determine thread safety of currently visiting function definition
 		if(definition) {
-			if (!m_program->function_call_stack.empty()) {
-				const auto func_above = m_program->function_call_stack.top().lock();
+			if (!m_program->function_definition_stack.empty()) {
+				const auto func_above = m_program->function_definition_stack.top().lock();
 				func_above->is_thread_safe &= definition->is_thread_safe;
 				func_above->is_restricted |= definition->is_restricted;
 			}
@@ -83,10 +83,10 @@ private:
 	}
 
 	NodeAST* visit(NodeVariableRef& node) override {
-		if (!m_program->function_call_stack.empty()) {
+		if (!m_program->function_definition_stack.empty()) {
 			if (auto decl = node.get_declaration()) {
 				if (!decl->is_engine) return &node;
-				const auto func_above = m_program->function_call_stack.top().lock();
+				const auto func_above = m_program->function_definition_stack.top().lock();
 				func_above->is_restricted |= decl->is_restricted;
 			}
 		}
@@ -96,10 +96,10 @@ private:
 	NodeAST* visit(NodeArrayRef& node) override {
 		if (node.index) node.index->accept(*this);
 
-		if (!m_program->function_call_stack.empty()) {
+		if (!m_program->function_definition_stack.empty()) {
 			if (auto decl = node.get_declaration()) {
 				if (!decl->is_engine) return &node;
-				const auto func_above = m_program->function_call_stack.top().lock();
+				const auto func_above = m_program->function_definition_stack.top().lock();
 				func_above->is_restricted |= decl->is_restricted;
 			}
 		}

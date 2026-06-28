@@ -962,11 +962,12 @@ struct NodeProgram final : NodeAST {
 	// std::shared_ptr<NodeVariable> global_iterator;
 	std::vector<std::shared_ptr<NodeVariable>> global_iterators;
 	/// holds the current function definition that is being processed
-	std::stack<std::weak_ptr<NodeFunctionDefinition>> function_call_stack{};
+	std::stack<std::weak_ptr<NodeFunctionDefinition>> function_definition_stack{};
 	std::shared_ptr<NodeFunctionDefinition> get_curr_function() {
-		if(function_call_stack.empty()) return nullptr;
-		return function_call_stack.top().lock();
+		if(function_definition_stack.empty()) return nullptr;
+		return function_definition_stack.top().lock();
 	}
+	std::vector<NodeFunctionCall*> function_call_stack{};
 	std::vector<struct NodeNamespace*> namespaces;
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::shared_ptr<NodeFunctionDefinition>> function_definitions;

@@ -119,7 +119,7 @@ NodeAST * ASTVariableChecking::visit(NodeFunctionHeader& node) {
 NodeAST* ASTVariableChecking::visit(NodeFunctionDefinition &node) {
 	node.visited = true;
 
-	m_program->function_call_stack.push(node.weak_from_this());
+	m_program->function_definition_stack.push(node.weak_from_this());
 	m_def_provider->add_scope();
 
 	node.header ->accept(*this);
@@ -128,7 +128,7 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionDefinition &node) {
 	node.body->accept(*this);
 
 	m_def_provider->remove_scope();
-	m_program->function_call_stack.pop();
+	m_program->function_definition_stack.pop();
 	return &node;
 }
 

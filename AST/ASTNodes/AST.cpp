@@ -343,7 +343,7 @@ std::unique_ptr<NodeReference> NodeDataStructure::to_reference() {
 bool NodeDataStructure::determine_locality(const NodeProgram* program, const NodeBlock* current_block) {
 	// not init_callback if var is set to local
 	const bool global_declarations = current_block and current_block == program->global_declarations.get();
-	const bool init_callback = (program->current_callback == program->init_callback and program->function_call_stack.empty() and !is_local) or is_global;
+	const bool init_callback = (program->current_callback == program->init_callback and program->function_definition_stack.empty() and !is_local) or is_global;
 	bool local = (current_block and current_block->scope) and !init_callback and !global_declarations;
 	local = local or (is_function_param() or is_member() or is_local);
 	// could also be an old school return variable which would have to be local

@@ -77,7 +77,7 @@ public:
 			}
 		}
 
-		m_program->function_call_stack.push(definition);
+		m_program->function_definition_stack.push(definition);
 		// visit everything beforehand to get depth first search
 		if(!definition->visited) definition->accept(*this);
 		definition->visited = true;
@@ -91,14 +91,14 @@ public:
 		// if node is_call, do not inline and return
 		if(node.strategy == NodeFunctionCall::Strategy::Call) {
 			definition->is_used = true;
-			m_program->function_call_stack.pop();
+			m_program->function_definition_stack.pop();
 			node.is_call = true;
 			return &node;
 		}
 
 		// used can not be set to false here, because some func calls might be "called" and some not
 		auto new_node = node.do_function_inlining(m_program);
-		m_program->function_call_stack.pop();
+		m_program->function_definition_stack.pop();
 		return new_node;
 	}
 

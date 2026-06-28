@@ -3,37 +3,23 @@
 #pragma max_callback_depth(420)
 
 
-declare labels: int[] := [1,2,3,4]
-declare sliders: int[] := [1,2,3,4]
-declare last_time_sli
+struct Point
+	x: int, y: int
+end struct	
 
-on ui_controls
-    update_fx_sli(NI_UI_ID)
-end on
+struct Array
+	points[100]: Point[]
 
-function update_fx_sli(uiid: int)
-	declare idx := search(sliders, uiid)
-	if idx # -1
-		fx_sli(idx)
-	end if
-end function
+	function __init__(self)
+		for idx, p in pairs(self.points)
+			p := new Point(idx, int(real(idx)**2.0))
+		end for			
+	end function		
+end struct	
 
-function fx_sli(idx)
-		declare page := idx / 5
-		declare disp_val
+declare point_array := new Array()
+declare point_array2 := new Array()
 
-		last_time_sli := ENGINE_UPTIME
-
-		select idx
-            case 0 to 4
-                disp_val := 4
-            case default
-                disp_val := 5
-		end select
-		
-		labels[idx] -> text := disp_val
-		wait(800 * 1000)
-		if(ENGINE_UPTIME - last_time_sli > 800 -5)
-			// labels[idx] -> text := "hello"
-		end if
-end function	
+on note 
+	
+end on	

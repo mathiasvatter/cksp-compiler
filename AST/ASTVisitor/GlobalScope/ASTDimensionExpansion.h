@@ -101,9 +101,9 @@ public:
 		if(node.bind_definition(m_program)) {
 			const auto definition = node.get_definition();
 			if(!definition->visited and !definition->is_thread_safe) {
-				m_program->function_call_stack.push(definition);
+				m_program->function_definition_stack.push(definition);
 				definition->accept(*this);
-				m_program->function_call_stack.pop();
+				m_program->function_definition_stack.pop();
 			}
 			definition->visited = true;
 		}

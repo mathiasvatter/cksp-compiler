@@ -39,6 +39,7 @@
 #include "AST/ASTVisitor/FunctionHandling/ASTPreemptiveFunctionInlining.h"
 #include "AST/ASTVisitor/GlobalScope/ASTDimensionExpansion.h"
 #include "AST/ASTVisitor/ASTLowerTypes.h"
+#include "AST/ASTVisitor/ASTStructInstanceAnalysis.h"
 #include "AST/ASTVisitor/ASTThreadSafeAnalysis.h"
 #include "AST/ASTVisitor/UniqueParameterNamesProvider.h"
 #include "AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
@@ -312,6 +313,8 @@ public:
 
 		ASTPointerScope pointer_scope(m_program);
 		ast->accept(pointer_scope);
+		ASTStructInstanceAnalysis instance_analysis(m_program);
+		ast->accept(instance_analysis);
 		ast->collect_references();  //>> actually needed when pointers are used -> LUX
 		ast->debug_print();
 

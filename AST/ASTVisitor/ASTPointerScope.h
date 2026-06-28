@@ -29,7 +29,6 @@
  * 2. The struct has other objects as members: dec(allocation[self]) and delete(member)
  * 3. The struct has recursive objects as members: while loop with pseudo recursion
  *
- * Also marks temporary constructors that have to be deleted later on in ReturnFunctionRewriting
  *
  * Implement also:
  * - determine max_individual_structs_var by looking at where the constructors are called:
@@ -37,9 +36,6 @@
  * 		- constructor called in linear for loop -> max_individual_structs_var + for loop elements
  */
 class ASTPointerScope final : public ASTVisitor {
-	std::vector<NodeLoop*> m_loop_stack;
-	// bool is_linear_environment = false;
-	std::unordered_map<NodeStruct*, std::unique_ptr<NodeAST>> m_num_constructors;
 
 	DefinitionProvider* m_def_provider = nullptr;
 	std::vector<std::unordered_map<StringTypeKey, NodeDataStructure*, StringTypeKeyHash>> m_pointer_scope_stack;
@@ -82,28 +78,17 @@ class ASTPointerScope final : public ASTVisitor {
 public:
 	explicit ASTPointerScope(NodeProgram *main) : m_def_provider(main->def_provider) {
 		m_program = main;
-	};
+	}
 
 	NodeAST* visit(NodeProgram& node) override {
 		m_program = &node;
-
 		// most func defs will be visited when called, keeping local scopes in mind
 		m_program->global_declarations->accept(*this);
 		m_program->init_callback->accept(*this);
-		// visit_all(node.namespaces, *this);
-		// visit_all(node.struct_definitions, *this);
 		for(const auto & callback : node.callbacks) {
 			if(callback.get() != m_program->init_callback) callback->accept(*this);
 		}
-
 		node.reset_function_visited_flag();
-
-		for(auto & struct_def : m_num_constructors) {
-			struct_def.second->do_constant_folding();
-			struct_def.first->max_individual_structs_count = std::move(struct_def.second);
-			struct_def.first->max_individual_structs_count->parent = struct_def.first;
-		}
-
 		return &node;
 	}
 
@@ -169,7 +154,6 @@ public:
 
 	NodeAST* visit(NodeSingleAssignment &node) override {
 //		if(node.l_value->is_member_ref()) return &node;
-
 		// move r_value expression to temporary if l_value is also in r_value expression
 		if (is_self_ptr_assignment(node)) {
 			auto tmp_var = m_program->get_tmp_ptr(node.r_value->ty);
@@ -233,56 +217,6 @@ public:
 		return &node;
 	}
 
-	//------- Nodes for struct instance analysis -------
-	bool is_linear_environment() const {
-		if (!m_program->function_call_stack.empty()) return false;
-		if (!m_program->current_callback) return true; // this is the case if we are in global_declarations
-		if (m_program->current_callback == m_program->init_callback) return true;
-		if (m_program->current_callback->begin_callback == "on persistence_changed") return true;
-		return false;
-	}
-
-	NodeAST* visit(NodeCallback& node) override {
-		m_program->current_callback = &node;
-
-
-		if(node.callback_id) node.callback_id->accept(*this);
-		node.statements->accept(*this);
-
-		m_program->current_callback = nullptr;
-		return &node;
-	}
-
-	NodeAST* visit(NodeFor& node) override {
-		node.iterator->accept(*this);
-		node.iterator_end->accept(*this);
-		if(node.step) node.step->accept(*this);
-
-		m_loop_stack.push_back(&node);
-		node.body->accept(*this);
-		m_loop_stack.pop_back();
-		return &node;
-	};
-
-	NodeAST* visit(NodeForEach& node) override {
-		if(node.key) node.key->accept(*this);
-		if(node.value) node.value->accept(*this);
-		node.range->accept(*this);
-
-		m_loop_stack.push_back(&node);
-		node.body->accept(*this);
-		m_loop_stack.pop_back();
-		return &node;
-	};
-
-	NodeAST* visit(NodeWhile& node) override {
-		m_loop_stack.push_back(&node);
-		node.condition->accept(*this);
-		node.body->accept(*this);
-		m_loop_stack.pop_back();
-		return &node;
-	};
-
 	// if constructor, get struct and increase constructor count
 	NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
@@ -290,80 +224,25 @@ public:
 		auto definition = node.get_definition();
 		if(definition and node.kind != NodeFunctionCall::Kind::Builtin) {
 			if(!definition->visited) {
-				m_program->function_call_stack.push(definition);
+				m_program->function_definition_stack.push(definition);
 				definition->accept(*this);
-				m_program->function_call_stack.pop();
+				m_program->function_definition_stack.pop();
 			}
 			definition->visited = true;
 		}
 
-		if(node.kind == NodeFunctionCall::Kind::Constructor) {
-			// temporary constructor only  when in access chain or func arg of func that is not constructor
-			node.is_temporary_constructor = node.is_func_arg() || node.parent->cast<NodeAccessChain>();
-			if(auto struct_def = definition->parent->cast<NodeStruct>()) {
-				increase_num_constructors(struct_def);
-			}
-		}
-
-
 		return &node;
-	};
+	}
 
 	NodeAST* visit(NodeFunctionDefinition& node) override {
-		// do this because function definitions are also in the structs
-		// if(node.visited) return &node;
-
 		node.header ->accept(*this);
 		if (node.return_variable.has_value())
 			node.return_variable.value()->accept(*this);
 		node.body->accept(*this);
 		return &node;
-	};
+	}
 
 private:
-
-	void add_expr_to_num_constructors(NodeStruct* key, std::unique_ptr<NodeAST> expr) {
-		auto it = m_num_constructors.find(key);
-		if(it != m_num_constructors.end()) {
-			auto& num = it->second;
-			auto new_expr = std::make_unique<NodeBinaryExpr>(token::ADD, std::move(expr), std::move(num), expr->tok);
-			num = std::move(new_expr);
-		} else {
-			m_num_constructors[key] = std::move(expr);
-		}
-	}
-
-	// multiply all loop iterations together if there are multiple loops
-	std::unique_ptr<NodeAST> determine_num_iterations() {
-		std::unique_ptr<NodeAST> all_num;
-		for(auto loop: m_loop_stack) {
-			if(loop->determine_linear()) {
-				if(auto num = loop->get_num_iterations()) {
-					all_num = all_num ? std::make_unique<NodeBinaryExpr>(token::MULT, std::move(all_num), std::move(num), num->tok) : std::move(num);
-				}
-			} else {
-				return nullptr;
-			}
-		}
-		return all_num;
-	}
-
-	void increase_num_constructors(NodeStruct* struct_def) {
-		if(is_linear_environment()) {
-			// if the constructor is called in a linear loop environment, add the number of iterations to the constructor count
-			if(!m_loop_stack.empty()) {
-				if(auto num = determine_num_iterations()) {
-					add_expr_to_num_constructors(struct_def, std::move(num));
-				}
-			} else {
-				add_expr_to_num_constructors(struct_def, std::make_unique<NodeInt>(1, Token()));
-			}
-//		} else {
-//			// if it is not called in a linear env, remove from constructor count map
-//			m_num_constructors.erase(struct_def);
-		}
-	}
-
 	// if l_value is of type object and r_value is no constructor
 	static bool alters_ref_count(NodeAST* node) {
 		Type* l_value_type = nullptr;
