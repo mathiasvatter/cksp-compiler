@@ -151,7 +151,7 @@ public:
 	/// returns true if reference is a ui_control, is a function argument and is the first argument
 	/// of a builtin "control_par" function call, a property function call or any argument of a user-defined function call
 	static bool needs_get_ui_id(const NodeReference& ref) {
-		if (!ref.is_func_arg()) {
+		if (!ref.is_direct_func_arg()) {
 			return false;
 		}
 

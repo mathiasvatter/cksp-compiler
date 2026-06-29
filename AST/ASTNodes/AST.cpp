@@ -229,11 +229,20 @@ NodeAST * NodeAST::collect_call_sites(NodeProgram *program) {
 	return call_sites.do_collect_call_sites(*this);
 }
 
-NodeFunctionHeaderRef* NodeAST::is_func_arg() const {
+NodeFunctionHeaderRef* NodeAST::is_direct_func_arg() const {
 	if(!this->parent) return nullptr;
 	if(!this->parent->parent) return nullptr;
 	if (!this->parent->cast<NodeParamList>()) return nullptr;
 	return this->parent->parent->cast<NodeFunctionHeaderRef>();
+}
+
+NodeFunctionHeaderRef * NodeAST::is_func_arg() const {
+	if (auto stmt = get_parent_statement()) {
+		if (auto call = stmt->statement->cast<NodeFunctionCall>()) {
+			return call->function.get();
+		}
+	}
+	return nullptr;
 }
 
 bool NodeAST::is_string_env() const {
@@ -243,7 +252,7 @@ bool NodeAST::is_string_env() const {
 		is_string |= binary_expr->ty == TypeRegistry::String;
 	}
 	// is within message call
-	if (auto header = is_func_arg()) {
+	if (auto header = is_direct_func_arg()) {
 		is_string |= header->name == "message";
 	}
 	// is within return statement
@@ -475,7 +484,7 @@ std::unique_ptr<NodeAST> NodeReference::get_size() {
 }
 
 NodeFunctionCall* NodeReference::is_in_get_ui_id() const {
-	if (const auto header = is_func_arg()) {
+	if (const auto header = is_direct_func_arg()) {
 		if (const auto func_call = header->parent->cast<NodeFunctionCall>()) {
 			if (!func_call->is_builtin_kind()) return nullptr;
 			if (func_call->function->name == "get_ui_id") {

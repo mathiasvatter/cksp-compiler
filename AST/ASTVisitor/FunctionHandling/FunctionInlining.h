@@ -239,7 +239,7 @@ private:
 					error.exit();
 				}
 			}
-			if(ref->is_func_arg()) {
+			if(ref->is_direct_func_arg()) {
 				const auto func_call = ref->parent->parent->parent->cast<NodeFunctionCall>();
 				if(func_call->is_destructive_builtin_func()) {
 					if(substitute->is_constant() and !substitute->ty->cast<CompositeType>()) {

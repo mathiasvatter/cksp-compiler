@@ -127,6 +127,9 @@ public:
 	}
 
 	NodeAST* visit(NodeVariableRef& node) override {
+		if (node.name == "nks.grain_fx_offset") {
+
+		}
 		kill_last_assignment(&node);
 		if(node.is_l_value()) m_last_reference[get_hash_value(node)] = &node;
 		return &node;

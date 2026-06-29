@@ -52,7 +52,6 @@ public:
 		node.reset_function_visited_flag();
 
 		for(auto & struct_def : m_num_constructors) {
-			struct_def.second->do_constant_folding();
 			struct_def.first->max_individual_structs_count = std::move(struct_def.second);
 			struct_def.first->max_individual_structs_count->parent = struct_def.first;
 		}

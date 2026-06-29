@@ -84,7 +84,7 @@ private:
 		// make sure that the function that is arg in a higher-order function
 		// does not get deleted because it is only ref and not being called
 		// foo(bar: (): void) -> bar is not called but function ref
-		if(node.get_declaration() and node.is_func_arg()) {
+		if(node.get_declaration() and node.is_direct_func_arg()) {
 			if(const auto def = node.get_declaration()->parent->cast<NodeFunctionDefinition>()) {
 				def->is_used = true;
 				def->accept(*this);

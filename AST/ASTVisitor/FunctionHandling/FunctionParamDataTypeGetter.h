@@ -23,7 +23,7 @@ public:
 	std::unordered_map<NodeFunctionParam*, std::unordered_set<DataType>> m_data_type_per_param;
 	NodeFunctionParam* m_current_formal_param = nullptr;
 	void insert_ui_control_type_of_arg(const NodeReference& actual_param, NodeFunctionParam* formal_param) {
-		if (!actual_param.is_func_arg()) return;
+		if (!actual_param.is_direct_func_arg()) return;
 		if (formal_param) {
 			m_data_type_per_param[formal_param].insert(actual_param.data_type);
 		}

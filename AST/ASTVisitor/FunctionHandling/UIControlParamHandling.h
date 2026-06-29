@@ -84,7 +84,7 @@ private:
 	}
 
 	static bool is_in_get_ui_id(const NodeReference& ref) {
-		if (auto header = ref.is_func_arg()) {
+		if (auto header = ref.is_direct_func_arg()) {
 			if (auto func_call = header->parent->cast<NodeFunctionCall>()) {
 				return is_get_ui_id_call(*func_call);
 			}

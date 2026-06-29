@@ -3,23 +3,38 @@
 #pragma max_callback_depth(420)
 
 
-struct Point
-	x: int, y: int
-end struct	
+// struct Point
+// 	x: int, y: int
+// end struct	
 
-struct Array
-	points[100]: Point[]
+// struct Array
+// 	points[100]: Point[]
 
-	function __init__(self)
-		for idx, p in pairs(self.points)
-			p := new Point(idx, int(real(idx)**2.0))
-		end for			
-	end function		
-end struct	
+// 	function __init__(self)
+// 		for idx, p in pairs(self.points)
+// 			p := new Point(idx, int(real(idx)**2.0))
+// 		end for			
+// 	end function		
+// end struct	
 
-declare point_array := new Array()
-declare point_array2 := new Array()
+// declare point_array := new Array()
+// declare point_array2 := new Array()
 
-on note 
+// on note 
 	
-end on	
+// end on	
+
+on init
+
+
+	declare offset, ooo
+	for i in range(5)
+		offset := 5 + ooo
+		message(offset)
+		set_nks_nav_name(4, NUM_GROUPS + offset, "eq")
+		offset := 6 + ooo
+		set_nks_nav_name(4, NUM_GROUPS + offset, "eq")
+	end for
+
+
+end on

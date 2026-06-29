@@ -168,7 +168,7 @@ public:
 	/// checks if given reference is in a nested get_ui_id call
 	static void check_nested_get_ui_id(const NodeReference& ref) {
 		if (auto func_call = ref.is_in_get_ui_id()) {
-			if (auto header = func_call->is_func_arg()) {
+			if (auto header = func_call->is_direct_func_arg()) {
 				if (auto fun = header->parent->cast<NodeFunctionCall>()) {
 					if (!fun->is_builtin_kind()) return;
 					if (fun->function->name == "get_ui_id") {

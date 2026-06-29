@@ -116,8 +116,11 @@ struct NodeAST {
 	NodeAST* do_lowering(NodeProgram* program);
 	NodeAST* collect_declarations(NodeProgram* program);
 	NodeAST* collect_call_sites(NodeProgram* program);
-	/// Determines if current Node is function argument
-	[[nodiscard]] NodeFunctionHeaderRef* is_func_arg() const;
+	/// Determines if current Node is a direct function argument -> fails if it is in a binary expression
+	/// and then a func arg
+	[[nodiscard]] NodeFunctionHeaderRef* is_direct_func_arg() const;
+	/// checks all the way up if it is a function argument (more reliable than the above func)
+	NodeFunctionHeaderRef* is_func_arg() const;
 	/// checks if reference is in a string representation (printing or string assignment)
 	[[nodiscard]] bool is_string_env() const;
 	NodeReference* is_reference();
