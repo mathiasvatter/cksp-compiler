@@ -50,7 +50,7 @@ public:
 		if(node->is_l_value()) return node;
 		/// propagation inside certain builtin functions is not allowed
 		/// if parameter in builtin function is a variable or an array -> no propagation
-		if(node->is_direct_func_arg()) {
+		if(node->is_func_arg()) {
 			auto func_call = node->parent->parent->parent->cast<NodeFunctionCall>();
 			if(func_call and func_call->kind == NodeFunctionCall::Kind::Builtin) {
 				if(func_call->get_definition()) {

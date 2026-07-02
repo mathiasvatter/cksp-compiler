@@ -27,14 +27,31 @@
 on init
 
 
-	declare offset, ooo
-	for i in range(5)
-		offset := 5 + ooo
-		message(offset)
-		set_nks_nav_name(4, NUM_GROUPS + offset, "eq")
-		offset := 6 + ooo
-		set_nks_nav_name(4, NUM_GROUPS + offset, "eq")
-	end for
+// 	declare offset, ooo
+// 	for i in range(5)
+// 		offset := 5 + ooo
+// 		message(offset)
+// 		set_nks_nav_name(4, NUM_GROUPS + offset, "eq")
+// 		offset := 6 + ooo
+// 		set_nks_nav_name(4, NUM_GROUPS + offset, "eq")
+// 	end for
 
 
 end on
+
+on persistence_changed	
+    message(center_circle_angle(0.0, 1.0))
+    message(center_circle_angle(1.0, 1.0))
+end on
+
+function center_circle_angle(x: real, y: real) : real
+    declare dx: real := x- 0.5
+    declare dy: real := y- 0.5
+
+    declare cos_theta: real := dx/sqrt(dx*dx + dy*dy)
+    declare angle: real := acos(cos_theta)
+    if dy < 0.0
+        angle := 2.0*NI_MATH_PI - angle
+    end if
+    return angle
+end function

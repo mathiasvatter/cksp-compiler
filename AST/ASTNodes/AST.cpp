@@ -237,11 +237,22 @@ NodeFunctionHeaderRef* NodeAST::is_direct_func_arg() const {
 }
 
 NodeFunctionHeaderRef * NodeAST::is_func_arg() const {
-	if (auto stmt = get_parent_statement()) {
-		if (auto call = stmt->statement->cast<NodeFunctionCall>()) {
-			return call->function.get();
-		}
+	// go out until you either find a NodeStatement or a NodeFunctionHeaderRef
+	NodeAST* current = parent;
+	NodeStatement* stmt = nullptr;
+	NodeFunctionHeaderRef* function_header = nullptr;
+	while (current) {
+		function_header = current->cast<NodeFunctionHeaderRef>();
+		if (function_header) break;
+		stmt = current->cast<NodeStatement>();
+		if (stmt) break;
+		// if current is not a binary expression or unary expression -> fail!
+		// we always need to be in an expression context -> not e.g. as an index in an array
+		if (!current->cast<NodeBinaryExpr>() and !current->cast<NodeUnaryExpr>()
+			and !current->cast<NodeParamList>()) break;
+		current = current->parent;
 	}
+	if (function_header) return function_header;
 	return nullptr;
 }
 
@@ -252,7 +263,7 @@ bool NodeAST::is_string_env() const {
 		is_string |= binary_expr->ty == TypeRegistry::String;
 	}
 	// is within message call
-	if (auto header = is_direct_func_arg()) {
+	if (auto header = is_func_arg()) {
 		is_string |= header->name == "message";
 	}
 	// is within return statement
@@ -484,7 +495,7 @@ std::unique_ptr<NodeAST> NodeReference::get_size() {
 }
 
 NodeFunctionCall* NodeReference::is_in_get_ui_id() const {
-	if (const auto header = is_direct_func_arg()) {
+	if (const auto header = is_func_arg()) {
 		if (const auto func_call = header->parent->cast<NodeFunctionCall>()) {
 			if (!func_call->is_builtin_kind()) return nullptr;
 			if (func_call->function->name == "get_ui_id") {
