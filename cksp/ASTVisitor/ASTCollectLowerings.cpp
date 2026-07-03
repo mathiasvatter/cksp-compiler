@@ -159,6 +159,7 @@ NodeAST * ASTCollectLowerings::visit(NodeFunctionCall& node) {
 	node.bind_definition(m_program, true);
 	if (const auto& definition = node.get_definition()) {
 		if(!definition->visited) {
+			FunctionCallStackScope diagnostic_frame(*m_program, node);
 			m_program->function_definition_stack.emplace(definition);
 			definition->accept(*this);
 			m_program->function_definition_stack.pop();

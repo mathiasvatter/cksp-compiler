@@ -499,7 +499,7 @@ public:
 			diagnostic.severity = DiagnosticSeverity::Error;
 			diagnostic.message = "Internal compiler error: " + std::string(exception.what());
 			if (m_cli_config && m_cli_config->input_filename) {
-				diagnostic.range.file = m_cli_config->input_filename.value();
+				diagnostic.file = m_cli_config->input_filename.value();
 			}
 			diagnostic_engine.report(std::move(diagnostic));
 			return {.success = false, .diagnostic_count = diagnostic_engine.diagnostic_count()};
@@ -509,7 +509,7 @@ public:
 			diagnostic.severity = DiagnosticSeverity::Error;
 			diagnostic.message = "Internal compiler error: unknown exception";
 			if (m_cli_config && m_cli_config->input_filename) {
-				diagnostic.range.file = m_cli_config->input_filename.value();
+				diagnostic.file = m_cli_config->input_filename.value();
 			}
 			diagnostic_engine.report(std::move(diagnostic));
 			return {.success = false, .diagnostic_count = diagnostic_engine.diagnostic_count()};

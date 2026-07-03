@@ -972,7 +972,8 @@ struct NodeProgram final : NodeAST {
 		if(function_definition_stack.empty()) return nullptr;
 		return function_definition_stack.top().lock();
 	}
-	std::vector<DiagnosticFrame> function_call_stack{};
+	/// Non-owning function calls active during recursive AST traversal.
+	std::vector<const NodeFunctionCall*> function_call_stack{};
 	std::vector<struct NodeNamespace*> namespaces;
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::shared_ptr<NodeFunctionDefinition>> function_definitions;
@@ -1025,6 +1026,7 @@ struct NodeProgram final : NodeAST {
 	void inline_structs_and_constants();
 	void reset_function_visited_flag();
 	void reset_function_used_flag() const;
+	/// Updates both the program stack and the active DiagnosticEngine stack.
 	void push_function_call(const NodeFunctionCall& call);
 	void pop_function_call() noexcept;
 	bool is_init_callback(const NodeCallback* curr_callback) const {
@@ -1037,6 +1039,7 @@ struct NodeProgram final : NodeAST {
 	std::shared_ptr<NodePointer> get_tmp_ptr(Type* ty, DataType data=DataType::Mutable, const Token& token = Token()) const;
 };
 
+/// Balances function-call stack updates across normal returns and exceptions.
 class FunctionCallStackScope final {
 public:
 	FunctionCallStackScope(NodeProgram& program, const NodeFunctionCall& call);
@@ -1047,5 +1050,4 @@ public:
 
 private:
 	NodeProgram& m_program;
-	class DiagnosticEngine* m_diagnostic_engine = nullptr;
 };

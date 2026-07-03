@@ -69,6 +69,7 @@ public:
 		if(node.bind_definition(m_program)) {
 			auto definition = node.get_definition();
 			if(!definition->visited) {
+				FunctionCallStackScope diagnostic_frame(*m_program, node);
 				definition->accept(*this);
 			}
 			definition->visited = true;

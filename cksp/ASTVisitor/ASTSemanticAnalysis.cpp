@@ -168,6 +168,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 	if(definition and node.kind == NodeFunctionCall::UserDefined) {
 		check_recursion(definition.get());
 		if(!definition->visited) {
+			FunctionCallStackScope diagnostic_frame(*m_program, node);
 			m_program->function_definition_stack.push(definition);
 			// check all return paths
 			definition->do_return_path_validation();

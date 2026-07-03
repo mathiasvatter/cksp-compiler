@@ -1722,24 +1722,24 @@ std::shared_ptr<NodePointer> NodeProgram::get_tmp_ptr(Type *ty, DataType data, c
 
 
 void NodeProgram::push_function_call(const NodeFunctionCall& call) {
-	DiagnosticFrame frame;
-	frame.function = call.function ? call.function->name : call.tok.val;
-	frame.call_site = call.range;
-	function_call_stack.push_back(std::move(frame));
+	function_call_stack.push_back(&call);
+	if (auto* diagnostics = DiagnosticEngine::current()) {
+		// The engine borrows these values only until FunctionCallStackScope is destroyed.
+		diagnostics->push_frame(call.function ? call.function->name : call.tok.val, call.tok.file, call.range);
+	}
 }
 
 void NodeProgram::pop_function_call() noexcept {
-	if (!function_call_stack.empty()) function_call_stack.pop_back();
+	if (function_call_stack.empty()) return;
+	if (auto* diagnostics = DiagnosticEngine::current()) diagnostics->pop_frame();
+	function_call_stack.pop_back();
 }
 
 FunctionCallStackScope::FunctionCallStackScope(NodeProgram& program, const NodeFunctionCall& call)
-	: m_program(program), m_diagnostic_engine(DiagnosticEngine::current()) {
+	: m_program(program) {
 	m_program.push_function_call(call);
-	if (m_diagnostic_engine) m_diagnostic_engine->push_frame(m_program.function_call_stack.back());
 }
 
 FunctionCallStackScope::~FunctionCallStackScope() {
-	if (m_diagnostic_engine) m_diagnostic_engine->pop_frame();
 	m_program.pop_function_call();
 }
-

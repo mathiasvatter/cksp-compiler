@@ -57,9 +57,9 @@ std::string replace_tabs_with_spaces(const std::string& input, const int spaces_
 }
 
 std::string get_line_from_file(const Diagnostic& diagnostic) {
-    if (diagnostic.range.file.empty()
+    if (diagnostic.file.empty()
         || diagnostic.range.start.line == static_cast<size_t>(-1)) return "";
-    std::ifstream file(diagnostic.range.file);
+    std::ifstream file(diagnostic.file);
     std::string line;
     for (size_t i = 0; file && i < diagnostic.range.start.line; ++i) std::getline(file, line);
     return line;
@@ -103,7 +103,7 @@ std::string generate_github_issue_url(
     description << diagnostic.message;
     if (!diagnostic.expected.empty()) description << "\nExpected: " << diagnostic.expected;
     if (!diagnostic.actual.empty()) description << "\nGot: " << diagnostic.actual;
-    if (!diagnostic.range.file.empty()) description << "\nFile: " << diagnostic.range.file;
+    if (!diagnostic.file.empty()) description << "\nFile: " << diagnostic.file;
     if (diagnostic.range.start.line != static_cast<size_t>(-1)) {
         description << "\nLine: " << diagnostic.range.start.line;
     }
@@ -111,8 +111,8 @@ std::string generate_github_issue_url(
         description << "\n\nCKSP call stack:";
         for (auto frame = diagnostic.call_stack.rbegin(); frame != diagnostic.call_stack.rend(); ++frame) {
             description << "\n  called from " << frame->function;
-            if (frame->call_site.is_valid()) {
-                description << " (" << frame->call_site.file << ':'
+            if (!frame->file.empty() && frame->call_site.is_valid()) {
+                description << " (" << frame->file << ':'
                             << frame->call_site.start.line << ':'
                             << frame->call_site.start.column << ')';
             }

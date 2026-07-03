@@ -27,7 +27,7 @@ void ConsoleDiagnosticSink::report(Diagnostic diagnostic) {
     m_output << color << ColorCode::Bold << severity_name(diagnostic.severity) << ColorCode::Reset;
     m_output << color << " [Type: " << ColorCode::Bold
              << error_type_to_string(diagnostic.type) << ColorCode::Reset;
-    m_output << color << ", Position: " << diagnostic.range.file;
+    m_output << color << ", Position: " << diagnostic.file;
 
     if (diagnostic.range.start.line != static_cast<size_t>(-1)) {
         m_output << ':' << diagnostic.range.start.line;
@@ -45,8 +45,8 @@ void ConsoleDiagnosticSink::report(Diagnostic diagnostic) {
     }
     m_output << ColorCode::Reset << std::endl;
 
-    if (diagnostic.range.start.line != static_cast<size_t>(-1) && !diagnostic.range.file.empty()) {
-        std::ifstream file(diagnostic.range.file);
+    if (diagnostic.range.start.line != static_cast<size_t>(-1) && !diagnostic.file.empty()) {
+        std::ifstream file(diagnostic.file);
         std::string line;
         for (size_t i = 0; file && i < diagnostic.range.start.line; ++i) {
             std::getline(file, line);
@@ -69,8 +69,8 @@ void ConsoleDiagnosticSink::report(Diagnostic diagnostic) {
 
     for (auto frame = diagnostic.call_stack.rbegin(); frame != diagnostic.call_stack.rend(); ++frame) {
         m_output << "  called from " << frame->function;
-        if (frame->call_site.is_valid()) {
-            m_output << " (" << frame->call_site.file << ':'
+        if (!frame->file.empty() && frame->call_site.is_valid()) {
+            m_output << " (" << frame->file << ':'
                      << frame->call_site.start.line << ':' << frame->call_site.start.column << ')';
         }
         m_output << '\n';
@@ -79,7 +79,7 @@ void ConsoleDiagnosticSink::report(Diagnostic diagnostic) {
     if (m_print_failure_footer && diagnostic.severity == DiagnosticSeverity::Error) {
         m_output << ColorCode::Red << "\nSeems like the compilation exited with a failure."
                  << ColorCode::Reset << std::endl;
-        if (!diagnostic.range.file.empty()) {
+        if (!diagnostic.file.empty()) {
             m_output << "To help make cksp better, please report any compiler related issues here: "
                      << generate_github_issue_url(diagnostic, "mathiasvatter", "cksp-compiler")
                      << std::endl;

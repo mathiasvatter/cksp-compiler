@@ -78,6 +78,7 @@ public:
 		}
 
 		m_program->function_definition_stack.push(definition);
+		FunctionCallStackScope diagnostic_frame(*m_program, node);
 		// visit everything beforehand to get depth first search
 		if(!definition->visited) definition->accept(*this);
 		definition->visited = true;

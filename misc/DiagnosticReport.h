@@ -4,6 +4,10 @@
 
 #include "Diagnostic.h"
 
+
+/**
+ * Helper functions to print error diagnostics to the console
+ */
 struct ColorCode {
     inline static const std::string Red = "\033[31m";
     inline static const std::string Green = "\033[32m";

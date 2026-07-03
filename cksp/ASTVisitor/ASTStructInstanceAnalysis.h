@@ -120,6 +120,7 @@ public:
 		auto definition = node.get_definition();
 		if(definition and node.kind != NodeFunctionCall::Kind::Builtin) {
 			if(!definition->visited) {
+				FunctionCallStackScope diagnostic_frame(*m_program, node);
 				m_function_call_stack.push_back(definition.get());
 				m_program->function_definition_stack.push(definition);
 				definition->accept(*this);

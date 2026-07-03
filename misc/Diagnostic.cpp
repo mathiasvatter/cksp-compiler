@@ -14,6 +14,7 @@ Diagnostic::Diagnostic(
       message(std::move(message)),
       expected(std::move(expected)),
       actual(token.val),
+      file(token.file),
       range(source_range_from_token(token)) {}
 
 Diagnostic::Diagnostic(
@@ -27,8 +28,8 @@ Diagnostic::Diagnostic(
       severity(type == ErrorType::CompileWarning ? DiagnosticSeverity::Warning : DiagnosticSeverity::Error),
       message(std::move(message)),
       expected(std::move(expected)),
-      actual(std::move(actual)) {
-    range.file = std::move(file_name);
+      actual(std::move(actual)),
+      file(std::move(file_name)) {
     range.start = {line_number, 0};
     range.end = {line_number, 0};
 }
@@ -55,5 +56,6 @@ void Diagnostic::exit() const {
 
 void Diagnostic::set_token(const Token& token) {
     actual = token.val;
+    file = token.file;
     range = source_range_from_token(token);
 }

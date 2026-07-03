@@ -101,6 +101,7 @@ public:
 		if(node.bind_definition(m_program)) {
 			const auto definition = node.get_definition();
 			if(!definition->visited and !definition->is_thread_safe) {
+				FunctionCallStackScope diagnostic_frame(*m_program, node);
 				m_program->function_definition_stack.push(definition);
 				definition->accept(*this);
 				m_program->function_definition_stack.pop();

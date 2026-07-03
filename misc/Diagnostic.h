@@ -28,17 +28,29 @@ enum class DiagnosticSeverity {
     Information
 };
 
+/// An owning function-call frame that remains valid after the AST traversal has unwound.
 struct DiagnosticFrame {
     std::string function;
+    /// Kept separate from SourceRange so ranges remain cheap to copy on AST nodes.
+    std::string file;
     SourceRange call_site;
 };
 
+/**
+ * A transport object for compiler messages.
+ *
+ * Diagnostics own all strings required by sinks, so a collecting sink may retain them
+ * independently of tokens and AST nodes. The call stack is populated lazily by the
+ * active DiagnosticEngine when the diagnostic is emitted.
+ */
 struct Diagnostic {
     ErrorType type = ErrorType::CompileError;
     DiagnosticSeverity severity = DiagnosticSeverity::Error;
     std::string message;
     std::string expected;
     std::string actual;
+    /// Owning source path corresponding to `range`.
+    std::string file;
     SourceRange range;
     std::vector<DiagnosticFrame> call_stack;
 
@@ -47,7 +59,9 @@ struct Diagnostic {
     Diagnostic(ErrorType type, std::string message, size_t line_number, std::string expected,
                std::string actual, std::string file_name);
 
+    /// Emits a non-fatal diagnostic through the active engine, if one exists.
     void report() const;
+    /// Aborts the current compilation by throwing CompilationAborted.
     [[noreturn]] void exit() const;
 
     void set_message(const std::string& value) { message = value; }
@@ -59,6 +73,7 @@ struct Diagnostic {
     void set_token(const Token& token);
 };
 
+/// Internal control-flow exception used to stop one compilation without terminating the process.
 class CompilationAborted final : public std::exception {
 public:
     explicit CompilationAborted(Diagnostic diagnostic)

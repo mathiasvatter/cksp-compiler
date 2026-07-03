@@ -59,6 +59,7 @@ private:
 		auto const definition = node.get_definition();
 		if(!node.is_builtin_kind() and definition) {
 			if(!definition->visited) {
+				FunctionCallStackScope diagnostic_frame(*m_program, node);
 				m_program->function_definition_stack.push(definition);
 				definition->accept(*this);
 				m_program->function_definition_stack.pop();

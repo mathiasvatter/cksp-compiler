@@ -8,12 +8,14 @@
 
 #include "Diagnostic.h"
 
+/// Consumer interface separating diagnostic production from presentation or storage.
 class DiagnosticSink {
 public:
     virtual ~DiagnosticSink() = default;
     virtual void report(Diagnostic diagnostic) = 0;
 };
 
+/// Retains owning diagnostics, primarily for APIs, tests and a future language server.
 class CollectingDiagnosticSink final : public DiagnosticSink {
 public:
     void report(Diagnostic diagnostic) override {
@@ -32,6 +34,7 @@ private:
     std::vector<Diagnostic> m_diagnostics;
 };
 
+/// Renders human-readable diagnostics to a stream for the command-line frontend.
 class ConsoleDiagnosticSink final : public DiagnosticSink {
 public:
     explicit ConsoleDiagnosticSink(std::ostream& output = std::cout, bool print_failure_footer = true)

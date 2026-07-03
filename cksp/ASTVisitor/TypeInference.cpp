@@ -835,6 +835,7 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 
 		// explicitly visit builtin functions regardless of visited flag since its not reset for those anyways
 		if (!definition->visited || node.is_builtin_kind()) {
+			FunctionCallStackScope diagnostic_frame(*m_program, node);
 			m_program->function_definition_stack.push(definition);
 			definition->accept(*this);
 			m_program->function_definition_stack.pop();

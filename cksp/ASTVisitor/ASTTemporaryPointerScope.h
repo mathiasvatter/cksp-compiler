@@ -70,9 +70,13 @@ public:
 	NodeAST* visit(NodeFunctionCall& node) override {
 		node.function->accept(*this);
 		node.bind_definition(m_program);
-		if(node.get_definition() and node.kind != NodeFunctionCall::Kind::Builtin) {
-			if(!node.get_definition()->visited) node.get_definition()->accept(*this);
-			node.get_definition()->visited = true;
+		auto decl = node.get_definition();
+		if(decl and node.kind != NodeFunctionCall::Kind::Builtin) {
+			if(!decl->visited) {
+				FunctionCallStackScope diagnostic_frame(*m_program, node);
+				decl->accept(*this);
+			}
+			decl->visited = true;
 		}
 
 		if(node.is_temporary_constructor) {
