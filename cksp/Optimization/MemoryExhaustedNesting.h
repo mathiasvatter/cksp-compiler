@@ -100,7 +100,7 @@ private:
 			auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, *node);
 			error.m_message = "Fixed possible 'memory exhausted' error by applying nested <if-statements> 'if(1=1)'. Consider using "
 							  "<Arrays> or loading separate *.nka files for static initializations to reduce the number of lines.";
-			error.print();
+			error.report();
 			return true;
 		}
 		return false;
@@ -148,5 +148,4 @@ private:
 
 
 };
-
 

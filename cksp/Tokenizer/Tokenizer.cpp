@@ -162,7 +162,7 @@ bool Tokenizer::is_pragma() const {
 	if(workaround_pragma) {
 		auto error = CompileError(ErrorType::CompileWarning, "", m_line, "", "//#pragma", m_current_file);
 		error.m_message = "Found usage of //#pragma. Note that this is a workaround and will be removed in future versions.";
-		error.print();
+		error.report();
 	}
 	return workaround_pragma;
 }
@@ -675,7 +675,6 @@ bool Tokenizer::is_callback_end() const {
         return m_tokens.back().val == "end" && m_buffer == "on";
     return false;
 }
-
 
 
 

@@ -35,7 +35,7 @@ class LoweringNDArray final : public ASTLowering {
 						error.m_message = "Size of <Array> does not match the size of the initializer list. Kontakt will ignore out of range initializers.";
 						error.m_got = std::to_string(init_list->size());
 						error.m_expected = std::to_string(node_int->value);
-						error.print();
+						error.report();
 						return false;
 					}
 				} else {
@@ -130,4 +130,3 @@ public:
 
 
 };
-

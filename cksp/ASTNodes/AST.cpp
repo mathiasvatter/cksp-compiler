@@ -405,7 +405,7 @@ Type* NodeDataStructure::cast_type() {
 		error.m_message = "Failed to infer <"+ty->get_type_kind_name()+"> type.";
 		error.m_message += " Automatically casted '"+name+"' as <"+ty->to_string()+">. Consider using type annotations (like <"+name+": "
 			+TypeRegistry::get_annotation_from_type(this->ty)+">) to improve readability.";
-		error.print();
+		error.report();
 	}
 	return ty;
 }
@@ -578,7 +578,7 @@ bool NodeString::check_string_length() const {
 	if (value.length() > 320) {
 		auto warning = CompileError(ErrorType::CompileWarning, "", "", tok);
 		warning.set_message("The length of this String Literal exceeds the maximum of 320 characters and will not be displayed properly by Kontakt.");
-		warning.print();
+		warning.report();
 		return false;
 	}
 	return true;
@@ -1337,7 +1337,7 @@ void NodeProgram::add_function_or_override(const std::shared_ptr<NodeFunctionDef
 				error.set_message( "Found duplicate function definition with the same name and parameter count at position "+func->tok.get_position()+".\nBoth have been marked"
 						 " as <override>. The compiler will use the last encountered definition that has been marked as <override>.\n"
 						 "Consider removing the <override> keyword from one of the definitions.");
-				error.print();
+				error.report();
 			}
 			NodeProgram::replace_function_definition(func, def);
 		} else if (func->override and !def->override) {
@@ -1498,7 +1498,7 @@ bool NodeProgram::check_unique_callbacks() const {
 			if (StringUtils::starts_with(count.first, "on ui_control_")) {
 				auto error = CompileError(ErrorType::CompileWarning, "", "", callback_list.back()->tok);
 				error.m_message = "Multiple <on ui_control> callbacks of the same variable found. Kontakt will only execute the last one.";
-				error.print();
+				error.report();
 			} else {
 				auto error = CompileError(ErrorType::SyntaxError, "", "", callback_list.back()->tok);
 				error.m_expected = '1';
@@ -1709,7 +1709,6 @@ std::shared_ptr<NodePointer> NodeProgram::get_tmp_ptr(Type *ty, DataType data, c
 	// tmp->is_engine = true;
 	return tmp;
 }
-
 
 
 

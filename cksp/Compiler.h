@@ -52,6 +52,7 @@
 #include "Optimization/ConstantDatabase.h"
 #include "Preprocessor/PreAST/PreASTConditions.h"
 #include "../misc/DiagnosticSink.h"
+#include "../misc/DiagnosticEngine.h"
 
 class Compiler {
 	std::unique_ptr<CompilerConfig> m_pragma_config;
@@ -483,12 +484,14 @@ private:
 public:
 	/// Compile the input file and report a fatal diagnostic without terminating the process.
 	CompilationResult compile(DiagnosticSink& diagnostics) {
+		DiagnosticEngine diagnostic_engine(diagnostics);
+		DiagnosticEngineScope diagnostic_scope(diagnostic_engine);
 		try {
 			compile_impl();
-			return {.success = true, .diagnostic_count = 0};
+			return {.success = true, .diagnostic_count = diagnostic_engine.diagnostic_count()};
 		} catch (const CompilationAborted& aborted) {
-			diagnostics.report(aborted.diagnostic());
-			return {.success = false, .diagnostic_count = 1};
+			diagnostic_engine.report(aborted.diagnostic());
+			return {.success = false, .diagnostic_count = diagnostic_engine.diagnostic_count()};
 		} catch (const std::exception& exception) {
 			Diagnostic diagnostic;
 			diagnostic.type = ErrorType::InternalError;
@@ -497,8 +500,8 @@ public:
 			if (m_cli_config && m_cli_config->input_filename) {
 				diagnostic.range.file = m_cli_config->input_filename.value();
 			}
-			diagnostics.report(std::move(diagnostic));
-			return {.success = false, .diagnostic_count = 1};
+			diagnostic_engine.report(std::move(diagnostic));
+			return {.success = false, .diagnostic_count = diagnostic_engine.diagnostic_count()};
 		} catch (...) {
 			Diagnostic diagnostic;
 			diagnostic.type = ErrorType::InternalError;
@@ -507,8 +510,8 @@ public:
 			if (m_cli_config && m_cli_config->input_filename) {
 				diagnostic.range.file = m_cli_config->input_filename.value();
 			}
-			diagnostics.report(std::move(diagnostic));
-			return {.success = false, .diagnostic_count = 1};
+			diagnostic_engine.report(std::move(diagnostic));
+			return {.success = false, .diagnostic_count = diagnostic_engine.diagnostic_count()};
 		}
 	}
 };

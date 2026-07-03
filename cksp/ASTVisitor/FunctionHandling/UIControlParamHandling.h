@@ -68,7 +68,7 @@ private:
 						error.m_message = "Found <get_ui_id> call in function body with a parameter as argument. Due to pass-by-value"
 								 " semantics this will not work as expected since <get_ui_id> can only be used directly with <ui controls>.\n "
 								"Try passing <ui control> variables by reference instead (using <ref> keyword before the parameter) or using <get_ui_id> when passing the parameter to the function.";
-						error.print();
+						error.report();
 						// // get all actual parameters to this formal param -> if none is get_ui_id -> make pass-by-reference
 						// auto actual_params = get_actual_params(*param);
 						// for (auto& arg : actual_params) {

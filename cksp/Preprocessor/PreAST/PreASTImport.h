@@ -51,7 +51,7 @@ public:
 								  m_basename_map[basename] + ". \nImporting again from: " + import_path + ".";
 				error.m_message += " This may lead to unexpected behavior.";
 				// return Result<SuccessTag>(error);
-				error.print();
+				error.report();
 			}
 			m_basename_map[basename] = import_path;
 

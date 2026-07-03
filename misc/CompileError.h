@@ -41,7 +41,10 @@ public:
     CompileError(ErrorType type, std::string message, std::string expected, const struct Token& token);
     CompileError(ErrorType type, std::string message, size_t lineNumber, std::string expected, std::string got,std::string fileName);
 
-    void print(ErrorType err=ErrorType::CompileWarning);
+    void report(ErrorType severity=ErrorType::CompileWarning) const;
+
+    [[deprecated("Use report() or DiagnosticEngine directly")]]
+    void print(ErrorType severity=ErrorType::CompileWarning) const;
 
     [[noreturn]] void exit(ErrorType err=ErrorType::CompileError) const;
 

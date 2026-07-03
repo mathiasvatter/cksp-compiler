@@ -29,7 +29,7 @@ public:
 
     inline T& unwrap() {
         if(is_error()) {
-            std::get<CompileError>(value).print();
+            std::get<CompileError>(value).report();
             throw std::runtime_error("Attempt to unwrap error!");
         }
         return std::get<T>(value);

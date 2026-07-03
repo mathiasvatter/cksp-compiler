@@ -63,6 +63,8 @@ add_library(cksp_core STATIC
         misc/CompileError.h
         misc/CompileError.cpp
         misc/Diagnostic.h
+        misc/DiagnosticEngine.h
+        misc/DiagnosticEngine.cpp
         misc/DiagnosticSink.h
         misc/DiagnosticSink.cpp
         misc/SourceLocation.h

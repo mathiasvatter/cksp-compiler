@@ -3,6 +3,7 @@
 //
 
 #include "CompileError.h"
+#include "DiagnosticEngine.h"
 #include "DiagnosticSink.h"
 #include "../cksp/Tokenizer/Tokenizer.h"
 
@@ -31,13 +32,25 @@ CompileError::CompileError(ErrorType type, std::string message, size_t lineNumbe
 	m_marker_length = 0;
 }
 
-void CompileError::print(const ErrorType err) {
+void CompileError::report(const ErrorType severity) const {
+    if (auto* diagnostics = DiagnosticEngine::current()) {
+        diagnostics->report(to_diagnostic(severity));
+        return;
+    }
     ConsoleDiagnosticSink sink(std::cout, false);
-    sink.report(to_diagnostic(err));
+    sink.report(to_diagnostic(severity));
+}
+
+void CompileError::print(const ErrorType severity) const {
+    report(severity);
 }
 
 void CompileError::exit(const ErrorType err) const {
-    throw CompilationAborted(to_diagnostic(err));
+    auto diagnostic = to_diagnostic(err);
+    if (auto* diagnostics = DiagnosticEngine::current()) {
+        diagnostics->fatal(std::move(diagnostic));
+    }
+    throw CompilationAborted(std::move(diagnostic));
 }
 
 Diagnostic CompileError::to_diagnostic(const ErrorType severity) const {
