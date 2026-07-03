@@ -53,7 +53,7 @@ foreach(TEXT_FILE ${TEXT_FILES})
 endforeach()
 add_custom_target(generate_headers DEPENDS ${GENERATED_HEADERS})
 
-add_executable(cksp main.cpp
+add_library(cksp_core STATIC
         cksp/Tokenizer/Tokens.h
         cksp/Tokenizer/Tokenizer.h
         cksp/Tokenizer/Tokenizer.cpp
@@ -247,11 +247,14 @@ add_executable(cksp main.cpp
         cksp/ASTVisitor/ASTStructInstanceAnalysis.h
         cksp/Optimization/ConstantDatabase.h
 )
-add_dependencies(cksp generate_headers)
+add_dependencies(cksp_core generate_headers)
 
-target_include_directories(cksp PRIVATE
+target_include_directories(cksp_core PUBLIC
         ${GENERATED_HEADERS_DIR}
         ${GENERATED_DIR}
 )
 
-target_compile_definitions(cksp PRIVATE PRINTER_OUTPUT_PATH="${CMAKE_SOURCE_DIR}")
+target_compile_definitions(cksp_core PUBLIC PRINTER_OUTPUT_PATH="${CMAKE_SOURCE_DIR}")
+
+add_executable(cksp main.cpp)
+target_link_libraries(cksp PRIVATE cksp_core)

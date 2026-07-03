@@ -6,8 +6,8 @@
 
 #include "PreASTVisitor.h"
 #include "../../ASTVisitor/ASTKSPSyntaxCheck.h"
-#include "../../misc/CommandLineOptions.h"
-#include "../../misc/PathHandler.h"
+#include "../../../misc/CommandLineOptions.h"
+#include "../../../misc/PathHandler.h"
 
 
 class PreASTPragma final : public PreASTVisitor {

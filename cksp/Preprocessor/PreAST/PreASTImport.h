@@ -5,9 +5,9 @@
 #pragma once
 
 #include "PreASTVisitor.h"
-#include "../../misc/PathHandler.h"
+#include "../../../misc/PathHandler.h"
 #include "../../Compiler.h"
-#include "../../JSON/NCKPTranslator.h"
+#include "../../../JSON/NCKPTranslator.h"
 
 class PreASTImport final : public PreASTVisitor {
 	std::string m_debug_token;
