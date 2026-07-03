@@ -3,6 +3,7 @@
 //
 
 #include "CompileError.h"
+#include "DiagnosticSink.h"
 #include "../cksp/Tokenizer/Tokenizer.h"
 
 #include <utility>
@@ -31,74 +32,27 @@ CompileError::CompileError(ErrorType type, std::string message, size_t lineNumbe
 }
 
 void CompileError::print(const ErrorType err) {
-    if (m_got == "\n") {
-        m_got = "linebreak";
-    }
-    auto error_code = ColorCode::Red;
-    if(err == ErrorType::CompileError)
-        error_code = ColorCode::Red;
-    if(err == ErrorType::CompileWarning)
-        error_code = ColorCode::Yellow;
-    std::cout << error_code << ColorCode::Bold << error_type_to_string(err) << ColorCode::Reset;
-    std::cout << error_code << " [Type: " << ColorCode::Bold << error_type_to_string(m_type) << ColorCode::Reset;
-    std::cout << error_code << ", " << "Position: ";
-
-    std::string pos_text = m_file_name;
-    if (m_line_number != -1) pos_text += ":" + std::to_string(m_line_number);
-    if (m_line_position > 0) pos_text += ":" + std::to_string(m_line_position);
-
-    // std::string uri = "file://" + StringUtils::percent_encode_uri_path(m_file_name);
-    // if (m_line_number != -1) {
-    //     uri += ":" + std::to_string(m_line_number);
-    //     if (m_line_position > 0) uri += ":" + std::to_string(m_line_position);
-    // }
-
-    std::cout << pos_text;
-    std::cout << "]\n";
-
-    // ---- sauber formatierte Message
-    // std::string msg = StringUtils::normalize_sentence(m_message);
-    std::cout << m_message << "\n";
-
-    // ---- optionale Felder, immer in neuer Zeile
-    if (!m_expected.empty()) {
-        std::cout << "Expected: '" << StringUtils::normalize_field(m_expected) << "'; ";
-    }
-    if (!m_got.empty()) {
-        std::cout << "Got: '" << StringUtils::normalize_field(m_got) << "'";
-    }
-    std::cout << ColorCode::Reset << std::endl;
-
-    // Zeige die entsprechende Zeile aus der Datei
-    if(m_line_number != -1) {
-        std::string in_line = "In line " + std::to_string(m_line_number) + ": ";
-        std::cout << ColorCode::Bold << in_line << ColorCode::Reset;
-        std::string line = replace_tabs_with_spaces(get_line_from_file(), 1);
-        std::cout << line << std::endl;
-
-        if(m_line_position > 0) {
-			std::cout << error_code;
-			auto start_pos = m_line_position - 1 + in_line.length();
-			auto end_pos = m_line_position - 1 + in_line.length() + m_marker_length-1;
-            for (int i = 0; i < (in_line.length() + line.length()); i++) {
-                if (i >= start_pos && i <= end_pos) {
-                    std::cout << "^";
-                } else {
-                    std::cout << " ";
-                }
-            }
-            std::cout << ColorCode::Reset << std::endl;
-        }
-    }
+    ConsoleDiagnosticSink sink(std::cout, false);
+    sink.report(to_diagnostic(err));
 }
 
-void CompileError::exit(const ErrorType err) {
-    print(err);
-    std::cout << ColorCode::Red << "\nSeems like the compilation exited with a failure." << std::endl;
-	if(!m_file_name.empty()) {
-    	std::cout << ColorCode::Reset << "To help make cksp better, please report any compiler related issues here: " << generate_github_issue_url("mathiasvatter", "cksp-compiler") << std::endl;
-	}
-    ::exit(EXIT_FAILURE);
+void CompileError::exit(const ErrorType err) const {
+    throw CompilationAborted(to_diagnostic(err));
+}
+
+Diagnostic CompileError::to_diagnostic(const ErrorType severity) const {
+    Diagnostic diagnostic;
+    diagnostic.type = m_type;
+    diagnostic.severity = severity == ErrorType::CompileWarning
+        ? DiagnosticSeverity::Warning
+        : DiagnosticSeverity::Error;
+    diagnostic.message = m_message;
+    diagnostic.expected = m_expected;
+    diagnostic.actual = m_got;
+    diagnostic.range.file = m_file_name;
+    diagnostic.range.start = {m_line_number, m_line_position};
+    diagnostic.range.end = {m_line_number, m_line_position + m_marker_length};
+    return diagnostic;
 }
 
 std::string CompileError::get_line_from_file() const {

@@ -8,6 +8,8 @@
 #include <iostream>
 #include <fstream>
 
+#include "Diagnostic.h"
+
 struct ColorCode {
     inline static const std::string Red = "\033[31m";
     inline static const std::string Green = "\033[32m";
@@ -31,21 +33,6 @@ struct ColorCode {
     inline static const std::string BgWhite = "\033[47m";
 };
 
-enum class ErrorType {
-    CompileError,
-    CompileWarning,
-    FileError,
-	SyntaxError,
-	TypeError,
-	VariableError,
-	TokenError,
-    ParseError,
-    PreprocessorError,
-	MathError,
-	InternalError
-	// TODO more error types
-};
-
 /// execute command line operations
 std::string exec(const char* cmd);
 
@@ -56,7 +43,9 @@ public:
 
     void print(ErrorType err=ErrorType::CompileWarning);
 
-    void exit(ErrorType err=ErrorType::CompileError);
+    [[noreturn]] void exit(ErrorType err=ErrorType::CompileError) const;
+
+    [[nodiscard]] Diagnostic to_diagnostic(ErrorType severity=ErrorType::CompileError) const;
 
 	void set_message(const std::string &message);
 	void add_message(const std::string &message);
@@ -98,4 +87,3 @@ public:
 
     static std::string replace_tabs_with_spaces(const std::string& input, int spacesPerTab = 4);
 };
-

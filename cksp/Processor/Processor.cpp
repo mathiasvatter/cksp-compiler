@@ -75,8 +75,7 @@ void Processor::remove_tokens(std::vector<Token> &tok, const size_t start, const
 			m_pos -= (end - start);
 	} else {
 		const auto err_msg = "Attempted to remove a token range out of bounds.";
-		CompileError(ErrorType::PreprocessorError, err_msg, tok.at(m_pos).line, "unknown", tok.at(m_pos).val, tok.at(m_pos).file).print();
-		exit(EXIT_FAILURE);
+		CompileError(ErrorType::PreprocessorError, err_msg, tok.at(m_pos).line, "unknown", tok.at(m_pos).val, tok.at(m_pos).file).exit();
 	}
 }
 

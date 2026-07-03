@@ -108,16 +108,14 @@ char Tokenizer::consume() {
         return m_input.at(m_pos++);
     }
     auto err_msg = "Reached end of file.";
-    CompileError(ErrorType::TokenError, err_msg, m_line, "end token", std::string(1, peek()), m_current_file).print();
-    exit(EXIT_FAILURE);
+    CompileError(ErrorType::TokenError, err_msg, m_line, "end token", std::string(1, peek()), m_current_file).exit();
 }
 
 void Tokenizer::skip_whitespace() {
     while (is_space(peek())) {
         if (m_pos + 1 >= m_input_length) {
 			auto err_msg = "Reached end of file.";
-			CompileError(ErrorType::TokenError, err_msg, m_line, "end token", std::string(1, peek()), m_current_file).print();
-			exit(EXIT_FAILURE);
+			CompileError(ErrorType::TokenError, err_msg, m_line, "end token", std::string(1, peek()), m_current_file).exit();
 		}
 //        m_buffer += peek();
 //        m_pos++;
@@ -677,7 +675,6 @@ bool Tokenizer::is_callback_end() const {
         return m_tokens.back().val == "end" && m_buffer == "on";
     return false;
 }
-
 
 
 

@@ -69,8 +69,7 @@ Result<int> SimpleExprInterpreter::evaluate_int_expression(std::unique_ptr<PreNo
 PreNodeAST* SimpleExprInterpreter::peek(const std::vector<std::unique_ptr<PreNodeAST>>& nodes, const int ahead) const {
 	if (nodes.size() < m_pos+ahead) {
 		auto err_msg = "Reached the end of the expression. Wrong Syntax discovered.";
-		CompileError(ErrorType::PreprocessorError, err_msg, m_line, "", "", m_file).print();
-		exit(EXIT_FAILURE);
+		CompileError(ErrorType::PreprocessorError, err_msg, m_line, "", "", m_file).exit();
 	}
     if(nodes.size() == m_pos+ahead) return nullptr;
 	return nodes.at(m_pos+ahead).get();
@@ -81,8 +80,7 @@ std::unique_ptr<PreNodeAST> SimpleExprInterpreter::consume(const std::vector<std
 		return nodes.at(m_pos++)->clone();
 	}
 	auto err_msg = "Reached the end of the m_tokens. Wrong Syntax discovered.";
-	CompileError(ErrorType::PreprocessorError, err_msg, m_line, "", "", m_file).print();
-	exit(EXIT_FAILURE);
+	CompileError(ErrorType::PreprocessorError, err_msg, m_line, "", "", m_file).exit();
 }
 
 Result<std::unique_ptr<PreNodeAST>> SimpleExprInterpreter::parse_binary_expr(const std::vector<std::unique_ptr<PreNodeAST>>& nodes, PreNodeAST *parent) {
@@ -227,4 +225,3 @@ Result<int> SimpleInterpreter::evaluate_int_expression(std::unique_ptr<NodeAST>&
                                     "Unknown expression statement. No variables allowed. " + preprocessor_error,
                                     root->tok.line, "", "", root->tok.file));
 }
-

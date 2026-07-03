@@ -10,6 +10,7 @@
 #include <mutex>
 
 #include "ASTHelper.h"
+#include "../Tokenizer/TokenSourceRange.h"
 #include "../Types/Types.h"
 #include "../../misc/HashFunctions.h"
 #include "../../utils/StringUtils.h"
@@ -36,10 +37,10 @@ struct NodeAST {
 		return nullptr;
 	}
 	void set_range(const Token& start, const Token& end) {
-		range = {start, end};
+		range = source_range_from_tokens(start, end);
 	}
 	void set_range(const Token& token) {
-		range = SourceRange{token};
+		range = source_range_from_token(token);
 	}
 	void set_range(const SourceRange& start, const SourceRange& end) {
 		range = SourceRange{start, end};

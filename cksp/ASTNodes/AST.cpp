@@ -41,7 +41,7 @@
 
 
 // ************* NodeAST Base Class ***************
-NodeAST::NodeAST(Token tok, const NodeType node_type) : range(SourceRange(tok)),
+NodeAST::NodeAST(Token tok, const NodeType node_type) : range(source_range_from_token(tok)),
                                                         tok(std::move(tok)), ty(TypeRegistry::Unknown), node_type(node_type) {}
 
 NodeAST::NodeAST(const NodeAST& other) : range(other.range), tok(other.tok), ty(other.ty),
@@ -1709,7 +1709,6 @@ std::shared_ptr<NodePointer> NodeProgram::get_tmp_ptr(Type *ty, DataType data, c
 	// tmp->is_engine = true;
 	return tmp;
 }
-
 
 
 

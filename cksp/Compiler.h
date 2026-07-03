@@ -51,6 +51,7 @@
 #include "Optimization/ArrayInitializationRaising.h"
 #include "Optimization/ConstantDatabase.h"
 #include "Preprocessor/PreAST/PreASTConditions.h"
+#include "../misc/DiagnosticSink.h"
 
 class Compiler {
 	std::unique_ptr<CompilerConfig> m_pragma_config;
@@ -167,15 +168,15 @@ public:
 
 	explicit Compiler(std::unique_ptr<CompilerConfig> config) : m_cli_config(std::move(config)) {
 		m_pragma_config = std::make_unique<CompilerConfig>();
-		// initialize standard types and registry
-		TypeRegistry::initialize();
-		// process builtins and save them in the definition provider class
-		BuiltinsProcessor builtins(&m_definition_provider);
-		builtins.process();
 	}
 
-	/// Compile the input file
-	void compile() {
+private:
+	void compile_impl() {
+		// Keep initialization inside the guarded compile path so failures become diagnostics.
+		TypeRegistry::initialize();
+		BuiltinsProcessor builtins(&m_definition_provider);
+		builtins.process();
+
 #ifndef NDEBUG
 		std::string input_filename{};
 		//	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
@@ -476,6 +477,38 @@ public:
 			std::cout << ColorCode::Green << ColorCode::Bold << "Saved compiled file to: " << ColorCode::Reset << m_final_config->outputs.front() << "\n";
 		else {
 			std::cout << ColorCode::Green << ColorCode::Bold << "Saved compiled file to: " << ColorCode::Reset << StringUtils::join(m_final_config->outputs, ' ') << "\n";
+		}
+	}
+
+public:
+	/// Compile the input file and report a fatal diagnostic without terminating the process.
+	CompilationResult compile(DiagnosticSink& diagnostics) {
+		try {
+			compile_impl();
+			return {.success = true, .diagnostic_count = 0};
+		} catch (const CompilationAborted& aborted) {
+			diagnostics.report(aborted.diagnostic());
+			return {.success = false, .diagnostic_count = 1};
+		} catch (const std::exception& exception) {
+			Diagnostic diagnostic;
+			diagnostic.type = ErrorType::InternalError;
+			diagnostic.severity = DiagnosticSeverity::Error;
+			diagnostic.message = "Internal compiler error: " + std::string(exception.what());
+			if (m_cli_config && m_cli_config->input_filename) {
+				diagnostic.range.file = m_cli_config->input_filename.value();
+			}
+			diagnostics.report(std::move(diagnostic));
+			return {.success = false, .diagnostic_count = 1};
+		} catch (...) {
+			Diagnostic diagnostic;
+			diagnostic.type = ErrorType::InternalError;
+			diagnostic.severity = DiagnosticSeverity::Error;
+			diagnostic.message = "Internal compiler error: unknown exception";
+			if (m_cli_config && m_cli_config->input_filename) {
+				diagnostic.range.file = m_cli_config->input_filename.value();
+			}
+			diagnostics.report(std::move(diagnostic));
+			return {.success = false, .diagnostic_count = 1};
 		}
 	}
 };

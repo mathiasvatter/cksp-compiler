@@ -57,10 +57,15 @@ add_library(cksp_core STATIC
         cksp/Tokenizer/Tokens.h
         cksp/Tokenizer/Tokenizer.h
         cksp/Tokenizer/Tokenizer.cpp
+        cksp/Tokenizer/TokenSourceRange.h
         cksp/Parser/Parser.h
         cksp/Parser/Parser.cpp
         misc/CompileError.h
         misc/CompileError.cpp
+        misc/Diagnostic.h
+        misc/DiagnosticSink.h
+        misc/DiagnosticSink.cpp
+        misc/SourceLocation.h
         misc/Result.h
         cksp/Preprocessor/PreAST/PreASTNodes/PreAST.h
         cksp/Preprocessor/PreAST/PreASTNodes/PreAST.cpp
@@ -108,7 +113,6 @@ add_library(cksp_core STATIC
         misc/FileHandler.h
         misc/FileHandler.cpp
         misc/CommandLineOptions.h
-        misc/CommandLineOptions.cpp
         cksp/BuiltinsProcessing/DefinitionProvider.h
         cksp/BuiltinsProcessing/DefinitionProvider.cpp
         cksp/Processor/Processor.h
@@ -256,5 +260,8 @@ target_include_directories(cksp_core PUBLIC
 
 target_compile_definitions(cksp_core PUBLIC PRINTER_OUTPUT_PATH="${CMAKE_SOURCE_DIR}")
 
-add_executable(cksp main.cpp)
+add_executable(cksp
+        main.cpp
+        misc/CommandLineOptions.cpp
+)
 target_link_libraries(cksp PRIVATE cksp_core)

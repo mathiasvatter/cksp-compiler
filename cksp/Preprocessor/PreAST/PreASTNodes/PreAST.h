@@ -8,6 +8,7 @@
 
 #include "PreASTHelper.h"
 #include "../../../ASTNodes/ASTHelper.h"
+#include "../../../Tokenizer/TokenSourceRange.h"
 #include "../../../BuiltinsProcessing/DefinitionProvider.h"
 #include "../../../../misc/HashFunctions.h"
 #include "../../../../utils/StringUtils.h"
@@ -18,7 +19,7 @@ struct PreNodeAST {
 	PreNodeType type;
 	PreNodeAST* parent = nullptr;
 	explicit PreNodeAST(Token tok, PreNodeAST* parent=nullptr, PreNodeType type=PreNodeType::DEAD_CODE)
-		: range(tok), tok(std::move(tok)), type(type), parent(parent) {}
+		: range(source_range_from_token(tok)), tok(std::move(tok)), type(type), parent(parent) {}
     virtual ~PreNodeAST() = default;
 	PreNodeAST(const PreNodeAST& other) = default;
     virtual PreNodeAST *accept(class PreASTVisitor &visitor) {return nullptr;}
@@ -39,10 +40,10 @@ struct PreNodeAST {
     	tok.line = token.line; tok.file = token.file;
     }
 	void set_range(const Token& start, const Token& end) {
-    	range = {start, end};
+		range = source_range_from_tokens(start, end);
     }
 	void set_range(const Token& token) {
-    	range = SourceRange{token};
+		range = source_range_from_token(token);
     }
 	void set_range(const SourceRange& start, const SourceRange& end) {
     	range = SourceRange{start, end};
@@ -1066,6 +1067,5 @@ struct PreNodeProgram final : PreNodeAST {
 	}
 
 };
-
 
 
