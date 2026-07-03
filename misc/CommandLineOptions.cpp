@@ -49,7 +49,7 @@ CommandLineOptions::CommandLineOptions(int argc, char **argv) {
         		auto result = handler.check_valid_output_file(out);
         		if (result.is_error()) {
 					auto error = result.get_error();
-					error.m_message = "Invalid output file path provided with -o option. " + error.m_message;
+					error.message = "Invalid output file path provided with -o option. " + error.message;
 					error.exit();
 				}
         		m_compiler_config->outputs.emplace_back(to_abs_norm(val));
@@ -135,7 +135,7 @@ CommandLineOptions::CommandLineOptions(int argc, char **argv) {
 	auto error = handler.check_valid_path(input_file);
 	if (error.is_error()) {
 		auto err = error.get_error();
-		err.m_message = "Invalid input file path. " + err.m_message;
+		err.message = "Invalid input file path. " + err.message;
 		err.exit();
 	}
 

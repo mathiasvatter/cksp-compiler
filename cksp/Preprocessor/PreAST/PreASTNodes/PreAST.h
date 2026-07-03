@@ -26,7 +26,7 @@ struct PreNodeAST {
     // Virtuelle clone()-Methode für tiefe Kopien
     [[nodiscard]] virtual std::unique_ptr<PreNodeAST> clone() const = 0;
 	virtual PreNodeAST *replace_child(PreNodeAST *oldChild, std::unique_ptr<PreNodeAST> newChild) {
-		auto error = CompileError(ErrorType::InternalError, "replace_child not implemented", "", tok);
+		auto error = Diagnostic(ErrorType::InternalError, "replace_child not implemented", "", tok);
 		error.exit();
 		// throw std::runtime_error("replace_child not implemented for this node type");
 		return nullptr;
@@ -1023,7 +1023,7 @@ struct PreNodeProgram final : PreNodeAST {
 	}
 	PreNodeDefineStatement* get_define_definition(const PreNodeKeyword &call) {
 		if (!call.parent) {
-			auto error = CompileError(ErrorType::InternalError, "<PreNodeKeyword> has no parent", "", call.tok);
+			auto error = Diagnostic(ErrorType::InternalError, "<PreNodeKeyword> has no parent", "", call.tok);
 			error.exit();
 		}
 		if (call.parent->cast<PreNodeDefineHeader>() || call.parent->cast<PreNodeMacroHeader>()) {
@@ -1038,7 +1038,7 @@ struct PreNodeProgram final : PreNodeAST {
 	}
 	PreNodeMacroDefinition* get_macro_definition(const PreNodeKeyword &call) {
 		if (!call.parent) {
-			auto error = CompileError(ErrorType::InternalError, "<PreNodeKeyword> has no parent", "", call.tok);
+			auto error = Diagnostic(ErrorType::InternalError, "<PreNodeKeyword> has no parent", "", call.tok);
 			error.exit();
 		}
 		if (call.parent->cast<PreNodeMacroHeader>() || call.parent->cast<PreNodeDefineHeader>()) {

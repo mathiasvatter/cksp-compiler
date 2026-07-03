@@ -171,7 +171,7 @@ public:
 				auto array_ref = arg->cast<NodeArrayRef>();
 				if (!array_ref) {
 					// can also be slider then it does not get transformed into an array reference
-					// auto error = ASTVisitor::get_raw_compile_error(ErrorType::InternalError, node);
+					// auto error = ASTVisitor::make_diagnostic(ErrorType::InternalError, node);
 					// error.set_message("First argument of watch_var was not transformed into an array reference. This should have been done in the visit(NodeVariableRef) method of this optimization.");
 					// error.exit();
 					return &node;

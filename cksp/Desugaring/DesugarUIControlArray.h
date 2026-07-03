@@ -80,9 +80,9 @@ public:
 
 	NodeAST * visit(NodeArray &node) override {
 		if(!node.size) {
-			auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-			error.m_message = "Unable to infer array size. Size of UI Control Array has to be determined at compile time.";
-			error.m_expected = "<initializer list>";
+			auto error = make_diagnostic(ErrorType::SyntaxError, node);
+			error.message = "Unable to infer array size. Size of UI Control Array has to be determined at compile time.";
+			error.expected = "<initializer list>";
 			error.exit();
 		}
 		m_ui_array_size = node.size->clone();
@@ -96,9 +96,9 @@ public:
 
 	NodeAST * visit(NodeNDArray &node) override {
 		if(!node.sizes) {
-			auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-			error.m_message = "Unable to infer array size. Size of UI Control Array has to be determined at compile time.";
-			error.m_expected = "<initializer list>";
+			auto error = make_diagnostic(ErrorType::SyntaxError, node);
+			error.message = "Unable to infer array size. Size of UI Control Array has to be determined at compile time.";
+			error.expected = "<initializer list>";
 			error.exit();
 		}
 		m_single_control_name = "_"+node.name;

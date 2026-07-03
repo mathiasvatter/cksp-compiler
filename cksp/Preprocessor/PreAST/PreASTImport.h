@@ -46,10 +46,10 @@ public:
 			auto basename = current_file_path.filename().string();
 			auto it = m_basename_map.find(basename);
 			if (it != m_basename_map.end() && it->second != import_path) {
-				auto error = CompileError(ErrorType::CompileWarning, "", "", node.tok);
-				error.m_message = "File with basename '" + basename + "' already imported from: " +
+				auto error = Diagnostic(ErrorType::CompileWarning, "", "", node.tok);
+				error.message = "File with basename '" + basename + "' already imported from: " +
 								  m_basename_map[basename] + ". \nImporting again from: " + import_path + ".";
-				error.m_message += " This may lead to unexpected behavior.";
+				error.message += " This may lead to unexpected behavior.";
 				// return Result<SuccessTag>(error);
 				error.report();
 			}

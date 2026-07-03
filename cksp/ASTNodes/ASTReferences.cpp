@@ -60,9 +60,9 @@ std::unique_ptr<NodeNumElements> NodeVariableRef::transform_ndarray_constant() {
 			tok
 		);
 	} catch (const std::invalid_argument&) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-		error.m_message = "Invalid dimension number in NDArray reference: " + name + ".";
-		error.m_got = dimension;
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+		error.message = "Invalid dimension number in NDArray reference: " + name + ".";
+		error.actual = dimension;
 		error.exit();
 	}
 	return nullptr;
@@ -95,8 +95,8 @@ NodeAST * NodeVariableRef::try_constant_value_replace() {
 	if (const auto declaration = get_declaration()) {
 		if (declaration->data_type == DataType::Const) {
 			if (!declaration->parent) {
-				auto error = CompileError(ErrorType::InternalError, "", "", tok);
-				error.m_message = "Variable declaration has no parent.";
+				auto error = Diagnostic(ErrorType::InternalError, "", "", tok);
+				error.message = "Variable declaration has no parent.";
 				error.exit();
 			}
 			if (const auto decl = declaration->parent->cast<NodeSingleDeclaration>()) {
@@ -247,7 +247,7 @@ std::unique_ptr<NodeAST> NodeNDArrayRef::get_size() {
 	auto nd_array = decl->cast<NodeNDArray>();
 	if (!nd_array) DefinitionProvider::internal_missing_declaration_error(*this).exit();
 	if (!nd_array->sizes) {
-		auto error = CompileError(ErrorType::InternalError, "", "", nd_array->tok);
+		auto error = Diagnostic(ErrorType::InternalError, "", "", nd_array->tok);
 		error.set_message("Could not determine size of <NDArrayRef>. Declaration might be function param. This should not happen, please report this error.");
 		error.exit();
 	}
@@ -318,9 +318,9 @@ bool NodeNDArrayRef::determine_sizes() {
 	}
 	if(get_declaration()->get_node_type() != NodeType::NDArray) {
 		if(get_declaration()->get_node_type() == NodeType::List) return false;
-		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-		error.m_message = "<NDArray> reference has to be declared as <NDArray>.";
-		error.m_got = get_declaration()->tok.val;
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+		error.message = "<NDArray> reference has to be declared as <NDArray>.";
+		error.actual = get_declaration()->tok.val;
 		error.exit();
 		return false;
 	}
@@ -366,7 +366,7 @@ std::unique_ptr<NodeReference> NodeNDArrayRef::expand_dimension(std::unique_ptr<
 }
 
 std::pair<int, int> NodeNDArrayRef::get_wildcard_dimensions() const {
-	auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
+	auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
 	std::vector<bool> wildcards;
 	// get wildcard dimension
 	int wildcard_start = -1;
@@ -381,7 +381,7 @@ std::pair<int, int> NodeNDArrayRef::get_wildcard_dimensions() const {
 		if(wildcards.size() > 2) {
 			// (1,0,1....)
 			if(wildcards[wildcards.size()-2] and !wildcards[wildcards.size()-1]) {
-				error.m_message = "Wildcards must be contiguous in <NDArray> index when assigning list.";
+				error.message = "Wildcards must be contiguous in <NDArray> index when assigning list.";
 				error.exit();
 			}
 		}
@@ -393,12 +393,12 @@ std::pair<int, int> NodeNDArrayRef::get_wildcard_dimensions() const {
 		}
 	}
 	if(wildcard_start == -1) {
-		error.m_message = "No wildcard found in <NDArray> index when assigning list.";
+		error.message = "No wildcard found in <NDArray> index when assigning list.";
 		error.exit();
 	}
 	// if more than one wildcard and it is not right aligned:
 	if(wildcard_end-wildcard_start > 1 and wildcard_end < wildcards.size()-1) {
-		error.m_message = "Wildcards have to be right aligned in index list.";
+		error.message = "Wildcards have to be right aligned in index list.";
 		error.exit();
 	}
 	return {wildcard_start, wildcard_end};
@@ -484,7 +484,7 @@ bool NodeFunctionHeaderRef::has_no_args() const {
 
 std::unique_ptr<NodeAST>& NodeFunctionHeaderRef::get_arg(const int i) const {
 	if(get_num_args() <= i) {
-		CompileError(ErrorType::InternalError, "Index out of bounds", "Function call argument index out of bounds", tok).exit();
+		Diagnostic(ErrorType::InternalError, "Index out of bounds", "Function call argument index out of bounds", tok).exit();
 	}
 	return args->params[i];
 }

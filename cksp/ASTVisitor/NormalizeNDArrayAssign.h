@@ -66,8 +66,8 @@ public:
 				// try to lower to array assignment
 				// check amount of wildcards
 				if (nd_array_ref->num_wildcards() != nd_array_copy->num_wildcards()) {
-					auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-					error.m_message = "Wildcard dimensions do not match in <NDArray> assignment.";
+					auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+					error.message = "Wildcard dimensions do not match in <NDArray> assignment.";
 					error.exit();
 				}
 				NDArrayCopyFunction nd_array_copy_function(m_program, nd_array_ref, nd_array_copy);

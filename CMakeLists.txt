@@ -60,9 +60,10 @@ add_library(cksp_core STATIC
         cksp/Tokenizer/TokenSourceRange.h
         cksp/Parser/Parser.h
         cksp/Parser/Parser.cpp
-        misc/CompileError.h
-        misc/CompileError.cpp
         misc/Diagnostic.h
+        misc/Diagnostic.cpp
+        misc/DiagnosticReport.h
+        misc/DiagnosticReport.cpp
         misc/DiagnosticEngine.h
         misc/DiagnosticEngine.cpp
         misc/DiagnosticSink.h

@@ -62,13 +62,13 @@ private:
 	}
 
 	std::unique_ptr<NodeFunctionCall> get_function_call(std::string control_function, const std::string& control_param, NodeAST* node) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", node->tok);
 		// get control_param from shorthand
 		auto control_par = get_full_control_param(control_param);
 		if(!control_par) {
-			error.m_message = "Unknown control parameter: " + control_param;
-			error.m_got = control_param;
-			error.m_expected = "valid <control parameter> ($CONTROL_PAR...)";
+			error.message = "Unknown control parameter: " + control_param;
+			error.actual = control_param;
+			error.expected = "valid <control parameter> ($CONTROL_PAR...)";
 			error.exit();
 		}
 

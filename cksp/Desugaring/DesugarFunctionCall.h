@@ -29,19 +29,19 @@ public:
 
 		if (node.function->get_num_args() > 0 and node.function->name == "num_elements") {
 			node.kind = NodeFunctionCall::Kind::Builtin;
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
 			if (node.function->get_num_args() > 2) {
-				error.m_message = "Too many arguments for function call <num_elements>.";
+				error.message = "Too many arguments for function call <num_elements>.";
 				error.exit();
 			} else if (node.function->get_num_args() < 1) {
-				error.m_message = "Too few arguments for function call <num_elements>.";
+				error.message = "Too few arguments for function call <num_elements>.";
 				error.exit();
 			}
 			std::unique_ptr<NodeReference> array = nullptr;
 			if(is_instance_of<NodeReference>(node.function->get_arg(0).get())) {
 				array = unique_ptr_cast<NodeReference>(std::move(node.function->get_arg(0)));
 			} else {
-				error.m_message = "First argument for function call <num_elements> must be a reference.";
+				error.message = "First argument for function call <num_elements> must be a reference.";
 				error.exit();
 			}
 			std::unique_ptr<NodeAST> dimension = nullptr;
@@ -55,7 +55,7 @@ public:
 		if((node.function->get_num_args() == 2 || node.function->get_num_args() == 4) &&
 			(node.function->name == "search" || node.function->name == "sort")) {
 			node.kind = NodeFunctionCall::Kind::Builtin;
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
 			if(is_instance_of<NodeReference>(node.function->get_arg(0).get())) {
 				auto search = std::make_unique<NodeSortSearch>(
 					node.function->name,
@@ -74,7 +74,7 @@ public:
 				}
 				return node.replace_with(std::move(search));
 			} else {
-				error.m_message = "First argument for function call <search> must be a reference.";
+				error.message = "First argument for function call <search> must be a reference.";
 				error.exit();
 			}
 		}
@@ -133,9 +133,9 @@ public:
 
 private:
 
-	CompileError throw_insufficient_args_error(Token tok) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-		error.m_message = "Too few arguments for function call <"+tok.val+">.";
+	Diagnostic throw_insufficient_args_error(Token tok) {
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+		error.message = "Too few arguments for function call <"+tok.val+">.";
 		return error;
 	}
 

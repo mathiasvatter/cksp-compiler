@@ -119,8 +119,8 @@ public:
 		// delete statement can only be applied to pointers or arrays -> not to array indices
 		if((node.ptr->get_node_type() == NodeType::Array or node.ptr->get_node_type() == NodeType::NDArray)
 			and node.ptr->ty->get_type_kind() != TypeKind::Composite) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-			error.m_message = "Delete statement can only be applied to pointers or arrays, not to array indices.";
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+			error.message = "Delete statement can only be applied to pointers or arrays, not to array indices.";
 			error.exit();
 		}
 		node.ptr->accept(*this);
@@ -327,8 +327,8 @@ private:
 			return del;
 		}
 
-		auto error = CompileError(ErrorType::InternalError, "", "", assign.tok);
-		error.m_message = "Invalid delete statement. Could not determine delete statement.";
+		auto error = Diagnostic(ErrorType::InternalError, "", "", assign.tok);
+		error.message = "Invalid delete statement. Could not determine delete statement.";
 		error.exit();
 
 		return nullptr;
@@ -396,8 +396,8 @@ private:
 			}
 		}
 
-		auto error = CompileError(ErrorType::InternalError, "", "", var->parent->tok);
-		error.m_message = "Invalid retain statement. Could not determine retain statement.";
+		auto error = Diagnostic(ErrorType::InternalError, "", "", var->parent->tok);
+		error.message = "Invalid retain statement. Could not determine retain statement.";
 		error.exit();
 
 		return nullptr;
@@ -414,8 +414,8 @@ private:
 			}
 			if(func_call->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
 				if(!func_call->get_definition()) {
-					auto error = CompileError(ErrorType::TypeError, "", "", func_call->tok);
-					error.m_message = "Function call assigned to <Pointer> does not have a definition."
+					auto error = Diagnostic(ErrorType::TypeError, "", "", func_call->tok);
+					error.message = "Function call assigned to <Pointer> does not have a definition."
 									  " It needs to be defined for memory allocation to work correctly.";
 					error.exit();
 				}

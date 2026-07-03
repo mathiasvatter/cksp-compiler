@@ -28,8 +28,8 @@ public:
 
 		auto decl = node.array->get_declaration();
 		if(!decl) {
-			auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
-			error.m_message = "Declaration of array in <num_elements> node was not set.";
+			auto error = Diagnostic(ErrorType::InternalError, "", "", node.tok);
+			error.message = "Declaration of array in <num_elements> node was not set.";
 			error.exit();
 		}
 
@@ -42,8 +42,8 @@ public:
 				node.dimension->do_constant_folding();
 				auto dim_int = node.dimension->cast<NodeInt>();
 				if (!dim_int) {
-					auto error = CompileError(ErrorType::SyntaxError, "", "", node.dimension->tok);
-					error.m_message = "The dimension of <num_elements> could not be folded into an <integer>.";
+					auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.dimension->tok);
+					error.message = "The dimension of <num_elements> could not be folded into an <integer>.";
 					error.exit();
 				}
 
@@ -63,8 +63,8 @@ public:
 				return node.replace_with(DefinitionProvider::num_elements(std::move(node.array)));
 			}
 		} else {
-			auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
-			error.m_message = "<reference> node in <num_elements> has somehow a declaration that is not an <Array>.";
+			auto error = Diagnostic(ErrorType::InternalError, "", "", node.tok);
+			error.message = "<reference> node in <num_elements> has somehow a declaration that is not an <Array>.";
 			error.exit();
 		}
 		return &node;

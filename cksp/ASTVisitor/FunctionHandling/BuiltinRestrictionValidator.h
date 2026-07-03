@@ -101,22 +101,22 @@ public:
 		if (!declaration) {
 			// will (probably with ui controls) always lead to errors
 			return true;
-			// auto error = get_raw_compile_error(ErrorType::InternalError, node);
-			// error.m_message = "Unable to find builtin variable declaration for <" + node.name + ">.";
+			// auto error = make_diagnostic(ErrorType::InternalError, node);
+			// error.message = "Unable to find builtin variable declaration for <" + node.name + ">.";
 			// error.exit();
 		}
 		if (declaration->is_restricted) {
 			const auto callback_name = StringUtils::remove(callback->begin_callback, "on ");
 			const auto allowed_callbacks = get_allowed_callbacks(node);
 			if (!allowed_callbacks.contains(callback_name)) {
-				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-				error.m_message = "Found restricted variable. <" + node.name + "> can not be used in <" + callback->begin_callback + "> callback.";
-				error.m_expected = "Allowed Callbacks are: \n";
+				auto error = make_diagnostic(ErrorType::SyntaxError, node);
+				error.message = "Found restricted variable. <" + node.name + "> can not be used in <" + callback->begin_callback + "> callback.";
+				error.expected = "Allowed Callbacks are: \n";
 				for (const auto& allowed_callback : allowed_callbacks) {
-					error.m_expected += "<" + allowed_callback + ">, ";
+					error.expected += "<" + allowed_callback + ">, ";
 				}
-				error.m_expected.erase(error.m_expected.size() - 2);
-				error.m_got = "<" + callback->begin_callback + ">";
+				error.expected.erase(error.expected.size() - 2);
+				error.actual = "<" + callback->begin_callback + ">";
 				error.exit();
 				return false;
 			}
@@ -129,8 +129,8 @@ public:
 		if (!callback) return true;
 		const auto definition = node.get_definition();
 		if (!definition) {
-			auto error = get_raw_compile_error(ErrorType::InternalError, node);
-			error.m_message = "Unable to find builtin function definition for <" + node.function->name + ">.";
+			auto error = make_diagnostic(ErrorType::InternalError, node);
+			error.message = "Unable to find builtin function definition for <" + node.function->name + ">.";
 			error.exit();
 		}
 		// check if called in restricted callback
@@ -138,14 +138,14 @@ public:
 			const auto callback_name = StringUtils::remove(callback->begin_callback, "on ");
 			const auto allowed_callbacks = get_allowed_callbacks(*node.function);
 			if (!allowed_callbacks.contains(callback_name)) {
-				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-				error.m_message = "Found restricted function. <" + node.function->name + "> can not be used in <" + callback->begin_callback + "> callback.";
-				error.m_expected = "Allowed Callbacks are: \n";
+				auto error = make_diagnostic(ErrorType::SyntaxError, node);
+				error.message = "Found restricted function. <" + node.function->name + "> can not be used in <" + callback->begin_callback + "> callback.";
+				error.expected = "Allowed Callbacks are: \n";
 				for (const auto& allowed_callback : allowed_callbacks) {
-					error.m_expected += "<" + allowed_callback + ">, ";
+					error.expected += "<" + allowed_callback + ">, ";
 				}
-				error.m_expected.erase(error.m_expected.size() - 2);
-				error.m_got = "<" + callback->begin_callback + ">";
+				error.expected.erase(error.expected.size() - 2);
+				error.actual = "<" + callback->begin_callback + ">";
 				error.exit();
 				return false;
 			}

@@ -17,8 +17,8 @@ public:
 		if(node.is_string_env()) {
 			auto it = bool_tokens_map.find(node.tok.type);
 			if (it == bool_tokens_map.end()) {
-				auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
-				error.m_message = "<LoweringBoolean>: Boolean value not found in mapping.";
+				auto error = Diagnostic(ErrorType::InternalError, "", "", node.tok);
+				error.message = "<LoweringBoolean>: Boolean value not found in mapping.";
 				error.exit();
 			}
 			node_repl = std::make_unique<NodeString>("\""+it->second + "\"", node.tok);

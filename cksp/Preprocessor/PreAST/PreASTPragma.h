@@ -66,13 +66,13 @@ private:
 			auto output_path = path_handler.resolve_path(path);
 			if (output_path.is_error()) {
 				auto error = output_path.get_error();
-				error.m_message.insert(0, error_message);
+				error.message.insert(0, error_message);
 				error.exit();
 			}
 			auto valid_output_path = path_handler.check_valid_output_file(output_path.unwrap());
 			if (valid_output_path.is_error()) {
 				auto error = valid_output_path.get_error();
-				error.m_message.insert(0, error_message);
+				error.message.insert(0, error_message);
 				error.exit();
 			}
 			m_config->outputs.push_back(valid_output_path.unwrap());
@@ -125,17 +125,17 @@ private:
 			}
 			if (m_config->max_callback_depth > MAX_ARRAY_ELEMENTS) {
 				auto error = get_pragma_error(token, depth_str, "a value less than " + std::to_string(MAX_ARRAY_ELEMENTS));
-				error.m_message = "The specified <max_callback_depth> exceeds the maximum allowed limit.";
+				error.message = "The specified <max_callback_depth> exceeds the maximum allowed limit.";
 				error.exit();
 			}
 		};
 	}
 
-	static CompileError get_pragma_error(const Token& tok, const std::string& got, const std::string& expected) {
-		auto err = CompileError(ErrorType::PreprocessorError, "", "", tok);
-		err.m_message = "Found unknown <#pragma> option or value.";
-		err.m_expected = expected;
-		err.m_got = got;
+	static Diagnostic get_pragma_error(const Token& tok, const std::string& got, const std::string& expected) {
+		auto err = Diagnostic(ErrorType::PreprocessorError, "", "", tok);
+		err.message = "Found unknown <#pragma> option or value.";
+		err.expected = expected;
+		err.actual = got;
 		return err;
 	}
 

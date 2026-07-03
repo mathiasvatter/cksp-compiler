@@ -260,8 +260,8 @@ private:
 					}
 				// division by zero
 				} else if (is_zero(right_int) and node.op == token::DIV) {
-					auto error = CompileError(ErrorType::MathError,"","", node.tok);
-					error.m_message = "Found division by zero. Result will be infinite.";
+					auto error = Diagnostic(ErrorType::MathError,"","", node.tok);
+					error.message = "Found division by zero. Result will be infinite.";
 					error.exit();
 				} else if (left_int or right_int) {
 					// der bekannte  Integer
@@ -375,8 +375,8 @@ private:
 			if (MATH_TOKENS.contains(node.op)) {
 				// check division by zero
 				if (node.op == token::DIV && is_zero(right_real)) {
-					auto error = CompileError(ErrorType::MathError,"","", node.tok);
-					error.m_message = "Found division by zero. Result will be infinite.";
+					auto error = Diagnostic(ErrorType::MathError,"","", node.tok);
+					error.message = "Found division by zero. Result will be infinite.";
 					error.exit();
 				}
 				// constant folding

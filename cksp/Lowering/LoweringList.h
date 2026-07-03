@@ -151,10 +151,10 @@ public:
 	NodeAST * visit(NodeListRef& node) override {
 		// list references can only have one or two (jagged lists) index
 		if(node.indexes->size() != 2 && node.indexes->size() != 1) {
-			auto error = CompileError(ErrorType::SyntaxError,"", "", node.tok);
-			error.m_message = "Got wrong amount of index for <List>.";
-			error.m_expected = "2";
-			error.m_got = std::to_string(node.indexes->params.size());
+			auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.tok);
+			error.message = "Got wrong amount of index for <List>.";
+			error.expected = "2";
+			error.actual = std::to_string(node.indexes->params.size());
 			error.exit();
 		}
 

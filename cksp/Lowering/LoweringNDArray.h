@@ -25,16 +25,16 @@ class LoweringNDArray final : public ASTLowering {
 				if(auto node_int = node_array->size->cast<NodeInt>()) {
 					auto dims = init_list->get_dimensions();
 					if(dims.size() != 1) {
-						auto error = CompileError(ErrorType::SyntaxError, "", "", node_array->tok);
-						error.m_message = "Initializer List for <Array> has to be one-dimensional.";
+						auto error = Diagnostic(ErrorType::SyntaxError, "", "", node_array->tok);
+						error.message = "Initializer List for <Array> has to be one-dimensional.";
 						error.exit();
 						return false;
 					}
 					if(node_int->value < dims[0]) {
-						auto error = CompileError(ErrorType::SyntaxError, "", "", node_array->tok);
-						error.m_message = "Size of <Array> does not match the size of the initializer list. Kontakt will ignore out of range initializers.";
-						error.m_got = std::to_string(init_list->size());
-						error.m_expected = std::to_string(node_int->value);
+						auto error = Diagnostic(ErrorType::SyntaxError, "", "", node_array->tok);
+						error.message = "Size of <Array> does not match the size of the initializer list. Kontakt will ignore out of range initializers.";
+						error.actual = std::to_string(init_list->size());
+						error.expected = std::to_string(node_int->value);
 						error.report();
 						return false;
 					}
@@ -54,10 +54,10 @@ public:
 		// check if we are in a declaration or a declaration of a ui control
 		const auto node_declaration = node.parent->cast<NodeSingleDeclaration>();
 		const auto node_ui_control = node.parent->cast<NodeUIControl>();
-		auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
 		if (!node_declaration and !node_ui_control and !node.is_function_param()) {
-			error.m_message = "NDArray is not a reference even though it is not part of a declaration.";
-			error.m_got = node.name;
+			error.message = "NDArray is not a reference even though it is not part of a declaration.";
+			error.actual = node.name;
 			error.exit();
 		}
 		if(node.is_function_param()) return &node;
@@ -66,22 +66,22 @@ public:
 		if (!node.sizes) {
 			// in case it is ui_control array and size is not determined
 			if(node_ui_control) {
-				error.m_message = "Unable to infer array size. Size of multidimensional UI Control Array has to be determined at compile time.";
+				error.message = "Unable to infer array size. Size of multidimensional UI Control Array has to be determined at compile time.";
 				error.exit();
 			}
 			// in case it is a declaration and declaration has no r-value -> throw error
 			if (node_declaration and !node_declaration->value) {
-				error.m_message =
+				error.message =
 					"Unable to infer array size. Size of NDArray has to be determined at compile time by providing an initializer list.";
-				error.m_got = node.name;
-				error.m_expected = "<Initializer List>";
+				error.actual = node.name;
+				error.expected = "<Initializer List>";
 				error.exit();
 			}
 			// 	declare ndarr: int[][] := [[1,2,3],[4,5, 4]]
 			if (const auto init_list = node_declaration->value->cast<NodeInitializerList>()) {
 				auto dims = init_list->get_dimensions();
 				if (dims.size() == 1) {
-					auto error2 = CompileError(ErrorType::SyntaxError, "", "", init_list->tok);
+					auto error2 = Diagnostic(ErrorType::SyntaxError, "", "", init_list->tok);
 					error2.set_message("When declaring an <NDArray> without it sizes, the Initializer List for <NDArray> has to be multi-dimensional. For one-dimensional arrays, use <Array> instead.");
 					error2.exit();
 				}

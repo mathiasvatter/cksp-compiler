@@ -148,7 +148,7 @@ public:
 		// if(ref.kind != NodeReference::User) return false;
 		const auto declaration = ref.get_declaration();
 		if(!declaration) {
-			auto error = CompileError(ErrorType::InternalError, "DimensionExpansion : Reference has no declaration", "", ref.tok);
+			auto error = Diagnostic(ErrorType::InternalError, "DimensionExpansion : Reference has no declaration", "", ref.tok);
 //			error.exit();
 			return false;
 		}

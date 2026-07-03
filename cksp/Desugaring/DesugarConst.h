@@ -39,8 +39,8 @@ public:
 
     NodeAST * visit(NodeSingleDeclaration& node) override {
         if (node.variable->get_node_type() != NodeType::Variable) {
-            auto error = CompileError(ErrorType::SyntaxError,"", "", node.variable->tok);
-			error.m_message = "Found incorrect <Constant Block> syntax. <Constant Blocks> can only contain <Variables>.";
+            auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.variable->tok);
+			error.message = "Found incorrect <Constant Block> syntax. <Constant Blocks> can only contain <Variables>.";
 			error.exit();
         }
         node.variable->accept(*this);

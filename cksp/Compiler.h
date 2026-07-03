@@ -53,6 +53,7 @@
 #include "Preprocessor/PreAST/PreASTConditions.h"
 #include "../misc/DiagnosticSink.h"
 #include "../misc/DiagnosticEngine.h"
+#include "../misc/DiagnosticReport.h"
 
 class Compiler {
 	std::unique_ptr<CompilerConfig> m_pragma_config;
@@ -103,7 +104,7 @@ public:
 		// static ImportProcessor imports(m_tokens, m_cli_config->input_filename.value(), &m_definition_provider);
 		// if(auto import_result = imports.process_imports(); import_result.is_error()) {
 		// 	auto error = import_result.get_error();
-		// 	error.m_message += " Preprocessor failed while processing import statements.";
+		// 	error.message += " Preprocessor failed while processing import statements.";
 		// 	error.exit();
 		// }
 		// m_tokens = std::move(imports.get_token_vector());
@@ -112,7 +113,7 @@ public:
 		// result = conditions.process_conditions();
 		// if(result.is_error()) {
 		// 	auto error = result.get_error();
-		// 	error.m_message += " Preprocessor failed while processing conditions.";
+		// 	error.message += " Preprocessor failed while processing conditions.";
 		// 	error.exit();
 		// }
 		// m_tokens = std::move(conditions.get_token_vector());
@@ -121,7 +122,7 @@ public:
 		// auto result_parse = parser.parse_program(nullptr);
 		// if(result_parse.is_error()) {
 		// 	auto error = result_parse.get_error();
-		// 	error.m_message += " Preprocessor parsing failed.";
+		// 	error.message += " Preprocessor parsing failed.";
 		// 	error.exit();
 		// }
 		// auto pre_ast = std::move(result_parse.unwrap());
@@ -130,7 +131,7 @@ public:
 		auto pre_ast_result = Compiler::preproc_parse(m_cli_config->input_filename.value(), &m_definition_provider, &m_lines_processed);
 		if(pre_ast_result.is_error()) {
 			auto error = pre_ast_result.get_error();
-			error.m_message += " Preprocessor parsing failed.";
+			error.message += " Preprocessor parsing failed.";
 			error.exit();
 		}
 		auto pre_ast = std::move(pre_ast_result.unwrap());

@@ -13,8 +13,8 @@ public:
 		array(array), array_to_copy(array_to_copy), program(program) {
 		// check if array and array_to_copy are NodeArrayRef or NodeNDArrayRef
 		if(array->get_node_type() != NodeType::ArrayRef && array->get_node_type() != NodeType::NDArrayRef) {
-			auto error = CompileError(ErrorType::TypeError, "", "", array->tok);
-			error.m_message = "First argument of copy function has to be an <array> or <nd-array> reference.";
+			auto error = Diagnostic(ErrorType::TypeError, "", "", array->tok);
+			error.message = "First argument of copy function has to be an <array> or <nd-array> reference.";
 			error.exit();
 		}
 

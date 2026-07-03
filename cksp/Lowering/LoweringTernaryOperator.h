@@ -107,7 +107,7 @@ private:
 				decl->remove_reference(&node);
 				node.declaration.reset();
 			} else {
-				auto error = CompileError(ErrorType::VariableError, "Local variable used in ternary operator has not been declared: " + node.name, "", node.tok);
+				auto error = Diagnostic(ErrorType::VariableError, "Local variable used in ternary operator has not been declared: " + node.name, "", node.tok);
 				error.exit();
 			}
 		}

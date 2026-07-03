@@ -76,8 +76,8 @@ public:
 			expression->left->set_element_type(TypeRegistry::Integer);
 			return node.replace_with(std::move(expression));
 		} else {
-			auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
-			error.m_message = "<LoweringBooleanExpression>: Unsupported unary boolean operator.";
+			auto error = Diagnostic(ErrorType::InternalError, "", "", node.tok);
+			error.message = "<LoweringBooleanExpression>: Unsupported unary boolean operator.";
 			error.exit();
 		}
 
@@ -114,8 +114,8 @@ public:
 		if (BOOL_TOKENS.contains(node.op)) {
 			const auto it = boolean_to_bitwise.find(node.op);
 			if (it == boolean_to_bitwise.end()) {
-				auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
-				error.m_message = "<LoweringBooleanExpression>: Boolean operator not found in mapping.";
+				auto error = Diagnostic(ErrorType::InternalError, "", "", node.tok);
+				error.message = "<LoweringBooleanExpression>: Boolean operator not found in mapping.";
 				error.exit();
 			}
 			node.op = it->second;
@@ -129,16 +129,16 @@ public:
 		if (COMPARISON_TOKENS.contains(node.op)) {
 			const auto it = BOOLEAN_FUNCTIONS.find(node.op);
 			if (it == BOOLEAN_FUNCTIONS.end()) {
-				auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
-				error.m_message = "<LoweringBooleanExpression>: Comparison operator not found in mapping.";
+				auto error = Diagnostic(ErrorType::InternalError, "", "", node.tok);
+				error.message = "<LoweringBooleanExpression>: Comparison operator not found in mapping.";
 				error.exit();
 			}
 			auto name = it->second.first;
 			auto num_params = it->second.second;
 			// auto func = m_def_provider->get_boolean_function(name, num_params);
 			// if (!func) {
-			// 	auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
-			// 	error.m_message = "<LoweringBooleanExpression>: Boolean function " + it->second.first + " not found.";
+			// 	auto error = Diagnostic(ErrorType::InternalError, "", "", node.tok);
+			// 	error.message = "<LoweringBooleanExpression>: Boolean function " + it->second.first + " not found.";
 			// 	error.exit();
 			// }
 

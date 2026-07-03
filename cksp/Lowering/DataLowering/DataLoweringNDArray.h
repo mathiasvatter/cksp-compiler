@@ -46,8 +46,8 @@ public:
     /// Lowering of multidimensional arrays to arrays when reference
 	NodeAST* visit(NodeNDArrayRef& node) override {
         if(node.indexes and node.sizes and node.indexes->size() != node.sizes->size()) {
-			auto error = CompileError(ErrorType::VariableError, "", "", node.tok);
-            error.m_message = "Number of indices does not match number of dimensions: " + node.name;
+			auto error = Diagnostic(ErrorType::VariableError, "", "", node.tok);
+            error.message = "Number of indices does not match number of dimensions: " + node.name;
             error.exit();
         }
         // convert index of multidimensional array
@@ -55,8 +55,8 @@ public:
 		if(node.indexes) {
 			// if no sizes -> ndarray is func param
 			if(!node.sizes) {
-				auto error = CompileError(ErrorType::VariableError, "", "", node.tok);
-				error.m_message = "Unable to infer array size. Size of <NDArrayRef> has to be determined at compile time.";
+				auto error = Diagnostic(ErrorType::VariableError, "", "", node.tok);
+				error.message = "Unable to infer array size. Size of <NDArrayRef> has to be determined at compile time.";
 				error.exit();
 			}
 			node_expression = NodeBinaryExpr::calculate_index_expression(node.sizes->params, node.indexes->params, 0,node.tok);

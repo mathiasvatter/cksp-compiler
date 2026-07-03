@@ -22,9 +22,9 @@ public:
 		for(auto & m: node.member_table) {
 			auto member = m.second.lock();
 			if(!NodeStruct::allowed_member_node_types.contains(member->get_node_type())) {
-				auto error = CompileError(ErrorType::SyntaxError, "", "", member->tok);
-				error.m_message = "Member type not allowed in struct. Only <Variables>, <Arrays>, <NDArrays>, <Pointers> and <Structs> are allowed.";
-				error.m_got = member->ty->to_string();
+				auto error = Diagnostic(ErrorType::SyntaxError, "", "", member->tok);
+				error.message = "Member type not allowed in struct. Only <Variables>, <Arrays>, <NDArrays>, <Pointers> and <Structs> are allowed.";
+				error.actual = member->ty->to_string();
 				error.exit();
 			}
 			node.member_node_types.insert(member->get_node_type());
@@ -182,8 +182,8 @@ public:
 	/// creates a nested call to max(a, b) from many sizes
 	static std::unique_ptr<NodeFunctionCall> find_max_array_size(const std::vector<std::unique_ptr<NodeAST>> &sizes) {
 		if (sizes.empty()) {
-			auto error = CompileError(ErrorType::InternalError, "", "", Token());
-			error.m_message = "No sizes given for struct.";
+			auto error = Diagnostic(ErrorType::InternalError, "", "", Token());
+			error.message = "No sizes given for struct.";
 			error.exit();
 		}
 		std::unique_ptr<NodeAST> max_call = sizes[0]->clone();

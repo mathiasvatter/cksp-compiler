@@ -314,9 +314,9 @@ bool NodeUIControl::is_ui_control_array() const {
 std::shared_ptr<NodeUIControl> NodeUIControl::get_builtin_widget(const NodeProgram *program) const {
 	const auto engine_widget = program->def_provider->get_builtin_widget(ui_control_type);
 	if(!engine_widget) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-		error.m_message = "Unknown Engine Widget";
-		error.m_got = ui_control_type;
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+		error.message = "Unknown Engine Widget";
+		error.actual = ui_control_type;
 		error.exit();
 		return nullptr;
 	}
@@ -410,7 +410,7 @@ void NodeStruct::add_method_or_override(const std::shared_ptr<NodeFunctionDefini
 		// was already declared, see if it overrides
 		if (method->override) {
 			if (exists->override and method->override) {
-				auto error = CompileError(ErrorType::SyntaxError,"", "", method->header->tok);
+				auto error = Diagnostic(ErrorType::SyntaxError,"", "", method->header->tok);
 				error.set_message( "Found duplicate method definition with the same name and parameter count at position "+exists->tok.get_position()+".\nBoth have been marked"
 					" as <override>. The compiler will use the last encountered definition that has been marked as <override>.\n"
 					"Consider removing the <override> keyword from one of the definitions.");
@@ -421,7 +421,7 @@ void NodeStruct::add_method_or_override(const std::shared_ptr<NodeFunctionDefini
 			// function in map is already override and encountered function is not
 			// pass
 		} else {
-			auto error = CompileError(ErrorType::SyntaxError,"", "", method->header->tok);
+			auto error = Diagnostic(ErrorType::SyntaxError,"", "", method->header->tok);
 			error.set_message( "A method with this name and parameter count already exists in this <struct> at position "+exists->tok.get_position()+". \n"
 				"To override it, use the <override> keyword. \n"
 				"To overload it, use <Union> types instead to define method templates accepting multiple types.");
@@ -476,7 +476,7 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_init_method() {
 			);
 			node_block->add_stmt(std::make_unique<NodeStatement>(std::move(assignment), this->tok));
 		} else {
-			auto error = CompileError(ErrorType::VariableError, "<Struct> member must be a declaration", "", tok);
+			auto error = Diagnostic(ErrorType::VariableError, "<Struct> member must be a declaration", "", tok);
 			error.exit();
 		}
 	}

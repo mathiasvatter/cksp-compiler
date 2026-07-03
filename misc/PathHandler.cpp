@@ -3,7 +3,7 @@
 //
 
 #include "PathHandler.h"
-#include "CompileError.h"
+#include "Diagnostic.h"
 
 PathHandler::PathHandler(Token current_token, std::string current_file, std::string root_directory)
 	: m_current_token(std::move(current_token)), m_current_file(std::move(current_file)),
@@ -11,46 +11,46 @@ PathHandler::PathHandler(Token current_token, std::string current_file, std::str
 
 Result<std::string> PathHandler::check_valid_path(const std::string &path) {
 	const std::filesystem::path fs_path(path);
-	m_error.m_got = fs_path.string();
+	m_error.actual = fs_path.string();
 
 	// std::filesystem::absolute ist nicht nötig, da resolve_path bereits absolute Pfade liefert
 	if (std::filesystem::exists(fs_path)) {
 		return Result<std::string>(fs_path.string());
 	} else {
-		m_error.m_message = "File does not exist at resolved path.";
-		m_error.m_expected = "A valid file path.";
+		m_error.message = "File does not exist at resolved path.";
+		m_error.expected = "A valid file path.";
 		return Result<std::string>(m_error);
 	}
 }
 
 Result<std::string> PathHandler::check_valid_output_file(const std::string &absolute_path) {
 	std::filesystem::path path(absolute_path);
-    m_error.m_got = path.string();
+    m_error.actual = path.string();
 
 	if (!path.is_absolute()) {
-		m_error.m_message = "Given path is not absolute.";
-		m_error.m_expected = "absolute path";
+		m_error.message = "Given path is not absolute.";
+		m_error.expected = "absolute path";
 		return Result<std::string>(m_error);
 	}
 
 	// Überprüfen, ob der Pfad eine .txt-Dateiendung hat
 	if (path.extension() != ".txt") {
-		m_error.m_message = "Given path does not lead to a .txt file.";
-		m_error.m_expected = "*.txt file";
+		m_error.message = "Given path does not lead to a .txt file.";
+		m_error.expected = "*.txt file";
 		return Result<std::string>(m_error);
 	}
 
 	// Überprüfen, ob der übergeordnete Ordner existiert
 	if (!std::filesystem::exists(path.parent_path())) {
-		m_error.m_message = "The parent folder does not exist.";
-		m_error.m_expected = path.parent_path().string();
+		m_error.message = "The parent folder does not exist.";
+		m_error.expected = path.parent_path().string();
 		return Result<std::string>(m_error);
 	}
 
 	// // Datei öffnen und schließen, um sicherzustellen, dass sie existiert
 	// std::ofstream outfile(absolute_path, std::ios::app); // Öffnen im Append-Modus, um keine Daten zu überschreiben
 	// if (!outfile) {
-	// 	m_error.m_message = "Could not open file.";
+	// 	m_error.message = "Could not open file.";
 	// 	return Result<std::string>(m_error);
 	// }
 	// outfile.close();
@@ -61,7 +61,7 @@ Result<std::string> PathHandler::check_valid_output_file(const std::string &abso
 // Combines standard overlap resolve with 'resolve_overlap' as fallback for sksp path stuff.
 Result<std::string> PathHandler::resolve_path(const std::string &import_path) {
 	std::filesystem::path rel(import_path);
-	m_error.m_got = rel.string();
+	m_error.actual = rel.string();
 
 	if (rel.is_absolute()) {
 		return Result<std::string>(rel.string());
@@ -96,8 +96,8 @@ Result<std::string> PathHandler::resolve_path(const std::string &import_path) {
 
 	// Wenn beides fehlschlägt, gib einen Fehler zurück.
 	// Der Fehlertext sollte den zuerst versuchten Pfad anzeigen.
-	m_error.m_message = "Could not resolve path. File not found.";
-	m_error.m_got = "Tried path: " + combined_path.string();
+	m_error.message = "Could not resolve path. File not found.";
+	m_error.actual = "Tried path: " + combined_path.string();
 	return Result<std::string>(m_error);
 }
 
@@ -124,8 +124,8 @@ Result<std::string> PathHandler::resolve_overlap(const std::string &base_path, c
 	}
 
 	if (baseParts.empty() || relativeParts.empty() || baseParts.back() != relativeParts.front()) {
-		m_error.m_got = base.string() + ", " + relative.string();
-		m_error.m_message = "Could not find a common path segment to resolve overlap.";
+		m_error.actual = base.string() + ", " + relative.string();
+		m_error.message = "Could not find a common path segment to resolve overlap.";
 		return Result<std::string>(m_error);
 	}
 
@@ -153,11 +153,11 @@ Result<std::string> PathHandler::resolve_import_path(const std::string &import_p
 Result<std::vector<std::string>> PathHandler::get_directory_files(const std::string &directory_path) {
 	std::vector<std::string> file_paths;
 	std::filesystem::path dir_path(directory_path);
-    m_error.m_got = dir_path.string();
+    m_error.actual = dir_path.string();
 
 	// Überprüfen, ob der gegebene Pfad tatsächlich ein Verzeichnis ist
 	if (!std::filesystem::is_directory(dir_path)) {
-		m_error.m_message = "Given path is not a directory";
+		m_error.message = "Given path is not a directory";
 		return Result<std::vector<std::string>>(m_error);
 	}
 

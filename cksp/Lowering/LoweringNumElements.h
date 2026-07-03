@@ -21,22 +21,22 @@ public:
 
 	NodeAST * visit(NodeNumElements &node) override {
 		if(node.array->ty->get_type_kind() != TypeKind::Composite) {
-			auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
-			error.m_message = "<num_elements> can only be used with <Composite> types like <Arrays> or <NDArrays>.";
+			auto error = Diagnostic(ErrorType::TypeError, "", "", node.tok);
+			error.message = "<num_elements> can only be used with <Composite> types like <Arrays> or <NDArrays>.";
 			error.exit();
 		}
 
 		if(node.dimension) {
 			// check if node is array ref -> no extra dimension allowed
 			if(node.array->cast<NodeArrayRef>()) {
-				auto error = CompileError(ErrorType::TypeError, "", "", node.array->tok);
-				error.m_message = "The <dimension> parameter of <num_elements> can not be used with <ArrayRef> since it "
+				auto error = Diagnostic(ErrorType::TypeError, "", "", node.array->tok);
+				error.message = "The <dimension> parameter of <num_elements> can not be used with <ArrayRef> since it "
 					  "cannot have more than a single dimension.";
 				error.exit();
 			}
 			if (!node.dimension->is_constant()) {
-				auto error = CompileError(ErrorType::SyntaxError, "", "", node.dimension->tok);
-				error.m_message = "The <dimension> parameter of <num_elements> has to be a constant expression.";
+				auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.dimension->tok);
+				error.message = "The <dimension> parameter of <num_elements> has to be a constant expression.";
 				error.exit();
 			}
 			// check if dimension is valid when int literal is used
@@ -44,13 +44,13 @@ public:
 				auto dim = int_node->value;
 				if(auto nd_array = node.array->get_declaration()->cast<NodeNDArray>()) {
 					if (dim > nd_array->dimensions) {
-						auto error = CompileError(ErrorType::TypeError, "", "", node.dimension->tok);
-						error.m_message =
+						auto error = Diagnostic(ErrorType::TypeError, "", "", node.dimension->tok);
+						error.message =
 							"Dimension " + std::to_string(dim) + " does not exist in <NDArray> " + node.array->name + ".";
 						error.exit();
 					} else if (dim < 0) {
-						auto error = CompileError(ErrorType::TypeError, "", "", node.dimension->tok);
-						error.m_message = "Dimension " + std::to_string(dim) + " is not valid. Dimensions start at 1. If"
+						auto error = Diagnostic(ErrorType::TypeError, "", "", node.dimension->tok);
+						error.message = "Dimension " + std::to_string(dim) + " is not valid. Dimensions start at 1. If"
 																			   " you want to access the number of all elements, use 0.";
 						error.exit();
 					}
@@ -66,8 +66,8 @@ public:
 		} else if(auto node_ndarray = node.array->cast<NodeNDArrayRef>()) {
 			auto nd_array = node.array->get_declaration()->cast<NodeNDArray>();
 			if(!nd_array) {
-				auto error = CompileError(ErrorType::VariableError, "", "", node.tok);
-				error.m_message = "<NDArrayRef> has somehow a declaration that is not an <NDArray>.";
+				auto error = Diagnostic(ErrorType::VariableError, "", "", node.tok);
+				error.message = "<NDArrayRef> has somehow a declaration that is not an <NDArray>.";
 				error.exit();
 			}
 
@@ -102,8 +102,8 @@ private:
 
 		// num_elements(ndarray[*, *], 1)
 		if(num_wildcards and node.dimension) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-			error.m_message = "Wildcard notation in <NDArrayRef> does not allow for dimension parameter in <num_elements>.";
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+			error.message = "Wildcard notation in <NDArrayRef> does not allow for dimension parameter in <num_elements>.";
 			error.exit();
 		}
 
@@ -144,8 +144,8 @@ private:
 
 		// num_elements(ndarray[*, *, 2])
 		if(num_wildcards > 1 and num_wildcards < num_dimensions) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-			error.m_message = "Cannot infer which dimension to return. Specify a single <Wildcard> (*).";
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+			error.message = "Cannot infer which dimension to return. Specify a single <Wildcard> (*).";
 			error.exit();
 		}
 

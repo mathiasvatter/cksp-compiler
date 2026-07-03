@@ -2,7 +2,7 @@
 
 #include <fstream>
 
-#include "CompileError.h"
+#include "DiagnosticReport.h"
 #include "../utils/StringUtils.h"
 
 namespace {
@@ -26,7 +26,7 @@ void ConsoleDiagnosticSink::report(Diagnostic diagnostic) {
     const auto& color = severity_color(diagnostic.severity);
     m_output << color << ColorCode::Bold << severity_name(diagnostic.severity) << ColorCode::Reset;
     m_output << color << " [Type: " << ColorCode::Bold
-             << CompileError::error_type_to_string(diagnostic.type) << ColorCode::Reset;
+             << error_type_to_string(diagnostic.type) << ColorCode::Reset;
     m_output << color << ", Position: " << diagnostic.range.file;
 
     if (diagnostic.range.start.line != static_cast<size_t>(-1)) {
@@ -52,7 +52,7 @@ void ConsoleDiagnosticSink::report(Diagnostic diagnostic) {
             std::getline(file, line);
         }
         if (file || !line.empty()) {
-            line = CompileError::replace_tabs_with_spaces(line, 1);
+            line = replace_tabs_with_spaces(line, 1);
             const std::string prefix = "In line " + std::to_string(diagnostic.range.start.line) + ": ";
             m_output << ColorCode::Bold << prefix << ColorCode::Reset << line << '\n';
 
@@ -67,23 +67,21 @@ void ConsoleDiagnosticSink::report(Diagnostic diagnostic) {
         }
     }
 
+    for (auto frame = diagnostic.call_stack.rbegin(); frame != diagnostic.call_stack.rend(); ++frame) {
+        m_output << "  called from " << frame->function;
+        if (frame->call_site.is_valid()) {
+            m_output << " (" << frame->call_site.file << ':'
+                     << frame->call_site.start.line << ':' << frame->call_site.start.column << ')';
+        }
+        m_output << '\n';
+    }
+
     if (m_print_failure_footer && diagnostic.severity == DiagnosticSeverity::Error) {
         m_output << ColorCode::Red << "\nSeems like the compilation exited with a failure."
                  << ColorCode::Reset << std::endl;
         if (!diagnostic.range.file.empty()) {
-            CompileError legacy_error(
-                diagnostic.type,
-                diagnostic.message,
-                diagnostic.range.start.line,
-                diagnostic.expected,
-                diagnostic.actual,
-                diagnostic.range.file);
-            legacy_error.m_line_position = diagnostic.range.start.column;
-            legacy_error.m_marker_length = diagnostic.range.end.column > diagnostic.range.start.column
-                ? diagnostic.range.end.column - diagnostic.range.start.column
-                : size_t{1};
             m_output << "To help make cksp better, please report any compiler related issues here: "
-                     << legacy_error.generate_github_issue_url("mathiasvatter", "cksp-compiler")
+                     << generate_github_issue_url(diagnostic, "mathiasvatter", "cksp-compiler")
                      << std::endl;
         }
     }

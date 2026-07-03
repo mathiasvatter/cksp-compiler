@@ -184,9 +184,9 @@ struct NodeNDArray final : NodeComposite {
 			sizes = unique_ptr_cast<NodeParamList>(std::move(size));
 			dimensions = sizes->size();
 		} else {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-			error.m_message = "Tried setting NDArray size. NDArray size has to be a <ParamList>.";
-			error.m_got = size->get_string();
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+			error.message = "Tried setting NDArray size. NDArray size has to be a <ParamList>.";
+			error.actual = size->get_string();
 			error.exit();
 		}
 	}
@@ -480,7 +480,7 @@ struct NodeStruct final : NodeDataStructure {
 			if(const auto decl = member->statement->cast<NodeSingleDeclaration>()) {
 				member_table[decl->variable->name] = decl->variable;
 			} else {
-				auto error = CompileError(ErrorType::VariableError, "<Struct> member must be a declaration", "", tok);
+				auto error = Diagnostic(ErrorType::VariableError, "<Struct> member must be a declaration", "", tok);
 				error.exit();
 			}
 		}

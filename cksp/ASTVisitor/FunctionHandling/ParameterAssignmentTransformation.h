@@ -71,8 +71,8 @@ public:
 	static void swap_call(NodeFunctionCall& old, const std::unique_ptr<NodeBlock>& new_block) {
 		auto definition = old.get_definition();
 		if (!definition) {
-			auto error = CompileError(ErrorType::InternalError, "", "", old.tok);
-			error.m_message = "FunctionAssignmentTransformation : Function node has to have a definition to be transformed.";
+			auto error = Diagnostic(ErrorType::InternalError, "", "", old.tok);
+			error.message = "FunctionAssignmentTransformation : Function node has to have a definition to be transformed.";
 			error.exit();
 		}
 		// create new call for easy replacement
@@ -122,8 +122,8 @@ private:
 	NodeAST* visit(NodeFunctionCall& node) override {
 		auto definition = node.get_definition();
 		if (!definition) {
-			auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
-			error.m_message = "FunctionAssignmentTransformation : Function node has to have a definition to be transformed.";
+			auto error = Diagnostic(ErrorType::InternalError, "", "", node.tok);
+			error.message = "FunctionAssignmentTransformation : Function node has to have a definition to be transformed.";
 			error.exit();
 			return &node;
 		}
@@ -133,6 +133,7 @@ private:
 		if (!definition->visited) {
 			definition->visited = true;
 			m_function_call_stack.push_back(&node);
+			FunctionCallStackScope diagnostic_frame(*m_program, node);
 
 			definition->accept(*this);
 
@@ -321,5 +322,4 @@ private:
 
 
 };
-
 

@@ -91,8 +91,8 @@ public:
 				// -> this pass will not go through the same function twice because of visited flag set previously
 				m_pointer_scope_stack.back().try_emplace({ref->name, ref->ty}, std::move(decr_func));
 			} else {
-				auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
-				error.m_message = "Temporary constructor must have a variable reference as first argument.";
+				auto error = Diagnostic(ErrorType::InternalError, "", "", node.tok);
+				error.message = "Temporary constructor must have a variable reference as first argument.";
 				error.exit();
 			}
 		}

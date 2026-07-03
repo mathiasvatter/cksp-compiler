@@ -33,8 +33,8 @@ NodeAST * ASTSemanticAnalysis::visit(NodeProgram& node) {
 
 NodeAST * ASTSemanticAnalysis::visit(NodeWildcard& node) {
 	if(!node.check_semantic()) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-		error.m_message = "Wildcard is not allowed in this context";
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+		error.message = "Wildcard is not allowed in this context";
 		error.exit();
 	}
 	return &node;
@@ -108,8 +108,8 @@ NodeAST * ASTSemanticAnalysis::visit(NodeSingleDeclaration &node) {
 	// check if static variable is class member
 	if (node.variable->kind == NodeDataStructure::Kind::Static) {
 		if (!node.variable->is_member()) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-			error.m_message = "<static> variables can only be declared as <struct> members in order for the fields to be used without instantiation.";
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+			error.message = "<static> variables can only be declared as <struct> members in order for the fields to be used without instantiation.";
 			error.exit();
 		}
 	}
@@ -205,7 +205,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeArrayRef &node) {
 NodeAST * ASTSemanticAnalysis::visit(NodeString &node) {
 	node.check_string_length();
 	if (!node.is_valid_string()) {
-		auto error = ASTVisitor::get_raw_compile_error(ErrorType::CompileError, node);
+		auto error = ASTVisitor::make_diagnostic(ErrorType::CompileError, node);
 		error.add_message("Invalid string literal: " + node.value);
 		error.add_message(". This might have been caused by faulty preprocessor macros.");
 		error.exit();
@@ -237,8 +237,8 @@ NodeAST * ASTSemanticAnalysis::visit(NodeNDArrayRef& node) {
 
 	// check if indices have same size as dimensions of declaration
 	if(node.indexes and node.indexes->params.size() != static_pointer_cast<NodeNDArray>(node.get_declaration())->dimensions) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-		error.m_message = "Number of indices does not match number of dimensions: " + node.name;
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+		error.message = "Number of indices does not match number of dimensions: " + node.name;
 		error.exit();
 	}
 	return &node;
@@ -366,12 +366,12 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 	// 			}
 	// 		}
 	// 	}
-	// 	auto error = CompileError(ErrorType::SyntaxError, "", "", data_struct->tok);
-	// 	error.m_message = "Found different types of reference for the same variable: " + data_struct->tok.val + ".";
+	// 	auto error = Diagnostic(ErrorType::SyntaxError, "", "", data_struct->tok);
+	// 	error.message = "Found different types of reference for the same variable: " + data_struct->tok.val + ".";
 	// 	for(const auto & ref : ref_names) {
-	// 		error.m_got += " as <" + ref + ">, ";
+	// 		error.actual += " as <" + ref + ">, ";
 	// 	}
-	// 	error.m_got.erase(error.m_got.size() - 2);
+	// 	error.actual.erase(error.actual.size() - 2);
 	// 	error.exit();
 	// }
 
@@ -418,8 +418,8 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 		node_var->ty = data_struct->ty;
 		new_data_struct = std::move(node_var);
 //	} else if(!ref_types.empty()) {
-//		auto error = CompileError(ErrorType::SyntaxError, "", "", data_struct->tok);
-//		error.m_message = "Reference type does not match declaration type: " + data_struct->name;
+//		auto error = Diagnostic(ErrorType::SyntaxError, "", "", data_struct->tok);
+//		error.message = "Reference type does not match declaration type: " + data_struct->name;
 //		error.exit();
 	}
 
@@ -479,8 +479,8 @@ NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(NodeR
 		node_replacement->ty = reference->ty;
 	} else if(auto node_arr_ref = reference->cast<NodeArrayRef>(); node_array_ref and declaration->cast<NodeNDArray>()) {
 		if (!node_arr_ref->is_raw_array()) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", reference->tok);
-			error.m_message =
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", reference->tok);
+			error.message =
 				"<ArrayRef> was declared as <NDArray> but is no raw array. To reference a raw <NDArray> use '_' as prefix.";
 			error.exit();
 		}

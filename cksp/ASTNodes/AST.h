@@ -13,6 +13,7 @@
 #include "../Tokenizer/TokenSourceRange.h"
 #include "../Types/Types.h"
 #include "../../misc/HashFunctions.h"
+#include "../../misc/Diagnostic.h"
 #include "../../utils/StringUtils.h"
 
 class ASTDesugaring;
@@ -757,7 +758,7 @@ struct NodeInitializerList final : NodeAST {
 	 * inconsistent, an exception is thrown.
 	 *
 	 * @return A vector containing the sizes of each dimension.
-	 * @throws CompileError if the sizes of nested lists are inconsistent.
+	 * @throws Diagnostic if the sizes of nested lists are inconsistent.
 	 */
 	[[nodiscard]] std::vector<int> get_dimensions() const;
 	/// tries to find constant step size with start and stop and transform to range
@@ -971,7 +972,7 @@ struct NodeProgram final : NodeAST {
 		if(function_definition_stack.empty()) return nullptr;
 		return function_definition_stack.top().lock();
 	}
-	std::vector<NodeFunctionCall*> function_call_stack{};
+	std::vector<DiagnosticFrame> function_call_stack{};
 	std::vector<struct NodeNamespace*> namespaces;
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::shared_ptr<NodeFunctionDefinition>> function_definitions;
@@ -1024,6 +1025,8 @@ struct NodeProgram final : NodeAST {
 	void inline_structs_and_constants();
 	void reset_function_visited_flag();
 	void reset_function_used_flag() const;
+	void push_function_call(const NodeFunctionCall& call);
+	void pop_function_call() noexcept;
 	bool is_init_callback(const NodeCallback* curr_callback) const {
 		return curr_callback == init_callback;
 	}
@@ -1032,4 +1035,17 @@ struct NodeProgram final : NodeAST {
 
 	std::shared_ptr<NodeVariable> get_tmp_var(Type* ty, DataType data=DataType::Mutable, const Token& token = Token()) const;
 	std::shared_ptr<NodePointer> get_tmp_ptr(Type* ty, DataType data=DataType::Mutable, const Token& token = Token()) const;
+};
+
+class FunctionCallStackScope final {
+public:
+	FunctionCallStackScope(NodeProgram& program, const NodeFunctionCall& call);
+	~FunctionCallStackScope();
+
+	FunctionCallStackScope(const FunctionCallStackScope&) = delete;
+	FunctionCallStackScope& operator=(const FunctionCallStackScope&) = delete;
+
+private:
+	NodeProgram& m_program;
+	class DiagnosticEngine* m_diagnostic_engine = nullptr;
 };

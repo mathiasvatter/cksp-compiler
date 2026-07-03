@@ -17,9 +17,9 @@ private:
 	NodeFunctionDefinition* m_current_function = nullptr;
 	int m_num_last_ret_values = 0; // saves the number of return values of last return statement
 
-	inline static CompileError throw_function_deprecation_error(Token tok) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "<Return> Statement", tok);
-		error.m_message = "Deprecated return syntax used in function definition. For type safety, using"
+	inline static Diagnostic throw_function_deprecation_error(Token tok) {
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "<Return> Statement", tok);
+		error.message = "Deprecated return syntax used in function definition. For type safety, using"
 						  " multiple return values or returning arrays, use <return> statement syntax instead.";
 		return error;
 	}
@@ -70,16 +70,16 @@ public:
 	// add dummy variable for every return parameter >1 to function header
 	inline NodeAST* visit(NodeReturn &node) override {
 		if (m_current_function->return_variable.has_value()) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-			error.m_message = "No Return Statement allowed in <FunctionDefinition> using deprecated return syntax.";
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+			error.message = "No Return Statement allowed in <FunctionDefinition> using deprecated return syntax.";
 			error.exit();
 		}
 		if(node.return_variables.size() != m_num_last_ret_values) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-			error.m_message = "<Return Statement> has incorrect number of return values. When using multiple <Return Statements>, all"
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+			error.message = "<Return Statement> has incorrect number of return values. When using multiple <Return Statements>, all"
 							  " must have the same number of return values.";
-			error.m_expected = std::to_string(m_num_last_ret_values);
-			error.m_got = std::to_string(node.return_variables.size());
+			error.expected = std::to_string(m_num_last_ret_values);
+			error.actual = std::to_string(node.return_variables.size());
 			error.exit();
 		}
 		m_current_function->num_return_stmts++;

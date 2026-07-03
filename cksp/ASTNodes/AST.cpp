@@ -23,6 +23,7 @@
 #include "../ASTVisitor/FunctionHandling/FunctionDefinitionOrdering.h"
 #include "../ASTVisitor/GlobalScope/ASTVariableReuse.h"
 #include "../ASTVisitor/ReturnFunctionRewriting/ReturnParamPromotion.h"
+#include "../../misc/DiagnosticEngine.h"
 #include "../Optimization/ConstantFolding.h"
 #include "../Lowering/LoweringInitializerList.h"
 #include "../Optimization/FreeVarCollector.h"
@@ -112,10 +113,10 @@ Type* NodeAST::set_element_type(Type *element_type) {
 		return ty;
 	}
 	if(ty->get_type_kind() == TypeKind::Object and element_type->get_type_kind() != TypeKind::Object) {
-		auto error = CompileError(ErrorType::TypeError, "", "", tok);
-		error.m_message = "Failed to set element type. Object of type <"+element_type->to_string()+"> has not been defined.";
-		error.m_expected = "valid <Object> type";
-		error.m_got = element_type->to_string();
+		auto error = Diagnostic(ErrorType::TypeError, "", "", tok);
+		error.message = "Failed to set element type. Object of type <"+element_type->to_string()+"> has not been defined.";
+		error.expected = "valid <Object> type";
+		error.actual = element_type->to_string();
 		error.exit();
 	} else {
 		ty = element_type;
@@ -397,13 +398,13 @@ NodeStruct* NodeDataStructure::is_member() const {
 Type* NodeDataStructure::cast_type() {
 	const Type* type = ty->get_element_type();
 	if(type == TypeRegistry::Number || type == TypeRegistry::Unknown || type == TypeRegistry::Any || type == TypeRegistry::Comparison) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-		error.m_got = ty->to_string();
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+		error.actual = ty->to_string();
 		this->set_element_type(TypeRegistry::Integer);
 		// if it is number do not print warning or is_used
 		if(type == TypeRegistry::Number or !is_used) return ty;
-		error.m_message = "Failed to infer <"+ty->get_type_kind_name()+"> type.";
-		error.m_message += " Automatically casted '"+name+"' as <"+ty->to_string()+">. Consider using type annotations (like <"+name+": "
+		error.message = "Failed to infer <"+ty->get_type_kind_name()+"> type.";
+		error.message += " Automatically casted '"+name+"' as <"+ty->to_string()+">. Consider using type annotations (like <"+name+": "
 			+TypeRegistry::get_annotation_from_type(this->ty)+">) to improve readability.";
 		error.report();
 	}
@@ -576,7 +577,7 @@ std::unique_ptr<NodeAST> NodeString::clone() const {
 
 bool NodeString::check_string_length() const {
 	if (value.length() > 320) {
-		auto warning = CompileError(ErrorType::CompileWarning, "", "", tok);
+		auto warning = Diagnostic(ErrorType::CompileWarning, "", "", tok);
 		warning.set_message("The length of this String Literal exceeds the maximum of 320 characters and will not be displayed properly by Kontakt.");
 		warning.report();
 		return false;
@@ -725,7 +726,7 @@ std::unique_ptr<NodeInitializerList> NodeParamList::to_initializer_list() {
 
 void NodeParamList::set_param(const int idx, std::unique_ptr<NodeAST> param) {
 	if(idx >= size()) {
-		auto error = CompileError(ErrorType::InternalError, "Index out of bounds", "", tok);
+		auto error = Diagnostic(ErrorType::InternalError, "Index out of bounds", "", tok);
 		error.exit();
 	}
 	param->parent = this;
@@ -815,8 +816,8 @@ std::vector<int> NodeInitializerList::get_dimensions() const {
 	std::vector<int> dimensions = calculate_dimensions(this, valid);
 
 	if (valid == 0) {
-		auto error = CompileError(ErrorType::TypeError, "", "", tok);
-		error.m_message = "Inconsistent sizes in <InitializerList>.";
+		auto error = Diagnostic(ErrorType::TypeError, "", "", tok);
+		error.message = "Inconsistent sizes in <InitializerList>.";
 		error.exit();
 	}
 
@@ -903,8 +904,8 @@ std::unique_ptr<NodeComposite> NodeInitializerList::transform_to_array(const std
 		ndarray->kind = NodeNDArray::Kind::Throwaway;
 		return ndarray;
 	}
-	auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-	error.m_message = "Failed to transform <InitializerList> to <Array> or <NDArray>.";
+	auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+	error.message = "Failed to transform <InitializerList> to <Array> or <NDArray>.";
 	error.exit();
 	return nullptr;
 }
@@ -1198,7 +1199,7 @@ void NodeFunctionDefinition::update_param_data_type() const {
 
 std::shared_ptr<NodeDataStructure> &NodeFunctionDefinition::get_param(const int i) const {
 	if(header->params.size() <= i) {
-		CompileError(ErrorType::InternalError, "Index out of bounds", "Function call argument index out of bounds", tok).exit();
+		Diagnostic(ErrorType::InternalError, "Index out of bounds", "Function call argument index out of bounds", tok).exit();
 	}
 	return header->get_param(i);
 }
@@ -1318,8 +1319,8 @@ NodeFunctionDefinition *NodeProgram::add_function_definition(const std::shared_p
 	def->parent = this;
 	// search function_lookup first for existing function signature
 	if (auto func = look_up_exact({def->header->name, static_cast<int>(def->header->params.size())}, def->header->ty)) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "", def->tok);
-		error.m_message = "A function with the same signature already exists.";
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", def->tok);
+		error.message = "A function with the same signature already exists.";
 		error.exit();
 		return nullptr;
 	}
@@ -1333,7 +1334,7 @@ void NodeProgram::add_function_or_override(const std::shared_ptr<NodeFunctionDef
 		// was already declared, see if it overrides
 		if (def->override) {
 			if (func->override and def->override) {
-				auto error = CompileError(ErrorType::SyntaxError,"", "", def->header->tok);
+				auto error = Diagnostic(ErrorType::SyntaxError,"", "", def->header->tok);
 				error.set_message( "Found duplicate function definition with the same name and parameter count at position "+func->tok.get_position()+".\nBoth have been marked"
 						 " as <override>. The compiler will use the last encountered definition that has been marked as <override>.\n"
 						 "Consider removing the <override> keyword from one of the definitions.");
@@ -1344,7 +1345,7 @@ void NodeProgram::add_function_or_override(const std::shared_ptr<NodeFunctionDef
 			// function in map is already override and encountered function is not
 			// pass
 		} else {
-			auto error = CompileError(ErrorType::SyntaxError,"", "", def->header->tok);
+			auto error = Diagnostic(ErrorType::SyntaxError,"", "", def->header->tok);
 			error.set_message( "A function with this name and parameter count already exists at position "+func->tok.get_position()+". \n"
 					 "To override it, use the <override> keyword. \n"
 					 "To overload it, use <Union> types instead to define function templates accepting multiple types.");
@@ -1496,14 +1497,14 @@ bool NodeProgram::check_unique_callbacks() const {
 		auto& callback_list = count.second;
 		if (size > 1) {
 			if (StringUtils::starts_with(count.first, "on ui_control_")) {
-				auto error = CompileError(ErrorType::CompileWarning, "", "", callback_list.back()->tok);
-				error.m_message = "Multiple <on ui_control> callbacks of the same variable found. Kontakt will only execute the last one.";
+				auto error = Diagnostic(ErrorType::CompileWarning, "", "", callback_list.back()->tok);
+				error.message = "Multiple <on ui_control> callbacks of the same variable found. Kontakt will only execute the last one.";
 				error.report();
 			} else {
-				auto error = CompileError(ErrorType::SyntaxError, "", "", callback_list.back()->tok);
-				error.m_expected = '1';
-				error.m_got = std::to_string(size);
-				error.m_message = "Multiple <" + count.first + "> callbacks found."
+				auto error = Diagnostic(ErrorType::SyntaxError, "", "", callback_list.back()->tok);
+				error.expected = '1';
+				error.actual = std::to_string(size);
+				error.message = "Multiple <" + count.first + "> callbacks found."
 						" Unable to compile, this callback type must be unique. Use <pragma> option"
 						" <combine_callbacks> to merge them automatically.";
 				error.exit();
@@ -1720,4 +1721,25 @@ std::shared_ptr<NodePointer> NodeProgram::get_tmp_ptr(Type *ty, DataType data, c
 
 
 
+void NodeProgram::push_function_call(const NodeFunctionCall& call) {
+	DiagnosticFrame frame;
+	frame.function = call.function ? call.function->name : call.tok.val;
+	frame.call_site = call.range;
+	function_call_stack.push_back(std::move(frame));
+}
+
+void NodeProgram::pop_function_call() noexcept {
+	if (!function_call_stack.empty()) function_call_stack.pop_back();
+}
+
+FunctionCallStackScope::FunctionCallStackScope(NodeProgram& program, const NodeFunctionCall& call)
+	: m_program(program), m_diagnostic_engine(DiagnosticEngine::current()) {
+	m_program.push_function_call(call);
+	if (m_diagnostic_engine) m_diagnostic_engine->push_frame(m_program.function_call_stack.back());
+}
+
+FunctionCallStackScope::~FunctionCallStackScope() {
+	if (m_diagnostic_engine) m_diagnostic_engine->pop_frame();
+	m_program.pop_function_call();
+}
 

@@ -16,7 +16,7 @@ protected:
     std::string get_text_replacement(const Token& name) {
         // Zähle einmalig die Anzahl der '#' im Token
         if (StringUtils::count_char(name.val, '#') % 2 != 0) {
-            auto error = CompileError(ErrorType::PreprocessorError,
+            auto error = Diagnostic(ErrorType::PreprocessorError,
                          "", "", name);
             error.set_message("Found wrong number of # in macro replacement.");
             error.exit();

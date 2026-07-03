@@ -129,8 +129,8 @@ struct NodeArrayRef final : NodeCompositeRef {
 	}
 	NodeAST* get_index(const size_t i) const override {
 		if(index) return index.get();
-		auto error = CompileError(ErrorType::InternalError, "", "", tok);
-		error.m_message = "ArrayRef has no index: " + name + ".";
+		auto error = Diagnostic(ErrorType::InternalError, "", "", tok);
+		error.message = "ArrayRef has no index: " + name + ".";
 		error.exit();
 		return nullptr;
 	}
@@ -194,17 +194,17 @@ struct NodeNDArrayRef final : NodeCompositeRef {
 	[[nodiscard]] int num_wildcards() const override;
 	/// clones sizes list from declaration if it is a NDArray
 	bool determine_sizes();
-	[[nodiscard]] CompileError throw_missing_indexes_error() const {
-		auto compile_error = CompileError(ErrorType::SyntaxError, "","", tok);
-		compile_error.m_message = "NDArray reference requires indexes in this context: " + tok.val + ".";
-		compile_error.m_expected = "Valid indexes";
-		return compile_error;
+	[[nodiscard]] Diagnostic throw_missing_indexes_error() const {
+		auto diagnostic = Diagnostic(ErrorType::SyntaxError, "","", tok);
+		diagnostic.message = "NDArray reference requires indexes in this context: " + tok.val + ".";
+		diagnostic.expected = "Valid indexes";
+		return diagnostic;
 	}
-	[[nodiscard]] CompileError throw_missing_sizes_error() const {
-		auto compile_error = CompileError(ErrorType::InternalError, "","", tok);
-		compile_error.m_message = "NDArray reference has unknown sizes: " + tok.val + ".";
-		compile_error.m_expected = "Valid sizes";
-		return compile_error;
+	[[nodiscard]] Diagnostic throw_missing_sizes_error() const {
+		auto diagnostic = Diagnostic(ErrorType::InternalError, "","", tok);
+		diagnostic.message = "NDArray reference has unknown sizes: " + tok.val + ".";
+		diagnostic.expected = "Valid sizes";
+		return diagnostic;
 	}
 	/// adds wildcard indexes to ndarray reference if there are no indexes present
 	/// depends on the size -> size has to be known beforehand
@@ -267,7 +267,7 @@ struct NodeFunctionHeaderRef final : NodeReference {
 	void set_arg(const int i, std::unique_ptr<NodeAST> arg) const {
 		args->set_param(i, std::move(arg));
 //		if(i >= get_num_args()) {
-//			auto error = CompileError(ErrorType::InternalError, "Index out of bounds", "", tok);
+//			auto error = Diagnostic(ErrorType::InternalError, "Index out of bounds", "", tok);
 //			error.exit();
 //		}
 //		args->params[i] = std::move(arg);

@@ -658,8 +658,8 @@ struct NodeSingleDeclaration final : NodeInstruction {
 	void check_constant_initialization() const {
 		if (variable->is_member()) return;
 		if (variable->data_type == DataType::Const and !value) {
-			auto error = CompileError(ErrorType::VariableError, "", "", tok);
-			error.m_message = "Constant variables must be initialized upon declaration.";
+			auto error = Diagnostic(ErrorType::VariableError, "", "", tok);
+			error.message = "Constant variables must be initialized upon declaration.";
 			error.exit();
 		}
 	}
@@ -1329,8 +1329,8 @@ struct NodeBreak final : NodeInstruction {
 			loop = loop->parent;
 		}
 		if(!loop) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-			error.m_message = "<Break> statement outside of loop. The <break> keyword can only be used inside a for- or while-loop.";
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+			error.message = "<Break> statement outside of loop. The <break> keyword can only be used inside a for- or while-loop.";
 			error.exit();
 		}
 		return static_cast<NodeWhile*>(loop);

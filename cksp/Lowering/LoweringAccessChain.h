@@ -50,9 +50,9 @@ public:
 	/// every pointer ref in access chain is replaced by array_ref with name "<obj_type>.<name>"
 	NodeAST * visit(NodePointerRef& node) override {
 		if(node.ty == TypeRegistry::Unknown || node.ty->get_type_kind() != TypeKind::Object) {
-			auto error = CompileError(ErrorType::TypeError, "", "", node.tok);
-			error.m_message = "Unknown type for pointer reference. Pointer references have to be typed or of type <Object>.";
-			error.m_got = node.ty->to_string();
+			auto error = Diagnostic(ErrorType::TypeError, "", "", node.tok);
+			error.message = "Unknown type for pointer reference. Pointer references have to be typed or of type <Object>.";
+			error.actual = node.ty->to_string();
 			error.exit();
 		}
 		if(&node == start_pointer) return &node;

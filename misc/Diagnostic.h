@@ -4,6 +4,7 @@
 #include <exception>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "SourceLocation.h"
 
@@ -27,6 +28,11 @@ enum class DiagnosticSeverity {
     Information
 };
 
+struct DiagnosticFrame {
+    std::string function;
+    SourceRange call_site;
+};
+
 struct Diagnostic {
     ErrorType type = ErrorType::CompileError;
     DiagnosticSeverity severity = DiagnosticSeverity::Error;
@@ -34,6 +40,23 @@ struct Diagnostic {
     std::string expected;
     std::string actual;
     SourceRange range;
+    std::vector<DiagnosticFrame> call_stack;
+
+    Diagnostic() = default;
+    Diagnostic(ErrorType type, std::string message, std::string expected, const struct Token& token);
+    Diagnostic(ErrorType type, std::string message, size_t line_number, std::string expected,
+               std::string actual, std::string file_name);
+
+    void report() const;
+    [[noreturn]] void exit() const;
+
+    void set_message(const std::string& value) { message = value; }
+    void add_message(const std::string& value) {
+        if (!message.empty()) message += '\n';
+        message += value;
+    }
+    void set_expected(const std::string& value) { expected = value; }
+    void set_token(const Token& token);
 };
 
 class CompilationAborted final : public std::exception {

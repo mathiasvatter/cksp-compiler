@@ -19,11 +19,11 @@ public:
 
 	NodeAST *visit(NodeRange &node) override {
 		if (!node.start) {
-			auto error = CompileError(ErrorType::SyntaxError, "<start> argument of <range> is not defined", "", node.tok);
+			auto error = Diagnostic(ErrorType::SyntaxError, "<start> argument of <range> is not defined", "", node.tok);
 			error.exit();
 		}
 		if (!node.step) {
-			auto error = CompileError(ErrorType::SyntaxError, "<step> argument of <range> is not defined", "", node.tok);
+			auto error = Diagnostic(ErrorType::SyntaxError, "<step> argument of <range> is not defined", "", node.tok);
 			error.exit();
 		}
 
@@ -33,7 +33,7 @@ public:
 
 		if (node.parent->cast<NodeSingleAssignment>() or node.parent->cast<NodeSingleDeclaration>()) {
 			if (!node.all_literals()) {
-				auto error = CompileError(ErrorType::SyntaxError, "Range arguments must be literals in this context", "", node.tok);
+				auto error = Diagnostic(ErrorType::SyntaxError, "Range arguments must be literals in this context", "", node.tok);
 				error.exit();
 			} else {
 				node.remove_references();

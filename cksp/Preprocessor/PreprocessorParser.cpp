@@ -63,7 +63,7 @@ Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::parse_int(PreNodeAST *pa
     const auto parse_res = std::from_chars(begin, end, val, 10);
     if (parse_res.ec != std::errc() || parse_res.ptr != end) {
         auto expected = std::string(1, "valid int base "[10]);
-        return Result<std::unique_ptr<PreNodeAST>>(CompileError(ErrorType::PreprocessorError,
+        return Result<std::unique_ptr<PreNodeAST>>(Diagnostic(ErrorType::PreprocessorError,
                                                                 "Invalid integer format.", token.line, expected, value, token.file));
     }
     auto node = std::make_unique<PreNodeInt>(static_cast<int32_t>(val & 0xFFFFFFFF), token, parent);
@@ -210,7 +210,7 @@ Result<std::unique_ptr<PreNodeList>> PreprocessorParser::parse_list(PreNodeAST *
     params_list.reserve(4);
     auto node_list = std::make_unique<PreNodeList>(std::move(params_list), peek(), parent);
     if (peek().type != token::OPEN_PARENTH) {
-        auto error = CompileError(ErrorType::PreprocessorError, "", "(", peek());
+        auto error = Diagnostic(ErrorType::PreprocessorError, "", "(", peek());
         error.set_message("Missing open parenthesis in <list> syntax.");
         return Result<std::unique_ptr<PreNodeList>>(error);
     }
@@ -233,7 +233,7 @@ Result<std::unique_ptr<PreNodeList>> PreprocessorParser::parse_list(PreNodeAST *
                 bracket_depth++;
             } else if (peek().type == token::CLOSED_PARENTH) {
                 if (parenth_depth == 1 && bracket_depth > 0) {
-                    auto error = CompileError(ErrorType::PreprocessorError, "", "]", peek());
+                    auto error = Diagnostic(ErrorType::PreprocessorError, "", "]", peek());
                     error.set_message("Unexpected closing parenthesis in <list> syntax.");
                     error.add_message("Missing closing bracket before ')'.");
                     return Result<std::unique_ptr<PreNodeList>>(error);
@@ -241,16 +241,16 @@ Result<std::unique_ptr<PreNodeList>> PreprocessorParser::parse_list(PreNodeAST *
                 parenth_depth--;
             } else if (peek().type == token::CLOSED_BRACKET) {
                 if (bracket_depth == 0) {
-                    auto error = CompileError(ErrorType::PreprocessorError, "", "[", peek());
+                    auto error = Diagnostic(ErrorType::PreprocessorError, "", "[", peek());
                     error.set_message("Unexpected closing bracket in <list> syntax.");
                     return Result<std::unique_ptr<PreNodeList>>(error);
                 }
                 bracket_depth--;
             } else if (peek().type == token::END_TOKEN) {
-                return Result<std::unique_ptr<PreNodeList>>(CompileError(ErrorType::PreprocessorError,
+                return Result<std::unique_ptr<PreNodeList>>(Diagnostic(ErrorType::PreprocessorError,
                                                                          "Unexpected end of file. Missing closing parenthesis.",")", peek()));
                 //         } else if (peek().type == token::LINEBRK) {
-                // return Result<std::unique_ptr<PreNodeList>>(CompileError(ErrorType::SyntaxError,
+                // return Result<std::unique_ptr<PreNodeList>>(Diagnostic(ErrorType::SyntaxError,
                 //  "Unexpected linebreak. Missing closing parenthesis.",")", peek()));
             }
             if (peek().type == token::COMMA && parenth_depth == 1 && bracket_depth == 0) {
@@ -281,16 +281,16 @@ Result<std::unique_ptr<PreNodePragma>> PreprocessorParser::parse_pragma(PreNodeA
     auto node_pragma = std::make_unique<PreNodePragma>(token, parent);
     std::string pragma_error_msg = "Unable to process #pragma syntax.";
     if(peek().type != token::KEYWORD) {
-        return Result<std::unique_ptr<PreNodePragma>>(CompileError(ErrorType::PreprocessorError,
+        return Result<std::unique_ptr<PreNodePragma>>(Diagnostic(ErrorType::PreprocessorError,
                                                                    pragma_error_msg, token.line, "Valid pragma option.",token.val, token.file));
     }
     auto node_option = parse_keyword(node_pragma.get());
     if(peek().type != token::OPEN_PARENTH) {
-        return Result<std::unique_ptr<PreNodePragma>>(CompileError(ErrorType::PreprocessorError, pragma_error_msg, token.line, "(",token.val, token.file));
+        return Result<std::unique_ptr<PreNodePragma>>(Diagnostic(ErrorType::PreprocessorError, pragma_error_msg, token.line, "(",token.val, token.file));
     }
     consume(); // consume (
     if(peek().type != token::KEYWORD and peek().type != token::STRING and peek().type != token::INT and peek().type != token::TRUE and peek().type != token::FALSE) {
-        return Result<std::unique_ptr<PreNodePragma>>(CompileError(ErrorType::PreprocessorError, pragma_error_msg, token.line, "Valid pragma parameter in <string>, <integer>, <bool> format.",token.val, token.file));
+        return Result<std::unique_ptr<PreNodePragma>>(Diagnostic(ErrorType::PreprocessorError, pragma_error_msg, token.line, "Valid pragma parameter in <string>, <integer>, <bool> format.",token.val, token.file));
     }
     auto result_keyword = parse_keyword(node_pragma.get());
     if (result_keyword.is_error())
@@ -298,11 +298,11 @@ Result<std::unique_ptr<PreNodePragma>> PreprocessorParser::parse_pragma(PreNodeA
     auto node_parameter = std::move(result_keyword.unwrap());
 
     if(peek().type != token::CLOSED_PARENTH) {
-        CompileError(ErrorType::PreprocessorError, pragma_error_msg, token.line, ")",token.val, token.file).exit();
+        Diagnostic(ErrorType::PreprocessorError, pragma_error_msg, token.line, ")",token.val, token.file).exit();
     }
     auto end_token = consume(); // consume )
     if(peek().type != token::LINEBRK) {
-        CompileError(ErrorType::PreprocessorError, pragma_error_msg, token.line, "linebreak",token.val, token.file).exit();
+        Diagnostic(ErrorType::PreprocessorError, pragma_error_msg, token.line, "linebreak",token.val, token.file).exit();
     }
     consume(); // consume \n
     node_pragma->option = std::move(node_option.unwrap());
@@ -349,7 +349,7 @@ Result<std::unique_ptr<PreNodeDefineStatement>> PreprocessorParser::parse_define
     auto start_token = consume(); //consume define
     auto define_statement = std::make_unique<PreNodeDefineStatement>(start_token, parent);
     if (peek().type != token::KEYWORD) {
-        return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::PreprocessorError,
+        return Result<std::unique_ptr<PreNodeDefineStatement>>(Diagnostic(ErrorType::PreprocessorError,
                                                                             "Missing define name.",peek().line,"<keyword>",peek().val, peek().file));
     }
     auto define_header_result = parse_define_header(define_statement.get());
@@ -357,18 +357,18 @@ Result<std::unique_ptr<PreNodeDefineStatement>> PreprocessorParser::parse_define
         return Result<std::unique_ptr<PreNodeDefineStatement>>(define_header_result.get_error());
     auto header = define_header_result.unwrap()->get_name();
     if(peek().type != token::ASSIGN)
-        return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::PreprocessorError,
+        return Result<std::unique_ptr<PreNodeDefineStatement>>(Diagnostic(ErrorType::PreprocessorError,
                                                                             "Found invalid Define Statement Syntax. Missing <assign> symbol.", peek().line, ":=", peek().val, peek().file));
     consume(); //consume :=
 
     auto node_chunk = std::make_unique<PreNodeChunk>(peek(), parent);
     while(peek().type != token::LINEBRK) {
         if (peek().type == token::END_TOKEN)
-            return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::PreprocessorError,
+            return Result<std::unique_ptr<PreNodeDefineStatement>>(Diagnostic(ErrorType::PreprocessorError,
                 "Unexpected end of m_tokens. Missing assignment of define statement.",peek().line, "", peek().val,peek().file));
 
         if(peek().type == token::KEYWORD and define_header_result.unwrap()->name->tok.val == peek().val) {
-            return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::SyntaxError,
+            return Result<std::unique_ptr<PreNodeDefineStatement>>(Diagnostic(ErrorType::SyntaxError,
                 "A define constant cannot define itself.",peek().line,"","", peek().file));
         }
         auto result_token = parse_token(node_chunk.get());
@@ -378,11 +378,11 @@ Result<std::unique_ptr<PreNodeDefineStatement>> PreprocessorParser::parse_define
         node_chunk->add_chunk(std::move(result_token.unwrap()));
     }
     if(node_chunk->chunk.empty()) {
-        return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::PreprocessorError,
+        return Result<std::unique_ptr<PreNodeDefineStatement>>(Diagnostic(ErrorType::PreprocessorError,
                                                                             "Found empty define statement assignment.",peek().line, "", peek().val,peek().file));
     }
     if (peek().type != token::LINEBRK) {
-        return Result<std::unique_ptr<PreNodeDefineStatement>>(CompileError(ErrorType::PreprocessorError,
+        return Result<std::unique_ptr<PreNodeDefineStatement>>(Diagnostic(ErrorType::PreprocessorError,
                                                                             "Missing necessary linebreak after define statement.",peek().line,"linebreak",peek().val, peek().file));
     }
     consume(); //consume linebreak
@@ -430,7 +430,7 @@ Result<std::unique_ptr<PreNodeMacroDefinition>> PreprocessorParser::parse_macro_
     auto start_token = consume(); // consume macro
     auto node_macro_definition = std::make_unique<PreNodeMacroDefinition>(start_token, parent);
     if (peek().type != token::KEYWORD) {
-        return Result<std::unique_ptr<PreNodeMacroDefinition>>(CompileError(ErrorType::SyntaxError,
+        return Result<std::unique_ptr<PreNodeMacroDefinition>>(Diagnostic(ErrorType::SyntaxError,
                                                                             "Missing macro name.",peek().line,"keyword",peek().val, peek().file));
     }
     auto header = parse_macro_header(node_macro_definition.get());
@@ -439,7 +439,7 @@ Result<std::unique_ptr<PreNodeMacroDefinition>> PreprocessorParser::parse_macro_
     }
     node_macro_definition->header = std::move(header.unwrap());
     if (peek().type != token::LINEBRK) {
-        return Result<std::unique_ptr<PreNodeMacroDefinition>>(CompileError(ErrorType::PreprocessorError,
+        return Result<std::unique_ptr<PreNodeMacroDefinition>>(Diagnostic(ErrorType::PreprocessorError,
                                                                             "Missing necessary linebreak after macro header.",peek().line,"linebreak",peek().val, peek().file));
     }
     consume(); // consume linebreak
@@ -447,7 +447,7 @@ Result<std::unique_ptr<PreNodeMacroDefinition>> PreprocessorParser::parse_macro_
     while(peek().type != token::END_MACRO) {
         if(peek().type == token::END_MACRO) break;
         if (peek().type == token::MACRO) {
-            auto error = CompileError(ErrorType::PreprocessorError, "", "", peek());
+            auto error = Diagnostic(ErrorType::PreprocessorError, "", "", peek());
             error.set_message("Nested macros are not allowed. Maybe you forgot an <end macro> along the line?");
             return Result<std::unique_ptr<PreNodeMacroDefinition>>(error);
         }
@@ -466,11 +466,11 @@ Result<std::unique_ptr<PreNodeIterateMacro>> PreprocessorParser::parse_iterate_m
     auto start_token = consume(); // consume iterate_macro
     auto node_iterate_macro = std::make_unique<PreNodeIterateMacro>(start_token, parent);
     if(m_parsing_iterator_macro || m_parsing_literate_macro) {
-        CompileError(ErrorType::SyntaxError,"Found nested macro iteration.", peek().line, "", "", peek().file).exit();
+        Diagnostic(ErrorType::SyntaxError,"Found nested macro iteration.", peek().line, "", "", peek().file).exit();
     }
     m_parsing_iterator_macro = true;
     if(peek().type != token::OPEN_PARENTH) {
-        return Result<std::unique_ptr<PreNodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
+        return Result<std::unique_ptr<PreNodeIterateMacro>>(Diagnostic(ErrorType::SyntaxError,
                                                                          "Found invalid <iterate_macro> statement syntax.",peek().line,"(",peek().val, peek().file));
     }
     auto node_statement = parse_list(node_iterate_macro.get());
@@ -478,7 +478,7 @@ Result<std::unique_ptr<PreNodeIterateMacro>> PreprocessorParser::parse_iterate_m
         return Result<std::unique_ptr<PreNodeIterateMacro>>(node_statement.get_error());
 
     if(peek().type != token::ASSIGN) {
-        return Result<std::unique_ptr<PreNodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
+        return Result<std::unique_ptr<PreNodeIterateMacro>>(Diagnostic(ErrorType::SyntaxError,
                                                                          "Found invalid <iterate_macro> statement syntax.", peek().line,":=", peek().val, peek().file));
     }
     consume(); // consume :=
@@ -493,7 +493,7 @@ Result<std::unique_ptr<PreNodeIterateMacro>> PreprocessorParser::parse_iterate_m
     }
 
     if(not(peek().type == token::TO or peek().type == token::DOWNTO)) {
-        return Result<std::unique_ptr<PreNodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
+        return Result<std::unique_ptr<PreNodeIterateMacro>>(Diagnostic(ErrorType::SyntaxError,
                                                                          "Found invalid <iterate_macro> statement syntax.", peek().line,"<to>/<downto>", peek().val, peek().file));
     }
     Token to = consume(); // consume downto/to
@@ -526,7 +526,7 @@ Result<std::unique_ptr<PreNodeIterateMacro>> PreprocessorParser::parse_iterate_m
         step = std::move(node_step);
     }
     if (peek().type != token::LINEBRK) {
-        return Result<std::unique_ptr<PreNodeIterateMacro>>(CompileError(ErrorType::SyntaxError,
+        return Result<std::unique_ptr<PreNodeIterateMacro>>(Diagnostic(ErrorType::SyntaxError,
                                                                          "Missing necessary linebreak after <iterate_macro> statement.",peek().line,"linebreak",peek().val, peek().file));
     }
 
@@ -546,11 +546,11 @@ Result<std::unique_ptr<PreNodeLiterateMacro>> PreprocessorParser::parse_literate
     auto start_token = consume(); // consume literate_macro
     auto node_literate_macro = std::make_unique<PreNodeLiterateMacro>(start_token, parent);
     if(m_parsing_iterator_macro || m_parsing_literate_macro) {
-        CompileError(ErrorType::SyntaxError,"Found nested macro iteration.", peek().line, "", "", peek().file).exit();
+        Diagnostic(ErrorType::SyntaxError,"Found nested macro iteration.", peek().line, "", "", peek().file).exit();
     }
     m_parsing_literate_macro = true;
     if(peek().type != token::OPEN_PARENTH) {
-        return Result<std::unique_ptr<PreNodeLiterateMacro>>(CompileError(ErrorType::SyntaxError,
+        return Result<std::unique_ptr<PreNodeLiterateMacro>>(Diagnostic(ErrorType::SyntaxError,
                                                                           "Found invalid <literate_macro> statement syntax.",peek().line,"(",peek().val, peek().file));
     }
     auto node_statement = parse_list(node_literate_macro.get());
@@ -558,7 +558,7 @@ Result<std::unique_ptr<PreNodeLiterateMacro>> PreprocessorParser::parse_literate
         return Result<std::unique_ptr<PreNodeLiterateMacro>>(node_statement.get_error());
 
     if(peek().type != token::ON) {
-        return Result<std::unique_ptr<PreNodeLiterateMacro>>(CompileError(ErrorType::SyntaxError,
+        return Result<std::unique_ptr<PreNodeLiterateMacro>>(Diagnostic(ErrorType::SyntaxError,
                                                                           "Found invalid <literate_macro> statement syntax.", peek().line,"on", peek().val, peek().file));
     }
     consume(); // consume on
@@ -570,7 +570,7 @@ Result<std::unique_ptr<PreNodeLiterateMacro>> PreprocessorParser::parse_literate
                 return Result<std::unique_ptr<PreNodeLiterateMacro>>(result_token.get_error());
             node_chunk->chunk.push_back(std::move(result_token.unwrap()));
         } else {
-            return Result<std::unique_ptr<PreNodeLiterateMacro>>(CompileError(ErrorType::SyntaxError,
+            return Result<std::unique_ptr<PreNodeLiterateMacro>>(Diagnostic(ErrorType::SyntaxError,
                                                                               "Found invalid <literate_macro> statement syntax. Can only literate on <keywords>.",peek().line,"<keyword>",peek().val, peek().file));
         }
         if(peek().type == token::COMMA)
@@ -578,7 +578,7 @@ Result<std::unique_ptr<PreNodeLiterateMacro>> PreprocessorParser::parse_literate
     }
 
     if (peek().type != token::LINEBRK) {
-        return Result<std::unique_ptr<PreNodeLiterateMacro>>(CompileError(ErrorType::SyntaxError,
+        return Result<std::unique_ptr<PreNodeLiterateMacro>>(Diagnostic(ErrorType::SyntaxError,
                                                                           "Missing necessary linebreak after <literate_macro> statement.",peek().line,"linebreak",peek().val, peek().file));
     }
     consume(); // consume linebreak
@@ -627,7 +627,7 @@ Result<std::unique_ptr<PreNodeIncrementer>> PreprocessorParser::parse_incremente
     auto node_incrementer = std::make_unique<PreNodeIncrementer>(start_inc, parent);
     constexpr auto error_msg = "Found invalid <START_INC> statement syntax. Correct syntax is: <START_INC> (<name>, <start>, <step>)\\n<code to increment>\\n<END_INC>";
     if(peek().type != token::OPEN_PARENTH) {
-        auto error = CompileError(ErrorType::PreprocessorError, error_msg, "(", peek());
+        auto error = Diagnostic(ErrorType::PreprocessorError, error_msg, "(", peek());
         error.set_message("Missing open parenthesis in <START_INC> statement syntax.");
         return Result<std::unique_ptr<PreNodeIncrementer>>(error);
     }
@@ -636,20 +636,20 @@ Result<std::unique_ptr<PreNodeIncrementer>> PreprocessorParser::parse_incremente
         return Result<std::unique_ptr<PreNodeIncrementer>>(node_list.get_error());
     auto list = std::move(node_list.unwrap());
     if(list->params.size() != 3) {
-        auto error = CompileError(ErrorType::PreprocessorError, error_msg, "<name>, <start>, <step>", peek());
+        auto error = Diagnostic(ErrorType::PreprocessorError, error_msg, "<name>, <start>, <step>", peek());
         error.set_message("Expected exactly 3 parameters in <START_INC> statement syntax: <name>, <start>, <step>.");
-        error.m_got = list->get_string();
+        error.actual = list->get_string();
         return Result<std::unique_ptr<PreNodeIncrementer>>(error);
     }
     // check if <name> argument only consists of one token
     if(list->params[0]->num_chunks() != 1) {
-        auto error = CompileError(ErrorType::PreprocessorError,error_msg, "<name>", peek());
-        error.m_got = list->params[0]->get_string();
+        auto error = Diagnostic(ErrorType::PreprocessorError,error_msg, "<name>", peek());
+        error.actual = list->params[0]->get_string();
         error.add_message("Found too many tokens in <START_INC> <name> argument.");
         return Result<std::unique_ptr<PreNodeIncrementer>>(error);
     }
     if (peek().type != token::LINEBRK) {
-        auto error = CompileError(ErrorType::PreprocessorError, error_msg, "linebreak", peek());
+        auto error = Diagnostic(ErrorType::PreprocessorError, error_msg, "linebreak", peek());
         error.set_message("Missing linebreak after <START_INC> statement.");
         return Result<std::unique_ptr<PreNodeIncrementer>>(error);
     }
@@ -659,7 +659,7 @@ Result<std::unique_ptr<PreNodeIncrementer>> PreprocessorParser::parse_incremente
         while(peek().type != token::LINEBRK) {
             if(peek().type == token::END_INC) break;
             if(peek().type == token::END_TOKEN) {
-                auto error = CompileError(ErrorType::PreprocessorError, error_msg, "end", peek());
+                auto error = Diagnostic(ErrorType::PreprocessorError, error_msg, "end", peek());
                 error.set_message("Missing <END_INC> statement. Reached the end of the file while parsing an incrementer.");
                 return Result<std::unique_ptr<PreNodeIncrementer>>(error);
             }
@@ -679,7 +679,7 @@ Result<std::unique_ptr<PreNodeIncrementer>> PreprocessorParser::parse_incremente
     auto end_inc = consume(); // consume END_INC
 
     if (peek().type != token::LINEBRK) {
-        auto error = CompileError(ErrorType::PreprocessorError, error_msg, "linebreak", peek());
+        auto error = Diagnostic(ErrorType::PreprocessorError, error_msg, "linebreak", peek());
         error.set_message("Missing linebreak after <START_INC> statement.");
         return Result<std::unique_ptr<PreNodeIncrementer>>(error);
     }
@@ -696,14 +696,14 @@ Result<std::unique_ptr<PreNodeImport>> PreprocessorParser::parse_import(PreNodeA
     auto token = consume(); // consume import
     Token path = consume();
     if(path.type != token::STRING) {
-        auto error = CompileError(ErrorType::FileError, "Not a filepath.","path",path);
+        auto error = Diagnostic(ErrorType::FileError, "Not a filepath.","path",path);
         error.add_message("Import statements must be followed by a string literal representing the file path to import in POSIX format.");
         return Result<std::unique_ptr<PreNodeImport>>(error);
     }
     std::string filepath = StringUtils::remove_quotes(path.val);
     std::unique_ptr<PreNodeKeyword> alias;
     if(peek().type == token::AS) {
-        auto error = CompileError(ErrorType::ParseError, "", "", peek());
+        auto error = Diagnostic(ErrorType::ParseError, "", "", peek());
         error.set_message("Importing file with alias is not supported in as of version " + COMPILER_VERSION + ". "+
             "Please remove the 'as <alias>' part from the import statement.");
         error.exit();
@@ -719,7 +719,7 @@ Result<std::unique_ptr<PreNodeImport>> PreprocessorParser::parse_import(PreNodeA
     }
     auto end_token = peek(-1);
     if(peek().type != token::LINEBRK) {
-        auto error = CompileError(ErrorType::ParseError, "Incorrect <import> syntax.","linebreak",peek());
+        auto error = Diagnostic(ErrorType::ParseError, "Incorrect <import> syntax.","linebreak",peek());
         error.add_message("Import statements must end with a linebreak after the file path.");
         return Result<std::unique_ptr<PreNodeImport>>(error);
 
@@ -734,23 +734,23 @@ Result<std::unique_ptr<PreNodeImport>> PreprocessorParser::parse_import(PreNodeA
 Result<std::unique_ptr<PreNodeImportNCKP>> PreprocessorParser::parse_import_nckp(PreNodeAST *parent) {
     auto token = consume(); // consume import_nckp
     if(peek().type != token::OPEN_PARENTH) {
-        return Result<std::unique_ptr<PreNodeImportNCKP>>(CompileError(ErrorType::ParseError,
+        return Result<std::unique_ptr<PreNodeImportNCKP>>(Diagnostic(ErrorType::ParseError,
                                                                        "Incorrect import_nckp Syntax.","(",peek()));
     }
     consume(); // consume (
     if(peek().type != token::STRING) {
-        return Result<std::unique_ptr<PreNodeImportNCKP>>(CompileError(ErrorType::PreprocessorError,
+        return Result<std::unique_ptr<PreNodeImportNCKP>>(Diagnostic(ErrorType::PreprocessorError,
                                                                        "Not a filepath","path",peek()));
     }
     Token path = consume(); // consume filepath
     std::string filepath = StringUtils::remove_quotes(path.val);
     if(peek().type != token::CLOSED_PARENTH) {
-        return Result<std::unique_ptr<PreNodeImportNCKP>>(CompileError(ErrorType::ParseError,
+        return Result<std::unique_ptr<PreNodeImportNCKP>>(Diagnostic(ErrorType::ParseError,
                                                                        "Incorrect import_nckp Syntax.",")",peek()));
     }
     auto end_token = consume(); // consume )
     if(peek().type != token::LINEBRK)
-        return Result<std::unique_ptr<PreNodeImportNCKP>>(CompileError(ErrorType::ParseError,
+        return Result<std::unique_ptr<PreNodeImportNCKP>>(Diagnostic(ErrorType::ParseError,
                                                                        "Incorrect import Syntax.","linebreak",peek()));
     consume(); //consume linebreak
     auto return_value = std::make_unique<PreNodeImportNCKP>(filepath, token, parent);
@@ -762,13 +762,13 @@ Result<std::unique_ptr<PreNodeSetCondition>> PreprocessorParser::parse_set_condi
     auto error_msg = "Found invalid <condition> syntax. ";
     auto token = consume(); // consume SET_CONDITION
     if(peek().type != token::OPEN_PARENTH) {
-        auto error = CompileError(ErrorType::PreprocessorError, error_msg,"(",peek());
+        auto error = Diagnostic(ErrorType::PreprocessorError, error_msg,"(",peek());
         error.add_message("<condition> statements must be in the format: SET_CONDITION(<condition-symbol>)");
         return Result<std::unique_ptr<PreNodeSetCondition>>(error);
     }
     consume(); // consume (
     if(peek().type != token::KEYWORD) {
-        auto error = CompileError(ErrorType::PreprocessorError, error_msg,"<condition-symbol>",peek());
+        auto error = Diagnostic(ErrorType::PreprocessorError, error_msg,"<condition-symbol>",peek());
         error.add_message("<condition> statements must be in the format: SET_CONDITION(<condition-symbol>), where <condition-symbol> is a single keyword token representing the symbol to set for conditional compilation.");
         return Result<std::unique_ptr<PreNodeSetCondition>>(error);
     }
@@ -779,13 +779,13 @@ Result<std::unique_ptr<PreNodeSetCondition>> PreprocessorParser::parse_set_condi
         return Result<std::unique_ptr<PreNodeSetCondition>>(condition.get_error());
     }
     if(peek().type != token::CLOSED_PARENTH) {
-        auto error = CompileError(ErrorType::PreprocessorError, error_msg,")",peek());
+        auto error = Diagnostic(ErrorType::PreprocessorError, error_msg,")",peek());
         error.add_message("<condition> statements must be in the format: SET_CONDITION(<condition-symbol>).");
         return Result<std::unique_ptr<PreNodeSetCondition>>(error);
     }
     auto end_token = consume(); // consume )
     if(peek().type != token::LINEBRK) {
-        auto error = CompileError(ErrorType::PreprocessorError, error_msg,"linebreak",peek());
+        auto error = Diagnostic(ErrorType::PreprocessorError, error_msg,"linebreak",peek());
         error.add_message("<condition> statements must end with a linebreak after the closing parenthesis.");
         return Result<std::unique_ptr<PreNodeSetCondition>>(error);
     }
@@ -799,13 +799,13 @@ Result<std::unique_ptr<PreNodeResetCondition>> PreprocessorParser::parse_reset_c
     auto token = consume(); // consume RESET_CONDITION
     auto error_msg = "Found invalid <condition> syntax. ";
     if(peek().type != token::OPEN_PARENTH) {
-        auto error = CompileError(ErrorType::PreprocessorError, error_msg,"(",peek());
+        auto error = Diagnostic(ErrorType::PreprocessorError, error_msg,"(",peek());
         error.add_message("<condition> statements must be in the format: RESET_CONDITION(<condition-symbol>)");
         return Result<std::unique_ptr<PreNodeResetCondition>>(error);
     }
     consume(); // consume (
     if(peek().type != token::KEYWORD) {
-        auto error = CompileError(ErrorType::PreprocessorError, error_msg,"<condition-symbol>",peek());
+        auto error = Diagnostic(ErrorType::PreprocessorError, error_msg,"<condition-symbol>",peek());
         error.add_message("<condition> statements must be in the format: RESET_CONDITION(<condition-symbol>), where <condition-symbol> is a single keyword token representing the symbol to reset for conditional compilation.");
         return Result<std::unique_ptr<PreNodeResetCondition>>(error);
     }
@@ -816,13 +816,13 @@ Result<std::unique_ptr<PreNodeResetCondition>> PreprocessorParser::parse_reset_c
         return Result<std::unique_ptr<PreNodeResetCondition>>(condition.get_error());
     }
     if(peek().type != token::CLOSED_PARENTH) {
-        auto error = CompileError(ErrorType::PreprocessorError, error_msg,")",peek());
+        auto error = Diagnostic(ErrorType::PreprocessorError, error_msg,")",peek());
         error.add_message("<condition> statements must be in the format: RESET_CONDITION(<condition-symbol>).");
         return Result<std::unique_ptr<PreNodeResetCondition>>(error);
     }
     auto end_token = consume(); // consume )
     if(peek().type != token::LINEBRK) {
-        auto error = CompileError(ErrorType::PreprocessorError, error_msg,"linebreak",peek());
+        auto error = Diagnostic(ErrorType::PreprocessorError, error_msg,"linebreak",peek());
         error.add_message("<condition> statements must end with a linebreak after the closing parenthesis.");
         return Result<std::unique_ptr<PreNodeResetCondition>>(error);
     }
@@ -838,7 +838,7 @@ Result<std::unique_ptr<PreNodeUseCodeIf>> PreprocessorParser::parse_use_code_if(
     auto error_msg = "Found invalid <USE_CODE_IF> syntax. ";
     auto node_if = std::make_unique<PreNodeUseCodeIf>(token, parent);
     if(peek().type != token::OPEN_PARENTH) {
-        auto error = CompileError(ErrorType::PreprocessorError, error_msg,"(",peek());
+        auto error = Diagnostic(ErrorType::PreprocessorError, error_msg,"(",peek());
         error.add_message("<USE_CODE_IF> statements must be in the format: USE_CODE_IF(<condition-symbol>)");
         return Result<std::unique_ptr<PreNodeUseCodeIf>>(error);
     }
@@ -851,13 +851,13 @@ Result<std::unique_ptr<PreNodeUseCodeIf>> PreprocessorParser::parse_use_code_if(
     }
     auto condition = std::move(condition_result.unwrap());
     if(peek().type != token::CLOSED_PARENTH) {
-        auto error = CompileError(ErrorType::PreprocessorError, error_msg,")",peek());
+        auto error = Diagnostic(ErrorType::PreprocessorError, error_msg,")",peek());
         error.add_message("<USE_CODE_IF> statements must be in the format: USE_CODE_IF(<condition-symbol>).");
         return Result<std::unique_ptr<PreNodeUseCodeIf>>(error);
     }
     auto end_token = consume(); // consume )
     if(peek().type != token::LINEBRK) {
-        auto error = CompileError(ErrorType::PreprocessorError, error_msg,"linebreak",peek());
+        auto error = Diagnostic(ErrorType::PreprocessorError, error_msg,"linebreak",peek());
         error.add_message("<USE_CODE_IF> statements must end with a linebreak after the closing parenthesis.");
         return Result<std::unique_ptr<PreNodeUseCodeIf>>(error);
     }
@@ -866,7 +866,7 @@ Result<std::unique_ptr<PreNodeUseCodeIf>> PreprocessorParser::parse_use_code_if(
     while (peek().type != token::END_USE_CODE) {
         if(peek().type == token::END_USE_CODE) break;
         if(peek().type == token::END_TOKEN) {
-            auto error = CompileError(ErrorType::PreprocessorError, error_msg, "end", peek());
+            auto error = Diagnostic(ErrorType::PreprocessorError, error_msg, "end", peek());
             error.set_message("Missing <END_USE_CODE> statement. Reached the end of the file while parsing an preprocessor if statement.");
             return Result<std::unique_ptr<PreNodeUseCodeIf>>(error);
         }
@@ -878,7 +878,7 @@ Result<std::unique_ptr<PreNodeUseCodeIf>> PreprocessorParser::parse_use_code_if(
     auto end_inc = consume(); // consume END_INC
 
     if (peek().type != token::LINEBRK) {
-        auto error = CompileError(ErrorType::PreprocessorError, error_msg, "linebreak", peek());
+        auto error = Diagnostic(ErrorType::PreprocessorError, error_msg, "linebreak", peek());
         error.set_message("Missing linebreak after <END_USE_CODE> statement.");
         error.add_message("CKSP uses <END_USE_CODE> as a closing directive only. Please make sure the statement is followed by a linebreak and does not have any additional tokens after it.");
         return Result<std::unique_ptr<PreNodeUseCodeIf>>(error);
@@ -914,7 +914,7 @@ Result<std::unique_ptr<PreNodeUseCodeIf>> PreprocessorParser::parse_use_code_if(
 //                     _skip_linebreaks();
 //                     continue;
 //                 } else if (peek().type == token::END_TOKEN) {
-//                     auto error = CompileError(ErrorType::PreprocessorError,
+//                     auto error = Diagnostic(ErrorType::PreprocessorError,
 //                                               "",")", peek());
 //                     error.add_message("Unexpected end of file. Missing closing parenthesis.");
 //                     error.exit();

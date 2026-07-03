@@ -33,11 +33,11 @@ public:
 		}
 		def.accept(*this);
 		if (!m_return_path[def.body.get()]) {
-			auto error = ASTVisitor::get_raw_compile_error(ErrorType::CompileError, *def.body);
-			error.m_message = "Function <"+def.header->name+"> does not terminate on all code paths. This might lead to an infinite loop. "
+			auto error = ASTVisitor::make_diagnostic(ErrorType::CompileError, *def.body);
+			error.message = "Function <"+def.header->name+"> does not terminate on all code paths. This might lead to an infinite loop. "
 					 "Checked the following code paths:\n";
 
-			// error.m_message += "\n Possible missing return statements in lines: ";
+			// error.message += "\n Possible missing return statements in lines: ";
 			std::vector<size_t> lines{};
 			std::string message{};
 			for (auto& [block, boolean] : m_return_path) {
@@ -58,11 +58,11 @@ public:
 
 				}
 			}
-			// error.m_message += StringUtils::join_apply(lines, [](size_t line) {
+			// error.message += StringUtils::join_apply(lines, [](size_t line) {
 			// 	return std::to_string(line);
 			// }, ", ");
-			error.m_message += message;
-			error.m_message += "Adding a return statement to some/all of these code paths might fix this error.";
+			error.message += message;
+			error.message += "Adding a return statement to some/all of these code paths might fix this error.";
 
 			error.exit();
 		}

@@ -56,8 +56,8 @@ public:
 				// data->clear_references();
 				m_def_provider->set_declaration(data, true);
 			} else {
-				auto error = CompileError(ErrorType::InternalError, "", "", Token());
-				error.m_message = "Data structure has been deleted during relinking.";
+				auto error = Diagnostic(ErrorType::InternalError, "", "", Token());
+				error.message = "Data structure has been deleted during relinking.";
 				error.exit();
 			}
 		}
@@ -87,8 +87,8 @@ public:
 					lower_case_names.insert(lower_case_name);
 				}
 			} else {
-				auto error = CompileError(ErrorType::InternalError, "", "", Token());
-				error.m_message = "Data structure has been deleted during relinking.";
+				auto error = Diagnostic(ErrorType::InternalError, "", "", Token());
+				error.message = "Data structure has been deleted during relinking.";
 				error.exit();
 			}
 		}

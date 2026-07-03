@@ -108,7 +108,7 @@ std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_definition(NodePr
 
 std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_builtin_definition(NodeProgram *program) {
     if(!program->def_provider) {
-        CompileError(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
+        Diagnostic(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
     }
     if(auto builtin_func = program->def_provider->get_builtin_function(function.get())) {
         function->ty = builtin_func->ty;
@@ -123,11 +123,11 @@ std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_builtin_definitio
 
 std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_property_definition(NodeProgram *program) {
     if(!program->def_provider) {
-        CompileError(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
+        Diagnostic(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
     }
     if(auto property_func = program->def_provider->get_property_function(function.get())) {
         if(function->args->size() < 2) {
-            CompileError(
+            Diagnostic(
                     ErrorType::SyntaxError,
                     "Found Property Function with insufficient amount of arguments.",
                     tok.line, "At least 2 arguments",
@@ -184,7 +184,7 @@ bool NodeFunctionCall::bind_definition(NodeProgram* program, const bool fail, co
     	if (decl and decl->is_function_param()) {
     		return true;
     	}
-        CompileError(ErrorType::SyntaxError,"A function with this signature has not been declared.", tok.line, "", function->name, tok.file).exit();
+        Diagnostic(ErrorType::SyntaxError,"A function with this signature has not been declared.", tok.line, "", function->name, tok.file).exit();
     }
     return false;
 }
@@ -547,8 +547,8 @@ NodeAST *NodeSingleAssignment::replace_child(NodeAST* oldChild, std::unique_ptr<
 			l_value = std::unique_ptr<NodeReference>(new_l_value);
 			return l_value.get();
 		} else {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", oldChild->tok);
-			error.m_message = "Tried to assign to a non-reference. Left side of assignment must be a reference.";
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", oldChild->tok);
+			error.message = "Tried to assign to a non-reference. Left side of assignment must be a reference.";
 			error.exit();
 		}
     } else if (r_value.get() == oldChild) {
@@ -579,8 +579,8 @@ void NodeSingleAssignment::check_for_constant_assignment() const {
 			if (strct and curr_func) {
 				if(curr_func->header->name == strct->name + OBJ_DELIMITER + NodeStruct::CONSTRUCTOR) {
 					if (auto decl = declaration->parent->cast<NodeSingleDeclaration>(); decl->value) {
-						auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, *this);
-						error.m_message = "Cannot assign to constant member <"+ declaration->name +"> in the constructor because it was already given a value at its declaration.";
+						auto error = ASTVisitor::make_diagnostic(ErrorType::SyntaxError, *this);
+						error.message = "Cannot assign to constant member <"+ declaration->name +"> in the constructor because it was already given a value at its declaration.";
 						error.exit();
 						return;
 					} else return;
@@ -589,8 +589,8 @@ void NodeSingleAssignment::check_for_constant_assignment() const {
 					return;
 				}
 			}
-			auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, *this);
-			error.m_message = "Cannot reassign value to constant variable <"+ l_value->name +">. Once declared, the value of a constant cannot be changed.";
+			auto error = ASTVisitor::make_diagnostic(ErrorType::SyntaxError, *this);
+			error.message = "Cannot reassign value to constant variable <"+ l_value->name +">. Once declared, the value of a constant cannot be changed.";
 			error.exit();
 			return;
 		}
@@ -1203,8 +1203,8 @@ bool NodePairs::check_environment() const {
 	if (parent->cast<NodeForEach>()) {
 		return true;
 	}
-	auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-	error.m_message = "As of v"+COMPILER_VERSION+", <pairs> can only be used in for-each loops.";
+	auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+	error.message = "As of v"+COMPILER_VERSION+", <pairs> can only be used in for-each loops.";
 	error.exit();
 	return false;
 }
@@ -1267,14 +1267,14 @@ std::unique_ptr<NodeAST> NodeRange::get_num_iterations() {
 
 std::unique_ptr<NodeInitializerList> NodeRange::to_initializer_list() const {
 	if (!start or !stop) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-		error.m_message = "Cannot convert <range> to <initializer_list> because it is missing start or stop.";
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+		error.message = "Cannot convert <range> to <initializer_list> because it is missing start or stop.";
 		error.exit();
 		return nullptr;
 	}
 	if (!all_literals()) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-		error.m_message = "Cannot convert <range> to <initializer_list> because not all elements are literals.";
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+		error.message = "Cannot convert <range> to <initializer_list> because not all elements are literals.";
 		error.exit();
 	}
 	auto initializer_list = std::make_unique<NodeInitializerList>(tok);
@@ -1298,8 +1298,8 @@ std::unique_ptr<NodeInitializerList> NodeRange::to_initializer_list() const {
 		return initializer_list;
 	}
 
-	auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-	error.m_message = "Cannot convert <range> to <initializer_list> because it contains non-integer or non-real values.";
+	auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+	error.message = "Cannot convert <range> to <initializer_list> because it contains non-integer or non-real values.";
 	error.exit();
 	return nullptr;
 
@@ -1314,8 +1314,8 @@ bool NodeRange::check_environment() const {
 	if (parent->cast<NodeSingleAssignment>() or parent->cast<NodeSingleDeclaration>()) {
 		return true;
 	}
-	auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-	error.m_message = "As of v"+COMPILER_VERSION+", <range> can only be used in for-each loops, assignments or declarations.";
+	auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+	error.message = "As of v"+COMPILER_VERSION+", <range> can only be used in for-each loops, assignments or declarations.";
 	error.exit();
 	return false;
 }

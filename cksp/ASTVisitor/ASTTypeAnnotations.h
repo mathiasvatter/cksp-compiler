@@ -18,8 +18,8 @@ class ASTTypeAnnotations final : public ASTVisitor {
 
 	static void check_for_hashtags(const std::string& name, const Token& tok) {
 		if(StringUtils::contains(name, "#")) {
-			auto error = CompileError(ErrorType::VariableError, "", "", tok);
-			error.m_message = "Found '#' character in variable. Variable names may only contain alphanumerical characters, dots and underscores."
+			auto error = Diagnostic(ErrorType::VariableError, "", "", tok);
+			error.message = "Found '#' character in variable. Variable names may only contain alphanumerical characters, dots and underscores."
 					 " Make sure any preprocessor text substitutions are correctly applied.";
 			error.exit();
 		}
@@ -74,7 +74,7 @@ public:
 		node.variable->accept(*this);
 		if (node.variable->ty == TypeRegistry::Any or node.variable->ty == TypeRegistry::Number) {
 			auto error = get_apply_type_annotations_error(node.variable);
-			error.m_message += " Union types like <Any> or <Number> can only be used in function parameters.";
+			error.message += " Union types like <Any> or <Number> can only be used in function parameters.";
 			error.exit();
 		}
 		if (node.value) node.value->accept(*this);
@@ -174,10 +174,10 @@ public:
 private:
 	DefinitionProvider* m_def_provider = nullptr;
 
-	static CompileError get_apply_type_annotations_error(const std::shared_ptr<NodeDataStructure> &node) {
-		auto error = CompileError(ErrorType::InternalError, "", "", node->tok);
-		error.m_message = "Type Annotation cannot be applied to node: "+node->name+".";
-		error.m_got = node->ty->to_string();
+	static Diagnostic get_apply_type_annotations_error(const std::shared_ptr<NodeDataStructure> &node) {
+		auto error = Diagnostic(ErrorType::InternalError, "", "", node->tok);
+		error.message = "Type Annotation cannot be applied to node: "+node->name+".";
+		error.actual = node->ty->to_string();
 		return error;
 	}
 
@@ -187,10 +187,10 @@ private:
 		// if(node.is_function_param()) return node.ty;
 		if(node.ty == TypeRegistry::Unknown) return node.ty;
 		if(!node.ty->is_compatible(expected)) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-			error.m_message = "Type Annotation of "+node.name+" does not match expected type kind.";
-			error.m_expected =  "<"+expected->get_type_kind_name()+"> Type";
-			error.m_got = "<"+node.ty->get_type_kind_name()+"> Type";
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+			error.message = "Type Annotation of "+node.name+" does not match expected type kind.";
+			error.expected =  "<"+expected->get_type_kind_name()+"> Type";
+			error.actual = "<"+node.ty->get_type_kind_name()+"> Type";
 			error.exit();
 		}
 		return nullptr;
@@ -199,10 +199,10 @@ private:
 	static Type* check_reference_annotation_with_expected(const NodeReference& node, const Type* expected) {
 		if(node.ty == TypeRegistry::Unknown) return node.ty;
 		if(!node.ty->is_compatible(expected)) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-			error.m_message = "Type Annotation of "+node.name+" does not match expected type kind.";
-			error.m_expected =  "<"+expected->get_type_kind_name()+"> Type";
-			error.m_got = "<"+node.ty->get_type_kind_name()+"> Type";
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+			error.message = "Type Annotation of "+node.name+" does not match expected type kind.";
+			error.expected =  "<"+expected->get_type_kind_name()+"> Type";
+			error.actual = "<"+node.ty->get_type_kind_name()+"> Type";
 			error.exit();
 		}
 		return nullptr;
@@ -221,10 +221,10 @@ private:
 		const auto element_type = node.ty->get_element_type();
 		if (element_type->cast<ObjectType>()) {
 			if (!NodeReference::get_object_ptr(m_program, element_type->to_string())) {
-				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-				error.m_message = "Found undefined Type. Type Annotation of "+node.name+" does not match any existing <Object> type.";
-				error.m_expected = "valid <Object> Type";
-				error.m_got = "<"+node.ty->to_string()+">";
+				auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+				error.message = "Found undefined Type. Type Annotation of "+node.name+" does not match any existing <Object> type.";
+				error.expected = "valid <Object> Type";
+				error.actual = "<"+node.ty->to_string()+">";
 				error.exit();
 
 			}
@@ -257,10 +257,10 @@ private:
 		} else if (node->ty->get_type_kind() == TypeKind::Basic) {
 			// if var is annotated as variable but recognized as array by parser -> throw error
 			if(node->get_node_type() == NodeType::Array or node->get_node_type() == NodeType::NDArray) {
-				auto syntax_error = CompileError(ErrorType::SyntaxError, "Syntax and Type Annotation are not compatible.", "", node->tok);
-				syntax_error.m_message += " Variable was annotated as <Variable> but recognized as <Array>: "+node->name+".";
-				syntax_error.m_expected = "<Variable> Syntax";
-				syntax_error.m_got = "<Array> Syntax";
+				auto syntax_error = Diagnostic(ErrorType::SyntaxError, "Syntax and Type Annotation are not compatible.", "", node->tok);
+				syntax_error.message += " Variable was annotated as <Variable> but recognized as <Array>: "+node->name+".";
+				syntax_error.expected = "<Variable> Syntax";
+				syntax_error.actual = "<Array> Syntax";
 				syntax_error.exit();
 				return nullptr;
 			}
@@ -268,10 +268,10 @@ private:
 		} else if (node->ty->get_type_kind() == TypeKind::Object and node->get_node_type() != NodeType::Pointer) {
 			// throw error when node was not recognized as variable by parser
 			if(node->get_node_type() != NodeType::Variable) {
-				auto syntax_error = CompileError(ErrorType::SyntaxError, "Syntax and Type Annotation are not compatible.", "", node->tok);
-				syntax_error.m_message += " Variable was annotated as <Object> but recognized as <Array>: "+node->name+".";
-				syntax_error.m_expected = "<Object> Syntax";
-				syntax_error.m_got = "<Array> Syntax";
+				auto syntax_error = Diagnostic(ErrorType::SyntaxError, "Syntax and Type Annotation are not compatible.", "", node->tok);
+				syntax_error.message += " Variable was annotated as <Object> but recognized as <Array>: "+node->name+".";
+				syntax_error.expected = "<Object> Syntax";
+				syntax_error.actual = "<Array> Syntax";
 				syntax_error.exit();
 				return nullptr;
 			} else {

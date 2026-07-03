@@ -20,7 +20,7 @@ protected:
 
 public:
 	virtual ~ASTVisitor() = default;
-	static CompileError get_raw_compile_error(ErrorType err_type, const NodeAST& node);
+	static Diagnostic make_diagnostic(ErrorType err_type, const NodeAST& node);
     static std::unique_ptr<NodeBlock> make_while_loop(NodeReference* var, int32_t from, int32_t to, std::unique_ptr<NodeBlock> body, NodeAST* parent);
 	static std::unique_ptr<NodeIf> make_nil_check(std::unique_ptr<NodeReference> ref);
 	static std::shared_ptr<NodeVariable> get_iterator_var(const Token& tok, const std::string& name="_iter") {
@@ -167,7 +167,7 @@ public:
 		return &node;
 	}
 	virtual NodeAST* visit(NodeDelete& node) {
-//		CompileError(ErrorType::InternalError, "<Delete> node not yet implemented.", "", node.tok).exit();
+//		Diagnostic(ErrorType::InternalError, "<Delete> node not yet implemented.", "", node.tok).exit();
 		for(const auto &del : node.ptrs) {
 			del->accept(*this);
 		}
@@ -339,7 +339,7 @@ public:
     virtual NodeAST* visit(NodeBlock& node) {
         for(const auto & stmt : node.statements) {
 			if(!stmt) {
-				auto error = CompileError(ErrorType::InternalError, "Null statement in block.", "", node.tok);
+				auto error = Diagnostic(ErrorType::InternalError, "Null statement in block.", "", node.tok);
 				error.exit();
 			}
 			stmt->accept(*this);

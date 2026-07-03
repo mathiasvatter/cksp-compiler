@@ -340,7 +340,7 @@ private:
 
 			auto l = m_lifetime_analysis->get_lifetime(node.variable.get());
 			if (!l) {
-				auto error = CompileError(ErrorType::InternalError, "Variable has no lifetime", "", node.tok);
+				auto error = Diagnostic(ErrorType::InternalError, "Variable has no lifetime", "", node.tok);
 				error.exit();
 			}
 			m_lifetime_end_per_var[l->end].push_back(node.variable);

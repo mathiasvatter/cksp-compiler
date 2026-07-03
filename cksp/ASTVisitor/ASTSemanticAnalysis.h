@@ -76,13 +76,13 @@ public:
 	bool check_recursion(NodeFunctionDefinition* func) const {
 		if(m_functions_in_use.contains(func)) {
 			// recursive function call detected
-			auto error = CompileError(ErrorType::SyntaxError, "", "", func->tok);
-			error.m_message = "Found recursive function call <"+func->header->name+">. Calling functions inside their definition is not allowed.";
-			error.m_got = "Function cycle with: ";
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", func->tok);
+			error.message = "Found recursive function call <"+func->header->name+">. Calling functions inside their definition is not allowed.";
+			error.actual = "Function cycle with: ";
 			for (const auto fun : m_functions_in_use) {
-				error.m_got += "<"+fun->header->name+">, ";
+				error.actual += "<"+fun->header->name+">, ";
 			}
-			error.m_got.erase(error.m_got.size() - 2);
+			error.actual.erase(error.actual.size() - 2);
 			error.exit();
 			return true;
 		}

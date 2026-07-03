@@ -60,7 +60,7 @@ std::vector<std::shared_ptr<NodeDataStructure>> NCKPTranslator::collect_ui_varia
 	for(auto &ui_pair : m_ui_controls) {
 		auto it = UI_CONTROL_INDEX.find(ui_pair.second);
 		if(it == UI_CONTROL_INDEX.end()) {
-			CompileError(ErrorType::ParseError, "Could not find ui widget index.", -1, "", std::to_string(ui_pair.second), "*.nckp").exit();
+			Diagnostic(ErrorType::ParseError, "Could not find ui widget index.", -1, "", std::to_string(ui_pair.second), "*.nckp").exit();
 		}
 		std::string ui_control = it->second;
 		std::string ui_var = ui_pair.first;

@@ -114,9 +114,9 @@ PreNodeAST *PreASTDefines::visit(PreNodeDefineStatement &node) {
 void PreASTDefines::check_recursion(const Token &tok) const {
 	if(m_defines_used.contains(tok.val)) {
 		// recursive function call detected
-		auto error = CompileError(ErrorType::PreprocessorError, "", "", tok);
-		error.m_message = "Recursive <define> call detected. Calling <defines> inside their definition is not allowed.";
-		error.m_got = tok.val;
+		auto error = Diagnostic(ErrorType::PreprocessorError, "", "", tok);
+		error.message = "Recursive <define> call detected. Calling <defines> inside their definition is not allowed.";
+		error.actual = tok.val;
 		error.exit();
 	}
 }
@@ -129,8 +129,8 @@ PreNodeAST *PreASTDefines::visit(PreNodeDefineCall &node) {
 	//substitution
 	// auto node_new_chunk = std::make_unique<PreNodeChunk>(Token(), node.parent);
 	if (!node.definition) {
-		auto error = CompileError(ErrorType::InternalError, "", "", token_name);
-		error.m_message = "Undefined <define> called. This construct was marked as a <define-call> during parsing, but no definition was found during preprocessing. This is likely a bug in the preprocessor.";
+		auto error = Diagnostic(ErrorType::InternalError, "", "", token_name);
+		error.message = "Undefined <define> called. This construct was marked as a <define-call> during parsing, but no definition was found during preprocessing. This is likely a bug in the preprocessor.";
 		error.exit();
 	}
 
@@ -164,9 +164,9 @@ std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> PreASTDefines::ge
 	for(int i= 0; i<definition.num_args(); i++) {
 		const auto &var = definition.get_arg(i)->get_chunk(0);
 		if(definition.get_arg(i)->num_chunks() > 1) {
-			auto error = CompileError(ErrorType::SyntaxError,"", "", definition.name->tok);
-			error.m_message = "Unable to substitute <define> arguments. Found wrong number of substitution tokens in <define-header>.";
-			error.m_got = definition.get_string();
+			auto error = Diagnostic(ErrorType::SyntaxError,"", "", definition.name->tok);
+			error.message = "Unable to substitute <define> arguments. Found wrong number of substitution tokens in <define-header>.";
+			error.actual = definition.get_string();
 			error.exit();
 		}
 		map[var->get_string()] = std::move(call.args->params[i]);

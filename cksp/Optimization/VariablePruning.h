@@ -111,8 +111,8 @@ public:
 		if(node.kind == NodeReference::Kind::Throwaway) {
 			// if a throwaway variable is not in assignment it has been incorrectly used
 			if(node.parent->cast<NodeSingleAssignment>()) {
-				auto error = get_raw_compile_error(ErrorType::VariableError, node);
-				error.m_message  = "Throwaway variables <"+node.name+"> are removed by the compiler and will not be included "
+				auto error = make_diagnostic(ErrorType::VariableError, node);
+				error.message  = "Throwaway variables <"+node.name+"> are removed by the compiler and will not be included "
 																	 "in the compiled code. Consider renaming your variable.";
 				error.exit();
 			}
