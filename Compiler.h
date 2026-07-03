@@ -194,7 +194,7 @@ public:
 		// input_filename = "/Users/mathias/Scripting/the-orchestra-complete-4/the_orchestra_ens_V1.2.ksp";
 		// input_filename = "/Users/mathias/Scripting/time-textures/time-textures.ksp";
 		// input_filename = "/Users/mathias/Scripting/legato-dev/legato.ksp";
-		// input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
+		input_filename = "/Users/mathias/Scripting/legato-dev/keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/ro-ki/rho_des.ksp";
 		// input_filename = "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp";
 		// input_filename = "/Users/mathias/Scripting/preset-system/main.ksp";
@@ -287,7 +287,6 @@ public:
 		ast->collect_references();
 		ast->debug_print();
 
-
 		m_timer.stop("Lexical Scope");
 		std::cout << m_timer.print_timer("Lexical Scope") << "\n";
 		m_timer.start("Semantic Analysis");
@@ -304,8 +303,8 @@ public:
 		infer_types.do_complete_traversal(*ast);
 		ast->debug_print();
 
-		ConstantDatabase constant_db;
-		constant_db.build(*ast);
+		// ConstantDatabase constant_db;
+		// constant_db.build(*ast);
 
 		UniqueParameterNamesProvider unique_names_provider(m_program);
 		unique_names_provider.do_parallel_renaming(*m_program);

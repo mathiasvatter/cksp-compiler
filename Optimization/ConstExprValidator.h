@@ -117,10 +117,17 @@ public:
 				m_is_constant &= true;
 				return &node;
 			}
-		} else if (node.kind == NodeFunctionCall::Kind::UserDefined and node.function->get_num_args() == 2) {
-			if (node.function->name == "Array::clip") {
-				m_is_constant &= true;
-				return &node;
+		} else if (node.kind == NodeFunctionCall::Kind::UserDefined) { // and node.function->get_num_args() == 2) {
+			// if (node.function->name == "Array::clip") {
+			// 	m_is_constant &= true;
+			// 	return &node;
+			// }
+			if (auto def = node.get_definition()) {
+				// Array::clip header is made const
+				if (def->header->data_type == DataType::Const) {
+					m_is_constant &= true;
+					return &node;
+				}
 			}
 		}
 		m_is_constant &= false;

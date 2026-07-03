@@ -67,9 +67,9 @@ public:
 		node.reset_function_visited_flag();
 
 
-		for (auto& con : m_constant_vars) {
-			std::cout << con.first->name << " := " << con.second->statement->get_string() << std::endl;
-		}
+		// for (auto& con : m_constant_vars) {
+		// 	std::cout << con.first->name << " := " << con.second->statement->get_string() << std::endl;
+		// }
 		return &node;
 	}
 
