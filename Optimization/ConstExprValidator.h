@@ -37,6 +37,10 @@ public:
 	}
 
 	NodeAST * visit(NodeVariableRef& node) override {
+		// if (node.is_local) {
+		// 	m_is_constant &= false;
+		// 	return &node;
+		// }
 		if(node.data_type == DataType::Const) {
 			m_is_constant &= true;
 		} else {
@@ -51,6 +55,10 @@ public:
 
 	NodeAST * visit(NodeArrayRef& node) override {
 		if(node.index) node.index->accept(*this);
+		// if (node.is_local) {
+		// 	m_is_constant &= false;
+		// 	return &node;
+		// }
 		if (arrayref_can_be_constants) {
 			if(node.data_type == DataType::Const) {
 				m_is_constant &= true;

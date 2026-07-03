@@ -57,6 +57,10 @@ public:
 		return &node;
 	}
 
+	std::unordered_map<StringTypeKey, std::unique_ptr<NodeAST>, StringTypeKeyHash> get_constants() {
+		return std::move(m_constants);
+	}
+
 	NodeAST* visit(NodeSingleDeclaration& node) override {
 		node.variable->accept(*this);
 		if(node.value) {
@@ -67,6 +71,7 @@ public:
 					add_constant(*node.variable, node.value.get());
 					return node.remove_node();
 				} else if (auto node_array = node.variable->cast<NodeArray>()) {
+					if (!node_array->size) return &node;
 					// split the const array up into its references
 					node_array->size->do_constant_folding();
 					if (auto size = node_array->get_size()) {

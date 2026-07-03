@@ -3,26 +3,41 @@
 #pragma max_callback_depth(420)
 
 
-// struct Point
-// 	x: int, y: int
-// end struct	
 
-// struct Array
-// 	points[100]: Point[]
+declare const bum := 100
 
-// 	function __init__(self)
-// 		for idx, p in pairs(self.points)
-// 			p := new Point(idx, int(real(idx)**2.0))
-// 		end for			
-// 	end function		
-// end struct	
+struct Array
+    points[bum]: Point[]
+    
+	function __init__(self)
+        for idx, p in pairs(self.points)
+            p := new Point(idx, int(real(idx)**2.0))
+		end for			
+end function		
+end struct	
 
-// declare point_array := new Array()
-// declare point_array2 := new Array()
+struct Point
+    x: int, y: int
+end struct	
 
-// on note 
-	
-// end on	
+declare x
+declare point_array := new Array()
+declare point_array2 := new Array()
+declare const pipi := 4 * x
+on note 
+    declare ass := (1,2,3)
+    declare const pipi := 50
+    declare const ass_size := num_elements(ass)
+    message(ass_size)
+    for i in range(ass_size)
+        message(i, " nice ass")
+    end for        
+end on	
+
+function func()
+    declare point_array2 := new Array()
+    message(point_array2)
+end function    
 
 on init
 
@@ -38,20 +53,3 @@ on init
 
 
 end on
-
-on persistence_changed	
-    message(center_circle_angle(0.0, 1.0))
-    message(center_circle_angle(1.0, 1.0))
-end on
-
-function center_circle_angle(x: real, y: real) : real
-    declare dx: real := x- 0.5
-    declare dy: real := y- 0.5
-
-    declare cos_theta: real := dx/sqrt(dx*dx + dy*dy)
-    declare angle: real := acos(cos_theta)
-    if dy < 0.0
-        angle := 2.0*NI_MATH_PI - angle
-    end if
-    return angle
-end function

@@ -139,9 +139,9 @@ protected:
 		if (const auto ui_control = node.variable->cast<NodeUIControl>()) {
 			ui_control->control_var->to_global();
 		}
-		if (node.variable->data_type == DataType::Const and node.variable->is_local) {
-			node.variable->to_global();
-		}
+		// if (node.variable->data_type == DataType::Const and node.variable->is_local) {
+		// 	node.variable->to_global();
+		// }
 
 		// if node variable is local, it starts its life -> add to alive_vars set
 		add_lifetime_start(node.variable.get(), m_current_statement);

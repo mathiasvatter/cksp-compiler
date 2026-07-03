@@ -101,7 +101,11 @@ NodeAST * NodeVariableRef::try_constant_value_replace() {
 			}
 			if (const auto decl = declaration->parent->cast<NodeSingleDeclaration>()) {
 				if (decl->value) {
-					return replace_with(decl->value->clone());
+					auto new_node = replace_with(decl->value->clone())->do_constant_folding();
+					if (auto var_ref = new_node->cast<NodeVariableRef>()) {
+						return var_ref->try_constant_value_replace();
+					}
+					return new_node;
 				}
 			}
 		}

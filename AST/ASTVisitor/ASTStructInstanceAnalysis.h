@@ -51,8 +51,16 @@ public:
 
 		node.reset_function_visited_flag();
 
+		// for (auto & func : m_num_constructors_per_func) {
+		// 	for (auto& struct_def : func.second) {
+		// 		add_expr_to_num_constructors(m_num_constructors, struct_def.first, std::move(struct_def.second));
+		// 	}
+		// }
+
 		for(auto & struct_def : m_num_constructors) {
-			struct_def.first->max_individual_structs_count = std::move(struct_def.second);
+			auto bin = std::make_unique<NodeBinaryExpr>(token::MULT, std::move(struct_def.second), std::make_unique<NodeInt>(1, Token()), Token());
+			bin->left->do_constant_folding();
+			struct_def.first->max_individual_structs_count = std::move(bin);
 			struct_def.first->max_individual_structs_count->parent = struct_def.first;
 		}
 
@@ -141,8 +149,9 @@ public:
 	}
 
 private:
-	void add_expr_to_num_constructors(NodeStruct* key, std::unique_ptr<NodeAST> expr) {
-		m_num_constructors[key] = add(m_num_constructors[key], expr);
+	static void add_expr_to_num_constructors(std::unordered_map<NodeStruct*, std::unique_ptr<NodeAST>> &map, NodeStruct* key, std::unique_ptr<NodeAST> expr) {
+		if (expr == nullptr) return;
+		map[key] = add(map[key], expr);
 		// auto it = m_num_constructors.find(key);
 		// if(it != m_num_constructors.end()) {
 		// 	auto& num = it->second;
@@ -152,7 +161,7 @@ private:
 	}
 
 	static std::unique_ptr<NodeAST> add(std::unique_ptr<NodeAST>& left, std::unique_ptr<NodeAST>& right) {
-		if (!left and !right) { return nullptr; }
+		if (!left and !right) return nullptr;
 		if (!left) {
 			return std::move(right);
 		} else if (!right) {
@@ -178,19 +187,21 @@ private:
 
 	void increase_num_constructors(NodeStruct* struct_def) {
 		// if we are in on init or persistence (and maybe in a function call stack)
-		if (is_linear_environment()) {
+		if (is_static_callback()) {
 			std::unique_ptr<NodeAST> num_constructor_calls = std::make_unique<NodeInt>(1, Token());
 			// if the constructor is called in a linear loop environment, add the number of iterations to the constructor count
 			if (!m_loop_stack.empty()) {
 				num_constructor_calls = determine_num_iterations();
 			}
 
-			// if (m_function_call_stack.empty()) {
-				add_expr_to_num_constructors(struct_def, std::move(num_constructor_calls));
-			// } else {
-			// 	// if we are in a function then first add to map
-			// 	m_num_constructors_per_func[]
-			// }
+			if (m_function_call_stack.empty()) {
+				add_expr_to_num_constructors(m_num_constructors, struct_def, std::move(num_constructor_calls));
+			} else {
+				// for (auto func : std::ranges::reverse_view(m_function_call_stack)) {
+				// 	// if we are in a function then first add to map
+				// 	add_expr_to_num_constructors(m_num_constructors_per_func[func], struct_def, std::move(num_constructor_calls));
+				// }
+			}
 
 
 		} else {

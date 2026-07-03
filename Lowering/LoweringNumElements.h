@@ -14,8 +14,7 @@
  * Inserting clip function call for num member of NodeNumElements
  */
 class LoweringNumElements : public ASTLowering {
-private:
-	std::string m_func_name = "Array"+OBJ_DELIMITER+"clip";
+	std::string m_func_name = "CKSP"+OBJ_DELIMITER+"clip";
 public:
 	explicit LoweringNumElements(NodeProgram *program) : ASTLowering(program) {}
 
@@ -86,7 +85,7 @@ public:
 				nd_array->inflation_times = 0;
 			}
 
-			// add clip function when ndarray is used
+			// add clip function when ndarray is used -> clip function will be present from start (engine_helper_functions)
 			add_clip_function(m_program);
 			node.set_dimension(get_clip_call(std::move(node.dimension), std::make_unique<NodeInt>(nd_array->dimensions, node.tok)));
 		}

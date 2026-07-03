@@ -81,6 +81,13 @@ private:
 		return &node;
 	}
 
+	// NodeAST* visit(NodeNumElements& node) override {
+	// 	if (!m_complete_traversal) {
+	// 		return node.post_lower(nullptr)->accept(*this);
+	// 	}
+	// 	return ASTVisitor::visit(node);
+	// }
+
 	NodeAST* visit(NodeFunctionCall& node) override {
 		if (m_visit_functions) {
 			if (const auto definition = node.get_definition()) {

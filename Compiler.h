@@ -49,6 +49,7 @@
 #include "AST/ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 #include "JSON/parser/JSONParser.h"
 #include "Optimization/ArrayInitializationRaising.h"
+#include "Optimization/ConstantDatabase.h"
 #include "Preprocessor/PreAST/PreASTConditions.h"
 
 class Compiler {
@@ -302,6 +303,9 @@ public:
 		TypeInference infer_types(ast.get());
 		infer_types.do_complete_traversal(*ast);
 		ast->debug_print();
+
+		ConstantDatabase constant_db;
+		constant_db.build(*ast);
 
 		UniqueParameterNamesProvider unique_names_provider(m_program);
 		unique_names_provider.do_parallel_renaming(*m_program);
