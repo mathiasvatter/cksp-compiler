@@ -5,7 +5,6 @@
 #pragma once
 
 #include "ASTVisitor.h"
-#include "../../BuiltinsProcessing/DefinitionProvider.h"
 
 class ASTHandleStringRepresentations final : public ASTVisitor {
 public:

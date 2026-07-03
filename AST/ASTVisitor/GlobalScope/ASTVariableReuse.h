@@ -264,14 +264,14 @@ private:
 	NodeAST* visit(NodeFunctionDefinition& node) override {
 		// start every function definition with a clean slate
 		clear_passive_vars();
-		m_program->function_call_stack.push(node.weak_from_this());
+		m_program->function_definition_stack.push(node.weak_from_this());
 		m_def_provider->add_scope();
 		node.header->accept(*this);
 		if (node.return_variable.has_value())
 			node.return_variable.value()->accept(*this);
 		node.body->accept(*this);
 		m_def_provider->remove_scope();
-		m_program->function_call_stack.pop();
+		m_program->function_definition_stack.pop();
 		return &node;
 	}
 

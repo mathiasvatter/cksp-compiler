@@ -13,7 +13,6 @@
  *
  */
 class LoweringMemAlloc : public ASTLowering {
-private:
 
 public:
 	explicit LoweringMemAlloc(NodeProgram *program) : ASTLowering(program) {}

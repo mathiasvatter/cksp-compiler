@@ -835,9 +835,9 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 
 		// explicitly visit builtin functions regardless of visited flag since its not reset for those anyways
 		if (!definition->visited || node.is_builtin_kind()) {
-			m_program->function_call_stack.push(definition);
+			m_program->function_definition_stack.push(definition);
 			definition->accept(*this);
-			m_program->function_call_stack.pop();
+			m_program->function_definition_stack.pop();
 			definition->visited = true;
 
 			// apply references to function params
@@ -931,7 +931,7 @@ NodeAST * TypeInference::visit(NodeFunctionHeader& node) {
 }
 
 NodeAST * TypeInference::visit(NodeFunctionDefinition& node) {
-	m_program->function_call_stack.push(node.weak_from_this());
+	m_program->function_definition_stack.push(node.weak_from_this());
 
 	// add data structures to provider
 //	m_def_provider->add_to_data_structures(node.header);
@@ -955,7 +955,7 @@ NodeAST * TypeInference::visit(NodeFunctionDefinition& node) {
 	if(node.return_variable.has_value()) {
 		match_type(node, *node.return_variable.value());
 	}
-	m_program->function_call_stack.pop();
+	m_program->function_definition_stack.pop();
 	return &node;
 }
 

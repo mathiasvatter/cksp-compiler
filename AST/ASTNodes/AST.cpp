@@ -229,11 +229,31 @@ NodeAST * NodeAST::collect_call_sites(NodeProgram *program) {
 	return call_sites.do_collect_call_sites(*this);
 }
 
-NodeFunctionHeaderRef* NodeAST::is_func_arg() const {
+NodeFunctionHeaderRef* NodeAST::is_direct_func_arg() const {
 	if(!this->parent) return nullptr;
 	if(!this->parent->parent) return nullptr;
 	if (!this->parent->cast<NodeParamList>()) return nullptr;
 	return this->parent->parent->cast<NodeFunctionHeaderRef>();
+}
+
+NodeFunctionHeaderRef * NodeAST::is_func_arg() const {
+	// go out until you either find a NodeStatement or a NodeFunctionHeaderRef
+	NodeAST* current = parent;
+	NodeStatement* stmt = nullptr;
+	NodeFunctionHeaderRef* function_header = nullptr;
+	while (current) {
+		function_header = current->cast<NodeFunctionHeaderRef>();
+		if (function_header) break;
+		stmt = current->cast<NodeStatement>();
+		if (stmt) break;
+		// if current is not a binary expression or unary expression -> fail!
+		// we always need to be in an expression context -> not e.g. as an index in an array
+		if (!current->cast<NodeBinaryExpr>() and !current->cast<NodeUnaryExpr>()
+			and !current->cast<NodeParamList>()) break;
+		current = current->parent;
+	}
+	if (function_header) return function_header;
+	return nullptr;
 }
 
 bool NodeAST::is_string_env() const {
@@ -343,7 +363,7 @@ std::unique_ptr<NodeReference> NodeDataStructure::to_reference() {
 bool NodeDataStructure::determine_locality(const NodeProgram* program, const NodeBlock* current_block) {
 	// not init_callback if var is set to local
 	const bool global_declarations = current_block and current_block == program->global_declarations.get();
-	const bool init_callback = (program->current_callback == program->init_callback and program->function_call_stack.empty() and !is_local) or is_global;
+	const bool init_callback = (program->current_callback == program->init_callback and program->function_definition_stack.empty() and !is_local) or is_global;
 	bool local = (current_block and current_block->scope) and !init_callback and !global_declarations;
 	local = local or (is_function_param() or is_member() or is_local);
 	// could also be an old school return variable which would have to be local

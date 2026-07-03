@@ -139,23 +139,27 @@ public:
 			}
 		}
 
-		auto max_structs = object->max_individual_structs_count ? std::move(object->max_individual_structs_count) : m_max_structs_ref->clone();
-
+		// no array members
 		if(sizes.empty()) {
-			return max_structs;
+			return object->max_individual_structs_count ? std::move(object->max_individual_structs_count) : m_max_structs_ref->clone();;
 		}
-		//wrap everything in max call again to ensure at least size of 1
+		// calculate maximum possible heap size with array members (MAX::STRUCTS/max_array_size)
 		auto bin_expr = std::make_unique<NodeBinaryExpr>(
 			token::DIV,
-			std::move(max_structs),
+			std::move(m_max_structs_ref->clone()),
 			find_max_array_size(sizes),
 			Token()
 		);
-		return create_min_max_call(
-			std::make_unique<NodeInt>(1, Token()),
-			std::move(bin_expr),
-			false
-		);
+		// if we were able to get a smaller individual struct count (with struct instance analysis), take
+		// the smaller size
+		if (object->max_individual_structs_count) {
+			return create_min_max_call(
+				std::move(object->max_individual_structs_count),
+				std::move(bin_expr),
+				true
+			);
+		}
+		return bin_expr;
 	}
 
 	static std::unique_ptr<NodeFunctionCall> create_min_max_call(const std::unique_ptr<NodeAST>& left, const std::unique_ptr<NodeAST>& right, bool min) {

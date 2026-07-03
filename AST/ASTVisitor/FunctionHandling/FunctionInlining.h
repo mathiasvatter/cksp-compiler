@@ -239,9 +239,9 @@ private:
 					error.exit();
 				}
 			}
-			if(ref->is_func_arg()) {
-				const auto func_call = ref->parent->parent->parent->cast<NodeFunctionCall>();
-				if(func_call->is_destructive_builtin_func()) {
+			if(auto header = ref->is_func_arg()) {
+				const auto func_call = header->parent->cast<NodeFunctionCall>();
+				if(func_call and func_call->is_destructive_builtin_func()) {
 					if(substitute->is_constant() and !substitute->ty->cast<CompositeType>()) {
 						auto error = CompileError(ErrorType::TypeError, "", "", ref->tok);
 						error.m_message = "Tried to substitute an argument of a destructive builtin function with an immutable value.";

@@ -3,37 +3,55 @@
 #pragma max_callback_depth(420)
 
 
-declare labels: int[] := [1,2,3,4]
-declare sliders: int[] := [1,2,3,4]
-declare last_time_sli
+// struct Point
+// 	x: int, y: int
+// end struct	
 
-on ui_controls
-    update_fx_sli(NI_UI_ID)
+// struct Array
+// 	points[100]: Point[]
+
+// 	function __init__(self)
+// 		for idx, p in pairs(self.points)
+// 			p := new Point(idx, int(real(idx)**2.0))
+// 		end for			
+// 	end function		
+// end struct	
+
+// declare point_array := new Array()
+// declare point_array2 := new Array()
+
+// on note 
+	
+// end on	
+
+on init
+
+
+// 	declare offset, ooo
+// 	for i in range(5)
+// 		offset := 5 + ooo
+// 		message(offset)
+// 		set_nks_nav_name(4, NUM_GROUPS + offset, "eq")
+// 		offset := 6 + ooo
+// 		set_nks_nav_name(4, NUM_GROUPS + offset, "eq")
+// 	end for
+
+
 end on
 
-function update_fx_sli(uiid: int)
-	declare idx := search(sliders, uiid)
-	if idx # -1
-		fx_sli(idx)
-	end if
+on persistence_changed	
+    message(center_circle_angle(0.0, 1.0))
+    message(center_circle_angle(1.0, 1.0))
+end on
+
+function center_circle_angle(x: real, y: real) : real
+    declare dx: real := x- 0.5
+    declare dy: real := y- 0.5
+
+    declare cos_theta: real := dx/sqrt(dx*dx + dy*dy)
+    declare angle: real := acos(cos_theta)
+    if dy < 0.0
+        angle := 2.0*NI_MATH_PI - angle
+    end if
+    return angle
 end function
-
-function fx_sli(idx)
-		declare page := idx / 5
-		declare disp_val
-
-		last_time_sli := ENGINE_UPTIME
-
-		select idx
-            case 0 to 4
-                disp_val := 4
-            case default
-                disp_val := 5
-		end select
-		
-		labels[idx] -> text := disp_val
-		wait(800 * 1000)
-		if(ENGINE_UPTIME - last_time_sli > 800 -5)
-			// labels[idx] -> text := "hello"
-		end if
-end function	

@@ -56,7 +56,7 @@ private:
 		if(node.bind_definition(m_program)) {
 			if(node.is_builtin_kind()) return &node;
 			const auto definition = node.get_definition();
-			m_program->function_call_stack.push(definition);
+			m_program->function_definition_stack.push(definition);
 			if(!definition->visited) definition->accept(*this);
 			definition->visited = true;
 
@@ -65,16 +65,16 @@ private:
 			if(node.strategy == NodeFunctionCall::Strategy::PreemptiveInlining) {
 				definition->is_used |= false;
 				const auto new_node = node.do_function_inlining(m_program);
-				m_program->function_call_stack.pop();
+				m_program->function_definition_stack.pop();
 				return new_node;
 			} else if (node.strategy == NodeFunctionCall::Strategy::ExpressionFunc) {
 				definition->is_used = false;
 				const auto new_node = node.do_function_inlining(m_program);
-				m_program->function_call_stack.pop();
+				m_program->function_definition_stack.pop();
 				return new_node;
 			} else {
 				definition->is_used |= true;
-				m_program->function_call_stack.pop();
+				m_program->function_definition_stack.pop();
 			}
 		}
 		return &node;

@@ -53,10 +53,10 @@ NodeAST* ASTDesugar::visit(NodeBlock& node) {
 }
 
 NodeAST* ASTDesugar::visit(NodeFunctionDefinition& node) {
-	m_program->function_call_stack.push(node.weak_from_this());
+	m_program->function_definition_stack.push(node.weak_from_this());
 	node.header->accept(*this);
 	node.body->accept(*this);
-	m_program->function_call_stack.pop();
+	m_program->function_definition_stack.pop();
 	return node.desugar(m_program);
 }
 
@@ -75,7 +75,7 @@ NodeAST* ASTDesugar::visit(NodeSingleDeclaration& node) {
     if(node.value) node.value->accept(*this);
 
 	// if var is global -> make assignment and move declaration to global declarations
-    if(node.variable->is_global and (!is_global_declaration or !m_program->function_call_stack.empty())) {
+    if(node.variable->is_global and (!is_global_declaration or !m_program->function_definition_stack.empty())) {
     	node.variable->is_global = true;
         m_global_variable_declarations->add_as_stmt(
 			std::make_unique<NodeSingleDeclaration>(node.variable, std::move(node.value), node.tok)
