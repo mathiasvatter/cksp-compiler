@@ -13,8 +13,8 @@
 #include "engine_helper_functions.h"
 #include "../ASTVisitor/FunctionHandling/BuiltinRestrictionValidator.h"
 
-BuiltinsProcessor::BuiltinsProcessor(DefinitionProvider* definition_provider)
-: Processor(), m_def_provider(definition_provider), m_builtin_variables_file("engine_variables.h"),
+BuiltinsProcessor::BuiltinsProcessor(DefinitionProvider* definition_provider, DiagnosticEngine& diagnostics)
+: Processor(), m_def_provider(definition_provider), m_diagnostics(diagnostics), m_builtin_variables_file("engine_variables.h"),
 m_builtin_constants_file("engine_constants.h"),
 m_builtin_functions_file("engine_functions.h"), m_builtin_widgets_file("engine_widgets.h"),
 m_boolean_functions_file("engine_helper_functions.h") {
@@ -52,7 +52,7 @@ void BuiltinsProcessor::process() {
 
 Result<SuccessTag> BuiltinsProcessor::parse_builtin_variables(const std::string &file) {
 	std::string data(reinterpret_cast<char*>(engine_variables), engine_variables_len);
-	Tokenizer tokenizer(data, file);
+	Tokenizer tokenizer(data, file, m_diagnostics);
 	m_tokens = tokenizer.tokenize();
 	m_pos = 0;
 	while(peek(m_tokens).type != token::END_TOKEN) {
@@ -77,7 +77,7 @@ Result<SuccessTag> BuiltinsProcessor::parse_builtin_variables(const std::string 
 
 Result<SuccessTag> BuiltinsProcessor::parse_builtin_constants(const std::string &file) {
     std::string data(reinterpret_cast<char*>(engine_constants), engine_constants_len);
-    Tokenizer tokenizer(data, file);
+    Tokenizer tokenizer(data, file, m_diagnostics);
     m_tokens = tokenizer.tokenize();
     m_pos = 0;
     while(peek(m_tokens).type != token::END_TOKEN) {
@@ -115,7 +115,7 @@ Result<SuccessTag> BuiltinsProcessor::parse_builtin_constants(const std::string 
 
 Result<SuccessTag> BuiltinsProcessor::parse_builtin_functions(const std::string &file) {
     std::string data(reinterpret_cast<char*>(engine_functions), engine_functions_len);
-    Tokenizer tokenizer(data, file);
+    Tokenizer tokenizer(data, file, m_diagnostics);
     m_tokens = tokenizer.tokenize();
     m_pos = 0;
     while(peek(m_tokens).type != token::END_TOKEN) {
@@ -149,7 +149,7 @@ void BuiltinsProcessor::apply_annotation_information(NodeDataStructure* node) {
 
 Result<SuccessTag> BuiltinsProcessor::parse_builtin_widgets(const std::string &file) {
     std::string data(reinterpret_cast<char*>(engine_widgets), engine_widgets_len);
-	Tokenizer tokenizer(data, file);
+	Tokenizer tokenizer(data, file, m_diagnostics);
 	m_tokens = tokenizer.tokenize();
 	m_pos = 0;
 	while(peek(m_tokens).type != token::END_TOKEN) {
@@ -166,7 +166,7 @@ Result<SuccessTag> BuiltinsProcessor::parse_builtin_widgets(const std::string &f
 
 Result<SuccessTag> BuiltinsProcessor::parse_cksp_helper_functions(const std::string &file) {
 	std::string data(reinterpret_cast<char*>(engine_helper_functions), engine_helper_functions_len);
-	Tokenizer tokenizer(data, file);
+	Tokenizer tokenizer(data, file, m_diagnostics);
 	m_tokens = tokenizer.tokenize();
 	m_pos = 0;
 	Parser parser(m_tokens);
@@ -380,5 +380,4 @@ Result<std::vector<std::unique_ptr<NodeFunctionParam>>> BuiltinsProcessor::parse
 bool BuiltinsProcessor::is_property_function(const std::string &fun_name) {
     return StringUtils::contains(fun_name, "_properties") || StringUtils::contains(fun_name, "set_bounds");
 }
-
 

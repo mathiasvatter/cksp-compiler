@@ -83,11 +83,10 @@ public:
 				error.actual += "<"+fun->header->name+">, ";
 			}
 			error.actual.erase(error.actual.size() - 2);
-			error.exit();
+			diagnostics().fatal(std::move(error));
 			return true;
 		}
 		return false;
 	}
 
 };
-

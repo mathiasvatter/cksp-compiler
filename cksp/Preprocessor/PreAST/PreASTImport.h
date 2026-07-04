@@ -51,12 +51,12 @@ public:
 								  m_basename_map[basename] + ". \nImporting again from: " + import_path + ".";
 				error.message += " This may lead to unexpected behavior.";
 				// return Result<SuccessTag>(error);
-				error.report();
+				error.report(diagnostics());
 			}
 			m_basename_map[basename] = import_path;
 
 			// parse
-			auto program_result = Compiler::preproc_parse(import_path, m_program->def_provider, m_lines_processed);
+			auto program_result = Compiler::preproc_parse(import_path, m_program->def_provider, m_lines_processed, diagnostics());
 			if (program_result.is_error()) {
 				program_result.get_error().exit();
 			}

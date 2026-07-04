@@ -5,11 +5,18 @@
 #pragma once
 
 #include "PreASTNodes/PreAST.h"
+#include "../../../misc/DiagnosticEngine.h"
 
 
 class PreASTVisitor {
 protected:
 	PreNodeProgram* m_program = nullptr;
+	[[nodiscard]] DiagnosticEngine& diagnostics() const {
+		if (!m_program || !m_program->diagnostic_engine) {
+			throw std::logic_error("PreASTVisitor has no DiagnosticEngine");
+		}
+		return *m_program->diagnostic_engine;
+	}
     /// substitution stack for define/macro substitutions
 	std::stack<std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>>> m_substitution_stack{};
     /// returns text replacement for current node.name, or original text if there is no replacement (in between #...#)

@@ -50,7 +50,7 @@ public:
 		if(node.return_variable.has_value()) {
 			node.num_return_params = 1;
 			if(!throw_deprecated_warning) {
-				throw_function_deprecation_error(node.return_variable.value()->tok).report();
+				throw_function_deprecation_error(node.return_variable.value()->tok).report(diagnostics());
 				throw_deprecated_warning = true;
 			}
 			transform_expr_only_to_return_function(&node);

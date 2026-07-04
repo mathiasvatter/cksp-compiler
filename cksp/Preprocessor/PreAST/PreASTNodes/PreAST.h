@@ -13,6 +13,8 @@
 #include "../../../../misc/HashFunctions.h"
 #include "../../../../utils/StringUtils.h"
 
+class DiagnosticEngine;
+
 struct PreNodeAST {
 	SourceRange range;
 	Token tok;
@@ -977,6 +979,7 @@ struct PreNodeIncrementer final : PreNodeAST {
 
 struct PreNodeProgram final : PreNodeAST {
 	DefinitionProvider* def_provider = nullptr;
+	DiagnosticEngine* diagnostic_engine = nullptr;
 	std::stack<PreNodeDefineStatement*> define_call_stack;
 	std::stack<PreNodeMacroCall*> macro_call_stack;
 	std::unique_ptr<PreNodeChunk> program;
@@ -1067,5 +1070,4 @@ struct PreNodeProgram final : PreNodeAST {
 	}
 
 };
-
 

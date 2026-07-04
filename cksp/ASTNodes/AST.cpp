@@ -52,6 +52,18 @@ NodeAST *NodeAST::accept(ASTVisitor &visitor) {
 	return nullptr;
 }
 
+DiagnosticEngine& NodeAST::diagnostics() const {
+	const NodeAST* root = this;
+	while (root->parent) root = root->parent;
+	const auto* program = root->node_type == NodeType::Program
+		? static_cast<const NodeProgram*>(root)
+		: nullptr;
+	if (!program || !program->diagnostic_engine) {
+		throw std::logic_error("AST node has no DiagnosticEngine");
+	}
+	return *program->diagnostic_engine;
+}
+
 NodeAST *NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
 	if (parent) {
 		newNode->parent = parent;
@@ -406,7 +418,7 @@ Type* NodeDataStructure::cast_type() {
 		error.message = "Failed to infer <"+ty->get_type_kind_name()+"> type.";
 		error.message += " Automatically casted '"+name+"' as <"+ty->to_string()+">. Consider using type annotations (like <"+name+": "
 			+TypeRegistry::get_annotation_from_type(this->ty)+">) to improve readability.";
-		error.report();
+		error.report(diagnostics());
 	}
 	return ty;
 }
@@ -579,7 +591,7 @@ bool NodeString::check_string_length() const {
 	if (value.length() > 320) {
 		auto warning = Diagnostic(ErrorType::CompileWarning, "", "", tok);
 		warning.set_message("The length of this String Literal exceeds the maximum of 320 characters and will not be displayed properly by Kontakt.");
-		warning.report();
+		warning.report(diagnostics());
 		return false;
 	}
 	return true;
@@ -1338,7 +1350,7 @@ void NodeProgram::add_function_or_override(const std::shared_ptr<NodeFunctionDef
 				error.set_message( "Found duplicate function definition with the same name and parameter count at position "+func->tok.get_position()+".\nBoth have been marked"
 						 " as <override>. The compiler will use the last encountered definition that has been marked as <override>.\n"
 						 "Consider removing the <override> keyword from one of the definitions.");
-				error.report();
+				error.report(diagnostics());
 			}
 			NodeProgram::replace_function_definition(func, def);
 		} else if (func->override and !def->override) {
@@ -1499,7 +1511,7 @@ bool NodeProgram::check_unique_callbacks() const {
 			if (StringUtils::starts_with(count.first, "on ui_control_")) {
 				auto error = Diagnostic(ErrorType::CompileWarning, "", "", callback_list.back()->tok);
 				error.message = "Multiple <on ui_control> callbacks of the same variable found. Kontakt will only execute the last one.";
-				error.report();
+				error.report(diagnostics());
 			} else {
 				auto error = Diagnostic(ErrorType::SyntaxError, "", "", callback_list.back()->tok);
 				error.expected = '1';
@@ -1713,33 +1725,26 @@ std::shared_ptr<NodePointer> NodeProgram::get_tmp_ptr(Type *ty, DataType data, c
 
 
 
-
-
-
-
-
-
-
-
-void NodeProgram::push_function_call(const NodeFunctionCall& call) {
-	function_call_stack.push_back(&call);
-	if (auto* diagnostics = DiagnosticEngine::current()) {
+FunctionCallStackScope::FunctionCallStackScope(NodeProgram& program, const NodeFunctionCall& call)
+	: m_program(program), m_uncaught_exceptions(std::uncaught_exceptions()) {
+	m_program.function_call_stack.push_back(&call);
+	if (m_program.diagnostic_engine) {
 		// The engine borrows these values only until FunctionCallStackScope is destroyed.
-		diagnostics->push_frame(call.function ? call.function->name : call.tok.val, call.tok.file, call.range);
+		m_program.diagnostic_engine->push_frame(call.function ? call.function->tok.val : call.tok.val, call.tok.file, call.range);
 	}
 }
 
-void NodeProgram::pop_function_call() noexcept {
-	if (function_call_stack.empty()) return;
-	if (auto* diagnostics = DiagnosticEngine::current()) diagnostics->pop_frame();
-	function_call_stack.pop_back();
-}
-
-FunctionCallStackScope::FunctionCallStackScope(NodeProgram& program, const NodeFunctionCall& call)
-	: m_program(program) {
-	m_program.push_function_call(call);
-}
-
 FunctionCallStackScope::~FunctionCallStackScope() {
-	m_program.pop_function_call();
+	// check if destructor is called because of an exception unwinding -> if so give frame to
+	// DiagnosticEngine
+	if (std::uncaught_exceptions() > m_uncaught_exceptions) {
+		if (m_program.function_call_stack.empty()) return;
+		if (m_program.diagnostic_engine) m_program.diagnostic_engine->preserve_frame_during_unwind();
+		m_program.function_call_stack.pop_back();
+		return;
+	}
+	// pop function_call_stack from program
+	if (m_program.function_call_stack.empty()) return;
+	if (m_program.diagnostic_engine) m_program.diagnostic_engine->pop_frame();
+	m_program.function_call_stack.pop_back();
 }

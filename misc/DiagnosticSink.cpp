@@ -23,6 +23,7 @@ const char* severity_name(const DiagnosticSeverity severity) {
 void ConsoleDiagnosticSink::report(Diagnostic diagnostic) {
     if (diagnostic.actual == "\n") diagnostic.actual = "linebreak";
 
+    const bool has_location = diagnostic.range.start.line != static_cast<size_t>(-1) && !diagnostic.file.empty();
     const auto& color = severity_color(diagnostic.severity);
     m_output << color << ColorCode::Bold << severity_name(diagnostic.severity) << ColorCode::Reset;
     m_output << color << " [Type: " << ColorCode::Bold
@@ -37,15 +38,17 @@ void ConsoleDiagnosticSink::report(Diagnostic diagnostic) {
     }
     m_output << "]\n" << diagnostic.message << '\n';
 
-    if (!diagnostic.expected.empty()) {
-        m_output << "Expected: '" << StringUtils::normalize_field(diagnostic.expected) << "'; ";
-    }
-    if (!diagnostic.actual.empty()) {
-        m_output << "Got: '" << StringUtils::normalize_field(diagnostic.actual) << "'";
+    if (!diagnostic.expected.empty() || !diagnostic.actual.empty()) {
+        if (!diagnostic.expected.empty()) {
+            m_output << ColorCode::Bold << "Expected: " << '\'' << StringUtils::normalize_field(diagnostic.expected) << "'\n";
+        }
+        if (!diagnostic.actual.empty()) {
+            m_output << ColorCode::Bold << "Got:      " << '\'' << StringUtils::normalize_field(diagnostic.actual) << "'\n";
+        }
     }
     m_output << ColorCode::Reset << std::endl;
 
-    if (diagnostic.range.start.line != static_cast<size_t>(-1) && !diagnostic.file.empty()) {
+    if (has_location) {
         std::ifstream file(diagnostic.file);
         std::string line;
         for (size_t i = 0; file && i < diagnostic.range.start.line; ++i) {
@@ -53,27 +56,41 @@ void ConsoleDiagnosticSink::report(Diagnostic diagnostic) {
         }
         if (file || !line.empty()) {
             line = replace_tabs_with_spaces(line, 1);
-            const std::string prefix = "In line " + std::to_string(diagnostic.range.start.line) + ": ";
-            m_output << ColorCode::Bold << prefix << ColorCode::Reset << line << '\n';
+            const auto line_number = std::to_string(diagnostic.range.start.line);
+            const std::string gutter = std::string(line_number.length(), ' ');
 
+            m_output << ColorCode::Bold << line_number << " | " << ColorCode::Reset << line << '\n';
             if (diagnostic.range.start.column > 0) {
-                const auto marker_length = diagnostic.range.end.column > diagnostic.range.start.column
+                const auto marker_length =
+                    diagnostic.range.end.column > diagnostic.range.start.column
                     ? diagnostic.range.end.column - diagnostic.range.start.column
                     : size_t{1};
-                const auto start = prefix.length() + diagnostic.range.start.column - 1;
-                m_output << color << std::string(start, ' ')
-                         << std::string(marker_length, '^') << ColorCode::Reset << '\n';
+                const auto marker_start = diagnostic.range.start.column - 1;
+                m_output << color
+                         << gutter << " | "
+                         << std::string(marker_start, ' ')
+                         << std::string(marker_length, '^')
+                         << ColorCode::Reset << '\n';
             }
         }
     }
 
-    for (auto frame = diagnostic.call_stack.rbegin(); frame != diagnostic.call_stack.rend(); ++frame) {
-        m_output << "  called from " << frame->function;
-        if (!frame->file.empty() && frame->call_site.is_valid()) {
-            m_output << " (" << frame->file << ':'
-                     << frame->call_site.start.line << ':' << frame->call_site.start.column << ')';
-        }
+    // print call stack
+    if (!diagnostic.call_stack.empty()) {
         m_output << '\n';
+        m_output << ColorCode::Bold << "Call stack:" << ColorCode::Reset << '\n';
+
+        size_t index = 0;
+        for (auto frame = diagnostic.call_stack.rbegin(); frame != diagnostic.call_stack.rend(); ++frame, ++index) {
+            m_output << "  #" << index << ' ' << frame->function << "()";
+            if (!frame->file.empty() && frame->call_site.is_valid()) {
+                m_output << '\n'
+                         << "     at " << frame->file << ':'
+                         << frame->call_site.start.line << ':'
+                         << frame->call_site.start.column;
+            }
+            m_output << '\n';
+        }
     }
 
     if (m_print_failure_footer && diagnostic.severity == DiagnosticSeverity::Error) {

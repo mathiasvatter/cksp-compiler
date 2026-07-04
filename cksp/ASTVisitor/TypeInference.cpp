@@ -833,8 +833,16 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 			m_func_calls.push_back(&node);
 		}
 
+		int method_idx = node.is_in_access_chain() ? 1 : 0;
 		// explicitly visit builtin functions regardless of visited flag since its not reset for those anyways
 		if (!definition->visited || node.is_builtin_kind()) {
+			if (node.kind != NodeFunctionCall::Property and node.function->get_num_args()+method_idx != definition->get_num_params()) {
+				auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+				error.add_message("Function call and its definition have different amounts of parameters.");
+				error.actual = std::to_string(node.function->get_num_args());
+				error.set_expected(std::to_string(definition->get_num_params()));
+				error.exit();
+			}
 			FunctionCallStackScope diagnostic_frame(*m_program, node);
 			m_program->function_definition_stack.push(definition);
 			definition->accept(*this);
@@ -851,7 +859,6 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
             }
 		}
 
-		int method_idx = node.is_in_access_chain() ? 1 : 0;
 		for (int i = 0; i < node.function->get_num_args(); i++) {
 			auto &func_arg = node.function->get_arg(i);
 			auto &param = definition->get_param(i+method_idx);

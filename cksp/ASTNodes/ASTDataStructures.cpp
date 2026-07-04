@@ -414,7 +414,7 @@ void NodeStruct::add_method_or_override(const std::shared_ptr<NodeFunctionDefini
 				error.set_message( "Found duplicate method definition with the same name and parameter count at position "+exists->tok.get_position()+".\nBoth have been marked"
 					" as <override>. The compiler will use the last encountered definition that has been marked as <override>.\n"
 					"Consider removing the <override> keyword from one of the definitions.");
-				error.report();
+				error.report(diagnostics());
 			}
 			NodeProgram::replace_function_definition(exists, method);
 		} else if (exists->override and !method->override) {
@@ -692,4 +692,3 @@ void NodeStruct::collect_recursive_structs(NodeProgram* program)
     //    mit `this` stehen.
     recursive_structs = cycleMembers;
 }
-

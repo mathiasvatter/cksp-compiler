@@ -29,7 +29,7 @@ public:
 		auto warning = Diagnostic(ErrorType::CompileWarning, "", "", def.tok);
 		warning.set_message("Note: Using <exit> in a function body will only exit the function it is called from, never the callback that calls the function.\n"
 					  "Please use <return> statements to exit functions prematurely instead of <exit> statements. This will make the behavior of your code clearer and prevent confusion about the behavior of <exit> statements in functions.");
-		warning.report();
+		warning.report(def.diagnostics());
 
 		return &def;
 	}

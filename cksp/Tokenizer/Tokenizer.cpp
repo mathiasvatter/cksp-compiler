@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "../../utils/StringUtils.h"
+#include "../../misc/DiagnosticEngine.h"
 
 /*
  * TOKEN STRUCT
@@ -23,8 +24,8 @@ std::ostream &operator<<(std::ostream &os, const Token &tok) {
 /*
  * Tokenizer Functions
  */
-Tokenizer::Tokenizer(const std::string& input, const std::string& file)
-    : m_pos(0), m_line(1), m_line_pos(1) {
+Tokenizer::Tokenizer(const std::string& input, const std::string& file, DiagnosticEngine& diagnostics)
+    : m_pos(0), m_line(1), m_line_pos(1), m_diagnostics(diagnostics) {
     m_current_file = file;
 
     m_input = input;
@@ -162,7 +163,7 @@ bool Tokenizer::is_pragma() const {
 	if(workaround_pragma) {
 		auto error = Diagnostic(ErrorType::CompileWarning, "", m_line, "", "//#pragma", m_current_file);
 		error.message = "Found usage of //#pragma. Note that this is a workaround and will be removed in future versions.";
-		error.report();
+		error.report(m_diagnostics);
 	}
 	return workaround_pragma;
 }
@@ -675,6 +676,5 @@ bool Tokenizer::is_callback_end() const {
         return m_tokens.back().val == "end" && m_buffer == "on";
     return false;
 }
-
 
 

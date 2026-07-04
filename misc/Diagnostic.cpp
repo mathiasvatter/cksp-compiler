@@ -1,7 +1,6 @@
 #include "Diagnostic.h"
 
 #include "DiagnosticEngine.h"
-#include "DiagnosticSink.h"
 #include "../cksp/Tokenizer/TokenSourceRange.h"
 
 Diagnostic::Diagnostic(
@@ -34,23 +33,15 @@ Diagnostic::Diagnostic(
     range.end = {line_number, 0};
 }
 
-void Diagnostic::report() const {
+void Diagnostic::report(DiagnosticEngine& diagnostics) const {
     auto diagnostic = *this;
     diagnostic.severity = DiagnosticSeverity::Warning;
-    if (auto* engine = DiagnosticEngine::current()) {
-        engine->report(std::move(diagnostic));
-        return;
-    }
-    ConsoleDiagnosticSink sink(std::cout, false);
-    sink.report(std::move(diagnostic));
+    diagnostics.report(std::move(diagnostic));
 }
 
 void Diagnostic::exit() const {
     auto diagnostic = *this;
     diagnostic.severity = DiagnosticSeverity::Error;
-    if (auto* engine = DiagnosticEngine::current()) {
-        engine->fatal(std::move(diagnostic));
-    }
     throw CompilationAborted(std::move(diagnostic));
 }
 

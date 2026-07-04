@@ -47,7 +47,7 @@ public:
 			error.message = "Condition '" + condition_name + "' has not been defined. <USE_CODE_IF> and <USE_CODE_IF_NOT> "
 						"statements require a condition to be defined once with SET_CONDITION(<condition>) or RESET_CONDITION(<condition>) before usage."
 						" This condition will be treated as <false>.";
-			error.report();
+			error.report(diagnostics());
 		} else {
 			condition_value = it->second;
 		}

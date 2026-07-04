@@ -16,6 +16,8 @@
 #include "../../misc/FileHandler.h"
 #include "../../misc/FreeFunctions.h"
 
+class DiagnosticEngine;
+
 /*
  * Token struct that gets line numbers, the token type and its value
  */
@@ -67,7 +69,7 @@ struct LinesProcessed {
  */
 class Tokenizer {
 public:
-	Tokenizer(const std::string& input, const std::string& file);
+	Tokenizer(const std::string& input, const std::string& file, DiagnosticEngine& diagnostics);
 	~Tokenizer() = default;
 	std::vector<Token> tokenize();
 	void token_loop();
@@ -87,6 +89,7 @@ protected:
 	size_t m_line_blank = 1;
     std::string m_buffer;
     std::vector<Token> m_tokens;
+	DiagnosticEngine& m_diagnostics;
 	bool is_in_fstring = false;
 	std::stack<char> fstring_starting_char;
 

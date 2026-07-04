@@ -8,6 +8,8 @@
 
 #include "SourceLocation.h"
 
+class DiagnosticEngine;
+
 enum class ErrorType {
     CompileError,
     CompileWarning,
@@ -59,8 +61,8 @@ struct Diagnostic {
     Diagnostic(ErrorType type, std::string message, size_t line_number, std::string expected,
                std::string actual, std::string file_name);
 
-    /// Emits a non-fatal diagnostic through the active engine, if one exists.
-    void report() const;
+    /// Emits a non-fatal diagnostic through the supplied compilation context.
+    void report(DiagnosticEngine& diagnostics) const;
     /// Aborts the current compilation by throwing CompilationAborted.
     [[noreturn]] void exit() const;
 

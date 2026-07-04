@@ -21,6 +21,7 @@ class ASTLowering;
 struct NodeProgram;
 struct NodeFunctionHeaderRef;
 struct NodeReference;
+class DiagnosticEngine;
 
 struct NodeAST {
 	SourceRange range;
@@ -78,6 +79,8 @@ struct NodeAST {
 	virtual NodeAST* lower(NodeProgram* program);
 	virtual NodeAST* post_lower(NodeProgram* program);
 	virtual NodeAST* data_lower(NodeProgram* program);
+	/// Returns the diagnostic context of the owning program.
+	[[nodiscard]] DiagnosticEngine& diagnostics() const;
     [[nodiscard]] NodeType get_node_type() const { return node_type; }
 	/// attempts to set the element type of this node to element_type if node has Composite Type
 	/// and elemen_type is Basic Type
@@ -962,6 +965,8 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 struct NodeProgram final : NodeAST {
 	struct CompilerConfig* compiler_config = nullptr;
 	class DefinitionProvider* def_provider = nullptr;
+	/// Non-owning diagnostic context supplied by Compiler for this AST's lifetime.
+	DiagnosticEngine* diagnostic_engine = nullptr;
 	NodeCallback* init_callback = nullptr;
 	NodeCallback* current_callback = nullptr;
 	// std::shared_ptr<NodeVariable> global_iterator;
@@ -1026,9 +1031,7 @@ struct NodeProgram final : NodeAST {
 	void inline_structs_and_constants();
 	void reset_function_visited_flag();
 	void reset_function_used_flag() const;
-	/// Updates both the program stack and the active DiagnosticEngine stack.
-	void push_function_call(const NodeFunctionCall& call);
-	void pop_function_call() noexcept;
+
 	bool is_init_callback(const NodeCallback* curr_callback) const {
 		return curr_callback == init_callback;
 	}
@@ -1040,6 +1043,7 @@ struct NodeProgram final : NodeAST {
 };
 
 /// Balances function-call stack updates across normal returns and exceptions.
+/// Keeps track of the function call stack upon creation and pops upon destruction
 class FunctionCallStackScope final {
 public:
 	FunctionCallStackScope(NodeProgram& program, const NodeFunctionCall& call);
@@ -1050,4 +1054,5 @@ public:
 
 private:
 	NodeProgram& m_program;
+	int m_uncaught_exceptions;
 };

@@ -16,21 +16,20 @@ class DiagnosticEngine {
 public:
     explicit DiagnosticEngine(DiagnosticSink& sink) : m_sink(sink) {}
 
-    /// Reports a diagnostic and fills an empty call stack from the active traversal.
+    /// Reports a diagnostic (by calling m_sink.report) and fills an empty call stack from the active traversal.
     void report(Diagnostic diagnostic);
-    void warning(Diagnostic diagnostic);
     /// Attaches the active stack and aborts the current compilation.
-    [[noreturn]] void fatal(Diagnostic diagnostic);
+    [[noreturn]] void fatal(Diagnostic diagnostic) const;
 
     /// Registers a non-owning frame. All arguments must outlive the matching pop_frame().
     void push_frame(std::string_view function, std::string_view file, const SourceRange& call_site);
     void pop_frame() noexcept;
+    /// Copies and removes the top frame while its borrowed AST data is still alive.
+    void preserve_frame_during_unwind();
 
     [[nodiscard]] size_t diagnostic_count() const noexcept {
         return m_diagnostic_count;
     }
-
-    [[nodiscard]] static DiagnosticEngine* current() noexcept;
 
 private:
     /// References AST data guarded by FunctionCallStackScope.
@@ -46,17 +45,6 @@ private:
     DiagnosticSink& m_sink;
     size_t m_diagnostic_count = 0;
     std::vector<ActiveFrame> m_call_stack;
-};
-
-/// Exposes one engine thread-locally to context-free diagnostic construction sites.
-class DiagnosticEngineScope {
-public:
-    explicit DiagnosticEngineScope(DiagnosticEngine& engine) noexcept;
-    ~DiagnosticEngineScope();
-
-    DiagnosticEngineScope(const DiagnosticEngineScope&) = delete;
-    DiagnosticEngineScope& operator=(const DiagnosticEngineScope&) = delete;
-
-private:
-    DiagnosticEngine* m_previous;
+    /// Frames preserved inner-to-outer by RAII destructors during exception unwinding.
+    std::vector<DiagnosticFrame> m_unwound_call_stack;
 };

@@ -4,12 +4,15 @@
 
 #pragma once
 
+#include <stdexcept>
+
 #include "../Types/TypeRegistry.h"
 #include "../ASTNodes/AST.h"
 #include "../ASTNodes/ASTInstructions.h"
 #include "../ASTNodes/ASTDataStructures.h"
 #include "../ASTNodes/ASTReferences.h"
 #include "../BuiltinsProcessing/DefinitionProvider.h"
+#include "../../misc/DiagnosticEngine.h"
 
 #define TRACE() \
 std::fprintf(stderr, ">> %s\n", __PRETTY_FUNCTION__);
@@ -17,6 +20,18 @@ std::fprintf(stderr, ">> %s\n", __PRETTY_FUNCTION__);
 class ASTVisitor {
 protected:
 	NodeProgram* m_program = nullptr;
+
+	/**
+	 * Returns the diagnostic context attached to the visited program.
+	 * Compiler installs this context before starting any AST pass, so derived
+	 * visitors do not need global or thread-local diagnostic lookup.
+	 */
+	[[nodiscard]] DiagnosticEngine& diagnostics() const {
+		if (!m_program || !m_program->diagnostic_engine) {
+			throw std::logic_error("ASTVisitor has no DiagnosticEngine");
+		}
+		return *m_program->diagnostic_engine;
+	}
 
 public:
 	virtual ~ASTVisitor() = default;
@@ -336,11 +351,11 @@ public:
 		node.reset_function_visited_flag();
 		return &node;
 	}
-    virtual NodeAST* visit(NodeBlock& node) {
+	virtual NodeAST* visit(NodeBlock& node) {
         for(const auto & stmt : node.statements) {
 			if(!stmt) {
 				auto error = Diagnostic(ErrorType::InternalError, "Null statement in block.", "", node.tok);
-				error.exit();
+				diagnostics().fatal(std::move(error));
 			}
 			stmt->accept(*this);
 		}
@@ -350,6 +365,4 @@ public:
 		return &node;
     }
 };
-
-
 

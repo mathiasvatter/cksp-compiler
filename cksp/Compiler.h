@@ -72,9 +72,9 @@ class Compiler {
 //	bool generate();
 public:
 
-	static std::vector<Token> tokenize(const std::string &input_filename, LinesProcessed* lines_collect) {
+	static std::vector<Token> tokenize(const std::string &input_filename, LinesProcessed* lines_collect, DiagnosticEngine& diagnostics) {
 		const FileHandler file_handler(input_filename);
-		Tokenizer tokenizer(file_handler.get_output(), input_filename);
+		Tokenizer tokenizer(file_handler.get_output(), input_filename, diagnostics);
 		auto tokens = tokenizer.tokenize();
 		auto l = tokenizer.get_lines_processed();
 		lines_collect->lines_total += l.lines_total;
@@ -83,10 +83,12 @@ public:
 		return tokens;
 	}
 
-	static Result<std::unique_ptr<PreNodeProgram>> preproc_parse(const std::string &input_filename, DefinitionProvider* definition_provider, LinesProcessed* lines_collect) {
-		const auto& tokens = Compiler::tokenize(input_filename, lines_collect);
+	static Result<std::unique_ptr<PreNodeProgram>> preproc_parse(const std::string &input_filename, DefinitionProvider* definition_provider, LinesProcessed* lines_collect, DiagnosticEngine& diagnostics) {
+		const auto& tokens = Compiler::tokenize(input_filename, lines_collect, diagnostics);
 		PreprocessorParser parser(tokens, definition_provider);
-		return parser.parse_program(nullptr);
+		auto result = parser.parse_program(nullptr);
+		if (!result.is_error()) result.unwrap()->diagnostic_engine = &diagnostics;
+		return result;
 	}
 
 	static std::unique_ptr<JSONValue> parse_json(const std::string &input_filename) {
@@ -95,7 +97,7 @@ public:
 		return parser.parse(file_handler.get_output(), input_filename);
 	}
 
-	void preprocess() {
+	void preprocess(DiagnosticEngine& diagnostics) {
 		auto result = Result<SuccessTag>(SuccessTag{});
 		m_timer.start("Import");
 
@@ -128,7 +130,7 @@ public:
 		// auto pre_ast = std::move(result_parse.unwrap());
 
 
-		auto pre_ast_result = Compiler::preproc_parse(m_cli_config->input_filename.value(), &m_definition_provider, &m_lines_processed);
+		auto pre_ast_result = Compiler::preproc_parse(m_cli_config->input_filename.value(), &m_definition_provider, &m_lines_processed, diagnostics);
 		if(pre_ast_result.is_error()) {
 			auto error = pre_ast_result.get_error();
 			error.message += " Preprocessor parsing failed.";
@@ -173,10 +175,10 @@ public:
 	}
 
 private:
-	void compile_impl() {
+	void compile_impl(DiagnosticEngine& diagnostic_engine) {
 		// Keep initialization inside the guarded compile path so failures become diagnostics.
 		TypeRegistry::initialize();
-		BuiltinsProcessor builtins(&m_definition_provider);
+		BuiltinsProcessor builtins(&m_definition_provider, diagnostic_engine);
 		builtins.process();
 
 #ifndef NDEBUG
@@ -217,7 +219,7 @@ private:
 		m_timer.start("Total Time");
 		m_timer.start("Preprocessor");
 
-		preprocess();
+		preprocess(diagnostic_engine);
 
 #ifndef NDEBUG
 		//    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
@@ -260,6 +262,7 @@ private:
 		auto ast = std::move(ast_result.unwrap());
 		{
 			m_program = ast.get();
+			m_program->diagnostic_engine = &diagnostic_engine;
 			m_program->def_provider = &m_definition_provider;
 			m_program->compiler_config = m_final_config.get();
 			m_program->apply_callback_overrides();
@@ -486,9 +489,8 @@ public:
 	/// Compile the input file and report a fatal diagnostic without terminating the process.
 	CompilationResult compile(DiagnosticSink& diagnostics) {
 		DiagnosticEngine diagnostic_engine(diagnostics);
-		DiagnosticEngineScope diagnostic_scope(diagnostic_engine);
 		try {
-			compile_impl();
+			compile_impl(diagnostic_engine);
 			return {.success = true, .diagnostic_count = diagnostic_engine.diagnostic_count()};
 		} catch (const CompilationAborted& aborted) {
 			diagnostic_engine.report(aborted.diagnostic());
