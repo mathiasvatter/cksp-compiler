@@ -22,6 +22,7 @@ Result<std::vector<Token>> SourceParser::tokenize(const SourceId& source) const 
 }
 
 Result<std::unique_ptr<PreNodeProgram>> SourceParser::parse_pre_ast(const SourceId& source) {
+    m_imports.add_source(source);
     auto token_result = tokenize(source);
     if (token_result.is_error()) {
         return Result<std::unique_ptr<PreNodeProgram>>(token_result.get_error());

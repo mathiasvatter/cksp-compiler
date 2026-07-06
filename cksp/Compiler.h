@@ -77,6 +77,7 @@ class Compiler {
 	std::vector<Token> m_tokens{};
 	Timer m_timer;
 	LinesProcessed m_lines_processed{};
+	ImportGraph m_import_graph;
 
 //	bool tokenize();
 //	bool preprocess();
@@ -164,7 +165,7 @@ private:
 	/// first frontend implementation -> can be used for lsp, does not generate code
 	void analyse_impl(DiagnosticEngine& diagnostic_engine) {
 		initialize(diagnostic_engine);
-		#ifndef NDEBUG
+	#ifndef NDEBUG
 		std::string input_filename{};
 		//	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 		//    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
@@ -174,7 +175,7 @@ private:
 		// input_filename = "/Users/mathias/Scripting/legato-dev/one-shot.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score-essentials/the-score-essentials.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
-		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
+		input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-brass/dev/Lux - Orchestral Brass Keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Ensemble.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Single.ksp";
@@ -198,16 +199,16 @@ private:
 		// input_filename = "/Users/mathias/Scripting/the-sculpture/sculpture-engine.cksp";
 		if (!input_filename.empty()) m_cli_config->input_filename = input_filename;
 		// m_cli_config->optimization_level = OptimizationLevel::None;
-#endif
+	#endif
 
 		m_timer.start("Total Time");
 		m_timer.start("Preprocessor");
 
 		SourceParser source_parser(
-			*m_sources, m_definition_provider, m_lines_processed, diagnostic_engine);
+			*m_sources, m_definition_provider, m_lines_processed, diagnostic_engine, m_import_graph);
 		preprocess(source_parser);
 
-#ifndef NDEBUG
+	#ifndef NDEBUG
 		//    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
 		// output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score_cksp.txt";
 		// output_filename = "/Users/mathias/Scripting/preset-system/samples/resources/scripts/preset-system.txt";
@@ -219,7 +220,7 @@ private:
 		// output_filename = "/Users/mathias/Scripting/toc-single-instruments/samples/resources/scripts/keyswitch.txt";
 		// output_filename = "/Users/mathias/Scripting/the-orchestra-complete-4/Samples/Resources/scripts/sonu_orchestra_ensemble.txt";
 		// output_filename = "/Users/mathias/Scripting/sonu-libraries/resources/scripts/main.txt";
-#endif
+	#endif
 
 		m_final_config = combine_configs(m_cli_config, m_pragma_config);
 		// m_final_config->optimization_level = OptimizationLevel::Aggressive;
@@ -467,13 +468,41 @@ private:
 		print_to_console(ColorCode::Bold, m_timer.print_timer("Total Time"), ColorCode::Reset);
 
 		print_to_console(ColorCode::Green, ColorCode::Bold, "Saved compiled file(s) to: ", ColorCode::Reset, StringUtils::join(m_final_config->outputs, ' '));
+		// m_import_graph.print();
 	}
 
 public:
-	/// Compile an explicitly supplied source, used by in-memory and language-server clients.
-	CompilationResult compile(const SourceId& entry_source, DiagnosticSink& diagnostics) {
+	/// Analyze an explicitly supplied source, used by in-memory and language-server clients.
+	CompilationResult analyze(const SourceId& entry_source, DiagnosticSink& diagnostics) {
 		m_cli_config->input_filename = entry_source.value;
-		return compile(diagnostics);
+		DiagnosticEngine diagnostic_engine(diagnostics);
+		try {
+			analyse_impl(diagnostic_engine);
+			return {.success = true, .diagnostic_count = diagnostic_engine.diagnostic_count()};
+		} catch (const CompilationAborted& aborted) {
+			diagnostic_engine.report(aborted.diagnostic());
+			return {.success = false, .diagnostic_count = diagnostic_engine.diagnostic_count()};
+		} catch (const std::exception& exception) {
+			Diagnostic diagnostic;
+			diagnostic.type = ErrorType::InternalError;
+			diagnostic.severity = DiagnosticSeverity::Error;
+			diagnostic.message = "Internal lsp error: " + std::string(exception.what());
+			if (m_cli_config && m_cli_config->input_filename) {
+				diagnostic.file = m_cli_config->input_filename.value();
+			}
+			diagnostic_engine.report(std::move(diagnostic));
+			return {.success = false, .diagnostic_count = diagnostic_engine.diagnostic_count()};
+		} catch (...) {
+			Diagnostic diagnostic;
+			diagnostic.type = ErrorType::InternalError;
+			diagnostic.severity = DiagnosticSeverity::Error;
+			diagnostic.message = "Internal compiler error: unknown exception";
+			if (m_cli_config && m_cli_config->input_filename) {
+				diagnostic.file = m_cli_config->input_filename.value();
+			}
+			diagnostic_engine.report(std::move(diagnostic));
+			return {.success = false, .diagnostic_count = diagnostic_engine.diagnostic_count()};
+		}
 	}
 
 	/// Compile the input file and report a fatal diagnostic without terminating the process.
