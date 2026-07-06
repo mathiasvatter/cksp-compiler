@@ -7,6 +7,7 @@
 #include <map>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 #include <memory>
@@ -49,7 +50,7 @@ struct JSONNull : JSONValue {
 };
 
 struct JSONObject : JSONValue {
-	std::vector<std::pair<std::string, std::unique_ptr<JSONValue>>> properties;
+	std::unordered_map<std::string, std::unique_ptr<JSONValue>> properties;
 
 	void add(const std::string& key, std::unique_ptr<JSONValue> value);
 	void accept(JSONVisitor& visitor) override;

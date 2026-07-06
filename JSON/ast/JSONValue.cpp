@@ -33,19 +33,13 @@ void JSONNull::accept(JSONVisitor& visitor) {
 }
 
 void JSONObject::add(const std::string &key, std::unique_ptr<JSONValue> value) {
-	// Prüfen, ob der Schlüssel bereits existiert.
-	auto it = std::ranges::find_if(properties,
-	                               [&key](const auto& pair) {
-		                               return pair.first == key;
-	                               });
-
+	auto it = properties.find(key);
+	// if key exists, update its value
 	if (it != properties.end()) {
-		// Schlüssel existiert, Wert aktualisieren. Die Position bleibt erhalten.
 		it->second = std::move(value);
-	} else {
-		// Neuer Schlüssel, am Ende hinzufügen.
-		properties.emplace_back(key, std::move(value));
+		return;
 	}
+	properties.emplace(key, std::move(value));
 }
 
 void JSONObject::accept(JSONVisitor& visitor) {

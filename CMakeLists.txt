@@ -271,5 +271,6 @@ add_executable(cksp
         main.cpp
         misc/CommandLineOptions.cpp
         cksp/CompilerConfig.h
+        lsp/JsonRpcConnection.h
 )
 target_link_libraries(cksp PRIVATE cksp_core)
