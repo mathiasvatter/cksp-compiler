@@ -63,7 +63,6 @@ add_library(cksp_core STATIC
         misc/Diagnostic.h
         misc/Diagnostic.cpp
         misc/DiagnosticReport.h
-        misc/DiagnosticReport.cpp
         misc/DiagnosticEngine.h
         misc/DiagnosticEngine.cpp
         misc/DiagnosticSink.h
@@ -266,5 +265,6 @@ target_compile_definitions(cksp_core PUBLIC PRINTER_OUTPUT_PATH="${CMAKE_SOURCE_
 add_executable(cksp
         main.cpp
         misc/CommandLineOptions.cpp
+        cksp/CompilerConfig.h
 )
 target_link_libraries(cksp PRIVATE cksp_core)

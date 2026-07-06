@@ -23,6 +23,8 @@ enum class ErrorType {
     MathError,
     InternalError
 };
+std::string error_type_to_string(const ErrorType type);
+
 
 enum class DiagnosticSeverity {
     Error,
@@ -30,7 +32,8 @@ enum class DiagnosticSeverity {
     Information
 };
 
-/// An owning function-call frame that remains valid after the AST traversal has unwound.
+/// A function-call frame that remains valid after the AST traversal has unwound because it will be copied in the event
+/// of an error
 struct DiagnosticFrame {
     std::string function;
     /// Kept separate from SourceRange so ranges remain cheap to copy on AST nodes.

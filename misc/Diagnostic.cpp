@@ -3,6 +3,23 @@
 #include "DiagnosticEngine.h"
 #include "../cksp/Tokenizer/TokenSourceRange.h"
 
+std::string error_type_to_string(const ErrorType type) {
+    switch (type) {
+        case ErrorType::CompileError: return "CompileError";
+        case ErrorType::CompileWarning: return "CompileWarning";
+        case ErrorType::FileError: return "FileError";
+        case ErrorType::SyntaxError: return "SyntaxError";
+        case ErrorType::TypeError: return "TypeError";
+        case ErrorType::VariableError: return "VariableError";
+        case ErrorType::TokenError: return "TokenError";
+        case ErrorType::ParseError: return "ParseError";
+        case ErrorType::PreprocessorError: return "PreprocessorError";
+        case ErrorType::MathError: return "MathError";
+        case ErrorType::InternalError: return "InternalError";
+    }
+    return "UnknownError";
+}
+
 Diagnostic::Diagnostic(
     const ErrorType type,
     std::string message,

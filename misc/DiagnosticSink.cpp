@@ -55,7 +55,7 @@ void ConsoleDiagnosticSink::report(Diagnostic diagnostic) {
             std::getline(file, line);
         }
         if (file || !line.empty()) {
-            line = replace_tabs_with_spaces(line, 1);
+            line = StringUtils::replace_tabs_with_spaces(line, 1);
             const auto line_number = std::to_string(diagnostic.range.start.line);
             const std::string gutter = std::string(line_number.length(), ' ');
 

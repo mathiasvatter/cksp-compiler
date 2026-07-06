@@ -186,11 +186,19 @@ inline std::string normalize_sentence(std::string s) {
     return s;
 }
 
-// Hilfsfunktion für einzeilige Felder (Expected/Got)
+/// Helper function for Diagnostic fields, tims whitespace and adds a space after ","
 inline std::string normalize_field(std::string s) {
     s = StringUtils::trim(std::move(s));
     s = std::regex_replace(s, std::regex(R"(\s{2,})"), " ");
     return s;
+}
+
+inline std::string replace_tabs_with_spaces(const std::string& input, const int spaces_per_tab = 4) {
+    std::string output;
+    for (const char character : input) {
+        output += character == '\t' ? std::string(spaces_per_tab, ' ') : std::string(1, character);
+    }
+    return output;
 }
 
 /// Splits a string into a vector of substrings based on a delimiter character.

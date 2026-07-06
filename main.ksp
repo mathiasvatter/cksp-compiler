@@ -17,7 +17,7 @@ end function
 end struct	
 
 struct Point
-    x: int, y: int, f: int
+    x: int, y: int
 end struct	
 
 declare x
