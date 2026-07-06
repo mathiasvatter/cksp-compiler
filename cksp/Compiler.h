@@ -14,7 +14,7 @@
 #include "Preprocessor/PreAST/PreASTPragma.h"
 // misc
 #include "../utils/Timer.h"
-#include "../misc/CommandLineOptions.h"
+#include "CompilerConfig.h"
 #include "BuiltinsProcessing/DefinitionProvider.h"
 // AST
 #include "Parser/Parser.h"
@@ -47,15 +47,18 @@
 #include "ASTVisitor/GlobalScope/ASTParameterPromotion.h"
 #include "ASTVisitor/GlobalScope/MarkThreadSafe.h"
 #include "ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
-#include "../JSON/parser/JSONParser.h"
 #include "Optimization/ArrayInitializationRaising.h"
 #include "Optimization/ConstantDatabase.h"
 #include "Preprocessor/PreAST/PreASTConditions.h"
+#include "Source/SourceParser.h"
+#include "Source/SourceProvider.h"
 #include "../misc/DiagnosticSink.h"
 #include "../misc/DiagnosticEngine.h"
 #include "../misc/DiagnosticReport.h"
 
 class Compiler {
+	std::unique_ptr<SourceProvider> m_owned_sources;
+	SourceProvider* m_sources = nullptr;
 	std::unique_ptr<CompilerConfig> m_pragma_config;
 	std::unique_ptr<CompilerConfig> m_cli_config;
 	std::unique_ptr<CompilerConfig> m_final_config;
@@ -71,33 +74,7 @@ class Compiler {
 //	bool process_ast();
 //	bool generate();
 public:
-
-	static std::vector<Token> tokenize(const std::string &input_filename, LinesProcessed* lines_collect, DiagnosticEngine& diagnostics) {
-		const FileHandler file_handler(input_filename);
-		Tokenizer tokenizer(file_handler.get_output(), input_filename, diagnostics);
-		auto tokens = tokenizer.tokenize();
-		auto l = tokenizer.get_lines_processed();
-		lines_collect->lines_total += l.lines_total;
-		lines_collect->lines_comment += l.lines_comment;
-		lines_collect->lines_blank += l.lines_blank;
-		return tokens;
-	}
-
-	static Result<std::unique_ptr<PreNodeProgram>> preproc_parse(const std::string &input_filename, DefinitionProvider* definition_provider, LinesProcessed* lines_collect, DiagnosticEngine& diagnostics) {
-		const auto& tokens = Compiler::tokenize(input_filename, lines_collect, diagnostics);
-		PreprocessorParser parser(tokens, definition_provider);
-		auto result = parser.parse_program(nullptr);
-		if (!result.is_error()) result.unwrap()->diagnostic_engine = &diagnostics;
-		return result;
-	}
-
-	static std::unique_ptr<JSONValue> parse_json(const std::string &input_filename) {
-		const FileHandler file_handler(input_filename);
-		JSONParser parser;
-		return parser.parse(file_handler.get_output(), input_filename);
-	}
-
-	void preprocess(DiagnosticEngine& diagnostics) {
+	void preprocess(SourceParser& parser) {
 		auto result = Result<SuccessTag>(SuccessTag{});
 		m_timer.start("Import");
 
@@ -130,7 +107,8 @@ public:
 		// auto pre_ast = std::move(result_parse.unwrap());
 
 
-		auto pre_ast_result = Compiler::preproc_parse(m_cli_config->input_filename.value(), &m_definition_provider, &m_lines_processed, diagnostics);
+		const SourceId entry_source(m_cli_config->input_filename.value());
+		auto pre_ast_result = parser.parse_pre_ast(entry_source);
 		if(pre_ast_result.is_error()) {
 			auto error = pre_ast_result.get_error();
 			error.message += " Preprocessor parsing failed.";
@@ -139,7 +117,8 @@ public:
 		auto pre_ast = std::move(pre_ast_result.unwrap());
 		std::unordered_set<std::string> imported_files{};
 		std::unordered_map<std::string, std::string> basename_map{};
-		pre_ast->do_import_processing(m_cli_config->input_filename.value(), m_cli_config->input_filename.value(), imported_files, basename_map, &m_lines_processed);
+		pre_ast->do_import_processing(
+			entry_source, entry_source, parser, imported_files, basename_map);
 
 		m_timer.stop("Import");
 		m_timer.start("Preprocessor");
@@ -170,7 +149,15 @@ public:
 		m_timer.stop("Preprocessor");
 	}
 
-	explicit Compiler(std::unique_ptr<CompilerConfig> config) : m_cli_config(std::move(config)) {
+	explicit Compiler(std::unique_ptr<CompilerConfig> config)
+		: m_owned_sources(std::make_unique<FileSystemSourceProvider>()),
+		  m_sources(m_owned_sources.get()),
+		  m_cli_config(std::move(config)) {
+		m_pragma_config = std::make_unique<CompilerConfig>();
+	}
+
+	Compiler(std::unique_ptr<CompilerConfig> config, SourceProvider& sources)
+		: m_sources(&sources), m_cli_config(std::move(config)) {
 		m_pragma_config = std::make_unique<CompilerConfig>();
 	}
 
@@ -192,6 +179,7 @@ private:
 		// input_filename = "/Users/Mathias/Scripting/the-score-essentials/the-score-essentials.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
+		// input_filename = "/Users/mathias/Scripting/lux-brass/dev/Lux - Orchestral Brass Keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Ensemble.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Single.ksp";
 		// input_filename = "/Users/mathias/Scripting/toc-single-instruments/legato.ksp";
@@ -219,7 +207,9 @@ private:
 		m_timer.start("Total Time");
 		m_timer.start("Preprocessor");
 
-		preprocess(diagnostic_engine);
+		SourceParser source_parser(
+			*m_sources, m_definition_provider, m_lines_processed, diagnostic_engine);
+		preprocess(source_parser);
 
 #ifndef NDEBUG
 		//    output_filename = "/Users/mathias/Scripting/the-score/Samples/Resources/scripts/the_score.txt";
@@ -486,6 +476,12 @@ private:
 	}
 
 public:
+	/// Compile an explicitly supplied source, used by in-memory and language-server clients.
+	CompilationResult compile(const SourceId& entry_source, DiagnosticSink& diagnostics) {
+		m_cli_config->input_filename = entry_source.value;
+		return compile(diagnostics);
+	}
+
 	/// Compile the input file and report a fatal diagnostic without terminating the process.
 	CompilationResult compile(DiagnosticSink& diagnostics) {
 		DiagnosticEngine diagnostic_engine(diagnostics);

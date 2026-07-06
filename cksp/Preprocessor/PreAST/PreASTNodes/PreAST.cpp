@@ -7,6 +7,7 @@
 #include "../PreASTImport.h"
 #include "../PreASTPrinter.h"
 #include "../PreASTVisitor.h"
+#include "../../../Source/SourceParser.h"
 
 
 // ************* PreNodeAST *************
@@ -27,12 +28,12 @@ void PreNodeAST::debug_print(const std::string &path) {
 }
 
 PreNodeAST * PreNodeAST::do_import_processing(
-	const std::string &base_file,
-	const std::string &current_file,
-	std::unordered_set<std::string> &imported_files,
-	std::unordered_map<std::string, std::string> &basename_map,
-	LinesProcessed* lines_collect) {
-	PreASTImport import_processor(base_file, current_file, imported_files, basename_map, lines_collect);
+	const SourceId& root,
+	const SourceId& current,
+	SourceParser& parser,
+	std::unordered_set<std::string>& imported_files,
+	std::unordered_map<std::string, std::string>& basename_map) {
+	PreASTImport import_processor(root, current, parser, imported_files, basename_map);
 	return accept(import_processor);
 }
 
