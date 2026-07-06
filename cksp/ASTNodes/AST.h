@@ -10,10 +10,11 @@
 #include <mutex>
 
 #include "ASTHelper.h"
-#include "../Tokenizer/TokenSourceRange.h"
+#include "../Tokenizer/Token.h"
 #include "../Types/Types.h"
 #include "../../misc/HashFunctions.h"
 #include "../../misc/Diagnostic.h"
+#include "../../misc/FreeFunctions.h"
 #include "../../utils/StringUtils.h"
 
 class ASTDesugaring;

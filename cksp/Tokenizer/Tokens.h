@@ -140,6 +140,12 @@ enum class token {
 };
 #undef ENUM
 
+static std::optional<token> get_token_type(const std::unordered_map<std::string, token>& keywordMap, const std::string& value) {
+	if (const auto it = keywordMap.find(value); it != keywordMap.end()) {
+		return it->second;
+	}
+	return std::nullopt;
+}
 
 #define STRING(name, str) str,
 inline const char *token_strings[] = {

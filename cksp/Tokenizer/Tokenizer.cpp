@@ -10,16 +10,6 @@
 #include "../../utils/StringUtils.h"
 #include "../../misc/DiagnosticEngine.h"
 
-/*
- * TOKEN STRUCT
- */
-Token::Token(token type, std::string  val, size_t line, size_t pos, const std::string &file)
-            : type(type), val(std::move(val)), line(line), pos(pos), file(file) {}
-
-std::ostream &operator<<(std::ostream &os, const Token &tok) {
-    os << "Type: " << tok.type << " | Value: " << tok.val << " | Line: " << tok.line;
-    return os;
-}
 
 /*
  * Tokenizer Functions

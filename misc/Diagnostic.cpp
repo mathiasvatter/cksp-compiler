@@ -1,7 +1,7 @@
 #include "Diagnostic.h"
 
 #include "DiagnosticEngine.h"
-#include "../cksp/Tokenizer/TokenSourceRange.h"
+#include "../cksp/Tokenizer/Token.h"
 
 std::string error_type_to_string(const ErrorType type) {
     switch (type) {

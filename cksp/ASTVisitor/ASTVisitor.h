@@ -5,6 +5,7 @@
 #pragma once
 
 #include <stdexcept>
+#include <fstream>
 
 #include "../Types/TypeRegistry.h"
 #include "../ASTNodes/AST.h"

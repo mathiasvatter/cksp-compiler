@@ -57,7 +57,7 @@ add_library(cksp_core STATIC
         cksp/Tokenizer/Tokens.h
         cksp/Tokenizer/Tokenizer.h
         cksp/Tokenizer/Tokenizer.cpp
-        cksp/Tokenizer/TokenSourceRange.h
+        cksp/Tokenizer/Token.h
         cksp/Parser/Parser.h
         cksp/Parser/Parser.cpp
         misc/Diagnostic.h

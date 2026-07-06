@@ -8,7 +8,7 @@
 
 #include "PreASTHelper.h"
 #include "../../../ASTNodes/ASTHelper.h"
-#include "../../../Tokenizer/TokenSourceRange.h"
+#include "../../../Tokenizer/Token.h"
 #include "../../../BuiltinsProcessing/DefinitionProvider.h"
 #include "../../../../misc/HashFunctions.h"
 #include "../../../../utils/StringUtils.h"

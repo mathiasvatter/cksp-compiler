@@ -12,45 +12,12 @@
 #include <optional>
 
 #include "../../misc/Result.h"
-#include "Tokens.h"
+#include "Token.h"
 #include "../../misc/FileHandler.h"
 #include "../../misc/FreeFunctions.h"
 
 class DiagnosticEngine;
 
-/*
- * Token struct that gets line numbers, the token type and its value
- */
-struct Token {
-    token type;
-    std::string val;
-    size_t line;
-    size_t pos;
-    std::string file;
-
-    Token() : type(token::INVALID), val(""), line(-1), pos(0), file("") {}
-    Token(token type, std::string val, size_t line, size_t pos, const std::string &file);
-	Token(const Token& other) = default;
-	void set_val(const std::string& value) {this->val = value;}
-	void set_type(const token token_type) { this->type = token_type; }
-    friend std::ostream& operator<<(std::ostream& os, const Token& tok);
-	bool operator==(const Token &other) const {
-		return type == other.type && val == other.val;
-	}
-	std::string get_position() const {
-		std::string pos_text = file;
-		if (line != -1) pos_text += ":" + std::to_string(line);
-		if (pos > 0) pos_text += ":" + std::to_string(pos);
-		return pos_text;
-	}
-};
-
-static std::optional<token> get_token_type(const std::unordered_map<std::string, token>& keywordMap, const std::string& value) {
-	if (const auto it = keywordMap.find(value); it != keywordMap.end()) {
-        return it->second;
-    }
-    return std::nullopt;
-}
 
 struct LinesProcessed {
 	size_t lines_total = 0;
