@@ -12,7 +12,6 @@ int main(int argc, char* argv[]) {
 	std::cout.imbue(std::locale::classic());
 	std::cin.imbue(std::locale::classic());
 
-	// std::locale::global(std::locale("C"));
 	ConsoleDiagnosticSink diagnostics;
 	try {
 		CommandLineOptions cli_options(argc, argv);

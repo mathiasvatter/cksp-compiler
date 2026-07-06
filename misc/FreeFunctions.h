@@ -96,15 +96,3 @@ inline std::string desanitize_dots(const std::string& str) {
 
 	return result;
 }
-
-/// takes string and returns vector of namespaces ('.')
-inline std::vector<std::string> get_namespaces(const std::string& str) {
-	std::vector<std::string> namespaces;
-	std::istringstream iss(str);
-	std::string ns;
-
-	while (std::getline(iss, ns, '.')) {
-		namespaces.push_back(ns);
-	}
-	return namespaces;
-}

@@ -4,7 +4,6 @@
 
 #pragma once
 
-
 // Preprocessor
 #include "Preprocessor/PreprocessorParser.h"
 #include "Preprocessor/PreAST/PreASTCombine.h"
@@ -56,7 +55,17 @@
 #include "../misc/DiagnosticEngine.h"
 #include "../misc/DiagnosticReport.h"
 
+
+template <typename... Args>
+void println(Args&&... args) {
+	(std::cout << ... << args) << '\n';
+}
+
+/**
+ * Central compiler class that combines all passes an provides a method to compile from start to finish
+ */
 class Compiler {
+	bool cli = false; // set to true if called from the console and not in lsp
 	std::unique_ptr<SourceProvider> m_owned_sources;
 	SourceProvider* m_sources = nullptr;
 	std::unique_ptr<CompilerConfig> m_pragma_config;
@@ -64,6 +73,7 @@ class Compiler {
 	std::unique_ptr<CompilerConfig> m_final_config;
 	DefinitionProvider m_definition_provider;
 	NodeProgram* m_program = nullptr;
+	std::unique_ptr<NodeProgram> ast;
 	std::vector<Token> m_tokens{};
 	Timer m_timer;
 	LinesProcessed m_lines_processed{};
@@ -74,38 +84,26 @@ class Compiler {
 //	bool process_ast();
 //	bool generate();
 public:
+
+	explicit Compiler(std::unique_ptr<CompilerConfig> config)
+		: m_owned_sources(std::make_unique<FileSystemSourceProvider>()),
+		  m_sources(m_owned_sources.get()),
+		  m_cli_config(std::move(config)) {
+		m_pragma_config = std::make_unique<CompilerConfig>();
+		cli = true;
+		ast = nullptr;
+	}
+
+	Compiler(std::unique_ptr<CompilerConfig> config, SourceProvider& sources)
+		: m_sources(&sources), m_cli_config(std::move(config)) {
+		m_pragma_config = std::make_unique<CompilerConfig>();
+		cli = false;
+		ast = nullptr;
+	}
+
 	void preprocess(SourceParser& parser) {
 		auto result = Result<SuccessTag>(SuccessTag{});
 		m_timer.start("Import");
-
-
-		// m_tokens = Compiler::tokenize(m_cli_config->input_filename.value());
-		// static ImportProcessor imports(m_tokens, m_cli_config->input_filename.value(), &m_definition_provider);
-		// if(auto import_result = imports.process_imports(); import_result.is_error()) {
-		// 	auto error = import_result.get_error();
-		// 	error.message += " Preprocessor failed while processing import statements.";
-		// 	error.exit();
-		// }
-		// m_tokens = std::move(imports.get_token_vector());
-		//
-		// PreprocessorConditions conditions(m_tokens);
-		// result = conditions.process_conditions();
-		// if(result.is_error()) {
-		// 	auto error = result.get_error();
-		// 	error.message += " Preprocessor failed while processing conditions.";
-		// 	error.exit();
-		// }
-		// m_tokens = std::move(conditions.get_token_vector());
-		//
-		// PreprocessorParser parser(m_tokens, &m_definition_provider);
-		// auto result_parse = parser.parse_program(nullptr);
-		// if(result_parse.is_error()) {
-		// 	auto error = result_parse.get_error();
-		// 	error.message += " Preprocessor parsing failed.";
-		// 	error.exit();
-		// }
-		// auto pre_ast = std::move(result_parse.unwrap());
-
 
 		const SourceId entry_source(m_cli_config->input_filename.value());
 		auto pre_ast_result = parser.parse_pre_ast(entry_source);
@@ -149,26 +147,24 @@ public:
 		m_timer.stop("Preprocessor");
 	}
 
-	explicit Compiler(std::unique_ptr<CompilerConfig> config)
-		: m_owned_sources(std::make_unique<FileSystemSourceProvider>()),
-		  m_sources(m_owned_sources.get()),
-		  m_cli_config(std::move(config)) {
-		m_pragma_config = std::make_unique<CompilerConfig>();
-	}
-
-	Compiler(std::unique_ptr<CompilerConfig> config, SourceProvider& sources)
-		: m_sources(&sources), m_cli_config(std::move(config)) {
-		m_pragma_config = std::make_unique<CompilerConfig>();
-	}
 
 private:
-	void compile_impl(DiagnosticEngine& diagnostic_engine) {
+	template <typename... Args>
+	void print_to_console(Args&&... args) {
+		if (cli) println(std::forward<Args>(args)...);
+	}
+
+	void initialize(DiagnosticEngine& diagnostic_engine) {
 		// Keep initialization inside the guarded compile path so failures become diagnostics.
 		TypeRegistry::initialize();
 		BuiltinsProcessor builtins(&m_definition_provider, diagnostic_engine);
 		builtins.process();
+	}
 
-#ifndef NDEBUG
+	/// first frontend implementation -> can be used for lsp, does not generate code
+	void analyse_impl(DiagnosticEngine& diagnostic_engine) {
+		initialize(diagnostic_engine);
+		#ifndef NDEBUG
 		std::string input_filename{};
 		//	input_filename = "/Users/mathias/Scripting/sonu-libraries/main.ksp";
 		//    input_filename = R"(C:\Users\mathi\Documents\Scripting\the-score\the-score.ksp)";
@@ -228,28 +224,22 @@ private:
 		m_final_config = combine_configs(m_cli_config, m_pragma_config);
 		// m_final_config->optimization_level = OptimizationLevel::Aggressive;
 
-		std::cout << "\n";
-		std::cout << "Input File: " << m_final_config->input_filename.value() << "\n";
-		if (m_final_config->outputs.size() == 1) {
-			std::cout << ColorCode::Bold << "Output File: " << ColorCode::Reset << m_final_config->outputs.front() << "\n";
-		} else {
-			std::cout << ColorCode::Bold << "Output Files: " << ColorCode::Reset << StringUtils::join(m_final_config->outputs, ' ') << "\n";
-		}
-		std::cout << "\n";
-		std::filesystem::path curr_path = __FILE__;
+		print_to_console();
+		print_to_console("Input File: ", m_final_config->input_filename.value());
+		print_to_console(ColorCode::Bold, "Output File(s): ", ColorCode::Reset, StringUtils::join(m_final_config->outputs, ' '));
+		print_to_console();
 
-		std::cout << m_timer.print_timer("Import") << "\n";
-		std::cout << m_lines_processed.get_report() << "\n";
-		std::cout << m_timer.print_timer("Preprocessor") << "\n";
+		print_to_console(ColorCode::Bold, m_lines_processed.get_report(), ColorCode::Reset);
+		print_to_console(m_timer.print_timer("Import"));
+		print_to_console(m_timer.print_timer("Preprocessor"));
 		m_timer.start("Parsing");
-
 
 		Parser parser(m_tokens);
 		auto ast_result = parser.parse();
 		if (ast_result.is_error()) {
 			ast_result.get_error().exit();
 		}
-		auto ast = std::move(ast_result.unwrap());
+		ast = std::move(ast_result.unwrap());
 		{
 			m_program = ast.get();
 			m_program->diagnostic_engine = &diagnostic_engine;
@@ -264,7 +254,7 @@ private:
 		}
 
 		m_timer.stop("Parsing");
-		std::cout << m_timer.print_timer("Parsing") << "\n";
+		print_to_console(m_timer.print_timer("Parsing"));
 		m_timer.start("Desugaring");
 
 		ASTDesugar desugar;
@@ -272,7 +262,7 @@ private:
 		ast->debug_print();
 
 		m_timer.stop("Desugaring");
-		std::cout << m_timer.print_timer("Desugaring") << "\n";
+		print_to_console(m_timer.print_timer("Desugaring"));
 		m_timer.start("Lexical Scope");
 
 		ASTTypeAnnotations type_annotations(m_program);
@@ -284,7 +274,7 @@ private:
 		ast->debug_print();
 
 		m_timer.stop("Lexical Scope");
-		std::cout << m_timer.print_timer("Lexical Scope") << "\n";
+		print_to_console(m_timer.print_timer("Lexical Scope"));
 		m_timer.start("Semantic Analysis");
 
 		ASTSemanticAnalysis data_structures(ast.get());
@@ -292,7 +282,7 @@ private:
 		ast->debug_print();
 
 		m_timer.stop("Semantic Analysis");
-		std::cout << m_timer.print_timer("Semantic Analysis") << "\n";
+		print_to_console(m_timer.print_timer("Semantic Analysis"));
 		m_timer.start("Type Checking");
 
 		TypeInference infer_types(ast.get());
@@ -307,7 +297,7 @@ private:
 		ast->debug_print();
 
 		m_timer.stop("Type Checking");
-		std::cout << m_timer.print_timer("Type Checking") << "\n";
+		print_to_console(m_timer.print_timer("Type Checking"));
 		m_timer.start("Lowering");
 
 		ASTPointerScope pointer_scope(m_program);
@@ -320,6 +310,12 @@ private:
 		ast->collect_call_sites(m_program); // collect call sites for UIControlParamHandling
 		ASTCollectLowerings lowering(m_program);
 		ast->accept(lowering);
+	}
+
+	void compile_impl(DiagnosticEngine& diagnostic_engine) {
+
+		analyse_impl(diagnostic_engine);
+
 		ASTHandleStringRepresentations hsr(&m_definition_provider);
 		ast->accept(hsr);
 		ast->debug_print();
@@ -329,7 +325,7 @@ private:
 		ast->debug_print();
 
 		m_timer.stop("Lowering");
-		std::cout << m_timer.print_timer("Lowering") << "\n";
+		print_to_console(m_timer.print_timer("Lowering"));
 		m_timer.start("Return Function Rewriting");
 
 		// that should also work here and then I can do the returnstmt lowering in ASTReturnFunctionRewriting???
@@ -351,9 +347,11 @@ private:
 		ast->debug_print();
 
 		{
+			ASTVariableChecking variable_checking(m_program);
 			variable_checking.do_reachable_traversal(*ast, true);
 			ast->remove_references();
 			ast->collect_references(); // >> those two are also only needed for LUX???
+			TypeInference infer_types(ast.get());
 			infer_types.do_reachable_traversal(*ast);
 			ast->debug_print();
 
@@ -380,7 +378,7 @@ private:
 		ast -> debug_print();
 
 		m_timer.stop("Return Function Rewriting");
-		std::cout << m_timer.print_timer("Return Function Rewriting") << "\n";
+		print_to_console(m_timer.print_timer("Return Function Rewriting"));
 		m_timer.start("Data Structure Lowering");
 
 
@@ -397,7 +395,7 @@ private:
 		ast->debug_print();
 
 		m_timer.stop("Data Structure Lowering");
-		std::cout << m_timer.print_timer("Data Structure Lowering") << "\n";
+		print_to_console(m_timer.print_timer("Data Structure Lowering"));
 		m_timer.start("Variable Reuse");
 
 		// second pass to analyze dynamic extend within callbacks and replace with passive_vars
@@ -414,7 +412,7 @@ private:
 		ast->debug_print();
 
 		m_timer.stop("Variable Reuse");
-		std::cout << m_timer.print_timer("Variable Reuse") << "\n";
+		print_to_console(m_timer.print_timer("Variable Reuse"));
 		m_timer.start("Function Inlining");
 
 		ASTFunctionInlining func_inlining(m_program);
@@ -423,7 +421,7 @@ private:
 		ast->debug_print();
 
 		m_timer.stop("Function Inlining");
-		std::cout << m_timer.print_timer("Function Inlining") << "\n";
+		print_to_console(m_timer.print_timer("Function Inlining"));
 		m_timer.start("Post Lowering");
 
 		ASTCollectPostLowerings post_lowering(m_program);
@@ -435,7 +433,7 @@ private:
 
 
 		m_timer.stop("Post Lowering");
-		std::cout << m_timer.print_timer("Post Lowering") << "\n";
+		print_to_console(m_timer.print_timer("Post Lowering"));
 		m_timer.start("Optimization");
 
 		ast->inline_global_variables();
@@ -445,7 +443,7 @@ private:
 		ast->debug_print();
 
 		m_timer.stop("Optimization");
-		std::cout << m_timer.print_timer("Optimization") << "\n";
+		print_to_console(m_timer.print_timer("Optimization"));
 		m_timer.start("Generator");
 
 		ASTKSPSyntaxCheck syntax_check(m_program);
@@ -461,18 +459,14 @@ private:
 		}
 
 		m_timer.stop("Generator");
-		std::cout << m_timer.print_timer("Generator") << "\n";
+		print_to_console(m_timer.print_timer("Generator"));
 		m_timer.stop("Total Time");
 
-		// std::cout << compile_time.report() << "\n";
-		std::cout << "---------------------------" << "\n";
-		std::cout << ColorCode::Bold << m_timer.print_timer("Total Time") << ColorCode::Reset << "\n";
+		// print_to_console(, compile_time.report());
+		print_to_console("---------------------------");
+		print_to_console(ColorCode::Bold, m_timer.print_timer("Total Time"), ColorCode::Reset);
 
-		if (m_final_config->outputs.size() == 1)
-			std::cout << ColorCode::Green << ColorCode::Bold << "Saved compiled file to: " << ColorCode::Reset << m_final_config->outputs.front() << "\n";
-		else {
-			std::cout << ColorCode::Green << ColorCode::Bold << "Saved compiled file to: " << ColorCode::Reset << StringUtils::join(m_final_config->outputs, ' ') << "\n";
-		}
+		print_to_console(ColorCode::Green, ColorCode::Bold, "Saved compiled file(s) to: ", ColorCode::Reset, StringUtils::join(m_final_config->outputs, ' '));
 	}
 
 public:
@@ -483,6 +477,7 @@ public:
 	}
 
 	/// Compile the input file and report a fatal diagnostic without terminating the process.
+	/// used in cli
 	CompilationResult compile(DiagnosticSink& diagnostics) {
 		DiagnosticEngine diagnostic_engine(diagnostics);
 		try {
