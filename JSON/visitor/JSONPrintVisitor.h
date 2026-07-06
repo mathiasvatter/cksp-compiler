@@ -10,6 +10,8 @@
 #include <ostream>
 #include <sstream>
 
+#include "../../utils/StringUtils.h"
+
 class JSONPrintVisitor final : public JSONVisitor {
 	std::stringstream out{};
 	int indent_level = 0;
@@ -31,7 +33,7 @@ public:
 	}
 
 	void visit(JSONString& node) override {
-		out << std::quoted(node.value);
+		out << std::quoted(StringUtils::escape_json_string(node.value));
 	}
 
 	void visit(JSONInt& node) override {

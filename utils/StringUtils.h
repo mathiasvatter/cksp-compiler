@@ -51,6 +51,31 @@ template <typename StringType, typename... OtherReplacements>
     }
 }
 
+/// Escapes a string so it can be safely embedded as a JSON string literal content.
+inline std::string escape_json_string(const std::string& input) {
+    std::ostringstream out;
+    for (unsigned char c : input) {
+        switch (c) {
+            case '"':  out << "\\\""; break;
+            case '\\': out << "\\\\"; break;
+            case '\b': out << "\\b"; break;
+            case '\f': out << "\\f"; break;
+            case '\n': out << "\\n"; break;
+            case '\r': out << "\\r"; break;
+            case '\t': out << "\\t"; break;
+            default:
+                if (c < 0x20) {
+                    out << "\\u"
+                        << std::hex << std::uppercase
+                        << std::setw(4) << std::setfill('0')
+                        << static_cast<int>(c);
+                } else {
+                    out << static_cast<char>(c);
+                }
+        }
+    }
+    return out.str();
+}
 
 inline std::string escape_spaces(const std::string& path) {
     return StringUtils::replace(path, " ", "\\ ");

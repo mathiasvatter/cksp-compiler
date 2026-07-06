@@ -8,7 +8,7 @@
 #include "../visitor/JSONVisitor.h"
 
 std::string JSONValue::get_string() {
-	static JSONPrintVisitor visitor;
+	JSONPrintVisitor visitor;
 	return visitor.get_string(*this);
 }
 
@@ -40,6 +40,34 @@ void JSONObject::add(const std::string &key, std::unique_ptr<JSONValue> value) {
 		return;
 	}
 	properties.emplace(key, std::move(value));
+}
+
+const JSONValue * JSONObject::get(const std::string &key) const {
+	const auto it = properties.find(key);
+	if (it != properties.end()) {
+		return it->second.get();
+	}
+	return nullptr;
+}
+
+const JSONObject * JSONObject::get_object(const std::string &key) const {
+	const auto it = properties.find(key);
+	if (it != properties.end()) {
+		return dynamic_cast<JSONObject*>(it->second.get());
+	}
+	return nullptr;
+}
+
+const JSONArray * JSONObject::get_array(const std::string &key) const {
+	const auto it = properties.find(key);
+	if (it != properties.end()) {
+		return dynamic_cast<JSONArray*>(it->second.get());
+	}
+	return nullptr;
+}
+
+bool JSONObject::contains(const std::string &key) const {
+	return properties.contains(key);
 }
 
 void JSONObject::accept(JSONVisitor& visitor) {

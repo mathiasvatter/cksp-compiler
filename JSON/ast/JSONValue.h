@@ -50,9 +50,13 @@ struct JSONNull : JSONValue {
 };
 
 struct JSONObject : JSONValue {
-	std::unordered_map<std::string, std::unique_ptr<JSONValue>> properties;
+	std::map<std::string, std::unique_ptr<JSONValue>> properties;
 
 	void add(const std::string& key, std::unique_ptr<JSONValue> value);
+	const JSONValue* get(const std::string& key) const;
+	const JSONObject* get_object(const std::string& key) const;
+	const struct JSONArray* get_array(const std::string& key) const;
+	bool contains(const std::string& key) const;
 	void accept(JSONVisitor& visitor) override;
 };
 
