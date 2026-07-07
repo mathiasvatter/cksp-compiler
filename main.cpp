@@ -3,6 +3,7 @@
 
 #include "misc/CommandLineOptions.h"
 #include "cksp/Compiler.h"
+#include "lsp/LanguageServer.h"
 
 
 
@@ -15,6 +16,12 @@ int main(int argc, char* argv[]) {
 	ConsoleDiagnosticSink diagnostics;
 	try {
 		CommandLineOptions cli_options(argc, argv);
+		if (cli_options.is_lsp_mode()) {
+			JsonRpcConnection connection(std::cin, std::cout);
+			LanguageServer server(connection);
+			return server.run();
+		}
+
 		auto config = cli_options.get_compiler_config();
 		Compiler compiler(std::move(config));
 		const auto result = compiler.compile(diagnostics);

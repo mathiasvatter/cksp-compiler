@@ -1,11 +1,14 @@
 #include "SourceProvider.h"
 
+#include <cctype>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <unordered_set>
 
 #include "../../misc/PathHandler.h"
+#include "../../utils/StringUtils.h"
 
 namespace {
 Diagnostic source_error(
@@ -28,6 +31,38 @@ bool has_supported_extension(const std::filesystem::path& path) {
     };
     return extensions.contains(path.extension().string());
 }
+
+std::string percent_decode_uri(std::string_view value) {
+    std::string decoded;
+    decoded.reserve(value.size());
+
+    for (size_t i = 0; i < value.size(); ++i) {
+        if (value[i] == '%' && i + 2 < value.size()
+            && std::isxdigit(static_cast<unsigned char>(value[i + 1]))
+            && std::isxdigit(static_cast<unsigned char>(value[i + 2]))) {
+            const std::string hex{value.substr(i + 1, 2)};
+            decoded.push_back(static_cast<char>(std::strtol(hex.c_str(), nullptr, 16)));
+            i += 2;
+        } else {
+            decoded.push_back(value[i]);
+        }
+    }
+
+    return decoded;
+}
+}
+
+SourceId source_from_uri(const std::string_view uri) {
+    static constexpr std::string_view file_scheme = "file://";
+    if (uri.starts_with(file_scheme)) {
+        return FileSystemSourceProvider::normalize(percent_decode_uri(uri.substr(file_scheme.size())));
+    }
+    return FileSystemSourceProvider::normalize(uri);
+}
+
+std::string uri_from_source(const SourceId& source) {
+    return "file://" + StringUtils::percent_encode_uri_path(
+        FileSystemSourceProvider::normalize(source.value).value);
 }
 
 SourceId FileSystemSourceProvider::normalize(const std::string_view path) {

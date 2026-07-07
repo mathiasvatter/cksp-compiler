@@ -126,6 +126,15 @@ std::unique_ptr<JSONValue> JSONObject::clone() const {
 	return std::make_unique<JSONObject>(*this);
 }
 
+std::optional<int64_t> JSONObject::get_int(const std::string &key) const {
+	const auto object = get<JSONObject>(key);
+	if (!object) return std::nullopt;
+	const auto* value = object->get(key);
+	const auto* number = value ? value->as<JSONInt>() : nullptr;
+	if (!number) return std::nullopt;
+	return number->value;
+}
+
 JSONArray::JSONArray(const JSONArray& other) : JSONValue(other) {
 	elements.reserve(other.elements.size());
 	for (const auto& value : other.elements) {

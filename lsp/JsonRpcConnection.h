@@ -31,7 +31,7 @@ class JsonRpcConnection {
 public:
 	JsonRpcConnection(std::istream& input, std::ostream& output) : m_input(input), m_output(output) {}
 
-	std::optional<JsonRpcMessage> read_message() const;
+	[[nodiscard]] std::optional<JsonRpcMessage> read_message() const;
 
 	void send_response(const JSONValue& id, const JSONValue& result) const;
 	void send_error_response(const JSONValue& id, int code, const std::string& message) const;
@@ -50,7 +50,7 @@ inline std::optional<JsonRpcMessage> JsonRpcConnection::read_message() const {
 		}
 		if (line.empty()) break;
 
-		const std::string prefix = "Content-Length:";
+		constexpr std::string prefix = "Content-Length:";
 		if (StringUtils::starts_with(line, prefix)) {
 			const std::string value = line.substr(prefix.length());
 			content_length = (std::size_t)std::stoul(value);

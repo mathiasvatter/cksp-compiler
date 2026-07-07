@@ -27,6 +27,9 @@ struct SourceId {
     friend bool operator==(const SourceId&, const SourceId&) = default;
 };
 
+[[nodiscard]] SourceId source_from_uri(std::string_view uri);
+[[nodiscard]] std::string uri_from_source(const SourceId& source);
+
 /** Immutable source snapshot consumed by one compilation. */
 struct SourceDocument {
     SourceId id;

@@ -37,6 +37,8 @@ CommandLineOptions::CommandLineOptions(int argc, char **argv) {
         	std::cout << get_help_option() << std::endl;
             std::cout << cli_help;
             exit(0);
+        } else if (arg == "--lsp") {
+			m_lsp_mode = true;
         } else if (arg == "-o") {
         	// Accept repeated -o occurrences
         	if (i + 1 < argc) {
@@ -124,6 +126,10 @@ CommandLineOptions::CommandLineOptions(int argc, char **argv) {
         }
     }
 
+	if (m_lsp_mode) {
+		return;
+	}
+
     if (input_file.empty()) {
         std::cerr << "Error: No input file provided.\n";
         std::cout << cli_help;
@@ -158,7 +164,11 @@ std::string CommandLineOptions::get_help_option() const {
 		if (!std::get<1>(tuple).empty()) {
 			if (!std::get<0>(tuple).empty()) ss << ", ";
 			else ss << "    ";
-			ss << std::get<1>(tuple);
+			if (std::get<1>(tuple).starts_with("-")) {
+				ss << std::get<1>(tuple);
+			} else {
+				ss << "--" << std::get<1>(tuple);
+			}
 		}
 		ss << " " << std::get<2>(tuple);
 		if (std::get<2>(tuple).empty()) ss << "\t";
@@ -170,5 +180,3 @@ std::string CommandLineOptions::get_help_option() const {
 std::unique_ptr<CompilerConfig> CommandLineOptions::get_compiler_config() {
 	return std::move(m_compiler_config);
 }
-
-

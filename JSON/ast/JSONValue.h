@@ -22,8 +22,8 @@ struct JSONValue {
 	JSONValue& operator=(const JSONValue& other) = default;
 	virtual void accept(JSONVisitor& visitor) = 0;
 	virtual void accept(JSONPrintVisitor& visitor) const = 0;
-	virtual std::unique_ptr<JSONValue> clone() const = 0;
-	std::string get_string() const;
+	[[nodiscard]] virtual std::unique_ptr<JSONValue> clone() const = 0;
+	[[nodiscard]] std::string get_string() const;
 
 	template <typename T>
 	[[nodiscard]] T* as() {
@@ -43,7 +43,7 @@ struct JSONString : JSONValue {
 	explicit JSONString(std::string  value) : value(std::move(value)) {}
 	void accept(JSONVisitor& visitor) override;
 	void accept(JSONPrintVisitor& visitor) const override;
-	std::unique_ptr<JSONValue> clone() const override;
+	[[nodiscard]] std::unique_ptr<JSONValue> clone() const override;
 };
 
 struct JSONInt : JSONValue {
@@ -51,7 +51,7 @@ struct JSONInt : JSONValue {
 	explicit JSONInt(const long long value) : value(value) {}
 	void accept(JSONVisitor& visitor) override;
 	void accept(JSONPrintVisitor& visitor) const override;
-	std::unique_ptr<JSONValue> clone() const override;
+	[[nodiscard]] std::unique_ptr<JSONValue> clone() const override;
 };
 
 struct JSONFloat : JSONValue {
@@ -59,7 +59,7 @@ struct JSONFloat : JSONValue {
 	explicit JSONFloat(const double value) : value(value) {}
 	void accept(JSONVisitor& visitor) override;
 	void accept(JSONPrintVisitor& visitor) const override;
-	std::unique_ptr<JSONValue> clone() const override;
+	[[nodiscard]] std::unique_ptr<JSONValue> clone() const override;
 };
 
 struct JSONBool : JSONValue {
@@ -92,10 +92,12 @@ struct JSONObject : JSONValue {
 		const auto* value = get(key);
 		return value ? value->as<T>() : nullptr;
 	}
+	std::optional<int64_t> get_int(const std::string& key) const;
 	bool contains(const std::string& key) const;
 	void accept(JSONVisitor& visitor) override;
 	void accept(JSONPrintVisitor& visitor) const override;
 	std::unique_ptr<JSONValue> clone() const override;
+
 };
 
 struct JSONArray : JSONValue {
