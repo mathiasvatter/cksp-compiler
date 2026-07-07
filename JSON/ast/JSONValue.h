@@ -13,6 +13,7 @@
 #include <memory>
 
 class JSONVisitor;
+class JSONPrintVisitor;
 
 struct JSONValue {
 	JSONValue() = default;
@@ -20,8 +21,9 @@ struct JSONValue {
 	JSONValue(const JSONValue& other) = default;
 	JSONValue& operator=(const JSONValue& other) = default;
 	virtual void accept(JSONVisitor& visitor) = 0;
+	virtual void accept(JSONPrintVisitor& visitor) const = 0;
 	virtual std::unique_ptr<JSONValue> clone() const = 0;
-	std::string get_string();
+	std::string get_string() const;
 
 	template <typename T>
 	[[nodiscard]] T* as() {
@@ -40,6 +42,7 @@ struct JSONString : JSONValue {
 	std::string value;
 	explicit JSONString(std::string  value) : value(std::move(value)) {}
 	void accept(JSONVisitor& visitor) override;
+	void accept(JSONPrintVisitor& visitor) const override;
 	std::unique_ptr<JSONValue> clone() const override;
 };
 
@@ -47,6 +50,7 @@ struct JSONInt : JSONValue {
 	long long value;
 	explicit JSONInt(const long long value) : value(value) {}
 	void accept(JSONVisitor& visitor) override;
+	void accept(JSONPrintVisitor& visitor) const override;
 	std::unique_ptr<JSONValue> clone() const override;
 };
 
@@ -54,6 +58,7 @@ struct JSONFloat : JSONValue {
 	double value;
 	explicit JSONFloat(const double value) : value(value) {}
 	void accept(JSONVisitor& visitor) override;
+	void accept(JSONPrintVisitor& visitor) const override;
 	std::unique_ptr<JSONValue> clone() const override;
 };
 
@@ -61,12 +66,14 @@ struct JSONBool : JSONValue {
 	bool value;
 	explicit JSONBool(const bool value) : value(value) {}
 	void accept(JSONVisitor& visitor) override;
+	void accept(JSONPrintVisitor& visitor) const override;
 	std::unique_ptr<JSONValue> clone() const override;
 };
 
 struct JSONNull : JSONValue {
 	JSONNull() = default;
 	void accept(JSONVisitor& visitor) override;
+	void accept(JSONPrintVisitor& visitor) const override;
 	std::unique_ptr<JSONValue> clone() const override;
 };
 
@@ -87,6 +94,7 @@ struct JSONObject : JSONValue {
 	}
 	bool contains(const std::string& key) const;
 	void accept(JSONVisitor& visitor) override;
+	void accept(JSONPrintVisitor& visitor) const override;
 	std::unique_ptr<JSONValue> clone() const override;
 };
 
@@ -112,5 +120,6 @@ struct JSONArray : JSONValue {
 	const JSONValue* at(size_t index) const;
 	void add(std::unique_ptr<JSONValue> value);
 	void accept(JSONVisitor& visitor) override;
+	void accept(JSONPrintVisitor& visitor) const override;
 	std::unique_ptr<JSONValue> clone() const override;
 };

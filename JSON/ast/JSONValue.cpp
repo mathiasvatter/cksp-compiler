@@ -7,12 +7,16 @@
 #include "../visitor/JSONPrintVisitor.h"
 #include "../visitor/JSONVisitor.h"
 
-std::string JSONValue::get_string() {
+std::string JSONValue::get_string() const {
 	JSONPrintVisitor visitor;
 	return visitor.get_string(*this);
 }
 
 void JSONString::accept(JSONVisitor& visitor) {
+	visitor.visit(*this);
+}
+
+void JSONString::accept(JSONPrintVisitor& visitor) const {
 	visitor.visit(*this);
 }
 
@@ -24,11 +28,19 @@ void JSONInt::accept(JSONVisitor& visitor) {
 	visitor.visit(*this);
 }
 
+void JSONInt::accept(JSONPrintVisitor& visitor) const {
+	visitor.visit(*this);
+}
+
 std::unique_ptr<JSONValue> JSONInt::clone() const {
 	return std::make_unique<JSONInt>(*this);
 }
 
 void JSONFloat::accept(JSONVisitor& visitor) {
+	visitor.visit(*this);
+}
+
+void JSONFloat::accept(JSONPrintVisitor& visitor) const {
 	visitor.visit(*this);
 }
 
@@ -40,11 +52,19 @@ void JSONBool::accept(JSONVisitor& visitor) {
 	visitor.visit(*this);
 }
 
+void JSONBool::accept(JSONPrintVisitor& visitor) const {
+	visitor.visit(*this);
+}
+
 std::unique_ptr<JSONValue> JSONBool::clone() const {
 	return std::make_unique<JSONBool>(*this);
 }
 
 void JSONNull::accept(JSONVisitor& visitor) {
+	visitor.visit(*this);
+}
+
+void JSONNull::accept(JSONPrintVisitor& visitor) const {
 	visitor.visit(*this);
 }
 
@@ -98,6 +118,10 @@ void JSONObject::accept(JSONVisitor& visitor) {
 	visitor.visit(*this);
 }
 
+void JSONObject::accept(JSONPrintVisitor& visitor) const {
+	visitor.visit(*this);
+}
+
 std::unique_ptr<JSONValue> JSONObject::clone() const {
 	return std::make_unique<JSONObject>(*this);
 }
@@ -137,6 +161,10 @@ void JSONArray::add(std::unique_ptr<JSONValue> value) {
 }
 
 void JSONArray::accept(JSONVisitor& visitor) {
+	visitor.visit(*this);
+}
+
+void JSONArray::accept(JSONPrintVisitor& visitor) const {
 	visitor.visit(*this);
 }
 

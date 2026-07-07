@@ -22,37 +22,27 @@ class JSONPrintVisitor final : public JSONVisitor {
 		}
 	}
 
-public:
-	explicit JSONPrintVisitor() = default;
-
-	[[nodiscard]] std::string get_string(JSONValue& node) {
-		out.str("");
-		out.clear();
-		node.accept(*this);
-		return out.str();
-	}
-
-	void visit(JSONString& node) override {
+	void write(const JSONString& node) {
 		out << std::quoted(StringUtils::escape_json_string(node.value));
 	}
 
-	void visit(JSONInt& node) override {
+	void write(const JSONInt& node) {
 		out << node.value;
 	}
 
-	void visit(JSONFloat& node) override {
+	void write(const JSONFloat& node) {
 		out << node.value;
 	}
 
-	void visit(JSONBool& node) override {
+	void write(const JSONBool& node) {
 		out << (node.value ? "true" : "false");
 	}
 
-	void visit(JSONNull& node) override {
+	void write(const JSONNull& node) {
 		out << "null";
 	}
 
-	void visit(JSONObject& node) override {
+	void write(const JSONObject& node) {
 		out << "{";
 		if (!node.properties.empty()) out << "\n";
 		indent_level++;
@@ -64,12 +54,7 @@ public:
 			}
 			indent();
 			out << std::quoted(fst) << ": ";
-			if (dynamic_cast<JSONValue*>(snd.get()) || dynamic_cast<JSONArray*>(snd.get())) {
-				// Kein zusätzlicher Space vor Objekt/Array wenn pretty printing
-			} else {
-				out << " ";
-			}
-			snd->accept(*this);
+			snd ? static_cast<const JSONValue&>(*snd).accept(*this) : write(JSONNull{});
 			first = false;
 		}
 
@@ -81,7 +66,7 @@ public:
 		out << "}";
 	}
 
-	void visit(JSONArray& node) override {
+	void write(const JSONArray& node) {
 		out << "[";
 		if (!node.elements.empty()) out << "\n";
 		indent_level++;
@@ -92,7 +77,7 @@ public:
 				out << ",\n";
 			}
 			indent();
-			elem->accept(*this);
+			elem ? static_cast<const JSONValue&>(*elem).accept(*this) : write(JSONNull{});
 			first = false;
 		}
 
@@ -104,5 +89,74 @@ public:
 		out << "]";
 	}
 
+public:
+	explicit JSONPrintVisitor() = default;
+
+	[[nodiscard]] std::string get_string(const JSONValue& node) {
+		out.str("");
+		out.clear();
+		node.accept(*this);
+		return out.str();
+	}
+
+	[[nodiscard]] std::string get_string(JSONValue& node) {
+		return get_string(static_cast<const JSONValue&>(node));
+	}
+
+	void visit(JSONString& node) override {
+		write(node);
+	}
+
+	void visit(const JSONString& node) {
+		write(node);
+	}
+
+	void visit(JSONInt& node) override {
+		write(node);
+	}
+
+	void visit(const JSONInt& node) {
+		write(node);
+	}
+
+	void visit(JSONFloat& node) override {
+		write(node);
+	}
+
+	void visit(const JSONFloat& node) {
+		write(node);
+	}
+
+	void visit(JSONBool& node) override {
+		write(node);
+	}
+
+	void visit(const JSONBool& node) {
+		write(node);
+	}
+
+	void visit(JSONNull& node) override {
+		write(node);
+	}
+
+	void visit(const JSONNull& node) {
+		write(node);
+	}
+
+	void visit(JSONObject& node) override {
+		write(node);
+	}
+
+	void visit(const JSONObject& node) {
+		write(node);
+	}
+
+	void visit(JSONArray& node) override {
+		write(node);
+	}
+
+	void visit(const JSONArray& node) {
+		write(node);
+	}
 
 };
