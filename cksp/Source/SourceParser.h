@@ -34,8 +34,8 @@ public:
         {}
 
     Result<std::vector<Token>> tokenize(const SourceId& source) const;
-    Result<std::unique_ptr<PreNodeProgram>> parse_pre_ast(const SourceId& source);
-    Result<std::unique_ptr<JSONValue>> parse_json(const SourceId& source);
+    Result<std::unique_ptr<PreNodeProgram>> parse_pre_ast(const SourceId& source) const;
+    Result<std::unique_ptr<JSONValue>> parse_json(const SourceId& source) const;
 
     Result<SourceId> resolve_import(const SourceId& root, const SourceId& importer, std::string_view import_path) const {
         auto result = m_sources.resolve_import(root, importer, import_path);

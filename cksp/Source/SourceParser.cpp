@@ -21,7 +21,7 @@ Result<std::vector<Token>> SourceParser::tokenize(const SourceId& source) const 
     return Result<std::vector<Token>>(std::move(tokens));
 }
 
-Result<std::unique_ptr<PreNodeProgram>> SourceParser::parse_pre_ast(const SourceId& source) {
+Result<std::unique_ptr<PreNodeProgram>> SourceParser::parse_pre_ast(const SourceId& source) const {
     m_imports.add_source(source);
     auto token_result = tokenize(source);
     if (token_result.is_error()) {
@@ -34,14 +34,13 @@ Result<std::unique_ptr<PreNodeProgram>> SourceParser::parse_pre_ast(const Source
     return result;
 }
 
-Result<std::unique_ptr<JSONValue>> SourceParser::parse_json(const SourceId& source) {
+Result<std::unique_ptr<JSONValue>> SourceParser::parse_json(const SourceId& source) const {
     auto document_result = m_sources.load(source);
     if (document_result.is_error()) {
         return Result<std::unique_ptr<JSONValue>>(document_result.get_error());
     }
 
     const auto& document = document_result.unwrap();
-    JSONParser parser;
     return Result<std::unique_ptr<JSONValue>>(
-        parser.parse(*document.text, document.id.value));
+        JSONParser::parse(*document.text, document.id.value));
 }

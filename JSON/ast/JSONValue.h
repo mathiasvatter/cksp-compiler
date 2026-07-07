@@ -77,7 +77,14 @@ struct JSONObject : JSONValue {
 	JSONObject(const JSONObject& other);
 	JSONObject& operator=(const JSONObject& other);
 	void add(const std::string& key, std::unique_ptr<JSONValue> value);
+	/// get value
 	const JSONValue* get(const std::string& key) const;
+	/// get value and cast it at the same time
+	template <typename T>
+	[[nodiscard]] const T* get(const std::string& key) const {
+		const auto* value = get(key);
+		return value ? value->as<T>() : nullptr;
+	}
 	bool contains(const std::string& key) const;
 	void accept(JSONVisitor& visitor) override;
 	std::unique_ptr<JSONValue> clone() const override;
