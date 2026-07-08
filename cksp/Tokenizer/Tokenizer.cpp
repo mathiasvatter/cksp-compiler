@@ -138,11 +138,11 @@ char Tokenizer::peek(const int ahead) const {
 void Tokenizer::get_invalid() {
 	flush_buffer();
 	consume();
-	add_token(token::INVALID, m_buffer);
 	auto got = !m_buffer.empty() ? m_buffer : std::string(1, m_current_char);
-	auto error = Diagnostic(ErrorType::TokenError, "", m_line, "valid token", got, m_current_file);
-	error.exit();
+	add_token(token::INVALID, m_buffer);
+	auto error = Diagnostic(ErrorType::TokenError, "", "valid token", m_tokens.back());
 	error.add_message("Found invalid token: " + got);
+	error.exit();
 	skip_whitespace();
 }
 
@@ -666,5 +666,3 @@ bool Tokenizer::is_callback_end() const {
         return m_tokens.back().val == "end" && m_buffer == "on";
     return false;
 }
-
-

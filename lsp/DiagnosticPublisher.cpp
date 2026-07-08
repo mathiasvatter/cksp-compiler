@@ -15,6 +15,17 @@ namespace {
 
 		return FileSystemSourceProvider::normalize(diagnostic.file) == source;
 	}
+
+	std::string diagnostic_message(const Diagnostic& diagnostic) {
+		if (!diagnostic.message.empty()) {
+			return diagnostic.message;
+		}
+		auto message = error_type_to_string(diagnostic.type);
+		if (!diagnostic.actual.empty()) {
+			message += ": " + diagnostic.actual;
+		}
+		return message;
+	}
 } // namespace
 
 void DiagnosticPublisher::publish(const SourceId& entry_source, const std::vector<Diagnostic>& diagnostics) {
@@ -77,7 +88,7 @@ std::unique_ptr<JSONObject> DiagnosticPublisher::make_lsp_diagnostic(const Diagn
 	result->add("severity", std::make_unique<JSONInt>((int)diagnostic.severity));
 	result->add("source", std::make_unique<JSONString>("cksp"));
 	result->add("code", std::make_unique<JSONString>(error_type_to_string(diagnostic.type)));
-	result->add("message", std::make_unique<JSONString>(diagnostic.message));
+	result->add("message", std::make_unique<JSONString>(diagnostic_message(diagnostic)));
 	return result;
 }
 

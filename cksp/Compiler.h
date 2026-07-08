@@ -162,8 +162,64 @@ private:
 		builtins.process();
 	}
 
-	/// first frontend implementation -> can be used for lsp, does not generate code
 	void analyse_impl(DiagnosticEngine& diagnostic_engine) {
+		initialize(diagnostic_engine);
+		SourceParser source_parser(*m_sources, m_definition_provider, m_lines_processed, diagnostic_engine, m_import_graph);
+		preprocess(source_parser);
+		m_final_config = combine_configs(m_cli_config, m_pragma_config);
+		Parser parser(m_tokens);
+		auto ast_result = parser.parse();
+		if (ast_result.is_error()) {
+			ast_result.get_error().exit();
+		}
+		ast = std::move(ast_result.unwrap());
+		{
+			m_program = ast.get();
+			m_program->diagnostic_engine = &diagnostic_engine;
+			m_program->def_provider = &m_definition_provider;
+			m_program->compiler_config = m_final_config.get();
+			m_program->apply_callback_overrides();
+			if (m_pragma_config->combine_callbacks) {
+				m_program->combine_callbacks();
+			}
+			m_program->check_unique_callbacks();
+			m_program->init_callback = m_program->move_on_init_callback();
+		}
+		ASTDesugar desugar;
+		ast->accept(desugar);
+
+		ASTTypeAnnotations type_annotations(m_program);
+		ast->accept(type_annotations);
+
+		ASTVariableChecking variable_checking(m_program);
+		variable_checking.do_complete_traversal(*ast, false);
+		ast->collect_references();
+
+		ASTSemanticAnalysis data_structures(ast.get());
+		ast->accept(data_structures);
+
+		TypeInference infer_types(ast.get());
+		infer_types.do_complete_traversal(*ast);
+
+		UniqueParameterNamesProvider unique_names_provider(m_program);
+		unique_names_provider.do_parallel_renaming(*m_program);
+
+		// ASTPointerScope pointer_scope(m_program);
+		// ast->accept(pointer_scope);
+		// ASTStructInstanceAnalysis instance_analysis(m_program);
+		// ast->accept(instance_analysis);
+		// ast->collect_references();  //>> actually needed when pointers are used -> LUX
+
+		ast->collect_call_sites(m_program); // collect call sites for UIControlParamHandling
+		ASTCollectLowerings lowering(m_program);
+		ast->accept(lowering);
+
+		ASTVariableChecking variable_checking2(m_program);
+		variable_checking2.do_reachable_traversal(*ast, true);
+	}
+
+	/// first frontend implementation -> can be used for lsp, does not generate code
+	void frontend_impl(DiagnosticEngine& diagnostic_engine) {
 		initialize(diagnostic_engine);
 	#ifndef NDEBUG
 		std::string input_filename{};
@@ -204,8 +260,7 @@ private:
 		m_timer.start("Total Time");
 		m_timer.start("Preprocessor");
 
-		SourceParser source_parser(
-			*m_sources, m_definition_provider, m_lines_processed, diagnostic_engine, m_import_graph);
+		SourceParser source_parser(*m_sources, m_definition_provider, m_lines_processed, diagnostic_engine, m_import_graph);
 		preprocess(source_parser);
 
 	#ifndef NDEBUG
