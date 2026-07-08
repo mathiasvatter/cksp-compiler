@@ -52,19 +52,22 @@ std::vector<SourceId> EntryPointResolver::affected_entries(const SourceId& chang
         }
     }
 
-    std::vector<SourceId> entries;
+    std::vector<SourceId> dependent_entries;
     for (const auto& entry_value : m_known_entries) {
         const SourceId entry(entry_value);
-        if (entry == source || entry_depends_on(entry, source)) {
-            entries.push_back(entry);
+        if (entry == source) {
+            continue;
+        }
+        if (entry_depends_on(entry, source)) {
+            dependent_entries.push_back(entry);
         }
     }
 
-    if (entries.empty()) {
-        entries.push_back(source);
+    if (!dependent_entries.empty()) {
+        return dependent_entries;
     }
 
-    return entries;
+    return {source};
 }
 
 std::optional<SourceId> EntryPointResolver::configured_entry_for(const SourceId& source) const {
