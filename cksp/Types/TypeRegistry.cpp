@@ -8,6 +8,14 @@
 
 // Implementation of the initialization method
 void TypeRegistry::initialize() {
+    object_types.clear();
+    composite_types.clear();
+    function_types.clear();
+    annotation_to_type.clear();
+    type_to_annotation.clear();
+    identifier_to_type.clear();
+    type_to_identifier.clear();
+
     // Initialization of standard types
     IntegerType = std::make_unique<BasicType>(Kind::Integer);
     Integer = IntegerType.get();
