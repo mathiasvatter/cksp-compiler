@@ -65,7 +65,6 @@ void println(Args&&... args) {
  * Central compiler class that combines all passes an provides a method to compile from start to finish
  */
 class Compiler {
-	bool cli = false; // set to true if called from the console and not in lsp
 	std::unique_ptr<SourceProvider> m_owned_sources;
 	SourceProvider* m_sources = nullptr;
 	std::unique_ptr<CompilerConfig> m_pragma_config;
@@ -91,14 +90,12 @@ public:
 		  m_sources(m_owned_sources.get()),
 		  m_cli_config(std::move(config)) {
 		m_pragma_config = std::make_unique<CompilerConfig>();
-		cli = true;
 		ast = nullptr;
 	}
 
 	Compiler(std::unique_ptr<CompilerConfig> config, SourceProvider& sources)
 		: m_sources(&sources), m_cli_config(std::move(config)) {
 		m_pragma_config = std::make_unique<CompilerConfig>();
-		cli = false;
 		ast = nullptr;
 	}
 
@@ -152,7 +149,7 @@ public:
 private:
 	template <typename... Args>
 	void print_to_console(Args&&... args) {
-		if (cli) println(std::forward<Args>(args)...);
+		if (!m_cli_config->lsp) println(std::forward<Args>(args)...);
 	}
 
 	void initialize(DiagnosticEngine& diagnostic_engine) {
@@ -162,6 +159,7 @@ private:
 		builtins.process();
 	}
 
+	/// used for lsp
 	void analyse_impl(DiagnosticEngine& diagnostic_engine) {
 		initialize(diagnostic_engine);
 		SourceParser source_parser(*m_sources, m_definition_provider, m_lines_processed, diagnostic_engine, m_import_graph);
@@ -216,6 +214,9 @@ private:
 
 		ASTVariableChecking variable_checking2(m_program);
 		variable_checking2.do_reachable_traversal(*ast, true);
+
+		// ASTKSPSyntaxCheck syntax_check(m_program);
+		// ast->accept(syntax_check);
 	}
 
 	/// first frontend implementation -> can be used for lsp, does not generate code
@@ -253,7 +254,7 @@ private:
 		// input_filename = "/Users/mathias/Scripting/sonu-libraries/try.ksp";
 		// input_filename = "/Users/mathias/Scripting/trinity-drums-2/main.ksp";
 		// input_filename = "/Users/mathias/Scripting/the-sculpture/sculpture-engine.cksp";
-		if (cli && !input_filename.empty()) m_cli_config->input_filename = input_filename;
+		if (!m_cli_config->lsp && !input_filename.empty()) m_cli_config->input_filename = input_filename;
 		// m_cli_config->optimization_level = OptimizationLevel::None;
 	#endif
 
@@ -370,7 +371,7 @@ private:
 
 	void compile_impl(DiagnosticEngine& diagnostic_engine) {
 
-		analyse_impl(diagnostic_engine);
+		frontend_impl(diagnostic_engine);
 
 		ASTHandleStringRepresentations hsr(&m_definition_provider);
 		ast->accept(hsr);

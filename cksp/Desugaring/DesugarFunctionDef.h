@@ -6,18 +6,18 @@
 
 #include "ASTDesugaring.h"
 #include "../../utils/Gensym.h"
+#include "../CompilerConfig.h"
 
 /// raises functions with deprecated style return to return statement only if expression only function
 /// because other functions with old-style return may be expected to work in a certain way
 /// when encountering return statement with multiple return values -> dummy parameter promotion
 /// when encountering old return style -> throw deprecation warning
 class DesugarFunctionDef : public ASTDesugaring {
-private:
 	bool throw_deprecated_warning = false;
 	NodeFunctionDefinition* m_current_function = nullptr;
 	int m_num_last_ret_values = 0; // saves the number of return values of last return statement
 
-	inline static Diagnostic throw_function_deprecation_error(Token tok) {
+	static Diagnostic throw_function_deprecation_error(Token tok) {
 		auto error = Diagnostic(ErrorType::SyntaxError, "", "<Return> Statement", tok);
 		error.message = "Deprecated return syntax used in function definition. For type safety, using"
 						  " multiple return values or returning arrays, use <return> statement syntax instead.";
@@ -25,7 +25,7 @@ private:
 	}
 
 	/// transforms expression only function into return statement functions
-	static inline bool transform_expr_only_to_return_function(NodeFunctionDefinition* def) {
+	static bool transform_expr_only_to_return_function(NodeFunctionDefinition* def) {
 		if(!def->return_variable.has_value()) return false;
 		if(def->body->statements.size() == 1) {
 			auto stmt = def->body->get_last_statement().get();
@@ -45,11 +45,11 @@ private:
 public:
 	explicit DesugarFunctionDef(NodeProgram *program) : ASTDesugaring(program) {};
 
-	inline NodeAST* visit(NodeFunctionDefinition &node) override {
+	NodeAST* visit(NodeFunctionDefinition &node) override {
 		m_current_function = &node;
 		if(node.return_variable.has_value()) {
 			node.num_return_params = 1;
-			if(!throw_deprecated_warning) {
+			if(!throw_deprecated_warning or m_program->compiler_config->lsp) {
 				throw_function_deprecation_error(node.return_variable.value()->tok).report(diagnostics());
 				throw_deprecated_warning = true;
 			}
@@ -59,16 +59,16 @@ public:
 		node.body->accept(*this);
 		m_current_function = nullptr;
 		return &node;
-	};
+	}
 
-	inline NodeAST* visit(NodeSingleAssignment &node) override {
+	NodeAST* visit(NodeSingleAssignment &node) override {
 		node.l_value->accept(*this);
 		node.r_value->accept(*this);
 		return &node;
-	};
+	}
 
 	// add dummy variable for every return parameter >1 to function header
-	inline NodeAST* visit(NodeReturn &node) override {
+	NodeAST* visit(NodeReturn &node) override {
 		if (m_current_function->return_variable.has_value()) {
 			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
 			error.message = "No Return Statement allowed in <FunctionDefinition> using deprecated return syntax.";
@@ -98,6 +98,5 @@ public:
 			}
 		}
 		return &node;
-	};
-
+	}
 };

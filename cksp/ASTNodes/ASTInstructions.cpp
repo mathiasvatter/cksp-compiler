@@ -82,6 +82,7 @@ std::unique_ptr<NodeAST> NodeFunctionCall::clone() const {
 }
 ASTLowering* NodeFunctionCall::get_lowering(struct NodeProgram *program) const {
     static LoweringFunctionCall lowering(program);
+	lowering.set_program(program);
     return &lowering;
 }
 
@@ -249,6 +250,7 @@ std::string NodeFunctionCall::get_method_name() const {
 
 ASTDesugaring * NodeFunctionCall::get_desugaring(NodeProgram *program) const {
 	static DesugarFunctionCall desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 
@@ -260,11 +262,13 @@ bool NodeFunctionCall::is_builtin_kind() const {
 
 NodeAST *NodeFunctionCall::do_function_call_hoisting(NodeProgram *program) {
 	static ReturnFunctionCallHoisting hoisting;
+	hoisting.set_program(program);
 	return hoisting.do_function_call_hoisting(*this, program);
 }
 
 NodeAST *NodeFunctionCall::do_function_inlining(NodeProgram *program) {
 	static FunctionInlining inlining(program);
+	inlining.set_program(program);
 	return inlining.do_function_inlining(*this);
 }
 
@@ -278,6 +282,7 @@ bool NodeFunctionCall::check_restricted_environment(NodeCallback *current_callba
 
 void NodeFunctionCall::determine_function_strategy(NodeProgram *program, NodeCallback *current_callback) {
 	static ASTFunctionStrategy function_strategy(program, program->compiler_config->parameter_passing);
+	function_strategy.set_program(program);
 	function_strategy.determine_function_strategy(*this, current_callback);
 }
 
@@ -350,11 +355,13 @@ NodeAST *NodeSortSearch::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAS
 
 ASTLowering* NodeSortSearch::get_lowering(NodeProgram *program) const {
 	static LoweringSortSearch lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
 ASTLowering* NodeSortSearch::get_post_lowering(NodeProgram *program) const {
 	static PostLoweringSortSearch lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -385,11 +392,13 @@ NodeAST *NodeNumElements::replace_child(NodeAST* oldChild, std::unique_ptr<NodeA
 
 ASTLowering* NodeNumElements::get_lowering(NodeProgram *program) const {
 	static LoweringNumElements lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
 ASTLowering* NodeNumElements::get_post_lowering(NodeProgram *program) const {
 	static PostLoweringNumElements lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -416,6 +425,7 @@ NodeAST *NodeUseCount::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST>
 
 ASTLowering* NodeUseCount::get_lowering(NodeProgram *program) const {
 	static LoweringUseCount lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -448,6 +458,7 @@ NodeAST *NodeDelete::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> n
 
 ASTDesugaring * NodeDelete::get_desugaring(NodeProgram *program) const {
 	static DesugarDelete desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 
@@ -475,6 +486,7 @@ NodeAST *NodeSingleDelete::replace_child(NodeAST* oldChild, std::unique_ptr<Node
 
 ASTLowering* NodeSingleDelete::get_lowering(NodeProgram *program) const {
 	static LoweringMemAlloc lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -502,6 +514,7 @@ NodeAST *NodeSingleRetain::replace_child(NodeAST* oldChild, std::unique_ptr<Node
 
 ASTLowering* NodeSingleRetain::get_lowering(NodeProgram *program) const {
 	static LoweringMemAlloc lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -532,6 +545,7 @@ std::unique_ptr<NodeAST> NodeAssignment::clone() const {
 
 ASTDesugaring * NodeAssignment::get_desugaring(NodeProgram *program) const {
     static DesugarDeclareAssign desugaring(program);
+	desugaring.set_program(program);
     return &desugaring;
 }
 
@@ -566,11 +580,13 @@ NodeAST *NodeSingleAssignment::replace_child(NodeAST* oldChild, std::unique_ptr<
 
 ASTDesugaring * NodeSingleAssignment::get_desugaring(NodeProgram *program) const {
 	static DesugarSingleAssignment desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 
 NodeAST *NodeSingleAssignment::do_array_normalization(NodeProgram *program) {
 	static NormalizeArrayAssign array_assign(program);
+	array_assign.set_program(program);
 	return accept(array_assign);
 }
 
@@ -618,6 +634,7 @@ std::unique_ptr<NodeAST> NodeCompoundAssignment::clone() const {
 
 ASTDesugaring * NodeCompoundAssignment::get_desugaring(NodeProgram *program) const {
 	static DesugarCompoundAssignment desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 
@@ -644,6 +661,7 @@ void NodeDeclaration::update_parents(NodeAST* new_parent)  {
 
 ASTDesugaring * NodeDeclaration::get_desugaring(NodeProgram *program) const {
     static DesugarDeclareAssign desugaring(program);
+	desugaring.set_program(program);
     return &desugaring;
 }
 
@@ -674,6 +692,7 @@ NodeAST *NodeSingleDeclaration::replace_child(NodeAST* oldChild, std::unique_ptr
 
 ASTDesugaring * NodeSingleDeclaration::get_desugaring(NodeProgram *program) const {
 	static DesugarUIControlArray desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 
@@ -995,6 +1014,7 @@ std::unique_ptr<NodeAST> NodeFamily::clone() const {
 
 ASTDesugaring * NodeFamily::get_desugaring(NodeProgram *program) const {
     static DesugarFamily desugaring(program);
+	desugaring.set_program(program);
     return &desugaring;
 }
 
@@ -1016,12 +1036,14 @@ NodeAST * NodeIf::do_short_circuit_transform(NodeProgram *program) {
 	if (auto node_binary = condition->cast<NodeBinaryExpr>()) {
 		if (node_binary->needs_short_circuiting()) {
 			static FunctionShortCircuit transform(program);
+			transform.set_program(program);
 			return transform.do_short_circuit(*this);
 		}
 	}
 	if (auto node_unary = condition->cast<NodeUnaryExpr>()) {
 		if (node_unary->needs_short_circuiting()) {
 			static FunctionShortCircuit transform(program);
+			transform.set_program(program);
 			return transform.do_short_circuit(*this);
 		}
 	}
@@ -1094,6 +1116,7 @@ NodeAST *NodeFor::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newC
 
 ASTLowering * NodeFor::get_lowering(NodeProgram *program) const {
 	static LoweringFor lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -1150,6 +1173,7 @@ NodeAST *NodeForEach::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> 
 
 ASTLowering * NodeForEach::get_lowering(NodeProgram *program) const {
 	static LoweringForEach lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -1328,6 +1352,7 @@ bool NodeRange::check_environment() const {
 
 ASTLowering * NodeRange::get_lowering(NodeProgram *program) const {
 	static LoweringRange lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -1352,6 +1377,7 @@ NodeAST *NodeWhile::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> ne
 }
 ASTLowering* NodeWhile::get_lowering(NodeProgram *program) const {
 	static LoweringWhile lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -1433,6 +1459,7 @@ std::unique_ptr<NodeAST> NodeNamespace::clone() const {
 
 ASTDesugaring * NodeNamespace::get_desugaring(NodeProgram *program) const {
 	static DesugarNamespace desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 

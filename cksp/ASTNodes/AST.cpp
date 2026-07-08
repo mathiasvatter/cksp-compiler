@@ -617,6 +617,7 @@ elements(clone_vector(other.elements)), quotes(other.quotes) {
 
 ASTDesugaring * NodeFormatString::get_desugaring(NodeProgram *program) const {
 	static DesugarFormatString desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 
@@ -684,6 +685,7 @@ NodeAST *NodeParamList::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST
 }
 ASTDesugaring *NodeParamList::get_desugaring(NodeProgram *program) const {
 	static DesugarParamList desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 int NodeParamList::get_idx(const NodeAST *node) const {
@@ -933,6 +935,7 @@ std::unique_ptr<NodeComposite> NodeInitializerList::transform_to_array(const std
 
 ASTLowering *NodeInitializerList::get_lowering(NodeProgram *program) const {
 	static LoweringInitializerList lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -1005,6 +1008,7 @@ NodeAST *NodeBinaryExpr::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAS
 
 ASTDesugaring *NodeBinaryExpr::get_desugaring(NodeProgram *program) const {
 	static DesugarBinaryExpr desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 
@@ -1190,11 +1194,13 @@ void NodeFunctionDefinition::set_child_parents() {
 
 ASTDesugaring *NodeFunctionDefinition::get_desugaring(NodeProgram *program) const {
 	static DesugarFunctionDef desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 
 ASTLowering *NodeFunctionDefinition::get_lowering(NodeProgram *program) const {
 	static LoweringFunctionDefReturnStmts lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 

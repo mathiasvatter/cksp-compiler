@@ -232,6 +232,7 @@ std::unique_ptr<NodeAST> NodeNDArrayRef::clone() const {
 
 ASTLowering* NodeNDArrayRef::get_data_lowering(NodeProgram *program) const {
 	static DataLoweringNDArray lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -519,6 +520,7 @@ std::unique_ptr<NodeAST> NodeListRef::clone() const {
 
 ASTLowering* NodeListRef::get_lowering(NodeProgram *program) const {
 	static LoweringList lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -547,6 +549,7 @@ std::unique_ptr<NodeVariableRef> NodePointerRef::to_variable_ref() {
 
 ASTLowering* NodePointerRef::get_lowering(NodeProgram *program) const {
 	static LoweringPointer lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -567,6 +570,7 @@ std::unique_ptr<NodeAST> NodeNil::clone() const {
 
 ASTLowering* NodeNil::get_lowering(NodeProgram *program) const {
 	static LoweringNil lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -596,6 +600,7 @@ std::unique_ptr<NodeAST> NodeAccessChain::clone() const {
 
 ASTLowering* NodeAccessChain::get_lowering(NodeProgram *program) const {
 	static LoweringAccessChain lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -640,6 +645,7 @@ NodeAST *NodeGetControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAS
 
 ASTLowering* NodeGetControl::get_lowering(NodeProgram *program) const {
 	static LoweringGetControl lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -700,6 +706,7 @@ NodeAST *NodeSetControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAS
 
 ASTLowering* NodeSetControl::get_lowering(NodeProgram *program) const {
 	static LoweringGetControl lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 

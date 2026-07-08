@@ -88,6 +88,7 @@ std::unique_ptr<NodeReference> NodePointer::to_reference() {
 
 ASTLowering* NodePointer::get_lowering(NodeProgram *program) const {
 	static LoweringPointer lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -130,6 +131,7 @@ NodeAST *NodeArray::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> ne
 
 ASTLowering* NodeArray::get_lowering(NodeProgram *program) const {
 	static LoweringArray lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -178,11 +180,13 @@ std::unique_ptr<NodeAST> NodeNDArray::clone() const {
 
 ASTLowering * NodeNDArray::get_lowering(NodeProgram *program) const {
 	static LoweringNDArray lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
 ASTLowering* NodeNDArray::get_data_lowering(NodeProgram *program) const {
 	static DataLoweringNDArray lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -338,6 +342,7 @@ std::unique_ptr<NodeAST> NodeList::clone() const {
 
 ASTLowering* NodeList::get_lowering(NodeProgram *program) const {
 	static LoweringList lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -374,6 +379,7 @@ std::unique_ptr<NodeAST> NodeConst::clone() const {
 
 ASTDesugaring * NodeConst::get_desugaring(NodeProgram *program) const {
 	static DesugarConst desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 
@@ -397,11 +403,13 @@ std::unique_ptr<NodeAST> NodeStruct::clone() const {
 
 ASTDesugaring *NodeStruct::get_desugaring(NodeProgram *program) const {
 	static DesugarStruct desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 
 ASTLowering* NodeStruct::get_lowering(NodeProgram *program) const {
 	static LoweringStruct lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 

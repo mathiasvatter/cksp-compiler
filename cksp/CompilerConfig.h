@@ -50,6 +50,7 @@ struct CompilerConfig {
 	std::optional<std::string> standard_output_file{};
 	OptimizationLevel optimization_level = OptimizationLevel::Unset;
 	DebugMode debug_mode = DebugMode::Unset;
+	bool lsp = false;
 	ParameterPassing parameter_passing = ParameterPassing::Unset;
 	std::optional<bool> combine_callbacks;
 	std::optional<int> max_callback_depth;
@@ -73,6 +74,8 @@ struct CompilerConfig {
 		if (other.debug_mode != DebugMode::Unset)
 			debug_mode = other.debug_mode;
 
+		lsp = other.lsp;
+
 		if (other.parameter_passing != ParameterPassing::Unset)
 			parameter_passing = other.parameter_passing;
 
@@ -94,6 +97,7 @@ struct CompilerConfig {
 		parameter_passing = ParameterPassing::ByValue;
 		combine_callbacks = false;
 		max_callback_depth = 1000;
+		lsp = false;
 	}
 
 };
