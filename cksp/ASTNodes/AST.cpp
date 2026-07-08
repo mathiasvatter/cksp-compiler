@@ -74,6 +74,7 @@ NodeAST *NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
 
 NodeAST *NodeAST::desugar(NodeProgram *program) {
 	if(const auto desugaring = get_desugaring(program)) {
+		desugaring->set_program(program);
 		return accept(*desugaring);
 	}
 	return this;
@@ -81,6 +82,7 @@ NodeAST *NodeAST::desugar(NodeProgram *program) {
 
 NodeAST *NodeAST::lower(NodeProgram *program) {
 	if(const auto lowering = get_lowering(program)) {
+		lowering->set_program(program);
 		return accept(*lowering);
 	}
 	return this;
@@ -88,6 +90,7 @@ NodeAST *NodeAST::lower(NodeProgram *program) {
 
 NodeAST *NodeAST::post_lower(NodeProgram *program) {
 	if(const auto post_lowering = get_post_lowering(program)) {
+		post_lowering->set_program(program);
 		return accept(*post_lowering);
 	}
 	return this;
@@ -95,6 +98,7 @@ NodeAST *NodeAST::post_lower(NodeProgram *program) {
 
 NodeAST *NodeAST::data_lower(NodeProgram *program) {
 	if(const auto data_lower = get_data_lowering(program)) {
+		data_lower->set_program(program);
 		return accept(*data_lower);
 	}
 	return this;
@@ -219,26 +223,31 @@ NodeAST *NodeAST::do_constant_folding() {
 
 void NodeAST::do_type_inference(NodeProgram *program) {
 	static TypeInference inference(program);
+	inference.set_program(program);
 	accept(inference);
 }
 
 NodeAST * NodeAST::do_type_lowering(NodeProgram *program) {
 	static ASTLowerTypes lowering_types(program);
+	lowering_types.set_program(program);
 	return accept(lowering_types);
 }
 
 NodeAST * NodeAST::do_lowering(NodeProgram *program) {
 	static ASTCollectLowerings collect_lowerings(program);
+	collect_lowerings.set_program(program);
 	return accept(collect_lowerings);
 }
 
 NodeAST * NodeAST::collect_declarations(NodeProgram *program) {
 	static ASTCollectDeclarations collect(program);
+	collect.set_program(program);
 	return collect.do_collect_declarations(*this);
 }
 
 NodeAST * NodeAST::collect_call_sites(NodeProgram *program) {
 	static ASTCollectCallSites call_sites(program);
+	call_sites.set_program(program);
 	return call_sites.do_collect_call_sites(*this);
 }
 

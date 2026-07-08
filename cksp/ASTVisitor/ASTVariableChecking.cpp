@@ -138,6 +138,7 @@ NodeAST* ASTVariableChecking::visit(NodeAccessChain& node) {
 	m_current_access.push(&node);
 	// collect args of func calls in access chain or indexes of arrays etc w/o errors
 	static ASTCollectDeclarations collect(m_program);
+	collect.set_program(m_program);
 	for (int i = 1; i<node.chain.size(); i++) {
 		auto& ref = node.chain[i];
 		if (auto array_ref = ref->cast<NodeArrayRef>()) {
@@ -422,7 +423,6 @@ NodeAST* ASTVariableChecking::visit(NodeStruct& node) {
 	m_current_struct = nullptr;
 	return &node;
 }
-
 
 
 

@@ -22,6 +22,7 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 
 	for(const auto & struct_def : node.struct_definitions) {
 		static PreLoweringStruct pre_lowering_struct(m_program);
+		pre_lowering_struct.set_program(m_program);
 		struct_def->accept(pre_lowering_struct);
 	}
 	for(const auto & struct_def : node.struct_definitions) {
@@ -30,6 +31,7 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	node.update_function_lookup();
 	for(const auto & struct_def : node.struct_definitions) {
 		static LoweringStructMembers lowering_struct_members(m_program);
+		lowering_struct_members.set_program(m_program);
 		struct_def->accept(lowering_struct_members);
 	}
 	for(const auto & struct_def : node.struct_definitions) {
@@ -92,6 +94,7 @@ NodeAST * ASTCollectLowerings::visit(NodeNil& node) {
 
 NodeAST * ASTCollectLowerings::visit(NodeBoolean &node) {
 	static LoweringBoolean bool_lowering(m_program);
+	bool_lowering.set_program(m_program);
 	return node.accept(bool_lowering);
 }
 
@@ -258,6 +261,7 @@ NodeAST * ASTCollectLowerings::visit(NodeIf &node) {
 NodeAST * ASTCollectLowerings::visit(NodeTernary &node) {
 	ASTVisitor::visit(node);
 	static LoweringTernaryOperator ternary(m_program);
+	ternary.set_program(m_program);
 	return node.accept(ternary);
 }
 
@@ -291,14 +295,15 @@ NodeAST * ASTCollectLowerings::visit(NodeRange &node) {
 NodeAST * ASTCollectLowerings::visit(NodeBinaryExpr &node) {
 	ASTVisitor::visit(node);
 	static LoweringBooleanExpression bool_expr_lowering(m_program);
+	bool_expr_lowering.set_program(m_program);
 	return bool_expr_lowering.lower_expression(node);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeUnaryExpr &node) {
 	ASTVisitor::visit(node);
 	static LoweringBooleanExpression bool_expr_lowering(m_program);
+	bool_expr_lowering.set_program(m_program);
 	return bool_expr_lowering.lower_expression(node);
 }
-
 
 

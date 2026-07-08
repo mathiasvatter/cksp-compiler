@@ -225,6 +225,9 @@ void DefinitionProvider::set_builtin_widgets(std::unordered_map<std::string, std
 }
 
 std::shared_ptr<NodeFunctionDefinition> DefinitionProvider::get_builtin_function(const NodeFunctionHeaderRef *function) {
+	if (!function || !function->args) {
+		return nullptr;
+	}
 	const auto it = builtin_functions.find({function->name, (int)function->args->size()});
 	if(it != builtin_functions.end()) {
 		return it->second;
@@ -250,6 +253,9 @@ void DefinitionProvider::set_boolean_functions(
 }
 
 std::shared_ptr<NodeFunctionDefinition> DefinitionProvider::get_property_function(const NodeFunctionHeaderRef *function) {
+	if (!function || !function->args) {
+		return nullptr;
+	}
 	if(auto it = property_functions.find(function->name); it != property_functions.end()) {
 		return it->second;
 	}
@@ -259,6 +265,4 @@ std::shared_ptr<NodeFunctionDefinition> DefinitionProvider::get_property_functio
 void DefinitionProvider::set_property_functions(std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> property_functions) {
 	DefinitionProvider::property_functions = std::move(property_functions);
 }
-
-
 

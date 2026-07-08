@@ -36,6 +36,9 @@ protected:
 
 public:
 	virtual ~ASTVisitor() = default;
+	virtual void set_program(NodeProgram* program) {
+		m_program = program;
+	}
 	static Diagnostic make_diagnostic(ErrorType err_type, const NodeAST& node);
     static std::unique_ptr<NodeBlock> make_while_loop(NodeReference* var, int32_t from, int32_t to, std::unique_ptr<NodeBlock> body, NodeAST* parent);
 	static std::unique_ptr<NodeIf> make_nil_check(std::unique_ptr<NodeReference> ref);
@@ -366,4 +369,3 @@ public:
 		return &node;
     }
 };
-

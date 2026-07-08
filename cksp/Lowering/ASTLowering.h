@@ -15,9 +15,15 @@ protected:
 	NodeProgram* m_program = nullptr;
 public:
     explicit ASTLowering(NodeProgram* program) : m_program(program) {
+		ASTVisitor::set_program(program);
 		if(m_program) m_def_provider = m_program->def_provider;
 	}
     ~ASTLowering() = default;
 
-};
+	void set_program(NodeProgram* program) override {
+		ASTVisitor::set_program(program);
+		m_program = program;
+		m_def_provider = m_program ? m_program->def_provider : nullptr;
+	}
 
+};

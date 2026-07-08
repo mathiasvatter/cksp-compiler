@@ -67,14 +67,14 @@ struct JSONBool : JSONValue {
 	explicit JSONBool(const bool value) : value(value) {}
 	void accept(JSONVisitor& visitor) override;
 	void accept(JSONPrintVisitor& visitor) const override;
-	std::unique_ptr<JSONValue> clone() const override;
+	[[nodiscard]] std::unique_ptr<JSONValue> clone() const override;
 };
 
 struct JSONNull : JSONValue {
 	JSONNull() = default;
 	void accept(JSONVisitor& visitor) override;
 	void accept(JSONPrintVisitor& visitor) const override;
-	std::unique_ptr<JSONValue> clone() const override;
+	[[nodiscard]] std::unique_ptr<JSONValue> clone() const override;
 };
 
 struct JSONObject : JSONValue {
@@ -85,18 +85,24 @@ struct JSONObject : JSONValue {
 	JSONObject& operator=(const JSONObject& other);
 	void add(const std::string& key, std::unique_ptr<JSONValue> value);
 	/// get value
-	const JSONValue* get(const std::string& key) const;
+	[[nodiscard]] const JSONValue* get(const std::string& key) const;
 	/// get value and cast it at the same time
 	template <typename T>
 	[[nodiscard]] const T* get(const std::string& key) const {
 		const auto* value = get(key);
 		return value ? value->as<T>() : nullptr;
 	}
-	std::optional<int64_t> get_int(const std::string& key) const;
-	bool contains(const std::string& key) const;
+	[[nodiscard]] std::optional<int64_t> get_int(const std::string& key) const;
+	[[nodiscard]] const JSONObject* get_object(const std::string& key) const {
+		return get<JSONObject>(key);
+	}
+	[[nodiscard]] const JSONString* get_string(const std::string& key) const {
+		return get<JSONString>(key);
+	}
+	[[nodiscard]] bool contains(const std::string& key) const;
 	void accept(JSONVisitor& visitor) override;
 	void accept(JSONPrintVisitor& visitor) const override;
-	std::unique_ptr<JSONValue> clone() const override;
+	[[nodiscard]] std::unique_ptr<JSONValue> clone() const override;
 
 };
 
@@ -123,5 +129,5 @@ struct JSONArray : JSONValue {
 	void add(std::unique_ptr<JSONValue> value);
 	void accept(JSONVisitor& visitor) override;
 	void accept(JSONPrintVisitor& visitor) const override;
-	std::unique_ptr<JSONValue> clone() const override;
+	[[nodiscard]] std::unique_ptr<JSONValue> clone() const override;
 };

@@ -110,6 +110,9 @@ std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_builtin_definitio
     if(!program->def_provider) {
         Diagnostic(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
     }
+	if (!function || !function->args) {
+		return nullptr;
+	}
     if(auto builtin_func = program->def_provider->get_builtin_function(function.get())) {
         function->ty = builtin_func->ty;
         function->has_forced_parenth = builtin_func->header->has_forced_parenth;
@@ -125,6 +128,9 @@ std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_property_definiti
     if(!program->def_provider) {
         Diagnostic(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
     }
+	if (!function || !function->args) {
+		return nullptr;
+	}
     if(auto property_func = program->def_provider->get_property_function(function.get())) {
         if(function->args->size() < 2) {
             Diagnostic(

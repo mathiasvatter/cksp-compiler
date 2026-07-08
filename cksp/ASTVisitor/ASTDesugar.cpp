@@ -17,6 +17,7 @@ NodeAST* ASTDesugar::visit(NodeProgram& node) {
 
 	// first desugar namespaces to assign correct prefixes
 	static DesugarNamespace ns_desugar(m_program);
+	ns_desugar.set_program(m_program);
 	// visit_all(node.namespaces, ns_desugar);
 	// move all namespaces into global declarations block
 	for (auto & ns : node.namespaces) {
@@ -155,5 +156,4 @@ NodeAST *ASTDesugar::visit(NodeBinaryExpr &node) {
 	node.right->accept(*this);
 	return node.desugar(m_program);
 }
-
 

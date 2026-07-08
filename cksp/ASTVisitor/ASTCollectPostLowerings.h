@@ -63,6 +63,7 @@ public:
 		node.variable->accept(*this);
 		if(node.value) node.value->accept(*this);
 		static ArrayDimensionConstants lowering(m_program);
+		lowering.set_program(m_program);
 		return node.accept(lowering);
 	}
 
@@ -87,5 +88,4 @@ public:
 	}
 
 };
-
 
