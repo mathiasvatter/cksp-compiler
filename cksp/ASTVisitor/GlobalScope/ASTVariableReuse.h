@@ -48,6 +48,11 @@ public:
 		clear_all_maps();
 	}
 
+	void set_program(NodeProgram* program) override {
+		ASTVisitor::set_program(program);
+		m_def_provider = program ? program->def_provider : nullptr;
+	}
+
 	std::vector<std::shared_ptr<NodeDataStructure>> do_variable_reuse(NodeFunctionDefinition& def) {
 		m_lifetime_analysis = std::make_unique<ASTLifeTimeAnalysis>(m_program);
 		m_lifetime_end_per_var.clear();

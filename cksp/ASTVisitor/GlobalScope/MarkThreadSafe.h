@@ -17,6 +17,11 @@ public:
 		m_program = main;
 	}
 
+	void set_program(NodeProgram* program) override {
+		ASTVisitor::set_program(program);
+		m_def_provider = program ? program->def_provider : nullptr;
+	}
+
 	NodeAST* mark_environments(NodeProgram& node) {
 		m_program = &node;
 		m_program->current_callback = nullptr;

@@ -1264,11 +1264,13 @@ void NodeFunctionDefinition::set_header(std::shared_ptr<struct NodeFunctionHeade
 
 std::vector<std::shared_ptr<NodeDataStructure>> NodeFunctionDefinition::do_variable_reuse(NodeProgram *program) {
 	static ASTVariableReuse register_reuse(program);
+	register_reuse.set_program(program);
 	return register_reuse.do_variable_reuse(*this);
 }
 
 void NodeFunctionDefinition::do_return_param_promotion(NodeProgram* program) {
 	static ReturnParamPromotion param_promotion(program);
+	param_promotion.set_program(program);
 	param_promotion.do_return_param_promotion(*this);
 }
 
@@ -1284,6 +1286,7 @@ void NodeFunctionDefinition::sanitize_exit_commands() {
 
 void NodeFunctionDefinition::mark_threadsafety(NodeProgram *program) {
 	static MarkThreadSafe marker(program);
+	marker.set_program(program);
 	marker.mark_function(*this);
 }
 

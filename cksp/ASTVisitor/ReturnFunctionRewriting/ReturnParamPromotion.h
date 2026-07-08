@@ -20,6 +20,11 @@ public:
         m_program = main;
     }
 
+	void set_program(NodeProgram* program) override {
+		ASTVisitor::set_program(program);
+		m_def_provider = program ? program->def_provider : nullptr;
+	}
+
 	void do_return_param_promotion(NodeFunctionDefinition& def) {
 		def.accept(*this);
 		m_return_param_names.clear();

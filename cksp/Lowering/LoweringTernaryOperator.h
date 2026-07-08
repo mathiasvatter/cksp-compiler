@@ -30,9 +30,15 @@ class LoweringTernaryOperator final : public ASTLowering {
 public:
 	explicit LoweringTernaryOperator(NodeProgram *program) : ASTLowering(program) {}
 
+	void set_program(NodeProgram* program) override {
+		ASTLowering::set_program(program);
+		m_local_vars.clear();
+	}
+
 private:
 
 	NodeAST *visit(NodeTernary &node) override {
+		m_local_vars.clear();
 		auto type = node.if_branch->ty; // should be the same as else_branch->ty
 		auto if_return = std::make_unique<NodeReturn>(
 			node.tok,
@@ -76,7 +82,9 @@ private:
 		);
 
 		// add local vars as params to ternary function
-		for (auto& local_var : m_local_vars) {
+		auto local_vars = std::move(m_local_vars);
+		m_local_vars.clear();
+		for (auto& local_var : local_vars) {
 			auto param_var = clone_as<NodeDataStructure>(local_var.get());
 			param_var->clear_references();
 

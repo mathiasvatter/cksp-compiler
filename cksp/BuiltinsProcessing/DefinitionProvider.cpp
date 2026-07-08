@@ -265,4 +265,3 @@ std::shared_ptr<NodeFunctionDefinition> DefinitionProvider::get_property_functio
 void DefinitionProvider::set_property_functions(std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> property_functions) {
 	DefinitionProvider::property_functions = std::move(property_functions);
 }
-
