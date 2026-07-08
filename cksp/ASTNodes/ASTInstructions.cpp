@@ -134,13 +134,14 @@ std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_property_definiti
 	}
     if(auto property_func = program->def_provider->get_property_function(function.get())) {
         if(function->args->size() < 2) {
-            Diagnostic(
+            auto error = Diagnostic(
                     ErrorType::SyntaxError,
                     "Found Property Function with insufficient amount of arguments.",
-                    tok.line, "At least 2 arguments",
-                    std::to_string(function->args->size()),
-                    tok.file
-            ).exit();
+                    "At least 2 arguments",
+                    tok
+            );
+            error.actual = std::to_string(function->args->size());
+            error.exit();
         }
         function->ty = property_func->ty;
         definition = property_func;

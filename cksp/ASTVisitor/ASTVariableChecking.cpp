@@ -382,7 +382,7 @@ NodeAST* ASTVariableChecking::visit(NodeListRef& node) {
 	if(node.get_declaration()) return &node;
 	auto node_declaration = m_def_provider->get_declaration(node);
 	if(!node_declaration) {
-		Diagnostic(ErrorType::VariableError, "List has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
+		Diagnostic(ErrorType::VariableError, "List has not been declared: "+node.name, "", node.tok).exit();
 		return &node;
 	}
 	return &node;
@@ -423,6 +423,5 @@ NodeAST* ASTVariableChecking::visit(NodeStruct& node) {
 	m_current_struct = nullptr;
 	return &node;
 }
-
 
 

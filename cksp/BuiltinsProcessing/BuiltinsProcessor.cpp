@@ -67,7 +67,7 @@ Result<SuccessTag> BuiltinsProcessor::parse_builtin_variables(const std::string 
 
 			} else {
 	             return Result<SuccessTag>(Diagnostic(ErrorType::PreprocessorError,
-	            "Failed loading builtin constants. Found builtin variable without variable identifier.", peek(m_tokens).line, "<identifier>", peek(m_tokens).val, peek(m_tokens).file));
+	            "Failed loading builtin constants. Found builtin variable without variable identifier.", "<identifier>", peek(m_tokens)));
 			}
 		} else consume(m_tokens);
 	}
@@ -248,7 +248,7 @@ Result<std::shared_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin
             consume(m_tokens);
         } else {
             return Result<std::shared_ptr<NodeFunctionDefinition>>(Diagnostic(ErrorType::PreprocessorError,
-           "Failed loading builtins. Found unknown <function_header> syntax.", peek(m_tokens).line, ")", peek(m_tokens).val, peek(m_tokens).file));
+           "Failed loading builtins. Found unknown <function_header> syntax.", ")", peek(m_tokens)));
         }
     }
 	for(auto & arg : func_args) {
@@ -288,7 +288,7 @@ Result<std::shared_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_contr
 	std::string ui_control_type = tok.val; // consume ui_control identifier
 	if(peek(m_tokens).type != token::KEYWORD) {
 		return Result<std::shared_ptr<NodeUIControl>>(Diagnostic(ErrorType::PreprocessorError,
-		"Failed loading builtins. Found unknown <engine_widget> syntax.", peek(m_tokens).line, "<Keyword>", peek(m_tokens).val, peek(m_tokens).file));
+		"Failed loading builtins. Found unknown <engine_widget> syntax.", "<Keyword>", peek(m_tokens)));
 	}
 	std::shared_ptr<NodeDataStructure> node_var;
 	if(peek(m_tokens, 1).type == token::OPEN_BRACKET) {
@@ -325,7 +325,7 @@ Result<std::shared_ptr<NodeUIControl>> BuiltinsProcessor::parse_builtin_ui_contr
 			consume(m_tokens);
 		} else {
 			return Result<std::shared_ptr<NodeUIControl>>(Diagnostic(ErrorType::PreprocessorError,
-			"Failed loading builtins. Found unknown <engine_widget> parameter syntax.", peek(m_tokens).line, ")", peek(m_tokens).val, peek(m_tokens).file));
+			"Failed loading builtins. Found unknown <engine_widget> parameter syntax.", ")", peek(m_tokens)));
 		}
 	}
 	node_var->data_type = DataType::UIControl;
@@ -349,7 +349,7 @@ Result<std::unique_ptr<NodeParamList>> BuiltinsProcessor::parse_builtin_args_lis
             func_args->params.push_back(arg->to_reference());
         } else {
             return Result<std::unique_ptr<NodeParamList>>(Diagnostic(ErrorType::PreprocessorError,
-                                                                                               "Failed loading builtins. Found unknown syntax in function arguments.", peek(m_tokens).line, "", peek(m_tokens).val, peek(m_tokens).file));
+                                                                                               "Failed loading builtins. Found unknown syntax in function arguments.", "", peek(m_tokens)));
         }
         if(peek(m_tokens).type == token::COMMA) consume(m_tokens); // consume comma
     }
@@ -370,7 +370,7 @@ Result<std::vector<std::unique_ptr<NodeFunctionParam>>> BuiltinsProcessor::parse
 			func_params.push_back(std::make_unique<NodeFunctionParam>(std::move(arg), nullptr, tok));
 		} else {
 			return Result<std::vector<std::unique_ptr<NodeFunctionParam>>>(Diagnostic(ErrorType::PreprocessorError,
-			"Failed loading builtins. Found unknown syntax in function parameters.", peek(m_tokens).line, "", peek(m_tokens).val, peek(m_tokens).file));
+			"Failed loading builtins. Found unknown syntax in function parameters.", "", peek(m_tokens)));
 		}
 		if(peek(m_tokens).type == token::COMMA) consume(m_tokens); // consume comma
 	}
@@ -380,4 +380,3 @@ Result<std::vector<std::unique_ptr<NodeFunctionParam>>> BuiltinsProcessor::parse
 bool BuiltinsProcessor::is_property_function(const std::string &fun_name) {
     return StringUtils::contains(fun_name, "_properties") || StringUtils::contains(fun_name, "set_bounds");
 }
-

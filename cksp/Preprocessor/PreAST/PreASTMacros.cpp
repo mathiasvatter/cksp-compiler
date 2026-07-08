@@ -273,7 +273,7 @@ PreNodeAST *PreASTMacros::visit(PreNodeIterateMacro &node) {
 
 PreNodeAST *PreASTMacros::visit(PreNodeLiterateMacro &node) {
     if(node.macro_call->params.size()>1) {
-        Diagnostic(ErrorType::PreprocessorError,"Found incorrect <literate_macro> syntax.", -1, "", "", "").exit();
+        Diagnostic(ErrorType::PreprocessorError,"Found incorrect <literate_macro> syntax.", "", node.tok).exit();
     }
 	auto linebreak_tok = node.tok; linebreak_tok.set_type(token::LINEBRK); linebreak_tok.set_val("\n");
     node.macro_call->get_element(0)->add_chunk(std::make_unique<PreNodeOther>(linebreak_tok,nullptr));
@@ -361,5 +361,4 @@ std::unique_ptr<PreNodeAST> PreASTMacros::get_substitute(const std::string& name
 	}
 	return nullptr;
 }
-
 

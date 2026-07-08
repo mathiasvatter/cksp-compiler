@@ -63,7 +63,7 @@ Result<int> SimpleExprInterpreter::evaluate_int_expression(std::unique_ptr<PreNo
     }
     return Result<int>(Diagnostic(ErrorType::PreprocessorError,
     "Unknown expression statement. No variables allowed. " + preprocessor_error,
-        -1, "", "", ""));
+        "", root->tok));
 }
 
 PreNodeAST* SimpleExprInterpreter::peek(const std::vector<std::unique_ptr<PreNodeAST>>& nodes, const int ahead) const {
@@ -209,19 +209,22 @@ Result<int> SimpleInterpreter::evaluate_int_expression(std::unique_ptr<NodeAST>&
             return Result<int>(left_value * right_value);
         } else if (binary_expr_node->op == token::DIV) {
             if (right_value == 0) {
-                return Result<int>(Diagnostic(ErrorType::PreprocessorError, "Divison by zero. " + preprocessor_error,
-                                                root->tok.line, "", std::to_string(right_value), root->tok.file));
+                auto error = Diagnostic(ErrorType::PreprocessorError, "Divison by zero. " + preprocessor_error,
+                                        "", root->tok);
+                error.actual = std::to_string(right_value);
+                return Result<int>(std::move(error));
             }
             return Result<int>(left_value / right_value);
         } else if (binary_expr_node->op == token::MODULO) {
             return Result<int>(left_value % right_value);
         }
         // Add other binary operations here if needed
-        return Result<int>(
-                Diagnostic(ErrorType::PreprocessorError, "Unsupported binary operation. " + preprocessor_error,
-                             root->tok.line, "*, /, -, +, mod", token_strings[(int)binary_expr_node->op], root->tok.file));
+        auto error = Diagnostic(ErrorType::PreprocessorError, "Unsupported binary operation. " + preprocessor_error,
+                                "*, /, -, +, mod", root->tok);
+        error.actual = token_strings[(int)binary_expr_node->op];
+        return Result<int>(std::move(error));
     }
     return Result<int>(Diagnostic(ErrorType::PreprocessorError,
                                     "Unknown expression statement. No variables allowed. " + preprocessor_error,
-                                    root->tok.line, "", "", root->tok.file));
+                                    "", root->tok));
 }

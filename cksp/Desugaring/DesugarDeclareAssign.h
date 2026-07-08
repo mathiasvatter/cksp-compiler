@@ -16,10 +16,10 @@ public:
 	NodeAST* visit(NodeDeclaration& node) override {
         // error handling
         if(node.variable.size() < node.value->params.size()) {
-            auto error = Diagnostic(ErrorType::SyntaxError,"", node.tok.line, "", "", node.tok.file);
+            auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
 			error.message = "Found incorrect declare statement syntax. There are more values to assign than to be declared.";
-            error.expected = node.variable.size();
-            error.actual = node.value->params.size();
+            error.expected = std::to_string(node.variable.size());
+            error.actual = std::to_string(node.value->params.size());
             error.exit();
         }
 		auto node_body = std::make_unique<NodeBlock>(node.tok);
@@ -89,7 +89,7 @@ public:
 						l_values[i + ii] = nullptr;
 					}
 				} else if (i+num_values >= l_values.size()) {
-					auto error = Diagnostic(ErrorType::SyntaxError,"", val->tok.line, "", "", val->tok.file);
+					auto error = Diagnostic(ErrorType::SyntaxError, "", "", val->tok);
 					error.message = "Found incorrect ";
 					if(node_type == NodeType::Assignment) {
 						error.message += "<Assign> ";
@@ -112,10 +112,10 @@ public:
         // error handling
         if(node.l_values.size() < node.r_values->params.size()) {
             auto error = Diagnostic(ErrorType::SyntaxError,
-                         "", node.tok.line, "", "", node.tok.file);
+                         "", "", node.tok);
             error.message = "Found incorrect assign statement syntax. There are more values to assign than array variables.";
-            error.expected = node.l_values.size();
-            error.actual = node.r_values->params.size();
+            error.expected = std::to_string(node.l_values.size());
+            error.actual = std::to_string(node.r_values->params.size());
             error.exit();
         }
 

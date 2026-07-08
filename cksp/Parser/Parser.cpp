@@ -752,12 +752,16 @@ Result<std::unique_ptr<NodeSingleAssignment>> Parser::parse_single_assign_statem
         Result<std::unique_ptr<NodeSingleAssignment>>(node_assign_statement_res.get_error());
     const auto node_assign_statement = std::move(node_assign_statement_res.unwrap());
     if(node_assign_statement->l_values.size() != 1) {
-        return Result<std::unique_ptr<NodeSingleAssignment>>(Diagnostic(ErrorType::ParseError,
-                                                                          "Incorrect Syntax in <Single Assign Statement>.", peek().line, "One Assignment", std::to_string(node_assign_statement->l_values.size()), peek().file));
+        auto error = Diagnostic(ErrorType::ParseError,
+                                "Incorrect Syntax in <Single Assign Statement>.", "One Assignment", peek());
+        error.actual = std::to_string(node_assign_statement->l_values.size());
+        return Result<std::unique_ptr<NodeSingleAssignment>>(std::move(error));
     }
     if(node_assign_statement->r_values->params.size() != 1) {
-        return Result<std::unique_ptr<NodeSingleAssignment>>(Diagnostic(ErrorType::ParseError,
-                                                                          "Incorrect Syntax in <Single Assign Statement>.", peek().line, "One Assignment", std::to_string(node_assign_statement->r_values->params.size()), peek().file));
+        auto error = Diagnostic(ErrorType::ParseError,
+                                "Incorrect Syntax in <Single Assign Statement>.", "One Assignment", peek());
+        error.actual = std::to_string(node_assign_statement->r_values->params.size());
+        return Result<std::unique_ptr<NodeSingleAssignment>>(std::move(error));
     }
 	auto ref = std::move(node_assign_statement->l_values[0]);
 	auto tok = ref->tok;
@@ -2535,7 +2539,6 @@ Result<std::unique_ptr<NodeGetControl>> Parser::parse_get_control_statement(std:
 	node_get_control_statement->parent = parent;
 	return Result<std::unique_ptr<NodeGetControl>>(std::move(node_get_control_statement));
 }
-
 
 
 
