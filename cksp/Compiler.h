@@ -197,7 +197,7 @@ private:
 		// input_filename = "/Users/mathias/Scripting/sonu-libraries/try.ksp";
 		// input_filename = "/Users/mathias/Scripting/trinity-drums-2/main.ksp";
 		// input_filename = "/Users/mathias/Scripting/the-sculpture/sculpture-engine.cksp";
-		if (!input_filename.empty()) m_cli_config->input_filename = input_filename;
+		if (cli && !input_filename.empty()) m_cli_config->input_filename = input_filename;
 		// m_cli_config->optimization_level = OptimizationLevel::None;
 	#endif
 
@@ -472,6 +472,10 @@ private:
 	}
 
 public:
+	[[nodiscard]] const ImportGraph& import_graph() const {
+		return m_import_graph;
+	}
+
 	/// Analyze an explicitly supplied source, used by in-memory and language-server clients.
 	CompilationResult analyze(const SourceId& entry_source, DiagnosticSink& diagnostics) {
 		m_cli_config->input_filename = entry_source.value;

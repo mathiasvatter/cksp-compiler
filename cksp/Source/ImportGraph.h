@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <iostream>
 #include <ostream>
+#include <vector>
 #include <unordered_set>
 
 #include "SourceProvider.h"
@@ -66,6 +67,15 @@ public:
 		return lookup(m_dependents, source);
 	}
 
+	[[nodiscard]] std::vector<SourceId> sources() const {
+		std::vector<SourceId> result;
+		result.reserve(m_imports.size());
+		for (const auto& [source, _] : m_imports) {
+			result.emplace_back(source);
+		}
+		return result;
+	}
+
 	/// get all dependents not only immediate
 	std::vector<SourceId> transitive_dependents_of(const SourceId& source) const {
 		std::vector<SourceId> result;
@@ -95,13 +105,24 @@ public:
 		return result;
 	}
 
-	void print() const {
+	void print(std::ostream& output = std::cout) const {
 		for (const auto& it : m_imports) {
-			std::cout << it.first << " --> " << it.second.size() << "\n";
+			output << it.first << " --> " << it.second.size() << "\n";
 			for (const auto& dependent : it.second) {
-				std::cout << "         " << std::filesystem::path(dependent).filename().string() << "\n";
+				output << "         " << std::filesystem::path(dependent).filename().string() << "\n";
 			}
 		}
+	}
+
+	void print_dot(std::ostream& output, const std::string& graph_name = "imports") const {
+		output << "digraph \"" << graph_name << "\" {\n";
+		for (const auto& [importer, imported_sources] : m_imports) {
+			output << "  \"" << importer << "\";\n";
+			for (const auto& imported : imported_sources) {
+				output << "  \"" << importer << "\" -> \"" << imported << "\";\n";
+			}
+		}
+		output << "}\n";
 	}
 
 private:

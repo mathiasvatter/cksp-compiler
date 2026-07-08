@@ -127,10 +127,7 @@ std::unique_ptr<JSONValue> JSONObject::clone() const {
 }
 
 std::optional<int64_t> JSONObject::get_int(const std::string &key) const {
-	const auto object = get<JSONObject>(key);
-	if (!object) return std::nullopt;
-	const auto* value = object->get(key);
-	const auto* number = value ? value->as<JSONInt>() : nullptr;
+	const auto* number = get<JSONInt>(key);
 	if (!number) return std::nullopt;
 	return number->value;
 }
