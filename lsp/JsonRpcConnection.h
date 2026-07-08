@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <iostream>
 #include <istream>
+#include <mutex>
 #include <ostream>
 #include <optional>
 #include <string>
@@ -19,9 +20,11 @@
 class JsonRpcConnection {
 	std::istream& m_input;
 	std::ostream& m_output;
+	mutable std::mutex m_output_mutex;
 
 	void write_json(const JSONValue& message) const {
 		const std::string body = message.get_string();
+		std::lock_guard lock(m_output_mutex);
 		m_output << "Content-Length: " << body.size() << "\r\n"
 				 << "\r\n"
 				 << body;

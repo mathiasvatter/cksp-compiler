@@ -8,9 +8,12 @@
 #include "../misc/DiagnosticSink.h"
 #include "version.h"
 
+#include <chrono>
 #include <filesystem>
+#include <unordered_set>
 
 namespace {
+constexpr auto ANALYSIS_DEBOUNCE = std::chrono::milliseconds(120);
 
 const JSONObject* object_at(const JSONObject* object, const std::string& key) {
 	if (!object) return nullptr;
@@ -45,6 +48,10 @@ std::optional<SourceId> resolve_configured_entry(const JSONObject* initialize_pa
 }
 }
 
+LanguageServer::~LanguageServer() {
+	stop_analysis_worker();
+}
+
 int LanguageServer::run() {
 	while (auto message = m_connection.read_message()) {
 		handle_message(*message);
@@ -52,6 +59,7 @@ int LanguageServer::run() {
 			break;
 		}
 	}
+	stop_analysis_worker();
 	return 0;
 }
 
@@ -94,18 +102,103 @@ void LanguageServer::handle_notification(const JsonRpcMessage& message) {
 	}
 }
 
-void LanguageServer::analyze_entry(const SourceId& entry_source) {
+void LanguageServer::schedule_analysis_for_source(const SourceId& changed_source) {
+	const auto source = FileSystemSourceProvider::normalize(changed_source.value);
+	{
+		std::lock_guard lock(m_analysis_mutex);
+		m_pending_analysis_sources.insert(source.value);
+		++m_analysis_generation;
+	}
+	m_analysis_cv.notify_one();
+}
+
+void LanguageServer::analysis_worker_loop() {
+	while (true) {
+		std::vector<SourceId> changed_sources;
+		uint64_t generation = 0;
+		{
+			std::unique_lock lock(m_analysis_mutex);
+			m_analysis_cv.wait(lock, [this] {
+				return m_stop_analysis_worker || !m_pending_analysis_sources.empty();
+			});
+			if (m_stop_analysis_worker) {
+				return;
+			}
+
+			while (true) {
+				const auto observed_generation = m_analysis_generation;
+				const bool changed = m_analysis_cv.wait_for(lock, ANALYSIS_DEBOUNCE, [this, observed_generation] {
+					return m_stop_analysis_worker || m_analysis_generation != observed_generation;
+				});
+				if (m_stop_analysis_worker) {
+					return;
+				}
+				if (!changed) {
+					break;
+				}
+			}
+
+			generation = m_analysis_generation;
+			changed_sources.reserve(m_pending_analysis_sources.size());
+			for (const auto& source : m_pending_analysis_sources) {
+				changed_sources.emplace_back(source);
+			}
+			m_pending_analysis_sources.clear();
+		}
+
+		analyze_entries_for_sources(changed_sources, generation);
+	}
+}
+
+void LanguageServer::stop_analysis_worker() {
+	{
+		std::lock_guard lock(m_analysis_mutex);
+		m_stop_analysis_worker = true;
+	}
+	m_analysis_cv.notify_one();
+	if (m_analysis_worker.joinable()) {
+		m_analysis_worker.join();
+	}
+}
+
+bool LanguageServer::is_analysis_current(const uint64_t generation) const {
+	std::lock_guard lock(m_analysis_mutex);
+	return !m_stop_analysis_worker && generation == m_analysis_generation;
+}
+
+void LanguageServer::analyze_entry(const SourceId& entry_source, const uint64_t generation) {
 	CollectingDiagnosticSink diagnostics;
 	auto config = std::make_unique<CompilerConfig>();
+	config->lsp = true;
 	Compiler compiler(std::move(config), m_sources);
 	compiler.analyze(entry_source, diagnostics);
+	if (!is_analysis_current(generation)) {
+		return;
+	}
+	std::lock_guard lock(m_state_mutex);
 	m_entry_points.register_analysis(entry_source, compiler.import_graph());
 	m_diagnostic_publisher.publish(entry_source, diagnostics.diagnostics());
 }
 
-void LanguageServer::analyze_entries_for_source(const SourceId& changed_source) {
-	for (const auto& entry : m_entry_points.affected_entries(changed_source)) {
-		analyze_entry(entry);
+void LanguageServer::analyze_entries_for_sources(const std::vector<SourceId>& changed_sources, const uint64_t generation) {
+	std::vector<SourceId> entries;
+	std::unordered_set<std::string> seen_entries;
+	{
+		std::lock_guard lock(m_state_mutex);
+		for (const auto& changed_source : changed_sources) {
+			for (const auto& entry : m_entry_points.affected_entries(changed_source)) {
+				if (seen_entries.insert(entry.value).second) {
+					entries.push_back(entry);
+				}
+			}
+		}
+	}
+
+	for (const auto& entry : entries) {
+		if (!is_analysis_current(generation)) {
+			return;
+		}
+		analyze_entry(entry, generation);
 	}
 }
 
@@ -117,8 +210,11 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 		m_workspace_root = FileSystemSourceProvider::normalize(m_workspace_root->value);
 	}
 	m_configured_entry_source = resolve_configured_entry(params, m_workspace_root);
-	m_entry_points.set_workspace_root(m_workspace_root);
-	m_entry_points.set_configured_entry(m_configured_entry_source);
+	{
+		std::lock_guard lock(m_state_mutex);
+		m_entry_points.set_workspace_root(m_workspace_root);
+		m_entry_points.set_configured_entry(m_configured_entry_source);
+	}
 
 	JSONObject sync;
 	sync.add("openClose", std::make_unique<JSONBool>(true));
@@ -157,7 +253,7 @@ void LanguageServer::handle_did_open(const JsonRpcMessage& message) {
 	const auto version = text_document->get_int("version").value_or(0);
 	const auto source = source_from_uri(uri->value);
 	m_sources.update(source, text->value, version);
-	analyze_entries_for_source(source);
+	schedule_analysis_for_source(source);
 }
 
 void LanguageServer::handle_did_change(const JsonRpcMessage& message) {
@@ -178,7 +274,7 @@ void LanguageServer::handle_did_change(const JsonRpcMessage& message) {
 	const auto version = text_document->get_int("version").value_or(0);
 	const auto source = source_from_uri(uri->value);
 	m_sources.update(source, text->value, version);
-	analyze_entries_for_source(source);
+	schedule_analysis_for_source(source);
 }
 
 void LanguageServer::handle_did_close(const JsonRpcMessage& message) {
@@ -189,6 +285,14 @@ void LanguageServer::handle_did_close(const JsonRpcMessage& message) {
 
 	const auto source = source_from_uri(uri->value);
 	m_sources.close(source);
-	m_entry_points.remove_entry(source);
-	m_diagnostic_publisher.clear_entry(source);
+	{
+		std::lock_guard lock(m_analysis_mutex);
+		m_pending_analysis_sources.erase(FileSystemSourceProvider::normalize(source.value).value);
+		++m_analysis_generation;
+	}
+	{
+		std::lock_guard lock(m_state_mutex);
+		m_entry_points.remove_entry(source);
+		m_diagnostic_publisher.clear_entry(source);
+	}
 }

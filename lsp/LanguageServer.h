@@ -3,8 +3,14 @@
 //
 
 #pragma once
+#include <condition_variable>
+#include <cstdint>
+#include <mutex>
 #include <optional>
 #include <string>
+#include <thread>
+#include <unordered_set>
+#include <vector>
 
 #include "DiagnosticPublisher.h"
 #include "EntryPointResolver.h"
@@ -19,17 +25,32 @@ class LanguageServer {
 	std::optional<SourceId> m_configured_entry_source;
 	std::optional<SourceId> m_workspace_root;
 	EntryPointResolver m_entry_points;
+	mutable std::mutex m_state_mutex;
+
+	mutable std::mutex m_analysis_mutex;
+	std::condition_variable m_analysis_cv;
+	std::unordered_set<std::string> m_pending_analysis_sources;
+	std::thread m_analysis_worker;
+	uint64_t m_analysis_generation = 0;
+	bool m_stop_analysis_worker = false;
 
 	bool m_initialized = false;
 	bool m_shutdown_requested = false;
 	bool m_exit_requested = false;
 
-	void analyze_entry(const SourceId& entry_source);
-	void analyze_entries_for_source(const SourceId& changed_source);
+	void schedule_analysis_for_source(const SourceId& changed_source);
+	void analysis_worker_loop();
+	void stop_analysis_worker();
+	void analyze_entry(const SourceId& entry_source, uint64_t generation);
+	void analyze_entries_for_sources(const std::vector<SourceId>& changed_sources, uint64_t generation);
+	[[nodiscard]] bool is_analysis_current(uint64_t generation) const;
 
 public:
 	explicit LanguageServer(JsonRpcConnection& connection)
-		: m_connection(connection), m_diagnostic_publisher(connection), m_sources(m_file_sources) {}
+		: m_connection(connection), m_diagnostic_publisher(connection), m_sources(m_file_sources) {
+		m_analysis_worker = std::thread(&LanguageServer::analysis_worker_loop, this);
+	}
+	~LanguageServer();
 
 	int run();
 
