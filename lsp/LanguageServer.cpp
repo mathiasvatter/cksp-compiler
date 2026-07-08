@@ -181,24 +181,33 @@ void LanguageServer::analyze_entry(const SourceId& entry_source, const uint64_t 
 }
 
 void LanguageServer::analyze_entries_for_sources(const std::vector<SourceId>& changed_sources, const uint64_t generation) {
-	std::vector<SourceId> entries;
 	std::unordered_set<std::string> seen_entries;
-	{
-		std::lock_guard lock(m_state_mutex);
-		for (const auto& changed_source : changed_sources) {
-			for (const auto& entry : m_entry_points.affected_entries(changed_source)) {
-				if (seen_entries.insert(entry.value).second) {
-					entries.push_back(entry);
+	while (true) {
+		std::vector<SourceId> entries;
+		{
+			std::lock_guard lock(m_state_mutex);
+			for (const auto& changed_source : changed_sources) {
+				for (const auto& entry : m_entry_points.affected_entries(changed_source)) {
+					if (seen_entries.contains(entry.value)) {
+						continue;
+					}
+					if (seen_entries.insert(entry.value).second) {
+						entries.push_back(entry);
+					}
 				}
 			}
 		}
-	}
 
-	for (const auto& entry : entries) {
-		if (!is_analysis_current(generation)) {
+		if (entries.empty()) {
 			return;
 		}
-		analyze_entry(entry, generation);
+
+		for (const auto& entry : entries) {
+			if (!is_analysis_current(generation)) {
+				return;
+			}
+			analyze_entry(entry, generation);
+		}
 	}
 }
 

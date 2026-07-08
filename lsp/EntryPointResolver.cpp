@@ -15,6 +15,9 @@ void EntryPointResolver::set_workspace_root(std::optional<SourceId> workspace_ro
 }
 
 void EntryPointResolver::set_configured_entry(std::optional<SourceId> configured_entry) {
+    if (configured_entry) {
+        configured_entry = FileSystemSourceProvider::normalize(configured_entry->value);
+    }
     m_configured_entry = std::move(configured_entry);
 }
 
@@ -33,8 +36,20 @@ void EntryPointResolver::remove_entry(const SourceId& entry_source) {
 
 std::vector<SourceId> EntryPointResolver::affected_entries(const SourceId& changed_source) const {
     const auto source = FileSystemSourceProvider::normalize(changed_source.value);
+
     if (const auto configured = configured_entry_for(source)) {
-        return {*configured};
+        if (*configured == source) {
+            return {*configured};
+        }
+
+        const auto configured_graph = m_import_graphs.find(configured->value);
+        if (configured_graph == m_import_graphs.end()) {
+            return {*configured};
+        }
+
+        if (entry_depends_on(*configured, source)) {
+            return {*configured};
+        }
     }
 
     std::vector<SourceId> entries;
