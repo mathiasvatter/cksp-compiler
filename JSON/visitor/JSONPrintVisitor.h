@@ -22,8 +22,12 @@ class JSONPrintVisitor final : public JSONVisitor {
 		}
 	}
 
+	void write_string_literal(const std::string& value) {
+		out << '"' << StringUtils::escape_json_string(value) << '"';
+	}
+
 	void write(const JSONString& node) {
-		out << std::quoted(StringUtils::escape_json_string(node.value));
+		write_string_literal(node.value);
 	}
 
 	void write(const JSONInt& node) {
@@ -53,7 +57,8 @@ class JSONPrintVisitor final : public JSONVisitor {
 				out << ",\n";
 			}
 			indent();
-			out << std::quoted(fst) << ": ";
+			write_string_literal(fst);
+			out << ": ";
 			snd ? static_cast<const JSONValue&>(*snd).accept(*this) : write(JSONNull{});
 			first = false;
 		}
