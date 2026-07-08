@@ -27,9 +27,10 @@ std::string error_type_to_string(const ErrorType type);
 
 
 enum class DiagnosticSeverity {
-    Error,
-    Warning,
-    Information
+    Error = 1,
+    Warning = 2,
+    Information = 3,
+    Hint = 4
 };
 
 /// A function-call frame that remains valid after the AST traversal has unwound because it will be copied in the event
@@ -76,6 +77,7 @@ struct Diagnostic {
     }
     void set_expected(const std::string& value) { expected = value; }
     void set_token(const Token& token);
+
 };
 
 /// Internal control-flow exception used to stop one compilation without terminating the process.

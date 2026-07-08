@@ -15,6 +15,7 @@ const char* severity_name(const DiagnosticSeverity severity) {
         case DiagnosticSeverity::Error: return "CompileError";
         case DiagnosticSeverity::Warning: return "CompileWarning";
         case DiagnosticSeverity::Information: return "Information";
+        case DiagnosticSeverity::Hint: return "Hint";
     }
     return "Diagnostic";
 }
