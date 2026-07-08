@@ -270,6 +270,7 @@ target_compile_definitions(cksp_core PUBLIC PRINTER_OUTPUT_PATH="${CMAKE_SOURCE_
 add_executable(cksp
         main.cpp
         misc/CommandLineOptions.cpp
+        misc/CrashReporter.h
         cksp/CompilerConfig.h
         lsp/JsonRpcConnection.h
         lsp/JsonRpcMessage.h

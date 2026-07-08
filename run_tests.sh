@@ -224,6 +224,7 @@ for entry in "${BUILDS[@]}"; do
 
 	stdout_log="$log_dir/stdout.log"
 	stderr_log="$log_dir/stderr.log"
+	crash_log="$log_dir/crash.log"
 	kontakt_log="$log_dir/kontakt_output.log"
 	OUTPUT_FILE="$log_dir/code_output.txt"
 
@@ -232,7 +233,7 @@ for entry in "${BUILDS[@]}"; do
 		start_spinner "$label" & spin_pid=$!
 		start_ms=$(now_ms)
 
-		"$executable" -o "$OUTPUT_FILE" "$file" >"$log_dir/.tmp_compile" 2>&1
+		CKSP_CRASH_LOG="$crash_log" "$executable" -o "$OUTPUT_FILE" "$file" >"$log_dir/.tmp_compile" 2>&1
 		compile_exit=$?
 
 		stop_spinner "$spin_pid"
@@ -255,6 +256,10 @@ for entry in "${BUILDS[@]}"; do
 
 	  echo "    ↪ compile errors (excerpt):"
 	  grep -E 'CompileError|error|ERROR' "$stderr_log" | head -n 20 | sed 's/^/        /' || true
+	  if [[ $compile_exit -ge 128 && -s "$crash_log" ]]; then
+		echo "    ↪ crash report: $crash_log"
+		head -n 30 "$crash_log" | sed 's/^/        /' || true
+	  fi
 	  printf '\033[0m'
 	  if [[ "$USE_KONTAKT" == true ]]; then
 		kontakt_skipped=$((kontakt_skipped + 1))
