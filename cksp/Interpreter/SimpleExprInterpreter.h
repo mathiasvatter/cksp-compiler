@@ -19,7 +19,7 @@ public:
 	[[nodiscard]] PreNodeAST* peek(const std::vector<std::unique_ptr<PreNodeAST>>& nodes, int ahead = 0) const;
 	std::unique_ptr<PreNodeAST> consume(const std::vector<std::unique_ptr<PreNodeAST>>& nodes);
 
-    Result<int> evaluate_int_expression(std::unique_ptr<PreNodeAST>& root);
+    static Result<int> evaluate_int_expression(std::unique_ptr<PreNodeAST>& root);
 	Result<std::unique_ptr<PreNodeAST>> parse(std::vector<std::unique_ptr<PreNodeAST>> n);
 	Result<std::unique_ptr<PreNodeAST>> parse_binary_expr(const std::vector<std::unique_ptr<PreNodeAST>>& nodes, PreNodeAST *parent);
 	Result<std::unique_ptr<PreNodeAST>> _parse_primary_expr(const std::vector<std::unique_ptr<PreNodeAST>>& nodes, PreNodeAST *parent);

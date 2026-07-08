@@ -106,7 +106,7 @@ Result<std::unique_ptr<PreNodeAST>> SimpleExprInterpreter::_parse_primary_expr(c
 	}
 	return Result<std::unique_ptr<PreNodeAST>>(Diagnostic(ErrorType::PreprocessorError,
 	"Found unknown expression token. No variables allowed in Preprocessor since statement has to be evaluated during compile time.",
-	m_line, "integer, define constant", current_node->get_string(), m_file));
+	"integer, define constant", current_node->tok));
 }
 
 Result<std::unique_ptr<PreNodeAST>> SimpleExprInterpreter::parse_unary_expr(const std::vector<std::unique_ptr<PreNodeAST>>& nodes, PreNodeAST *parent) {
@@ -190,10 +190,10 @@ Result<int> SimpleInterpreter::evaluate_int_expression(std::unique_ptr<NodeAST>&
         if (unary_expr_node->op == token::SUB) { // Assuming SUB represents the '-' unary operator
             return Result<int>(-operandValue);
         }
+    	auto error = Diagnostic(ErrorType::PreprocessorError,"Unsupported unary operation. " + preprocessor_error,"-", root->tok);
+    	error.actual = get_token_string(unary_expr_node->op);
+        return Result<int>(std::move(error));
         // Add other unary operations here if needed
-        return Result<int>(Diagnostic(ErrorType::PreprocessorError,
-                                        "Unsupported unary operation. " + preprocessor_error,
-                                        root->tok.line, "-", get_token_string(unary_expr_node->op), root->tok.file));
     } else if (auto binary_expr_node = root->cast<NodeBinaryExpr>()) {
         auto left_value_stmt = evaluate_int_expression(binary_expr_node->left);
         if (left_value_stmt.is_error()) return Result<int>(left_value_stmt.get_error());

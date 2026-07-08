@@ -191,7 +191,8 @@ bool NodeFunctionCall::bind_definition(NodeProgram* program, const bool fail, co
     	if (decl and decl->is_function_param()) {
     		return true;
     	}
-        Diagnostic(ErrorType::SyntaxError,"A function with this signature has not been declared.", tok.line, "", function->name, tok.file).exit();
+        auto error = Diagnostic(ErrorType::SyntaxError,"A function with this signature has not been declared.", "", tok);
+    	error.exit();
     }
     return false;
 }
