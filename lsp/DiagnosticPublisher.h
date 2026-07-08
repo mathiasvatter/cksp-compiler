@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <unordered_map>
 #include <unordered_set>
 
 #include "../misc/Diagnostic.h"
@@ -12,8 +13,7 @@
 
 class DiagnosticPublisher {
 	JsonRpcConnection& m_connection;
-	/// Maps an entry source to all source files for which the last analysis of that entry published diagnostics.
-	std::unordered_map<std::string, std::unordered_set<std::string>> m_published_sources_by_entry;
+	std::unordered_map<std::string, std::unordered_map<std::string, std::vector<Diagnostic>>> m_diagnostics_by_entry_and_source;
 public:
 	explicit DiagnosticPublisher(JsonRpcConnection& connection)
 		: m_connection(connection) {}
@@ -30,12 +30,16 @@ public:
 	/// Clears every diagnostic previously published for this entry source.
 	void clear_entry(const SourceId& entry_source);
 
+	/// Clears a tracked entry without clearing a URI that is not owned by this entry.
+	void discard_entry(const SourceId& entry_source);
+
 	/// Clears diagnostics for one source without changing entry ownership.
-	void clear_source(const SourceId& source) const;
+	void clear_source(const SourceId& source);
 
 private:
 
 	[[nodiscard]] static SourceId diagnostic_source(const Diagnostic& diagnostic, const SourceId& entry_source);
 	[[nodiscard]] static std::unique_ptr<JSONObject> make_lsp_diagnostic(const Diagnostic& diagnostic);
+	void publish_merged_source(const SourceId& source) const;
 	void publish_source(const SourceId& source, const std::vector<Diagnostic>& diagnostics) const;
 };

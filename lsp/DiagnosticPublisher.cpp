@@ -29,50 +29,76 @@ namespace {
 } // namespace
 
 void DiagnosticPublisher::publish(const SourceId& entry_source, const std::vector<Diagnostic>& diagnostics) {
+	const auto entry = FileSystemSourceProvider::normalize(entry_source.value);
 	std::unordered_map<std::string, std::vector<Diagnostic>> diagnostics_by_source;
+	std::unordered_set<std::string> affected_sources;
+	affected_sources.insert(entry.value);
 
 	for (const auto& diagnostic : diagnostics) {
-		const auto source = diagnostic_source(diagnostic, entry_source);
+		const auto source = diagnostic_source(diagnostic, entry);
 		diagnostics_by_source[source.value].push_back(diagnostic);
+		affected_sources.insert(source.value);
 	}
 
 	// Always publish the entry source, even if it has no diagnostics.
 	// This clears old diagnostics located directly in the entry file.
-	if (!diagnostics_by_source.contains(entry_source.value)) {
-		diagnostics_by_source.try_emplace(entry_source.value);
+	if (!diagnostics_by_source.contains(entry.value)) {
+		diagnostics_by_source.try_emplace(entry.value);
 	}
 
-	std::unordered_set<std::string> current_sources;
-	current_sources.reserve(diagnostics_by_source.size());
-
-	for (const auto& [source_value, source_diagnostics] : diagnostics_by_source) {
-		current_sources.insert(source_value);
-		publish_source(SourceId(source_value), source_diagnostics);
-	}
-
-	auto& previous_sources = m_published_sources_by_entry[entry_source.value];
-	for (const auto& previous_source : previous_sources) {
-		if (!current_sources.contains(previous_source)) {
-			clear_source(SourceId(previous_source));
+	const auto previous_entry = m_diagnostics_by_entry_and_source.find(entry.value);
+	if (previous_entry != m_diagnostics_by_entry_and_source.end()) {
+		for (const auto& [source_value, _] : previous_entry->second) {
+			affected_sources.insert(source_value);
 		}
 	}
-	previous_sources = std::move(current_sources);
+
+	m_diagnostics_by_entry_and_source[entry.value] = std::move(diagnostics_by_source);
+
+	for (const auto& source : affected_sources) {
+		publish_merged_source(SourceId(source));
+	}
 }
 
 void DiagnosticPublisher::clear_entry(const SourceId& entry_source) {
-	const auto it = m_published_sources_by_entry.find(entry_source.value);
-	if (it == m_published_sources_by_entry.end()) {
+	const auto entry = FileSystemSourceProvider::normalize(entry_source.value);
+	const auto it = m_diagnostics_by_entry_and_source.find(entry.value);
+	if (it == m_diagnostics_by_entry_and_source.end()) {
 		clear_source(entry_source);
 		return;
 	}
-	for (const auto& source : it->second) {
-		clear_source(SourceId(source));
+	std::unordered_set<std::string> affected_sources;
+	for (const auto& [source, _] : it->second) {
+		affected_sources.insert(source);
 	}
-	m_published_sources_by_entry.erase(it);
+	m_diagnostics_by_entry_and_source.erase(it);
+	for (const auto& source : affected_sources) {
+		publish_merged_source(SourceId(source));
+	}
 }
 
-void DiagnosticPublisher::clear_source(const SourceId& source) const {
-	publish_source(source, {});
+void DiagnosticPublisher::discard_entry(const SourceId& entry_source) {
+	const auto entry = FileSystemSourceProvider::normalize(entry_source.value);
+	const auto it = m_diagnostics_by_entry_and_source.find(entry.value);
+	if (it == m_diagnostics_by_entry_and_source.end()) {
+		return;
+	}
+	std::unordered_set<std::string> affected_sources;
+	for (const auto& [source, _] : it->second) {
+		affected_sources.insert(source);
+	}
+	m_diagnostics_by_entry_and_source.erase(it);
+	for (const auto& source : affected_sources) {
+		publish_merged_source(SourceId(source));
+	}
+}
+
+void DiagnosticPublisher::clear_source(const SourceId& source) {
+	const auto normalized_source = FileSystemSourceProvider::normalize(source.value);
+	for (auto& [_, diagnostics_by_source] : m_diagnostics_by_entry_and_source) {
+		diagnostics_by_source.erase(normalized_source.value);
+	}
+	publish_source(normalized_source, {});
 }
 
 SourceId DiagnosticPublisher::diagnostic_source(const Diagnostic& diagnostic, const SourceId& entry_source) {
@@ -90,6 +116,18 @@ std::unique_ptr<JSONObject> DiagnosticPublisher::make_lsp_diagnostic(const Diagn
 	result->add("code", std::make_unique<JSONString>(error_type_to_string(diagnostic.type)));
 	result->add("message", std::make_unique<JSONString>(diagnostic_message(diagnostic)));
 	return result;
+}
+
+void DiagnosticPublisher::publish_merged_source(const SourceId& source) const {
+	std::vector<Diagnostic> diagnostics;
+	for (const auto& [_, diagnostics_by_source] : m_diagnostics_by_entry_and_source) {
+		const auto it = diagnostics_by_source.find(source.value);
+		if (it == diagnostics_by_source.end()) {
+			continue;
+		}
+		diagnostics.insert(diagnostics.end(), it->second.begin(), it->second.end());
+	}
+	publish_source(source, diagnostics);
 }
 
 void DiagnosticPublisher::publish_source(const SourceId& source, const std::vector<Diagnostic>& diagnostics) const {

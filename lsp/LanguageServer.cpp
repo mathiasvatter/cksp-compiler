@@ -187,13 +187,23 @@ void LanguageServer::analyze_entries_for_sources(const std::vector<SourceId>& ch
 		{
 			std::lock_guard lock(m_state_mutex);
 			for (const auto& changed_source : changed_sources) {
-				for (const auto& entry : m_entry_points.affected_entries(changed_source)) {
+				const auto normalized_source = FileSystemSourceProvider::normalize(changed_source.value);
+				const auto affected_entries = m_entry_points.affected_entries(normalized_source);
+				bool source_is_entry = false;
+				for (const auto& entry : affected_entries) {
+					if (entry == normalized_source) {
+						source_is_entry = true;
+					}
 					if (seen_entries.contains(entry.value)) {
 						continue;
 					}
 					if (seen_entries.insert(entry.value).second) {
 						entries.push_back(entry);
 					}
+				}
+				if (!source_is_entry) {
+					m_entry_points.remove_entry(normalized_source);
+					m_diagnostic_publisher.discard_entry(normalized_source);
 				}
 			}
 		}
