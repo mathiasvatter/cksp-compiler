@@ -188,7 +188,8 @@ public:
 		if(node.cast<NodePointerRef>()) type = "<Pointer>";
 		if(node.cast<NodeListRef>()) type = "<List>";
 		if (node.cast<NodeFunctionHeaderRef>()) type = "<Function> Variable of this name";
-		diagnostic.message = type+" has not been declared: " + node.tok.val+". "+add_msg;
+		diagnostic.message = type+" has not been declared: " + node.tok.val+".";
+		if (!add_msg.empty()) diagnostic.message += " " + add_msg;
 		diagnostic.expected = "Valid declaration";
 
 		// check if reference is assignment in declaration of global variable

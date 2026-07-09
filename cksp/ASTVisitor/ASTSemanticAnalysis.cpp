@@ -46,6 +46,9 @@ NodeAST * ASTSemanticAnalysis::visit(NodeNumElements& node) {
 
 	// transform var ref to composite type
 	if(auto var = node.array->cast<NodeVariableRef>()) {
+		if (!var->get_declaration()) {
+			DefinitionProvider::throw_declaration_error(*var, "", m_def_provider).exit();
+		}
 		auto node_array_ref = var->to_array_ref(nullptr);
 		return var->replace_reference(std::move(node_array_ref));
 	}
@@ -60,6 +63,9 @@ NodeAST * ASTSemanticAnalysis::visit(NodeSortSearch& node) {
 
 	// transform var ref to composite type
 	if(const auto var = node.array->cast<NodeVariableRef>()) {
+		if (!var->get_declaration()) {
+			DefinitionProvider::throw_declaration_error(*var, "", m_def_provider).exit();
+		}
 		auto node_array_ref = var->to_array_ref(nullptr);
 		return var->replace_reference(std::move(node_array_ref));
 	}
@@ -290,13 +296,15 @@ NodeAST * ASTSemanticAnalysis::visit(NodeListRef& node) {
 	return replace_incorrectly_detected_data_struct(new_node->get_declaration());
 }
 
-void ASTSemanticAnalysis::update_func_call_node_types(const NodeFunctionCall* func_call) {
+void ASTSemanticAnalysis::update_func_call_node_types(const NodeFunctionCall* func_call) const {
 	if(const auto definition = func_call->get_definition()) {
 		for(int i=0; i<func_call->function->get_num_args(); i++) {
 			const auto & arg = func_call->function->get_arg(i);
 			const auto & param = definition->get_param(i);
 			if(const auto node_var_ref = arg->cast<NodeVariableRef>(); node_var_ref and param->cast<NodeArray>()) {
-//				if(!node_var_ref->get_declaration()) return;
+				if(!node_var_ref->get_declaration()) {
+					DefinitionProvider::throw_declaration_error(*node_var_ref, "", m_def_provider).exit();
+				}
 				auto node_array_ref = std::make_unique<NodeArrayRef>(
 					node_var_ref->name,
 					nullptr,
@@ -495,7 +503,5 @@ NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(NodeR
 	}
 	return nullptr;
 }
-
-
 
 

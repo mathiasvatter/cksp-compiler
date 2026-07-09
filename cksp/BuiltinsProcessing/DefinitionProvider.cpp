@@ -153,7 +153,7 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::set_declaration(const std
 		} else {
 			diagnostic.message += "Try renaming the variable to avoid shadowing.";
 		}
-        if(global_scope and !data_struct->is_engine) diagnostic.message += "\nVariables declared in the <init> callback are always considered global, no local scopes are created.";
+		if(global_scope and !data_struct->is_engine) diagnostic.message += "\nVariables declared in the <init> callback are always considered global, no local scopes are created.";
 		diagnostic.exit();
 	} else {
 		if(global_scope) {
@@ -161,6 +161,7 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::set_declaration(const std
 		} else {
 			m_declared_data_structures.back().insert({var->name, var});
 		}
+		add_to_data_structures(var);
 	}
 	return nullptr;
 }

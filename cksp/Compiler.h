@@ -232,7 +232,7 @@ private:
 		// input_filename = "/Users/mathias/Scripting/legato-dev/one-shot.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score-essentials/the-score-essentials.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
-		input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
+		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-brass/dev/Lux - Orchestral Brass Keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Ensemble.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Single.ksp";
