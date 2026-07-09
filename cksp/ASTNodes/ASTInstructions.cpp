@@ -66,7 +66,7 @@ NodeFunctionCall::NodeFunctionCall(bool is_call, std::unique_ptr<NodeFunctionHea
 
 NodeFunctionCall::~NodeFunctionCall() {
 	if(const auto def = definition.lock()) {
-		def->call_sites.erase(this);
+		def->remove_call_site(this);
 	}
 }
 

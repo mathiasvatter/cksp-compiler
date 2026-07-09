@@ -161,7 +161,6 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::set_declaration(const std
 		} else {
 			m_declared_data_structures.back().insert({var->name, var});
 		}
-		add_to_data_structures(var);
 	}
 	return nullptr;
 }

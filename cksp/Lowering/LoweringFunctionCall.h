@@ -21,7 +21,7 @@ public:
         if(node.kind == NodeFunctionCall::Kind::Property) {
             auto node_body = inline_property_function(node.get_definition()->header, std::move(node.function));
             node_body->accept(*this);
-			node.get_definition()->call_sites.erase(&node);
+			node.get_definition()->remove_call_site(&node);
             return node.replace_with(std::move(node_body));
         }
         if(node.kind == NodeFunctionCall::Kind::Builtin) {

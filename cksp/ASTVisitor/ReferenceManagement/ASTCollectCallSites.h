@@ -55,7 +55,7 @@ public:
 				definition->accept(*this);
 			}
 			definition->visited = true;
-			definition->call_sites.insert(&node);
+			definition->add_call_site(&node);
 
 		}
 

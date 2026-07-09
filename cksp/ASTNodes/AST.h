@@ -927,6 +927,7 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	int num_return_stmts = 0;
 	std::vector<NodeReturn*> return_stmts;
     std::unordered_set<NodeFunctionCall*> call_sites = {};
+	mutable std::mutex call_sites_mutex;
     std::shared_ptr<NodeFunctionHeader> header;
     std::optional<std::shared_ptr<NodeDataStructure>> return_variable;
     bool override = false;
@@ -954,6 +955,14 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	bool is_expression_function() const;
 	std::shared_ptr<NodeFunctionDefinition> get_shared() {
 		return shared_from_this();
+	}
+	void add_call_site(NodeFunctionCall* call_site) {
+		std::lock_guard<std::mutex> lock(call_sites_mutex);
+		call_sites.insert(call_site);
+	}
+	void remove_call_site(NodeFunctionCall* call_site) {
+		std::lock_guard<std::mutex> lock(call_sites_mutex);
+		call_sites.erase(call_site);
 	}
 	void set_header(std::shared_ptr<NodeFunctionHeader> header);
 	std::vector<std::shared_ptr<NodeDataStructure>> do_variable_reuse(NodeProgram *program);

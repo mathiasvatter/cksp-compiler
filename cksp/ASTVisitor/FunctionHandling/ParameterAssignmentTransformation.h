@@ -91,8 +91,8 @@ public:
 			new_call->strategy = NodeFunctionCall::Call;
 		}
 		new_block->add_as_stmt(std::move(new_call));
-		definition->call_sites.erase(&old);
-		definition->call_sites.insert(new_block->get_last_statement()->cast<NodeFunctionCall>());
+		definition->remove_call_site(&old);
+		definition->add_call_site(new_block->get_last_statement()->cast<NodeFunctionCall>());
 	}
 
 private:
