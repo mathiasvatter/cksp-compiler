@@ -13,13 +13,14 @@ struct Array
         for idx, p in pairs(self.points)
             p := new Point(idx, int(real(idx)**2.0))
 		end for			
-end function		
+    end function
 end struct	
 
 struct Point
     x: int, y: int
 end struct	
 
+declare ui_slider sli[5](1,2)
 declare x
 // declare point_array := new Array()
 // declare point_array2 := new Array()

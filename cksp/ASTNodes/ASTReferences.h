@@ -160,9 +160,11 @@ struct NodeNDArrayRef final : NodeCompositeRef {
 	void update_parents(NodeAST* new_parent) override {
 		parent = new_parent;
 		if(indexes) indexes ->update_parents(this);
+		if(sizes) sizes->update_parents(this);
 	}
 	void set_child_parents() override {
 		if(indexes) indexes->parent = this;
+		if(sizes) sizes->parent = this;
 	};
 	std::string get_string() override {
 		return name;

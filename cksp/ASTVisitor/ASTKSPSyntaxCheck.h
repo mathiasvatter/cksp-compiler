@@ -69,11 +69,17 @@ public:
 
 	NodeAST* visit(NodeIf& node) override {
 		ASTVisitor::visit(node);
+		if (m_program->compiler_config->lsp) {
+			return &node;
+		}
 		return KSPConditions::sanitize_condition(node);
 	}
 
 	NodeAST* visit(NodeWhile& node) override {
 		ASTVisitor::visit(node);
+		if (m_program->compiler_config->lsp) {
+			return &node;
+		}
 		return KSPConditions::sanitize_condition(node);
 	}
 
@@ -81,6 +87,9 @@ public:
 		node.variable->accept(*this);
 		if(node.value) node.value->accept(*this);
 
+		if (m_program->compiler_config->lsp) {
+			return &node;
+		}
 		static KSPDeclarations declarations;
 		auto new_node = node.accept(declarations);
 		static KSPPersistency persistency;
@@ -88,6 +97,9 @@ public:
 	}
 
 	NodeAST* visit(NodeFunctionCall& node) override {
+		if (m_program->compiler_config->lsp) {
+			return ASTVisitor::visit(node);
+		}
 		if (node.function->get_num_args() > 0 and node.function->get_arg(0)->ty->get_type_kind() == TypeKind::Composite and
 				BuiltinRestrictionValidator::is_load_save_function(node.function->name)) {
 			// check if we have a load/save array function -> check if first param is local array
@@ -122,12 +134,18 @@ public:
 	}
 
 	NodeAST* visit(NodeArray& node) override {
-		node.size->accept(*this);
+		if (m_program->compiler_config->lsp) {
+			return ASTVisitor::visit(node);
+		}
+		if (node.size) node.size->accept(*this);
 		check_max_array_size(node);
 		return &node;
 	}
 
 	NodeAST* visit(NodeArrayRef& node) override {
+		if (m_program->compiler_config->lsp) {
+			return ASTVisitor::visit(node);
+		}
 		if(node.index) node.index->accept(*this);
 		check_nested_get_ui_id(node);
 		if(LoweringFunctionCall::needs_get_ui_id(node)) {
@@ -137,6 +155,9 @@ public:
 	}
 
 	NodeAST* visit(NodeVariableRef& node) override {
+		if (m_program->compiler_config->lsp) {
+			return ASTVisitor::visit(node);
+		}
 		check_nested_get_ui_id(node);
 		if(LoweringFunctionCall::needs_get_ui_id(node)) {
 			return node.replace_with(std::move(LoweringFunctionCall::wrap_in_get_ui_id(node)));
@@ -145,6 +166,9 @@ public:
 	}
 
 	NodeAST* visit(NodeUIControl& node) override {
+		// if (m_program->compiler_config->lsp) {
+		// 	return ASTVisitor::visit(node);
+		// }
 		m_ui_control_count[node.ui_control_type]++;
 		check_max_ui_controls(m_ui_control_count[node.ui_control_type], node);
 		node.control_var->accept(*this);

@@ -677,6 +677,7 @@ std::unique_ptr<NodeAST> NodeParamList::clone() const {
 NodeAST *NodeParamList::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     for (auto& param : params) {
         if (param.get() == oldChild) {
+            newChild->parent = this;
             param = std::move(newChild);
             return param.get();
         }

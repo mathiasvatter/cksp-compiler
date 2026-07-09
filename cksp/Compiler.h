@@ -54,7 +54,7 @@
 #include "../misc/DiagnosticSink.h"
 #include "../misc/DiagnosticEngine.h"
 #include "../misc/DiagnosticReport.h"
-
+#include "ASTVisitor/ASTCheck.h"
 
 template <typename... Args>
 void println(Args&&... args) {
@@ -215,8 +215,8 @@ private:
 		ASTVariableChecking variable_checking2(m_program);
 		variable_checking2.do_reachable_traversal(*ast, true);
 
-		// ASTKSPSyntaxCheck syntax_check(m_program);
-		// ast->accept(syntax_check);
+		ASTKSPSyntaxCheck syntax_check(m_program);
+		ast->accept(syntax_check);
 	}
 
 	/// first frontend implementation -> can be used for lsp, does not generate code
@@ -508,6 +508,8 @@ private:
 		ASTKSPSyntaxCheck::fix_memory_exhausted_error(*ast);
 		ast->debug_print();
 
+		ASTCheck check(m_program);
+		ast->accept(check);
 
 		ASTGenerator generator;
 		ast->accept(generator);
