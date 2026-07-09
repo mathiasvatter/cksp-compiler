@@ -49,18 +49,17 @@ class ASTKSPSyntaxCheck final : public ASTVisitor {
 		}
 	}
 
-	void check_max_ui_controls(const NodeUIControl& node) {
-		if(m_ui_control_count[node.ui_control_type] > MAX_UI_CONTROLS) {
-			auto error = ASTVisitor::make_diagnostic(ErrorType::SyntaxError, node);
-			error.message = "Maximum number of UI controls exceeded for <"+node.ui_control_type+">. Counted "+std::to_string(m_ui_control_count[node.ui_control_type])+" controls.";
-			error.exit();
-		}
-	}
-
-
 public:
 	explicit ASTKSPSyntaxCheck(NodeProgram *main) : m_def_provider(main->def_provider) {
 		m_program = main;
+	}
+
+	static void check_max_ui_controls(const int count, const NodeUIControl& node) {
+		if(count > MAX_UI_CONTROLS) {
+			auto error = ASTVisitor::make_diagnostic(ErrorType::SyntaxError, node);
+			error.message = "Maximum number of UI controls exceeded for <"+node.ui_control_type+">. Counted "+std::to_string(count)+" controls.";
+			error.exit();
+		}
 	}
 
 	static NodeAST* fix_memory_exhausted_error(NodeAST& node) {
@@ -80,11 +79,6 @@ public:
 
 	NodeAST* visit(NodeSingleDeclaration& node) override {
 		node.variable->accept(*this);
-		if (TypeRegistry::get_identifier_from_type(node.variable->ty) == ' ') {
-			auto error = ASTVisitor::make_diagnostic(ErrorType::InternalError, node);
-			error.set_message("Type identifier for variable '" + node.variable->name + "' is empty. This should not happen.");
-			error.exit();
-		}
 		if(node.value) node.value->accept(*this);
 
 		static KSPDeclarations declarations;
@@ -117,13 +111,6 @@ public:
 			}
 		}
 		return ASTVisitor::visit(node);
-	}
-
-	NodeAST* visit(NodeWildcard& node) override {
-		auto error = ASTVisitor::make_diagnostic(ErrorType::InternalError, node);
-		error.set_message("<wildcard> node should not exist anymore in AST.");
-		error.exit();
-		return &node;
 	}
 
 	NodeAST* visit(NodeBlock& node) override {
@@ -159,7 +146,7 @@ public:
 
 	NodeAST* visit(NodeUIControl& node) override {
 		m_ui_control_count[node.ui_control_type]++;
-		check_max_ui_controls(node);
+		check_max_ui_controls(m_ui_control_count[node.ui_control_type], node);
 		node.control_var->accept(*this);
 		node.params->accept(*this);
 		return &node;

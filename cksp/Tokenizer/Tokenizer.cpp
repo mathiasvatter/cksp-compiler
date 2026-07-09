@@ -151,7 +151,8 @@ bool Tokenizer::is_pragma() const {
             peek(3) == 'p' and peek(4) == 'r' and peek(5) == 'a' and
             peek(6) == 'g' and peek(7) == 'm' and peek(8) == 'a';
 	if(workaround_pragma) {
-		auto error = Diagnostic(ErrorType::CompileWarning, "", m_line, "", "//#pragma", m_current_file);
+		auto token = Token(token::PRAGMA, "//#pragma", m_line, m_line_pos, m_current_file);
+		auto error = Diagnostic(ErrorType::CompileWarning, "", "#pragma", token);
 		error.message = "Found usage of //#pragma. Note that this is a workaround and will be removed in future versions.";
 		error.report(m_diagnostics);
 	}

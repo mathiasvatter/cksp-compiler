@@ -5,6 +5,7 @@
 #pragma once
 
 #include "ASTDesugaring.h"
+#include "../ASTVisitor/ASTKSPSyntaxCheck.h"
 #include "../Interpreter/SimpleExprInterpreter.h"
 
 /// called bei NodeUIControl and NodeSingleDeclaration
@@ -119,6 +120,7 @@ public:
 			array_size_res.get_error().exit();
 		}
 		int array_size = array_size_res.unwrap();
+		ASTKSPSyntaxCheck::check_max_ui_controls(array_size, ui_control);
 		auto ui_control_template = m_engine_widget;
         // if is ui_table array -> set size to ui_table array size
         if(auto node_array = ui_control_template->control_var->cast<NodeArray>()) {

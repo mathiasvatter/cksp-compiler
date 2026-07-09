@@ -257,6 +257,7 @@ add_library(cksp_core STATIC
         cksp/ASTVisitor/ASTStructInstanceAnalysis.h
         cksp/Optimization/ConstantDatabase.h
         cksp/Source/ImportGraph.h
+        cksp/ASTVisitor/ASTCheck.h
 )
 add_dependencies(cksp_core generate_headers)
 
