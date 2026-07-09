@@ -33,22 +33,6 @@ class ASTKSPSyntaxCheck final : public ASTVisitor {
 	DefinitionProvider *m_def_provider;
 	std::unordered_map<std::string, int> m_ui_control_count;
 
-	static void check_max_array_size(const NodeArray& node) {
-		if(auto node_int = node.size->cast<NodeInt>()) {
-			
-			if(node_int->value > MAX_ARRAY_ELEMENTS) {
-				auto error = ASTVisitor::make_diagnostic(ErrorType::SyntaxError, node);
-				error.message = "Array size exceeds maximum of " + std::to_string(MAX_ARRAY_ELEMENTS) + ".";
-				if (!node.is_thread_safe) {
-					error.add_message("Since the array was declared locally in environment of asynchronous function calls,"
-					   " this might have been caused by the compiler and can be prevented by either declaring the array globally or reducing <max_callback_depth> via #pragma.");
-				}
-				error.actual = std::to_string(node_int->value);
-				error.exit();
-			}
-		}
-	}
-
 public:
 	explicit ASTKSPSyntaxCheck(NodeProgram *main) : m_def_provider(main->def_provider) {
 		m_program = main;
@@ -59,6 +43,21 @@ public:
 			auto error = ASTVisitor::make_diagnostic(ErrorType::SyntaxError, node);
 			error.message = "Maximum number of UI controls exceeded for <"+node.ui_control_type+">. Counted "+std::to_string(count)+" controls.";
 			error.exit();
+		}
+	}
+
+	static void check_max_array_size(const NodeArray& node) {
+		if(auto node_int = node.size->cast<NodeInt>()) {
+			if(node_int->value > MAX_ARRAY_ELEMENTS) {
+				auto error = ASTVisitor::make_diagnostic(ErrorType::SyntaxError, *node_int);
+				error.message = "Array size exceeds maximum of " + std::to_string(MAX_ARRAY_ELEMENTS) + ".";
+				if (!node.is_thread_safe) {
+					error.add_message("Since the array was declared locally in environment of asynchronous function calls,"
+					   " this might have been caused by the compiler and can be prevented by either declaring the array globally or reducing <max_callback_depth> via #pragma.");
+				}
+				error.actual = std::to_string(node_int->value);
+				error.exit();
+			}
 		}
 	}
 

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "ASTLowering.h"
+#include "../ASTVisitor/ASTKSPSyntaxCheck.h"
 
 /**
  * Determining the size of the array if possible
@@ -106,6 +107,9 @@ public:
 				error.actual = node.size->get_string();
 				error.exit();
 			}
+		}
+		if (node.size) {
+			ASTKSPSyntaxCheck::check_max_array_size(node);
 		}
 		if (node_declaration) {
 			check_size_against_initializer_list(*node_declaration);
