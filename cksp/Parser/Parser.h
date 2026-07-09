@@ -57,10 +57,26 @@ static const std::unordered_set<token> persistence_keywords = {
 
 
 class Parser: public Processor {
+	NodeProgram* m_program = nullptr;
+
+	std::vector<std::unique_ptr<NodeCallback>> m_callbacks;
+	int m_init_callback_idx = -1;
+    std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_function_definitions;
+	std::vector<NodeDataStructure*> m_all_data_structures;
+
 	bool is_variable_declaration();
 	bool is_array_declaration();
-	NodeProgram* m_program = nullptr;
+	static bool is_malformed_end_statement_start(const Token& tok, const Token& next);
+	static Diagnostic make_invalid_end_statement_diagnostic(const std::string& construct, const std::string& expected, const Token& start, const Token& next);
+
 public:
+
+    explicit Parser(std::vector<Token> tokens);
+    Result<std::unique_ptr<NodeProgram>> parse();
+
+    static std::optional<Token> get_persistent_keyword(const Token& tok);
+	int peek_past_modifiers();
+	static std::optional<Diagnostic> check_invalid_end_statement(const std::string& construct, token expected_end, const Token& start, const Token& next);
 
 	static int get_binop_precedence(const token tok) {
 		const int precedence = operator_precedence[tok];
@@ -69,11 +85,6 @@ public:
 		}
 		return precedence;
 	}
-    explicit Parser(std::vector<Token> tokens);
-    Result<std::unique_ptr<NodeProgram>> parse();
-
-    static std::optional<Token> get_persistent_keyword(const Token& tok);
-	int peek_past_modifiers();
 
     static std::string sanitize_binary(const std::string& input);
     /// convert eg 0bFFFh into 0xbFFF
@@ -153,10 +164,6 @@ public:
 	Result<std::unique_ptr<NodeNamespace>> parse_namespace(NodeAST* parent);
 
 	Result<std::unique_ptr<NodeProgram>> parse_program();
-	std::vector<std::unique_ptr<NodeCallback>> m_callbacks;
-	int m_init_callback_idx = -1;
-    std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_function_definitions;
-	std::vector<NodeDataStructure*> m_all_data_structures;
 
 	Result<SuccessTag> consume_linebreak(const std::string& construct);
 };

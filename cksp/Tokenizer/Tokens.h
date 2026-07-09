@@ -27,7 +27,7 @@
     XX(DOT, "dot") \
 	XX(KEYWORD, "Keyword") \
 	XX(BEGIN_CALLBACK, "begin callback") \
-	XX(END_CALLBACK, "end callback") \
+	XX(END_CALLBACK, "end on") \
 	XX(ASSIGN, "assignment")     \
 	XX(ARROW, "arrow")     \
 	XX(SUB, "-") \
@@ -88,7 +88,7 @@
     XX(END_WHILE, "end while") \
     XX(END_IF, "end if") \
     XX(END_SELECT, "end select") \
-    XX(END_CONST, "end constblock") \
+    XX(END_CONST, "end const") \
     XX(END_LIST, "end list") \
     XX(END_FAMILY, "end family") \
     XX(END_STRUCT, "end struct") \
