@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../ASTVisitor.h"
+#include "../../Preprocessor/PreAST/PreASTConditions.h"
 
 /**
  * Stores restrictive and thread unsafe ksp commands
@@ -64,6 +65,12 @@ public:
 		{ "NI_SIGNAL_TYPE", {"listener"} },
 		{ "CC_NUM", {"controller"} },
 		{ "POLY_AT_NUM", {"poly_at"} },
+		{"NI_MOUSE_EVENT_TYPE", {"ui_control", "ui_controls"} },
+		{"NI_MOUSE_EVENT_TYPE_DRAG", {"ui_control", "ui_controls"} },
+		{"NI_MOUSE_EVENT_TYPE_DROP", {"ui_control", "ui_controls"} },
+		{"NI_MOUSE_EVENT_TYPE_LEFT_BUTTON_DOWN", {"ui_control", "ui_controls"} },
+		{"NI_MOUSE_EVENT_TYPE_LEFT_BUTTON_UP", {"ui_control", "ui_controls"} },
+		{"NI_MOUSE_OVER_CONTROL", {"ui_control", "ui_controls"} },
 	};
 
 	inline static const std::unordered_map<std::string, std::unordered_set<std::string>> m_thread_unsafe_functions = {
@@ -119,6 +126,19 @@ public:
 				error.actual = "<" + callback->begin_callback + ">";
 				error.exit();
 				return false;
+			}
+		}
+		if (PreASTConditions::is_builtin_condition(node.tok)) {
+			auto func_header = node.is_direct_func_arg();
+			bool throw_error = !func_header;
+			if (!throw_error) {
+				throw_error = !PREPROCESSOR_SYNTAX.contains(func_header->name);
+			}
+			if(throw_error) {
+				auto error = ASTVisitor::make_diagnostic(ErrorType::SyntaxError, node);
+				error.set_message("Found built-in preprocessor variable in incorrcet environment. "
+				"<" + StringUtils::join(PreASTConditions::BUILTIN_CONDITIONS, ", ") + "> can only be used in <(RE)SET_CONDITION>");
+				error.exit();
 			}
 		}
 		return true;

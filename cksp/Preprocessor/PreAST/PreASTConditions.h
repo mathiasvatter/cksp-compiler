@@ -14,12 +14,13 @@ class PreASTConditions final : public PreASTVisitor {
 		return value;
 	}
 
-	inline static std::unordered_set<std::string> BUILTIN_CONDITIONS = {"NO_SYS_SCRIPT_GROUP_START", "NO_SYS_SCRIPT_PEDAL", "NO_SYS_SCRIPT_RLS_TRIG", "NO_SYS_RELEASE_TRIGGER"};
-
 public:
+
 	explicit PreASTConditions() {
 		m_conditions_set.clear();
 	}
+
+	inline static std::unordered_set<std::string> BUILTIN_CONDITIONS = {"NO_SYS_SCRIPT_GROUP_START", "NO_SYS_SCRIPT_PEDAL", "NO_SYS_SCRIPT_RLS_TRIG", "NO_SYS_RELEASE_TRIGGER"};
 	static bool is_builtin_condition(const Token& token) {
 		return BUILTIN_CONDITIONS.contains(token.val);
 	}

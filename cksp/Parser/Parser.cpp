@@ -883,7 +883,7 @@ Result<std::unique_ptr<NodeCompoundAssignment>> Parser::parse_compound_assign_st
 		for (auto& tok : valid_operator_tokens) {
 			valid_tokens.push_back(std::string("<") + get_token_string(tok) + ">");
 		}
-		error.expected = StringUtils::join(valid_tokens, ',');
+		error.expected = StringUtils::join(valid_tokens, ", ");
 		return Result<std::unique_ptr<NodeCompoundAssignment>>(error);
 	}
 	auto op = consume(); // consume operator token

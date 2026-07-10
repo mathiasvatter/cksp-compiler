@@ -89,6 +89,7 @@ public:
 		check_for_correct_object_type_annotation(node);
 		return apply_type_annotations(node.get_shared());
 	}
+
 	NodeAST* visit(NodeArrayRef& node) override {
 		desanitize_ref_name(node);
 		convert_composite_to_reference(node);
@@ -107,6 +108,7 @@ public:
 		check_for_correct_object_type_annotation(node);
 		return apply_type_annotations(node.get_shared());
 	}
+
 	NodeAST* visit(NodeVariableRef& node) override {
 		desanitize_ref_name(node);
 		check_reference_annotation_with_expected(node, TypeRegistry::Unknown);

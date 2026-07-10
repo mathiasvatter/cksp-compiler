@@ -66,7 +66,7 @@
     XX(BOOL_NOT, "bool_not") \
     XX(BOOL_XOR, "bool_xor") \
     XX(FUNCTION, "function") \
-    XX(CALL, "func_call") \
+    XX(CALL, "call") \
     XX(OVERRIDE, "override") \
     XX(FOR, "for") \
     XX(WHILE, "while") \
@@ -116,13 +116,13 @@
     XX(ON, "on") \
     XX(ITERATE_MACRO, "iterate_macro") \
     XX(LITERATE_MACRO, "literate_macro") \
-    XX(SET_CONDITION, "set_condition") \
-    XX(RESET_CONDITION, "reset_condition") \
-    XX(USE_CODE_IF, "use_code_if") \
-    XX(USE_CODE_IF_NOT, "use_code_if_not") \
-    XX(END_USE_CODE, "end_use_code") \
-    XX(START_INC, "start_inc") \
-    XX(END_INC, "end_inc") \
+    XX(SET_CONDITION, "SET_CONDITION") \
+    XX(RESET_CONDITION, "RESET_CONDITION") \
+    XX(USE_CODE_IF, "USE_CODE_IF") \
+    XX(USE_CODE_IF_NOT, "USE_CODE_IF_NOT") \
+    XX(END_USE_CODE, "END_USE_CODE") \
+    XX(START_INC, "START_INC") \
+    XX(END_INC, "END_INC") \
     XX(UI_CONTROL, "ui_control")\
     XX(RETURN, "return")\
     XX(REF, "ref")\

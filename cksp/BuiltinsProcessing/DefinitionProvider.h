@@ -206,7 +206,7 @@ public:
 			auto suggestions = ctx->misspelled_suggestions(name);
 			if (!suggestions.empty()) {
 				diagnostic.message += " Did you mean: "
-					+ StringUtils::join(suggestions, ',') + "?";
+					+ StringUtils::join(suggestions, ", ") + "?";
 			}
 		}
 

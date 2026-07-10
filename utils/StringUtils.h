@@ -242,19 +242,25 @@ inline std::vector<std::string> split(const std::string& s, char delimiter) {
 }
 
 /// Joins a vector of strings into a single string using a delimiter character.
-inline std::string join(const std::vector<std::string>& elements, char delimiter) {
-    if (elements.empty()) {
+template <typename Container>
+inline std::string join(const Container& elements, const std::string& delimiter) {
+    auto it  = std::begin(elements);
+    auto end = std::end(elements);
+    if (it == end) {
         return "";
     }
 
     std::ostringstream oss;
-    for (size_t i = 0; i < elements.size(); ++i) {
-        oss << elements[i];
-        if (i < elements.size() - 1) {
-            oss << delimiter;
-        }
+    oss << *it;
+    for (++it; it != end; ++it) {
+        oss << delimiter << *it;
     }
     return oss.str();
+}
+
+template <typename Container>
+inline std::string join(const Container& elements, char delimiter) {
+    return join(elements, std::string(1, delimiter));
 }
 
 template<typename Container, typename Protector = std::string, typename Proj>

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "ASTLowering.h"
+#include "../Preprocessor/PreAST/PreASTConditions.h"
 
 ///
 class LoweringFunctionCall final : public ASTLowering {
@@ -27,7 +28,7 @@ public:
         if(node.kind == NodeFunctionCall::Kind::Builtin) {
             // get_ui_id lowering
             node.function->accept(*this);
-
+			
 			if (node.function->get_num_args() == 1) {
 				if (node.function->name == "bool") {
 					auto& arg = node.function->get_arg(0);
@@ -40,6 +41,23 @@ public:
 					node.kind = NodeFunctionCall::Kind::UserDefined;
 					node.collect_references();
 					node.definition = m_program->def_provider->get_boolean_function(node.function->name, 1);
+				} else if (PREPROCESSOR_SYNTAX.contains(node.function->name)) {
+					// check here also for buildin preproc constants like NO_SYS_SCRIPT_GROUP_START
+					// SET_CONDITION can only have a variable ref as arg, no expression
+					auto& arg = node.function->get_arg(0);
+					auto var = arg->cast<NodeVariableRef>();
+					if (!var) {
+						auto error = ASTVisitor::make_diagnostic(ErrorType::SyntaxError, *arg);
+						error.set_message("Preprocessor function has to have one argument that is a built-in preprocessor condition.");
+						error.exit();
+					}
+					if (!PreASTConditions::is_builtin_condition(var->tok)) {
+						auto error = ASTVisitor::make_diagnostic(ErrorType::SyntaxError, *arg);
+						error.set_message("Found a variable in a preprocessor function that is not a Kontakt built-in condition and not user-defined.\n");
+						error.add_message("Usable are: " + StringUtils::join(PreASTConditions::BUILTIN_CONDITIONS, ", ") + ".");
+						error.exit();
+					}
+
 				}
 			} else if (node.function->get_num_args() == 0 and node.function->name == "exit") {
         	// check if we are in a user function, then replace exit function call with return stmt
