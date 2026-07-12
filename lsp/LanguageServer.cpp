@@ -82,6 +82,8 @@ void LanguageServer::handle_request(const JsonRpcMessage& message) {
 		handle_initialize(message);
 	} else if (method->value == "shutdown") {
 		handle_shutdown(message);
+	} else if (method->value == "textDocument/definition") {
+		handle_definition(message);
 	}
 }
 
@@ -177,6 +179,7 @@ void LanguageServer::analyze_entry(const SourceId& entry_source, const uint64_t 
 	}
 	std::lock_guard lock(m_state_mutex);
 	m_entry_points.register_analysis(entry_source, compiler.import_graph());
+	m_reference_indexes[FileSystemSourceProvider::normalize(entry_source.value).value] = compiler.reference_index();
 	m_diagnostic_publisher.publish(entry_source, diagnostics.diagnostics());
 }
 
@@ -204,6 +207,7 @@ void LanguageServer::analyze_entries_for_sources(const std::vector<SourceId>& ch
 				if (!source_is_entry) {
 					m_entry_points.remove_entry(normalized_source);
 					m_diagnostic_publisher.discard_entry(normalized_source);
+					m_reference_indexes.erase(normalized_source.value);
 				}
 			}
 		}
@@ -248,6 +252,7 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 
 	JSONObject capabilities;
 	capabilities.add("textDocumentSync", std::make_unique<JSONObject>(sync));
+	capabilities.add("definitionProvider", std::make_unique<JSONBool>(true));
 
 	JSONObject server_info;
 	server_info.add("name", std::make_unique<JSONString>("cksp-lsp"));
@@ -265,6 +270,51 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 void LanguageServer::handle_shutdown(const JsonRpcMessage& message) {
 	m_shutdown_requested = true;
 	if (const auto* id = message.id()) {
+		m_connection.send_response(*id, JSONNull{});
+	}
+}
+
+void LanguageServer::handle_definition(const JsonRpcMessage& message) {
+	const auto* params = message.params() ? message.params()->as<JSONObject>() : nullptr;
+	const auto* text_document = object_at(params, "textDocument");
+	const auto* uri = string_at(text_document, "uri");
+	const auto* position = object_at(params, "position");
+
+	std::optional<ReferenceLink> found;
+	if (uri && position) {
+		const auto line = static_cast<size_t>(position->get_int("line").value_or(0));
+		const auto character = static_cast<size_t>(position->get_int("character").value_or(0));
+		const auto source = source_from_uri(uri->value);
+
+		std::lock_guard lock(m_state_mutex);
+		// Prefer the entry that owns this file: its analysis has the in-context resolution.
+		for (const auto& entry : m_entry_points.affected_entries(source)) {
+			const auto index = m_reference_indexes.find(FileSystemSourceProvider::normalize(entry.value).value);
+			if (index == m_reference_indexes.end()) continue;
+			if (auto link = index->second.resolve(source.value, line, character)) {
+				found = std::move(link);
+				break;
+			}
+		}
+		// Fall back to any index that covers the position (e.g. a standalone/orphan file).
+		if (!found) {
+			for (const auto& [_, index] : m_reference_indexes) {
+				if (auto link = index.resolve(source.value, line, character)) {
+					found = std::move(link);
+					break;
+				}
+			}
+		}
+	}
+
+	const auto* id = message.id();
+	if (!id) return;
+	if (found) {
+		JSONObject location;
+		location.add("uri", std::make_unique<JSONString>(uri_from_source(SourceId(found->def_file))));
+		location.add("range", found->def_range.get_lsp_range());
+		m_connection.send_response(*id, location);
+	} else {
 		m_connection.send_response(*id, JSONNull{});
 	}
 }
@@ -325,6 +375,7 @@ void LanguageServer::handle_did_close(const JsonRpcMessage& message) {
 		if (standalone_entry) {
 			m_entry_points.remove_entry(source);
 			m_diagnostic_publisher.clear_entry(source);
+			m_reference_indexes.erase(FileSystemSourceProvider::normalize(source.value).value);
 		}
 	}
 

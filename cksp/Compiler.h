@@ -24,6 +24,7 @@
 #include "ASTVisitor/ASTCollectLowerings.h"
 #include "ASTVisitor/ASTSemanticAnalysis.h"
 #include "ASTVisitor/ASTVariableChecking.h"
+#include "ASTVisitor/ReferenceIndexBuilder.h"
 #include "ASTVisitor/ASTOptimizations.h"
 #include "ASTVisitor/TypeInference.h"
 #include "ASTVisitor/ASTReturnFunctionRewriting.h"
@@ -77,6 +78,7 @@ class Compiler {
 	Timer m_timer;
 	LinesProcessed m_lines_processed{};
 	ImportGraph m_import_graph;
+	ReferenceIndex m_reference_index;
 
 //	bool tokenize();
 //	bool preprocess();
@@ -215,8 +217,20 @@ private:
 		ASTVariableChecking variable_checking2(m_program);
 		variable_checking2.do_reachable_traversal(*ast, true);
 
+		if (m_program->compiler_config->lsp) {
+			build_reference_index();
+		}
+
 		ASTKSPSyntaxCheck syntax_check(m_program);
 		ast->accept(syntax_check);
+	}
+
+	/// Harvests reference -> declaration links for go-to-definition. Runs after the final
+	/// variable checking pass, once every declaration is resolved.
+	void build_reference_index() {
+		m_reference_index = ReferenceIndex{};
+		ReferenceIndexBuilder reference_index_builder(m_reference_index);
+		ast->accept(reference_index_builder);
 	}
 
 	/// first frontend implementation -> can be used for lsp, does not generate code
@@ -532,6 +546,11 @@ private:
 public:
 	[[nodiscard]] const ImportGraph& import_graph() const {
 		return m_import_graph;
+	}
+
+	/// Reference -> declaration index built during analysis (populated in LSP mode).
+	[[nodiscard]] const ReferenceIndex& reference_index() const {
+		return m_reference_index;
 	}
 
 	/// Analyze an explicitly supplied source, used by in-memory and language-server clients.
