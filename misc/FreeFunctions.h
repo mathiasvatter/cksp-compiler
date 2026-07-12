@@ -71,6 +71,20 @@ void parallel_for_each(Iterator begin, Iterator end, Func func, size_t num_threa
 	}
 }
 
+// Runs the range sequentially when `sequential` is true, otherwise parallelises via
+// parallel_for_each. Used to keep the LSP analysis deterministic: passes with
+// order-sensitive side effects (declaration registration, renaming) must not run
+// concurrently, because the outcome would otherwise depend on thread scheduling.
+// Exceptions propagate in both modes.
+template <typename Iterator, typename Func>
+void parallel_for_each_unless(bool sequential, Iterator begin, Iterator end, Func func, size_t num_threads = 0) {
+	if (sequential) {
+		std::for_each(begin, end, std::move(func));
+	} else {
+		parallel_for_each(begin, end, std::move(func), num_threads);
+	}
+}
+
 /*
  * helper functions to deal with special characters not supported in KSP
  */

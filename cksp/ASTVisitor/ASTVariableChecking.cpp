@@ -4,6 +4,7 @@
 
 #include "ASTVariableChecking.h"
 
+#include "../CompilerConfig.h"
 #include "ReferenceManagement/ASTCollectDeclarations.h"
 
 ASTVariableChecking::ASTVariableChecking(NodeProgram* main)
@@ -14,8 +15,11 @@ ASTVariableChecking::ASTVariableChecking(NodeProgram* main)
 
 NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 	m_program = &node;
-	// add all function definition header variables to global scope
-	parallel_for_each(node.function_lookup.begin(), node.function_lookup.end(),
+	// add all function definition header variables to global scope.
+	// set_declaration has order-sensitive side effects (gensym, redeclaration errors,
+	// renaming), so run sequentially in LSP mode to keep diagnostics deterministic.
+	parallel_for_each_unless(node.compiler_config && node.compiler_config->lsp,
+			node.function_lookup.begin(), node.function_lookup.end(),
 			[&](auto const& defs) {
 				for (auto & def : defs.second) {
 					if (auto func = def.lock()) {
