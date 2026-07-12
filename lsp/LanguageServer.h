@@ -48,6 +48,7 @@ class LanguageServer {
 public:
 	explicit LanguageServer(JsonRpcConnection& connection)
 		: m_connection(connection), m_diagnostic_publisher(connection), m_sources(m_file_sources) {
+		m_diagnostic_publisher.set_entry_resolver(&m_entry_points);
 		m_analysis_worker = std::thread(&LanguageServer::analysis_worker_loop, this);
 	}
 	~LanguageServer();

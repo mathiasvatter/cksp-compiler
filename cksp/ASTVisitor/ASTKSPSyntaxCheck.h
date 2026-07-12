@@ -90,8 +90,10 @@ public:
 			return &node;
 		}
 		static KSPDeclarations declarations;
+		declarations.set_program(m_program);
 		auto new_node = node.accept(declarations);
 		static KSPPersistency persistency;
+		persistency.set_program(m_program);
 		return new_node->accept(persistency);
 	}
 

@@ -235,6 +235,13 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 		m_entry_points.set_configured_entry(m_configured_entry_source);
 	}
 
+	// Analyse the configured entry up front so project-wide diagnostics are available
+	// without having to open one of its member files first, and so ownership of shared
+	// files is established early.
+	if (m_configured_entry_source) {
+		schedule_analysis_for_source(*m_configured_entry_source);
+	}
+
 	JSONObject sync;
 	sync.add("openClose", std::make_unique<JSONBool>(true));
 	sync.add("change", std::make_unique<JSONInt>(1));
@@ -303,15 +310,30 @@ void LanguageServer::handle_did_close(const JsonRpcMessage& message) {
 	if (!uri) return;
 
 	const auto source = source_from_uri(uri->value);
+	// Drop the in-memory buffer so reads fall back to disk again.
 	m_sources.close(source);
+
+	bool standalone_entry = false;
 	{
+		std::lock_guard lock(m_state_mutex);
+		// Only tear down entries that exist solely because the file was open: a standalone
+		// orphan entry. The configured entry and files it owns keep their diagnostics so the
+		// whole project's diagnostics do not vanish when a tab is closed.
+		standalone_entry = m_entry_points.is_known_entry(source)
+			&& !m_entry_points.is_configured_entry(source)
+			&& !m_entry_points.is_owned_by_configured_entry(source);
+		if (standalone_entry) {
+			m_entry_points.remove_entry(source);
+			m_diagnostic_publisher.clear_entry(source);
+		}
+	}
+
+	if (standalone_entry) {
 		std::lock_guard lock(m_analysis_mutex);
 		m_pending_analysis_sources.erase(FileSystemSourceProvider::normalize(source.value).value);
 		++m_analysis_generation;
-	}
-	{
-		std::lock_guard lock(m_state_mutex);
-		m_entry_points.remove_entry(source);
-		m_diagnostic_publisher.clear_entry(source);
+	} else {
+		// Re-analyse so any unsaved edits that were just discarded are reflected from disk.
+		schedule_analysis_for_source(source);
 	}
 }

@@ -35,6 +35,17 @@ public:
 	void remove_entry(const SourceId& entry_source);
 	[[nodiscard]] std::vector<SourceId> affected_entries(const SourceId& changed_source) const;
 
+	/// True if the source is the configured/primary entry point.
+	[[nodiscard]] bool is_configured_entry(const SourceId& source) const;
+
+	/// True if the source has been registered as an entry point (configured or standalone).
+	[[nodiscard]] bool is_known_entry(const SourceId& source) const;
+
+	/// True if the source is the configured entry or transitively imported by it.
+	/// Such sources are "owned" by the configured entry and must not receive
+	/// diagnostics from standalone entries that merely include them.
+	[[nodiscard]] bool is_owned_by_configured_entry(const SourceId& source) const;
+
 
 
 private:

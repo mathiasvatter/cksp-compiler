@@ -9,14 +9,20 @@
 
 #include "../misc/Diagnostic.h"
 #include "../cksp/Source/SourceProvider.h"
+#include "EntryPointResolver.h"
 #include "JsonRpcConnection.h"
 
 class DiagnosticPublisher {
 	JsonRpcConnection& m_connection;
+	const EntryPointResolver* m_entries = nullptr;
 	std::unordered_map<std::string, std::unordered_map<std::string, std::vector<Diagnostic>>> m_diagnostics_by_entry_and_source;
 public:
 	explicit DiagnosticPublisher(JsonRpcConnection& connection)
 		: m_connection(connection) {}
+
+	/// Provides the entry-point ownership information used to suppress diagnostics
+	/// that standalone entries produce for files owned by the configured entry.
+	void set_entry_resolver(const EntryPointResolver* entries) { m_entries = entries; }
 
 	/**
 	 * Publishes all diagnostics produced while analyzing one entry source.
