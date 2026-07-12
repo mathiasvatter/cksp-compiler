@@ -1422,6 +1422,23 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_init_list(NodeAST* parent, bool a
 	return Result<std::unique_ptr<NodeAST>>(std::move(init_list));
 }
 
+namespace {
+// Builds a function-header range that spans from the name to `end`, but only if `end` is
+// genuinely positioned after the name. Struct methods are rewritten with an injected `self`
+// and a mangled `Struct.method` name; the generated `(`, `self` and `)` tokens inherit the
+// name's position, so peek(-1) can land at or before the name. In that case fall back to
+// spanning just the name instead of producing a backwards, one-column range.
+void set_header_range(NodeAST& header, const Token& start, const Token& end) {
+	const bool end_after_start = end.line > start.line
+		|| (end.line == start.line && end.pos >= start.pos + start.val.length());
+	if (end_after_start) {
+		header.set_range(start, end);
+	} else {
+		header.set_range(start);
+	}
+}
+}
+
 Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header(NodeAST* parent) {
     std::string func_name;
 	Token start_token = consume();
@@ -1478,7 +1495,7 @@ Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header(NodeAS
 	}
 
 	node_function_header->create_function_type(return_type);
-	node_function_header->set_range(start_token, peek(-1));
+	set_header_range(*node_function_header, start_token, peek(-1));
     node_function_header->parent = parent;
     return Result<std::unique_ptr<NodeFunctionHeader>>(std::move(node_function_header));
 }
@@ -1497,7 +1514,7 @@ Result<std::unique_ptr<NodeFunctionHeaderRef>> Parser::parse_function_header_ref
 	node_function_header_ref->ty = ty;
 	node_function_header_ref->args = std::move(func_args.unwrap());
 	node_function_header_ref->set_child_parents();
-	node_function_header_ref->set_range(start_token, peek(-1));
+	set_header_range(*node_function_header_ref, start_token, peek(-1));
 	node_function_header_ref->parent = parent;
 	// node_function_header_ref->create_function_type(TypeRegistry::Unknown);
 	return Result<std::unique_ptr<NodeFunctionHeaderRef>>(std::move(node_function_header_ref));
