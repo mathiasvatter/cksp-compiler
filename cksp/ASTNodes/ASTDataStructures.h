@@ -234,7 +234,8 @@ struct NodeFunctionHeader final : NodeDataStructure {
 		return output + ")";
 	}
 	void update_token_data(const Token& token) override {
-		tok.line = token.line; tok.file = token.file;
+		// Use the base so the range is kept in sync with the token, then relocate the params.
+		NodeAST::update_token_data(token);
 		for(const auto &param : params) param->update_token_data(token);
 	}
 	NodeType get_ref_node_type() override {return NodeType::FunctionHeaderRef;}

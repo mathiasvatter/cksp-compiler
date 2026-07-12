@@ -61,9 +61,27 @@ struct NodeAST {
 	virtual void set_child_parents() {}
     virtual std::string get_string() = 0;
 	virtual std::string get_token_string() const { return tok.val; }
-    virtual void update_token_data(const Token& token) {
-        tok.line = token.line; tok.file = token.file;
-    }
+    // virtual void update_token_data(const Token& token) {
+    //     tok.line = token.line; tok.file = token.file;
+    // }
+	virtual void update_token_data(const Token& token) {
+		const long long delta = (long long)token.line - (long long)tok.line;
+		tok.line = token.line;
+		tok.file = token.file;
+		if (range.is_valid()) {
+			// Keep the range in sync with the relocated token by shifting it the same number
+			// of lines; columns are preserved. Guard against underflow when moving upwards.
+			const long long start_line = (long long)range.start.line + delta;
+			const long long end_line   = (long long)range.end.line + delta;
+			range.start.line = start_line < 0 ? 0 : (size_t)start_line;
+			range.end.line   = end_line   < 0 ? 0 : (size_t)end_line;
+		} else {
+			// The node never had a valid range (e.g. it was built from an empty token);
+			// derive one from the now-populated token.
+			range = source_range_from_token(tok);
+		}
+	}
+
     [[nodiscard]] virtual ASTDesugaring *get_desugaring(NodeProgram *program) const {
         return nullptr;
     }
