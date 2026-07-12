@@ -27,11 +27,13 @@ class ReferenceIndexBuilder final : public ASTVisitor {
 	}
 
 	static SourceRange declaration_range(const NodeAST& node) {
-		if (node.range.is_valid()) return node.range;
+		// Like reference_range: the token spans exactly the declared identifier. A node's
+		// `range` is unreliable for some declarations (struct method/constructor headers get a
+		// one-column range), so jump to the name via the token.
 		return source_range_from_token(node.tok);
 	}
 
-	void add_link(const NodeAST& reference, const NodeAST& target) {
+	void add_link(const NodeAST& reference, const NodeAST& target) const {
 		// Builtins/engine variables and synthesized nodes have no real source file.
 		if (reference.tok.file.empty() || target.tok.file.empty()) return;
 		const auto ref_range = reference_range(reference);
@@ -42,8 +44,9 @@ class ReferenceIndexBuilder final : public ASTVisitor {
 			FileSystemSourceProvider::normalize(target.tok.file).value, def_range);
 	}
 
-	void record_variable(const NodeReference& reference) {
+	void record_variable(const NodeReference& reference) const {
 		if (const auto declaration = reference.get_declaration()) {
+			if(declaration->kind == NodeDataStructure::Kind::Builtin) return;
 			add_link(reference, *declaration);
 		}
 	}
@@ -58,12 +61,12 @@ public:
 	NodeAST* visit(NodeListRef& node) override { record_variable(node); return ASTVisitor::visit(node); }
 
 	NodeAST* visit(NodeFunctionCall& node) override {
-		if (node.function) {
+		if (node.function and !node.is_builtin_kind()) {
 			if (const auto definition = node.get_definition()) {
 				// Jump to the function definition's header (the name at the definition site).
 				add_link(*node.function, *definition->header);
-			} else if (const auto declaration = node.function->get_declaration()) {
-				add_link(*node.function, *declaration);
+			// } else if (const auto declaration = node.function->get_declaration()) {
+			// 	add_link(*node.function, *declaration);
 			}
 		}
 		return ASTVisitor::visit(node);
