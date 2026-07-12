@@ -1507,7 +1507,12 @@ std::shared_ptr<NodeFunctionDefinition> NodeProgram::look_up_compatible(const St
 std::unordered_map<std::string, std::vector<NodeCallback *>> NodeProgram::get_callback_counts() const {
 	std::unordered_map<std::string, std::vector<NodeCallback*>> callback_counts;
 	std::mutex map_mutex;
-	parallel_for_each(callbacks.begin(), callbacks.end(), [&](const auto& cb) {
+	// The count per callback type is order-independent, but the resulting per-type list
+	// order is not: check_unique_callbacks reports the duplicate error on callback_list.back(),
+	// so a nondeterministic order would attach the diagnostic to a nondeterministic file/line.
+	// Run sequentially in LSP mode to keep diagnostic locations stable.
+	parallel_for_each_unless(compiler_config && compiler_config->lsp,
+		callbacks.begin(), callbacks.end(), [&](const auto& cb) {
 		std::string hash = cb->begin_callback;
 		if (cb->callback_id) {
 			hash += "_" + cb->callback_id->get_string();
