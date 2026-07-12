@@ -6,6 +6,7 @@
 
 #include <optional>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "../../misc/SourceLocation.h"
@@ -32,9 +33,17 @@ struct ReferenceLink {
  */
 class ReferenceIndex {
 	std::vector<ReferenceLink> m_links;
+	std::unordered_set<std::string> m_seen_references;
 
 public:
+	/// Records a reference -> declaration link. A reference location is indexed only once:
+	/// if a link for the same file and reference range already exists it is kept, so an earlier
+	/// (e.g. pre-lowering) pass wins over a later one for the same reference.
 	void add(std::string ref_file, const SourceRange& ref_range, std::string def_file, const SourceRange& def_range) {
+		auto key = ref_file + "@"
+			+ std::to_string(ref_range.start.line) + ":" + std::to_string(ref_range.start.column) + "-"
+			+ std::to_string(ref_range.end.line) + ":" + std::to_string(ref_range.end.column);
+		if (!m_seen_references.insert(std::move(key)).second) return;
 		m_links.push_back({std::move(ref_file), ref_range, std::move(def_file), def_range});
 	}
 

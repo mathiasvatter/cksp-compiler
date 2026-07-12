@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "ASTVisitor.h"
 #include "../ASTNodes/ASTReferences.h"
 #include "../Source/ReferenceIndex.h"
@@ -20,24 +22,18 @@
 class ReferenceIndexBuilder final : public ASTVisitor {
 	ReferenceIndex& m_index;
 
-	/// The reference token spans exactly the clicked identifier; a node's `range` is not
-	/// reliable for every reference kind (function header refs get a one-column range).
-	static SourceRange reference_range(const NodeAST& node) {
-		return source_range_from_token(node.tok);
-	}
-
-	static SourceRange declaration_range(const NodeAST& node) {
-		// Like reference_range: the token spans exactly the declared identifier. A node's
-		// `range` is unreliable for some declarations (struct method/constructor headers get a
-		// one-column range), so jump to the name via the token.
+	/// The token spans exactly the identifier. Access-chain members carry per-segment tokens
+	/// (see the to_method_chain overrides), and struct method/constructor headers have an
+	/// unreliable node.range, so both the reference and the declaration use the token.
+	static SourceRange node_range(const NodeAST& node) {
 		return source_range_from_token(node.tok);
 	}
 
 	void add_link(const NodeAST& reference, const NodeAST& target) const {
 		// Builtins/engine variables and synthesized nodes have no real source file.
 		if (reference.tok.file.empty() || target.tok.file.empty()) return;
-		const auto ref_range = reference_range(reference);
-		const auto def_range = declaration_range(target);
+		const auto ref_range = node_range(reference);
+		const auto def_range = node_range(target);
 		if (!ref_range.is_valid() || !def_range.is_valid()) return;
 		m_index.add(
 			FileSystemSourceProvider::normalize(reference.tok.file).value, ref_range,
@@ -65,8 +61,6 @@ public:
 			if (const auto definition = node.get_definition()) {
 				// Jump to the function definition's header (the name at the definition site).
 				add_link(*node.function, *definition->header);
-			// } else if (const auto declaration = node.function->get_declaration()) {
-			// 	add_link(*node.function, *declaration);
 			}
 		}
 		return ASTVisitor::visit(node);

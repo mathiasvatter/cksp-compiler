@@ -51,3 +51,14 @@ struct Token {
     range.end = {end.line, end.pos + end.val.length()};
     return range;
 }
+
+/// Builds a token for one dotted segment of a combined access-chain token (whose value is
+/// "a.b.c"): same file/line/type as `base`, positioned `offset` characters past base's column,
+/// with `segment` as its value. Gives each access-chain member its own source position instead
+/// of sharing the combined token.
+[[nodiscard]] inline Token segment_token(const Token& base, const size_t offset, std::string segment) {
+    Token token = base;
+    token.pos = base.pos + offset;
+    token.val = std::move(segment);
+    return token;
+}

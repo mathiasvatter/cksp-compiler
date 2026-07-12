@@ -204,10 +204,16 @@ std::unique_ptr<NodeAccessChain> NodeFunctionCall::to_method_chain() {
 	auto method_chain = std::make_unique<NodeAccessChain>(tok);
 	auto func_call = clone_as<NodeFunctionCall>(this);
 	func_call->function->name = ptr_strings.back();
-	ptr_strings.pop_back();
-	for(auto &str : ptr_strings) {
-		method_chain->add_method(std::make_unique<NodeVariableRef>(str, tok));
+	// Position each receiver member and the method itself at their own segment of the
+	// combined "a.b.method" token so every member points to its own declaration.
+	size_t offset = 0;
+	for(size_t i = 0; i + 1 < ptr_strings.size(); ++i) {
+		method_chain->add_method(std::make_unique<NodeVariableRef>(ptr_strings[i], segment_token(function->tok, offset, ptr_strings[i])));
+		offset += ptr_strings[i].length() + 1;
 	}
+	const Token last = segment_token(function->tok, offset, ptr_strings.back());
+	func_call->function->tok = last;
+	func_call->function->set_range(last);
 	method_chain->add_method(std::move(func_call));
 	method_chain->parent = this->parent;
 	return method_chain;

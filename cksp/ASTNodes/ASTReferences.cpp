@@ -35,11 +35,13 @@ std::unique_ptr<NodePointerRef> NodeVariableRef::to_pointer_ref() {
 
 
 std::unique_ptr<NodeAccessChain> NodeVariableRef::to_method_chain() {
-	// split into variable references
+	// split into variable references, each carrying its own segment position
 	auto ptr_strings = this->get_ptr_chain();
 	auto method_chain = std::make_unique<NodeAccessChain>(tok);
+	size_t offset = 0;
 	for(auto &str : ptr_strings) {
-		method_chain->add_method(std::make_unique<NodeVariableRef>(str, tok));
+		method_chain->add_method(std::make_unique<NodeVariableRef>(str, segment_token(tok, offset, str)));
+		offset += str.length() + 1; // segment + '.'
 	}
 	method_chain->parent = this->parent;
 	return method_chain;
@@ -148,10 +150,14 @@ std::unique_ptr<NodeAccessChain> NodeArrayRef::to_method_chain() {
 	auto method_chain = std::make_unique<NodeAccessChain>(tok);
 	auto array_ref = clone_as<NodeArrayRef>(this);
 	array_ref->name = ptr_strings.back();
-	ptr_strings.pop_back();
-	for(auto &str : ptr_strings) {
-		method_chain->add_method(std::make_unique<NodeVariableRef>(str, tok));
+	size_t offset = 0;
+	for(size_t i = 0; i + 1 < ptr_strings.size(); ++i) {
+		method_chain->add_method(std::make_unique<NodeVariableRef>(ptr_strings[i], segment_token(tok, offset, ptr_strings[i])));
+		offset += ptr_strings[i].length() + 1;
 	}
+	const Token last = segment_token(tok, offset, ptr_strings.back());
+	array_ref->tok = last;
+	array_ref->set_range(last);
 	method_chain->add_method(std::move(array_ref));
 	method_chain->parent = this->parent;
 	return method_chain;
@@ -294,10 +300,14 @@ std::unique_ptr<NodeAccessChain> NodeNDArrayRef::to_method_chain() {
 	auto method_chain = std::make_unique<NodeAccessChain>(tok);
 	auto array_ref = clone_as<NodeNDArrayRef>(this);
 	array_ref->name = ptr_strings.back();
-	ptr_strings.pop_back();
-	for(auto &str : ptr_strings) {
-		method_chain->add_method(std::make_unique<NodeVariableRef>(str, tok));
+	size_t offset = 0;
+	for(size_t i = 0; i + 1 < ptr_strings.size(); ++i) {
+		method_chain->add_method(std::make_unique<NodeVariableRef>(ptr_strings[i], segment_token(tok, offset, ptr_strings[i])));
+		offset += ptr_strings[i].length() + 1;
 	}
+	const Token last = segment_token(tok, offset, ptr_strings.back());
+	array_ref->tok = last;
+	array_ref->set_range(last);
 	method_chain->add_method(std::move(array_ref));
 	method_chain->parent = this->parent;
 	return method_chain;

@@ -195,11 +195,17 @@ private:
 		variable_checking.do_complete_traversal(*ast, false);
 		ast->collect_references();
 
+		
 		ASTSemanticAnalysis data_structures(ast.get());
 		ast->accept(data_structures);
-
+		
 		TypeInference infer_types(ast.get());
 		infer_types.do_complete_traversal(*ast);
+		// // First go-to-definition pass: positions are still pristine (before lowering).
+		// if (m_program->compiler_config->lsp) {
+		// 	m_reference_index = ReferenceIndex{};
+		// 	build_reference_index();
+		// }
 
 		UniqueParameterNamesProvider unique_names_provider(m_program);
 		unique_names_provider.do_parallel_renaming(*m_program);
@@ -217,6 +223,8 @@ private:
 		ASTVariableChecking variable_checking2(m_program);
 		variable_checking2.do_reachable_traversal(*ast, true);
 
+		// Second pass: pick up references only resolved after the final variable check.
+		// Dedup keeps the first pass's ranges for references seen in both.
 		if (m_program->compiler_config->lsp) {
 			build_reference_index();
 		}
@@ -225,8 +233,10 @@ private:
 		ast->accept(syntax_check);
 	}
 
-	/// Harvests reference -> declaration links for go-to-definition. Runs after the final
-	/// variable checking pass, once every declaration is resolved.
+	/// Harvests reference -> declaration links for go-to-definition into m_reference_index.
+	/// Appends to the existing index; the index dedupes by reference range, so running this after
+	/// an early variable check (pristine positions) and again after the final one keeps the early
+	/// range for references seen in both, while still picking up references resolved only later.
 	void build_reference_index() {
 		m_reference_index = ReferenceIndex{};
 		ReferenceIndexBuilder reference_index_builder(m_reference_index);
@@ -246,7 +256,7 @@ private:
 		// input_filename = "/Users/mathias/Scripting/legato-dev/one-shot.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score-essentials/the-score-essentials.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
-		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
+		input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-brass/dev/Lux - Orchestral Brass Keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Ensemble.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Single.ksp";
@@ -425,6 +435,8 @@ private:
 			TypeInference infer_types(ast.get());
 			infer_types.do_reachable_traversal(*ast);
 			ast->debug_print();
+			// build_reference_index();
+
 
 			// then do parameter promotion directly to global or successively
 			// eliminate function-local variables
