@@ -46,6 +46,8 @@ class LanguageServer {
 	void analyze_entry(const SourceId& entry_source, uint64_t generation);
 	void analyze_entries_for_sources(const std::vector<SourceId>& changed_sources, uint64_t generation);
 	[[nodiscard]] bool is_analysis_current(uint64_t generation) const;
+	[[nodiscard]] std::optional<ReferenceLink> resolve_navigation_target(
+		const JsonRpcMessage& message);
 
 public:
 	explicit LanguageServer(JsonRpcConnection& connection)

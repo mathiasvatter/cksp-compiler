@@ -26,6 +26,13 @@ struct ReferenceLink {
 	SourceRange def_range;  ///< the declaration's location (the jump target)
 };
 
+/** A named source construct which can be used as a qualifier, such as a namespace. */
+struct QualifierDefinition {
+	std::string name;
+	std::string file;
+	SourceRange range;
+};
+
 /**
  * Position -> declaration index built for one analyzed entry.
  *
@@ -36,6 +43,8 @@ struct ReferenceLink {
 class ReferenceIndex {
 	std::vector<ReferenceLink> m_links;
 	std::unordered_set<std::string> m_seen_references;
+	std::vector<QualifierDefinition> m_qualifier_definitions;
+	std::unordered_set<std::string> m_seen_qualifier_definitions;
 
 public:
 	/// Records a reference -> declaration link. A reference location is indexed only once:
@@ -56,6 +65,29 @@ public:
 		if (!ref_range.is_valid() || !def_range.is_valid()) return;
 		add(FileSystemSourceProvider::normalize(reference.file).value, ref_range,
 			FileSystemSourceProvider::normalize(declaration.file).value, def_range);
+	}
+
+	/// Records a named qualifier definition before desugaring removes its AST node.
+	void add_qualifier_definition(std::string name, const Token& declaration) {
+		if (declaration.file.empty()) return;
+		const auto range = source_range_from_token(declaration);
+		if (!range.is_valid()) return;
+		auto file = FileSystemSourceProvider::normalize(declaration.file).value;
+		auto key = name + "@" + file + "@" + range.to_string();
+		if (!m_seen_qualifier_definitions.insert(std::move(key)).second) return;
+		m_qualifier_definitions.push_back({std::move(name), std::move(file), range});
+	}
+
+	/// Finds the qualifier in the file which owns the referenced member. Requiring the same
+	/// file prevents equal namespace/family names in separate imports from being conflated.
+	[[nodiscard]] std::optional<QualifierDefinition> qualifier_definition(
+		const std::string& name,
+		const std::string& preferred_file) const {
+		const auto normalized_preferred = FileSystemSourceProvider::normalize(preferred_file).value;
+		for (const auto& definition : m_qualifier_definitions) {
+			if (definition.name == name && definition.file == normalized_preferred) return definition;
+		}
+		return std::nullopt;
 	}
 
 	[[nodiscard]] bool empty() const { return m_links.empty(); }

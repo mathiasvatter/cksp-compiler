@@ -183,6 +183,9 @@ private:
 			m_program->diagnostic_engine = &diagnostic_engine;
 			m_program->def_provider = &m_definition_provider;
 			m_program->compiler_config = m_final_config.get();
+			if (m_program->compiler_config->lsp) {
+				collect_reference_definitions();
+			}
 			m_program->apply_callback_overrides();
 			if (m_pragma_config->combine_callbacks.value_or(false)) {
 				m_program->combine_callbacks();
@@ -243,8 +246,16 @@ private:
 	/// the preprocessor passes); the index dedupes by reference range. The reset happens at
 	/// the start of analyse_impl, before preprocessing.
 	void build_reference_index() {
-		ReferenceIndexBuilder reference_index_builder(m_reference_index);
+		ReferenceIndexBuilder reference_index_builder(
+			m_reference_index, ReferenceIndexBuilder::Pass::References);
 		ast->accept(reference_index_builder);
+	}
+
+	/// Records qualifier blocks before desugaring removes namespace/family/const nodes.
+	void collect_reference_definitions() {
+		ReferenceIndexBuilder definition_builder(
+			m_reference_index, ReferenceIndexBuilder::Pass::Definitions);
+		ast->accept(definition_builder);
 	}
 
 	/// first frontend implementation -> can be used for lsp, does not generate code

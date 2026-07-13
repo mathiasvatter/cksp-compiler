@@ -321,22 +321,25 @@ void LanguageServer::handle_shutdown(const JsonRpcMessage& message) {
 	}
 }
 
-void LanguageServer::handle_definition(const JsonRpcMessage& message) {
+std::optional<ReferenceLink> LanguageServer::resolve_navigation_target(
+	const JsonRpcMessage& message) {
 	const auto* params = message.params() ? message.params()->as<JSONObject>() : nullptr;
 	const auto* text_document = object_at(params, "textDocument");
 	const auto* uri = string_at(text_document, "uri");
 	const auto* position = object_at(params, "position");
+	if (!uri || !position) return std::nullopt;
 
-	std::optional<ReferenceLink> found;
-	if (uri && position) {
-		const auto line = static_cast<size_t>(position->get_int("line").value_or(0));
-		const auto character = static_cast<size_t>(position->get_int("character").value_or(0));
-		const auto source = source_from_uri(uri->value);
+	const auto line = static_cast<size_t>(position->get_int("line").value_or(0));
+	const auto character = static_cast<size_t>(position->get_int("character").value_or(0));
+	const auto source = source_from_uri(uri->value);
 
-		std::lock_guard lock(m_state_mutex);
-		found = m_references.resolve_target(
-			m_entry_points.affected_entries(source), source, line, character);
-	}
+	std::lock_guard lock(m_state_mutex);
+	return m_references.resolve_target(
+		m_entry_points.affected_entries(source), source, line, character);
+}
+
+void LanguageServer::handle_definition(const JsonRpcMessage& message) {
+	const auto found = resolve_navigation_target(message);
 
 	const auto* id = message.id();
 	if (!id) return;
@@ -352,25 +355,14 @@ void LanguageServer::handle_definition(const JsonRpcMessage& message) {
 
 void LanguageServer::handle_references(const JsonRpcMessage& message) {
 	const auto* params = message.params() ? message.params()->as<JSONObject>() : nullptr;
-	const auto* text_document = object_at(params, "textDocument");
-	const auto* uri = string_at(text_document, "uri");
-	const auto* position = object_at(params, "position");
 	const auto* context = object_at(params, "context");
 	const auto* include_declaration_value = context ? context->get<JSONBool>("includeDeclaration") : nullptr;
 	const bool include_declaration = include_declaration_value && include_declaration_value->value;
 
 	std::vector<ReferenceLocation> locations;
 
-	if (uri && position) {
-		const auto line = static_cast<size_t>(position->get_int("line").value_or(0));
-		const auto character = static_cast<size_t>(position->get_int("character").value_or(0));
-		const auto source = source_from_uri(uri->value);
-		std::lock_guard lock(m_state_mutex);
-		const auto target = m_references.resolve_target(
-			m_entry_points.affected_entries(source), source, line, character);
-		if (target) {
-			locations = m_references.references_to(*target, include_declaration);
-		}
+	if (const auto target = resolve_navigation_target(message)) {
+		locations = m_references.references_to(*target, include_declaration);
 	}
 
 	JSONArray result;
