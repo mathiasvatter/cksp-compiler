@@ -28,6 +28,14 @@ PreNodeAST *PreASTDefines::do_substitution(PreNodeLiteral &node) {
 	if(m_program->define_call_stack.empty()) return &node;
 	if (!m_substitution_stack.empty()) {
 		if (auto substitute = get_substitute(node.tok.val)) {
+			// go-to-definition: this is an argument usage inside the define body (the clone
+			// still carries definition-site positions) -> link it to the header argument
+			if (m_reference_index && !m_param_token_stack.empty()) {
+				const auto& params = m_param_token_stack.top();
+				if (const auto it = params.find(node.tok.val); it != params.end()) {
+					m_reference_index->add_link(node.tok, it->second);
+				}
+			}
 			return node.replace_with(std::move(substitute));
 		} else if(node.cast<PreNodeKeyword>()) {
 			// in case there are more # substitutions in one word
@@ -148,9 +156,22 @@ PreNodeAST *PreASTDefines::visit(PreNodeDefineCall &node) {
 	// node_define_definition->parent = node.parent;
 	auto substitution_map = get_substitution_map(*define_header, *node.define);
 	m_substitution_stack.push(std::move(substitution_map));
+	if (m_reference_index) {
+		// remember the header argument tokens so body usages can link to them
+		std::unordered_map<std::string, Token> param_tokens;
+		const auto& header = *node.definition->header;
+		for (int i = 0; i < header.num_args(); i++) {
+			const auto* var = header.get_arg(i)->get_chunk(0);
+			if (var) param_tokens[var->tok.val] = var->tok;
+		}
+		m_param_token_stack.push(std::move(param_tokens));
+	}
 	define_body->accept(*this);
 	define_body->parent = node.parent;
 	m_substitution_stack.pop();
+	if (m_reference_index && !m_param_token_stack.empty()) {
+		m_param_token_stack.pop();
+	}
 	m_program->define_call_stack.pop();
 	m_defines_used.erase(token_name.val);
 	return node.replace_with(std::move(define_body));

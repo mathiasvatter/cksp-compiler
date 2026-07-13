@@ -45,6 +45,14 @@ PreNodeMacroDefinition *PreASTMacros::get_macro_string_definition(const PreNodeM
 PreNodeAST *PreASTMacros::do_substitution(PreNodeLiteral &node) {
 	if (!m_substitution_stack.empty()) {
 		if (auto substitute = get_substitute(node.tok.val)) {
+			// go-to-definition: this is a parameter usage inside the macro body (the clone
+			// still carries definition-site positions) -> link it to the header parameter
+			if (m_reference_index && !m_param_token_stack.empty()) {
+				const auto& params = m_param_token_stack.top();
+				if (const auto it = params.find(node.tok.val); it != params.end()) {
+					m_reference_index->add_link(node.tok, it->second);
+				}
+			}
 			return node.replace_with(std::move(substitute));
 		} else if(node.cast<PreNodeKeyword>()) {
 			// in case there are more # substitutions in one word
@@ -156,6 +164,17 @@ visit(PreNodeMacroCall &node) {
 		if(node.macro->has_args()) {
 			auto substitution_vec = get_substitution_map(*macro_definition->header, *node.macro);
 			m_substitution_stack.push(std::move(substitution_vec));
+			if (m_reference_index) {
+				// remember the header parameter tokens so body usages can link to them
+				std::unordered_map<std::string, Token> param_tokens;
+				const auto& header = *node.definition->header;
+				for (int i = 0; i < header.num_args(); i++) {
+					if (header.args->params[i]->chunk.empty()) continue;
+					const auto& var = header.args->params[i]->chunk[0];
+					param_tokens[var->get_string()] = var->tok;
+				}
+				m_param_token_stack.push(std::move(param_tokens));
+			}
 		} else {
         // if parent is literate -> replace #l# in substitution vector with first arg of macro
             if(!node.macro->has_args() and macro_definition->header->num_args() == 1) {
@@ -179,6 +198,9 @@ visit(PreNodeMacroCall &node) {
         // node_new_chunk->parent = node.parent;
 		if(node.macro->has_args()) {
 			m_substitution_stack.pop();
+			if (m_reference_index && !m_param_token_stack.empty()) {
+				m_param_token_stack.pop();
+			}
 		}
         m_macros_used.erase(token_name.val);
 		m_program->macro_call_stack.pop();

@@ -586,6 +586,16 @@ public:
 			return {.success = true, .diagnostic_count = diagnostic_engine.diagnostic_count()};
 		} catch (const CompilationAborted& aborted) {
 			diagnostic_engine.report(aborted.diagnostic());
+			// Salvage whatever was resolved before the abort so go-to-definition keeps
+			// working in files that currently have an error. The preprocessor links are
+			// already in the index; harvest the partially resolved AST on top if it exists.
+			if (ast) {
+				try {
+					build_reference_index();
+				} catch (...) {
+					// a partially transformed AST must never break diagnostics reporting
+				}
+			}
 			return {.success = false, .diagnostic_count = diagnostic_engine.diagnostic_count()};
 		} catch (const std::exception& exception) {
 			Diagnostic diagnostic;

@@ -36,6 +36,10 @@ public:
 private:
 	std::string m_debug_token;
 	ReferenceIndex* m_reference_index = nullptr;
+	// header parameter tokens of the macro currently being expanded, keyed by parameter name;
+	// kept parallel to m_substitution_stack so parameter usages inside a macro body can be
+	// linked to the header parameter for go-to-definition
+	std::stack<std::unordered_map<std::string, Token>> m_param_token_stack;
 
 	// std::unordered_map<StringIntKey, PreNodeMacroDefinition*, StringIntKeyHash> m_macro_lookup;
 
