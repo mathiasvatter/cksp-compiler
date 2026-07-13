@@ -54,6 +54,7 @@ struct CompilerConfig {
 	ParameterPassing parameter_passing = ParameterPassing::Unset;
 	std::optional<bool> combine_callbacks;
 	std::optional<int> max_callback_depth;
+	std::optional<bool> obfuscate;
 
 	/// constructor with default values
 	CompilerConfig() = default;
@@ -85,6 +86,9 @@ struct CompilerConfig {
 		if (other.max_callback_depth.has_value())
 			max_callback_depth = other.max_callback_depth;
 
+		if (other.obfuscate.has_value())
+			obfuscate = other.obfuscate;
+
 		return *this;
 	}
 
@@ -98,6 +102,7 @@ struct CompilerConfig {
 		combine_callbacks = false;
 		max_callback_depth = 1000;
 		lsp = false;
+		obfuscate = false;
 	}
 
 };

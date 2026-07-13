@@ -110,6 +110,17 @@ private:
 			}
 		};
 
+		pragma_handlers["obfuscate"] = [this](const std::string& arg, const Token& token) {
+			std::string obfuse = StringUtils::remove_quotes(arg);
+			if (obfuse == "true") {
+				m_config->obfuscate = true;
+			} else if (obfuse == "false") {
+				m_config->obfuscate = false;
+			} else {
+				get_pragma_error(token, obfuse, "'true' or 'false'").exit();
+			}
+		};
+
 		pragma_handlers["max_callback_depth"] = [this](const std::string& arg, const Token& token) {
 			std::string depth_str = StringUtils::remove_quotes(arg);
 			try {

@@ -24,7 +24,7 @@
 #include "ASTVisitor/ASTCollectLowerings.h"
 #include "ASTVisitor/ASTSemanticAnalysis.h"
 #include "ASTVisitor/ASTVariableChecking.h"
-#include "ASTVisitor/ReferenceIndexBuilder.h"
+#include "../lsp/visitor/ReferenceIndexBuilder.h"
 #include "ASTVisitor/ASTOptimizations.h"
 #include "ASTVisitor/TypeInference.h"
 #include "ASTVisitor/ASTReturnFunctionRewriting.h"
@@ -56,6 +56,7 @@
 #include "../misc/DiagnosticEngine.h"
 #include "../misc/DiagnosticReport.h"
 #include "ASTVisitor/ASTCheck.h"
+#include "ASTVisitor/ASTObfuscate.h"
 
 template <typename... Args>
 void println(Args&&... args) {
@@ -281,6 +282,7 @@ private:
 		if (!m_cli_config->lsp && !input_filename.empty()) m_cli_config->input_filename = input_filename;
 		// m_cli_config->optimization_level = OptimizationLevel::None;
 	#endif
+		m_cli_config->obfuscate = true;
 
 		m_timer.start("Total Time");
 		m_timer.start("Preprocessor");
@@ -514,6 +516,11 @@ private:
 		ASTRelinkGlobalScope relink_global_scope(m_program);
 		ast->accept(relink_global_scope);
 
+		if (m_final_config->obfuscate) {
+			ASTObfuscate obfuse(m_program);
+			ast->accept(obfuse);
+			ast->debug_print();
+		}
 
 		m_timer.stop("Post Lowering");
 		print_to_console(m_timer.print_timer("Post Lowering"));

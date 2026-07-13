@@ -20,7 +20,8 @@ enum class CmdOptions {
     Compression,
 	Optimization,
 	CallbackCombining,
-	ParameterPassing
+	ParameterPassing,
+	Obfuscating,
 };
 
 
@@ -52,6 +53,7 @@ private:
 			{"",  "no-combine-callbacks", "", CmdOptions::CallbackCombining, "Disable duplicate callback combining"},
 			{"P", "pass-by", "<value|reference>", CmdOptions::ParameterPassing, "Force the parameter passing method for all function parameters. The default is 'value'. To imitate SublimeKSP behavior, use 'reference'."},
 			{"s", "max-callback-depth", "<value>", CmdOptions::ParameterPassing, "Set the maximum callback stack depth (default: 1000)"},
+			{"", "obfuscate", "", CmdOptions::Obfuscating, "Obfuscate all variable names to a random sequence of characters, making them harder to read. Will also substitute most KSP builtin constants with their internal integer representation."},
     };
 
 	[[nodiscard]] std::string get_help_option() const;

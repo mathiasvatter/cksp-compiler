@@ -50,13 +50,15 @@ public:
 	};
 
 private:
-	std::unique_ptr<NodeReference> get_full_control_param(const std::string& control_param) {
+	std::unique_ptr<NodeReference> get_full_control_param(const std::string& control_param) const {
 		std::string control_par = StringUtils::to_lower(control_param);
 		if(control_par == "x") control_par = "pos_x";
 		if(control_par == "y") control_par = "pos_y";
 		if(control_par == "default") control_par += "_value";
 		if(const auto builtin_var = m_def_provider->get_builtin_variable(StringUtils::to_upper("control_par_"+control_par))) {
-			return builtin_var->to_reference();
+			auto control = builtin_var->to_reference();
+			control->kind = NodeReference::Kind::Builtin;
+			return control;
 		}
 		return nullptr;
 	}

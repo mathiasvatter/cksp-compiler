@@ -258,6 +258,8 @@ add_library(cksp_core STATIC
         cksp/Optimization/ConstantDatabase.h
         cksp/Source/ImportGraph.h
         cksp/ASTVisitor/ASTCheck.h
+        cksp/ASTVisitor/ASTObfuscate.h
+        cksp/BuiltinsProcessing/EngineConstantsIntegers.h
 )
 add_dependencies(cksp_core generate_headers)
 
@@ -281,5 +283,6 @@ add_executable(cksp
         lsp/DiagnosticPublisher.h
         lsp/EntryPointResolver.cpp
         lsp/EntryPointResolver.h
+        utils/IdentifierObfuscator.h
 )
 target_link_libraries(cksp PRIVATE cksp_core)
