@@ -54,6 +54,8 @@ struct CompilerConfig {
 	ParameterPassing parameter_passing = ParameterPassing::Unset;
 	std::optional<bool> combine_callbacks;
 	std::optional<int> max_callback_depth;
+	// unset by default like the other optionals: an engaged default would make the CLI config
+	// overwrite a #pragma obfuscate("true") during merging even without --obfuscate
 	std::optional<bool> obfuscate;
 
 	/// constructor with default values

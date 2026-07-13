@@ -1423,19 +1423,35 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_init_list(NodeAST* parent, bool a
 }
 
 namespace {
-// Builds a function-header range that spans from the name to `end`, but only if `end` is
-// genuinely positioned after the name. Struct methods are rewritten with an injected `self`
-// and a mangled `Struct.method` name; the generated `(`, `self` and `)` tokens inherit the
-// name's position, so peek(-1) can land at or before the name. In that case fall back to
-// spanning just the name instead of producing a backwards, one-column range.
-void set_header_range(NodeAST& header, const Token& start, const Token& end) {
-	const bool end_after_start = end.line > start.line
-		|| (end.line == start.line && end.pos >= start.pos + start.val.length());
-	if (end_after_start) {
-		header.set_range(start, end);
-	} else {
-		header.set_range(start);
+bool position_after(const SourcePosition& a, const SourcePosition& b) {
+	return a.line > b.line || (a.line == b.line && a.column > b.column);
+}
+
+// Extends `range` so it also covers `other` when that one ends later.
+void extend_range(SourceRange& range, const SourceRange& other) {
+	if (other.is_valid() && position_after(other.end, range.end)) {
+		range.end = other.end;
 	}
+}
+
+// Spans a function header from its name across its parameters/arguments to `end` (the last
+// consumed token: closing parenthesis or return type). Struct methods are rewritten with an
+// injected `self` and a mangled `Struct.method` name; their generated `(`, `self` and `)`
+// tokens inherit the name's position, so `end` can land at or before the name. The parameter
+// nodes still carry real source ranges, so extending over them keeps the range spanning the
+// full header in that case instead of collapsing to a backwards, one-column range.
+template <typename Children>
+void set_header_range(NodeAST& header, const Token& start, const Token& end, const Children& children) {
+	auto range = source_range_from_token(start);
+	extend_range(range, source_range_from_token(end));
+	for (const auto& child : children) {
+		if (child) extend_range(range, child->range);
+	}
+	header.range = range;
+}
+
+void set_header_range(NodeAST& header, const Token& start, const Token& end) {
+	set_header_range(header, start, end, std::initializer_list<const NodeAST*>{});
 }
 }
 
@@ -1495,7 +1511,7 @@ Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header(NodeAS
 	}
 
 	node_function_header->create_function_type(return_type);
-	set_header_range(*node_function_header, start_token, peek(-1));
+	set_header_range(*node_function_header, start_token, peek(-1), node_function_header->params);
     node_function_header->parent = parent;
     return Result<std::unique_ptr<NodeFunctionHeader>>(std::move(node_function_header));
 }
@@ -1514,7 +1530,11 @@ Result<std::unique_ptr<NodeFunctionHeaderRef>> Parser::parse_function_header_ref
 	node_function_header_ref->ty = ty;
 	node_function_header_ref->args = std::move(func_args.unwrap());
 	node_function_header_ref->set_child_parents();
-	set_header_range(*node_function_header_ref, start_token, peek(-1));
+	if (node_function_header_ref->args) {
+		set_header_range(*node_function_header_ref, start_token, peek(-1), node_function_header_ref->args->params);
+	} else {
+		set_header_range(*node_function_header_ref, start_token, peek(-1));
+	}
 	node_function_header_ref->parent = parent;
 	// node_function_header_ref->create_function_type(TypeRegistry::Unknown);
 	return Result<std::unique_ptr<NodeFunctionHeaderRef>>(std::move(node_function_header_ref));

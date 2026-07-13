@@ -273,6 +273,10 @@ Result<std::unique_ptr<PreNodeList>> PreprocessorParser::parse_list(PreNodeAST *
     _skip_linebreaks();
     auto end_token = consume(); //consume )
     node_list->set_range(start_token, end_token);
+    // keep the original parenthesis tokens so PreASTCombine can re-emit them with their
+    // real source positions instead of regenerating them at the preceding token
+    node_list->open_parenth_tok = std::move(start_token);
+    node_list->closed_parenth_tok = std::move(end_token);
     return Result<std::unique_ptr<PreNodeList>>(std::move(node_list));
 }
 

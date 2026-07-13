@@ -4,6 +4,7 @@
 
 #include "PreASTMacros.h"
 #include "../../Interpreter/SimpleExprInterpreter.h"
+#include "../../Source/ReferenceIndex.h"
 
 PreNodeAST *PreASTMacros::visit(PreNodeProgram &node) {
     m_program = &node;
@@ -137,6 +138,11 @@ visit(PreNodeMacroCall &node) {
 		// this could still be a wrongly detected macro call inside interate
 		m_program->macro_call_stack.pop();
 		return &node;
+	}
+
+	// go-to-definition: link this macro usage to its definition's name
+	if (m_reference_index) {
+		m_reference_index->add_link(token_name, node.definition->header->name->tok);
 	}
 
     // substitution

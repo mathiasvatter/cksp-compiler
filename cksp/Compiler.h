@@ -128,11 +128,13 @@ public:
 		PreASTPragma pragma(m_pragma_config.get());
 		pre_ast->accept(pragma);
 
-		PreASTDefines defines;
+		// in lsp mode the substitution passes record define/macro usage -> definition links
+		ReferenceIndex* reference_index = m_cli_config->lsp ? &m_reference_index : nullptr;
+		PreASTDefines defines(reference_index);
 		pre_ast->accept(defines);
 		pre_ast->debug_print();
 
-		PreASTMacros macros;
+		PreASTMacros macros(reference_index);
 		pre_ast->accept(macros);
 		pre_ast->debug_print();
 
@@ -165,6 +167,8 @@ private:
 	/// used for lsp
 	void analyse_impl(DiagnosticEngine& diagnostic_engine) {
 		initialize(diagnostic_engine);
+		// reset before preprocess: the substitution passes already record define/macro links
+		m_reference_index = ReferenceIndex{};
 		SourceParser source_parser(*m_sources, m_definition_provider, m_lines_processed, diagnostic_engine, m_import_graph);
 		preprocess(source_parser);
 		m_final_config = combine_configs(m_cli_config, m_pragma_config);
@@ -180,7 +184,7 @@ private:
 			m_program->def_provider = &m_definition_provider;
 			m_program->compiler_config = m_final_config.get();
 			m_program->apply_callback_overrides();
-			if (m_pragma_config->combine_callbacks) {
+			if (m_pragma_config->combine_callbacks.value_or(false)) {
 				m_program->combine_callbacks();
 			}
 			m_program->check_unique_callbacks();
@@ -235,11 +239,10 @@ private:
 	}
 
 	/// Harvests reference -> declaration links for go-to-definition into m_reference_index.
-	/// Appends to the existing index; the index dedupes by reference range, so running this after
-	/// an early variable check (pristine positions) and again after the final one keeps the early
-	/// range for references seen in both, while still picking up references resolved only later.
+	/// Appends to the existing index (which already holds the define/macro links recorded by
+	/// the preprocessor passes); the index dedupes by reference range. The reset happens at
+	/// the start of analyse_impl, before preprocessing.
 	void build_reference_index() {
-		m_reference_index = ReferenceIndex{};
 		ReferenceIndexBuilder reference_index_builder(m_reference_index);
 		ast->accept(reference_index_builder);
 	}
@@ -257,7 +260,7 @@ private:
 		// input_filename = "/Users/mathias/Scripting/legato-dev/one-shot.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score-essentials/the-score-essentials.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
-		input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
+		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-brass/dev/Lux - Orchestral Brass Keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Ensemble.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Single.ksp";
@@ -329,7 +332,7 @@ private:
 			m_program->def_provider = &m_definition_provider;
 			m_program->compiler_config = m_final_config.get();
 			m_program->apply_callback_overrides();
-			if (m_pragma_config->combine_callbacks) {
+			if (m_pragma_config->combine_callbacks.value_or(false)) {
 				m_program->combine_callbacks();
 			}
 			m_program->check_unique_callbacks();
@@ -516,7 +519,9 @@ private:
 		ASTRelinkGlobalScope relink_global_scope(m_program);
 		ast->accept(relink_global_scope);
 
-		if (m_final_config->obfuscate) {
+		// value_or: testing the optional itself checks has_value(), which is always true after
+		// set_defaults, so it must be the contained value that gates the pass
+		if (m_final_config->obfuscate.value_or(false)) {
 			ASTObfuscate obfuse(m_program);
 			ast->accept(obfuse);
 			ast->debug_print();

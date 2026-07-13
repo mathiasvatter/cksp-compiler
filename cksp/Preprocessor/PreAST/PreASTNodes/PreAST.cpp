@@ -233,7 +233,9 @@ PreNodeAST *PreNodeList::accept(PreASTVisitor &visitor) {
 }
 
 PreNodeList::PreNodeList(const PreNodeList &other): PreNodeAST(other),
-params(clone_vector(other.params)) {
+params(clone_vector(other.params)),
+open_parenth_tok(other.open_parenth_tok),
+closed_parenth_tok(other.closed_parenth_tok) {
 	PreNodeList::set_child_parents();
 }
 

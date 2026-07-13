@@ -331,6 +331,10 @@ struct PreNodeChunk final : PreNodeAST {
 
 struct PreNodeList final : PreNodeAST {
     std::vector<std::unique_ptr<PreNodeChunk>> params;
+	/// The original '(' and ')' tokens of a parsed list. Synthesized lists leave them empty;
+	/// PreASTCombine then regenerates parentheses at the preceding token's position instead.
+	Token open_parenth_tok;
+	Token closed_parenth_tok;
 	PreNodeList(Token tok, PreNodeAST *parent)
 		: PreNodeAST(std::move(tok), parent, PreNodeType::LIST) {}
     PreNodeList(std::vector<std::unique_ptr<PreNodeChunk>> params, Token tok, PreNodeAST *parent)
@@ -359,6 +363,12 @@ struct PreNodeList final : PreNodeAST {
 		return str;
 	}
     void update_token_data(const Token &token) override {
+        if (!open_parenth_tok.file.empty()) {
+            open_parenth_tok.line = token.line; open_parenth_tok.file = token.file;
+        }
+        if (!closed_parenth_tok.file.empty()) {
+            closed_parenth_tok.line = token.line; closed_parenth_tok.file = token.file;
+        }
         for(auto & p : params) {
             p->update_token_data(token);
         }

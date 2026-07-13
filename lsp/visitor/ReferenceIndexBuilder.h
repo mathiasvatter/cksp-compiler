@@ -22,18 +22,24 @@
 class ReferenceIndexBuilder final : public ASTVisitor {
 	ReferenceIndex& m_index;
 
-	/// The token spans exactly the identifier. Access-chain members carry per-segment tokens
-	/// (see the to_method_chain overrides), and struct method/constructor headers have an
-	/// unreliable node.range, so both the reference and the declaration use the token.
-	static SourceRange node_range(const NodeAST& node) {
+	/// Function definitions present their whole header (name, parameters, parenthesis) as
+	/// the definition range, like other lsps do; the parser maintains that range on the
+	/// header node. Every other declaration jumps to its name token.
+	static SourceRange declaration_range(const NodeAST& node) {
+		if (node.get_node_type() == NodeType::FunctionHeader && node.range.is_valid()) {
+			return node.range;
+		}
 		return source_range_from_token(node.tok);
 	}
 
 	void add_link(const NodeAST& reference, const NodeAST& target) const {
 		// Builtins/engine variables and synthesized nodes have no real source file.
 		if (reference.tok.file.empty() || target.tok.file.empty()) return;
-		const auto ref_range = node_range(reference);
-		const auto def_range = node_range(target);
+		// The reference side stays on the token: access-chain members carry per-segment
+		// tokens (see the to_method_chain overrides), so the token spans exactly the
+		// clickable identifier.
+		const auto ref_range = source_range_from_token(reference.tok);
+		const auto def_range = declaration_range(target);
 		if (!ref_range.is_valid() || !def_range.is_valid()) return;
 		m_index.add(
 			FileSystemSourceProvider::normalize(reference.tok.file).value, ref_range,

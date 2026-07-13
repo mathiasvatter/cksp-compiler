@@ -6,8 +6,15 @@
 
 #include "PreASTVisitor.h"
 
+class ReferenceIndex;
+
 class PreASTMacros final : public PreASTVisitor {
 public:
+	/// The optional reference index collects macro-usage -> macro-definition links for
+	/// go-to-definition while expanding (language server only).
+	explicit PreASTMacros(ReferenceIndex* reference_index = nullptr)
+		: m_reference_index(reference_index) {}
+
 	// transform to macro calls if macro definition exists, otherwise return node
 	PreNodeAST *visit(PreNodeFunctionCall &node) override;
 
@@ -28,6 +35,7 @@ public:
 
 private:
 	std::string m_debug_token;
+	ReferenceIndex* m_reference_index = nullptr;
 
 	// std::unordered_map<StringIntKey, PreNodeMacroDefinition*, StringIntKeyHash> m_macro_lookup;
 

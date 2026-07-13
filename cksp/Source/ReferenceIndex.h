@@ -10,6 +10,8 @@
 #include <vector>
 
 #include "../../misc/SourceLocation.h"
+#include "../Tokenizer/Token.h"
+#include "SourceProvider.h"
 
 /**
  * One resolved reference -> its declaration location, harvested during LSP analysis.
@@ -45,6 +47,18 @@ public:
 			+ std::to_string(ref_range.end.line) + ":" + std::to_string(ref_range.end.column);
 		if (!m_seen_references.insert(std::move(key)).second) return;
 		m_links.push_back({std::move(ref_file), ref_range, std::move(def_file), def_range});
+	}
+
+	/// Records a link between two source tokens (reference -> declaration). Tokens without a
+	/// real source file (builtins, synthesized nodes) are skipped. Used by the preprocessor
+	/// passes for define and macro usages.
+	void add_link(const Token& reference, const Token& declaration) {
+		if (reference.file.empty() || declaration.file.empty()) return;
+		const auto ref_range = source_range_from_token(reference);
+		const auto def_range = source_range_from_token(declaration);
+		if (!ref_range.is_valid() || !def_range.is_valid()) return;
+		add(FileSystemSourceProvider::normalize(reference.file).value, ref_range,
+			FileSystemSourceProvider::normalize(declaration.file).value, def_range);
 	}
 
 	[[nodiscard]] bool empty() const { return m_links.empty(); }

@@ -6,8 +6,14 @@
 
 #include "PreASTVisitor.h"
 
+class ReferenceIndex;
+
 class PreASTDefines final : public PreASTVisitor {
 public:
+	/// The optional reference index collects define-usage -> define-definition links for
+	/// go-to-definition while substituting (language server only).
+	explicit PreASTDefines(ReferenceIndex* reference_index = nullptr)
+		: m_reference_index(reference_index) {}
 
 	// transform to define calls if define definition exists, otherwise return node
 	PreNodeAST *visit(PreNodeFunctionCall &node) override;
@@ -23,6 +29,7 @@ public:
 
 private:
 	std::string m_debug_token;
+	ReferenceIndex* m_reference_index = nullptr;
 
 	PreNodeAST *do_substitution(PreNodeLiteral &node);
 	std::unique_ptr<PreNodeAST> get_substitute(const std::string& name);

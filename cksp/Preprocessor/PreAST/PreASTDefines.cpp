@@ -7,6 +7,7 @@
 #include <sstream>
 
 #include "PreASTPragma.h"
+#include "../../Source/ReferenceIndex.h"
 
 PreNodeAST *PreASTDefines::visit(PreNodeProgram &node) {
 	m_program = &node;
@@ -132,6 +133,11 @@ PreNodeAST *PreASTDefines::visit(PreNodeDefineCall &node) {
 		auto error = Diagnostic(ErrorType::InternalError, "", "", token_name);
 		error.message = "Undefined <define> called. This construct was marked as a <define-call> during parsing, but no definition was found during preprocessing. This is likely a bug in the preprocessor.";
 		error.exit();
+	}
+
+	// go-to-definition: link this define usage to its definition's name
+	if (m_reference_index) {
+		m_reference_index->add_link(token_name, node.definition->header->name->tok);
 	}
 
 	m_defines_used.insert(token_name.val);
