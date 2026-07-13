@@ -15,6 +15,39 @@
 namespace {
 constexpr auto ANALYSIS_DEBOUNCE = std::chrono::milliseconds(120);
 
+/// Records the immutable documents actually read by one compiler run. Keeping this at the
+/// SourceProvider boundary makes the successful reference snapshot correspond exactly to
+/// the source text that produced it, including in-memory editor overlays.
+class TrackingSourceProvider final : public SourceProvider {
+	SourceProvider& m_delegate;
+	ReferenceProvider::SourceContents m_loaded_contents;
+
+public:
+	explicit TrackingSourceProvider(SourceProvider& delegate) : m_delegate(delegate) {}
+
+	Result<SourceDocument> load(const SourceId& source) override {
+		auto result = m_delegate.load(source);
+		if (!result.is_error()) {
+			const auto& document = result.unwrap();
+			m_loaded_contents.insert_or_assign(
+				FileSystemSourceProvider::normalize(document.id.value).value,
+				document.text);
+		}
+		return result;
+	}
+
+	Result<SourceId> resolve_import(
+		const SourceId& root,
+		const SourceId& importer,
+		const std::string_view import_path) override {
+		return m_delegate.resolve_import(root, importer, import_path);
+	}
+
+	[[nodiscard]] ReferenceProvider::SourceContents take_loaded_contents() {
+		return std::move(m_loaded_contents);
+	}
+};
+
 const JSONObject* object_at(const JSONObject* object, const std::string& key) {
 	if (!object) return nullptr;
 	return object->get_object(key);
@@ -84,6 +117,8 @@ void LanguageServer::handle_request(const JsonRpcMessage& message) {
 		handle_shutdown(message);
 	} else if (method->value == "textDocument/definition") {
 		handle_definition(message);
+	} else if (method->value == "textDocument/references") {
+		handle_references(message);
 	}
 }
 
@@ -172,14 +207,25 @@ void LanguageServer::analyze_entry(const SourceId& entry_source, const uint64_t 
 	CollectingDiagnosticSink diagnostics;
 	auto config = std::make_unique<CompilerConfig>();
 	config->lsp = true;
-	Compiler compiler(std::move(config), m_sources);
-	compiler.analyze(entry_source, diagnostics);
+	TrackingSourceProvider analysis_sources(m_sources);
+	Compiler compiler(std::move(config), analysis_sources);
+	const auto result = compiler.analyze(entry_source, diagnostics);
+	auto successful_sources = result.success
+		? analysis_sources.take_loaded_contents()
+		: ReferenceProvider::SourceContents{};
 	if (!is_analysis_current(generation)) {
 		return;
 	}
 	std::lock_guard lock(m_state_mutex);
-	m_entry_points.register_analysis(entry_source, compiler.import_graph());
-	m_reference_indexes[FileSystemSourceProvider::normalize(entry_source.value).value] = compiler.reference_index();
+	const auto entry = FileSystemSourceProvider::normalize(entry_source.value);
+	const bool has_successful_graph = m_references.has_successful_snapshot(entry);
+	// A failed analysis often has only a partial import graph. Use it to establish a new
+	// entry, but never replace graph ownership learned from a complete analysis.
+	if (result.success || !has_successful_graph) {
+		m_entry_points.register_analysis(entry, compiler.import_graph());
+	}
+
+	m_references.publish(entry, compiler.reference_index(), result.success, std::move(successful_sources));
 	m_diagnostic_publisher.publish(entry_source, diagnostics.diagnostics());
 }
 
@@ -207,7 +253,7 @@ void LanguageServer::analyze_entries_for_sources(const std::vector<SourceId>& ch
 				if (!source_is_entry) {
 					m_entry_points.remove_entry(normalized_source);
 					m_diagnostic_publisher.discard_entry(normalized_source);
-					m_reference_indexes.erase(normalized_source.value);
+					m_references.erase(normalized_source);
 				}
 			}
 		}
@@ -253,6 +299,7 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 	JSONObject capabilities;
 	capabilities.add("textDocumentSync", std::make_unique<JSONObject>(sync));
 	capabilities.add("definitionProvider", std::make_unique<JSONBool>(true));
+	capabilities.add("referencesProvider", std::make_unique<JSONBool>(true));
 
 	JSONObject server_info;
 	server_info.add("name", std::make_unique<JSONString>("cksp-lsp"));
@@ -287,24 +334,8 @@ void LanguageServer::handle_definition(const JsonRpcMessage& message) {
 		const auto source = source_from_uri(uri->value);
 
 		std::lock_guard lock(m_state_mutex);
-		// Prefer the entry that owns this file: its analysis has the in-context resolution.
-		for (const auto& entry : m_entry_points.affected_entries(source)) {
-			const auto index = m_reference_indexes.find(FileSystemSourceProvider::normalize(entry.value).value);
-			if (index == m_reference_indexes.end()) continue;
-			if (auto link = index->second.resolve(source.value, line, character)) {
-				found = std::move(link);
-				break;
-			}
-		}
-		// Fall back to any index that covers the position (e.g. a standalone/orphan file).
-		if (!found) {
-			for (const auto& [_, index] : m_reference_indexes) {
-				if (auto link = index.resolve(source.value, line, character)) {
-					found = std::move(link);
-					break;
-				}
-			}
-		}
+		found = m_references.resolve_target(
+			m_entry_points.affected_entries(source), source, line, character);
 	}
 
 	const auto* id = message.id();
@@ -316,6 +347,41 @@ void LanguageServer::handle_definition(const JsonRpcMessage& message) {
 		m_connection.send_response(*id, location);
 	} else {
 		m_connection.send_response(*id, JSONNull{});
+	}
+}
+
+void LanguageServer::handle_references(const JsonRpcMessage& message) {
+	const auto* params = message.params() ? message.params()->as<JSONObject>() : nullptr;
+	const auto* text_document = object_at(params, "textDocument");
+	const auto* uri = string_at(text_document, "uri");
+	const auto* position = object_at(params, "position");
+	const auto* context = object_at(params, "context");
+	const auto* include_declaration_value = context ? context->get<JSONBool>("includeDeclaration") : nullptr;
+	const bool include_declaration = include_declaration_value && include_declaration_value->value;
+
+	std::vector<ReferenceLocation> locations;
+
+	if (uri && position) {
+		const auto line = static_cast<size_t>(position->get_int("line").value_or(0));
+		const auto character = static_cast<size_t>(position->get_int("character").value_or(0));
+		const auto source = source_from_uri(uri->value);
+		std::lock_guard lock(m_state_mutex);
+		const auto target = m_references.resolve_target(
+			m_entry_points.affected_entries(source), source, line, character);
+		if (target) {
+			locations = m_references.references_to(*target, include_declaration);
+		}
+	}
+
+	JSONArray result;
+	for (const auto& found : locations) {
+		auto location = std::make_unique<JSONObject>();
+		location->add("uri", std::make_unique<JSONString>(uri_from_source(SourceId(found.file))));
+		location->add("range", found.range.get_lsp_range());
+		result.add(std::move(location));
+	}
+	if (const auto* id = message.id()) {
+		m_connection.send_response(*id, result);
 	}
 }
 
@@ -375,7 +441,7 @@ void LanguageServer::handle_did_close(const JsonRpcMessage& message) {
 		if (standalone_entry) {
 			m_entry_points.remove_entry(source);
 			m_diagnostic_publisher.clear_entry(source);
-			m_reference_indexes.erase(FileSystemSourceProvider::normalize(source.value).value);
+			m_references.erase(source);
 		}
 	}
 

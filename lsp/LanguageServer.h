@@ -12,11 +12,9 @@
 #include <unordered_set>
 #include <vector>
 
-#include <unordered_map>
-
 #include "DiagnosticPublisher.h"
 #include "EntryPointResolver.h"
-#include "../cksp/Source/ReferenceIndex.h"
+#include "ReferenceProvider.h"
 #include "../cksp/Source/SourceProvider.h"
 #include "JsonRpcConnection.h"
 
@@ -25,10 +23,10 @@ class LanguageServer {
 	DiagnosticPublisher m_diagnostic_publisher;
 	FileSystemSourceProvider m_file_sources;
 	OverlaySourceProvider m_sources;
+	ReferenceProvider m_references;
 	std::optional<SourceId> m_configured_entry_source;
 	std::optional<SourceId> m_workspace_root;
 	EntryPointResolver m_entry_points;
-	std::unordered_map<std::string, ReferenceIndex> m_reference_indexes;
 	mutable std::mutex m_state_mutex;
 
 	mutable std::mutex m_analysis_mutex;
@@ -51,7 +49,7 @@ class LanguageServer {
 
 public:
 	explicit LanguageServer(JsonRpcConnection& connection)
-		: m_connection(connection), m_diagnostic_publisher(connection), m_sources(m_file_sources) {
+		: m_connection(connection), m_diagnostic_publisher(connection), m_sources(m_file_sources), m_references(m_sources) {
 		m_diagnostic_publisher.set_entry_resolver(&m_entry_points);
 		m_analysis_worker = std::thread(&LanguageServer::analysis_worker_loop, this);
 	}
@@ -74,6 +72,7 @@ public:
 	void handle_initialize(const JsonRpcMessage& message);
 	void handle_shutdown(const JsonRpcMessage& message);
 	void handle_definition(const JsonRpcMessage& message);
+	void handle_references(const JsonRpcMessage& message);
 
 	void handle_did_open(const JsonRpcMessage& message);
 	void handle_did_change(const JsonRpcMessage& message);

@@ -42,10 +42,7 @@ public:
 	/// if a link for the same file and reference range already exists it is kept, so an earlier
 	/// (e.g. pre-lowering) pass wins over a later one for the same reference.
 	void add(std::string ref_file, const SourceRange& ref_range, std::string def_file, const SourceRange& def_range) {
-		auto key = ref_file + "@"
-			+ std::to_string(ref_range.start.line) + ":" + std::to_string(ref_range.start.column) + "-"
-			+ std::to_string(ref_range.end.line) + ":" + std::to_string(ref_range.end.column);
-		if (!m_seen_references.insert(std::move(key)).second) return;
+		if (!m_seen_references.insert(reference_key(ref_file, ref_range)).second) return;
 		m_links.push_back({std::move(ref_file), ref_range, std::move(def_file), def_range});
 	}
 
@@ -76,7 +73,50 @@ public:
 		return *best;
 	}
 
+	/// Resolves the declaration represented at a position. The position may be either a
+	/// reference or the declaration itself. References take precedence when ranges overlap.
+	[[nodiscard]] std::optional<ReferenceLink> resolve_target(const std::string& file, size_t line, size_t character) const {
+		if (auto reference = resolve(file, line, character)) return reference;
+
+		const ReferenceLink* best = nullptr;
+		for (const auto& link : m_links) {
+			if (link.def_file != file) continue;
+			if (!covers(link.def_range, line, character)) continue;
+			if (!best || is_narrower(link.def_range, best->def_range)) best = &link;
+		}
+		if (!best) return std::nullopt;
+		return *best;
+	}
+
+	/// Returns every indexed usage that resolves to the same declaration as target.
+	[[nodiscard]] std::vector<ReferenceLink> references_to(const ReferenceLink& target) const {
+		std::vector<ReferenceLink> references;
+		for (const auto& link : m_links) {
+			if (link.def_file == target.def_file && same_range(link.def_range, target.def_range)) {
+				references.push_back(link);
+			}
+		}
+		return references;
+	}
+
+	/// True when this snapshot already has a (possibly differently resolved) link at range.
+	/// Used when layering a partial current index over the last successful snapshot.
+	[[nodiscard]] bool contains_reference(const std::string& file, const SourceRange& range) const {
+		return m_seen_references.contains(reference_key(file, range));
+	}
+
 private:
+	static std::string reference_key(const std::string& file, const SourceRange& range) {
+		return file + "@"
+			+ std::to_string(range.start.line) + ":" + std::to_string(range.start.column) + "-"
+			+ std::to_string(range.end.line) + ":" + std::to_string(range.end.column);
+	}
+
+	static bool same_range(const SourceRange& a, const SourceRange& b) {
+		return a.start.line == b.start.line && a.start.column == b.start.column
+			&& a.end.line == b.end.line && a.end.column == b.end.column;
+	}
+
 	static bool covers(const SourceRange& range, size_t line, size_t character) {
 		if (!range.is_valid()) return false;
 		const size_t start_line = range.start.get_lsp_line();
