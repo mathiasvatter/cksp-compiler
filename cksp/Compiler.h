@@ -281,8 +281,8 @@ private:
 		// input_filename = "/Users/mathias/Scripting/the-sculpture/sculpture-engine.cksp";
 		if (!m_cli_config->lsp && !input_filename.empty()) m_cli_config->input_filename = input_filename;
 		// m_cli_config->optimization_level = OptimizationLevel::None;
+		// m_cli_config->obfuscate = true;
 	#endif
-		m_cli_config->obfuscate = true;
 
 		m_timer.start("Total Time");
 		m_timer.start("Preprocessor");
