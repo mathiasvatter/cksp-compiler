@@ -157,8 +157,10 @@ public:
 		auto node_while_body = std::make_unique<NodeBlock>(ui_control.tok);
 
 		// this is the $_lbl_lbl0 from the above example
-		auto node_ui_control_var_ref = ui_control_template->control_var->to_reference();
-		node_ui_control_var_ref->name = m_single_control_name + std::to_string(0);
+		const auto& first_decl = node_body->get_first_statement()->cast<NodeSingleDeclaration>();
+		const auto& first_ui_control = first_decl->variable->cast<NodeUIControl>();
+		auto node_ui_control_var_ref = first_ui_control->control_var->to_reference();
+		// node_ui_control_var_ref->name = m_single_control_name + std::to_string(0);
 
 		// get_ui_id($_lbl_lbl0)+_iterator
 		auto r_value = std::make_unique<NodeBinaryExpr>(

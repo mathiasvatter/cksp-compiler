@@ -6,10 +6,10 @@
 
 #include <string>
 
-#include "ASTVisitor.h"
-#include "../ASTNodes/ASTReferences.h"
-#include "../Source/ReferenceIndex.h"
-#include "../Source/SourceProvider.h"
+#include "../../cksp/ASTVisitor/ASTVisitor.h"
+#include "../../cksp/ASTNodes/ASTReferences.h"
+#include "../../cksp/Source/ReferenceIndex.h"
+#include "../../cksp/Source/SourceProvider.h"
 
 /**
  * Walks a resolved AST and records reference -> declaration links into a ReferenceIndex.

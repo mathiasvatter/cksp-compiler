@@ -7,7 +7,7 @@
 #include "ASTVisitor.h"
 #include "../BuiltinsProcessing/DefinitionProvider.h"
 
-/*
+/**
  * Assumes that the AST has now global scope. Collects all references and variables and (in a final step)
  * relinks references to variables by name using the DefinitionProvider.
  * This is necessary to ensure that all references are correctly linked to their corresponding data structures.
