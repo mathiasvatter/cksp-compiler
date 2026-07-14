@@ -203,7 +203,7 @@ bool LanguageServer::is_analysis_current(const uint64_t generation) const {
 	return !m_stop_analysis_worker && generation == m_analysis_generation;
 }
 
-void LanguageServer::analyze_entry(const SourceId& entry_source, const uint64_t generation) {
+void LanguageServer::analyze_entry(const SourceId& entry_source) {
 	CollectingDiagnosticSink diagnostics;
 	auto config = std::make_unique<CompilerConfig>();
 	config->lsp = true;
@@ -213,8 +213,14 @@ void LanguageServer::analyze_entry(const SourceId& entry_source, const uint64_t 
 	auto successful_sources = result.success
 		? analysis_sources.take_loaded_contents()
 		: ReferenceProvider::SourceContents{};
-	if (!is_analysis_current(generation)) {
-		return;
+	// A completed analysis is published even when newer input arrived meanwhile: it is a
+	// consistent snapshot and strictly better than nothing, and the pending re-analysis
+	// supersedes it right after. Only a stopping worker must not publish.
+	{
+		std::lock_guard lock(m_analysis_mutex);
+		if (m_stop_analysis_worker) {
+			return;
+		}
 	}
 	std::lock_guard lock(m_state_mutex);
 	const auto entry = FileSystemSourceProvider::normalize(entry_source.value);
@@ -262,11 +268,19 @@ void LanguageServer::analyze_entries_for_sources(const std::vector<SourceId>& ch
 			return;
 		}
 
-		for (const auto& entry : entries) {
+		for (size_t i = 0; i < entries.size(); ++i) {
 			if (!is_analysis_current(generation)) {
+				// Newer input arrived: stop the batch so it is picked up quickly, but hand
+				// the not-yet-analyzed entries back to the queue. Otherwise their didOpen
+				// is consumed without effect and e.g. an opened standalone entry would
+				// never be analyzed at all.
+				std::lock_guard lock(m_analysis_mutex);
+				for (size_t remaining = i; remaining < entries.size(); ++remaining) {
+					m_pending_analysis_sources.insert(entries[remaining].value);
+				}
 				return;
 			}
-			analyze_entry(entry, generation);
+			analyze_entry(entries[i]);
 		}
 	}
 }

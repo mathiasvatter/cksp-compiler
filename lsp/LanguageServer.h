@@ -43,7 +43,7 @@ class LanguageServer {
 	void schedule_analysis_for_source(const SourceId& changed_source);
 	void analysis_worker_loop();
 	void stop_analysis_worker();
-	void analyze_entry(const SourceId& entry_source, uint64_t generation);
+	void analyze_entry(const SourceId& entry_source);
 	void analyze_entries_for_sources(const std::vector<SourceId>& changed_sources, uint64_t generation);
 	[[nodiscard]] bool is_analysis_current(uint64_t generation) const;
 	[[nodiscard]] std::optional<ReferenceLink> resolve_navigation_target(
