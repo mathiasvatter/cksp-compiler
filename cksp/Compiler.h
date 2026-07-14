@@ -209,11 +209,6 @@ private:
 		
 		TypeInference infer_types(ast.get());
 		infer_types.do_complete_traversal(*ast);
-		// // First go-to-definition pass: positions are still pristine (before lowering).
-		// if (m_program->compiler_config->lsp) {
-		// 	m_reference_index = ReferenceIndex{};
-		// 	build_reference_index();
-		// }
 
 		UniqueParameterNamesProvider unique_names_provider(m_program);
 		unique_names_provider.do_parallel_renaming(*m_program);

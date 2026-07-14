@@ -57,7 +57,7 @@ public:
                 stmt->value = std::move(val);
             }
             stmt->set_child_parents();
-            node_body->add_stmt(std::make_unique<NodeStatement>(std::move(stmt), node.tok));
+            node_body->add_as_stmt(std::move(stmt));
         }
 
         return node.replace_with(std::move(node_body));
@@ -147,7 +147,7 @@ public:
             auto &val = values[i];
             stmt->r_value = std::move(val);
             stmt->set_child_parents();
-            node_body->add_stmt(std::make_unique<NodeStatement>(std::move(stmt), node.tok));
+            node_body->add_as_stmt(std::move(stmt));
         }
         return node.replace_with(std::move(node_body));
     }

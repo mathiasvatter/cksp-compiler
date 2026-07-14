@@ -64,14 +64,14 @@ private:
 	/// Function definitions present their whole header (name, parameters, parenthesis) as
 	/// the definition range, like other lsps do; the parser maintains that range on the
 	/// header node. Every other declaration jumps to its name token.
-	static SourceRange declaration_range(const NodeAST& node) {
-		if (node.get_node_type() == NodeType::FunctionHeader && node.range.is_valid()) {
+	static SourceRange declaration_range(NodeAST& node) {
+		if (node.cast<NodeFunctionHeader>() && node.range.is_valid()) {
 			return node.range;
 		}
 		return source_range_from_token(node.tok);
 	}
 
-	void add_link(const NodeAST& reference, const NodeAST& target) const {
+	void add_link(const NodeAST& reference, NodeAST& target) const {
 		// Builtins/engine variables and synthesized nodes have no real source file.
 		if (reference.tok.file.empty() || target.tok.file.empty()) return;
 		// The reference side stays on the token: access-chain members carry per-segment

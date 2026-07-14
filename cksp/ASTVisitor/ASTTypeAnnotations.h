@@ -81,6 +81,12 @@ public:
 		return &node;
 	}
 
+	NodeAST* visit(NodeDeclaration& node) override {
+		auto error = ASTVisitor::make_diagnostic(ErrorType::InternalError, node);
+		error.set_message("Found <NodeDeclaration> after desugaring pass. This node should not exist anymore.");
+		error.exit();
+	}
+
 	NodeAST* visit(NodeArray& node) override {
 		desanitize_data_name(node);
 		if(node.size) node.size->accept(*this);

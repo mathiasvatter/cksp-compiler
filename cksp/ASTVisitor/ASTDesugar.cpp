@@ -25,10 +25,11 @@ NodeAST* ASTDesugar::visit(NodeProgram& node) {
 	}
 	node.namespaces.clear();
 
+	m_program->add_global_iterator(); // has to be added before visiting global_declarations, in case we have
+	// a ui control array there which adds a global iterator, causing the NodeBlock iteration to crash
 	is_global_declaration = true;
 	m_program->global_declarations->accept(*this);
 	is_global_declaration = false;
-	m_program->add_global_iterator();
 
 
 	// m_program->global_declarations->prepend_as_stmt(m_program->declare_global_iterators());
@@ -68,7 +69,8 @@ NodeAST* ASTDesugar::visit(NodeFunctionCall& node) {
 
 NodeAST* ASTDesugar::visit(NodeDeclaration& node) {
 	// desugar first into single declarations and then visit them
-    return node.desugar(m_program)->accept(*this);
+    const auto new_node = node.desugar(m_program);
+	return new_node->accept(*this);
 }
 
 NodeAST* ASTDesugar::visit(NodeSingleDeclaration& node) {
@@ -81,6 +83,7 @@ NodeAST* ASTDesugar::visit(NodeSingleDeclaration& node) {
         m_global_variable_declarations->add_as_stmt(
 			std::make_unique<NodeSingleDeclaration>(node.variable, std::move(node.value), node.tok)
 		);
+    	// m_global_variable_declarations->get_last_statement()->desugar(m_program);
 		return node.remove_node();
     }
 	return node.desugar(m_program);
