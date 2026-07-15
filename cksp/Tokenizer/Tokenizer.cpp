@@ -535,10 +535,11 @@ void Tokenizer::get_bitwise_operator() {
 		while (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
 			consume();
 		}
-        // add_token(token::DOT, ".");
-		m_tokens.emplace_back(token::DOT, ".", m_line, m_line_pos-m_buffer.length(), m_current_file);
-        // add_token(token::KEYWORD, m_buffer.erase(0,1));
-		m_tokens.emplace_back(token::KEYWORD, m_buffer.erase(0,1), m_line, m_line_pos-m_buffer.length()+1, m_current_file);
+		const auto dot_pos = m_line_pos - m_buffer.length();
+		auto keyword = m_buffer.substr(1);
+		const auto keyword_pos = m_line_pos - keyword.length();
+		m_tokens.emplace_back(token::DOT, ".", m_line, dot_pos, m_current_file);
+		m_tokens.emplace_back(token::KEYWORD, std::move(keyword), m_line, keyword_pos, m_current_file);
     }
     skip_whitespace();
 }

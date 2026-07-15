@@ -58,7 +58,8 @@ struct Token {
 /// of sharing the combined token.
 [[nodiscard]] inline Token segment_token(const Token& base, const size_t offset, std::string segment) {
     Token token = base;
-    token.pos = base.pos + offset;
+    const auto source_offset = base.val.find(segment, offset);
+    token.pos = base.pos + (source_offset == std::string::npos ? offset : source_offset);
     token.val = std::move(segment);
     return token;
 }
