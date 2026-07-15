@@ -23,7 +23,8 @@ struct ReferenceLink {
 	std::string ref_file;   ///< normalized path of the file containing the reference
 	SourceRange ref_range;  ///< where the reference sits (what the user clicks)
 	std::string def_file;   ///< normalized path of the declaration's file
-	SourceRange def_range;  ///< the declaration's location (the jump target)
+	SourceRange def_range;  ///< the declaration's location (the jump target; spans the whole header for functions)
+	SourceRange def_name_range;  ///< exactly the declared name, e.g. the range a rename edit replaces
 };
 
 /** A named source construct which can be used as a qualifier, such as a namespace. */
@@ -51,8 +52,14 @@ public:
 	/// if a link for the same file and reference range already exists it is kept, so an earlier
 	/// (e.g. pre-lowering) pass wins over a later one for the same reference.
 	void add(std::string ref_file, const SourceRange& ref_range, std::string def_file, const SourceRange& def_range) {
+		add(std::move(ref_file), ref_range, std::move(def_file), def_range, def_range);
+	}
+
+	/// Same as add(), with a separate name range when the declaration range spans more than
+	/// the declared name (function headers span name, parameters and parenthesis).
+	void add(std::string ref_file, const SourceRange& ref_range, std::string def_file, const SourceRange& def_range, const SourceRange& def_name_range) {
 		if (!m_seen_references.insert(reference_key(ref_file, ref_range)).second) return;
-		m_links.push_back({std::move(ref_file), ref_range, std::move(def_file), def_range});
+		m_links.push_back({std::move(ref_file), ref_range, std::move(def_file), def_range, def_name_range});
 	}
 
 	/// Records a link between two source tokens (reference -> declaration). Tokens without a
@@ -137,6 +144,18 @@ public:
 		return m_seen_references.contains(reference_key(file, range));
 	}
 
+	/// True when the zero-based (LSP) position lies inside the one-based range.
+	static bool covers(const SourceRange& range, size_t line, size_t character) {
+		if (!range.is_valid()) return false;
+		const size_t start_line = range.start.get_lsp_line();
+		const size_t start_char = range.start.get_lsp_char();
+		const size_t end_line = range.end.get_lsp_line();
+		const size_t end_char = range.end.get_lsp_char();
+		const bool after_start = line > start_line || (line == start_line && character >= start_char);
+		const bool before_end = line < end_line || (line == end_line && character < end_char);
+		return after_start && before_end;
+	}
+
 private:
 	static std::string reference_key(const std::string& file, const SourceRange& range) {
 		return file + "@"
@@ -147,17 +166,6 @@ private:
 	static bool same_range(const SourceRange& a, const SourceRange& b) {
 		return a.start.line == b.start.line && a.start.column == b.start.column
 			&& a.end.line == b.end.line && a.end.column == b.end.column;
-	}
-
-	static bool covers(const SourceRange& range, size_t line, size_t character) {
-		if (!range.is_valid()) return false;
-		const size_t start_line = range.start.get_lsp_line();
-		const size_t start_char = range.start.get_lsp_char();
-		const size_t end_line = range.end.get_lsp_line();
-		const size_t end_char = range.end.get_lsp_char();
-		const bool after_start = line > start_line || (line == start_line && character >= start_char);
-		const bool before_end = line < end_line || (line == end_line && character < end_char);
-		return after_start && before_end;
 	}
 
 	static bool is_narrower(const SourceRange& a, const SourceRange& b) {

@@ -116,7 +116,8 @@ std::vector<ReferenceLocation> ReferenceProvider::references_to(
 			add(reference.ref_file, reference.ref_range);
 		}
 	}
-	if (include_declaration) add(target.def_file, target.def_range);
+	// the declaration is listed (and rename-edited) at its name, not the whole header range
+	if (include_declaration) add(target.def_file, target.def_name_range);
 
 	std::ranges::sort(locations, [](const ReferenceLocation& a, const ReferenceLocation& b) {
 		if (a.file != b.file) return a.file < b.file;

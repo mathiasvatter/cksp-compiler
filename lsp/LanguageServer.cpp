@@ -4,82 +4,20 @@
 
 #include "LanguageServer.h"
 
+#include "RequestParams.h"
+#include "TrackingSourceProvider.h"
 #include "../cksp/Compiler.h"
 #include "../misc/DiagnosticSink.h"
 #include "version.h"
 
-#include <chrono>
 #include <filesystem>
 #include <unordered_set>
 
-namespace {
-constexpr auto ANALYSIS_DEBOUNCE = std::chrono::milliseconds(120);
-
-/// Records the immutable documents actually read by one compiler run. Keeping this at the
-/// SourceProvider boundary makes the successful reference snapshot correspond exactly to
-/// the source text that produced it, including in-memory editor overlays.
-class TrackingSourceProvider final : public SourceProvider {
-	SourceProvider& m_delegate;
-	ReferenceProvider::SourceContents m_loaded_contents;
-
-public:
-	explicit TrackingSourceProvider(SourceProvider& delegate) : m_delegate(delegate) {}
-
-	Result<SourceDocument> load(const SourceId& source) override {
-		auto result = m_delegate.load(source);
-		if (!result.is_error()) {
-			const auto& document = result.unwrap();
-			m_loaded_contents.insert_or_assign(
-				FileSystemSourceProvider::normalize(document.id.value).value,
-				document.text);
-		}
-		return result;
-	}
-
-	Result<SourceId> resolve_import(
-		const SourceId& root,
-		const SourceId& importer,
-		const std::string_view import_path) override {
-		return m_delegate.resolve_import(root, importer, import_path);
-	}
-
-	[[nodiscard]] ReferenceProvider::SourceContents take_loaded_contents() {
-		return std::move(m_loaded_contents);
-	}
-};
-
-const JSONObject* object_at(const JSONObject* object, const std::string& key) {
-	if (!object) return nullptr;
-	return object->get_object(key);
-}
-
-const JSONString* string_at(const JSONObject* object, const std::string& key) {
-	if (!object) return nullptr;
-	return object->get_string(key);
-}
-
-std::optional<SourceId> source_from_optional_uri_or_path(const JSONObject* object, const std::string& uri_key, const std::string& path_key) {
-	if (const auto* uri = string_at(object, uri_key)) {
-		return source_from_uri(uri->value);
-	}
-	if (const auto* path = string_at(object, path_key)) {
-		return FileSystemSourceProvider::normalize(path->value);
-	}
-	return std::nullopt;
-}
-
-std::optional<SourceId> resolve_configured_entry(const JSONObject* initialize_params, const std::optional<SourceId>& workspace_root) {
-	const auto* options = object_at(initialize_params, "initializationOptions");
-	auto entry = source_from_optional_uri_or_path(options, "mainFileUri", "mainFilePath");
-	if (!entry) return std::nullopt;
-
-	std::filesystem::path path(entry->value);
-	if (path.is_relative() && workspace_root) {
-		path = std::filesystem::path(workspace_root->value) / path;
-	}
-	return FileSystemSourceProvider::normalize(path.string());
-}
-}
+using lsp::object_at;
+using lsp::string_at;
+using lsp::position_params;
+using lsp::source_from_optional_uri_or_path;
+using lsp::resolve_configured_entry;
 
 LanguageServer::~LanguageServer() {
 	stop_analysis_worker();
@@ -119,6 +57,12 @@ void LanguageServer::handle_request(const JsonRpcMessage& message) {
 		handle_definition(message);
 	} else if (method->value == "textDocument/references") {
 		handle_references(message);
+	} else if (method->value == "textDocument/prepareRename") {
+		handle_prepare_rename(message);
+	} else if (method->value == "textDocument/rename") {
+		handle_rename(message);
+	} else if (method->value == "textDocument/documentHighlight") {
+		handle_document_highlight(message);
 	}
 }
 
@@ -310,10 +254,15 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 	sync.add("openClose", std::make_unique<JSONBool>(true));
 	sync.add("change", std::make_unique<JSONInt>(1));
 
+	JSONObject rename_options;
+	rename_options.add("prepareProvider", std::make_unique<JSONBool>(true));
+
 	JSONObject capabilities;
 	capabilities.add("textDocumentSync", std::make_unique<JSONObject>(sync));
 	capabilities.add("definitionProvider", std::make_unique<JSONBool>(true));
 	capabilities.add("referencesProvider", std::make_unique<JSONBool>(true));
+	capabilities.add("renameProvider", std::make_unique<JSONObject>(rename_options));
+	capabilities.add("documentHighlightProvider", std::make_unique<JSONBool>(true));
 
 	JSONObject server_info;
 	server_info.add("name", std::make_unique<JSONString>("cksp-lsp"));
@@ -337,16 +286,13 @@ void LanguageServer::handle_shutdown(const JsonRpcMessage& message) {
 
 std::optional<ReferenceLink> LanguageServer::resolve_navigation_target(
 	const JsonRpcMessage& message) {
-	const auto* params = message.params() ? message.params()->as<JSONObject>() : nullptr;
-	const auto* text_document = object_at(params, "textDocument");
-	const auto* uri = string_at(text_document, "uri");
-	const auto* position = object_at(params, "position");
-	if (!uri || !position) return std::nullopt;
+	const auto position = position_params(message);
+	if (!position) return std::nullopt;
+	return resolve_target_at(position->source, position->line, position->character);
+}
 
-	const auto line = static_cast<size_t>(position->get_int("line").value_or(0));
-	const auto character = static_cast<size_t>(position->get_int("character").value_or(0));
-	const auto source = source_from_uri(uri->value);
-
+std::optional<ReferenceLink> LanguageServer::resolve_target_at(
+	const SourceId& source, const size_t line, const size_t character) {
 	std::lock_guard lock(m_state_mutex);
 	return m_references.resolve_target(
 		m_entry_points.affected_entries(source), source, line, character);
@@ -389,6 +335,94 @@ void LanguageServer::handle_references(const JsonRpcMessage& message) {
 	if (const auto* id = message.id()) {
 		m_connection.send_response(*id, result);
 	}
+}
+
+void LanguageServer::handle_prepare_rename(const JsonRpcMessage& message) {
+	const auto* id = message.id();
+	if (!id) return;
+
+	const auto position = position_params(message);
+	const auto target = position
+		? resolve_target_at(position->source, position->line, position->character)
+		: std::nullopt;
+	if (!position || !target) {
+		// null makes the client refuse the rename ("element can't be renamed"),
+		// e.g. on builtins, keywords or whitespace
+		m_connection.send_response(*id, JSONNull{});
+		return;
+	}
+
+	const auto symbol_range = RenameProvider::renameable_range(
+		*target, position->source, position->line, position->character);
+	if (!symbol_range) {
+		m_connection.send_response(*id, JSONNull{});
+		return;
+	}
+	m_connection.send_response(*id, *symbol_range->get_lsp_range());
+}
+
+void LanguageServer::handle_rename(const JsonRpcMessage& message) {
+	const auto* id = message.id();
+	if (!id) return;
+
+	const auto* params = message.params() ? message.params()->as<JSONObject>() : nullptr;
+	const auto* new_name = string_at(params, "newName");
+	const auto position = position_params(message);
+	if (!position || !new_name) {
+		m_connection.send_error_response(*id, -32602, "Invalid rename parameters.");
+		return;
+	}
+
+	const auto target = resolve_target_at(position->source, position->line, position->character);
+	if (!target) {
+		m_connection.send_error_response(*id, -32803, "No renamable symbol at this position.");
+		return;
+	}
+
+	const auto result = m_rename.rename(*target, new_name->value);
+	if (!result.ok()) {
+		m_connection.send_error_response(*id, -32803, result.error);
+		return;
+	}
+
+	auto changes = std::make_unique<JSONObject>();
+	std::unordered_map<std::string, JSONArray*> edits_by_file;
+	for (const auto& location : result.edits) {
+		auto& edits = edits_by_file[location.file];
+		if (!edits) {
+			auto array = std::make_unique<JSONArray>();
+			edits = array.get();
+			changes->add(uri_from_source(SourceId(location.file)), std::move(array));
+		}
+		auto edit = std::make_unique<JSONObject>();
+		edit->add("range", location.range.get_lsp_range());
+		edit->add("newText", std::make_unique<JSONString>(new_name->value));
+		edits->add(std::move(edit));
+	}
+
+	JSONObject workspace_edit;
+	workspace_edit.add("changes", std::move(changes));
+	m_connection.send_response(*id, workspace_edit);
+}
+
+void LanguageServer::handle_document_highlight(const JsonRpcMessage& message) {
+	const auto* id = message.id();
+	if (!id) return;
+
+	JSONArray highlights;
+	const auto position = position_params(message);
+	const auto target = position
+		? resolve_target_at(position->source, position->line, position->character)
+		: std::nullopt;
+	if (target) {
+		for (const auto& location : m_references.references_to(*target, true)) {
+			if (location.file != position->source.value) continue;
+			auto highlight = std::make_unique<JSONObject>();
+			highlight->add("range", location.range.get_lsp_range());
+			highlights.add(std::move(highlight));
+		}
+	}
+	m_connection.send_response(*id, highlights);
 }
 
 void LanguageServer::handle_did_open(const JsonRpcMessage& message) {

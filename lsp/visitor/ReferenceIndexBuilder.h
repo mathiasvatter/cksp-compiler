@@ -81,9 +81,12 @@ private:
 		const auto def_range = declaration_range(target);
 		if (!ref_range.is_valid() || !def_range.is_valid()) return;
 		add_qualifier_links(reference, target);
+		// the name range carries the exact identifier at the declaration, which rename
+		// edits replace; def_range may span the whole header for functions
 		m_index.add(
 			FileSystemSourceProvider::normalize(reference.tok.file).value, ref_range,
-			FileSystemSourceProvider::normalize(target.tok.file).value, def_range);
+			FileSystemSourceProvider::normalize(target.tok.file).value, def_range,
+			source_range_from_token(target.tok));
 	}
 
 	void record_variable(const NodeReference& reference) const {

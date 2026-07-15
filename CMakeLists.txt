@@ -281,6 +281,11 @@ add_executable(cksp
         lsp/LanguageServer.h
         lsp/ReferenceProvider.cpp
         lsp/ReferenceProvider.h
+        lsp/RenameProvider.cpp
+        lsp/RenameProvider.h
+        lsp/RequestParams.cpp
+        lsp/RequestParams.h
+        lsp/TrackingSourceProvider.h
         lsp/DiagnosticPublisher.cpp
         lsp/DiagnosticPublisher.h
         lsp/EntryPointResolver.cpp
