@@ -12,6 +12,7 @@
 #include "ASTHelper.h"
 #include "../Tokenizer/Token.h"
 #include "../Types/Types.h"
+#include "../Types/TypeReference.h"
 #include "../../misc/HashFunctions.h"
 #include "../../misc/Diagnostic.h"
 #include "../../misc/FreeFunctions.h"
@@ -28,6 +29,7 @@ struct NodeAST {
 	SourceRange range;
     Token tok;
 	Type* ty = nullptr;
+	TypeReferences type_references;
     NodeType node_type;
     NodeAST* parent = nullptr;
 	explicit NodeAST(Token tok=Token(), NodeType node_type=NodeType::DeadCode);

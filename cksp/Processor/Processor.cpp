@@ -79,11 +79,11 @@ void Processor::remove_tokens(std::vector<Token> &tok, const size_t start, const
 	}
 }
 
-Result<Type*> Processor::parse_type_annotation(Type* ty) {
+Result<Type*> Processor::parse_type_annotation(Type* ty, TypeReferences* references) {
 	Type* type = TypeRegistry::Unknown;
 	if(peek().type == token::TYPE) {
 		consume(); // consume semicolon
-		auto parsed_type = parse_type();
+		auto parsed_type = parse_type(references);
 		if(parsed_type.is_error()) return Result<Type*>(parsed_type.get_error());
 		type = parsed_type.unwrap();
 		// if existing type is already not Unknown then there was an identifier
@@ -101,7 +101,7 @@ Result<Type*> Processor::parse_type_annotation(Type* ty) {
 	return Result<Type*>(type);
 }
 
-Result<Type*> Processor::parse_type() {
+Result<Type*> Processor::parse_type(TypeReferences* references) {
 	Type* type = TypeRegistry::Unknown;
 	auto error = Diagnostic(ErrorType::ParseError,"", "", get_tok());
 	if(peek().type != token::KEYWORD and peek().type != token::OPEN_PARENTH) {
@@ -110,11 +110,11 @@ Result<Type*> Processor::parse_type() {
 	}
 
 	if(peek().type == token::OPEN_PARENTH) {
-		auto func_type = _parse_function_type();
+		auto func_type = _parse_function_type(references);
 		if(func_type.is_error()) return Result<Type*>(func_type.get_error());
 		type = func_type.unwrap();
 	} else if(peek().type == token::KEYWORD) {
-		auto single_type = _parse_single_types();
+		auto single_type = _parse_single_types(references);
 		if(single_type.is_error()) return Result<Type*>(single_type.get_error());
 		type = single_type.unwrap();
 	}
@@ -122,7 +122,7 @@ Result<Type*> Processor::parse_type() {
 }
 
 
-Result<Type*> Processor::_parse_single_types() {
+Result<Type*> Processor::_parse_single_types(TypeReferences* references) {
 	auto type_token = consume(m_tokens);
 	Type* type = nullptr;
 	int dimensions = 0;
@@ -147,6 +147,10 @@ Result<Type*> Processor::_parse_single_types() {
 		error.expected = "valid type annotation";
 		return Result<Type *>(error);
 	}
+	// Retain every written type name independently from the interned semantic Type.
+	// For composite annotations such as Foo[][] this intentionally records Foo,
+	// while the returned semantic type is wrapped below.
+	if (references) references->push_back({type, type_token});
 	// if composite type
 	if (dimensions > 0) {
 		type = TypeRegistry::add_composite_type(CompoundKind::Array, type, dimensions);
@@ -154,12 +158,12 @@ Result<Type*> Processor::_parse_single_types() {
 	return Result<Type*>(type);
 }
 
-Result<Type*> Processor::_parse_function_type() {
+Result<Type*> Processor::_parse_function_type(TypeReferences* references) {
 	std::vector<Type*> params;
 	// consume the open parenthesis
 	consume();
 	while(peek().type != token::CLOSED_PARENTH) {
-		auto type = parse_type();
+		auto type = parse_type(references);
 		if(type.is_error()) return Result<Type*>(type.get_error());
 		params.push_back(type.unwrap());
 		if(peek().type == token::COMMA) {
@@ -175,7 +179,7 @@ Result<Type*> Processor::_parse_function_type() {
 		return Result<Type*>(error);
 	}
 	consume(); // consume the colon
-	auto return_type = parse_type();
+	auto return_type = parse_type(references);
 	if(return_type.is_error()) return Result<Type*>(return_type.get_error());
 	return Result<Type*>(TypeRegistry::add_function_type(params, return_type.unwrap()));
 }

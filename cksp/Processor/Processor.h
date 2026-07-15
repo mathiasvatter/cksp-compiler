@@ -7,6 +7,7 @@
 #include "../Tokenizer/Tokenizer.h"
 #include "../Tokenizer/Tokens.h"
 #include "../Types/Types.h"
+#include "../Types/TypeReference.h"
 
 /// Base Class for all parsing related classes like:
 /// - Parser
@@ -44,10 +45,10 @@ protected:
 
 	/// \brief Parse a type annotation
 	/// \param ty The optional identifier type before the variable name (e.g. ?|$|~x)
-	Result<Type*> parse_type_annotation(Type* ty = nullptr);
-	Result<Type*> parse_type();
-	Result<Type*> _parse_function_type();
-	Result<Type*> _parse_single_types();
+	Result<Type*> parse_type_annotation(Type* ty = nullptr, TypeReferences* references = nullptr);
+	Result<Type*> parse_type(TypeReferences* references = nullptr);
+	Result<Type*> _parse_function_type(TypeReferences* references = nullptr);
+	Result<Type*> _parse_single_types(TypeReferences* references = nullptr);
 
 	void _skip_linebreaks();
 

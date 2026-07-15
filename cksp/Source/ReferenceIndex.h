@@ -43,14 +43,15 @@ struct QualifierDefinition {
  */
 class ReferenceIndex {
 	std::vector<ReferenceLink> m_links;
+	std::unordered_set<std::string> m_seen_links;
 	std::unordered_set<std::string> m_seen_references;
 	std::vector<QualifierDefinition> m_qualifier_definitions;
 	std::unordered_set<std::string> m_seen_qualifier_definitions;
 
 public:
-	/// Records a reference -> declaration link. A reference location is indexed only once:
-	/// if a link for the same file and reference range already exists it is kept, so an earlier
-	/// (e.g. pre-lowering) pass wins over a later one for the same reference.
+	/// Records a reference -> declaration link. The same visible source range can legitimately
+	/// carry both a preprocessor link and an AST semantic link after macro expansion, so dedupe
+	/// keeps distinct declaration targets while still suppressing exact duplicates.
 	void add(std::string ref_file, const SourceRange& ref_range, std::string def_file, const SourceRange& def_range) {
 		add(std::move(ref_file), ref_range, std::move(def_file), def_range, def_range);
 	}
@@ -58,7 +59,10 @@ public:
 	/// Same as add(), with a separate name range when the declaration range spans more than
 	/// the declared name (function headers span name, parameters and parenthesis).
 	void add(std::string ref_file, const SourceRange& ref_range, std::string def_file, const SourceRange& def_range, const SourceRange& def_name_range) {
-		if (!m_seen_references.insert(reference_key(ref_file, ref_range)).second) return;
+		const auto ref_key = reference_key(ref_file, ref_range);
+		const auto link_key = ref_key + "=>" + reference_key(def_file, def_range);
+		if (!m_seen_links.insert(link_key).second) return;
+		m_seen_references.insert(ref_key);
 		m_links.push_back({std::move(ref_file), ref_range, std::move(def_file), def_range, def_name_range});
 	}
 

@@ -46,6 +46,7 @@ NodeAST::NodeAST(Token tok, const NodeType node_type) : range(source_range_from_
                                                         tok(std::move(tok)), ty(TypeRegistry::Unknown), node_type(node_type) {}
 
 NodeAST::NodeAST(const NodeAST& other) : range(other.range), tok(other.tok), ty(other.ty),
+	                                     type_references(other.type_references),
                                          node_type(other.node_type), parent(other.parent) {}
 
 NodeAST *NodeAST::accept(ASTVisitor &visitor) {
@@ -438,6 +439,7 @@ void NodeDataStructure::match_metadata(const std::shared_ptr<NodeDataStructure>&
 	is_global = data_structure->is_global;
 	data_type = data_structure->data_type;
 	is_thread_safe = data_structure->is_thread_safe;
+	type_references = data_structure->type_references;
 }
 
 NodeDataStructure* NodeDataStructure::lower_type() {

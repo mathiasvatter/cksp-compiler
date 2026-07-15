@@ -213,6 +213,13 @@ private:
 		UniqueParameterNamesProvider unique_names_provider(m_program);
 		unique_names_provider.do_parallel_renaming(*m_program);
 
+		// Harvest source-level references while struct definitions and their lookup are
+		// still alive. ASTCollectLowerings removes them; the later pass layers links
+		// resolved only by the final variable check on top of this snapshot.
+		if (m_program->compiler_config->lsp) {
+			build_reference_index();
+		}
+
 		// ASTPointerScope pointer_scope(m_program);
 		// ast->accept(pointer_scope);
 		// ASTStructInstanceAnalysis instance_analysis(m_program);
@@ -242,14 +249,14 @@ private:
 	/// the start of analyse_impl, before preprocessing.
 	void build_reference_index() {
 		ReferenceIndexBuilder reference_index_builder(
-			m_reference_index, ReferenceIndexBuilder::Pass::References);
+			m_reference_index, ReferenceIndexBuilder::Pass::References, m_sources);
 		ast->accept(reference_index_builder);
 	}
 
 	/// Records qualifier blocks before desugaring removes namespace/family/const nodes.
 	void collect_reference_definitions() {
 		ReferenceIndexBuilder definition_builder(
-			m_reference_index, ReferenceIndexBuilder::Pass::Definitions);
+			m_reference_index, ReferenceIndexBuilder::Pass::Definitions, m_sources);
 		ast->accept(definition_builder);
 	}
 

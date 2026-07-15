@@ -1499,7 +1499,8 @@ Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header(NodeAS
 		// Allow line breaks between ')' and the return type annotation but only if it is annotated
 		_skip_linebreaks();
 	}
-	auto type = parse_type_annotation();
+	TypeReferences return_type_references;
+	auto type = parse_type_annotation(nullptr, &return_type_references);
 	if(type.is_error()) {
 		return Result<std::unique_ptr<NodeFunctionHeader>>(type.get_error());
 	}
@@ -1511,6 +1512,7 @@ Result<std::unique_ptr<NodeFunctionHeader>> Parser::parse_function_header(NodeAS
 	}
 
 	node_function_header->create_function_type(return_type);
+	node_function_header->type_references = std::move(return_type_references);
 	set_header_range(*node_function_header, start_token, peek(-1), node_function_header->params);
     node_function_header->parent = parent;
     return Result<std::unique_ptr<NodeFunctionHeader>>(std::move(node_function_header));
@@ -1868,7 +1870,8 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_declare_variable(NodeAST* pa
         return Result<std::unique_ptr<NodeVariable>>(parsed_var.get_error());
     }
     auto node_variable = std::move(parsed_var.unwrap());
-	auto type = parse_type_annotation(node_variable->ty);
+	TypeReferences type_references;
+	auto type = parse_type_annotation(node_variable->ty, &type_references);
 	if(type.is_error()) {
 		return Result<std::unique_ptr<NodeVariable>>(type.get_error());
 	}
@@ -1876,6 +1879,7 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_declare_variable(NodeAST* pa
     node_variable->is_global = is_global;
 	node_variable->kind = kind;
 	node_variable->ty = type.unwrap();
+	node_variable->type_references = std::move(type_references);
 	node_variable->set_range(start_token, peek(-1));
     return Result<std::unique_ptr<NodeVariable>>(std::move(node_variable));
 }
@@ -1944,7 +1948,8 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_declare_array(NodeAST* 
         return Result<std::unique_ptr<NodeDataStructure>>(parsed_arr.get_error());
     }
     auto node_array = std::move(parsed_arr.unwrap());
-	auto type = parse_type_annotation(node_array->ty);
+	TypeReferences type_references;
+	auto type = parse_type_annotation(node_array->ty, &type_references);
 	if(type.is_error()) {
 		return Result<std::unique_ptr<NodeDataStructure>>(type.get_error());
 	}
@@ -1953,6 +1958,7 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_declare_array(NodeAST* 
     node_array->is_local = is_local;
     node_array->is_global = is_global;
 	node_array->ty = type.unwrap();
+	node_array->type_references = std::move(type_references);
 	node_array->set_range(start_token, peek(-1));
     return Result<std::unique_ptr<NodeDataStructure>>(std::move(node_array));
 }
@@ -2009,11 +2015,13 @@ Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST*
         }
         control_var = std::move(parsed_var.unwrap());
     }
-	auto type = parse_type_annotation(control_var->ty);
+	TypeReferences type_references;
+	auto type = parse_type_annotation(control_var->ty, &type_references);
 	if(type.is_error()) {
 		return Result<std::unique_ptr<NodeUIControl>>(type.get_error());
 	}
 	control_var->ty = type.unwrap();
+	control_var->type_references = std::move(type_references);
     std::unique_ptr<NodeParamList> control_params;
     if(peek().type == token::OPEN_PARENTH) {
         auto param_list = parse_param_list(node_ui_control.get());
@@ -2532,7 +2540,8 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 	if (peek().type == token::CLOSED_BRACKET) {
 		consume(); // consume ]
 	}
-	auto type = parse_type_annotation(ty);
+	TypeReferences type_references;
+	auto type = parse_type_annotation(ty, &type_references);
 	if(type.is_error()) {
 		return Result<std::unique_ptr<NodeAST>>(type.get_error());
 	}
@@ -2568,6 +2577,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 	node_list_block->body = std::move(stmts);
 //	node_list_block->parent = node_declaration.get();
 	node_list_block->ty = type.unwrap();
+	node_list_block->type_references = std::move(type_references);
 	node_list_block->set_range(construct, end_token);
 	auto node_declaration = std::make_unique<NodeSingleDeclaration>(std::move(node_list_block), node_list_block->tok);
 	node_declaration->parent = parent;
