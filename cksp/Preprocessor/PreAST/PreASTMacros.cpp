@@ -57,7 +57,7 @@ PreNodeAST *PreASTMacros::do_substitution(PreNodeLiteral &node) {
 		} else if(node.cast<PreNodeKeyword>()) {
 			// in case there are more # substitutions in one word
 			if (StringUtils::count_char(node.tok.val, '#') >= 2) {
-				node.tok.val = get_text_replacement(node.tok);
+				node.tok = get_text_replacement_token(node.tok);
 			}
 		}
 	}
@@ -157,12 +157,13 @@ visit(PreNodeMacroCall &node) {
     auto node_new_chunk = std::make_unique<PreNodeChunk>(node.tok, node.parent);
 
 	// see if parent is iterate or literate -> ignore amount of parameters then
-    if(node.definition) {
+	if(node.definition) {
 	const auto macro_definition = clone_as<PreNodeMacroDefinition>(node.definition);
         m_macros_used.insert(token_name.val);
         // macro_definition->parent = node.parent;
 		if(node.macro->has_args()) {
 			auto substitution_vec = get_substitution_map(*macro_definition->header, *node.macro);
+			inherit_substitutions(substitution_vec);
 			m_substitution_stack.push(std::move(substitution_vec));
 			if (m_reference_index) {
 				// remember the header parameter tokens so body usages can link to them
@@ -262,6 +263,7 @@ PreNodeAST *PreASTMacros::visit(PreNodeIterateMacro &node) {
 
         std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> subst_map;
         subst_map.insert({"#n#", std::move(node_number_chunk)});
+		inherit_substitutions(subst_map);
         m_substitution_stack.push(std::move(subst_map));
 
         auto macro_call = node.macro_call->params[0]->clone();
@@ -331,6 +333,7 @@ PreNodeAST *PreASTMacros::visit(PreNodeLiterateMacro &node) {
         std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> subst_map;
         subst_map.insert({"#l#", std::move(node_literate_chunk)});
         subst_map.insert({"#n#", std::move(node_number_chunk)});
+		inherit_substitutions(subst_map);
         m_substitution_stack.push(std::move(subst_map));
 
         auto macro_call = node.macro_call->params[0]->clone();
@@ -362,6 +365,19 @@ std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> PreASTMacros::get
 			error.actual = definition.get_string();
 			error.exit();
 		}
+		if (call.args->params[i]) {
+			if (auto substitute = clone_substitution_chunk(call.args->params[i]->get_string())) {
+				call.args->params[i] = std::move(substitute);
+			} else {
+				const auto* source = first_source_token(call.args->params[i].get());
+				if (source && source->val == ",") {
+					if (auto inherited = clone_substitution_chunk(var->get_string())) {
+						call.args->params[i] = std::move(inherited);
+					}
+				}
+				call.args->params[i]->accept(*this);
+			}
+		}
 		map[var->get_string()] = std::move(call.args->params[i]);
 	}
 	return map;
@@ -389,4 +405,3 @@ std::unique_ptr<PreNodeAST> PreASTMacros::get_substitute(const std::string& name
 	}
 	return nullptr;
 }
-

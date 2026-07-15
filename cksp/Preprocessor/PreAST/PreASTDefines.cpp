@@ -40,7 +40,7 @@ PreNodeAST *PreASTDefines::do_substitution(PreNodeLiteral &node) {
 		} else if(node.cast<PreNodeKeyword>()) {
 			// in case there are more # substitutions in one word
 			if (StringUtils::count_char(node.tok.val, '#') >= 2) {
-				node.tok.val = get_text_replacement(node.tok);
+				node.tok = get_text_replacement_token(node.tok);
 			}
 		}
 	}
@@ -155,6 +155,7 @@ PreNodeAST *PreASTDefines::visit(PreNodeDefineCall &node) {
 	auto define_body = clone_as<PreNodeChunk>(node.definition->body.get());
 	// node_define_definition->parent = node.parent;
 	auto substitution_map = get_substitution_map(*define_header, *node.define);
+	inherit_substitutions(substitution_map);
 	m_substitution_stack.push(std::move(substitution_map));
 	if (m_reference_index) {
 		// remember the header argument tokens so body usages can link to them
