@@ -366,16 +366,14 @@ std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> PreASTMacros::get
 			error.exit();
 		}
 		if (call.args->params[i]) {
+			// Fast path: an argument that is exactly an enclosing substitution parameter
+			// (e.g. inner(#x#) inside another macro) is resolved eagerly so its source-token
+			// position is preserved for go-to-definition. Arguments that only *contain* a
+			// parameter, in particular token-pasted ones like #control#0, must NOT be
+			// substituted here: eager substitution collapses the pasting and drops the
+			// pasted suffix. Those are left raw for the body's lazy substitution.
 			if (auto substitute = clone_substitution_chunk(call.args->params[i]->get_string())) {
 				call.args->params[i] = std::move(substitute);
-			} else {
-				const auto* source = first_source_token(call.args->params[i].get());
-				if (source && source->val == ",") {
-					if (auto inherited = clone_substitution_chunk(var->get_string())) {
-						call.args->params[i] = std::move(inherited);
-					}
-				}
-				call.args->params[i]->accept(*this);
 			}
 		}
 		map[var->get_string()] = std::move(call.args->params[i]);
