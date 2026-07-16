@@ -5,7 +5,7 @@
 #pragma once
 
 #include "visitor/JSONVisitor.h"
-#include "../BuiltinsProcessing/DefinitionProvider.h"
+#include "../cksp/BuiltinsProcessing/DefinitionProvider.h"
 
 inline std::map<int, std::string> UI_CONTROL_INDEX = {
         {0, "ui_panel"},

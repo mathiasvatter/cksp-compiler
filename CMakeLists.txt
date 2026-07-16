@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 project(CKSP_Compiler VERSION 0.0.9)
-set(PRE_RELEASE_VERSION "-alpha.9")
+set(PRE_RELEASE_VERSION "")
 
 set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
 configure_file(
@@ -53,173 +53,173 @@ foreach(TEXT_FILE ${TEXT_FILES})
 endforeach()
 add_custom_target(generate_headers DEPENDS ${GENERATED_HEADERS})
 
-add_executable(cksp main.cpp
-        Tokenizer/Tokens.h
-        Tokenizer/Tokenizer.h
-        Tokenizer/Tokenizer.cpp
-        Parser/Parser.h
-        Parser/Parser.cpp
+add_library(cksp_core STATIC
+        cksp/Tokenizer/Tokens.h
+        cksp/Tokenizer/Tokenizer.h
+        cksp/Tokenizer/Tokenizer.cpp
+        cksp/Parser/Parser.h
+        cksp/Parser/Parser.cpp
         misc/CompileError.h
         misc/CompileError.cpp
         misc/Result.h
-        Preprocessor/PreAST/PreASTNodes/PreAST.h
-        Preprocessor/PreAST/PreASTNodes/PreAST.cpp
-        Preprocessor/PreAST/PreASTVisitor.h
-        Preprocessor/PreAST/PreASTVisitor.cpp
-        Preprocessor/PreprocessorParser.h
-        Preprocessor/PreprocessorParser.cpp
-        Preprocessor/PreAST/PreASTMacros.h
-        Preprocessor/PreAST/PreASTMacros.cpp
-        AST/ASTNodes/AST.h
-        AST/ASTNodes/AST.cpp
-        AST/ASTNodes/ASTDataStructures.h
-        AST/ASTNodes/ASTDataStructures.cpp
-        AST/ASTNodes/ASTHelper.h
-        AST/ASTNodes/ASTReferences.h
-        AST/ASTNodes/ASTReferences.cpp
-        AST/ASTVisitor/ASTVisitor.h
-        AST/ASTVisitor/ASTVisitor.cpp
-        AST/ASTVisitor/ASTPrinter.h
-        AST/ASTVisitor/ASTPrinter.cpp
-        AST/ASTVisitor/ASTDesugar.h
-        AST/ASTVisitor/ASTDesugar.cpp
-        AST/ASTVisitor/ASTCollectLowerings.h
-        AST/ASTVisitor/ASTCollectLowerings.cpp
-        AST/ASTVisitor/ASTSemanticAnalysis.h
-        AST/ASTVisitor/ASTSemanticAnalysis.cpp
-        AST/Types/Types.h
-        AST/Types/Types.cpp
-        AST/Types/TypeRegistry.h
-        AST/Types/TypeRegistry.cpp
-        Interpreter/SimpleExprInterpreter.h
-        Interpreter/SimpleExprInterpreter.cpp
-        Preprocessor/PreAST/PreASTCombine.h
-        Preprocessor/PreAST/PreASTIncrementer.h
-        Preprocessor/PreAST/PreASTIncrementer.cpp
-        BuiltinsProcessing/BuiltinsProcessor.h
-        BuiltinsProcessing/BuiltinsProcessor.cpp
-        Generator/ASTGenerator.h
-        Generator/ASTGenerator.cpp
+        cksp/Preprocessor/PreAST/PreASTNodes/PreAST.h
+        cksp/Preprocessor/PreAST/PreASTNodes/PreAST.cpp
+        cksp/Preprocessor/PreAST/PreASTVisitor.h
+        cksp/Preprocessor/PreAST/PreASTVisitor.cpp
+        cksp/Preprocessor/PreprocessorParser.h
+        cksp/Preprocessor/PreprocessorParser.cpp
+        cksp/Preprocessor/PreAST/PreASTMacros.h
+        cksp/Preprocessor/PreAST/PreASTMacros.cpp
+        cksp/ASTNodes/AST.h
+        cksp/ASTNodes/AST.cpp
+        cksp/ASTNodes/ASTDataStructures.h
+        cksp/ASTNodes/ASTDataStructures.cpp
+        cksp/ASTNodes/ASTHelper.h
+        cksp/ASTNodes/ASTReferences.h
+        cksp/ASTNodes/ASTReferences.cpp
+        cksp/ASTVisitor/ASTVisitor.h
+        cksp/ASTVisitor/ASTVisitor.cpp
+        cksp/ASTVisitor/debug/ASTPrinter.h
+        cksp/ASTVisitor/debug/ASTPrinter.cpp
+        cksp/ASTVisitor/ASTDesugar.h
+        cksp/ASTVisitor/ASTDesugar.cpp
+        cksp/ASTVisitor/ASTCollectLowerings.h
+        cksp/ASTVisitor/ASTCollectLowerings.cpp
+        cksp/ASTVisitor/ASTSemanticAnalysis.h
+        cksp/ASTVisitor/ASTSemanticAnalysis.cpp
+        cksp/Types/Types.h
+        cksp/Types/Types.cpp
+        cksp/Types/TypeRegistry.h
+        cksp/Types/TypeRegistry.cpp
+        cksp/Interpreter/SimpleExprInterpreter.h
+        cksp/Interpreter/SimpleExprInterpreter.cpp
+        cksp/Preprocessor/PreAST/PreASTCombine.h
+        cksp/Preprocessor/PreAST/PreASTIncrementer.h
+        cksp/Preprocessor/PreAST/PreASTIncrementer.cpp
+        cksp/BuiltinsProcessing/BuiltinsProcessor.h
+        cksp/BuiltinsProcessing/BuiltinsProcessor.cpp
+        cksp/Generator/ASTGenerator.h
+        cksp/Generator/ASTGenerator.cpp
         ${GENERATED_HEADERS}
         generated/version.h
-        Preprocessor/PreAST/PreASTDefines.h
-        Preprocessor/PreAST/PreASTDefines.cpp
-        Preprocessor/PreAST/PreASTPragma.h
+        cksp/Preprocessor/PreAST/PreASTDefines.h
+        cksp/Preprocessor/PreAST/PreASTDefines.cpp
+        cksp/Preprocessor/PreAST/PreASTPragma.h
         misc/FileHandler.h
         misc/FileHandler.cpp
         misc/CommandLineOptions.h
         misc/CommandLineOptions.cpp
-        BuiltinsProcessing/DefinitionProvider.h
-        BuiltinsProcessing/DefinitionProvider.cpp
-        Processor/Processor.h
-        Processor/Processor.cpp
+        cksp/BuiltinsProcessing/DefinitionProvider.h
+        cksp/BuiltinsProcessing/DefinitionProvider.cpp
+        cksp/Processor/Processor.h
+        cksp/Processor/Processor.cpp
         misc/PathHandler.h
         misc/PathHandler.cpp
-        Lowering/ASTLowering.h
-        Lowering/LoweringList.h
-        Lowering/DataLowering/DataLoweringNDArray.h
-        Desugaring/DesugarFamily.h
-        Desugaring/ASTDesugaring.h
-        Desugaring/DesugarDeclareAssign.h
-        Lowering/LoweringFor.h
-        Lowering/LoweringForEach.h
-        misc/Gensym.h
-        misc/Timer.h
-        Compiler.h
-        AST/ASTVisitor/ASTOptimizations.h
-        AST/ASTVisitor/ASTOptimizations.cpp
-        AST/ASTVisitor/ASTVariableChecking.h
-        AST/ASTVisitor/ASTVariableChecking.cpp
-        AST/ASTVisitor/TypeInference.h
-        AST/ASTVisitor/TypeInference.cpp
-        Lowering/LoweringFunctionCall.h
-        AST/ASTNodes/ASTInstructions.h
-        AST/ASTNodes/ASTInstructions.cpp
-        AST/ASTVisitor/GlobalScope/ASTParameterPromotion.h
-        AST/ASTVisitor/GlobalScope/ASTVariableReuse.h
-        AST/ASTVisitor/GlobalScope/NormalizeArrayAssign.h
-        Desugaring/DesugarStruct.h
-        Lowering/LoweringStruct.h
-        Lowering/LoweringPointer.h
-        AST/ASTVisitor/ASTLowerTypes.h
-        Lowering/LoweringNil.h
-        AST/ASTVisitor/ReturnFunctionRewriting/ReturnFunctionCallHoisting.h
-        AST/ASTVisitor/ReturnFunctionRewriting/ReturnParamPromotion.h
-        AST/ASTVisitor/ASTDataStructureLowering.h
-        AST/ASTVisitor/ASTReturnFunctionRewriting.h
-        Lowering/DataLowering/NDArrayCopyFunction.h
-        AST/ASTVisitor/NormalizeNDArrayAssign.h
-        AST/ASTVisitor/FunctionHandling/ASTFunctionInlining.h
-        AST/ASTVisitor/FunctionHandling/ASTPreemptiveFunctionInlining.h
-        Optimization/ConstantPropagation.h
-        Optimization/VariablePruning.h
-        AST/ASTVisitor/ASTRelinkGlobalScope.h
-        Optimization/ConstExprValidator.h
-        Optimization/ConstExprPropagation.h
-        Optimization/DeadCodeElimination.h
-        AST/ASTVisitor/ASTKSPSyntaxCheck.h
-        SyntaxChecks/KSPPersistency.h
-        SyntaxChecks/KSPDeclarations.h
+        cksp/Lowering/ASTLowering.h
+        cksp/Lowering/LoweringList.h
+        cksp/Lowering/DataLowering/DataLoweringNDArray.h
+        cksp/Desugaring/DesugarFamily.h
+        cksp/Desugaring/ASTDesugaring.h
+        cksp/Desugaring/DesugarDeclareAssign.h
+        cksp/Lowering/LoweringFor.h
+        cksp/Lowering/LoweringForEach.h
+        utils/Gensym.h
+        utils/Timer.h
+        cksp/Compiler.h
+        cksp/ASTVisitor/ASTOptimizations.h
+        cksp/ASTVisitor/ASTOptimizations.cpp
+        cksp/ASTVisitor/ASTVariableChecking.h
+        cksp/ASTVisitor/ASTVariableChecking.cpp
+        cksp/ASTVisitor/TypeInference.h
+        cksp/ASTVisitor/TypeInference.cpp
+        cksp/Lowering/LoweringFunctionCall.h
+        cksp/ASTNodes/ASTInstructions.h
+        cksp/ASTNodes/ASTInstructions.cpp
+        cksp/ASTVisitor/GlobalScope/ASTParameterPromotion.h
+        cksp/ASTVisitor/GlobalScope/ASTVariableReuse.h
+        cksp/ASTVisitor/GlobalScope/NormalizeArrayAssign.h
+        cksp/Desugaring/DesugarStruct.h
+        cksp/Lowering/LoweringStruct.h
+        cksp/Lowering/LoweringPointer.h
+        cksp/ASTVisitor/ASTLowerTypes.h
+        cksp/Lowering/LoweringNil.h
+        cksp/ASTVisitor/ReturnFunctionRewriting/ReturnFunctionCallHoisting.h
+        cksp/ASTVisitor/ReturnFunctionRewriting/ReturnParamPromotion.h
+        cksp/ASTVisitor/ASTDataStructureLowering.h
+        cksp/ASTVisitor/ASTReturnFunctionRewriting.h
+        cksp/Lowering/DataLowering/NDArrayCopyFunction.h
+        cksp/ASTVisitor/NormalizeNDArrayAssign.h
+        cksp/ASTVisitor/FunctionHandling/ASTFunctionInlining.h
+        cksp/ASTVisitor/FunctionHandling/ASTPreemptiveFunctionInlining.h
+        cksp/Optimization/ConstantPropagation.h
+        cksp/Optimization/VariablePruning.h
+        cksp/ASTVisitor/ASTRelinkGlobalScope.h
+        cksp/Optimization/ConstExprValidator.h
+        cksp/Optimization/ConstExprPropagation.h
+        cksp/Optimization/DeadCodeElimination.h
+        cksp/ASTVisitor/ASTKSPSyntaxCheck.h
+        cksp/SyntaxChecks/KSPPersistency.h
+        cksp/SyntaxChecks/KSPDeclarations.h
         misc/HashFunctions.h
-        Optimization/ConstantPromotion.h
-        Optimization/VarExistsValidator.h
-        Optimization/MemoryExhaustedNesting.h
-        Optimization/TokenCounter.h
-        Desugaring/DesugarFunctionCall.h
-        AST/ASTVisitor/ASTHandleStringRepresentations.h
-        Desugaring/DesugarDelete.h
-        AST/ASTVisitor/ASTPointerScope.h
-        Desugaring/DesugarParamList.h
-        Desugaring/DesugarBinaryExpr.h
-        Lowering/LoweringWhile.h
-        Lowering/LoweringFunctionDefReturnStmts.h
-        AST/ASTNodes/NodeStructCreateRefCountFunctions.h
-        Lowering/PreLoweringStruct.h
-        Lowering/LoweringMemAlloc.h
-        Lowering/LoweringNumElements.h
-        Desugaring/DesugarSingleAssignment.h
-        Lowering/PostLowering/PostLoweringNumElements.h
-        AST/ASTVisitor/ASTCollectPostLowerings.h
-        Optimization/NilValidator.h
-        Lowering/LoweringUseCount.h
-        AST/ASTVisitor/ASTTypeAnnotations.h
-        AST/ASTVisitor/ReferenceManagement/ASTCollectReferences.h
-        AST/ASTVisitor/ReferenceManagement/ASTRemoveReferences.h
+        cksp/Optimization/ConstantPromotion.h
+        cksp/Optimization/VarExistsValidator.h
+        cksp/Optimization/MemoryExhaustedNesting.h
+        cksp/Optimization/TokenCounter.h
+        cksp/Desugaring/DesugarFunctionCall.h
+        cksp/ASTVisitor/ASTHandleStringRepresentations.h
+        cksp/Desugaring/DesugarDelete.h
+        cksp/ASTVisitor/ASTPointerScope.h
+        cksp/Desugaring/DesugarParamList.h
+        cksp/Desugaring/DesugarBinaryExpr.h
+        cksp/Lowering/LoweringWhile.h
+        cksp/Lowering/LoweringFunctionDefReturnStmts.h
+        cksp/ASTNodes/NodeStructCreateRefCountFunctions.h
+        cksp/Lowering/PreLoweringStruct.h
+        cksp/Lowering/LoweringMemAlloc.h
+        cksp/Lowering/LoweringNumElements.h
+        cksp/Desugaring/DesugarSingleAssignment.h
+        cksp/Lowering/PostLowering/PostLoweringNumElements.h
+        cksp/ASTVisitor/ASTCollectPostLowerings.h
+        cksp/Optimization/NilValidator.h
+        cksp/Lowering/LoweringUseCount.h
+        cksp/ASTVisitor/ASTTypeAnnotations.h
+        cksp/ASTVisitor/ReferenceManagement/ASTCollectReferences.h
+        cksp/ASTVisitor/ReferenceManagement/ASTRemoveReferences.h
         misc/FreeFunctions.h
-        AST/ASTVisitor/FunctionHandling/FunctionDefinitionOrdering.h
-        AST/ASTVisitor/ReturnFunctionRewriting/ReturnFunctionIsolation.h
-        AST/ASTVisitor/FunctionHandling/FunctionInlining.h
-        AST/ASTVisitor/ArrayDimensionConstants.h
-        Lowering/LoweringSortSearch.h
-        Lowering/PostLowering/PostLoweringSortSearch.h
-        AST/ASTVisitor/GlobalScope/ASTDimensionExpansion.h
-        Lowering/LoweringInitializerList.h
-        AST/ASTVisitor/ASTTemporaryPointerScope.h
-        AST/ASTVisitor/FunctionHandling/ReturnPathValidator.h
-        AST/ASTVisitor/GlobalScope/MarkThreadSafe.h
-        AST/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h
-        AST/ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h
-        AST/ASTVisitor/ReferenceManagement/ASTCollectCallSites.h
-        AST/ASTVisitor/GlobalScope/DeflateParameters.h
-        AST/ASTVisitor/FunctionHandling/BuiltinRestrictionValidator.h
-        AST/ASTVisitor/FunctionHandling/FunctionParamDataTypeGetter.h
-        AST/ASTVisitor/GlobalScope/DimensionDeflator.h
-        Optimization/ArrayInitializationRaising.h
-        Desugaring/DesugarUIControlArray.h
-        AST/ASTVisitor/UniqueArrayNamesProvider.h
-        AST/ASTVisitor/UniqueParameterNamesProvider.h
-        AST/ASTVisitor/FunctionHandling/ParameterAssignmentTransformation.h
-        AST/ASTVisitor/FunctionHandling/ParameterReuse.h
-        Optimization/ReferenceValidator.h
-        AST/ASTVisitor/ASTNoVisitor.h
-        AST/ASTVisitor/FunctionHandling/UIControlParamHandling.h
-        Desugaring/DesugarCompoundAssignment.h
-        Desugaring/DesugarNamespace.h
-        Lowering/LoweringRange.h
-        AST/ASTVisitor/FunctionHandling/FunctionShortCircuit.h
-        Desugaring/DesugarFormatString.h
-        Preprocessor/PreAST/PreASTNodes/PreASTHelper.h
-        Preprocessor/PreAST/PreASTPrinter.h
+        cksp/ASTVisitor/FunctionHandling/FunctionDefinitionOrdering.h
+        cksp/ASTVisitor/ReturnFunctionRewriting/ReturnFunctionIsolation.h
+        cksp/ASTVisitor/FunctionHandling/FunctionInlining.h
+        cksp/ASTVisitor/ArrayDimensionConstants.h
+        cksp/Lowering/LoweringSortSearch.h
+        cksp/Lowering/PostLowering/PostLoweringSortSearch.h
+        cksp/ASTVisitor/GlobalScope/ASTDimensionExpansion.h
+        cksp/Lowering/LoweringInitializerList.h
+        cksp/ASTVisitor/ASTTemporaryPointerScope.h
+        cksp/ASTVisitor/FunctionHandling/ReturnPathValidator.h
+        cksp/ASTVisitor/GlobalScope/MarkThreadSafe.h
+        cksp/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h
+        cksp/ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h
+        cksp/ASTVisitor/ReferenceManagement/ASTCollectCallSites.h
+        cksp/ASTVisitor/GlobalScope/DeflateParameters.h
+        cksp/ASTVisitor/FunctionHandling/BuiltinRestrictionValidator.h
+        cksp/ASTVisitor/FunctionHandling/FunctionParamDataTypeGetter.h
+        cksp/ASTVisitor/GlobalScope/DimensionDeflator.h
+        cksp/Optimization/ArrayInitializationRaising.h
+        cksp/Desugaring/DesugarUIControlArray.h
+        cksp/ASTVisitor/UniqueArrayNamesProvider.h
+        cksp/ASTVisitor/UniqueParameterNamesProvider.h
+        cksp/ASTVisitor/FunctionHandling/ParameterAssignmentTransformation.h
+        cksp/ASTVisitor/FunctionHandling/ParameterReuse.h
+        cksp/Optimization/ReferenceValidator.h
+        cksp/ASTVisitor/ASTNoVisitor.h
+        cksp/ASTVisitor/FunctionHandling/UIControlParamHandling.h
+        cksp/Desugaring/DesugarCompoundAssignment.h
+        cksp/Desugaring/DesugarNamespace.h
+        cksp/Lowering/LoweringRange.h
+        cksp/ASTVisitor/FunctionHandling/FunctionShortCircuit.h
+        cksp/Desugaring/DesugarFormatString.h
+        cksp/Preprocessor/PreAST/PreASTNodes/PreASTHelper.h
+        cksp/Preprocessor/PreAST/PreASTPrinter.h
         JSON/NCKPTranslator.cpp
         JSON/NCKPTranslator.h
         JSON/ast/JSONValue.cpp
@@ -230,27 +230,31 @@ add_executable(cksp main.cpp
         JSON/parser/JSONTokens.h
         JSON/visitor/JSONVisitor.h
         JSON/visitor/JSONPrintVisitor.h
-        Optimization/FreeVarCollector.h
-        Lowering/LoweringBooleanExpression.h
-        Lowering/LoweringTernaryOperator.h
-        Lowering/LoweringBoolean.h
-        SyntaxChecks/KSPConditions.h
-        Lowering/LoweringComparisons.h
-        Preprocessor/PreAST/PreASTImport.h
-        Preprocessor/PreAST/PreASTConditions.h
-        Optimization/VariableCollector.h
-        Lowering/LoweringNDArray.h
-        Optimization/ScalarVarToArray.h
-        AST/ASTVisitor/FunctionHandling/FunctionExitCheck.h
-        AST/ASTVisitor/ASTLifeTimeAnalysis.h
-        AST/ASTVisitor/ASTThreadSafeAnalysis.h
-        AST/ASTVisitor/ASTStructInstanceAnalysis.h
+        cksp/Optimization/FreeVarCollector.h
+        cksp/Lowering/LoweringBooleanExpression.h
+        cksp/Lowering/LoweringTernaryOperator.h
+        cksp/Lowering/LoweringBoolean.h
+        cksp/SyntaxChecks/KSPConditions.h
+        cksp/Lowering/LoweringComparisons.h
+        cksp/Preprocessor/PreAST/PreASTImport.h
+        cksp/Preprocessor/PreAST/PreASTConditions.h
+        cksp/Optimization/VariableCollector.h
+        cksp/Lowering/LoweringNDArray.h
+        cksp/Optimization/ScalarVarToArray.h
+        cksp/ASTVisitor/FunctionHandling/FunctionExitCheck.h
+        cksp/ASTVisitor/ASTLifeTimeAnalysis.h
+        cksp/ASTVisitor/ASTThreadSafeAnalysis.h
+        cksp/ASTVisitor/ASTStructInstanceAnalysis.h
+        cksp/Optimization/ConstantDatabase.h
 )
-add_dependencies(cksp generate_headers)
+add_dependencies(cksp_core generate_headers)
 
-target_include_directories(cksp PRIVATE
+target_include_directories(cksp_core PUBLIC
         ${GENERATED_HEADERS_DIR}
         ${GENERATED_DIR}
 )
 
-target_compile_definitions(cksp PRIVATE PRINTER_OUTPUT_PATH="${CMAKE_SOURCE_DIR}")
+target_compile_definitions(cksp_core PUBLIC PRINTER_OUTPUT_PATH="${CMAKE_SOURCE_DIR}")
+
+add_executable(cksp main.cpp)
+target_link_libraries(cksp PRIVATE cksp_core)
