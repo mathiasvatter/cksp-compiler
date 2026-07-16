@@ -80,6 +80,7 @@ class Compiler {
 	LinesProcessed m_lines_processed{};
 	ImportGraph m_import_graph;
 	ReferenceIndex m_reference_index;
+	ConstantDatabase m_constant_db;
 
 //	bool tokenize();
 //	bool preprocess();
@@ -388,8 +389,7 @@ private:
 		infer_types.do_complete_traversal(*ast);
 		ast->debug_print();
 
-		// ConstantDatabase constant_db;
-		// constant_db.build(*ast);
+		m_constant_db.build(*ast);
 
 		UniqueParameterNamesProvider unique_names_provider(m_program);
 		unique_names_provider.do_parallel_renaming(*m_program);
@@ -588,6 +588,11 @@ public:
 	/// Reference -> declaration index built during analysis (populated in LSP mode).
 	[[nodiscard]] const ReferenceIndex& reference_index() const {
 		return m_reference_index;
+	}
+
+	/// Folded values of all constants, built early in the pipeline (after type inference).
+	[[nodiscard]] const ConstantDatabase& constant_database() const {
+		return m_constant_db;
 	}
 
 	/// Analyze an explicitly supplied source, used by in-memory and language-server clients.
