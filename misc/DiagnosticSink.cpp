@@ -93,6 +93,7 @@ void ConsoleDiagnosticSink::report(Diagnostic diagnostic) {
             m_output << '\n';
         }
     }
+    m_output << '\n';
 
     if (m_print_failure_footer && diagnostic.severity == DiagnosticSeverity::Error) {
         m_output << ColorCode::Red << "\nSeems like the compilation exited with a failure."

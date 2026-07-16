@@ -68,6 +68,7 @@ class Parser: public Processor {
 	bool is_array_declaration();
 	static bool is_malformed_end_statement_start(const Token& tok, const Token& next);
 	static Diagnostic make_invalid_end_statement_diagnostic(const std::string& construct, const std::string& expected, const Token& start, const Token& next);
+	static Type* normalize_ksp_identifier_token(Token& token);
 
 public:
 
@@ -167,4 +168,3 @@ public:
 
 	Result<SuccessTag> consume_linebreak(const std::string& construct);
 };
-

@@ -41,6 +41,16 @@ Diagnostic Parser::make_invalid_end_statement_diagnostic(const std::string& cons
 	return error;
 }
 
+Type* Parser::normalize_ksp_identifier_token(Token& token) {
+	if (token.val.empty()) return TypeRegistry::Unknown;
+	auto ty = TypeRegistry::get_type_from_identifier(token.val[0]);
+	if (ty != TypeRegistry::Unknown) {
+		token.val.erase(0, 1);
+		token.pos += 1;
+	}
+	return ty;
+}
+
 std::string Parser::sanitize_binary(const std::string& input) {
 	if (input.empty()) {
 		return input;
@@ -196,9 +206,8 @@ Result<std::unique_ptr<NodeFormatString>> Parser::parse_fstring(NodeAST *parent)
 
 Result<std::unique_ptr<NodeVariable>> Parser::parse_variable(NodeAST* parent, const std::optional<Token>& is_persistent, DataType var_type) {
 	auto var_token = consume();
+	auto ty = normalize_ksp_identifier_token(var_token);
 	std::string var_name = var_token.val;
-	auto ty = TypeRegistry::get_type_from_identifier(var_name[0]);
-	if(ty != TypeRegistry::Unknown) var_name = var_name.erase(0,1);
 	auto node_variable = std::make_unique<NodeVariable>(is_persistent, var_name, ty, var_token, var_type);
 	node_variable->set_range(var_token);
 	node_variable->parent = parent;
@@ -207,9 +216,8 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_variable(NodeAST* parent, co
 
 Result<std::unique_ptr<NodeVariableRef>> Parser::parse_variable_ref(NodeAST* parent) {
 	auto var_token = consume();
+	const auto ty = normalize_ksp_identifier_token(var_token);
 	std::string var_name = var_token.val;
-	const auto ty = TypeRegistry::get_type_from_identifier(var_name[0]);
-	if(ty != TypeRegistry::Unknown) var_name = var_name.erase(0,1);
 	auto node_variable_ref = std::make_unique<NodeVariableRef>(var_name, var_token);
 	node_variable_ref->set_range(var_token);
 	node_variable_ref->parent = parent;
@@ -254,9 +262,8 @@ Result<std::unique_ptr<NodePointerRef>> Parser::parse_pointer_ref(NodeAST* paren
 Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, std::optional<Token> is_persistent, DataType var_type) {
 	auto error = Diagnostic(ErrorType::SyntaxError,"Found unknown Array Syntax.", "", peek());
 	auto arr_token = consume();
+	auto ty = normalize_ksp_identifier_token(arr_token);
 	std::string arr_name = arr_token.val;
-	auto ty = TypeRegistry::get_type_from_identifier(arr_name[0]);
-	if(ty != TypeRegistry::Unknown) arr_name = arr_name.erase(0,1);
 	std::unique_ptr<NodeDataStructure> node_array = nullptr;
 	std::unique_ptr<NodeParamList> sizes = std::make_unique<NodeParamList>(arr_token);
 	sizes->parent = node_array.get();
@@ -310,9 +317,8 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, 
 Result<std::unique_ptr<NodeReference>> Parser::parse_array_ref(NodeAST *parent) {
 	auto error = Diagnostic(ErrorType::SyntaxError,"Found unknown Array Reference Syntax.", "", peek());
 	auto arr_token = consume();
+	auto ty = normalize_ksp_identifier_token(arr_token);
 	std::string arr_name = arr_token.val;
-	auto ty = TypeRegistry::get_type_from_identifier(arr_name[0]);
-	if(ty != TypeRegistry::Unknown) arr_name = arr_name.erase(0,1);
 	std::unique_ptr<NodeReference> node_array_ref = nullptr;
 	auto indexes = std::make_unique<NodeParamList>(arr_token);;
 	indexes->parent = node_array_ref.get();
@@ -2515,11 +2521,10 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 															 "Found unknown <list> syntax.", "valid <keyword>", peek()));
 	}
 	Token name_tok = consume(); // consume keyword
+	auto ty = normalize_ksp_identifier_token(name_tok);
 	auto node_list_block = std::make_unique<NodeList>(name_tok);
 	std::string name = name_tok.val;
-	auto ty = TypeRegistry::get_type_from_identifier(name[0]);
 	if(ty != TypeRegistry::Unknown) {
-		name = name.erase(0,1);
 		if(auto comp_ty = ty->cast<CompositeType>()) {
 			ty = TypeRegistry::add_composite_type(CompoundKind::List, comp_ty->get_element_type(), comp_ty->get_dimensions());
 		}
