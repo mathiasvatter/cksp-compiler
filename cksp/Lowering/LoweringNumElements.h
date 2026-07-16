@@ -93,8 +93,8 @@ public:
 		return &node;
 	}
 
-private:
-
+	/// Resolves wildcard index notation into a plain dimension parameter.
+	/// Only mutates the given nodes, so it can also run on detached clones (ConstantValueFolder).
 	static void handle_wildcard_notation(NodeNDArrayRef& array, const NodeNDArray& declaration, NodeNumElements& node) {
 		auto tok = array.tok;
 		int num_wildcards = array.num_wildcards();
@@ -107,10 +107,11 @@ private:
 			error.exit();
 		}
 
-		// num_elements(ndarray[*, *]) -> num_elements(ndarray)
+		// num_elements(ndarray[*, *]) -> num_elements(ndarray, 0) -> total element count
 		if(num_wildcards == num_dimensions) {
-			// set default dimension to 0
 			array.indexes = nullptr;
+			node.set_dimension(std::make_unique<NodeInt>(0, tok));
+			return;
 		}
 
 		// num_elements(ndarray) -> num_elements(ndarray, 0)
@@ -130,10 +131,8 @@ private:
 			// get index of wildcard
 			int idx = 0;
 			for(const auto & param : array.indexes->params) {
-				if(param->cast<NodeWildcard>()) {
-					idx = 0;
-					break;
-				}
+				if(param->cast<NodeWildcard>()) break;
+				idx++;
 			}
 			// set dimension to index + 1
 			idx++;
@@ -150,6 +149,8 @@ private:
 		}
 
 	}
+
+private:
 
 	std::unique_ptr<NodeFunctionCall> get_clip_call(std::unique_ptr<NodeAST> x, std::unique_ptr<NodeAST> b) {
 		auto clip_call = std::make_unique<NodeFunctionCall>(
