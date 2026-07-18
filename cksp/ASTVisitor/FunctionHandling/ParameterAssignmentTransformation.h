@@ -204,6 +204,8 @@ private:
 				// return parameters have to passed back and do not need to be assigned
 				if (formal_param->data_type == DataType::Return) {
 					if (const auto ref = cast_node<NodeReference>(actual_param.get())) {
+						// discarded return values (throwaway refs) do not need to be passed back
+						if (ref->kind == NodeReference::Kind::Throwaway) continue;
 						auto return_assign = std::make_unique<NodeSingleAssignment>(
 							unique_ptr_cast<NodeReference>(std::move(actual_param)),
 							formal_param->to_reference(),

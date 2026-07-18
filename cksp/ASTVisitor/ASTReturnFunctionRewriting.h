@@ -144,24 +144,6 @@ private:
 				definition->lower(m_program);
 				definition->accept(*this);
 			}
-
-
-			// add throwaway variable ref to params
-			// if (node.parent->cast<NodeStatement>() and &node != m_just_hoisted) {
-			// 	if (node.is_builtin_kind()) return &node;
-			// 	if (definition->num_return_params > 0) {
-			// 		auto &throwaway_var = definition->header-
-			// 		>get_param(0);
-			// 		auto throwaway_ref = throwaway_var->to_reference();
-			// 		throwaway_ref->name = m_def_provider->get_fresh_name("_");
-			// 		throwaway_ref->kind = NodeReference::Kind::Throwaway;
-			// 		// add declaration to global vars
-			// 		auto throwaway_decl = std::make_unique<NodeSingleDeclaration>(
-			// 			std::move(throwaway_var), nullptr, node.tok);
-			// 		m_program->global_declarations->add_as_stmt(std::move(throwaway_decl));
-			// 		node.function->prepend_arg(std::move(throwaway_ref));
-			// 	}
-			// }
 		}
 		return &node;
 	}
