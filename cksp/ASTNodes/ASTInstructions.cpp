@@ -1147,11 +1147,19 @@ std::unique_ptr<NodeRange> NodeFor::determine_loop_range() {
 }
 
 std::unique_ptr<NodeAST> NodeFor::get_num_iterations() {
-	// (end-start)/step
+	// abs((end-start)/step) + 1 -> to/downto loops are inclusive
 	auto start = iterator->r_value->clone();
 	auto end = iterator_end->clone();
-	auto node_range = std::make_unique<NodeRange>(std::move(start), std::move(end), nullptr, tok);
-	return node_range->get_num_iterations();
+	std::unique_ptr<NodeAST> expr = std::make_unique<NodeBinaryExpr>(token::SUB, std::move(end), std::move(start), tok);
+	expr->ty = TypeRegistry::Integer;
+	if(step) {
+		expr = std::make_unique<NodeBinaryExpr>(token::DIV, std::move(expr), step->clone(), tok);
+		expr->ty = TypeRegistry::Integer;
+	}
+	expr = DefinitionProvider::create_builtin_call("abs", std::move(expr));
+	expr = std::make_unique<NodeBinaryExpr>(token::ADD, std::move(expr), std::make_unique<NodeInt>(1, tok), tok);
+	expr->ty = TypeRegistry::Integer;
+	return expr;
 }
 
 // ************* NodeForEach ***************
@@ -1282,25 +1290,39 @@ NodeAST *NodeRange::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> ne
 }
 
 std::unique_ptr<NodeAST> NodeRange::get_num_iterations() {
-	auto start = this->start->clone();
-	auto stop = this->stop->clone();
-	std::unique_ptr<NodeAST> expr = std::make_unique<NodeBinaryExpr>(
+	// ceil(abs(stop-start) / abs(step)) -> ranges are exclusive
+	auto diff = std::make_unique<NodeBinaryExpr>(
 		token::SUB,
-		std::move(stop),
-		std::move(start),
+		this->stop->clone(),
+		this->start->clone(),
 		tok
 	);
-	expr->ty = TypeRegistry::Integer;
+	diff->ty = TypeRegistry::Integer;
+	std::unique_ptr<NodeAST> expr = DefinitionProvider::create_builtin_call("abs", std::move(diff));
 	if(step) {
-		expr = std::make_unique<NodeBinaryExpr>(
-		token::DIV,
-		std::move(expr),
-		std::move(step),
+		// ceil division: (abs(stop-start) + abs(step) - 1) / abs(step)
+		auto numerator = std::make_unique<NodeBinaryExpr>(
+			token::SUB,
+			std::make_unique<NodeBinaryExpr>(
+				token::ADD,
+				std::move(expr),
+				DefinitionProvider::create_builtin_call("abs", step->clone()),
+				tok
+			),
+			std::make_unique<NodeInt>(1, tok),
 			tok
 		);
+		numerator->left->ty = TypeRegistry::Integer;
+		numerator->ty = TypeRegistry::Integer;
+		expr = std::make_unique<NodeBinaryExpr>(
+			token::DIV,
+			std::move(numerator),
+			DefinitionProvider::create_builtin_call("abs", step->clone()),
+			tok
+		);
+		expr->ty = TypeRegistry::Integer;
 	}
-	expr->ty = TypeRegistry::Integer;
-	return DefinitionProvider::create_builtin_call("abs", std::move(expr));
+	return expr;
 }
 
 std::unique_ptr<NodeInitializerList> NodeRange::to_initializer_list() const {
