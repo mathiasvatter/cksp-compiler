@@ -488,7 +488,7 @@ private:
 						{token::GREATER_EQUAL, [](const double a, const double b) { return (a >= b) ? 1 : 0; }},
 					};
 					if (bool_operations.contains(node.op)) {
-						int32_t result = bool_operations[node.op](left_real->value, left_real->value);
+						int32_t result = bool_operations[node.op](left_real->value, right_real->value);
 						auto new_node = std::make_unique<NodeInt>(result, node.tok);
 						new_node->ty = TypeRegistry::Integer;
 						return node.replace_with(std::move(new_node));
