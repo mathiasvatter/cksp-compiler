@@ -20,6 +20,7 @@
 
 class ASTDesugaring;
 class ASTLowering;
+class ConstantDatabase;
 struct NodeProgram;
 struct NodeFunctionHeaderRef;
 struct NodeReference;
@@ -134,7 +135,7 @@ struct NodeAST {
 	[[nodiscard]] NodeBlock* get_outmost_block() const;
 	[[nodiscard]] struct NodeCallback* get_current_callback() const;
 	[[nodiscard]] struct NodeFunctionDefinition* get_current_function() const;
-	NodeAST *do_constant_folding();
+	NodeAST *do_constant_folding(const ConstantDatabase* database = nullptr);
 	/// calls TypeInference pass
 	void do_type_inference(NodeProgram *program);
 	/// calls ASTLowerTypes pass

@@ -3,50 +3,10 @@
 //
 
 #pragma once
-#include <limits>
 #include <optional>
 #include <shared_mutex>
 
 #include "../ASTVisitor/ASTOptimizations.h"
-#include "../Lowering/LoweringNumElements.h"
-
-class ConstantDatabase;
-
-/**
- * Folds a detached value expression with the help of the database:
- * substitutes references to already known constants (scalars and const array
- * elements with a constant index) and constant folds the result.
- * Only ever runs on clones owned by the database, never on the program AST.
- */
-class ConstantValueFolder final : public ASTOptimizations {
-	const ConstantDatabase& m_db;
-
-public:
-	explicit ConstantValueFolder(const ConstantDatabase& db) : m_db(db) {}
-
-	/// returns a folded clone of the given expression, the expression itself stays untouched
-	std::unique_ptr<NodeAST> fold_clone(const NodeAST& expr) {
-		// wrap the clone in a statement so replace_with has a parent to replace into
-		auto stmt = std::make_unique<NodeStatement>(expr.clone(), expr.tok);
-		stmt->do_constant_folding();
-		stmt->accept(*this);
-		stmt->do_constant_folding();
-		auto folded = std::move(stmt->statement);
-		folded->parent = nullptr;
-		return folded;
-	}
-
-private:
-	NodeAST* visit(NodeVariableRef& node) override;
-	NodeAST* visit(NodeArrayRef& node) override;
-	NodeAST* visit(NodeNumElements& node) override;
-
-	static NodeAST* replace_with_int(NodeAST& node, const int32_t value) {
-		auto new_node = std::make_unique<NodeInt>(value, node.tok);
-		new_node->ty = TypeRegistry::Integer;
-		return node.replace_with(std::move(new_node));
-	}
-};
 
 /**
  * Early pass that collects every constant in the program and eagerly folds its
@@ -176,19 +136,26 @@ public:
 	}
 
 private:
+	/// Fold a detached clone against constants already recorded in this database.
+	[[nodiscard]] std::unique_ptr<NodeAST> fold_clone(const NodeAST& expression) const {
+		auto statement = std::make_unique<NodeStatement>(expression.clone(), expression.tok);
+		statement->do_constant_folding(this);
+		auto folded = std::move(statement->statement);
+		folded->parent = nullptr;
+		return folded;
+	}
+
 	void add_constant(NodeDataStructure* decl, const NodeAST& value) {
-		ConstantValueFolder folder(*this);
-		auto folded = folder.fold_clone(value);
+		auto folded = fold_clone(value);
 		std::unique_lock lock(m_mutex);
 		m_values[decl] = std::move(folded);
 	}
 
 	void add_array_sizes(NodeDataStructure* decl, const std::vector<NodeAST*>& sizes) {
-		ConstantValueFolder folder(*this);
 		std::vector<std::unique_ptr<NodeAST>> folded_sizes;
 		folded_sizes.reserve(sizes.size());
 		for (const auto size : sizes) {
-			folded_sizes.push_back(folder.fold_clone(*size));
+			folded_sizes.push_back(fold_clone(*size));
 		}
 		std::unique_lock lock(m_mutex);
 		m_array_sizes[decl] = std::move(folded_sizes);
@@ -224,88 +191,3 @@ private:
 		return &node;
 	}
 };
-
-
-inline NodeAST* ConstantValueFolder::visit(NodeVariableRef& node) {
-	// builtin engine constants have no compile-time value
-	if (node.is_engine) return &node;
-	if (node.data_type != DataType::Const) return &node;
-	if (auto value = m_db.clone_value(node.get_declaration().get())) {
-		if (value->ty and node.ty and !value->ty->is_compatible(node.ty)) return &node;
-		return node.replace_with(std::move(value));
-	}
-	return &node;
-}
-
-inline NodeAST* ConstantValueFolder::visit(NodeArrayRef& node) {
-	// fold the index first, so constant indices become literals
-	if (node.index) {
-		node.index->accept(*this);
-		node.index->do_constant_folding();
-	}
-	if (node.is_engine) return &node;
-	if (node.data_type != DataType::Const) return &node;
-	const auto index = node.index ? node.index->cast<NodeInt>() : nullptr;
-	if (!index) return &node;
-	if (auto element = m_db.clone_element(node.get_declaration().get(), index->value)) {
-		return node.replace_with(std::move(element));
-	}
-	return &node;
-}
-
-inline NodeAST * ConstantValueFolder::visit(NodeNumElements &node) {
-	if (!node.array) return &node;
-	// fold a possible constant dimension expression first
-	if (node.dimension) {
-		node.dimension->accept(*this);
-		node.dimension->do_constant_folding();
-	}
-	const auto decl = node.array->get_declaration();
-	if (!decl) return &node;
-
-	// plain arrays: no dimension parameter allowed (diagnosed later in lowering)
-	if (decl->cast<NodeArray>()) {
-		if (node.dimension) return &node;
-		if (const auto size = m_db.get_array_size(decl.get())) {
-			return replace_with_int(node, *size);
-		}
-		return &node;
-	}
-
-	// ndarrays: dimension 0 (or none) = total element count, 1..n = size of that dimension
-	if (const auto nd_array = decl->cast<NodeNDArray>()) {
-		// resolve wildcard index notation on the clone, exactly like the later lowering does
-		if (const auto nd_ref = node.array->cast<NodeNDArrayRef>()) {
-			if (nd_ref->indexes and nd_ref->num_wildcards()) {
-				LoweringNumElements::handle_wildcard_notation(*nd_ref, *nd_array, node);
-			}
-		}
-		int32_t dim = 0;
-		if (node.dimension) {
-			const auto dim_node = node.dimension->cast<NodeInt>();
-			if (!dim_node) return &node;
-			dim = dim_node->value;
-		}
-		const auto num_dims = m_db.get_num_dimensions(decl.get());
-		if (num_dims == 0) return &node;
-		// invalid dimensions are diagnosed later in lowering
-		if (dim < 0 or dim > static_cast<int32_t>(num_dims)) return &node;
-		if (dim > 0) {
-			if (const auto size = m_db.get_array_size(decl.get(), dim - 1)) {
-				return replace_with_int(node, *size);
-			}
-			return &node;
-		}
-		// dimension 0 -> product of all dimension sizes
-		int64_t total = 1;
-		for (size_t d = 0; d < num_dims; ++d) {
-			const auto size = m_db.get_array_size(decl.get(), d);
-			if (!size) return &node;
-			total *= *size;
-		}
-		if (total > std::numeric_limits<int32_t>::max()) return &node;
-		return replace_with_int(node, static_cast<int32_t>(total));
-	}
-	return &node;
-}
-

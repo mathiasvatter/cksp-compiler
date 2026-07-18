@@ -217,8 +217,8 @@ NodeFunctionDefinition *NodeAST::get_current_function() const {
 	return nullptr;
 }
 
-NodeAST *NodeAST::do_constant_folding() {
-	static ConstantFolding constant_folding;
+NodeAST *NodeAST::do_constant_folding(const ConstantDatabase* database) {
+	ConstantFolding constant_folding(database);
 	return constant_folding.do_local_traversal(*this);
 }
 

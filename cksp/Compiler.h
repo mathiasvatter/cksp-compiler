@@ -401,7 +401,7 @@ private:
 
 		ASTPointerScope pointer_scope(m_program);
 		ast->accept(pointer_scope);
-		ASTStructInstanceAnalysis instance_analysis(m_program);
+		ASTStructInstanceAnalysis instance_analysis(m_program, m_constant_db);
 		ast->accept(instance_analysis);
 		ast->collect_references();  //>> actually needed when pointers are used -> LUX
 		ast->debug_print();
