@@ -71,8 +71,14 @@ public:
 	/// updated incorrectly detected references of function params
 	static NodeReference* replace_incorrectly_detected_reference(NodeReference* reference);
 
+	/// warns when a pass-by-value function parameter is modified in the function body,
+	/// once per parameter. The modification is local and lost at the call site
+	void check_param_modification(NodeReference& ref);
+
 	/// track functions in use to search for recursive calls
 	std::unordered_set<NodeFunctionDefinition*> m_functions_in_use{};
+	/// parameters already warned about being modified while passed by value
+	std::unordered_set<const NodeFunctionParam*> m_warned_params{};
 	bool check_recursion(NodeFunctionDefinition* func) const {
 		if(m_functions_in_use.contains(func)) {
 			// recursive function call detected

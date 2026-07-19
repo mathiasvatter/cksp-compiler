@@ -3,6 +3,7 @@
 //
 
 #include "ASTSemanticAnalysis.h"
+#include "../CompilerConfig.h"
 
 ASTSemanticAnalysis::ASTSemanticAnalysis(NodeProgram *main)
 : m_def_provider(main->def_provider) {
@@ -90,7 +91,30 @@ NodeAST * ASTSemanticAnalysis::visit(NodePairs &node) {
 NodeAST* ASTSemanticAnalysis::visit(NodeSingleAssignment& node) {
 	node.l_value->accept(*this);
 	node.r_value->accept(*this);
+	if (const auto ref = cast_node<NodeReference>(node.l_value.get())) {
+		check_param_modification(*ref);
+	}
 	return &node;
+}
+
+void ASTSemanticAnalysis::check_param_modification(NodeReference& ref) {
+	// in pass-by-reference mode (SublimeKSP behavior) modifications reach the caller
+	if (m_program->compiler_config
+		and m_program->compiler_config->parameter_passing == ParameterPassing::ByReference) return;
+	const auto declaration = ref.get_declaration();
+	if (!declaration) return;
+	// composite parameters (arrays, structs, pointers) are implicitly passed by reference
+	if (!declaration->cast<NodeVariable>()) return;
+	const auto param = declaration->is_function_param();
+	if (!param or param->is_pass_by_ref) return;
+	if (!m_warned_params.insert(param).second) return;
+
+	auto warning = Diagnostic(ErrorType::CompileWarning, "", "", ref.tok);
+	warning.message = "Function parameter <"+declaration->name+"> is passed by value but modified here. Function "
+		"parameters have function-local scope: this modification is not visible at the call site. "
+		"Declare the parameter as <ref "+declaration->name+"> to pass it by reference if the change should take "
+		"effect outside the function.";
+	warning.report(diagnostics());
 }
 
 NodeAST * ASTSemanticAnalysis::visit(NodeCallback& node) {
@@ -167,6 +191,14 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 		if (node.function->name == "exit") {
 			auto func = m_program->get_curr_function();
 			func->has_exit_command = true;
+		}
+	}
+
+	// destructive builtin commands modify their argument in place
+	if (node.is_builtin_kind() and node.function->get_num_args() == 1
+		and (node.function->name == "inc" or node.function->name == "dec")) {
+		if (const auto ref = cast_node<NodeReference>(node.function->get_arg(0).get())) {
+			check_param_modification(*ref);
 		}
 	}
 
