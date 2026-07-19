@@ -13,6 +13,8 @@
 class TypeInference final : public ASTVisitor {
 	DefinitionProvider* m_def_provider;
 	std::vector<NodeFunctionCall*> m_func_calls;
+	/// positions of already reported discarded-return warnings for method calls
+	std::unordered_set<std::string> m_discard_warnings;
 
 	void do_monomorphization() {
 		// copy m_func_calls to avoid modification during iteration (especially when visiting nodes again
@@ -231,6 +233,7 @@ public:
 
 	NodeAST* do_complete_traversal(NodeProgram& node) {
 		m_func_calls.clear();
+		m_discard_warnings.clear();
 		m_def_provider->m_all_declarations.clear();
 		m_def_provider->m_all_references.clear();
 		m_def_provider->m_all_data_structures.clear();
@@ -267,6 +270,7 @@ public:
 
 	NodeAST* do_reachable_traversal(NodeProgram& node) {
 		m_func_calls.clear();
+		m_discard_warnings.clear();
 		m_def_provider->m_all_declarations.clear();
 		m_def_provider->m_all_references.clear();
 		m_def_provider->m_all_data_structures.clear();

@@ -128,13 +128,39 @@ private:
 		if (const auto func_call = node.r_value->cast<NodeFunctionCall>()) {
 			func_call->bind_definition(m_program);
 			const auto definition = func_call->get_definition();
-			if (!definition) return &node;
-			if (definition->is_expression_function()) return &node;
-			if (func_call->is_builtin_kind()) return &node;
-			if (definition->num_return_params > 0) {
+			if (definition and !definition->is_expression_function() and !func_call->is_builtin_kind()
+				and definition->num_return_params > 0) {
 				node.remove_references();
 				func_call->function->prepend_arg(std::move(node.l_value));
 				return node.replace_with(std::move(node.r_value));
+			}
+		}
+
+		// `_ := expr` where the expression has no promoted return parameter to receive the
+		// throwaway: assign to a fresh unused variable instead, so no undeclared throwaway
+		// leaks into the generated code. Pruned by optimization when the expression is pure
+		if (const auto l_ref = node.l_value->cast<NodeVariableRef>()) {
+			if (l_ref->kind == NodeReference::Kind::Throwaway or l_ref->name == "_") {
+				auto discard_var = std::make_shared<NodeVariable>(
+					std::nullopt,
+					m_def_provider->get_fresh_name("_ret"),
+					node.r_value->ty,
+					node.tok,
+					DataType::Mutable
+				);
+				discard_var->is_local = true;
+				auto discard_ref = discard_var->to_reference();
+				discard_ref->ty = node.r_value->ty;
+				node.remove_references();
+				auto node_assignment = std::make_unique<NodeSingleAssignment>(
+					std::move(discard_ref), std::move(node.r_value), node.tok);
+				node_assignment->collect_references();
+				auto node_decl = std::make_unique<NodeSingleDeclaration>(std::move(discard_var), nullptr, node.tok);
+				node_decl->kind = NodeSingleDeclaration::Kind::ReturnVar;
+				auto node_block = std::make_unique<NodeBlock>(node.tok, false);
+				node_block->add_as_stmt(std::move(node_decl));
+				node_block->add_as_stmt(std::move(node_assignment));
+				return node.replace_with(std::move(node_block));
 			}
 		}
 		return &node;
