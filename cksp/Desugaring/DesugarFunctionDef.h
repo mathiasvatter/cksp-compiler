@@ -5,6 +5,7 @@
 #pragma once
 
 #include "ASTDesugaring.h"
+#include "../ASTVisitor/FunctionHandling/ReturnPathValidator.h"
 #include "../../utils/Gensym.h"
 #include "../CompilerConfig.h"
 
@@ -57,6 +58,21 @@ public:
 		}
 		m_num_last_ret_values = node.num_return_params;
 		node.body->accept(*this);
+
+		// a void function may fall off the end like in other languages: append the implicit
+		// trailing return so the early-return lowering (while-wrap) terminates without
+		// requiring an explicit return on every code path
+		if (node.num_return_params == 0 and node.num_return_stmts > 0 and !node.body->empty()) {
+			static ReturnPathValidator return_validator;
+			if (!return_validator.all_paths_return(node)) {
+				auto implicit_return = std::make_unique<NodeReturn>(node.body->get_last_statement()->tok);
+				implicit_return->definition = node.get_shared();
+				node.return_stmts.push_back(implicit_return.get());
+				node.num_return_stmts++;
+				node.body->add_as_stmt(std::move(implicit_return));
+			}
+		}
+
 		m_current_function = nullptr;
 		return &node;
 	}

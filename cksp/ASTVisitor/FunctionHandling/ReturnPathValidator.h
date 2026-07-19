@@ -25,14 +25,20 @@ class ReturnPathValidator final : public ASTVisitor {
 	std::unordered_map<NodeBlock*, bool> m_return_path;
 public:
 
-	bool do_return_path_validation(NodeFunctionDefinition& def) {
+	/// runs the analysis and reports whether every code path ends in a return statement.
+	/// does not emit diagnostics
+	bool all_paths_return(NodeFunctionDefinition& def) {
 		m_return_path.clear();
 		// no need for validation if no return statements
 		if (def.return_stmts.empty()) {
 			return true;
 		}
 		def.accept(*this);
-		if (!m_return_path[def.body.get()]) {
+		return m_return_path[def.body.get()];
+	}
+
+	bool do_return_path_validation(NodeFunctionDefinition& def) {
+		if (!all_paths_return(def)) {
 			auto error = ASTVisitor::make_diagnostic(ErrorType::CompileError, *def.body);
 			error.message = "Function <"+def.header->name+"> does not terminate on all code paths. This might lead to an infinite loop. "
 					 "Checked the following code paths:\n";
@@ -67,7 +73,7 @@ public:
 			error.exit();
 		}
 
-		return m_return_path[def.body.get()];
+		return true;
 	}
 
 private:
