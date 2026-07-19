@@ -40,6 +40,17 @@ class TypeInference final : public ASTVisitor {
 
 		m_program->reset_function_visited_flag();
 
+		// resolved monomorphizations per definition and actual argument types. Cloning the
+		// function header per call site is expensive (the clone copies every reference set of
+		// every parameter), so repeated call sites with the same argument types rebind to the
+		// cached resolution without touching the header
+		struct MonomorphCacheEntry {
+			int method_idx;
+			std::vector<Type*> arg_types;
+			std::shared_ptr<NodeFunctionDefinition> resolved;
+		};
+		std::unordered_map<NodeFunctionDefinition*, std::vector<MonomorphCacheEntry>> monomorph_cache;
+
 		for (const auto& call : calls) {
 			if (call->kind != NodeFunctionCall::Kind::UserDefined) continue;
 			auto const def = call->get_definition();
@@ -59,8 +70,40 @@ class TypeInference final : public ASTVisitor {
 
 
 			if (def->header->has_union_params()) {
-				auto new_header = clone_as<NodeFunctionHeader>(def->header.get());
 				int method_idx = call->is_in_access_chain() ? 1 : 0;
+
+				const bool arity_fits = call->function->get_num_args() + method_idx <= def->get_num_params();
+				std::vector<Type*> arg_types;
+				if (arity_fits) {
+					arg_types.reserve(call->function->get_num_args());
+					for (size_t i = 0; i < call->function->get_num_args(); i++) {
+						arg_types.push_back(call->function->get_arg(i)->ty);
+					}
+					auto& entries = monomorph_cache[def.get()];
+					const auto entry = std::ranges::find_if(entries, [&](const MonomorphCacheEntry& e) {
+						return e.method_idx == method_idx and e.arg_types == arg_types;
+					});
+					if (entry != entries.end()) {
+						// apply the one side effect of the skipped match_type: composite formal
+						// parameters hand their type to still untyped actual arguments
+						for (size_t i = 0; i < call->function->get_num_args(); i++) {
+							auto& actual_param = call->function->get_arg(i);
+							const auto& formal_param = def->get_param(i + method_idx);
+							if (formal_param->ty and formal_param->ty->get_type_kind() == TypeKind::Composite
+								and actual_param->ty == TypeRegistry::Unknown) {
+								const auto elem_type = actual_param->ty->get_element_type();
+								actual_param->ty = formal_param->ty;
+								actual_param->set_element_type(elem_type);
+							}
+						}
+						call->definition = entry->resolved;
+						call->function->declaration = entry->resolved->header;
+						call->function->name = entry->resolved->header->name;
+						continue;
+					}
+				}
+
+				auto new_header = clone_as<NodeFunctionHeader>(def->header.get());
 				for (size_t i = 0; i< call->function->get_num_args(); i++) {
 					auto& actual_param = call->function->get_arg(i);
 					auto& formal_param = new_header->get_param(i+method_idx);
@@ -73,6 +116,9 @@ class TypeInference final : public ASTVisitor {
 				const auto func = m_program->look_up_exact({new_header->name, (int)new_header->params.size()}, new_header->ty);
 				// if there is only one call site skip this
 				if (func) {
+					if (arity_fits) {
+						monomorph_cache[def.get()].push_back({method_idx, std::move(arg_types), func});
+					}
 					call->definition = func;
 					call->function->declaration = func->header;
 					call->function->name = func->header->name;
@@ -125,6 +171,9 @@ class TypeInference final : public ASTVisitor {
 				const auto func_ptr = m_program->add_function_definition(std::move(new_func_def));
 				call->definition = func_ptr->get_shared();
 				func_ptr->header->name = func_name;
+				if (arity_fits) {
+					monomorph_cache[def.get()].push_back({method_idx, std::move(arg_types), func_ptr->get_shared()});
+				}
 			}
 		}
 		// auto start_merge = std::chrono::high_resolution_clock::now();
