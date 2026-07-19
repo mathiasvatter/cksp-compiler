@@ -361,7 +361,11 @@ void Tokenizer::get_keyword_or_num() {
 			consume();
 	}
 	// here could come a single dot or a line continuation 'and...'
-	if (!is_line_continuation()) {
+	// an identifier directly behind a DOT token (emitted by ?. and by chain
+	// continuations) is an access chain member: keep its dotted parts separate
+	// so every part becomes its own chain member. Namespace-qualified names in
+	// all other positions stay one dotted token
+	if (!is_line_continuation() and (m_tokens.empty() or m_tokens.back().type != token::DOT)) {
 		while (peek() == '.') {
 			consume();
 			if (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
