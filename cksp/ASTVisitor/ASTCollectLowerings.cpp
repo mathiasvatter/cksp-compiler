@@ -8,6 +8,7 @@
 #include "../Lowering/PreLoweringStruct.h"
 #include "../Lowering/LoweringBoolean.h"
 #include "../Lowering/LoweringBooleanExpression.h"
+#include "../Lowering/LoweringOptionalChaining.h"
 #include "FunctionHandling/UIControlParamHandling.h"
 
 NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
@@ -228,8 +229,10 @@ NodeAST * ASTCollectLowerings::visit(NodePointerRef& node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeAccessChain& node) {
+	LoweringOptionalChaining opt_chaining(m_program);
+	const auto new_node = node.accept(opt_chaining);
 	//TRACE();
-	return node.lower(m_program)->accept(*this);
+	return new_node->lower(m_program)->accept(*this);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeSingleRetain& node) {

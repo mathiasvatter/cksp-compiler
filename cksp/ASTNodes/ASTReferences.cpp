@@ -590,7 +590,8 @@ NodeAST *NodeAccessChain::accept(struct ASTVisitor &visitor) {
 }
 
 NodeAccessChain::NodeAccessChain(const NodeAccessChain& other)
-	: NodeReference(other), chain(clone_vector(other.chain)), types(other.types) {
+	: NodeReference(other), chain(clone_vector(other.chain)), types(other.types),
+	opt_chaining_indexes(other.opt_chaining_indexes) {
 	set_child_parents();
 }
 
@@ -606,6 +607,27 @@ NodeAST *NodeAccessChain::replace_child(NodeAST* oldChild, std::unique_ptr<NodeA
 
 std::unique_ptr<NodeAST> NodeAccessChain::clone() const {
 	return std::make_unique<NodeAccessChain>(*this);
+}
+
+std::unique_ptr<NodeAST> NodeAccessChain::split(const size_t idx) {
+	std::vector<std::unique_ptr<NodeAST>> left;
+	left.reserve(idx);
+	for (size_t i = 0; i<idx; i++) {
+		left.push_back(chain[i]->clone());
+	}
+	auto first_chain = std::make_unique<NodeAccessChain>(std::move(left), tok);
+	first_chain->update_types();
+	std::vector<std::optional<Token>> opt_chains{};
+	opt_chains.reserve(idx);
+	for (size_t i = 0; i < idx; i++) {
+		opt_chains.push_back(std::move(opt_chaining_indexes[i]));
+		opt_chaining_indexes[i].reset();
+	}
+	first_chain->opt_chaining_indexes = std::move(opt_chains);
+	if (first_chain->chain.size() == 1) {
+		return std::move(first_chain->chain[0]);
+	}
+	return std::move(first_chain);
 }
 
 ASTLowering* NodeAccessChain::get_lowering(NodeProgram *program) const {

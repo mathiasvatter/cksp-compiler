@@ -347,6 +347,7 @@ struct NodeNil final : NodePointerRef {
 struct NodeAccessChain final : NodeReference {
 	std::vector<std::unique_ptr<NodeAST>> chain;
 	std::vector<Type*> types;
+	std::vector<std::optional<Token>> opt_chaining_indexes{};
 	NodeAccessChain(std::vector<std::unique_ptr<NodeAST>> method_chain, Token tok, DataType data_type=DataType::Mutable)
 		: NodeReference("", NodeType::AccessChain, std::move(tok), data_type), chain(std::move(method_chain)) {
 		NodeAccessChain::set_child_parents();
@@ -374,6 +375,15 @@ struct NodeAccessChain final : NodeReference {
 	void add_method(std::unique_ptr<NodeAST> m) {
 		m->parent = this;
 		chain.push_back(std::move(m));
+	}
+	void add_opt_chaining(const std::optional<Token> &tok) {
+		opt_chaining_indexes.push_back(tok);
+	}
+	bool has_opt_chaining() const {
+		return std::ranges::any_of(
+			opt_chaining_indexes,
+			[](const auto& tok) { return tok.has_value(); }
+		);
 	}
 	void update_types() {
 		for(const auto& c: chain) {
@@ -415,6 +425,8 @@ struct NodeAccessChain final : NodeReference {
 		chain = std::move(flat_list);
 	}
 
+	/// non-destructive, returns nodes split at the idx point where chain[0, idx)
+	std::unique_ptr<NodeAST> split(size_t idx);
 	/// returns variable ref if access chain is incorrectly detected array/list/ndarray size constant
 //	std::unique_ptr<NodeVariableRef> is_size_constant();
 

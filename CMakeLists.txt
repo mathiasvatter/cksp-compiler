@@ -291,5 +291,6 @@ add_executable(cksp
         lsp/EntryPointResolver.cpp
         lsp/EntryPointResolver.h
         utils/IdentifierObfuscator.h
+        cksp/Lowering/LoweringOptionalChaining.h
 )
 target_link_libraries(cksp PRIVATE cksp_core)

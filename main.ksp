@@ -18,11 +18,22 @@ end struct
 
 struct Point
     x: int, y: int
+
+    function get_x(self)
+        return self.x
+    end function        
 end struct	
 
 // declare ui_slider sli[5](1,2)
 declare x
-// declare point_array := new Array()
+declare point_array := new Array()
+
+on init
+    declare point := new Point(1,2)
+    point?.get_x()
+    // obj?.member := 5
+end on
+
 // declare point_array2 := new Array()
 declare const pipi := 4 * x
 on note 
@@ -33,13 +44,12 @@ on note
     for i in range(ass_size)
         message(i, " nice ass")
     end for      
-func()  
 end on	
 
-function func()
+function func(arg1: int)
+    if (arg1 = 1) 
+        return
+    end if        
     declare point_array2 := new Array()
     message(point_array2)
 end function    
-
-on init
-end on

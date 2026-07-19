@@ -230,3 +230,17 @@ std::vector<std::unique_ptr<T>> clone_vector(const std::vector<std::unique_ptr<T
 	}
 	return new_vec;
 }
+
+static std::pair<std::vector<std::unique_ptr<NodeAST>>, std::vector<std::unique_ptr<NodeAST>>>
+split_vector(std::vector<std::unique_ptr<NodeAST>> vec, size_t idx) {
+	if (idx > vec.size()) {
+		throw std::out_of_range("Split index out of range");
+	}
+	std::vector<std::unique_ptr<NodeAST>> left;
+	std::vector<std::unique_ptr<NodeAST>> right;
+	left.reserve(idx);
+	right.reserve(vec.size() - idx);
+	std::move(vec.begin(),vec.begin() + idx,std::back_inserter(left));
+	std::move(vec.begin() + idx,vec.end(),std::back_inserter(right));
+	return {std::move(left), std::move(right)};
+}

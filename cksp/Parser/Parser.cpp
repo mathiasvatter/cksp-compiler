@@ -422,6 +422,13 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_reference_chain(NodeAST *parent) 
 			}
 		}
 		chain->add_method(std::move(stmt));
+		// check for optional chaining syntax
+		if (peek().type == token::TERNARY and peek(1).type == token::DOT) {
+			auto opt_chaining_tok = consume();
+			chain->add_opt_chaining(opt_chaining_tok);
+		} else {
+			chain->add_opt_chaining(std::nullopt);
+		}
 		// --- Transactional newline skip: only keep it if a DOT follows ---
 		size_t save_pos = m_pos;
 		_skip_linebreaks();                    // tentatively skip linebreaks
@@ -976,142 +983,148 @@ Result<std::unique_ptr<NodeBreak>> Parser::parse_break_statement(NodeAST* parent
 	return Result<std::unique_ptr<NodeBreak>>(std::move(node_break_stmt));
 }
 
-Result<std::unique_ptr<NodeStatement>> Parser::parse_statement(NodeAST* parent) {
+Result<std::unique_ptr<NodeStatement> > Parser::parse_statement(NodeAST *parent) {
 	auto start_token = peek();
-    auto node_statement = std::make_unique<NodeStatement>(start_token);
-    _skip_linebreaks();
-    std::unique_ptr<NodeAST> stmt;
-    // assign statement
-    if (peek().type == token::KEYWORD || peek().type == token::DECLARE
+	auto node_statement = std::make_unique<NodeStatement>(start_token);
+	_skip_linebreaks();
+	std::unique_ptr<NodeAST> stmt;
+	// assign statement
+	if (peek().type == token::KEYWORD || peek().type == token::DECLARE
 		|| peek().type == token::CALL || peek().type == token::SET_CONDITION || peek().type == token::RESET_CONDITION) {
-        if (peek().type == token::DECLARE) {
-            auto declare_stmt = parse_declare_statement(node_statement.get());
-            if (declare_stmt.is_error()) {
-                return Result<std::unique_ptr<NodeStatement>>(declare_stmt.get_error());
-            }
-            stmt = std::move(declare_stmt.unwrap());
-        } else if ((peek().type == token::CALL) xor
-                   (peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK or peek(1).type == token::CLOSED_PARENTH)) {
-	        auto function_call = parse_function_call(node_statement.get());
-	if (function_call.is_error()) {
-		return Result<std::unique_ptr<NodeStatement>>(function_call.get_error());
-	}
-	stmt = std::move(function_call.unwrap());
-        } else if (peek().type == token::SET_CONDITION or peek().type == token::RESET_CONDITION) {
-	auto function_call = parse_function_call(node_statement.get());
-	if (function_call.is_error()) {
-		return Result<std::unique_ptr<NodeStatement>>(function_call.get_error());
-	}
-	stmt = std::move(function_call.unwrap());
-        } else {
-	auto l_values = parse_l_values(node_statement.get());
-	if (l_values.is_error()) return Result<std::unique_ptr<NodeStatement>>(l_values.get_error());
-	// check if l_value is reference chain with function call at the end -> can stand isolated
-	auto values = std::move(l_values.unwrap());
-	if (values.size() == 1 and is_func_call_reference_chain(*values[0])) {
-		stmt = std::move(values[0]);
-	} else if (values.size() == 1 and peek().type != token::ASSIGN and peek().type != token::LINEBRK) {
-		auto compound_assign = parse_compound_assign_statement(std::move(values[0]), node_statement.get());
-		if (compound_assign.is_error()) {
-			return Result<std::unique_ptr<NodeStatement>>(compound_assign.get_error());
+		if (peek().type == token::DECLARE) {
+			auto declare_stmt = parse_declare_statement(node_statement.get());
+			if (declare_stmt.is_error()) {
+				return Result<std::unique_ptr<NodeStatement> >(declare_stmt.get_error());
+			}
+			stmt = std::move(declare_stmt.unwrap());
+		} else if ((peek().type == token::CALL) xor
+			(peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK or peek(1).type ==
+				token::CLOSED_PARENTH)) {
+			auto function_call = parse_function_call(node_statement.get());
+			if (function_call.is_error()) {
+				return Result<std::unique_ptr<NodeStatement> >(function_call.get_error());
+			}
+			stmt = std::move(function_call.unwrap());
+		} else if (peek().type == token::SET_CONDITION or peek().type == token::RESET_CONDITION) {
+			auto function_call = parse_function_call(node_statement.get());
+			if (function_call.is_error()) {
+				return Result<std::unique_ptr<NodeStatement> >(function_call.get_error());
+			}
+			stmt = std::move(function_call.unwrap());
+		} else {
+			auto l_values = parse_l_values(node_statement.get());
+			if (l_values.is_error()) return Result<std::unique_ptr<NodeStatement> >(l_values.get_error());
+			// check if l_value is reference chain with function call at the end -> can stand isolated
+			auto values = std::move(l_values.unwrap());
+			if (values.size() == 1 and is_func_call_reference_chain(*values[0])) {
+				stmt = std::move(values[0]);
+			} else if (values.size() == 1 and peek().type != token::ASSIGN and peek().type != token::LINEBRK) {
+				auto compound_assign = parse_compound_assign_statement(std::move(values[0]), node_statement.get());
+				if (compound_assign.is_error()) {
+					return Result<std::unique_ptr<NodeStatement> >(compound_assign.get_error());
+				}
+				stmt = std::move(compound_assign.unwrap());
+			} else {
+				auto assign_stmt = parse_assign_statement(std::move(values), node_statement.get());
+				if (assign_stmt.is_error()) {
+					return Result<std::unique_ptr<NodeStatement> >(assign_stmt.get_error());
+				}
+				stmt = std::move(assign_stmt.unwrap());
+			}
 		}
-		stmt = std::move(compound_assign.unwrap());
-	} else {
-	            auto assign_stmt = parse_assign_statement(std::move(values), node_statement.get());
-	            if (assign_stmt.is_error()) {
-	                return Result<std::unique_ptr<NodeStatement>>(assign_stmt.get_error());
-	            }
-	            stmt = std::move(assign_stmt.unwrap());
-	}
-        }
-    } else if (peek().type == token::CONST) {
+	} else if (peek().type == token::CONST) {
 		auto construct_stmt = parse_const_statement(node_statement.get());
 		if (construct_stmt.is_error()) {
-			return Result<std::unique_ptr<NodeStatement>>(construct_stmt.get_error());
+			return Result<std::unique_ptr<NodeStatement> >(construct_stmt.get_error());
 		}
 		stmt = std::move(construct_stmt.unwrap());
 	} else if (peek().type == token::FAMILY) {
 		auto family_stmt = parse_family_statement(node_statement.get());
 		if (family_stmt.is_error()) {
-			return Result<std::unique_ptr<NodeStatement>>(family_stmt.get_error());
+			return Result<std::unique_ptr<NodeStatement> >(family_stmt.get_error());
 		}
 		stmt = std::move(family_stmt.unwrap());
-    } else if (peek().type == token::IF) {
-        auto if_stmt = parse_if_statement(node_statement.get());
-        if (if_stmt.is_error()) {
-            return Result<std::unique_ptr<NodeStatement>>(if_stmt.get_error());
-        }
-        stmt = std::move(if_stmt.unwrap());
-    } else if (peek().type == token::FOR) {
-        if(is_for_each_syntax()) {
-            auto for_stmt = parse_for_each_statement(node_statement.get());
-            if (for_stmt.is_error()) {
-                return Result<std::unique_ptr<NodeStatement>>(for_stmt.get_error());
-            }
-            stmt = std::move(for_stmt.unwrap());
-        } else {
-            auto for_stmt = parse_for_statement(node_statement.get());
-            if (for_stmt.is_error()) {
-                return Result<std::unique_ptr<NodeStatement>>(for_stmt.get_error());
-            }
-            stmt = std::move(for_stmt.unwrap());
-        }
-    } else if (peek().type == token::WHILE) {
-        auto while_stmt = parse_while_statement(node_statement.get());
-        if(while_stmt.is_error()) {
-            return Result<std::unique_ptr<NodeStatement>>(while_stmt.get_error());
-        }
-        stmt = std::move(while_stmt.unwrap());
+	} else if (peek().type == token::IF) {
+		auto if_stmt = parse_if_statement(node_statement.get());
+		if (if_stmt.is_error()) {
+			return Result<std::unique_ptr<NodeStatement> >(if_stmt.get_error());
+		}
+		stmt = std::move(if_stmt.unwrap());
+	} else if (peek().type == token::FOR) {
+		if (is_for_each_syntax()) {
+			auto for_stmt = parse_for_each_statement(node_statement.get());
+			if (for_stmt.is_error()) {
+				return Result<std::unique_ptr<NodeStatement> >(for_stmt.get_error());
+			}
+			stmt = std::move(for_stmt.unwrap());
+		} else {
+			auto for_stmt = parse_for_statement(node_statement.get());
+			if (for_stmt.is_error()) {
+				return Result<std::unique_ptr<NodeStatement> >(for_stmt.get_error());
+			}
+			stmt = std::move(for_stmt.unwrap());
+		}
+	} else if (peek().type == token::WHILE) {
+		auto while_stmt = parse_while_statement(node_statement.get());
+		if (while_stmt.is_error()) {
+			return Result<std::unique_ptr<NodeStatement> >(while_stmt.get_error());
+		}
+		stmt = std::move(while_stmt.unwrap());
 	} else if (peek().type == token::SELECT) {
-        auto select_stmt = parse_select_statement(node_statement.get());
-        if (select_stmt.is_error()) {
-            return Result<std::unique_ptr<NodeStatement>>(select_stmt.get_error());
-        }
-        stmt = std::move(select_stmt.unwrap());
-    } else if (peek().type == token::LIST) {
+		auto select_stmt = parse_select_statement(node_statement.get());
+		if (select_stmt.is_error()) {
+			return Result<std::unique_ptr<NodeStatement> >(select_stmt.get_error());
+		}
+		stmt = std::move(select_stmt.unwrap());
+	} else if (peek().type == token::LIST) {
 		auto list_block = parse_list_block(node_statement.get());
 		if (list_block.is_error()) {
-			return Result<std::unique_ptr<NodeStatement>>(list_block.get_error());
+			return Result<std::unique_ptr<NodeStatement> >(list_block.get_error());
 		}
 		stmt = std::move(list_block.unwrap());
 	} else if (peek().type == token::RETURN) {
 		auto return_stmt = parse_return_statement(node_statement.get());
 		if (return_stmt.is_error()) {
-			return Result<std::unique_ptr<NodeStatement>>(return_stmt.get_error());
+			return Result<std::unique_ptr<NodeStatement> >(return_stmt.get_error());
 		}
 		stmt = std::move(return_stmt.unwrap());
-	} else if(peek().type == token::BREAK) {
+	} else if (peek().type == token::BREAK) {
 		auto break_stmt = parse_break_statement(node_statement.get());
 		if (break_stmt.is_error()) {
-			return Result<std::unique_ptr<NodeStatement>>(break_stmt.get_error());
+			return Result<std::unique_ptr<NodeStatement> >(break_stmt.get_error());
 		}
 		stmt = std::move(break_stmt.unwrap());
 	} else if (peek().type == token::DELETE) {
 		auto delete_stmt = parse_delete_statement(node_statement.get());
 		if (delete_stmt.is_error()) {
-			return Result<std::unique_ptr<NodeStatement>>(delete_stmt.get_error());
+			return Result<std::unique_ptr<NodeStatement> >(delete_stmt.get_error());
 		}
 		stmt = std::move(delete_stmt.unwrap());
-    } else {
-	auto error = Diagnostic(ErrorType::SyntaxError,
-		 "Found invalid Statement Syntax.", "<statement>",peek());
-	if (peek().type == token::NAMESPACE) {
-		error.add_message("A <namespace> can only be declared in the global scope or nested in other namespaces.");
-	} else if (peek().type == token::FUNCTION) {
-		error.add_message("A <function> definition is not allowed here. Functions can only be declared in the global scope, inside namespaces or structs.");
+	} else {
+		auto error = Diagnostic(ErrorType::SyntaxError,
+		                        "Found invalid Statement Syntax.",
+		                        "<statement>",
+		                        peek());
+		if (peek().type == token::NAMESPACE) {
+			error.add_message("A <namespace> can only be declared in the global scope or nested in other namespaces.");
+		} else if (peek().type == token::FUNCTION) {
+			error.add_message(
+				"A <function> definition is not allowed here. Functions can only be declared in the global scope, inside namespaces or structs.");
+		}
+		return Result<std::unique_ptr<NodeStatement> >(error);
 	}
-        return Result<std::unique_ptr<NodeStatement>>(error);
-    }
-    if (peek().type != token::LINEBRK) {
-        return Result<std::unique_ptr<NodeStatement>>(Diagnostic(ErrorType::SyntaxError,
-		"Found incorrect statement syntax.", "", peek()));
-    }
-    consume();
-    _skip_linebreaks();
-    node_statement->statement = std::move(stmt);
+	if (peek().type != token::LINEBRK) {
+		return Result<std::unique_ptr<NodeStatement> >(Diagnostic(ErrorType::SyntaxError,
+		                                                          "Found incorrect statement syntax.",
+		                                                          "",
+		                                                          peek()));
+	}
+	consume();
+	_skip_linebreaks();
+	node_statement->statement = std::move(stmt);
 	node_statement->set_range(start_token, peek(-1));
-    node_statement->parent = parent;
-    return Result<std::unique_ptr<NodeStatement>>(std::move(node_statement));
+	node_statement->parent = parent;
+	return Result<std::unique_ptr<NodeStatement> >(std::move(node_statement));
 }
 
 

@@ -130,6 +130,8 @@ mkdir -p "$LOG_ROOT"
 # -----------------------------
 # Spinner helpers
 # -----------------------------
+ACTIVE_SPINNER_PID=""
+
 start_spinner() {
   local label="$1"
   local spin_chars='-\|/'
@@ -143,11 +145,29 @@ start_spinner() {
 }
 
 stop_spinner() {
-  kill "$1" &>/dev/null || true
-  wait "$1" 2>/dev/null || true
+  local pid="${1:-$ACTIVE_SPINNER_PID}"
+  if [[ -n "$pid" ]]; then
+	kill "$pid" &>/dev/null || true
+	wait "$pid" 2>/dev/null || true
+	if [[ "$ACTIVE_SPINNER_PID" == "$pid" ]]; then
+	  ACTIVE_SPINNER_PID=""
+	fi
+  fi
   tput cnorm 2>/dev/null || true
-  printf "\r"
+  printf '\r\033[K'
 }
+
+cleanup_terminal() {
+  stop_spinner
+}
+
+# Background spinners do not reliably receive the foreground terminal signal.
+# Always stop the active spinner and restore the cursor when the script exits.
+trap cleanup_terminal EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
+trap 'exit 131' QUIT
 
 # High-resolution timestamp in milliseconds (portable for macOS/Linux)
 now_ms() {
@@ -230,13 +250,13 @@ for entry in "${BUILDS[@]}"; do
 
 		# ----- Compile -----
 		label="compile: $filename"
-		start_spinner "$label" & spin_pid=$!
+		start_spinner "$label" & ACTIVE_SPINNER_PID=$!
 		start_ms=$(now_ms)
 
 		CKSP_CRASH_LOG="$crash_log" "$executable" -o "$OUTPUT_FILE" "$file" >"$log_dir/.tmp_compile" 2>&1
 		compile_exit=$?
 
-		stop_spinner "$spin_pid"
+		stop_spinner
 		end_ms=$(now_ms)
 		duration_compile_ms=$(( end_ms - start_ms ))
 		duration_compile=$(awk -v ms="$duration_compile_ms" 'BEGIN { printf "%.3f", ms / 1000 }')
@@ -270,7 +290,7 @@ for entry in "${BUILDS[@]}"; do
 	# ----- Kontakt (optional) -----
 		if [[ "$USE_KONTAKT" == true ]]; then
 		  label="kontakt: $filename"
-		  start_spinner "$label" & spin2_pid=$!
+		  start_spinner "$label" & ACTIVE_SPINNER_PID=$!
 
 		  start_ms=$(now_ms)
 		  python3 "$KONTAKT_RUNNER" \
@@ -283,7 +303,7 @@ for entry in "${BUILDS[@]}"; do
 		"$OUTPUT_FILE"
 		  kontakt_exit=$?
 
-		  stop_spinner "$spin2_pid"
+		  stop_spinner
 		  end_ms=$(now_ms)
 		  duration_kontakt_ms=$(( end_ms - start_ms ))
 		  duration_kontakt=$(awk -v ms="$duration_kontakt_ms" 'BEGIN { printf "%.3f", ms / 1000 }')

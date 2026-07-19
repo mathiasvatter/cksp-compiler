@@ -347,12 +347,18 @@ void Tokenizer::get_keyword_or_num() {
 			auto err_msg = "Found unknown keyword.";
 			Diagnostic(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).exit();
 		}
+	// check if optional chaining ?.
+	} else if (peek() == '?' and peek(1) == '.') {
+		consume();
+		add_token(token::TERNARY, m_buffer);
+		consume();
+		add_token(token::DOT, m_buffer);
     // check if next char is _ or text
     } else if (is_keyword_or_num()) {
 	    //        if(peek() =='#') consume(); //consume # for macro iteration
-	consume(); //consume possible identifier
-	while (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
-		consume();
+		consume(); //consume possible identifier
+		while (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
+			consume();
 	}
 	// here could come a single dot or a line continuation 'and...'
 	if (!is_line_continuation()) {
@@ -367,7 +373,7 @@ void Tokenizer::get_keyword_or_num() {
 				Diagnostic(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).exit();
 			}
 		}
-		}
+	}
 	if (is_hexadecimal(m_buffer)) {
 		add_token(token::HEXADECIMAL, m_buffer);
 	} else if (is_binary(m_buffer)) {
