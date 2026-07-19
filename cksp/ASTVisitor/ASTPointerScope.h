@@ -39,6 +39,9 @@ class ASTPointerScope final : public ASTVisitor {
 
 	DefinitionProvider* m_def_provider = nullptr;
 	std::vector<std::unordered_map<StringTypeKey, NodeDataStructure*, StringTypeKeyHash>> m_pointer_scope_stack;
+	/// stack of m_pointer_scope_stack depths at function entry; scopes above the top
+	/// boundary belong to the function currently being traversed
+	std::vector<size_t> m_function_scope_boundaries;
 
 	// which references can be pointers?
 	inline static std::unordered_set<NodeType> pointer_types = {
@@ -102,13 +105,17 @@ public:
 		for(auto & stmt : node.statements) {
 			stmt->accept(*this);
 		}
-		// add delete statements for all local pointers
+		// add delete statements for all local pointers. When the block ends in a return
+		// statement, the deletes were already placed before the return by visit(NodeReturn)
+		// and appending them here would only create dead code behind the return
 		if(node.scope) {
 			auto local_ptrs = remove_scope();
-			for(auto & [key, ptr] : local_ptrs) {
-				auto ref = ptr->to_reference();
-				auto del = std::make_unique<NodeSingleDelete>(std::move(ref), std::make_unique<NodeInt>(1, ptr->tok), ptr->tok);
-				node.add_as_stmt(std::move(del));
+			if (!ends_with_return(node)) {
+				for(auto & [key, ptr] : local_ptrs) {
+					auto ref = ptr->to_reference();
+					auto del = std::make_unique<NodeSingleDelete>(std::move(ref), std::make_unique<NodeInt>(1, ptr->tok), ptr->tok);
+					node.add_as_stmt(std::move(del));
+				}
 			}
 		}
 		node.flatten();
@@ -129,13 +136,51 @@ public:
 	}
 
 	NodeAST* visit(NodeReturn &node) override {
+		std::unordered_set<StringTypeKey, StringTypeKeyHash> returned_ptrs{};
 		for(auto & ret : node.return_variables) {
 			ret->accept(*this);
+			if(auto ref = cast_node<NodeReference>(ret.get())) {
+				returned_ptrs.insert({ref->name, ref->ty});
+			}
+		}
+
+		// a return exits the function on this path: place delete statements for every pointer
+		// alive in the function's scopes before the return, so the later return lowering
+		// (RETURN_FLAG/continue or exit) cannot jump over the end-of-scope cleanup.
+		// returned pointers are excluded: their ownership transfers to the caller
+		if (!m_function_scope_boundaries.empty()) {
+			auto deletes = std::make_unique<NodeBlock>(node.tok, false);
+			for (size_t depth = m_function_scope_boundaries.back(); depth < m_pointer_scope_stack.size(); ++depth) {
+				for (auto& [key, ptr] : m_pointer_scope_stack[depth]) {
+					if (returned_ptrs.contains(key)) continue;
+					deletes->add_as_single_delete(ptr->to_reference(), std::make_unique<NodeInt>(1, ptr->tok));
+				}
+			}
+			const auto stmt = node.get_parent_statement();
+			if (stmt and !deletes->empty()) {
+				deletes->add_as_stmt(std::move(stmt->statement));
+				stmt->set_statement(std::move(deletes));
+			}
+		}
+
+		for(auto & ret : node.return_variables) {
 			if(auto ref = cast_node<NodeReference>(ret.get())) {
 				remove_pointer(*ref);
 			}
 		}
 		return &node;
+	}
+
+	/// true when the block (following trailing sub-blocks) ends in a return statement
+	static bool ends_with_return(const NodeBlock& block) {
+		const NodeBlock* current = &block;
+		while (current) {
+			if (current->empty()) return false;
+			const auto last = current->get_last_statement().get();
+			if (last->get_node_type() == NodeType::Return) return true;
+			current = cast_node<NodeBlock>(last);
+		}
+		return false;
 	}
 
 	// check if l_value is also in r_value
@@ -239,7 +284,11 @@ public:
 		node.header ->accept(*this);
 		if (node.return_variable.has_value())
 			node.return_variable.value()->accept(*this);
+		// scopes above this boundary belong to the function: a return statement must
+		// delete exactly the pointers of these scopes, not the ones of the caller
+		m_function_scope_boundaries.push_back(m_pointer_scope_stack.size());
 		node.body->accept(*this);
+		m_function_scope_boundaries.pop_back();
 		return &node;
 	}
 
