@@ -358,6 +358,29 @@ Result<std::unique_ptr<NodeReference>> Parser::parse_array_ref(NodeAST *parent) 
 }
 
 
+/// dotted identifiers are single tokens (namespace syntax). As members of an explicit
+/// access chain (behind a ?.) every dotted part is its own chain member -> split them,
+/// so struct member resolution sees the single parts and the optional chaining indexes
+/// stay aligned with the chain
+static void add_chain_member_split_dotted(NodeAccessChain* chain, std::unique_ptr<NodeAST> stmt) {
+	std::string* name = nullptr;
+	if (const auto var_ref = stmt->cast<NodeVariableRef>()) name = &var_ref->name;
+	else if (const auto arr_ref = stmt->cast<NodeArrayRef>()) name = &arr_ref->name;
+	else if (const auto nd_ref = stmt->cast<NodeNDArrayRef>()) name = &nd_ref->name;
+	else if (const auto call = stmt->cast<NodeFunctionCall>()) name = &call->function->name;
+	if (name) {
+		size_t pos;
+		while ((pos = name->find('.')) != std::string::npos) {
+			auto part = std::make_unique<NodeVariableRef>(name->substr(0, pos), stmt->tok);
+			part->parent = chain;
+			chain->add_method(std::move(part));
+			chain->add_opt_chaining(std::nullopt);
+			name->erase(0, pos + 1);
+		}
+	}
+	chain->add_method(std::move(stmt));
+}
+
 Result<std::unique_ptr<NodeAST>> Parser::parse_reference_chain(NodeAST *parent) {
 	if (peek().type == token::NEW) {
 		consume();
@@ -421,7 +444,12 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_reference_chain(NodeAST *parent) 
 				}
 			}
 		}
-		chain->add_method(std::move(stmt));
+		if (chain->chain.empty()) {
+			// the first element may be a namespace-qualified name -> keep it as one member
+			chain->add_method(std::move(stmt));
+		} else {
+			add_chain_member_split_dotted(chain.get(), std::move(stmt));
+		}
 		// check for optional chaining syntax
 		if (peek().type == token::TERNARY and peek(1).type == token::DOT) {
 			auto opt_chaining_tok = consume();

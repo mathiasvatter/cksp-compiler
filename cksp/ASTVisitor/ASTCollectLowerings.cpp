@@ -135,6 +135,11 @@ NodeAST * ASTCollectLowerings::visit(NodeSingleDeclaration &node) {
 
 NodeAST * ASTCollectLowerings::visit(NodeSingleAssignment& node) {
 	//TRACE();
+	// obj?.member := value is wrapped into a nil-guard before the chain lowering runs
+	LoweringOptionalChaining opt_chaining(m_program);
+	if (const auto new_node = node.accept(opt_chaining); new_node != &node) {
+		return new_node->accept(*this);
+	}
 	node.r_value->accept(*this);
 	node.l_value->accept(*this);
 	node.check_for_constant_assignment();
