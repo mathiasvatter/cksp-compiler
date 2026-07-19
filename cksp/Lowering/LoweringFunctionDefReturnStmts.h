@@ -155,6 +155,10 @@ public:
 			std::make_unique<NodeInt>(1, node.tok),
 			node.tok
 		);
+		// mark the flag assignment as part of the return sequence, so later passes
+		// (temporary pointer scope) can recognize the function exit after the return
+		// statement itself has been rewritten away
+		return_flag_assignment->kind = NodeInstruction::ReturnVar;
 		auto new_return = std::make_unique<NodeReturn>(std::move(node.return_variables), node.tok);
 		new_return->definition = node.definition;
 

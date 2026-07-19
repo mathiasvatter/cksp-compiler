@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <optional>
+
 #include "ASTVisitor.h"
 
 
@@ -17,6 +19,9 @@ class ASTTemporaryPointerScope : public ASTVisitor {
 private:
 	DefinitionProvider* m_def_provider = nullptr;
 	std::vector<std::unordered_map<StringTypeKey, std::unique_ptr<NodeFunctionCall>, StringTypeKeyHash>> m_pointer_scope_stack;
+	/// stack of m_pointer_scope_stack depths at function entry; scopes above the top
+	/// boundary belong to the function currently being traversed
+	std::vector<size_t> m_function_scope_boundaries;
 
 	std::unordered_map<StringTypeKey, std::unique_ptr<NodeFunctionCall>, StringTypeKeyHash> remove_scope() {
 		if (!m_pointer_scope_stack.empty()) {
@@ -55,16 +60,96 @@ public:
 		for(auto & stmt : node.statements) {
 			stmt->accept(*this);
 		}
+		// this pass runs after the return lowering: a lowered return (RETURN_FLAG/continue
+		// or exit) jumps over the end-of-scope decrements. If the block leaves the function,
+		// place the pending decrements before the exit sequence instead of appending them
+		// behind it as dead code
+		const bool exits_function = insert_pending_decrs_before_exit(node);
 		// add delete statements for all local pointers
 		if(node.scope) {
 			auto temp_deletes = std::move(remove_scope());
-			for(auto & [key, del] : temp_deletes) {
-				node.add_as_stmt(std::move(del));
+			if (!exits_function) {
+				for(auto & [key, del] : temp_deletes) {
+					node.add_as_stmt(std::move(del));
+				}
 			}
 		}
 		node.flatten();
 		return &node;
 	}
+
+	NodeAST* visit(NodeFunctionDefinition& node) override {
+		node.header->accept(*this);
+		if (node.return_variable.has_value())
+			node.return_variable.value()->accept(*this);
+		// scopes above this boundary belong to the function: a function exit must
+		// decrement exactly the temporaries of these scopes, not the ones of the caller
+		m_function_scope_boundaries.push_back(m_pointer_scope_stack.size());
+		node.body->accept(*this);
+		m_function_scope_boundaries.pop_back();
+		return &node;
+	}
+
+private:
+	struct FunctionExitSite {
+		NodeBlock* block;
+		size_t insert_index;
+	};
+
+	/// finds the function exit sequence the return lowering placed at the end of the block
+	/// (following trailing sub-blocks): a return statement, an exit call, or a continue
+	/// call preceded by its ReturnVar-marked RETURN_FLAG assignment. A bare continue is
+	/// a loop continue or a RETURN_FLAG propagation check and no function exit
+	static std::optional<FunctionExitSite> find_function_exit(NodeBlock& block) {
+		NodeBlock* current = &block;
+		while (current) {
+			auto& stmts = current->statements;
+			if (stmts.empty()) return std::nullopt;
+			const auto last = stmts.back()->statement.get();
+			if (last->get_node_type() == NodeType::Return) {
+				return FunctionExitSite{current, stmts.size() - 1};
+			}
+			if (const auto call = cast_node<NodeFunctionCall>(last)) {
+				if (call->function->name == "exit") {
+					return FunctionExitSite{current, stmts.size() - 1};
+				}
+				if (call->function->name == "continue" and stmts.size() >= 2) {
+					if (const auto assign = cast_node<NodeSingleAssignment>(stmts[stmts.size() - 2]->statement.get())) {
+						if (assign->kind == NodeInstruction::ReturnVar) {
+							return FunctionExitSite{current, stmts.size() - 2};
+						}
+					}
+				}
+				return std::nullopt;
+			}
+			current = cast_node<NodeBlock>(last);
+		}
+		return std::nullopt;
+	}
+
+	/// places clones of all pending temporary decrements of the current function before
+	/// the function exit sequence at the end of the block, if there is one. Returns true
+	/// when the block leaves the function
+	bool insert_pending_decrs_before_exit(NodeBlock& node) {
+		if (m_function_scope_boundaries.empty()) return false;
+		const auto site = find_function_exit(node);
+		if (!site) return false;
+
+		size_t offset = 0;
+		for (size_t depth = m_function_scope_boundaries.back(); depth < m_pointer_scope_stack.size(); ++depth) {
+			for (auto& [key, del] : m_pointer_scope_stack[depth]) {
+				auto stmt = std::make_unique<NodeStatement>(clone_as<NodeFunctionCall>(del.get()), del->tok);
+				stmt->parent = site->block;
+				stmt->statement->parent = stmt.get();
+				site->block->statements.insert(
+					site->block->statements.begin() + site->insert_index + offset, std::move(stmt));
+				offset++;
+			}
+		}
+		return true;
+	}
+
+public:
 
 	// if constructor, get struct and increase constructor count
 	NodeAST* visit(NodeFunctionCall& node) override {
