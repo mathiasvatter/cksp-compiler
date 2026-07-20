@@ -946,7 +946,7 @@ struct NodeIf final : NodeInstruction {
     std::unique_ptr<NodeAST> condition;
     std::unique_ptr<NodeBlock> if_body;
     std::unique_ptr<NodeBlock> else_body;
-    explicit NodeIf(Token tok) : NodeInstruction(NodeType::If, std::move(tok)) {
+    explicit NodeIf(const Token& tok) : NodeInstruction(NodeType::If, tok) {
 	    set_else_body(std::make_unique<NodeBlock>(tok, true));
     	set_if_body(std::make_unique<NodeBlock>(tok, true));
     }
@@ -1002,8 +1002,8 @@ struct NodeNullCoalesce final : NodeInstruction {
 	std::unique_ptr<NodeAST> fallback;
 	explicit NodeNullCoalesce(Token tok) : NodeInstruction(NodeType::NullCoalesce, std::move(tok)) {}
 	NodeNullCoalesce(std::unique_ptr<NodeAST> chain, std::unique_ptr<NodeAST> fallback, Token tok)
-			: NodeInstruction(NodeType::NullCoalesce, std::move(tok)), chain(std::move(chain)), fallback(std::move(fallback)) {
-			NodeNullCoalesce::set_child_parents();
+	: NodeInstruction(NodeType::NullCoalesce, std::move(tok)), chain(std::move(chain)), fallback(std::move(fallback)) {
+		NodeNullCoalesce::set_child_parents();
 	}
 	NodeAST * accept(ASTVisitor &visitor) override;
 	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;

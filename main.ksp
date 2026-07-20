@@ -21,17 +21,48 @@ struct Point
 
     function get_x(self)
         return self.x
-    end function        
-end struct	
+    end function
+end struct
+
+struct Wrapper
+    inner: Point
+end struct
 
 // declare ui_slider sli[5](1,2)
 declare x
 declare point_array := new Array()
 
+declare point := new Point(1, 2)
+declare wrapper := new Wrapper(new Point(3, 4))
+declare empty_wrapper: Wrapper := nil
+
 on init
-    declare point := new Point(1,2)
+    // standalone method call: only runs if point is not nil
     point?.get_x()
-    // obj?.member := 5
+
+    // assignment target: only assigns if point is not nil
+    point?.x := 5
+
+    // nested optional chaining: both wrapper and wrapper.inner must be non-nil
+    wrapper?.inner?.get_x()
+    wrapper?.inner?.x := 10
+
+    // mixed chaining: only wrapper is optional, .inner itself is a plain access
+    wrapper?.inner.x := 11
+
+    // nullish coalescing: yields a real value in any value context, falling back
+    // when the object in front of the ?. is nil
+    declare v1 := point?.x ?? 0
+    message(v1)
+
+    declare v2 := wrapper?.inner?.x ?? -1
+    message(v2)
+
+    declare v3 := empty_wrapper?.inner?.x ?? -1
+    message(v3)
+
+    // value context without ?? is rejected at compile time:
+    // declare bad := point?.x
 end on
 
 // declare point_array2 := new Array()

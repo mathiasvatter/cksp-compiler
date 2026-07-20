@@ -512,7 +512,8 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 					const std::string values = definition->num_return_params > 1 ? "values" : "value";
 					warning.message = "The return "+values+" of method <"+func_call->function->name+"> "
 						+ (definition->num_return_params > 1 ? "are" : "is")
-						+ " discarded here. Assign the result <result := obj."+func_call->function->name+"(...)> if it is needed.";
+						+ " discarded here. Assign the result <result := obj."+func_call->function->name+"(...)> if it is needed.\n"
+						"To get rid of this warning use a throwaway variable <_ := ...> to assign to.";
 					warning.report(diagnostics());
 				}
 

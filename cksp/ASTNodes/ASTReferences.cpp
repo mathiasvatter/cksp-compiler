@@ -617,13 +617,7 @@ std::unique_ptr<NodeAST> NodeAccessChain::split(const size_t idx) {
 	}
 	auto first_chain = std::make_unique<NodeAccessChain>(std::move(left), tok);
 	first_chain->update_types();
-	// std::vector<std::optional<Token>> opt_chains{};
-	// opt_chains.reserve(idx);
-	// for (size_t i = 0; i < idx; i++) {
-	// 	opt_chains.push_back(std::move(opt_chaining_indexes[i]));
-	// 	opt_chaining_indexes[i].reset();
-	// }
-	// first_chain->opt_chaining_indexes = std::move(opt_chains);
+	opt_chaining_indexes[std::max((size_t)0,idx-1)].reset();
 	if (first_chain->chain.size() == 1) {
 		return std::move(first_chain->chain[0]);
 	}

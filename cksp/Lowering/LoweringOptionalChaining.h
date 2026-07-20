@@ -101,12 +101,11 @@ public:
 	}
 
 	/// builds the `<chain prefix> # nil` guard for the ?. at idx and consumes its token.
-	/// Resets the token on `node` itself rather than relying on split() to do so, so repeated
+	/// split resets the token on `node`, so repeated
 	/// calls for a chain with multiple ?. (here and in LoweringNullCoalescing) terminate
 	/// regardless of what split() does with its own copy of the indexes.
 	static std::unique_ptr<NodeBinaryExpr> make_nil_check(NodeAccessChain& node, const size_t idx, const Token& opt_tok) {
 		auto first = node.split(idx + 1);
-		node.opt_chaining_indexes[idx].reset();
 		auto condition = std::make_unique<NodeBinaryExpr>(
 			token::NOT_EQUAL,
 			std::move(first),
