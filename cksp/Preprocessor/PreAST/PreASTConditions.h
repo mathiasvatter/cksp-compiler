@@ -14,12 +14,13 @@ class PreASTConditions final : public PreASTVisitor {
 		return value;
 	}
 
-	inline static std::unordered_set<std::string> BUILTIN_CONDITIONS = {"NO_SYS_SCRIPT_GROUP_START", "NO_SYS_SCRIPT_PEDAL", "NO_SYS_SCRIPT_RLS_TRIG", "NO_SYS_RELEASE_TRIGGER"};
-
 public:
+
 	explicit PreASTConditions() {
 		m_conditions_set.clear();
 	}
+
+	inline static std::unordered_set<std::string> BUILTIN_CONDITIONS = {"NO_SYS_SCRIPT_GROUP_START", "NO_SYS_SCRIPT_PEDAL", "NO_SYS_SCRIPT_RLS_TRIG", "NO_SYS_RELEASE_TRIGGER"};
 	static bool is_builtin_condition(const Token& token) {
 		return BUILTIN_CONDITIONS.contains(token.val);
 	}
@@ -43,11 +44,11 @@ public:
 		const auto it = m_conditions_set.find(condition_name);
 		bool condition_value = false;
 		if(it == m_conditions_set.end()) {
-			auto error = CompileError(ErrorType::CompileWarning, "", "", node.tok);
-			error.m_message = "Condition '" + condition_name + "' has not been defined. <USE_CODE_IF> and <USE_CODE_IF_NOT> "
+			auto error = Diagnostic(ErrorType::CompileWarning, "", "", node.tok);
+			error.message = "Condition '" + condition_name + "' has not been defined. <USE_CODE_IF> and <USE_CODE_IF_NOT> "
 						"statements require a condition to be defined once with SET_CONDITION(<condition>) or RESET_CONDITION(<condition>) before usage."
 						" This condition will be treated as <false>.";
-			error.print();
+			error.report(diagnostics());
 		} else {
 			condition_value = it->second;
 		}

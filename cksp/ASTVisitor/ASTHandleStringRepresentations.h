@@ -127,8 +127,8 @@ private:
 	/// if return is false, the function already exists
 	bool generate_array_repr_method(NodeArrayRef& node) const {
 		if(!node.get_declaration()) {
-			auto error = get_raw_compile_error(ErrorType::InternalError, node);
-			error.m_message = "ArrayRef has no declaration";
+			auto error = make_diagnostic(ErrorType::InternalError, node);
+			error.message = "ArrayRef has no declaration";
 			error.exit();
 		}
 		std::string func_name = node.ty->to_string()+OBJ_DELIMITER+"__repr__";
@@ -177,8 +177,8 @@ private:
 	/// if return is false, the function already exists
 	bool generate_ndarray_repr_method(NodeNDArrayRef& node) const {
 		if(!node.get_declaration()) {
-			auto error = get_raw_compile_error(ErrorType::InternalError, node);
-			error.m_message = "NDArrayRef has no declaration";
+			auto error = make_diagnostic(ErrorType::InternalError, node);
+			error.message = "NDArrayRef has no declaration";
 			error.exit();
 		}
 		std::string func_name = node.ty->to_string()+OBJ_DELIMITER+"__repr__";

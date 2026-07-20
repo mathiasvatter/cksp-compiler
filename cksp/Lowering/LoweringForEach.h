@@ -69,21 +69,21 @@ public:
 
         // range has to be an array that was parsed as variable ref
         if(!node.range->ty->cast<CompositeType>()) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node.range->tok);
-			error.m_message = "Found incorrect range in for-each syntax. Range has to be of type <Composite> which"
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.range->tok);
+			error.message = "Found incorrect range in for-each syntax. Range has to be of type <Composite> which"
 							  " can be an array, a function or a multidimensional array";
-            error.m_expected = "<CompositeType>";
-            error.m_got = node.range->ty->to_string();
+            error.expected = "<CompositeType>";
+            error.actual = node.range->ty->to_string();
             error.exit();
         }
 
 		// foreach loop with pairs function -> two keys
 		if(node.range->cast<NodePairs>()) {
 			if (!m_key) {
-				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-				error.m_message = "Found no (key, value) pair in for-each syntax when using <pairs>.";
-				error.m_expected = "2";
-				error.m_got = "1";
+				auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+				error.message = "Found no (key, value) pair in for-each syntax when using <pairs>.";
+				error.expected = "2";
+				error.actual = "1";
 				error.exit();
 			}
 			auto block = tackle_for_each_pairs(node);
@@ -93,10 +93,10 @@ public:
 		// normal for each loop over array with one key
 		} else {
 			if(m_key) {
-				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-				error.m_message = "Found incorrect amount of variables in for-each syntax. When a (key, value) pair is used, the range has to be a <pairs> function.";
-				error.m_expected = "1";
-				error.m_got = "2";
+				auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+				error.message = "Found incorrect amount of variables in for-each syntax. When a (key, value) pair is used, the range has to be a <pairs> function.";
+				error.expected = "1";
+				error.actual = "2";
 				error.exit();
 			}
 			auto block = tackle_for_each(node);
@@ -256,9 +256,9 @@ public:
 		return std::move(node_scope);
 	}
 
-	static CompileError throw_range_composite_error(const Token &tok) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-		error.m_message = "Found incorrect range in for-each syntax. Range has to be of type <Composite> which"
+	static Diagnostic throw_range_composite_error(const Token &tok) {
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+		error.message = "Found incorrect range in for-each syntax. Range has to be of type <Composite> which"
 						  " can be an array, a function or a multidimensional array. This range parameter seems"
 						  " not to be recognized as valid.";
 		return error;

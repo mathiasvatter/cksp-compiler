@@ -10,20 +10,27 @@
 #include <mutex>
 
 #include "ASTHelper.h"
+#include "../Tokenizer/Token.h"
 #include "../Types/Types.h"
+#include "../Types/TypeReference.h"
 #include "../../misc/HashFunctions.h"
+#include "../../misc/Diagnostic.h"
+#include "../../misc/FreeFunctions.h"
 #include "../../utils/StringUtils.h"
 
 class ASTDesugaring;
 class ASTLowering;
+class ConstantDatabase;
 struct NodeProgram;
 struct NodeFunctionHeaderRef;
 struct NodeReference;
+class DiagnosticEngine;
 
 struct NodeAST {
 	SourceRange range;
     Token tok;
 	Type* ty = nullptr;
+	TypeReferences type_references;
     NodeType node_type;
     NodeAST* parent = nullptr;
 	explicit NodeAST(Token tok=Token(), NodeType node_type=NodeType::DeadCode);
@@ -36,10 +43,10 @@ struct NodeAST {
 		return nullptr;
 	}
 	void set_range(const Token& start, const Token& end) {
-		range = {start, end};
+		range = source_range_from_tokens(start, end);
 	}
 	void set_range(const Token& token) {
-		range = SourceRange{token};
+		range = source_range_from_token(token);
 	}
 	void set_range(const SourceRange& start, const SourceRange& end) {
 		range = SourceRange{start, end};
@@ -57,9 +64,27 @@ struct NodeAST {
 	virtual void set_child_parents() {}
     virtual std::string get_string() = 0;
 	virtual std::string get_token_string() const { return tok.val; }
-    virtual void update_token_data(const Token& token) {
-        tok.line = token.line; tok.file = token.file;
-    }
+    // virtual void update_token_data(const Token& token) {
+    //     tok.line = token.line; tok.file = token.file;
+    // }
+	virtual void update_token_data(const Token& token) {
+		const long long delta = (long long)token.line - (long long)tok.line;
+		tok.line = token.line;
+		tok.file = token.file;
+		if (range.is_valid()) {
+			// Keep the range in sync with the relocated token by shifting it the same number
+			// of lines; columns are preserved. Guard against underflow when moving upwards.
+			const long long start_line = (long long)range.start.line + delta;
+			const long long end_line   = (long long)range.end.line + delta;
+			range.start.line = start_line < 0 ? 0 : (size_t)start_line;
+			range.end.line   = end_line   < 0 ? 0 : (size_t)end_line;
+		} else {
+			// The node never had a valid range (e.g. it was built from an empty token);
+			// derive one from the now-populated token.
+			range = source_range_from_token(tok);
+		}
+	}
+
     [[nodiscard]] virtual ASTDesugaring *get_desugaring(NodeProgram *program) const {
         return nullptr;
     }
@@ -76,6 +101,8 @@ struct NodeAST {
 	virtual NodeAST* lower(NodeProgram* program);
 	virtual NodeAST* post_lower(NodeProgram* program);
 	virtual NodeAST* data_lower(NodeProgram* program);
+	/// Returns the diagnostic context of the owning program.
+	[[nodiscard]] DiagnosticEngine& diagnostics() const;
     [[nodiscard]] NodeType get_node_type() const { return node_type; }
 	/// attempts to set the element type of this node to element_type if node has Composite Type
 	/// and elemen_type is Basic Type
@@ -108,7 +135,7 @@ struct NodeAST {
 	[[nodiscard]] NodeBlock* get_outmost_block() const;
 	[[nodiscard]] struct NodeCallback* get_current_callback() const;
 	[[nodiscard]] struct NodeFunctionDefinition* get_current_function() const;
-	NodeAST *do_constant_folding();
+	NodeAST *do_constant_folding(const ConstantDatabase* database = nullptr);
 	/// calls TypeInference pass
 	void do_type_inference(NodeProgram *program);
 	/// calls ASTLowerTypes pass
@@ -756,7 +783,7 @@ struct NodeInitializerList final : NodeAST {
 	 * inconsistent, an exception is thrown.
 	 *
 	 * @return A vector containing the sizes of each dimension.
-	 * @throws CompileError if the sizes of nested lists are inconsistent.
+	 * @throws Diagnostic if the sizes of nested lists are inconsistent.
 	 */
 	[[nodiscard]] std::vector<int> get_dimensions() const;
 	/// tries to find constant step size with start and stop and transform to range
@@ -921,6 +948,7 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	int num_return_stmts = 0;
 	std::vector<NodeReturn*> return_stmts;
     std::unordered_set<NodeFunctionCall*> call_sites = {};
+	mutable std::mutex call_sites_mutex;
     std::shared_ptr<NodeFunctionHeader> header;
     std::optional<std::shared_ptr<NodeDataStructure>> return_variable;
     bool override = false;
@@ -949,6 +977,14 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	std::shared_ptr<NodeFunctionDefinition> get_shared() {
 		return shared_from_this();
 	}
+	void add_call_site(NodeFunctionCall* call_site) {
+		std::lock_guard<std::mutex> lock(call_sites_mutex);
+		call_sites.insert(call_site);
+	}
+	void remove_call_site(NodeFunctionCall* call_site) {
+		std::lock_guard<std::mutex> lock(call_sites_mutex);
+		call_sites.erase(call_site);
+	}
 	void set_header(std::shared_ptr<NodeFunctionHeader> header);
 	std::vector<std::shared_ptr<NodeDataStructure>> do_variable_reuse(NodeProgram *program);
 	void do_return_param_promotion(NodeProgram* program);
@@ -960,6 +996,8 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 struct NodeProgram final : NodeAST {
 	struct CompilerConfig* compiler_config = nullptr;
 	class DefinitionProvider* def_provider = nullptr;
+	/// Non-owning diagnostic context supplied by Compiler for this AST's lifetime.
+	DiagnosticEngine* diagnostic_engine = nullptr;
 	NodeCallback* init_callback = nullptr;
 	NodeCallback* current_callback = nullptr;
 	// std::shared_ptr<NodeVariable> global_iterator;
@@ -970,7 +1008,8 @@ struct NodeProgram final : NodeAST {
 		if(function_definition_stack.empty()) return nullptr;
 		return function_definition_stack.top().lock();
 	}
-	std::vector<NodeFunctionCall*> function_call_stack{};
+	/// Non-owning function calls active during recursive AST traversal.
+	std::vector<const NodeFunctionCall*> function_call_stack{};
 	std::vector<struct NodeNamespace*> namespaces;
     std::vector<std::unique_ptr<NodeCallback>> callbacks;
     std::vector<std::shared_ptr<NodeFunctionDefinition>> function_definitions;
@@ -1023,6 +1062,7 @@ struct NodeProgram final : NodeAST {
 	void inline_structs_and_constants();
 	void reset_function_visited_flag();
 	void reset_function_used_flag() const;
+
 	bool is_init_callback(const NodeCallback* curr_callback) const {
 		return curr_callback == init_callback;
 	}
@@ -1031,4 +1071,19 @@ struct NodeProgram final : NodeAST {
 
 	std::shared_ptr<NodeVariable> get_tmp_var(Type* ty, DataType data=DataType::Mutable, const Token& token = Token()) const;
 	std::shared_ptr<NodePointer> get_tmp_ptr(Type* ty, DataType data=DataType::Mutable, const Token& token = Token()) const;
+};
+
+/// Balances function-call stack updates across normal returns and exceptions.
+/// Keeps track of the function call stack upon creation and pops upon destruction
+class FunctionCallStackScope final {
+public:
+	FunctionCallStackScope(NodeProgram& program, const NodeFunctionCall& call);
+	~FunctionCallStackScope();
+
+	FunctionCallStackScope(const FunctionCallStackScope&) = delete;
+	FunctionCallStackScope& operator=(const FunctionCallStackScope&) = delete;
+
+private:
+	NodeProgram& m_program;
+	int m_uncaught_exceptions;
 };

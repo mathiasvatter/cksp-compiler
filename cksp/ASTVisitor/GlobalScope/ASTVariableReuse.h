@@ -48,6 +48,11 @@ public:
 		clear_all_maps();
 	}
 
+	void set_program(NodeProgram* program) override {
+		ASTVisitor::set_program(program);
+		m_def_provider = program ? program->def_provider : nullptr;
+	}
+
 	std::vector<std::shared_ptr<NodeDataStructure>> do_variable_reuse(NodeFunctionDefinition& def) {
 		m_lifetime_analysis = std::make_unique<ASTLifeTimeAnalysis>(m_program);
 		m_lifetime_end_per_var.clear();
@@ -340,7 +345,7 @@ private:
 
 			auto l = m_lifetime_analysis->get_lifetime(node.variable.get());
 			if (!l) {
-				auto error = CompileError(ErrorType::InternalError, "Variable has no lifetime", "", node.tok);
+				auto error = Diagnostic(ErrorType::InternalError, "Variable has no lifetime", "", node.tok);
 				error.exit();
 			}
 			m_lifetime_end_per_var[l->end].push_back(node.variable);

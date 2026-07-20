@@ -13,6 +13,8 @@
 class TypeInference final : public ASTVisitor {
 	DefinitionProvider* m_def_provider;
 	std::vector<NodeFunctionCall*> m_func_calls;
+	/// positions of already reported discarded-return warnings for method calls
+	std::unordered_set<std::string> m_discard_warnings;
 
 	void do_monomorphization() {
 		// copy m_func_calls to avoid modification during iteration (especially when visiting nodes again
@@ -40,6 +42,17 @@ class TypeInference final : public ASTVisitor {
 
 		m_program->reset_function_visited_flag();
 
+		// resolved monomorphizations per definition and actual argument types. Cloning the
+		// function header per call site is expensive (the clone copies every reference set of
+		// every parameter), so repeated call sites with the same argument types rebind to the
+		// cached resolution without touching the header
+		struct MonomorphCacheEntry {
+			int method_idx;
+			std::vector<Type*> arg_types;
+			std::shared_ptr<NodeFunctionDefinition> resolved;
+		};
+		std::unordered_map<NodeFunctionDefinition*, std::vector<MonomorphCacheEntry>> monomorph_cache;
+
 		for (const auto& call : calls) {
 			if (call->kind != NodeFunctionCall::Kind::UserDefined) continue;
 			auto const def = call->get_definition();
@@ -59,8 +72,40 @@ class TypeInference final : public ASTVisitor {
 
 
 			if (def->header->has_union_params()) {
-				auto new_header = clone_as<NodeFunctionHeader>(def->header.get());
 				int method_idx = call->is_in_access_chain() ? 1 : 0;
+
+				const bool arity_fits = call->function->get_num_args() + method_idx <= def->get_num_params();
+				std::vector<Type*> arg_types;
+				if (arity_fits) {
+					arg_types.reserve(call->function->get_num_args());
+					for (size_t i = 0; i < call->function->get_num_args(); i++) {
+						arg_types.push_back(call->function->get_arg(i)->ty);
+					}
+					auto& entries = monomorph_cache[def.get()];
+					const auto entry = std::ranges::find_if(entries, [&](const MonomorphCacheEntry& e) {
+						return e.method_idx == method_idx and e.arg_types == arg_types;
+					});
+					if (entry != entries.end()) {
+						// apply the one side effect of the skipped match_type: composite formal
+						// parameters hand their type to still untyped actual arguments
+						for (size_t i = 0; i < call->function->get_num_args(); i++) {
+							auto& actual_param = call->function->get_arg(i);
+							const auto& formal_param = def->get_param(i + method_idx);
+							if (formal_param->ty and formal_param->ty->get_type_kind() == TypeKind::Composite
+								and actual_param->ty == TypeRegistry::Unknown) {
+								const auto elem_type = actual_param->ty->get_element_type();
+								actual_param->ty = formal_param->ty;
+								actual_param->set_element_type(elem_type);
+							}
+						}
+						call->definition = entry->resolved;
+						call->function->declaration = entry->resolved->header;
+						call->function->name = entry->resolved->header->name;
+						continue;
+					}
+				}
+
+				auto new_header = clone_as<NodeFunctionHeader>(def->header.get());
 				for (size_t i = 0; i< call->function->get_num_args(); i++) {
 					auto& actual_param = call->function->get_arg(i);
 					auto& formal_param = new_header->get_param(i+method_idx);
@@ -73,6 +118,9 @@ class TypeInference final : public ASTVisitor {
 				const auto func = m_program->look_up_exact({new_header->name, (int)new_header->params.size()}, new_header->ty);
 				// if there is only one call site skip this
 				if (func) {
+					if (arity_fits) {
+						monomorph_cache[def.get()].push_back({method_idx, std::move(arg_types), func});
+					}
 					call->definition = func;
 					call->function->declaration = func->header;
 					call->function->name = func->header->name;
@@ -125,6 +173,9 @@ class TypeInference final : public ASTVisitor {
 				const auto func_ptr = m_program->add_function_definition(std::move(new_func_def));
 				call->definition = func_ptr->get_shared();
 				func_ptr->header->name = func_name;
+				if (arity_fits) {
+					monomorph_cache[def.get()].push_back({method_idx, std::move(arg_types), func_ptr->get_shared()});
+				}
 			}
 		}
 		// auto start_merge = std::chrono::high_resolution_clock::now();
@@ -182,6 +233,7 @@ public:
 
 	NodeAST* do_complete_traversal(NodeProgram& node) {
 		m_func_calls.clear();
+		m_discard_warnings.clear();
 		m_def_provider->m_all_declarations.clear();
 		m_def_provider->m_all_references.clear();
 		m_def_provider->m_all_data_structures.clear();
@@ -218,6 +270,7 @@ public:
 
 	NodeAST* do_reachable_traversal(NodeProgram& node) {
 		m_func_calls.clear();
+		m_discard_warnings.clear();
 		m_def_provider->m_all_declarations.clear();
 		m_def_provider->m_all_references.clear();
 		m_def_provider->m_all_data_structures.clear();
@@ -289,6 +342,7 @@ public:
 	NodeAST * visit(NodeSortSearch& node) override;
 	NodeAST * visit(NodeForEach& node) override;
 	NodeAST * visit(NodeTernary& node) override;
+	NodeAST * visit(NodeNullCoalesce& node) override;
 
 
 
@@ -297,48 +351,48 @@ public:
     static void cast_data_structure_types(const NodeProgram* program, bool cast= false);
 
     /// error if composite type was not added to the type registry
-    static CompileError throw_composite_error(NodeReference* node) {
-        auto error = CompileError(ErrorType::TypeError,"", "", node->tok);
+    static Diagnostic throw_composite_error(NodeReference* node) {
+        auto error = Diagnostic(ErrorType::TypeError,"", "", node->tok);
         error.set_message("Composite Type is referenced but does not exist: "+node->name);
         return error;
     }
 
-    static CompileError throw_type_error(const NodeAST& node1, const Type* type, const std::string& message="") {
-        auto error = CompileError(ErrorType::TypeError,"", "", node1.tok);
+    static Diagnostic throw_type_error(const NodeAST& node1, const Type* type, const std::string& message="") {
+        auto error = Diagnostic(ErrorType::TypeError,"", "", node1.tok);
         error.set_message("Type mismatch: " + node1.ty->to_string() + " and " + type->to_string()+". ");
 		error.add_message(message);
         return error;
     }
 
-	static CompileError throw_type_error(const NodeAST& node1, const NodeAST& node2, const std::string& message="") {
-    	auto error = CompileError(ErrorType::TypeError,"", "", node1.tok);
-    	error.set_message("Type mismatch: The types of '"+ node1.get_token_string() +"' (<" + node1.ty->to_string() + ">) and '"+
-    		node2.get_token_string() +"' (<" + node2.ty->to_string()+">) are incompatible.");
-    	error.m_got = node1.ty->to_string();
-    	error.m_expected = node2.ty->to_string();
-    	error.add_message(message);
-    	return error;
+	static Diagnostic throw_type_error(const NodeAST& node1, const NodeAST& node2, const std::string& message="") {
+	auto error = Diagnostic(ErrorType::TypeError,"", "", node1.tok);
+	error.set_message("Type mismatch: The types of '"+ node1.get_token_string() +"' (<" + node1.ty->to_string() + ">) and '"+
+		node2.get_token_string() +"' (<" + node2.ty->to_string()+">) are incompatible.");
+	error.actual = node1.ty->to_string();
+	error.expected = node2.ty->to_string();
+	error.add_message(message);
+	return error;
     }
 
 	/// check for function that has same param types as return type
 	static bool is_same_input_same_output_type(const NodeFunctionHeader& header) {
-    	if (!header.ty) return false;
-    	if (header.params.empty()) return false;
-    	const auto func_type = header.ty->cast<FunctionType>();
-    	if (!func_type) return false;
-    	if (func_type->m_params.empty()) return false;
-    	// check if all param types are the same;
-    	if (std::ranges::adjacent_find(func_type->m_params, std::not_equal_to<>()) != func_type->m_params.end()) return false;
-    	if (!func_type->m_params[0]->is_union_type()) return false;
-    	// check if return type is the same as param type
-    	if (func_type->m_return_type != func_type->m_params[0]) return false;
-    	return true;
+	if (!header.ty) return false;
+	if (header.params.empty()) return false;
+	const auto func_type = header.ty->cast<FunctionType>();
+	if (!func_type) return false;
+	if (func_type->m_params.empty()) return false;
+	// check if all param types are the same;
+	if (std::ranges::adjacent_find(func_type->m_params, std::not_equal_to<>()) != func_type->m_params.end()) return false;
+	if (!func_type->m_params[0]->is_union_type()) return false;
+	// check if return type is the same as param type
+	if (func_type->m_return_type != func_type->m_params[0]) return false;
+	return true;
     }
 
     /// check types of initializations and try to infer overall element type
     static Type* infer_initialization_types(std::vector<Type*> &type_list, const NodeAST* node) {
-        auto error = CompileError(ErrorType::TypeError, "", "", node->tok);
-        if(type_list.empty()) CompileError(ErrorType::InternalError, "Found no types in list", "", node->tok).exit();
+        auto error = Diagnostic(ErrorType::TypeError, "", "", node->tok);
+        if(type_list.empty()) Diagnostic(ErrorType::InternalError, "Found no types in list", "", node->tok).exit();
 
         Type* first = nullptr;
         Type* second = nullptr;
@@ -359,14 +413,14 @@ public:
         if (first && !second) {
             return first;
         }
-    	if (first == TypeRegistry::Unknown || second == TypeRegistry::Unknown || !has_more_than_two_types) {
-    		// if one of the two found types is unknown, that is ok -> might be a misspelled variable
-    		if (first == TypeRegistry::Unknown) {
-    			return second;
-    		} else {
-    			return first;
-    		}
-    	}
+	if (first == TypeRegistry::Unknown || second == TypeRegistry::Unknown || !has_more_than_two_types) {
+		// if one of the two found types is unknown, that is ok -> might be a misspelled variable
+		if (first == TypeRegistry::Unknown) {
+			return second;
+		} else {
+			return first;
+		}
+	}
 
         // exactly two different types -> only allowed if they are <String> and <Integer>/<Real>
         if (!has_more_than_two_types && first && second) {
@@ -376,10 +430,10 @@ public:
             if (contains_string && contains_number) {
                 return TypeRegistry::String;
             }
-            error.m_message = "Only <String> and <Integer> or <Real> types are allowed in an initialization.";
+            error.message = "Only <String> and <Integer> or <Real> types are allowed in an initialization.";
             error.exit();
         }
-		error.m_message = "Unable to infer type from initialization.";
+		error.message = "Unable to infer type from initialization.";
 		error.exit();
         return nullptr;
     }
@@ -407,7 +461,7 @@ public:
             throw_type_error(node1, node2, message).exit();
 		}
 
-    	match_composite_type(node1, node2);
+	match_composite_type(node1, node2);
 		// specialize types:
         node1.set_element_type(specialize_type(node1.ty, node2.ty));
 
@@ -416,19 +470,19 @@ public:
 
 	// matches the outer type of node1 and node2 -> does not check for compatibility
 	static Type* match_composite_type(NodeAST& node1, NodeAST& node2) {
-    	// if one of them is composite type -> the other will be too
-    	if(node2.ty->get_type_kind() == TypeKind::Composite and node1.ty == TypeRegistry::Unknown) {
-    		// stash elem_typ temporarily
-    		const auto elem_type = node1.ty->get_element_type();
-    		node1.ty = node2.ty;
-    		node1.set_element_type(elem_type);
-    	} else if(node1.ty->get_type_kind() == TypeKind::Composite and node2.ty == TypeRegistry::Unknown) {
-    		// stash elem_typ temporarily
-    		const auto elem_type = node2.ty->get_element_type();
-    		node2.ty = node1.ty;
-    		node2.set_element_type(elem_type);
-    	}
-    	return node1.ty;
+	// if one of them is composite type -> the other will be too
+	if(node2.ty->get_type_kind() == TypeKind::Composite and node1.ty == TypeRegistry::Unknown) {
+		// stash elem_typ temporarily
+		const auto elem_type = node1.ty->get_element_type();
+		node1.ty = node2.ty;
+		node1.set_element_type(elem_type);
+	} else if(node1.ty->get_type_kind() == TypeKind::Composite and node2.ty == TypeRegistry::Unknown) {
+		// stash elem_typ temporarily
+		const auto elem_type = node2.ty->get_element_type();
+		node2.ty = node1.ty;
+		node2.set_element_type(elem_type);
+	}
+	return node1.ty;
     }
 
 
@@ -539,57 +593,57 @@ public:
 	/// integer, float -> number
 	/// string, integer, float -> any
 	static Type* generalize_type(const Type* type1, const Type* type2) {
-    	const auto node_1 = type1->get_element_type();
-    	const auto node_2 = type2->get_element_type();
+	const auto node_1 = type1->get_element_type();
+	const auto node_2 = type2->get_element_type();
 
-    	// if node 2 is unknown, return type of node1
-    	if(node_2 == TypeRegistry::Unknown) return node_1;
+	// if node 2 is unknown, return type of node1
+	if(node_2 == TypeRegistry::Unknown) return node_1;
 
 
-    	if(node_1 == TypeRegistry::Unknown) {
-    		if (node_2 == TypeRegistry::Integer) return TypeRegistry::Integer;
-    		if (node_2 == TypeRegistry::Real) return TypeRegistry::Real;
-    		if (node_2 == TypeRegistry::String) return TypeRegistry::String;
-    	}
+	if(node_1 == TypeRegistry::Unknown) {
+		if (node_2 == TypeRegistry::Integer) return TypeRegistry::Integer;
+		if (node_2 == TypeRegistry::Real) return TypeRegistry::Real;
+		if (node_2 == TypeRegistry::String) return TypeRegistry::String;
+	}
 
-    	if (node_1 == TypeRegistry::Integer) {
-    		if (node_2 == TypeRegistry::Integer) return node_1;
-    		if (node_2 == TypeRegistry::Real) return TypeRegistry::Number;
-    		if (node_2 == TypeRegistry::String) return TypeRegistry::Any;
-    	}
+	if (node_1 == TypeRegistry::Integer) {
+		if (node_2 == TypeRegistry::Integer) return node_1;
+		if (node_2 == TypeRegistry::Real) return TypeRegistry::Number;
+		if (node_2 == TypeRegistry::String) return TypeRegistry::Any;
+	}
 
-    	if (node_1 == TypeRegistry::Real) {
-    		if (node_2 == TypeRegistry::Integer) return TypeRegistry::Number;
-    		if (node_2 == TypeRegistry::Real) return node_1;
-    		if (node_2 == TypeRegistry::String) return TypeRegistry::Any;
-    	}
+	if (node_1 == TypeRegistry::Real) {
+		if (node_2 == TypeRegistry::Integer) return TypeRegistry::Number;
+		if (node_2 == TypeRegistry::Real) return node_1;
+		if (node_2 == TypeRegistry::String) return TypeRegistry::Any;
+	}
 
-    	if (node_1 == TypeRegistry::String) {
-    		if (node_2 == TypeRegistry::String) {
-    			return node_1;
-    		} else {
+	if (node_1 == TypeRegistry::String) {
+		if (node_2 == TypeRegistry::String) {
+			return node_1;
+		} else {
 				return TypeRegistry::Any;
 			}
-    	}
+	}
 
-    	return node_1;
+	return node_1;
     }
 
 	/// only there to match/generalize formal parameter to actual parameter
 	static Type* match_parameters(NodeAST& node1, Type* type, const std::string& message="") {
-    	// if(!node1.ty->is_compatible(type)) {
-    	// 	throw_type_error(node1, type, message).exit();
-    	// }
-    	// if type is composite and node1 is unknown, set type of node1 to type
-    	if(type->cast<CompositeType>() and node1.ty == TypeRegistry::Unknown) {
-    		// stash elem_typ temporarily
-    		const auto elem_type = node1.ty->get_element_type();
-    		node1.ty = type;
-    		node1.set_element_type(elem_type);
-    	}
-    	// specialize types:
-    	node1.set_element_type(generalize_type(node1.ty, type));
-    	return node1.ty;
+	// if(!node1.ty->is_compatible(type)) {
+	// 	throw_type_error(node1, type, message).exit();
+	// }
+	// if type is composite and node1 is unknown, set type of node1 to type
+	if(type->cast<CompositeType>() and node1.ty == TypeRegistry::Unknown) {
+		// stash elem_typ temporarily
+		const auto elem_type = node1.ty->get_element_type();
+		node1.ty = type;
+		node1.set_element_type(elem_type);
+	}
+	// specialize types:
+	node1.set_element_type(generalize_type(node1.ty, type));
+	return node1.ty;
     }
 
 };

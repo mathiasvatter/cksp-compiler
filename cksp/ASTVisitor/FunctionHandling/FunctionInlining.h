@@ -26,14 +26,14 @@ public:
 		m_local_arrays.clear();
 		node.function->accept(*this);
 		if(node.is_builtin_kind()) {
-			auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
-			error.m_message = "Function of builtin kind can not be inlined.";
+			auto error = Diagnostic(ErrorType::InternalError, "", "", node.tok);
+			error.message = "Function of builtin kind can not be inlined.";
 			return &node;
 		}
 		auto definition = node.get_definition();
 		if(!definition) {
-			auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
-			error.m_message = "FunctionInlining : Function node has to have a definition.";
+			auto error = Diagnostic(ErrorType::InternalError, "", "", node.tok);
+			error.message = "FunctionInlining : Function node has to have a definition.";
 		}
 
 		// deal here with expression functions
@@ -51,7 +51,7 @@ public:
 
 		// check if FunctionCall is in statement and not assigned or in a condition etc (Handled bei ReturnFunctionRewriting class)
 		if(!node.parent->cast<NodeStatement>()) {
-			CompileError(ErrorType::InternalError, "FunctionInlining : Function node was not rewritten and is not within <Statement>.", "", node.tok).exit();
+			Diagnostic(ErrorType::InternalError, "FunctionInlining : Function node was not rewritten and is not within <Statement>.", "", node.tok).exit();
 		}
 
 		// inlining process
@@ -75,8 +75,8 @@ private:
 		if(const auto ret = stmt->cast<NodeReturn>()) {
 			return std::move(ret->return_variables[0]);
 		}
-		auto error = CompileError(ErrorType::InternalError, "", "", body->tok);
-		error.m_message = "Function is not a return-only function";
+		auto error = Diagnostic(ErrorType::InternalError, "", "", body->tok);
+		error.message = "Function is not a return-only function";
 		error.exit();
 		return nullptr;
 	}
@@ -88,7 +88,7 @@ private:
 			ref.declaration = it->second;
 			return true;
 		}
-		auto error = CompileError(ErrorType::InternalError, "", "", ref.tok);
+		auto error = Diagnostic(ErrorType::InternalError, "", "", ref.tok);
 		error.set_message("Unable to find local array declaration for reference <"+ref.name+"> during function inlining.");
 		error.exit();
 		return false;
@@ -147,13 +147,13 @@ private:
 
 		if(substitute->ty->cast<CompositeType>()) {
 			if (!substitute->cast<NodeArrayRef>() and !substitute->cast<NodeNDArrayRef>()) {
-				auto error = CompileError(ErrorType::InternalError, "", "", ref->tok);
-				error.m_message = "Arg is of type <Composite> but is no <ArrayRef> Node: <" + ref->name + ">.";
+				auto error = Diagnostic(ErrorType::InternalError, "", "", ref->tok);
+				error.message = "Arg is of type <Composite> but is no <ArrayRef> Node: <" + ref->name + ">.";
 				error.exit();
 			}
 			if(ref->cast<NodeVariableRef>()) {
-				auto error = CompileError(ErrorType::InternalError, "", "", ref->tok);
-				error.m_message = "Tried to substitute a <Variable> function argument with an <Array>";
+				auto error = Diagnostic(ErrorType::InternalError, "", "", ref->tok);
+				error.message = "Tried to substitute a <Variable> function argument with an <Array>";
 				error.exit();
 			}
 			// if substitution is ndarray with wildcards [*, *] -> replace
@@ -178,8 +178,8 @@ private:
 						}
 					}
 					return nullptr;
-					// auto error = CompileError(ErrorType::SyntaxError, "", "", ref->tok);
-					// error.m_message = "Tried to substitute a function argument of type <"+ref->ty->to_string()+"> with "
+					// auto error = Diagnostic(ErrorType::SyntaxError, "", "", ref->tok);
+					// error.message = "Tried to substitute a function argument of type <"+ref->ty->to_string()+"> with "
 					// 				   "an <NDArray> containing wildcards and of type "+substitute->ty->to_string()+".";
 					// error.exit();
 				}
@@ -208,8 +208,8 @@ private:
 	static NodeReference* substitute_function_type(NodeReference* ref, NodeAST* substitute) {
 		if(substitute->ty->cast<FunctionType>()) {
 			if (!substitute->cast<NodeFunctionHeaderRef>() and !ref->cast<NodeFunctionHeaderRef>()) {
-				auto error = CompileError(ErrorType::InternalError, "", "", ref->tok);
-				error.m_message = "Arg is of type <Function> but is no <FunctionHeaderRef> Node: <" + ref->name + ">.";
+				auto error = Diagnostic(ErrorType::InternalError, "", "", ref->tok);
+				error.message = "Arg is of type <Function> but is no <FunctionHeaderRef> Node: <" + ref->name + ">.";
 				error.exit();
 			}
 			const auto function_subst = substitute->cast<NodeFunctionHeaderRef>();
@@ -234,8 +234,8 @@ private:
 				// 	return nullptr;
 				// }
 				if(!substitute->ty->cast<CompositeType>() and substitute->is_constant()) {
-					auto error = CompileError(ErrorType::SyntaxError, "", "", substitute->tok);
-					error.m_message = "Tried to substitute an l_value of an assignment with an immutable value. Left side of assignment must be a reference.";
+					auto error = Diagnostic(ErrorType::SyntaxError, "", "", substitute->tok);
+					error.message = "Tried to substitute an l_value of an assignment with an immutable value. Left side of assignment must be a reference.";
 					error.exit();
 				}
 			}
@@ -243,10 +243,10 @@ private:
 				const auto func_call = header->parent->cast<NodeFunctionCall>();
 				if(func_call and func_call->is_destructive_builtin_func()) {
 					if(substitute->is_constant() and !substitute->ty->cast<CompositeType>()) {
-						auto error = CompileError(ErrorType::TypeError, "", "", ref->tok);
-						error.m_message = "Tried to substitute an argument of a destructive builtin function with an immutable value.";
-						error.m_message += " Destructive functions require a variable as an argument.";
-						error.m_got = substitute->tok.val;
+						auto error = Diagnostic(ErrorType::TypeError, "", "", ref->tok);
+						error.message = "Tried to substitute an argument of a destructive builtin function with an immutable value.";
+						error.message += " Destructive functions require a variable as an argument.";
+						error.actual = substitute->tok.val;
 						error.exit();
 					}
 				}

@@ -141,15 +141,15 @@ private:
 		const auto declaration = node_reference->get_declaration();
 		if(!declaration) return false;
 		// check if callback id reference is ui_control
-		auto error = CompileError(ErrorType::TypeError, "", "", callback_id->tok);
+		auto error = Diagnostic(ErrorType::TypeError, "", "", callback_id->tok);
 		if(node_reference->data_type != DataType::UIControl) {
-			error.m_message = id_node_type+" needs to be of type <UI Control> to be referenced in <UI Callback>.";
+			error.message = id_node_type+" needs to be of type <UI Control> to be referenced in <UI Callback>.";
 			error.exit();
 		} else {
 			// var ref is ui control -> check if it is ui_label
 			if(const auto ui_control = declaration->parent->cast<NodeUIControl>()) {
 				if(ui_control->name == "ui_label") {
-					error.m_message = "<UI Label> cannot be referenced in <UI Callback>.";
+					error.message = "<UI Label> cannot be referenced in <UI Callback>.";
 					error.exit();
 				}
 			}

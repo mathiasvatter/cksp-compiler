@@ -5,23 +5,66 @@
 #pragma once
 
 #include "PreASTNodes/PreAST.h"
+#include "../../../misc/DiagnosticEngine.h"
 
 
 class PreASTVisitor {
 protected:
 	PreNodeProgram* m_program = nullptr;
-    /// substitution stack for define/macro substitutions
+	[[nodiscard]] DiagnosticEngine& diagnostics() const {
+		if (!m_program || !m_program->diagnostic_engine) {
+			throw std::logic_error("PreASTVisitor has no DiagnosticEngine");
+		}
+		return *m_program->diagnostic_engine;
+	}
+	/// substitution stack for define/macro substitutions
 	std::stack<std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>>> m_substitution_stack{};
+	void inherit_substitutions(std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>>& map) const {
+		if (m_substitution_stack.empty()) return;
+		for (const auto& [name, value] : m_substitution_stack.top()) {
+			if (!map.contains(name)) {
+				map[name] = clone_as<PreNodeChunk>(value.get());
+			}
+		}
+	}
+	std::unique_ptr<PreNodeChunk> clone_substitution_chunk(const std::string& name) const {
+		if (m_substitution_stack.empty()) return nullptr;
+		const auto& map = m_substitution_stack.top();
+		const auto it = map.find(name);
+		if (it == map.end()) return nullptr;
+		return clone_as<PreNodeChunk>(it->second.get());
+	}
+	static const Token* first_source_token(const PreNodeAST* node) {
+		if (!node) return nullptr;
+		if (!node->tok.file.empty() && node->tok.line != static_cast<size_t>(-1) && node->tok.pos > 0 && !node->tok.val.empty()) {
+			return &node->tok;
+		}
+		if (const auto* statement = dynamic_cast<const PreNodeStatement*>(node)) {
+			return first_source_token(statement->statement.get());
+		}
+		if (const auto* chunk = dynamic_cast<const PreNodeChunk*>(node)) {
+			for (const auto& child : chunk->chunk) {
+				if (const auto* token = first_source_token(child.get())) return token;
+			}
+		}
+		if (const auto* list = dynamic_cast<const PreNodeList*>(node)) {
+			for (const auto& param : list->params) {
+				if (const auto* token = first_source_token(param.get())) return token;
+			}
+		}
+		return nullptr;
+	}
     /// returns text replacement for current node.name, or original text if there is no replacement (in between #...#)
-    std::string get_text_replacement(const Token& name) {
+    Token get_text_replacement_token(const Token& name) {
         // Zähle einmalig die Anzahl der '#' im Token
         if (StringUtils::count_char(name.val, '#') % 2 != 0) {
-            auto error = CompileError(ErrorType::PreprocessorError,
+            auto error = Diagnostic(ErrorType::PreprocessorError,
                          "", "", name);
             error.set_message("Found wrong number of # in macro replacement.");
             error.exit();
         }
-        std::string result = name.val;
+        Token result = name;
+        const Token* prefix_source = nullptr;
         // Iteriere durch die Substitutionen
         const auto& substitutions = m_substitution_stack.top();
         for (const auto&[fst, snd] : substitutions) {
@@ -31,12 +74,18 @@ protected:
                 const std::string& replace_with = snd->get_chunk(0)->get_string();
 
                 // Verwende result.find und result.replace direkt, ohne den String mehrfach zu verändern
-                while ((start = result.find(fst, start)) != std::string::npos) {
-                    result.replace(start, fst.length(), replace_with);
+                while ((start = result.val.find(fst, start)) != std::string::npos) {
+	                if (start == 0) prefix_source = first_source_token(snd.get());
+                    result.val.replace(start, fst.length(), replace_with);
                     start += replace_with.length();
                 }
             }
         }
+	    if (prefix_source && result.val.starts_with(prefix_source->val)) {
+		    result.line = prefix_source->line;
+		    result.pos = prefix_source->pos;
+		    result.file = prefix_source->file;
+	    }
         return result;
     }
 public:

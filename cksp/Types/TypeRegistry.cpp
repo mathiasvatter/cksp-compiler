@@ -8,6 +8,14 @@
 
 // Implementation of the initialization method
 void TypeRegistry::initialize() {
+    object_types.clear();
+    composite_types.clear();
+    function_types.clear();
+    annotation_to_type.clear();
+    type_to_annotation.clear();
+    identifier_to_type.clear();
+    type_to_identifier.clear();
+
     // Initialization of standard types
     IntegerType = std::make_unique<BasicType>(Kind::Integer);
     Integer = IntegerType.get();
@@ -81,10 +89,25 @@ Type *TypeRegistry::get_type_from_annotation(const std::string &name) {
 }
 
 std::string TypeRegistry::get_annotation_from_type(Type* ty) {
+	if (!ty) return "";
     auto it = type_to_annotation.find(ty);
     if (it != type_to_annotation.end()) {
         return it->second;
     }
+
+	const auto is_registered = [ty] {
+		for (const auto& [_, type] : object_types) {
+			if (type.get() == ty) return true;
+		}
+		for (const auto& [_, type] : composite_types) {
+			if (type.get() == ty) return true;
+		}
+		for (const auto& [_, type] : function_types) {
+			if (type.get() == ty) return true;
+		}
+		return false;
+	};
+	if (!is_registered()) return "";
     return ty->to_string();
 }
 

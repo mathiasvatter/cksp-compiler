@@ -99,8 +99,8 @@ private:
 
 		if (node.is_builtin_kind() and node.ty->get_element_type() == TypeRegistry::Boolean) {
 			auto other = bin_exp->left.get() == &node ? bin_exp->right.get() : bin_exp->left.get();
-			auto error = CompileError(ErrorType::SyntaxError, "", "", other->tok);
-			error.m_message = "Comparison operators cannot be used on builtin functions that return boolean values such as <"+node.function->name+">.";
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", other->tok);
+			error.message = "Comparison operators cannot be used on builtin functions that return boolean values such as <"+node.function->name+">.";
 			error.exit();
 		}
 		return ASTVisitor::visit(node);

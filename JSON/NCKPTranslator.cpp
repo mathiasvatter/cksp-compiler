@@ -4,6 +4,37 @@
 
 #include "NCKPTranslator.h"
 
+namespace {
+	template<typename T>
+	T* get_property_as(JSONObject& object, const std::string& key) {
+		auto it = object.properties.find(key);
+		if(it == object.properties.end()) {
+			return nullptr;
+		}
+		return dynamic_cast<T*>(it->second.get());
+	}
+
+	JSONString* find_control_id(JSONObject& object) {
+		if(auto id = get_property_as<JSONString>(object, "id")) {
+			return id;
+		}
+		if(auto common = get_property_as<JSONObject>(object, "common")) {
+			if(auto id = get_property_as<JSONString>(*common, "id")) {
+				return id;
+			}
+		}
+		if(auto value = get_property_as<JSONObject>(object, "value")) {
+			if(auto id = get_property_as<JSONString>(*value, "id")) {
+				return id;
+			}
+			if(auto common = get_property_as<JSONObject>(*value, "common")) {
+				return get_property_as<JSONString>(*common, "id");
+			}
+		}
+		return nullptr;
+	}
+}
+
 NCKPTranslator::NCKPTranslator(DefinitionProvider* definition_provider)
 	: m_def_provider(definition_provider) {}
 
@@ -12,26 +43,9 @@ void NCKPTranslator::visit(JSONBool &boolean) {
 }
 
 void NCKPTranslator::visit(JSONString &str) {
-
-    if(m_current_property == "id") {
-		std::string var_name = StringUtils::remove_quotes(str.value);
-		if(!m_panel_prefixes.empty()) {
-			var_name = m_panel_prefixes.top().first + "_" + var_name;
-		}
-        m_ui_controls.insert({var_name, m_current_control_idx});
-		if(m_current_control_idx == 0) {
-			m_panel_prefixes.emplace(var_name, m_current_panel_object);
-		}
-    }
 }
 
 void NCKPTranslator::visit(JSONInt &num) {
-    if(m_current_property == "index") {
-        m_current_control_idx = num.value;
-		if(m_current_control_idx == 0) {
-			m_current_panel_object = m_current_object;
-		}
-    }
 }
 
 void NCKPTranslator::visit(JSONFloat &num) {
@@ -45,12 +59,25 @@ void NCKPTranslator::visit(JSONArray &array) {
 }
 
 void NCKPTranslator::visit(JSONObject &object) {
-	m_current_object = &object;
-    for(auto &pair : object.properties) {
-        m_current_property = pair.first;
-        pair.second->accept(*this);
-    }
-	if(!m_panel_prefixes.empty() and &object == m_panel_prefixes.top().second) {
+	bool pushed_panel = false;
+	if(auto index = get_property_as<JSONInt>(object, "index")) {
+		if(auto id = find_control_id(object)) {
+			std::string var_name = StringUtils::remove_quotes(id->value);
+			if(!m_panel_prefixes.empty()) {
+				var_name = m_panel_prefixes.top().first + "_" + var_name;
+			}
+			m_ui_controls.insert({var_name, index->value});
+			if(index->value == 0) {
+				m_panel_prefixes.emplace(var_name, &object);
+				pushed_panel = true;
+			}
+		}
+	}
+
+	for(auto &pair : object.properties) {
+		pair.second->accept(*this);
+	}
+	if(pushed_panel) {
 		m_panel_prefixes.pop();
 	}
 }
@@ -60,7 +87,7 @@ std::vector<std::shared_ptr<NodeDataStructure>> NCKPTranslator::collect_ui_varia
 	for(auto &ui_pair : m_ui_controls) {
 		auto it = UI_CONTROL_INDEX.find(ui_pair.second);
 		if(it == UI_CONTROL_INDEX.end()) {
-			CompileError(ErrorType::ParseError, "Could not find ui widget index.", -1, "", std::to_string(ui_pair.second), "*.nckp").exit();
+			Diagnostic(ErrorType::ParseError, "Could not find ui widget index.", -1, "", std::to_string(ui_pair.second), "*.nckp").exit();
 		}
 		std::string ui_control = it->second;
 		std::string ui_var = ui_pair.first;
@@ -84,5 +111,3 @@ std::vector<std::shared_ptr<NodeDataStructure>> NCKPTranslator::collect_ui_varia
 	}
 	return std::move(ui_variables);
 }
-
-

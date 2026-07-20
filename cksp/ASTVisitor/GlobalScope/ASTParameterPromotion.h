@@ -71,7 +71,7 @@ private:
 		node.bind_definition(m_program);
 
         if(node.kind == NodeFunctionCall::Kind::Property) {
-            CompileError(ErrorType::InternalError, "Found undefined <property function>.", "", node.tok).exit();
+            Diagnostic(ErrorType::InternalError, "Found undefined <property function>.", "", node.tok).exit();
         } else if (node.kind == NodeFunctionCall::Kind::Builtin) {
             // no param promotion for builtin function pls
             return &node;
@@ -90,6 +90,7 @@ private:
 			// only visit definition if not already visited
 			if (!definition->visited) {
 				m_function_call_stack.push_back(&node);
+				FunctionCallStackScope diagnostic_frame(*m_program, node);
 				definition->accept(*this);
 				definition->visited = true;
 				const auto& func_local_vars = definition->do_variable_reuse(m_program);
@@ -100,7 +101,7 @@ private:
 					// declarations by variable reuse
 					const auto declaration = var->parent->cast<NodeSingleDeclaration>();
 					if (!declaration) {
-						auto error = CompileError(ErrorType::InternalError, "Variable not in declaration.", "", var->tok);
+						auto error = Diagnostic(ErrorType::InternalError, "Variable not in declaration.", "", var->tok);
 						error.exit();
 					}
 					auto assignment = ASTVariableReuse::to_assign_statement(*declaration);
@@ -198,4 +199,3 @@ private:
     }
 
 };
-

@@ -9,7 +9,7 @@
 
 class BuiltinsProcessor : public Processor {
 public:
-	explicit BuiltinsProcessor(DefinitionProvider* definition_provider);
+	BuiltinsProcessor(DefinitionProvider* definition_provider, DiagnosticEngine& diagnostics);
 
 	/// main function to process the tokens and parse the builtins
     void process() override;
@@ -29,6 +29,7 @@ public:
 
 private:
 	DefinitionProvider* m_def_provider;
+	DiagnosticEngine& m_diagnostics;
     std::unordered_map<std::string, std::shared_ptr<NodeVariable>> m_builtin_variables;
     std::unordered_map<std::string, std::shared_ptr<NodeArray>> m_builtin_arrays;
     std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_builtin_functions;
@@ -48,4 +49,3 @@ private:
 //    static DataType get_var_type_annotation(const std::string& keyword);
     static bool is_property_function(const std::string& fun_name);
 };
-

@@ -64,11 +64,11 @@ private:
 			if (const auto ref = func_call->function->get_arg(0)->is_reference()) {
 				if (const auto decl = ref->get_declaration()) {
 					if (const auto param = decl->is_function_param(); param and !param->is_pass_by_ref) {
-						auto error = CompileError(ErrorType::CompileWarning, "", "", node.tok);
-						error.m_message = "Found <get_ui_id> call in function body with a parameter as argument. Due to pass-by-value"
+						auto error = Diagnostic(ErrorType::CompileWarning, "", "", node.tok);
+						error.message = "Found <get_ui_id> call in function body with a parameter as argument. Due to pass-by-value"
 								 " semantics this will not work as expected since <get_ui_id> can only be used directly with <ui controls>.\n "
 								"Try passing <ui control> variables by reference instead (using <ref> keyword before the parameter) or using <get_ui_id> when passing the parameter to the function.";
-						error.print();
+						error.report(node.diagnostics());
 						// // get all actual parameters to this formal param -> if none is get_ui_id -> make pass-by-reference
 						// auto actual_params = get_actual_params(*param);
 						// for (auto& arg : actual_params) {
@@ -162,7 +162,7 @@ private:
 		std::vector<NodeAST*> actual_params;
 		for (auto& call : func_def->call_sites) {
 			if (call->function->get_num_args() <= index) {
-				auto error = CompileError(ErrorType::InternalError, "Function call does not have enough arguments.", "", call->tok);
+				auto error = Diagnostic(ErrorType::InternalError, "Function call does not have enough arguments.", "", call->tok);
 				error.exit();
 			}
 			actual_params.push_back(call->function->get_arg(index).get());

@@ -23,6 +23,7 @@
 #include "../ASTVisitor/FunctionHandling/FunctionDefinitionOrdering.h"
 #include "../ASTVisitor/GlobalScope/ASTVariableReuse.h"
 #include "../ASTVisitor/ReturnFunctionRewriting/ReturnParamPromotion.h"
+#include "../../misc/DiagnosticEngine.h"
 #include "../Optimization/ConstantFolding.h"
 #include "../Lowering/LoweringInitializerList.h"
 #include "../Optimization/FreeVarCollector.h"
@@ -41,14 +42,27 @@
 
 
 // ************* NodeAST Base Class ***************
-NodeAST::NodeAST(Token tok, const NodeType node_type) : range(SourceRange(tok)),
+NodeAST::NodeAST(Token tok, const NodeType node_type) : range(source_range_from_token(tok)),
                                                         tok(std::move(tok)), ty(TypeRegistry::Unknown), node_type(node_type) {}
 
 NodeAST::NodeAST(const NodeAST& other) : range(other.range), tok(other.tok), ty(other.ty),
+	                                     type_references(other.type_references),
                                          node_type(other.node_type), parent(other.parent) {}
 
 NodeAST *NodeAST::accept(ASTVisitor &visitor) {
 	return nullptr;
+}
+
+DiagnosticEngine& NodeAST::diagnostics() const {
+	const NodeAST* root = this;
+	while (root->parent) root = root->parent;
+	const auto* program = root->node_type == NodeType::Program
+		? static_cast<const NodeProgram*>(root)
+		: nullptr;
+	if (!program || !program->diagnostic_engine) {
+		throw std::logic_error("AST node has no DiagnosticEngine");
+	}
+	return *program->diagnostic_engine;
 }
 
 NodeAST *NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
@@ -61,6 +75,7 @@ NodeAST *NodeAST::replace_with(std::unique_ptr<NodeAST> newNode) {
 
 NodeAST *NodeAST::desugar(NodeProgram *program) {
 	if(const auto desugaring = get_desugaring(program)) {
+		desugaring->set_program(program);
 		return accept(*desugaring);
 	}
 	return this;
@@ -68,6 +83,7 @@ NodeAST *NodeAST::desugar(NodeProgram *program) {
 
 NodeAST *NodeAST::lower(NodeProgram *program) {
 	if(const auto lowering = get_lowering(program)) {
+		lowering->set_program(program);
 		return accept(*lowering);
 	}
 	return this;
@@ -75,6 +91,7 @@ NodeAST *NodeAST::lower(NodeProgram *program) {
 
 NodeAST *NodeAST::post_lower(NodeProgram *program) {
 	if(const auto post_lowering = get_post_lowering(program)) {
+		post_lowering->set_program(program);
 		return accept(*post_lowering);
 	}
 	return this;
@@ -82,6 +99,7 @@ NodeAST *NodeAST::post_lower(NodeProgram *program) {
 
 NodeAST *NodeAST::data_lower(NodeProgram *program) {
 	if(const auto data_lower = get_data_lowering(program)) {
+		data_lower->set_program(program);
 		return accept(*data_lower);
 	}
 	return this;
@@ -112,10 +130,10 @@ Type* NodeAST::set_element_type(Type *element_type) {
 		return ty;
 	}
 	if(ty->get_type_kind() == TypeKind::Object and element_type->get_type_kind() != TypeKind::Object) {
-		auto error = CompileError(ErrorType::TypeError, "", "", tok);
-		error.m_message = "Failed to set element type. Object of type <"+element_type->to_string()+"> has not been defined.";
-		error.m_expected = "valid <Object> type";
-		error.m_got = element_type->to_string();
+		auto error = Diagnostic(ErrorType::TypeError, "", "", tok);
+		error.message = "Failed to set element type. Object of type <"+element_type->to_string()+"> has not been defined.";
+		error.expected = "valid <Object> type";
+		error.actual = element_type->to_string();
 		error.exit();
 	} else {
 		ty = element_type;
@@ -199,33 +217,38 @@ NodeFunctionDefinition *NodeAST::get_current_function() const {
 	return nullptr;
 }
 
-NodeAST *NodeAST::do_constant_folding() {
-	static ConstantFolding constant_folding;
+NodeAST *NodeAST::do_constant_folding(const ConstantDatabase* database) {
+	ConstantFolding constant_folding(database);
 	return constant_folding.do_local_traversal(*this);
 }
 
 void NodeAST::do_type_inference(NodeProgram *program) {
 	static TypeInference inference(program);
+	inference.set_program(program);
 	accept(inference);
 }
 
 NodeAST * NodeAST::do_type_lowering(NodeProgram *program) {
 	static ASTLowerTypes lowering_types(program);
+	lowering_types.set_program(program);
 	return accept(lowering_types);
 }
 
 NodeAST * NodeAST::do_lowering(NodeProgram *program) {
 	static ASTCollectLowerings collect_lowerings(program);
+	collect_lowerings.set_program(program);
 	return accept(collect_lowerings);
 }
 
 NodeAST * NodeAST::collect_declarations(NodeProgram *program) {
 	static ASTCollectDeclarations collect(program);
+	collect.set_program(program);
 	return collect.do_collect_declarations(*this);
 }
 
 NodeAST * NodeAST::collect_call_sites(NodeProgram *program) {
 	static ASTCollectCallSites call_sites(program);
+	call_sites.set_program(program);
 	return call_sites.do_collect_call_sites(*this);
 }
 
@@ -397,15 +420,15 @@ NodeStruct* NodeDataStructure::is_member() const {
 Type* NodeDataStructure::cast_type() {
 	const Type* type = ty->get_element_type();
 	if(type == TypeRegistry::Number || type == TypeRegistry::Unknown || type == TypeRegistry::Any || type == TypeRegistry::Comparison) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-		error.m_got = ty->to_string();
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+		error.actual = ty->to_string();
 		this->set_element_type(TypeRegistry::Integer);
 		// if it is number do not print warning or is_used
 		if(type == TypeRegistry::Number or !is_used) return ty;
-		error.m_message = "Failed to infer <"+ty->get_type_kind_name()+"> type.";
-		error.m_message += " Automatically casted '"+name+"' as <"+ty->to_string()+">. Consider using type annotations (like <"+name+": "
+		error.message = "Failed to infer <"+ty->get_type_kind_name()+"> type.";
+		error.message += " Automatically casted '"+name+"' as <"+ty->to_string()+">. Consider using type annotations (like <"+name+": "
 			+TypeRegistry::get_annotation_from_type(this->ty)+">) to improve readability.";
-		error.print();
+		error.report(diagnostics());
 	}
 	return ty;
 }
@@ -416,6 +439,7 @@ void NodeDataStructure::match_metadata(const std::shared_ptr<NodeDataStructure>&
 	is_global = data_structure->is_global;
 	data_type = data_structure->data_type;
 	is_thread_safe = data_structure->is_thread_safe;
+	type_references = data_structure->type_references;
 }
 
 NodeDataStructure* NodeDataStructure::lower_type() {
@@ -576,9 +600,9 @@ std::unique_ptr<NodeAST> NodeString::clone() const {
 
 bool NodeString::check_string_length() const {
 	if (value.length() > 320) {
-		auto warning = CompileError(ErrorType::CompileWarning, "", "", tok);
+		auto warning = Diagnostic(ErrorType::CompileWarning, "", "", tok);
 		warning.set_message("The length of this String Literal exceeds the maximum of 320 characters and will not be displayed properly by Kontakt.");
-		warning.print();
+		warning.report(diagnostics());
 		return false;
 	}
 	return true;
@@ -595,6 +619,7 @@ elements(clone_vector(other.elements)), quotes(other.quotes) {
 
 ASTDesugaring * NodeFormatString::get_desugaring(NodeProgram *program) const {
 	static DesugarFormatString desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 
@@ -654,6 +679,7 @@ std::unique_ptr<NodeAST> NodeParamList::clone() const {
 NodeAST *NodeParamList::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
     for (auto& param : params) {
         if (param.get() == oldChild) {
+            newChild->parent = this;
             param = std::move(newChild);
             return param.get();
         }
@@ -662,6 +688,7 @@ NodeAST *NodeParamList::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST
 }
 ASTDesugaring *NodeParamList::get_desugaring(NodeProgram *program) const {
 	static DesugarParamList desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 int NodeParamList::get_idx(const NodeAST *node) const {
@@ -725,7 +752,7 @@ std::unique_ptr<NodeInitializerList> NodeParamList::to_initializer_list() {
 
 void NodeParamList::set_param(const int idx, std::unique_ptr<NodeAST> param) {
 	if(idx >= size()) {
-		auto error = CompileError(ErrorType::InternalError, "Index out of bounds", "", tok);
+		auto error = Diagnostic(ErrorType::InternalError, "Index out of bounds", "", tok);
 		error.exit();
 	}
 	param->parent = this;
@@ -815,8 +842,8 @@ std::vector<int> NodeInitializerList::get_dimensions() const {
 	std::vector<int> dimensions = calculate_dimensions(this, valid);
 
 	if (valid == 0) {
-		auto error = CompileError(ErrorType::TypeError, "", "", tok);
-		error.m_message = "Inconsistent sizes in <InitializerList>.";
+		auto error = Diagnostic(ErrorType::TypeError, "", "", tok);
+		error.message = "Inconsistent sizes in <InitializerList>.";
 		error.exit();
 	}
 
@@ -903,14 +930,15 @@ std::unique_ptr<NodeComposite> NodeInitializerList::transform_to_array(const std
 		ndarray->kind = NodeNDArray::Kind::Throwaway;
 		return ndarray;
 	}
-	auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-	error.m_message = "Failed to transform <InitializerList> to <Array> or <NDArray>.";
+	auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+	error.message = "Failed to transform <InitializerList> to <Array> or <NDArray>.";
 	error.exit();
 	return nullptr;
 }
 
 ASTLowering *NodeInitializerList::get_lowering(NodeProgram *program) const {
 	static LoweringInitializerList lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -983,6 +1011,7 @@ NodeAST *NodeBinaryExpr::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAS
 
 ASTDesugaring *NodeBinaryExpr::get_desugaring(NodeProgram *program) const {
 	static DesugarBinaryExpr desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 
@@ -1168,11 +1197,13 @@ void NodeFunctionDefinition::set_child_parents() {
 
 ASTDesugaring *NodeFunctionDefinition::get_desugaring(NodeProgram *program) const {
 	static DesugarFunctionDef desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 
 ASTLowering *NodeFunctionDefinition::get_lowering(NodeProgram *program) const {
 	static LoweringFunctionDefReturnStmts lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -1198,7 +1229,7 @@ void NodeFunctionDefinition::update_param_data_type() const {
 
 std::shared_ptr<NodeDataStructure> &NodeFunctionDefinition::get_param(const int i) const {
 	if(header->params.size() <= i) {
-		CompileError(ErrorType::InternalError, "Index out of bounds", "Function call argument index out of bounds", tok).exit();
+		Diagnostic(ErrorType::InternalError, "Index out of bounds", "Function call argument index out of bounds", tok).exit();
 	}
 	return header->get_param(i);
 }
@@ -1242,11 +1273,13 @@ void NodeFunctionDefinition::set_header(std::shared_ptr<struct NodeFunctionHeade
 
 std::vector<std::shared_ptr<NodeDataStructure>> NodeFunctionDefinition::do_variable_reuse(NodeProgram *program) {
 	static ASTVariableReuse register_reuse(program);
+	register_reuse.set_program(program);
 	return register_reuse.do_variable_reuse(*this);
 }
 
 void NodeFunctionDefinition::do_return_param_promotion(NodeProgram* program) {
 	static ReturnParamPromotion param_promotion(program);
+	param_promotion.set_program(program);
 	param_promotion.do_return_param_promotion(*this);
 }
 
@@ -1262,6 +1295,7 @@ void NodeFunctionDefinition::sanitize_exit_commands() {
 
 void NodeFunctionDefinition::mark_threadsafety(NodeProgram *program) {
 	static MarkThreadSafe marker(program);
+	marker.set_program(program);
 	marker.mark_function(*this);
 }
 
@@ -1318,8 +1352,8 @@ NodeFunctionDefinition *NodeProgram::add_function_definition(const std::shared_p
 	def->parent = this;
 	// search function_lookup first for existing function signature
 	if (auto func = look_up_exact({def->header->name, static_cast<int>(def->header->params.size())}, def->header->ty)) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "", def->tok);
-		error.m_message = "A function with the same signature already exists.";
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", def->tok);
+		error.message = "A function with the same signature already exists.";
 		error.exit();
 		return nullptr;
 	}
@@ -1333,18 +1367,18 @@ void NodeProgram::add_function_or_override(const std::shared_ptr<NodeFunctionDef
 		// was already declared, see if it overrides
 		if (def->override) {
 			if (func->override and def->override) {
-				auto error = CompileError(ErrorType::SyntaxError,"", "", def->header->tok);
+				auto error = Diagnostic(ErrorType::SyntaxError,"", "", def->header->tok);
 				error.set_message( "Found duplicate function definition with the same name and parameter count at position "+func->tok.get_position()+".\nBoth have been marked"
 						 " as <override>. The compiler will use the last encountered definition that has been marked as <override>.\n"
 						 "Consider removing the <override> keyword from one of the definitions.");
-				error.print();
+				error.report(diagnostics());
 			}
 			NodeProgram::replace_function_definition(func, def);
 		} else if (func->override and !def->override) {
 			// function in map is already override and encountered function is not
 			// pass
 		} else {
-			auto error = CompileError(ErrorType::SyntaxError,"", "", def->header->tok);
+			auto error = Diagnostic(ErrorType::SyntaxError,"", "", def->header->tok);
 			error.set_message( "A function with this name and parameter count already exists at position "+func->tok.get_position()+". \n"
 					 "To override it, use the <override> keyword. \n"
 					 "To overload it, use <Union> types instead to define function templates accepting multiple types.");
@@ -1475,7 +1509,12 @@ std::shared_ptr<NodeFunctionDefinition> NodeProgram::look_up_compatible(const St
 std::unordered_map<std::string, std::vector<NodeCallback *>> NodeProgram::get_callback_counts() const {
 	std::unordered_map<std::string, std::vector<NodeCallback*>> callback_counts;
 	std::mutex map_mutex;
-	parallel_for_each(callbacks.begin(), callbacks.end(), [&](const auto& cb) {
+	// The count per callback type is order-independent, but the resulting per-type list
+	// order is not: check_unique_callbacks reports the duplicate error on callback_list.back(),
+	// so a nondeterministic order would attach the diagnostic to a nondeterministic file/line.
+	// Run sequentially in LSP mode to keep diagnostic locations stable.
+	parallel_for_each_unless(compiler_config && compiler_config->lsp,
+		callbacks.begin(), callbacks.end(), [&](const auto& cb) {
 		std::string hash = cb->begin_callback;
 		if (cb->callback_id) {
 			hash += "_" + cb->callback_id->get_string();
@@ -1496,14 +1535,14 @@ bool NodeProgram::check_unique_callbacks() const {
 		auto& callback_list = count.second;
 		if (size > 1) {
 			if (StringUtils::starts_with(count.first, "on ui_control_")) {
-				auto error = CompileError(ErrorType::CompileWarning, "", "", callback_list.back()->tok);
-				error.m_message = "Multiple <on ui_control> callbacks of the same variable found. Kontakt will only execute the last one.";
-				error.print();
+				auto error = Diagnostic(ErrorType::CompileWarning, "", "", callback_list.back()->tok);
+				error.message = "Multiple <on ui_control> callbacks of the same variable found. Kontakt will only execute the last one.";
+				error.report(diagnostics());
 			} else {
-				auto error = CompileError(ErrorType::SyntaxError, "", "", callback_list.back()->tok);
-				error.m_expected = '1';
-				error.m_got = std::to_string(size);
-				error.m_message = "Multiple <" + count.first + "> callbacks found."
+				auto error = Diagnostic(ErrorType::SyntaxError, "", "", callback_list.back()->tok);
+				error.expected = '1';
+				error.actual = std::to_string(size);
+				error.message = "Multiple <" + count.first + "> callbacks found."
 						" Unable to compile, this callback type must be unique. Use <pragma> option"
 						" <combine_callbacks> to merge them automatically.";
 				error.exit();
@@ -1712,14 +1751,26 @@ std::shared_ptr<NodePointer> NodeProgram::get_tmp_ptr(Type *ty, DataType data, c
 
 
 
+FunctionCallStackScope::FunctionCallStackScope(NodeProgram& program, const NodeFunctionCall& call)
+	: m_program(program), m_uncaught_exceptions(std::uncaught_exceptions()) {
+	m_program.function_call_stack.push_back(&call);
+	if (m_program.diagnostic_engine) {
+		// The engine borrows these values only until FunctionCallStackScope is destroyed.
+		m_program.diagnostic_engine->push_frame(call.function ? call.function->tok.val : call.tok.val, call.tok.file, call.range);
+	}
+}
 
-
-
-
-
-
-
-
-
-
-
+FunctionCallStackScope::~FunctionCallStackScope() {
+	// check if destructor is called because of an exception unwinding -> if so give frame to
+	// DiagnosticEngine
+	if (std::uncaught_exceptions() > m_uncaught_exceptions) {
+		if (m_program.function_call_stack.empty()) return;
+		if (m_program.diagnostic_engine) m_program.diagnostic_engine->preserve_frame_during_unwind();
+		m_program.function_call_stack.pop_back();
+		return;
+	}
+	// pop function_call_stack from program
+	if (m_program.function_call_stack.empty()) return;
+	if (m_program.diagnostic_engine) m_program.diagnostic_engine->pop_frame();
+	m_program.function_call_stack.pop_back();
+}

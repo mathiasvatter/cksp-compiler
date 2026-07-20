@@ -5,6 +5,7 @@
 #pragma once
 
 #include "ASTDesugaring.h"
+#include "../ASTVisitor/ASTKSPSyntaxCheck.h"
 #include "../Interpreter/SimpleExprInterpreter.h"
 
 /// called bei NodeUIControl and NodeSingleDeclaration
@@ -80,9 +81,9 @@ public:
 
 	NodeAST * visit(NodeArray &node) override {
 		if(!node.size) {
-			auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-			error.m_message = "Unable to infer array size. Size of UI Control Array has to be determined at compile time.";
-			error.m_expected = "<initializer list>";
+			auto error = make_diagnostic(ErrorType::SyntaxError, node);
+			error.message = "Unable to infer array size. Size of UI Control Array has to be determined at compile time.";
+			error.expected = "<initializer list>";
 			error.exit();
 		}
 		m_ui_array_size = node.size->clone();
@@ -96,9 +97,9 @@ public:
 
 	NodeAST * visit(NodeNDArray &node) override {
 		if(!node.sizes) {
-			auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-			error.m_message = "Unable to infer array size. Size of UI Control Array has to be determined at compile time.";
-			error.m_expected = "<initializer list>";
+			auto error = make_diagnostic(ErrorType::SyntaxError, node);
+			error.message = "Unable to infer array size. Size of UI Control Array has to be determined at compile time.";
+			error.expected = "<initializer list>";
 			error.exit();
 		}
 		m_single_control_name = "_"+node.name;
@@ -119,6 +120,7 @@ public:
 			array_size_res.get_error().exit();
 		}
 		int array_size = array_size_res.unwrap();
+		ASTKSPSyntaxCheck::check_max_ui_controls(array_size, ui_control);
 		auto ui_control_template = m_engine_widget;
         // if is ui_table array -> set size to ui_table array size
         if(auto node_array = ui_control_template->control_var->cast<NodeArray>()) {
@@ -155,8 +157,10 @@ public:
 		auto node_while_body = std::make_unique<NodeBlock>(ui_control.tok);
 
 		// this is the $_lbl_lbl0 from the above example
-		auto node_ui_control_var_ref = ui_control_template->control_var->to_reference();
-		node_ui_control_var_ref->name = m_single_control_name + std::to_string(0);
+		const auto& first_decl = node_body->get_first_statement()->cast<NodeSingleDeclaration>();
+		const auto& first_ui_control = first_decl->variable->cast<NodeUIControl>();
+		auto node_ui_control_var_ref = first_ui_control->control_var->to_reference();
+		// node_ui_control_var_ref->name = m_single_control_name + std::to_string(0);
 
 		// get_ui_id($_lbl_lbl0)+_iterator
 		auto r_value = std::make_unique<NodeBinaryExpr>(

@@ -35,8 +35,8 @@ public:
 			return &node;
 		} else if(auto nd_array_ref = node.array->cast<NodeNDArrayRef>()) {
 			if(node.from || node.to) {
-				auto error = CompileError(ErrorType::SyntaxError, "", "", node.array->tok);
-				error.m_message = "Found <search> function with <NDArrayRef> and from/to parameters. "
+				auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.array->tok);
+				error.message = "Found <search> function with <NDArrayRef> and from/to parameters. "
 								  "'from' and 'to' parameters are not allowed in this case. Use <Wildcards> instead to search specific dimensions. "
 								  "Wildcard bounds are automatically derived.";
 				error.exit();
@@ -46,21 +46,21 @@ public:
 				return &node;
 			}
 			if(!nd_array_ref->sizes) {
-				auto error = CompileError(ErrorType::InternalError, "", "", node.array->tok);
-				error.m_message = "No sizes given for <NDArrayRef> in <search>.";
+				auto error = Diagnostic(ErrorType::InternalError, "", "", node.array->tok);
+				error.message = "No sizes given for <NDArrayRef> in <search>.";
 				error.exit();
 			}
 			if(!nd_array_ref->indexes) {
-				auto error = CompileError(ErrorType::InternalError, "", "", node.array->tok);
-				error.m_message = "No indexes given for <NDArrayRef> in <search>.";
+				auto error = Diagnostic(ErrorType::InternalError, "", "", node.array->tok);
+				error.message = "No indexes given for <NDArrayRef> in <search>.";
 				error.exit();
 			}
 
 			auto wildcard_dims = nd_array_ref->get_wildcard_dimensions();
 			// check that they are right aligned
 			if(wildcard_dims.second != nd_array_ref->indexes->size()-1) {
-				auto error = CompileError(ErrorType::SyntaxError, "", "", node.array->tok);
-				error.m_message = "<Wildcards> have to be in the last dimension when using with <search>.";
+				auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.array->tok);
+				error.message = "<Wildcards> have to be in the last dimension when using with <search>.";
 				error.exit();
 			}
 
@@ -97,8 +97,8 @@ public:
 			nd_array_ref->indexes = nullptr;
 			return &node;
 		} else {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-			error.m_message = "First argument for function call <search> must be of <Composite> Type.";
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+			error.message = "First argument for function call <search> must be of <Composite> Type.";
 			error.exit();
 		}
 

@@ -31,7 +31,7 @@ Result<int> SimpleExprInterpreter::evaluate_int_expression(std::unique_ptr<PreNo
             return Result<int>(-operandValue);
         }
         // Add other unary operations here if needed
-        return Result<int>(CompileError(ErrorType::PreprocessorError,
+        return Result<int>(Diagnostic(ErrorType::PreprocessorError,
             "Unsupported unary operation. " + preprocessor_error,
             "-", unary_expr_node->tok));
     } else if (auto binary_expr_node = root->cast<PreNodeBinaryExpr>()) {
@@ -49,7 +49,7 @@ Result<int> SimpleExprInterpreter::evaluate_int_expression(std::unique_ptr<PreNo
             return Result<int>(left_value * right_value);
         } else if (binary_expr_node->op == token::DIV) {
             if (right_value == 0) {
-                return Result<int>(CompileError(ErrorType::PreprocessorError, "Divison by zero." + preprocessor_error,
+                return Result<int>(Diagnostic(ErrorType::PreprocessorError, "Divison by zero." + preprocessor_error,
                 "", binary_expr_node->tok));
             }
             return Result<int>(left_value / right_value);
@@ -58,19 +58,18 @@ Result<int> SimpleExprInterpreter::evaluate_int_expression(std::unique_ptr<PreNo
         }
         // Add other binary operations here if needed
         return Result<int>(
-                CompileError(ErrorType::PreprocessorError, "Unsupported binary operation. " + preprocessor_error,
+                Diagnostic(ErrorType::PreprocessorError, "Unsupported binary operation. " + preprocessor_error,
                 "*, /, -, +, mod", binary_expr_node->tok));
     }
-    return Result<int>(CompileError(ErrorType::PreprocessorError,
+    return Result<int>(Diagnostic(ErrorType::PreprocessorError,
     "Unknown expression statement. No variables allowed. " + preprocessor_error,
-        -1, "", "", ""));
+        "", root->tok));
 }
 
 PreNodeAST* SimpleExprInterpreter::peek(const std::vector<std::unique_ptr<PreNodeAST>>& nodes, const int ahead) const {
 	if (nodes.size() < m_pos+ahead) {
 		auto err_msg = "Reached the end of the expression. Wrong Syntax discovered.";
-		CompileError(ErrorType::PreprocessorError, err_msg, m_line, "", "", m_file).print();
-		exit(EXIT_FAILURE);
+		Diagnostic(ErrorType::PreprocessorError, err_msg, m_line, "", "", m_file).exit();
 	}
     if(nodes.size() == m_pos+ahead) return nullptr;
 	return nodes.at(m_pos+ahead).get();
@@ -81,8 +80,7 @@ std::unique_ptr<PreNodeAST> SimpleExprInterpreter::consume(const std::vector<std
 		return nodes.at(m_pos++)->clone();
 	}
 	auto err_msg = "Reached the end of the m_tokens. Wrong Syntax discovered.";
-	CompileError(ErrorType::PreprocessorError, err_msg, m_line, "", "", m_file).print();
-	exit(EXIT_FAILURE);
+	Diagnostic(ErrorType::PreprocessorError, err_msg, m_line, "", "", m_file).exit();
 }
 
 Result<std::unique_ptr<PreNodeAST>> SimpleExprInterpreter::parse_binary_expr(const std::vector<std::unique_ptr<PreNodeAST>>& nodes, PreNodeAST *parent) {
@@ -106,9 +104,9 @@ Result<std::unique_ptr<PreNodeAST>> SimpleExprInterpreter::_parse_primary_expr(c
 			return Result(std::move(node_statement->statement));
 		}
 	}
-	return Result<std::unique_ptr<PreNodeAST>>(CompileError(ErrorType::PreprocessorError,
+	return Result<std::unique_ptr<PreNodeAST>>(Diagnostic(ErrorType::PreprocessorError,
 	"Found unknown expression token. No variables allowed in Preprocessor since statement has to be evaluated during compile time.",
-	m_line, "integer, define constant", current_node->get_string(), m_file));
+	"integer, define constant", current_node->tok));
 }
 
 Result<std::unique_ptr<PreNodeAST>> SimpleExprInterpreter::parse_unary_expr(const std::vector<std::unique_ptr<PreNodeAST>>& nodes, PreNodeAST *parent) {
@@ -168,13 +166,13 @@ Result<std::unique_ptr<PreNodeAST>> SimpleExprInterpreter::_parse_parenth_expr(c
 	auto node_other = current_node->cast<PreNodeOther>();
 	// auto node_other = dynamic_cast<PreNodeOther*>(peek(nodes));
 	if (!node_other or node_other->tok.type != token::CLOSED_PARENTH) {
-		auto error = CompileError(ErrorType::PreprocessorError,
+		auto error = Diagnostic(ErrorType::PreprocessorError,
 			"", "", expr.unwrap()->tok);
 		error.set_message("Missing closing parenthesis in expression.");
 		error.set_expected(")");
-		error.m_got = current_node->get_string();
+		error.actual = current_node->get_string();
 		return Result<std::unique_ptr<PreNodeAST>>(std::move(error));
-		// return Result<std::unique_ptr<PreNodeAST>>(CompileError(ErrorType::PreprocessorError,
+		// return Result<std::unique_ptr<PreNodeAST>>(Diagnostic(ErrorType::PreprocessorError,
 		// 	"Missing parenthesis.", m_line, ")", peek(nodes)->get_string(), m_file));
 	}
 	consume(nodes); // eat )
@@ -192,10 +190,10 @@ Result<int> SimpleInterpreter::evaluate_int_expression(std::unique_ptr<NodeAST>&
         if (unary_expr_node->op == token::SUB) { // Assuming SUB represents the '-' unary operator
             return Result<int>(-operandValue);
         }
+    	auto error = Diagnostic(ErrorType::PreprocessorError,"Unsupported unary operation. " + preprocessor_error,"-", root->tok);
+    	error.actual = get_token_string(unary_expr_node->op);
+        return Result<int>(std::move(error));
         // Add other unary operations here if needed
-        return Result<int>(CompileError(ErrorType::PreprocessorError,
-                                        "Unsupported unary operation. " + preprocessor_error,
-                                        root->tok.line, "-", get_token_string(unary_expr_node->op), root->tok.file));
     } else if (auto binary_expr_node = root->cast<NodeBinaryExpr>()) {
         auto left_value_stmt = evaluate_int_expression(binary_expr_node->left);
         if (left_value_stmt.is_error()) return Result<int>(left_value_stmt.get_error());
@@ -211,20 +209,22 @@ Result<int> SimpleInterpreter::evaluate_int_expression(std::unique_ptr<NodeAST>&
             return Result<int>(left_value * right_value);
         } else if (binary_expr_node->op == token::DIV) {
             if (right_value == 0) {
-                return Result<int>(CompileError(ErrorType::PreprocessorError, "Divison by zero. " + preprocessor_error,
-                                                root->tok.line, "", std::to_string(right_value), root->tok.file));
+                auto error = Diagnostic(ErrorType::PreprocessorError, "Divison by zero. " + preprocessor_error,
+                                        "", root->tok);
+                error.actual = std::to_string(right_value);
+                return Result<int>(std::move(error));
             }
             return Result<int>(left_value / right_value);
         } else if (binary_expr_node->op == token::MODULO) {
             return Result<int>(left_value % right_value);
         }
         // Add other binary operations here if needed
-        return Result<int>(
-                CompileError(ErrorType::PreprocessorError, "Unsupported binary operation. " + preprocessor_error,
-                             root->tok.line, "*, /, -, +, mod", token_strings[(int)binary_expr_node->op], root->tok.file));
+        auto error = Diagnostic(ErrorType::PreprocessorError, "Unsupported binary operation. " + preprocessor_error,
+                                "*, /, -, +, mod", root->tok);
+        error.actual = token_strings[(int)binary_expr_node->op];
+        return Result<int>(std::move(error));
     }
-    return Result<int>(CompileError(ErrorType::PreprocessorError,
+    return Result<int>(Diagnostic(ErrorType::PreprocessorError,
                                     "Unknown expression statement. No variables allowed. " + preprocessor_error,
-                                    root->tok.line, "", "", root->tok.file));
+                                    "", root->tok));
 }
-

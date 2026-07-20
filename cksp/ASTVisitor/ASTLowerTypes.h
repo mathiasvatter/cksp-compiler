@@ -29,6 +29,7 @@ public:
 	NodeAST *visit(NodeIf &node) override {
 		ASTVisitor::visit(node);
 		static LoweringComparisons lowering(m_program);
+		lowering.set_program(m_program);
 		lowering.lower_comparison(node.condition);
 		return &node;
 	}
@@ -36,6 +37,7 @@ public:
 	NodeAST* visit(NodeWhile& node) override {
 		ASTVisitor::visit(node);
 		static LoweringComparisons lowering(m_program);
+		lowering.set_program(m_program);
 		lowering.lower_comparison(node.condition);
 		return &node;
 	}
@@ -95,7 +97,10 @@ public:
 		node.bind_definition(m_program);
 		auto decl = node.get_definition();
 		if(decl) {
-			if(!decl->visited) decl->accept(*this);
+			if(!decl->visited) {
+				FunctionCallStackScope diagnostic_frame(*m_program, node);
+				decl->accept(*this);
+			}
 			decl->visited = true;
 		}
 		if (node.ty->get_element_type() == TypeRegistry::Boolean) {

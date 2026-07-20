@@ -95,12 +95,12 @@ private:
      * @param block_points The accumulated points for the block.
      * @return True if the block exceeds the line limit, false otherwise.
      */
-	static bool check_line_count(NodeBlock* node, double block_points) {
+	bool check_line_count(NodeBlock* node, double block_points) {
 		if(static_cast<int>(block_points) >= ONE_TOKEN_LIMIT) {
-			auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, *node);
-			error.m_message = "Fixed possible 'memory exhausted' error by applying nested <if-statements> 'if(1=1)'. Consider using "
+			auto error = ASTVisitor::make_diagnostic(ErrorType::SyntaxError, *node);
+			error.message = "Fixed possible 'memory exhausted' error by applying nested <if-statements> 'if(1=1)'. Consider using "
 							  "<Arrays> or loading separate *.nka files for static initializations to reduce the number of lines.";
-			error.print();
+			error.report(diagnostics());
 			return true;
 		}
 		return false;
@@ -148,5 +148,3 @@ private:
 
 
 };
-
-

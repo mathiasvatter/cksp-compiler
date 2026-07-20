@@ -134,8 +134,8 @@ private:
 					reused->add_references(param->references);
 					const auto decl = param->parent->cast<NodeSingleDeclaration>();
 					if (!decl) {
-						auto error = CompileError(ErrorType::InternalError, "", "", param->tok);
-						error.m_message = "ParameterReuse : Parameter declaration is not a NodeSingleDeclaration.";
+						auto error = Diagnostic(ErrorType::InternalError, "", "", param->tok);
+						error.message = "ParameterReuse : Parameter declaration is not a NodeSingleDeclaration.";
 						error.exit();
 					}
 					decl->remove_node();

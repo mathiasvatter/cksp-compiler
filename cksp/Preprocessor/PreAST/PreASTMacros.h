@@ -6,8 +6,15 @@
 
 #include "PreASTVisitor.h"
 
+class ReferenceIndex;
+
 class PreASTMacros final : public PreASTVisitor {
 public:
+	/// The optional reference index collects macro-usage -> macro-definition links for
+	/// go-to-definition while expanding (language server only).
+	explicit PreASTMacros(ReferenceIndex* reference_index = nullptr)
+		: m_reference_index(reference_index) {}
+
 	// transform to macro calls if macro definition exists, otherwise return node
 	PreNodeAST *visit(PreNodeFunctionCall &node) override;
 
@@ -28,6 +35,11 @@ public:
 
 private:
 	std::string m_debug_token;
+	ReferenceIndex* m_reference_index = nullptr;
+	// header parameter tokens of the macro currently being expanded, keyed by parameter name;
+	// kept parallel to m_substitution_stack so parameter usages inside a macro body can be
+	// linked to the header parameter for go-to-definition
+	std::stack<std::unordered_map<std::string, Token>> m_param_token_stack;
 
 	// std::unordered_map<StringIntKey, PreNodeMacroDefinition*, StringIntKeyHash> m_macro_lookup;
 
@@ -38,7 +50,7 @@ private:
 
 	PreNodeAST *do_substitution(PreNodeLiteral &node);
     std::unique_ptr<PreNodeAST> get_substitute(const std::string& name);
-    static std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> get_substitution_map(PreNodeMacroHeader& definition, const PreNodeMacroHeader& call);
+    std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> get_substitution_map(PreNodeMacroHeader& definition, const PreNodeMacroHeader& call);
     // PreNodeMacroDefinition* get_macro_definition(const PreNodeMacroHeader& macro_header);
 
 
@@ -46,6 +58,5 @@ private:
     void check_recursion(const Token &tok) const;
     std::unordered_set<std::string> m_macros_used;
 };
-
 
 

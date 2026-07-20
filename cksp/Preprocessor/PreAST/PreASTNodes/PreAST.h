@@ -8,9 +8,14 @@
 
 #include "PreASTHelper.h"
 #include "../../../ASTNodes/ASTHelper.h"
+#include "../../../Tokenizer/Token.h"
 #include "../../../BuiltinsProcessing/DefinitionProvider.h"
 #include "../../../../misc/HashFunctions.h"
 #include "../../../../utils/StringUtils.h"
+
+class DiagnosticEngine;
+class SourceParser;
+struct SourceId;
 
 struct PreNodeAST {
 	SourceRange range;
@@ -18,14 +23,14 @@ struct PreNodeAST {
 	PreNodeType type;
 	PreNodeAST* parent = nullptr;
 	explicit PreNodeAST(Token tok, PreNodeAST* parent=nullptr, PreNodeType type=PreNodeType::DEAD_CODE)
-		: range(tok), tok(std::move(tok)), type(type), parent(parent) {}
+		: range(source_range_from_token(tok)), tok(std::move(tok)), type(type), parent(parent) {}
     virtual ~PreNodeAST() = default;
 	PreNodeAST(const PreNodeAST& other) = default;
     virtual PreNodeAST *accept(class PreASTVisitor &visitor) {return nullptr;}
     // Virtuelle clone()-Methode für tiefe Kopien
     [[nodiscard]] virtual std::unique_ptr<PreNodeAST> clone() const = 0;
 	virtual PreNodeAST *replace_child(PreNodeAST *oldChild, std::unique_ptr<PreNodeAST> newChild) {
-		auto error = CompileError(ErrorType::InternalError, "replace_child not implemented", "", tok);
+		auto error = Diagnostic(ErrorType::InternalError, "replace_child not implemented", "", tok);
 		error.exit();
 		// throw std::runtime_error("replace_child not implemented for this node type");
 		return nullptr;
@@ -39,10 +44,10 @@ struct PreNodeAST {
     	tok.line = token.line; tok.file = token.file;
     }
 	void set_range(const Token& start, const Token& end) {
-    	range = {start, end};
+		range = source_range_from_tokens(start, end);
     }
 	void set_range(const Token& token) {
-    	range = SourceRange{token};
+		range = source_range_from_token(token);
     }
 	void set_range(const SourceRange& start, const SourceRange& end) {
     	range = SourceRange{start, end};
@@ -63,7 +68,12 @@ struct PreNodeAST {
 	}
 	void debug_print(const std::string &path = PRINTER_OUTPUT);
 	// does import passes
-	PreNodeAST* do_import_processing(const std::string& base_file, const std::string& current_file, std::unordered_set<std::string> &imported_files, std::unordered_map<std::string, std::string> &basename_map, LinesProcessed* lines_collect);
+	PreNodeAST* do_import_processing(
+		const SourceId& root,
+		const SourceId& current,
+		SourceParser& parser,
+		std::unordered_set<std::string>& imported_files,
+		std::unordered_map<std::string, std::string>& basename_map);
 };
 
 // Template-Funktion für sicheren Cast
@@ -321,6 +331,10 @@ struct PreNodeChunk final : PreNodeAST {
 
 struct PreNodeList final : PreNodeAST {
     std::vector<std::unique_ptr<PreNodeChunk>> params;
+	/// The original '(' and ')' tokens of a parsed list. Synthesized lists leave them empty;
+	/// PreASTCombine then regenerates parentheses at the preceding token's position instead.
+	Token open_parenth_tok;
+	Token closed_parenth_tok;
 	PreNodeList(Token tok, PreNodeAST *parent)
 		: PreNodeAST(std::move(tok), parent, PreNodeType::LIST) {}
     PreNodeList(std::vector<std::unique_ptr<PreNodeChunk>> params, Token tok, PreNodeAST *parent)
@@ -349,6 +363,12 @@ struct PreNodeList final : PreNodeAST {
 		return str;
 	}
     void update_token_data(const Token &token) override {
+        if (!open_parenth_tok.file.empty()) {
+            open_parenth_tok.line = token.line; open_parenth_tok.file = token.file;
+        }
+        if (!closed_parenth_tok.file.empty()) {
+            closed_parenth_tok.line = token.line; closed_parenth_tok.file = token.file;
+        }
         for(auto & p : params) {
             p->update_token_data(token);
         }
@@ -976,6 +996,7 @@ struct PreNodeIncrementer final : PreNodeAST {
 
 struct PreNodeProgram final : PreNodeAST {
 	DefinitionProvider* def_provider = nullptr;
+	DiagnosticEngine* diagnostic_engine = nullptr;
 	std::stack<PreNodeDefineStatement*> define_call_stack;
 	std::stack<PreNodeMacroCall*> macro_call_stack;
 	std::unique_ptr<PreNodeChunk> program;
@@ -1022,7 +1043,7 @@ struct PreNodeProgram final : PreNodeAST {
 	}
 	PreNodeDefineStatement* get_define_definition(const PreNodeKeyword &call) {
 		if (!call.parent) {
-			auto error = CompileError(ErrorType::InternalError, "<PreNodeKeyword> has no parent", "", call.tok);
+			auto error = Diagnostic(ErrorType::InternalError, "<PreNodeKeyword> has no parent", "", call.tok);
 			error.exit();
 		}
 		if (call.parent->cast<PreNodeDefineHeader>() || call.parent->cast<PreNodeMacroHeader>()) {
@@ -1037,7 +1058,7 @@ struct PreNodeProgram final : PreNodeAST {
 	}
 	PreNodeMacroDefinition* get_macro_definition(const PreNodeKeyword &call) {
 		if (!call.parent) {
-			auto error = CompileError(ErrorType::InternalError, "<PreNodeKeyword> has no parent", "", call.tok);
+			auto error = Diagnostic(ErrorType::InternalError, "<PreNodeKeyword> has no parent", "", call.tok);
 			error.exit();
 		}
 		if (call.parent->cast<PreNodeMacroHeader>() || call.parent->cast<PreNodeDefineHeader>()) {
@@ -1066,6 +1087,3 @@ struct PreNodeProgram final : PreNodeAST {
 	}
 
 };
-
-
-

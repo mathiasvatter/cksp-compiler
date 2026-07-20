@@ -5,6 +5,7 @@
 #pragma once
 
 #include "ASTLowering.h"
+#include "../ASTVisitor/ASTKSPSyntaxCheck.h"
 
 /**
  * Determining the size of the array if possible
@@ -28,17 +29,17 @@ class LoweringArray final : public ASTLowering {
 				if(auto node_int = node_array->size->cast<NodeInt>()) {
 					auto dims = init_list->get_dimensions();
 					if(dims.size() != 1) {
-						auto error = CompileError(ErrorType::SyntaxError, "", "", node_array->tok);
-						error.m_message = "Initializer List for <Array> has to be one-dimensional.";
+						auto error = Diagnostic(ErrorType::SyntaxError, "", "", node_array->tok);
+						error.message = "Initializer List for <Array> has to be one-dimensional.";
 						error.exit();
 						return false;
 					}
 					if(node_int->value < dims[0]) {
-						auto error = CompileError(ErrorType::SyntaxError, "", "", node_array->tok);
-						error.m_message = "Size of <Array> does not match the size of the initializer list. Kontakt will ignore out of range initializers.";
-						error.m_got = std::to_string(init_list->size());
-						error.m_expected = std::to_string(node_int->value);
-						error.print();
+						auto error = Diagnostic(ErrorType::SyntaxError, "", "", node_array->tok);
+						error.message = "Size of <Array> does not match the size of the initializer list. Kontakt will ignore out of range initializers.";
+						error.actual = std::to_string(init_list->size());
+						error.expected = std::to_string(node_int->value);
+						error.report(node.diagnostics());
 						return false;
 					}
 				} else {
@@ -59,10 +60,10 @@ public:
 		// check if we are in a declaration or a declaration of a ui control
 		const auto node_declaration = node.parent->cast<NodeSingleDeclaration>();
 		const auto node_ui_control = node.parent->cast<NodeUIControl>();
-		auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
 		if (!node_declaration and !node_ui_control and !node.is_function_param()) {
-			error.m_message = "Array is not a reference even though it is not part of a declaration.";
-			error.m_got = node.name;
+			error.message = "Array is not a reference even though it is not part of a declaration.";
+			error.actual = node.name;
 			error.exit();
 		}
 		if(node.is_function_param()) return &node;
@@ -71,15 +72,15 @@ public:
 		if (!node.size) {
 			// in case it is ui_control array and size is not determined
 			if(node_ui_control) {
-				error.m_message = "Unable to infer array size. Size of UI Control Array has to be determined at compile time.";
+				error.message = "Unable to infer array size. Size of UI Control Array has to be determined at compile time.";
 				error.exit();
 			}
 			// in case it is a declaration and declaration has no r-value -> throw error
 			if (node_declaration and !node_declaration->value) {
-				error.m_message =
+				error.message =
 					"Unable to infer array size. Size of Array has to be determined at compile time by providing an initializer list.";
-				error.m_got = node.name;
-				error.m_expected = "<Initializer List>";
+				error.actual = node.name;
+				error.expected = "<Initializer List>";
 				error.exit();
 			}
 			if (const auto init_list = node_declaration->value->cast<NodeInitializerList>()) {
@@ -102,10 +103,13 @@ public:
 			node.size->accept(*this);
 			if(!node.size->is_constant()) {
 				error.set_token(node.size->tok);
-				error.m_message = "Size of <Array> has to be a constant expression with constant <Variables> and/or <Integers>.";
-				error.m_got = node.size->get_string();
+				error.message = "Size of <Array> has to be a constant expression with constant <Variables> and/or <Integers>.";
+				error.actual = node.size->get_string();
 				error.exit();
 			}
+		}
+		if (node.size) {
+			ASTKSPSyntaxCheck::check_max_array_size(node);
 		}
 		if (node_declaration) {
 			check_size_against_initializer_list(*node_declaration);
@@ -141,8 +145,8 @@ public:
 		if(node.kind == NodeFunctionCall::Kind::Builtin and node.function->get_num_args() == 1) {
 			if(node.function->name == "num_elements") {
 				if(node.function->get_arg(0)->get_string() == m_current_array->name) {
-					auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-					error.m_message = "Size of <Array> cannot reference itself.";
+					auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+					error.message = "Size of <Array> cannot reference itself.";
 					error.exit();
 				}
 			}
@@ -153,8 +157,8 @@ public:
 	NodeAST * visit(NodeNumElements& node) override {
 		node.array->accept(*this);
 		if (node.array->name == m_current_array->name) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-			error.m_message = "Size of <Array> cannot reference itself.";
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+			error.message = "Size of <Array> cannot reference itself.";
 			error.exit();
 		}
 		if(node.dimension) node.dimension->accept(*this);
@@ -163,4 +167,3 @@ public:
 
 
 };
-

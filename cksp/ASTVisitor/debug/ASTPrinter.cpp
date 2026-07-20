@@ -452,6 +452,13 @@ NodeAST * ASTPrinter::visit(NodeIf &node) {
 	return &node;
 }
 
+NodeAST * ASTPrinter::visit(NodeNullCoalesce &node) {
+	node.chain->accept(*this);
+	os << " ?? ";
+	node.fallback->accept(*this);
+	return &node;
+}
+
 NodeAST * ASTPrinter::visit(NodeTernary &node) {
 	os << "(" ;
 	node.condition->accept(*this);

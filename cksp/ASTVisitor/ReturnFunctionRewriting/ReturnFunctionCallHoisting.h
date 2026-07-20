@@ -36,9 +36,9 @@ class ReturnFunctionCallHoisting final : public ASTVisitor {
 		bool is_in_assignment =  node.parent->cast<NodeSingleAssignment>();
 		bool is_in_return = node.parent->cast<NodeReturn>();
 		if(!is_in_stmt and !returns_values) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-			error.m_message = "Function "+node.function->name+" does not return any value";
-			error.m_got = node.function->name;
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+			error.message = "Function "+node.function->name+" does not return any value";
+			error.actual = node.function->name;
 			error.exit();
 		}
 		if(!returns_values) {
@@ -107,8 +107,8 @@ public:
 		if(is_hoistable(node)) {
 			const auto last_stmt = node.get_parent_statement();
 			if(!last_stmt) {
-				auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
-				error.m_message = "Unable to find parent statement of <FunctionCall>.";
+				auto error = Diagnostic(ErrorType::InternalError, "", "", node.tok);
+				error.message = "Unable to find parent statement of <FunctionCall>.";
 				error.exit();
 			}
 

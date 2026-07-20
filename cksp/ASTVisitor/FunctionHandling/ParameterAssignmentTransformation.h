@@ -71,8 +71,8 @@ public:
 	static void swap_call(NodeFunctionCall& old, const std::unique_ptr<NodeBlock>& new_block) {
 		auto definition = old.get_definition();
 		if (!definition) {
-			auto error = CompileError(ErrorType::InternalError, "", "", old.tok);
-			error.m_message = "FunctionAssignmentTransformation : Function node has to have a definition to be transformed.";
+			auto error = Diagnostic(ErrorType::InternalError, "", "", old.tok);
+			error.message = "FunctionAssignmentTransformation : Function node has to have a definition to be transformed.";
 			error.exit();
 		}
 		// create new call for easy replacement
@@ -91,8 +91,8 @@ public:
 			new_call->strategy = NodeFunctionCall::Call;
 		}
 		new_block->add_as_stmt(std::move(new_call));
-		definition->call_sites.erase(&old);
-		definition->call_sites.insert(new_block->get_last_statement()->cast<NodeFunctionCall>());
+		definition->remove_call_site(&old);
+		definition->add_call_site(new_block->get_last_statement()->cast<NodeFunctionCall>());
 	}
 
 private:
@@ -122,8 +122,8 @@ private:
 	NodeAST* visit(NodeFunctionCall& node) override {
 		auto definition = node.get_definition();
 		if (!definition) {
-			auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
-			error.m_message = "FunctionAssignmentTransformation : Function node has to have a definition to be transformed.";
+			auto error = Diagnostic(ErrorType::InternalError, "", "", node.tok);
+			error.message = "FunctionAssignmentTransformation : Function node has to have a definition to be transformed.";
 			error.exit();
 			return &node;
 		}
@@ -133,6 +133,7 @@ private:
 		if (!definition->visited) {
 			definition->visited = true;
 			m_function_call_stack.push_back(&node);
+			FunctionCallStackScope diagnostic_frame(*m_program, node);
 
 			definition->accept(*this);
 
@@ -203,6 +204,8 @@ private:
 				// return parameters have to passed back and do not need to be assigned
 				if (formal_param->data_type == DataType::Return) {
 					if (const auto ref = cast_node<NodeReference>(actual_param.get())) {
+						// discarded return values (throwaway refs) do not need to be passed back
+						if (ref->kind == NodeReference::Kind::Throwaway) continue;
 						auto return_assign = std::make_unique<NodeSingleAssignment>(
 							unique_ptr_cast<NodeReference>(std::move(actual_param)),
 							formal_param->to_reference(),
@@ -321,5 +324,3 @@ private:
 
 
 };
-
-

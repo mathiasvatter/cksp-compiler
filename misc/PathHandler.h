@@ -14,7 +14,7 @@ public:
 
 private:
 	Token m_current_token;
-    CompileError m_error = CompileError(ErrorType::FileError, "Found incorrect path.", "valid path", m_current_token);
+    Diagnostic m_error = Diagnostic(ErrorType::FileError, "Found incorrect path.", "valid path", m_current_token);
 	std::string m_current_file;
 	std::string m_root_directory;
 public:
@@ -37,7 +37,7 @@ public:
 	 * @brief Resolves the import path to an absolute path.
 	 *
 	 * @param import_path The path provided in the import statement.
-	 * @return A Result object containing the resolved path as a string if successful, or a CompileError if unsuccessful.
+	 * @return A Result object containing the resolved path as a string if successful, or a Diagnostic if unsuccessful.
 	 */
 	Result<std::string> resolve_import_path(const std::string& import_path);;
 
@@ -46,7 +46,7 @@ public:
 	 * Does not check if the path exists.
 	 *
 	 * @param import_path The path provided in the import statement.
-	 * @return A Result object containing the resolved path as a string if successful, or a CompileError if unsuccessful.
+	 * @return A Result object containing the resolved path as a string if successful, or a Diagnostic if unsuccessful.
 	 */
 	Result<std::string> resolve_path(const std::string& import_path);
 
@@ -58,7 +58,7 @@ public:
 	 *
 	 * @param base_path The base path.
 	 * @param relative_path The relative path to be resolved.
-	 * @return A Result object containing the resolved path as a string if successful, or a CompileError if unsuccessful.
+	 * @return A Result object containing the resolved path as a string if successful, or a Diagnostic if unsuccessful.
 	 */
 	Result<std::string> resolve_overlap(const std::string& base_path, const std::string& relative_path);
 
@@ -66,7 +66,7 @@ public:
 	 * @brief Returns a vector of all files in a given directory.
 	 *
 	 * @param directory_path The path of the directory.
-	 * @return A Result object containing the vector of file paths if successful, or a CompileError if unsuccessful.
+	 * @return A Result object containing the vector of file paths if successful, or a Diagnostic if unsuccessful.
 	 */
 	Result<std::vector<std::string>> get_directory_files(const std::string& directory_path);
 

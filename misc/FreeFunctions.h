@@ -12,8 +12,9 @@
 #include <algorithm>
 #include <sstream>
 
-#include "../cksp/Tokenizer/Tokens.h"
-
+#include <atomic>
+#include <exception>
+#include <mutex>
 #include <thread>
 
 template <typename Iterator, typename Func>
@@ -33,15 +34,26 @@ void parallel_for_each(Iterator begin, Iterator end, Func func, size_t num_threa
 	// Threads erstellen
 	std::vector<std::thread> threads;
 	Iterator chunk_begin = begin;
+	std::exception_ptr first_exception = nullptr;
+	std::mutex exception_mutex;
+	std::atomic_bool stop_requested = false;
 
 	for (size_t t = 0; t < num_threads && chunk_begin != end; ++t) {
 		Iterator chunk_end = chunk_begin;
 		std::advance(chunk_end, std::min(chunk_size, static_cast<size_t>(std::distance(chunk_begin, end))));
 
-		threads.emplace_back([chunk_begin, chunk_end, func]() {
-		  for (auto it = chunk_begin; it != chunk_end; ++it) {
-			  func(*it);
-		  }
+		threads.emplace_back([chunk_begin, chunk_end, func, &first_exception, &exception_mutex, &stop_requested]() {
+			try {
+				for (auto it = chunk_begin; it != chunk_end && !stop_requested.load(); ++it) {
+					func(*it);
+				}
+			} catch (...) {
+				stop_requested.store(true);
+				std::lock_guard<std::mutex> guard(exception_mutex);
+				if (!first_exception) {
+					first_exception = std::current_exception();
+				}
+			}
 		});
 
 		chunk_begin = chunk_end;
@@ -52,6 +64,24 @@ void parallel_for_each(Iterator begin, Iterator end, Func func, size_t num_threa
 		if (thread.joinable()) {
 			thread.join();
 		}
+	}
+
+	if (first_exception) {
+		std::rethrow_exception(first_exception);
+	}
+}
+
+// Runs the range sequentially when `sequential` is true, otherwise parallelises via
+// parallel_for_each. Used to keep the LSP analysis deterministic: passes with
+// order-sensitive side effects (declaration registration, renaming) must not run
+// concurrently, because the outcome would otherwise depend on thread scheduling.
+// Exceptions propagate in both modes.
+template <typename Iterator, typename Func>
+void parallel_for_each_unless(bool sequential, Iterator begin, Iterator end, Func func, size_t num_threads = 0) {
+	if (sequential) {
+		std::for_each(begin, end, std::move(func));
+	} else {
+		parallel_for_each(begin, end, std::move(func), num_threads);
 	}
 }
 
@@ -97,16 +127,4 @@ inline std::string desanitize_dots(const std::string& str) {
 	// }
 
 	return result;
-}
-
-/// takes string and returns vector of namespaces ('.')
-inline std::vector<std::string> get_namespaces(const std::string& str) {
-	std::vector<std::string> namespaces;
-	std::istringstream iss(str);
-	std::string ns;
-
-	while (std::getline(iss, ns, '.')) {
-		namespaces.push_back(ns);
-	}
-	return namespaces;
 }

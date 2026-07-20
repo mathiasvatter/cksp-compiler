@@ -46,8 +46,8 @@ public:
 
 		auto condition_type = condition->ty;
 		if (condition_type == TypeRegistry::Unknown) {
-			auto error = CompileError(ErrorType::InternalError, "", "", tok);
-			error.m_message = "Condition has unknown type. This should not happen.";
+			auto error = Diagnostic(ErrorType::InternalError, "", "", tok);
+			error.message = "Condition has unknown type. This should not happen.";
 			error.exit();
 		}
 

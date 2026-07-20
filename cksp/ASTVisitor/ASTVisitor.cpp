@@ -5,8 +5,8 @@
 #include "ASTVisitor.h"
 
 
-CompileError ASTVisitor::get_raw_compile_error(ErrorType err_type, const NodeAST &node) {
-	return CompileError(err_type, "", "", node.tok);
+Diagnostic ASTVisitor::make_diagnostic(ErrorType err_type, const NodeAST &node) {
+	return Diagnostic(err_type, "", "", node.tok);
 }
 
 std::unique_ptr<NodeBlock> ASTVisitor::make_while_loop(NodeReference* var, int32_t from, int32_t to, std::unique_ptr<NodeBlock> body, NodeAST* parent) {

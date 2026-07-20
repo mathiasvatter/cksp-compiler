@@ -37,6 +37,8 @@ CommandLineOptions::CommandLineOptions(int argc, char **argv) {
         	std::cout << get_help_option() << std::endl;
             std::cout << cli_help;
             exit(0);
+        } else if (arg == "--lsp") {
+			m_lsp_mode = true;
         } else if (arg == "-o") {
         	// Accept repeated -o occurrences
         	if (i + 1 < argc) {
@@ -49,7 +51,7 @@ CommandLineOptions::CommandLineOptions(int argc, char **argv) {
         		auto result = handler.check_valid_output_file(out);
         		if (result.is_error()) {
 					auto error = result.get_error();
-					error.m_message = "Invalid output file path provided with -o option. " + error.m_message;
+					error.message = "Invalid output file path provided with -o option. " + error.message;
 					error.exit();
 				}
         		m_compiler_config->outputs.emplace_back(to_abs_norm(val));
@@ -94,24 +96,26 @@ CommandLineOptions::CommandLineOptions(int argc, char **argv) {
         	}
         	m_compiler_config->parameter_passing = it->second;
         } else if (arg == "-s" || arg == "--max-callback-depth") {
-        	std::string val;
+	        std::string val;
         	if (i + 1 < argc) {
-				val = argv[++i];
-			} else {
-				std::cerr << "Error: " << arg << " requires an integer argument.\n";
-				std::exit(1);
-			}
-			try {
-				int depth = std::stoi(val);
-				if (depth <= 0) {
-					std::cerr << "Error: max callback stack depth must be positive.\n";
-					std::exit(1);
-				}
-				m_compiler_config->max_callback_depth = depth;
-			} catch (const std::exception& e) {
-				std::cerr << "Error: invalid integer for max callback stack depth: " << val << "\n";
-				std::exit(1);
-			}
+        		val = argv[++i];
+        	} else {
+        		std::cerr << "Error: " << arg << " requires an integer argument.\n";
+        		std::exit(1);
+        	}
+        	try {
+        		int depth = std::stoi(val);
+        		if (depth <= 0) {
+        			std::cerr << "Error: max callback stack depth must be positive.\n";
+        			std::exit(1);
+        		}
+        		m_compiler_config->max_callback_depth = depth;
+        	} catch (const std::exception& e) {
+        		std::cerr << "Error: invalid integer for max callback stack depth: " << val << "\n";
+        		std::exit(1);
+        	}
+        } else if (arg == "--obfuscate") {
+        	m_compiler_config->obfuscate = true;
         } else {
         	// First non-option token is the input file
         	if (input_file.empty())
@@ -124,6 +128,10 @@ CommandLineOptions::CommandLineOptions(int argc, char **argv) {
         }
     }
 
+	if (m_lsp_mode) {
+		return;
+	}
+
     if (input_file.empty()) {
         std::cerr << "Error: No input file provided.\n";
         std::cout << cli_help;
@@ -135,7 +143,7 @@ CommandLineOptions::CommandLineOptions(int argc, char **argv) {
 	auto error = handler.check_valid_path(input_file);
 	if (error.is_error()) {
 		auto err = error.get_error();
-		err.m_message = "Invalid input file path. " + err.m_message;
+		err.message = "Invalid input file path. " + err.message;
 		err.exit();
 	}
 
@@ -158,7 +166,11 @@ std::string CommandLineOptions::get_help_option() const {
 		if (!std::get<1>(tuple).empty()) {
 			if (!std::get<0>(tuple).empty()) ss << ", ";
 			else ss << "    ";
-			ss << std::get<1>(tuple);
+			if (std::get<1>(tuple).starts_with("-")) {
+				ss << std::get<1>(tuple);
+			} else {
+				ss << "--" << std::get<1>(tuple);
+			}
 		}
 		ss << " " << std::get<2>(tuple);
 		if (std::get<2>(tuple).empty()) ss << "\t";
@@ -170,5 +182,3 @@ std::string CommandLineOptions::get_help_option() const {
 std::unique_ptr<CompilerConfig> CommandLineOptions::get_compiler_config() {
 	return std::move(m_compiler_config);
 }
-
-

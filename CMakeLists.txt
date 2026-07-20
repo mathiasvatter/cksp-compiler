@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
-project(CKSP_Compiler VERSION 0.0.9)
-set(PRE_RELEASE_VERSION "")
+project(CKSP_Compiler VERSION 0.1.0)
+set(PRE_RELEASE_VERSION "-alpha.1")
 
 set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
 configure_file(
@@ -57,10 +57,21 @@ add_library(cksp_core STATIC
         cksp/Tokenizer/Tokens.h
         cksp/Tokenizer/Tokenizer.h
         cksp/Tokenizer/Tokenizer.cpp
+        cksp/Tokenizer/Token.h
+        cksp/Source/SourceProvider.h
+        cksp/Source/SourceProvider.cpp
+        cksp/Source/SourceParser.h
+        cksp/Source/SourceParser.cpp
         cksp/Parser/Parser.h
         cksp/Parser/Parser.cpp
-        misc/CompileError.h
-        misc/CompileError.cpp
+        misc/Diagnostic.h
+        misc/Diagnostic.cpp
+        misc/DiagnosticReport.h
+        misc/DiagnosticEngine.h
+        misc/DiagnosticEngine.cpp
+        misc/DiagnosticSink.h
+        misc/DiagnosticSink.cpp
+        misc/SourceLocation.h
         misc/Result.h
         cksp/Preprocessor/PreAST/PreASTNodes/PreAST.h
         cksp/Preprocessor/PreAST/PreASTNodes/PreAST.cpp
@@ -108,7 +119,6 @@ add_library(cksp_core STATIC
         misc/FileHandler.h
         misc/FileHandler.cpp
         misc/CommandLineOptions.h
-        misc/CommandLineOptions.cpp
         cksp/BuiltinsProcessing/DefinitionProvider.h
         cksp/BuiltinsProcessing/DefinitionProvider.cpp
         cksp/Processor/Processor.h
@@ -126,6 +136,7 @@ add_library(cksp_core STATIC
         utils/Gensym.h
         utils/Timer.h
         cksp/Compiler.h
+        cksp/CompilerConfig.h
         cksp/ASTVisitor/ASTOptimizations.h
         cksp/ASTVisitor/ASTOptimizations.cpp
         cksp/ASTVisitor/ASTVariableChecking.h
@@ -246,6 +257,12 @@ add_library(cksp_core STATIC
         cksp/ASTVisitor/ASTThreadSafeAnalysis.h
         cksp/ASTVisitor/ASTStructInstanceAnalysis.h
         cksp/Optimization/ConstantDatabase.h
+        cksp/Source/ImportGraph.h
+        cksp/ASTVisitor/ASTCheck.h
+        cksp/ASTVisitor/ASTObfuscate.h
+        cksp/BuiltinsProcessing/EngineConstantsIntegers.h
+        utils/IdentifierObfuscator.h
+        cksp/Lowering/LoweringOptionalChaining.h
 )
 add_dependencies(cksp_core generate_headers)
 
@@ -256,5 +273,24 @@ target_include_directories(cksp_core PUBLIC
 
 target_compile_definitions(cksp_core PUBLIC PRINTER_OUTPUT_PATH="${CMAKE_SOURCE_DIR}")
 
-add_executable(cksp main.cpp)
+add_executable(cksp
+        main.cpp
+        misc/CommandLineOptions.cpp
+        misc/CrashReporter.h
+        lsp/JsonRpcConnection.h
+        lsp/JsonRpcMessage.h
+        lsp/LanguageServer.cpp
+        lsp/LanguageServer.h
+        lsp/ReferenceProvider.cpp
+        lsp/ReferenceProvider.h
+        lsp/RenameProvider.cpp
+        lsp/RenameProvider.h
+        lsp/RequestParams.cpp
+        lsp/RequestParams.h
+        lsp/TrackingSourceProvider.h
+        lsp/DiagnosticPublisher.cpp
+        lsp/DiagnosticPublisher.h
+        lsp/EntryPointResolver.cpp
+        lsp/EntryPointResolver.h
+)
 target_link_libraries(cksp PRIVATE cksp_core)

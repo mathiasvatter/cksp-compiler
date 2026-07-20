@@ -8,23 +8,14 @@
 #include <vector>
 
 #include "../../utils/StringUtils.h"
+#include "../../misc/DiagnosticEngine.h"
 
-/*
- * TOKEN STRUCT
- */
-Token::Token(token type, std::string  val, size_t line, size_t pos, const std::string &file)
-            : type(type), val(std::move(val)), line(line), pos(pos), file(file) {}
-
-std::ostream &operator<<(std::ostream &os, const Token &tok) {
-    os << "Type: " << tok.type << " | Value: " << tok.val << " | Line: " << tok.line;
-    return os;
-}
 
 /*
  * Tokenizer Functions
  */
-Tokenizer::Tokenizer(const std::string& input, const std::string& file)
-    : m_pos(0), m_line(1), m_line_pos(1) {
+Tokenizer::Tokenizer(const std::string& input, const std::string& file, DiagnosticEngine& diagnostics)
+    : m_pos(0), m_line(1), m_line_pos(1), m_diagnostics(diagnostics) {
     m_current_file = file;
 
     m_input = input;
@@ -36,7 +27,7 @@ Tokenizer::Tokenizer(const std::string& input, const std::string& file)
 std::vector<Token> Tokenizer::tokenize() {
 	is_in_fstring = false;
     if(m_input.empty())
-        CompileError(ErrorType::TokenError, "Missing input file to tokenize.", 0, "<input file>", "", m_current_file).exit();
+        Diagnostic(ErrorType::TokenError, "Missing input file to tokenize.", 0, "<input file>", "", m_current_file).exit();
 
 	token_loop();
 
@@ -108,16 +99,14 @@ char Tokenizer::consume() {
         return m_input.at(m_pos++);
     }
     auto err_msg = "Reached end of file.";
-    CompileError(ErrorType::TokenError, err_msg, m_line, "end token", std::string(1, peek()), m_current_file).print();
-    exit(EXIT_FAILURE);
+    Diagnostic(ErrorType::TokenError, err_msg, m_line, "end token", std::string(1, peek()), m_current_file).exit();
 }
 
 void Tokenizer::skip_whitespace() {
     while (is_space(peek())) {
         if (m_pos + 1 >= m_input_length) {
 			auto err_msg = "Reached end of file.";
-			CompileError(ErrorType::TokenError, err_msg, m_line, "end token", std::string(1, peek()), m_current_file).print();
-			exit(EXIT_FAILURE);
+			Diagnostic(ErrorType::TokenError, err_msg, m_line, "end token", std::string(1, peek()), m_current_file).exit();
 		}
 //        m_buffer += peek();
 //        m_pos++;
@@ -134,7 +123,7 @@ void Tokenizer::add_token(token type, std::string val) {
 
 char Tokenizer::peek(const int ahead) const {
     if (m_input_length <= m_pos + ahead) {
-		auto error = CompileError(
+		auto error = Diagnostic(
 		    ErrorType::TokenError,
 		    "Reached end of file.",
 		    m_line,
@@ -149,11 +138,11 @@ char Tokenizer::peek(const int ahead) const {
 void Tokenizer::get_invalid() {
 	flush_buffer();
 	consume();
-	add_token(token::INVALID, m_buffer);
 	auto got = !m_buffer.empty() ? m_buffer : std::string(1, m_current_char);
-	auto error = CompileError(ErrorType::TokenError, "", m_line, "valid token", got, m_current_file);
-	error.exit();
+	add_token(token::INVALID, m_buffer);
+	auto error = Diagnostic(ErrorType::TokenError, "", "valid token", m_tokens.back());
 	error.add_message("Found invalid token: " + got);
+	error.exit();
 	skip_whitespace();
 }
 
@@ -162,9 +151,10 @@ bool Tokenizer::is_pragma() const {
             peek(3) == 'p' and peek(4) == 'r' and peek(5) == 'a' and
             peek(6) == 'g' and peek(7) == 'm' and peek(8) == 'a';
 	if(workaround_pragma) {
-		auto error = CompileError(ErrorType::CompileWarning, "", m_line, "", "//#pragma", m_current_file);
-		error.m_message = "Found usage of //#pragma. Note that this is a workaround and will be removed in future versions.";
-		error.print();
+		auto token = Token(token::PRAGMA, "//#pragma", m_line, m_line_pos, m_current_file);
+		auto error = Diagnostic(ErrorType::CompileWarning, "", "#pragma", token);
+		error.message = "Found usage of //#pragma. Note that this is a workaround and will be removed in future versions.";
+		error.report(m_diagnostics);
 	}
 	return workaround_pragma;
 }
@@ -194,7 +184,7 @@ void Tokenizer::get_comment() {
             while (peek() != '\n') {
 				consume();
             }
-        	m_line_comment++;
+	m_line_comment++;
             // skip nex_char(); so that the \n can be tokenized
         // if multi-line comment c++ style
         } else if (peek(1) == '*') {
@@ -235,19 +225,19 @@ void Tokenizer::get_format_string() {
         if (peek() == '\\' and peek(1) == fstring_starting_char.top()) {
             consume();
         }
-    	if (peek() == '\\' and peek(1) == '<') {
-    		consume();
-    	}
-    	if (peek() == '<') {
-    		if (!m_buffer.empty()) {
-    			add_token(token::STRING, m_buffer);
-    		}
-    		flush_buffer();
-    		consume();
-    		add_token(token::FSTRING_EXPR_START, m_buffer);
-    		return;
-    	}
-    	consume();
+	if (peek() == '\\' and peek(1) == '<') {
+		consume();
+	}
+	if (peek() == '<') {
+		if (!m_buffer.empty()) {
+			add_token(token::STRING, m_buffer);
+		}
+		flush_buffer();
+		consume();
+		add_token(token::FSTRING_EXPR_START, m_buffer);
+		return;
+	}
+	consume();
     }
 	add_token(token::STRING, m_buffer);
 	consume(); // consume the fstring_starting_char
@@ -278,7 +268,7 @@ void Tokenizer::get_binary_operators() {
 			consume();
 			tok = token::EXP;
 		} else {
-        	tok = token::MULT;
+	tok = token::MULT;
 		}
     } else if (peek() == '&') {
         tok = token::STRING_OP;
@@ -355,86 +345,101 @@ void Tokenizer::get_keyword_or_num() {
 			add_token(token::FLOAT, m_buffer);
 		} else {
 			auto err_msg = "Found unknown keyword.";
-			CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).exit();
+			Diagnostic(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).exit();
 		}
+	// check if optional chaining ?.
+	} else if (peek() == '?' and peek(1) == '.') {
+		consume();
+		add_token(token::TERNARY, m_buffer);
+		consume();
+		add_token(token::DOT, m_buffer);
+	// check if nullish coalescing ??
+	} else if (peek() == '?' and peek(1) == '?') {
+		consume();
+		consume();
+		add_token(token::NULL_COALESCE, m_buffer);
     // check if next char is _ or text
     } else if (is_keyword_or_num()) {
 	    //        if(peek() =='#') consume(); //consume # for macro iteration
-    	consume(); //consume possible identifier
-    	while (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
-    		consume();
-    	}
-    	// here could come a single dot or a line continuation 'and...'
-    	if (!is_line_continuation()) {
-    		while (peek() == '.') {
-    			consume();
-    			if (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
-    				while(std::isalnum(peek()) || peek() == '_' || peek() == '#') {
-    					consume();
-    				}
-    			} else {
-    				auto err_msg = "Found unknown keyword.";
-    				CompileError(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).exit();
-    			}
-    		}
+		consume(); //consume possible identifier
+		while (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
+			consume();
+	}
+	// here could come a single dot or a line continuation 'and...'
+	// an identifier directly behind a DOT token (emitted by ?. and by chain
+	// continuations) is an access chain member: keep its dotted parts separate
+	// so every part becomes its own chain member. Namespace-qualified names in
+	// all other positions stay one dotted token
+	if (!is_line_continuation() and (m_tokens.empty() or m_tokens.back().type != token::DOT)) {
+		while (peek() == '.') {
+			consume();
+			if (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
+				while(std::isalnum(peek()) || peek() == '_' || peek() == '#') {
+					consume();
+				}
+			} else {
+				auto err_msg = "Found unknown keyword.";
+				Diagnostic(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).exit();
+			}
 		}
-    	if (is_hexadecimal(m_buffer)) {
-    		add_token(token::HEXADECIMAL, m_buffer);
-    	} else if (is_binary(m_buffer)) {
-    		add_token(token::BINARY, m_buffer);
-    	} else if (is_callback_start()) {
-    		m_tokens.pop_back();
-    		add_token(token::BEGIN_CALLBACK, "on "+m_buffer);
-    	} else if (is_callback_end()) {
-    		m_tokens.pop_back();
-    		add_token(token::END_CALLBACK, "end "+m_buffer);
-    	} else if (m_buffer == "mod") {
-    		add_token(token::MODULO, m_buffer);
-    	} else if (auto type = get_token_type(BOOL_OPERATORS, m_buffer)) {
-    		add_token(*type, m_buffer);
-    	} else if (auto type = get_token_type(STATEMENTS, m_buffer)) {
-    		// get end statements
-    		if (!m_tokens.empty()) {
-    			if (m_tokens.back().val == "end") {
-    				m_tokens.pop_back();
-    				m_buffer = "end " + m_buffer;
-    				type = get_token_type(END_STATEMENTS, m_buffer);
-    			}
-    		}
-    		add_token(*type, m_buffer);
-    	} else if (auto type = get_token_type(STATEMENT_SYNTAX, m_buffer)) {
-    		add_token(*type, m_buffer);
-    	} else if (UI_CONTROLS.contains(m_buffer)) {
-    		add_token(token::UI_CONTROL, m_buffer);
-    	} else if (auto type = get_token_type(PREPROCESSOR_SYNTAX, m_buffer)) {
-    		add_token(*type, m_buffer);
-    	} else if (auto type = get_token_type(DECLARATION_SYNTAX, m_buffer)) {
-    		add_token(*type, m_buffer);
-    	} else if (auto type = get_token_type(FUNCTION_SYNTAX, m_buffer)) {
-    		add_token(*type, m_buffer);
-    	} else if (auto type = get_token_type(BOOLEAN_SYNTAX, m_buffer)) {
-    		add_token(*type, m_buffer);
-    	} else if (auto type = get_token_type(OBJECT_SYNTAX, m_buffer)) {
-    		add_token(*type, m_buffer);
-    	} else {
+	}
+	if (is_hexadecimal(m_buffer)) {
+		add_token(token::HEXADECIMAL, m_buffer);
+	} else if (is_binary(m_buffer)) {
+		add_token(token::BINARY, m_buffer);
+	} else if (is_callback_start()) {
+		m_tokens.pop_back();
+		add_token(token::BEGIN_CALLBACK, "on "+m_buffer);
+	} else if (is_callback_end()) {
+		m_tokens.pop_back();
+		add_token(token::END_CALLBACK, "end "+m_buffer);
+	} else if (m_buffer == "mod") {
+		add_token(token::MODULO, m_buffer);
+	} else if (auto type = get_token_type(BOOL_OPERATORS, m_buffer)) {
+		add_token(*type, m_buffer);
+	} else if (auto type = get_token_type(STATEMENTS, m_buffer)) {
+		// get end statements
+		if (!m_tokens.empty()) {
+			if (m_tokens.back().val == "end") {
+				m_tokens.pop_back();
+				m_buffer = "end " + m_buffer;
+				type = get_token_type(END_STATEMENTS, m_buffer);
+			}
+		}
+		add_token(*type, m_buffer);
+	} else if (auto type = get_token_type(STATEMENT_SYNTAX, m_buffer)) {
+		add_token(*type, m_buffer);
+	} else if (UI_CONTROLS.contains(m_buffer)) {
+		add_token(token::UI_CONTROL, m_buffer);
+	} else if (auto type = get_token_type(PREPROCESSOR_SYNTAX, m_buffer)) {
+		add_token(*type, m_buffer);
+	} else if (auto type = get_token_type(DECLARATION_SYNTAX, m_buffer)) {
+		add_token(*type, m_buffer);
+	} else if (auto type = get_token_type(FUNCTION_SYNTAX, m_buffer)) {
+		add_token(*type, m_buffer);
+	} else if (auto type = get_token_type(BOOLEAN_SYNTAX, m_buffer)) {
+		add_token(*type, m_buffer);
+	} else if (auto type = get_token_type(OBJECT_SYNTAX, m_buffer)) {
+		add_token(*type, m_buffer);
+	} else {
 
-    		// try to fix #keyword into # keyword (two tokens)
-    		const auto not_equal = GENERATE_COMPARISON_OPERATORS[token::NOT_EQUAL];
-    		if (StringUtils::starts_with(m_buffer, not_equal)) {
-    			if (StringUtils::count_char(m_buffer, not_equal[0]) % 2 == 1) {
-    				add_token(token::NOT_EQUAL, not_equal);
-    				m_buffer.erase(0, not_equal.length());
-    			}
-    		}
+		// try to fix #keyword into # keyword (two tokens)
+		const auto not_equal = GENERATE_COMPARISON_OPERATORS[token::NOT_EQUAL];
+		if (StringUtils::starts_with(m_buffer, not_equal)) {
+			if (StringUtils::count_char(m_buffer, not_equal[0]) % 2 == 1) {
+				add_token(token::NOT_EQUAL, not_equal);
+				m_buffer.erase(0, not_equal.length());
+			}
+		}
 
-    		add_token(token::KEYWORD, m_buffer);
-    	}
-    	// see if char after keyword is dot
+		add_token(token::KEYWORD, m_buffer);
+	}
+	// see if char after keyword is dot
     } else if (is_float) {
 		add_token(token::FLOAT, m_buffer);
     } else {
 	    // is probably int
-    	add_token(token::INT, m_buffer);
+	add_token(token::INT, m_buffer);
     }
     skip_whitespace();
 }
@@ -487,7 +492,7 @@ void Tokenizer::get_comparison_operators() {
         // NOT
     } else {
 		auto err_msg = "Unknown comparison operator.";
-		CompileError(ErrorType::TokenError, err_msg, m_line, "<, >, =", m_buffer, m_current_file).exit();
+		Diagnostic(ErrorType::TokenError, err_msg, m_line, "<, >, =", m_buffer, m_current_file).exit();
 	}
 	consume();
     add_token(tok, m_buffer);
@@ -545,10 +550,11 @@ void Tokenizer::get_bitwise_operator() {
 		while (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
 			consume();
 		}
-        // add_token(token::DOT, ".");
-		m_tokens.emplace_back(token::DOT, ".", m_line, m_line_pos-m_buffer.length(), m_current_file);
-        // add_token(token::KEYWORD, m_buffer.erase(0,1));
-		m_tokens.emplace_back(token::KEYWORD, m_buffer.erase(0,1), m_line, m_line_pos-m_buffer.length()+1, m_current_file);
+		const auto dot_pos = m_line_pos - m_buffer.length();
+		auto keyword = m_buffer.substr(1);
+		const auto keyword_pos = m_line_pos - keyword.length();
+		m_tokens.emplace_back(token::DOT, ".", m_line, dot_pos, m_current_file);
+		m_tokens.emplace_back(token::KEYWORD, std::move(keyword), m_line, keyword_pos, m_current_file);
     }
     skip_whitespace();
 }
@@ -601,7 +607,7 @@ void Tokenizer::consume_exponent() {
 	// must have at least one digit
 	if (!std::isdigit(peek())) {
 		auto err_msg = "Malformed scientific literal exponent (missing digits after e/E).";
-		CompileError(ErrorType::TokenError, err_msg, m_line, "digits", m_buffer, m_current_file).exit();
+		Diagnostic(ErrorType::TokenError, err_msg, m_line, "digits", m_buffer, m_current_file).exit();
 	}
 	while (std::isdigit(peek())) {
 		consume();
@@ -677,8 +683,3 @@ bool Tokenizer::is_callback_end() const {
         return m_tokens.back().val == "end" && m_buffer == "on";
     return false;
 }
-
-
-
-
-

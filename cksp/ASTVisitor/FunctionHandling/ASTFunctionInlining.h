@@ -50,7 +50,7 @@ public:
 		auto definition = node.get_definition();
 
 		if(node.kind == NodeFunctionCall::Kind::Property) {
-			CompileError(ErrorType::InternalError,"Found undefined property function.", "", node.tok).exit();
+			Diagnostic(ErrorType::InternalError,"Found undefined property function.", "", node.tok).exit();
 		}
 		if(!definition) {
 			// since we do depth first and try to visit every function before inlining,
@@ -59,8 +59,8 @@ public:
 			if(node.function->get_declaration() and node.function->get_declaration()->is_function_param())
 				return &node;
 
-			auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-			error.m_message = "Unable to find function definition for <"+node.function->name+">.";
+			auto error = make_diagnostic(ErrorType::SyntaxError, node);
+			error.message = "Unable to find function definition for <"+node.function->name+">.";
 			error.exit();
 		}
 		if (node.kind == NodeFunctionCall::Builtin) {
@@ -70,21 +70,22 @@ public:
 		// only threadsafe functions can be called in <on init> callback
 		if(m_current_callback == m_program->init_callback) {
 			if(!definition->is_thread_safe) {
-				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-				error.m_message = "Only threadsafe functions can be called in the <on init> callback. Function <"
+				auto error = make_diagnostic(ErrorType::SyntaxError, node);
+				error.message = "Only threadsafe functions can be called in the <on init> callback. Function <"
 								  +node.function->name+"> contains asychronous operations.";
 				error.exit();
 			}
 		}
 
 		m_program->function_definition_stack.push(definition);
+		FunctionCallStackScope diagnostic_frame(*m_program, node);
 		// visit everything beforehand to get depth first search
 		if(!definition->visited) definition->accept(*this);
 		definition->visited = true;
 
 		if (node.strategy == NodeFunctionCall::Strategy::ParameterStack) {
-			auto error = get_raw_compile_error(ErrorType::InternalError, node);
-			error.m_message = "ASTFunctionInlining : Found ParameterStack function call. This should not be possible anymore at this stage.";
+			auto error = make_diagnostic(ErrorType::InternalError, node);
+			error.message = "ASTFunctionInlining : Found ParameterStack function call. This should not be possible anymore at this stage.";
 			error.exit();
 		}
 		// node.determine_function_strategy(m_program, m_current_callback);

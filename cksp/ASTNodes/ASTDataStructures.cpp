@@ -88,6 +88,7 @@ std::unique_ptr<NodeReference> NodePointer::to_reference() {
 
 ASTLowering* NodePointer::get_lowering(NodeProgram *program) const {
 	static LoweringPointer lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -130,6 +131,7 @@ NodeAST *NodeArray::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> ne
 
 ASTLowering* NodeArray::get_lowering(NodeProgram *program) const {
 	static LoweringArray lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -178,11 +180,13 @@ std::unique_ptr<NodeAST> NodeNDArray::clone() const {
 
 ASTLowering * NodeNDArray::get_lowering(NodeProgram *program) const {
 	static LoweringNDArray lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
 ASTLowering* NodeNDArray::get_data_lowering(NodeProgram *program) const {
 	static DataLoweringNDArray lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -314,9 +318,9 @@ bool NodeUIControl::is_ui_control_array() const {
 std::shared_ptr<NodeUIControl> NodeUIControl::get_builtin_widget(const NodeProgram *program) const {
 	const auto engine_widget = program->def_provider->get_builtin_widget(ui_control_type);
 	if(!engine_widget) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-		error.m_message = "Unknown Engine Widget";
-		error.m_got = ui_control_type;
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+		error.message = "Unknown Engine Widget";
+		error.actual = ui_control_type;
 		error.exit();
 		return nullptr;
 	}
@@ -338,6 +342,7 @@ std::unique_ptr<NodeAST> NodeList::clone() const {
 
 ASTLowering* NodeList::get_lowering(NodeProgram *program) const {
 	static LoweringList lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -374,6 +379,7 @@ std::unique_ptr<NodeAST> NodeConst::clone() const {
 
 ASTDesugaring * NodeConst::get_desugaring(NodeProgram *program) const {
 	static DesugarConst desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 
@@ -397,11 +403,13 @@ std::unique_ptr<NodeAST> NodeStruct::clone() const {
 
 ASTDesugaring *NodeStruct::get_desugaring(NodeProgram *program) const {
 	static DesugarStruct desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 
 ASTLowering* NodeStruct::get_lowering(NodeProgram *program) const {
 	static LoweringStruct lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -410,18 +418,18 @@ void NodeStruct::add_method_or_override(const std::shared_ptr<NodeFunctionDefini
 		// was already declared, see if it overrides
 		if (method->override) {
 			if (exists->override and method->override) {
-				auto error = CompileError(ErrorType::SyntaxError,"", "", method->header->tok);
+				auto error = Diagnostic(ErrorType::SyntaxError,"", "", method->header->tok);
 				error.set_message( "Found duplicate method definition with the same name and parameter count at position "+exists->tok.get_position()+".\nBoth have been marked"
 					" as <override>. The compiler will use the last encountered definition that has been marked as <override>.\n"
 					"Consider removing the <override> keyword from one of the definitions.");
-				error.print();
+				error.report(diagnostics());
 			}
 			NodeProgram::replace_function_definition(exists, method);
 		} else if (exists->override and !method->override) {
 			// function in map is already override and encountered function is not
 			// pass
 		} else {
-			auto error = CompileError(ErrorType::SyntaxError,"", "", method->header->tok);
+			auto error = Diagnostic(ErrorType::SyntaxError,"", "", method->header->tok);
 			error.set_message( "A method with this name and parameter count already exists in this <struct> at position "+exists->tok.get_position()+". \n"
 				"To override it, use the <override> keyword. \n"
 				"To overload it, use <Union> types instead to define method templates accepting multiple types.");
@@ -476,7 +484,7 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_init_method() {
 			);
 			node_block->add_stmt(std::make_unique<NodeStatement>(std::move(assignment), this->tok));
 		} else {
-			auto error = CompileError(ErrorType::VariableError, "<Struct> member must be a declaration", "", tok);
+			auto error = Diagnostic(ErrorType::VariableError, "<Struct> member must be a declaration", "", tok);
 			error.exit();
 		}
 	}
@@ -692,5 +700,3 @@ void NodeStruct::collect_recursive_structs(NodeProgram* program)
     //    mit `this` stehen.
     recursive_structs = cycleMembers;
 }
-
-
