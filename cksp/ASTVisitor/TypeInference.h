@@ -342,6 +342,7 @@ public:
 	NodeAST * visit(NodeSortSearch& node) override;
 	NodeAST * visit(NodeForEach& node) override;
 	NodeAST * visit(NodeTernary& node) override;
+	NodeAST * visit(NodeNullCoalesce& node) override;
 
 
 

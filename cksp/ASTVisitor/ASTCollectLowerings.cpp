@@ -273,6 +273,22 @@ NodeAST * ASTCollectLowerings::visit(NodeTernary &node) {
 	return node.accept(ternary);
 }
 
+NodeAST * ASTCollectLowerings::visit(NodeNullCoalesce &node) {
+	// only lower the fallback here: the chain has to stay untouched so the
+	// nullish coalescing lowering can build the nil guards from it
+	node.fallback->accept(*this);
+	static LoweringNullCoalescing coalesce(m_program);
+	coalesce.set_program(m_program);
+	const auto call = node.accept(coalesce);
+	// the generated function body still contains the raw chain -> lower it now
+	if (const auto func_call = call->cast<NodeFunctionCall>()) {
+		if (const auto def = func_call->get_definition()) {
+			def->body->accept(*this);
+		}
+	}
+	return call;
+}
+
 NodeAST * ASTCollectLowerings::visit(NodeBreak& node) {
 	//TRACE();
 	// node.get_nearest_loop();

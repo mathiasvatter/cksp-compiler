@@ -1066,6 +1066,29 @@ NodeAST *NodeIf::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newCh
     return nullptr;
 }
 
+// ************* NodeNullCoalesce ***************
+NodeAST *NodeNullCoalesce::accept(ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeNullCoalesce::NodeNullCoalesce(const NodeNullCoalesce& other)
+		: NodeInstruction(other), chain(clone_unique(other.chain)),
+		  fallback(clone_unique(other.fallback)) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeNullCoalesce::clone() const {
+	return std::make_unique<NodeNullCoalesce>(*this);
+}
+NodeAST *NodeNullCoalesce::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (chain.get() == oldChild) {
+		chain = std::move(newChild);
+		return chain.get();
+	} else if (fallback.get() == oldChild) {
+		fallback = std::move(newChild);
+		return fallback.get();
+	}
+	return nullptr;
+}
+
 // ************* NodeTernary ***************
 NodeAST *NodeTernary::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);

@@ -121,6 +121,7 @@ public:
 		Result<std::unique_ptr<NodeAST>> _parse_binary_expr_rhs(int precedence, std::unique_ptr<NodeAST> lhs, NodeAST* parent);
 		/// Helper function for parsing ternary tail
 		Result<std::unique_ptr<NodeAST>> _parse_ternary_rhs(std::unique_ptr<NodeAST> condition, NodeAST* parent);
+		Result<std::unique_ptr<NodeAST>> _parse_null_coalesce_rhs(std::unique_ptr<NodeAST> lhs, NodeAST* parent);
 		/// ( expression )
 		Result<std::unique_ptr<NodeAST>> _parse_parenth_expr(NodeAST* parent);
 		/// parse identifierexpr, numberexpr, parenthexpr, functionheader

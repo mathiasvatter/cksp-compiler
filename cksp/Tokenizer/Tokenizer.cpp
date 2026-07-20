@@ -353,6 +353,11 @@ void Tokenizer::get_keyword_or_num() {
 		add_token(token::TERNARY, m_buffer);
 		consume();
 		add_token(token::DOT, m_buffer);
+	// check if nullish coalescing ??
+	} else if (peek() == '?' and peek(1) == '?') {
+		consume();
+		consume();
+		add_token(token::NULL_COALESCE, m_buffer);
     // check if next char is _ or text
     } else if (is_keyword_or_num()) {
 	    //        if(peek() =='#') consume(); //consume # for macro iteration

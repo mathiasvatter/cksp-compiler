@@ -453,6 +453,16 @@ NodeAST * TypeInference::visit(NodeTernary &node) {
 	return ASTVisitor::visit(node);
 }
 
+NodeAST * TypeInference::visit(NodeNullCoalesce &node) {
+	node.chain->accept(*this);
+	node.fallback->accept(*this);
+	// the expression evaluates to the chain value or the fallback -> both must be compatible
+	match_type(*node.chain, *node.fallback,
+		"The fallback of <?\?> must have the same type as the optional chain in front of it.");
+	node.ty = specialize_type(node.chain->ty, node.fallback->ty);
+	return &node;
+}
+
 NodeAST * TypeInference::visit(NodeAccessChain& node) {
 
 	for(int i = 0; i<node.chain.size(); i++) {

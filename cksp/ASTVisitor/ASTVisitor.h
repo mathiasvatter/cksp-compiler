@@ -290,6 +290,11 @@ public:
 		node.else_branch->accept(*this);
 		return &node;
 	}
+	virtual NodeAST* visit(NodeNullCoalesce& node) {
+		node.chain->accept(*this);
+		node.fallback->accept(*this);
+		return &node;
+	}
     virtual NodeAST* visit(NodeFor& node) {
 		node.iterator->accept(*this);
 		node.iterator_end->accept(*this);

@@ -167,6 +167,9 @@ public:
 	NodeAST* visit(NodeTernary& node) override {
     	return &node;
     }
+	NodeAST* visit(NodeNullCoalesce& node) override {
+		return &node;
+	}
     NodeAST* visit(NodeFor& node) override {
 		return &node;
 	}

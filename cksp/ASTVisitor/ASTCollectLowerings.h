@@ -68,6 +68,7 @@ public:
 	NodeAST * visit(NodeWhile& node) override;
 	NodeAST * visit(NodeIf& node) override;
 	NodeAST * visit(NodeTernary& node) override;
+	NodeAST * visit(NodeNullCoalesce& node) override;
 	/// throw error since they are not in loop
 	NodeAST * visit(NodeBreak& node) override;
 	/// lower list struct references to array references

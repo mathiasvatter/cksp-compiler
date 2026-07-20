@@ -996,6 +996,38 @@ struct NodeIf final : NodeInstruction {
 	NodeAST* do_short_circuit_transform(NodeProgram* program);
 };
 
+/// nullish coalescing: <optional chain> ?? <fallback expression>
+struct NodeNullCoalesce final : NodeInstruction {
+	std::unique_ptr<NodeAST> chain;
+	std::unique_ptr<NodeAST> fallback;
+	explicit NodeNullCoalesce(Token tok) : NodeInstruction(NodeType::NullCoalesce, std::move(tok)) {}
+	NodeNullCoalesce(std::unique_ptr<NodeAST> chain, std::unique_ptr<NodeAST> fallback, Token tok)
+			: NodeInstruction(NodeType::NullCoalesce, std::move(tok)), chain(std::move(chain)), fallback(std::move(fallback)) {
+			NodeNullCoalesce::set_child_parents();
+	}
+	NodeAST * accept(ASTVisitor &visitor) override;
+	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+	NodeNullCoalesce(const NodeNullCoalesce& other);
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		chain->update_parents(this);
+		fallback->update_parents(this);
+	}
+	void set_child_parents() override {
+		chain->parent = this;
+		fallback->parent = this;
+	}
+	std::string get_string() override { return ""; }
+	std::string get_token_string() const override {
+		return chain->get_token_string() + " ?? " + fallback->get_token_string();
+	}
+	void update_token_data(const Token& token) override {
+		chain->update_token_data(token);
+		fallback->update_token_data(token);
+	}
+};
+
 struct NodeTernary final : NodeInstruction {
     std::unique_ptr<NodeAST> condition;
     std::unique_ptr<NodeAST> if_branch;

@@ -459,7 +459,37 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_expression(NodeAST* parent) {
 	auto concat_done = _parse_string_expr_rhs(std::move(lhs.unwrap()), parent);
 	if (concat_done.is_error()) return Result<std::unique_ptr<NodeAST>>(concat_done.get_error());
 
-	return _parse_ternary_rhs(std::move(concat_done.unwrap()), parent);
+	auto coalesce_done = _parse_null_coalesce_rhs(std::move(concat_done.unwrap()), parent);
+	if (coalesce_done.is_error()) return Result<std::unique_ptr<NodeAST>>(coalesce_done.get_error());
+
+	return _parse_ternary_rhs(std::move(coalesce_done.unwrap()), parent);
+}
+
+// Expect token::NULL_COALESCE for '??'. Right-associative like the ternary:
+// a?.b ?? c?.d ?? e  ==  a?.b ?? (c?.d ?? e)
+Result<std::unique_ptr<NodeAST>>
+Parser::_parse_null_coalesce_rhs(std::unique_ptr<NodeAST> lhs, NodeAST* parent) {
+	while (peek().type == token::NULL_COALESCE) {
+		Token op = consume();                     // consume '??'
+		_skip_linebreaks();                       // allow line breaks after '??'
+
+		// only an optional chain can be nil and needs a fallback value
+		const auto chain = lhs->cast<NodeAccessChain>();
+		if (!chain or !chain->has_opt_chaining()) {
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", op);
+			error.message = "The left side of <?\?> must be an optional chain like <obj?.member>.";
+			return Result<std::unique_ptr<NodeAST>>(error);
+		}
+
+		auto fallback = parse_expression(parent);
+		if (fallback.is_error()) return Result<std::unique_ptr<NodeAST>>(fallback.get_error());
+
+		auto node = std::make_unique<NodeNullCoalesce>(std::move(lhs), std::move(fallback.unwrap()), op);
+		node->parent = parent;
+		node->set_range(node->chain->range, node->fallback->range);
+		lhs = std::move(node);
+	}
+	return Result<std::unique_ptr<NodeAST>>(std::move(lhs));
 }
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_string_expr(NodeAST* parent) {
