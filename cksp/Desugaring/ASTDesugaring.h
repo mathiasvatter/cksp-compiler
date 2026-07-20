@@ -16,5 +16,9 @@ public:
     explicit ASTDesugaring(NodeProgram* program) {m_program = program;};
     ~ASTDesugaring() =default;
 
+	void set_program(NodeProgram* program) override {
+		ASTVisitor::set_program(program);
+	}
+
     std::unique_ptr<NodeAST> replacement_node;
 };

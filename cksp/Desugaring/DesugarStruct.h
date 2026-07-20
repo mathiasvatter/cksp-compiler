@@ -37,9 +37,9 @@ class DesugarStruct final : public ASTDesugaring {
 	std::unordered_map<std::string, NodeDataStructure*> members;
 	void add_to_members(NodeDataStructure* node) {
 		if (members.contains(node->name)) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node->tok);
-			error.m_message = "Member already exists.";
-			error.m_got = node->tok.val;
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node->tok);
+			error.message = "Member already exists.";
+			error.actual = node->tok.val;
 			error.exit();
 		}
 		members[node->name] = node;
@@ -105,8 +105,8 @@ public:
 			if (m->header->name == NodeStruct::CONSTRUCTOR) has_init_method = true;
 			if (m->header->name == "__repr__") has_repr_method = true;
 			if (m->header->name == "__del__") {
-				auto error = CompileError(ErrorType::SyntaxError, "", "", m->tok);
-				error.m_message = "Destructor method is generated automatically. Please use another name.";
+				auto error = Diagnostic(ErrorType::SyntaxError, "", "", m->tok);
+				error.message = "Destructor method is generated automatically. Please use another name.";
 				error.exit();
 			}
 		}
@@ -137,14 +137,14 @@ public:
 
 	NodeAST* visit(NodeFunctionDefinition& node) override {
 		if(!node.is_method()) {
-			auto error = CompileError(ErrorType::SyntaxError,"", "", node.tok);
-			error.m_message = "Method definition must contain <self> as first parameter.";
+			auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.tok);
+			error.message = "Method definition must contain <self> as first parameter.";
 			error.exit();
 		}
 		// check if header name has dot in it -> this is not allowed
 		if (node.header->name.find('.') != std::string::npos) {
-			auto error = CompileError(ErrorType::SyntaxError,"", "", node.tok);
-			error.m_message = "Method name cannot contain '.' character. This is reserved for struct member access.";
+			auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.tok);
+			error.message = "Method name cannot contain '.' character. This is reserved for struct member access.";
 			error.exit();
 		}
 		// every self as first parameter has to be of type object
@@ -152,16 +152,16 @@ public:
 
 		// add constructor type
 		if(node.header->name == NodeStruct::CONSTRUCTOR) {
-			auto error = CompileError(ErrorType::SyntaxError,"", "", node.tok);
+			auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.tok);
 			if(node.ty != TypeRegistry::Unknown and node.ty != TypeRegistry::get_object_type(m_structs.top()->name)) {
-				error.m_message = "Constructor method has to be of object type.";
-				error.m_got = node.ty->to_string();
-				error.m_expected = m_structs.top()->name;
+				error.message = "Constructor method has to be of object type.";
+				error.actual = node.ty->to_string();
+				error.expected = m_structs.top()->name;
 				error.exit();
 			}
 			m_structs.top()->constructor = node.get_shared();
 			if(node.num_return_params > 0) {
-				error.m_message = "Constructor method cannot have return values.";
+				error.message = "Constructor method cannot have return values.";
 				error.exit();
 			}
 			node.num_return_params = 1;
@@ -172,13 +172,13 @@ public:
 		}
 		if(node.header->name == "__repr__") {
 			if(node.num_return_params > 1) {
-				auto error = CompileError(ErrorType::SyntaxError,"", "", node.tok);
-				error.m_message = "Repr method cannot have more than one return value.";
+				auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.tok);
+				error.message = "Repr method cannot have more than one return value.";
 				error.exit();
 			}
 			if(node.header->params.size() > 1) {
-				auto error = CompileError(ErrorType::SyntaxError,"", "", node.tok);
-				error.m_message = "Repr method cannot have more than one argument.";
+				auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.tok);
+				error.message = "Repr method cannot have more than one argument.";
 				error.exit();
 			}
 			node.num_return_params = 1;
@@ -206,8 +206,8 @@ public:
 			node.variable->accept(*this);
 		} else {
 			if(node.variable->name.find("self.") == 0) {
-				auto error = CompileError(ErrorType::SyntaxError,"", "", node.tok);
-				error.m_message = "<self> keyword is only allowed in member declarations.";
+				auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.tok);
+				error.message = "<self> keyword is only allowed in member declarations.";
 			}
 		}
 		if(node.value) node.value->accept(*this);
@@ -217,13 +217,13 @@ public:
 	// does currently ONLY visit when member declaration
 	NodeAST* visit(NodeVariable& node) override {
 		if(node.name == "SIZE") {
-			auto error = CompileError(ErrorType::VariableError, "", "", node.tok);
-			error.m_message = "Variable name 'SIZE' is reserved for array size constants. Please choose another name.";
+			auto error = Diagnostic(ErrorType::VariableError, "", "", node.tok);
+			error.message = "Variable name 'SIZE' is reserved for array size constants. Please choose another name.";
 			error.exit();
 		}
 		if(StringUtils::contains(node.name, "SIZE_D")) {
-			auto error = CompileError(ErrorType::VariableError, "", "", node.tok);
-			error.m_message = "Variable names containing 'SIZE_D' are reserved for multidimensional array size constants. Please choose another name.";
+			auto error = Diagnostic(ErrorType::VariableError, "", "", node.tok);
+			error.message = "Variable names containing 'SIZE_D' are reserved for multidimensional array size constants. Please choose another name.";
 			error.exit();
 		}
 		return &node;

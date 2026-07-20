@@ -66,7 +66,7 @@ NodeFunctionCall::NodeFunctionCall(bool is_call, std::unique_ptr<NodeFunctionHea
 
 NodeFunctionCall::~NodeFunctionCall() {
 	if(const auto def = definition.lock()) {
-		def->call_sites.erase(this);
+		def->remove_call_site(this);
 	}
 }
 
@@ -82,6 +82,7 @@ std::unique_ptr<NodeAST> NodeFunctionCall::clone() const {
 }
 ASTLowering* NodeFunctionCall::get_lowering(struct NodeProgram *program) const {
     static LoweringFunctionCall lowering(program);
+	lowering.set_program(program);
     return &lowering;
 }
 
@@ -108,8 +109,11 @@ std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_definition(NodePr
 
 std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_builtin_definition(NodeProgram *program) {
     if(!program->def_provider) {
-        CompileError(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
+        Diagnostic(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
     }
+	if (!function || !function->args) {
+		return nullptr;
+	}
     if(auto builtin_func = program->def_provider->get_builtin_function(function.get())) {
         function->ty = builtin_func->ty;
         function->has_forced_parenth = builtin_func->header->has_forced_parenth;
@@ -123,17 +127,21 @@ std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_builtin_definitio
 
 std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_property_definition(NodeProgram *program) {
     if(!program->def_provider) {
-        CompileError(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
+        Diagnostic(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
     }
+	if (!function || !function->args) {
+		return nullptr;
+	}
     if(auto property_func = program->def_provider->get_property_function(function.get())) {
         if(function->args->size() < 2) {
-            CompileError(
+            auto error = Diagnostic(
                     ErrorType::SyntaxError,
                     "Found Property Function with insufficient amount of arguments.",
-                    tok.line, "At least 2 arguments",
-                    std::to_string(function->args->size()),
-                    tok.file
-            ).exit();
+                    "At least 2 arguments",
+                    tok
+            );
+            error.actual = std::to_string(function->args->size());
+            error.exit();
         }
         function->ty = property_func->ty;
         definition = property_func;
@@ -184,7 +192,8 @@ bool NodeFunctionCall::bind_definition(NodeProgram* program, const bool fail, co
     	if (decl and decl->is_function_param()) {
     		return true;
     	}
-        CompileError(ErrorType::SyntaxError,"A function with this signature has not been declared.", tok.line, "", function->name, tok.file).exit();
+        auto error = Diagnostic(ErrorType::SyntaxError,"A function with this signature has not been declared.", "", tok);
+    	error.exit();
     }
     return false;
 }
@@ -195,10 +204,16 @@ std::unique_ptr<NodeAccessChain> NodeFunctionCall::to_method_chain() {
 	auto method_chain = std::make_unique<NodeAccessChain>(tok);
 	auto func_call = clone_as<NodeFunctionCall>(this);
 	func_call->function->name = ptr_strings.back();
-	ptr_strings.pop_back();
-	for(auto &str : ptr_strings) {
-		method_chain->add_method(std::make_unique<NodeVariableRef>(str, tok));
+	// Position each receiver member and the method itself at their own segment of the
+	// combined "a.b.method" token so every member points to its own declaration.
+	size_t offset = 0;
+	for(size_t i = 0; i + 1 < ptr_strings.size(); ++i) {
+		method_chain->add_method(std::make_unique<NodeVariableRef>(ptr_strings[i], segment_token(function->tok, offset, ptr_strings[i])));
+		offset += ptr_strings[i].length() + 1;
 	}
+	const Token last = segment_token(function->tok, offset, ptr_strings.back());
+	func_call->function->tok = last;
+	func_call->function->set_range(last);
 	method_chain->add_method(std::move(func_call));
 	method_chain->parent = this->parent;
 	return method_chain;
@@ -243,6 +258,7 @@ std::string NodeFunctionCall::get_method_name() const {
 
 ASTDesugaring * NodeFunctionCall::get_desugaring(NodeProgram *program) const {
 	static DesugarFunctionCall desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 
@@ -254,11 +270,13 @@ bool NodeFunctionCall::is_builtin_kind() const {
 
 NodeAST *NodeFunctionCall::do_function_call_hoisting(NodeProgram *program) {
 	static ReturnFunctionCallHoisting hoisting;
+	hoisting.set_program(program);
 	return hoisting.do_function_call_hoisting(*this, program);
 }
 
 NodeAST *NodeFunctionCall::do_function_inlining(NodeProgram *program) {
 	static FunctionInlining inlining(program);
+	inlining.set_program(program);
 	return inlining.do_function_inlining(*this);
 }
 
@@ -272,6 +290,7 @@ bool NodeFunctionCall::check_restricted_environment(NodeCallback *current_callba
 
 void NodeFunctionCall::determine_function_strategy(NodeProgram *program, NodeCallback *current_callback) {
 	static ASTFunctionStrategy function_strategy(program, program->compiler_config->parameter_passing);
+	function_strategy.set_program(program);
 	function_strategy.determine_function_strategy(*this, current_callback);
 }
 
@@ -344,11 +363,13 @@ NodeAST *NodeSortSearch::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAS
 
 ASTLowering* NodeSortSearch::get_lowering(NodeProgram *program) const {
 	static LoweringSortSearch lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
 ASTLowering* NodeSortSearch::get_post_lowering(NodeProgram *program) const {
 	static PostLoweringSortSearch lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -379,11 +400,13 @@ NodeAST *NodeNumElements::replace_child(NodeAST* oldChild, std::unique_ptr<NodeA
 
 ASTLowering* NodeNumElements::get_lowering(NodeProgram *program) const {
 	static LoweringNumElements lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
 ASTLowering* NodeNumElements::get_post_lowering(NodeProgram *program) const {
 	static PostLoweringNumElements lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -410,6 +433,7 @@ NodeAST *NodeUseCount::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST>
 
 ASTLowering* NodeUseCount::get_lowering(NodeProgram *program) const {
 	static LoweringUseCount lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -442,6 +466,7 @@ NodeAST *NodeDelete::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> n
 
 ASTDesugaring * NodeDelete::get_desugaring(NodeProgram *program) const {
 	static DesugarDelete desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 
@@ -469,6 +494,7 @@ NodeAST *NodeSingleDelete::replace_child(NodeAST* oldChild, std::unique_ptr<Node
 
 ASTLowering* NodeSingleDelete::get_lowering(NodeProgram *program) const {
 	static LoweringMemAlloc lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -496,6 +522,7 @@ NodeAST *NodeSingleRetain::replace_child(NodeAST* oldChild, std::unique_ptr<Node
 
 ASTLowering* NodeSingleRetain::get_lowering(NodeProgram *program) const {
 	static LoweringMemAlloc lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -526,6 +553,7 @@ std::unique_ptr<NodeAST> NodeAssignment::clone() const {
 
 ASTDesugaring * NodeAssignment::get_desugaring(NodeProgram *program) const {
     static DesugarDeclareAssign desugaring(program);
+	desugaring.set_program(program);
     return &desugaring;
 }
 
@@ -547,8 +575,8 @@ NodeAST *NodeSingleAssignment::replace_child(NodeAST* oldChild, std::unique_ptr<
 			l_value = std::unique_ptr<NodeReference>(new_l_value);
 			return l_value.get();
 		} else {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", oldChild->tok);
-			error.m_message = "Tried to assign to a non-reference. Left side of assignment must be a reference.";
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", oldChild->tok);
+			error.message = "Tried to assign to a non-reference. Left side of assignment must be a reference.";
 			error.exit();
 		}
     } else if (r_value.get() == oldChild) {
@@ -560,11 +588,13 @@ NodeAST *NodeSingleAssignment::replace_child(NodeAST* oldChild, std::unique_ptr<
 
 ASTDesugaring * NodeSingleAssignment::get_desugaring(NodeProgram *program) const {
 	static DesugarSingleAssignment desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 
 NodeAST *NodeSingleAssignment::do_array_normalization(NodeProgram *program) {
 	static NormalizeArrayAssign array_assign(program);
+	array_assign.set_program(program);
 	return accept(array_assign);
 }
 
@@ -579,8 +609,8 @@ void NodeSingleAssignment::check_for_constant_assignment() const {
 			if (strct and curr_func) {
 				if(curr_func->header->name == strct->name + OBJ_DELIMITER + NodeStruct::CONSTRUCTOR) {
 					if (auto decl = declaration->parent->cast<NodeSingleDeclaration>(); decl->value) {
-						auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, *this);
-						error.m_message = "Cannot assign to constant member <"+ declaration->name +"> in the constructor because it was already given a value at its declaration.";
+						auto error = ASTVisitor::make_diagnostic(ErrorType::SyntaxError, *this);
+						error.message = "Cannot assign to constant member <"+ declaration->name +"> in the constructor because it was already given a value at its declaration.";
 						error.exit();
 						return;
 					} else return;
@@ -589,8 +619,8 @@ void NodeSingleAssignment::check_for_constant_assignment() const {
 					return;
 				}
 			}
-			auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, *this);
-			error.m_message = "Cannot reassign value to constant variable <"+ l_value->name +">. Once declared, the value of a constant cannot be changed.";
+			auto error = ASTVisitor::make_diagnostic(ErrorType::SyntaxError, *this);
+			error.message = "Cannot reassign value to constant variable <"+ l_value->name +">. Once declared, the value of a constant cannot be changed.";
 			error.exit();
 			return;
 		}
@@ -612,6 +642,7 @@ std::unique_ptr<NodeAST> NodeCompoundAssignment::clone() const {
 
 ASTDesugaring * NodeCompoundAssignment::get_desugaring(NodeProgram *program) const {
 	static DesugarCompoundAssignment desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 
@@ -638,6 +669,7 @@ void NodeDeclaration::update_parents(NodeAST* new_parent)  {
 
 ASTDesugaring * NodeDeclaration::get_desugaring(NodeProgram *program) const {
     static DesugarDeclareAssign desugaring(program);
+	desugaring.set_program(program);
     return &desugaring;
 }
 
@@ -668,6 +700,7 @@ NodeAST *NodeSingleDeclaration::replace_child(NodeAST* oldChild, std::unique_ptr
 
 ASTDesugaring * NodeSingleDeclaration::get_desugaring(NodeProgram *program) const {
 	static DesugarUIControlArray desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 
@@ -989,6 +1022,7 @@ std::unique_ptr<NodeAST> NodeFamily::clone() const {
 
 ASTDesugaring * NodeFamily::get_desugaring(NodeProgram *program) const {
     static DesugarFamily desugaring(program);
+	desugaring.set_program(program);
     return &desugaring;
 }
 
@@ -1010,12 +1044,14 @@ NodeAST * NodeIf::do_short_circuit_transform(NodeProgram *program) {
 	if (auto node_binary = condition->cast<NodeBinaryExpr>()) {
 		if (node_binary->needs_short_circuiting()) {
 			static FunctionShortCircuit transform(program);
+			transform.set_program(program);
 			return transform.do_short_circuit(*this);
 		}
 	}
 	if (auto node_unary = condition->cast<NodeUnaryExpr>()) {
 		if (node_unary->needs_short_circuiting()) {
 			static FunctionShortCircuit transform(program);
+			transform.set_program(program);
 			return transform.do_short_circuit(*this);
 		}
 	}
@@ -1028,6 +1064,29 @@ NodeAST *NodeIf::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newCh
         return condition.get();
     }
     return nullptr;
+}
+
+// ************* NodeNullCoalesce ***************
+NodeAST *NodeNullCoalesce::accept(ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+NodeNullCoalesce::NodeNullCoalesce(const NodeNullCoalesce& other)
+		: NodeInstruction(other), chain(clone_unique(other.chain)),
+		  fallback(clone_unique(other.fallback)) {
+	set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeNullCoalesce::clone() const {
+	return std::make_unique<NodeNullCoalesce>(*this);
+}
+NodeAST *NodeNullCoalesce::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (chain.get() == oldChild) {
+		chain = std::move(newChild);
+		return chain.get();
+	} else if (fallback.get() == oldChild) {
+		fallback = std::move(newChild);
+		return fallback.get();
+	}
+	return nullptr;
 }
 
 // ************* NodeTernary ***************
@@ -1088,6 +1147,7 @@ NodeAST *NodeFor::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newC
 
 ASTLowering * NodeFor::get_lowering(NodeProgram *program) const {
 	static LoweringFor lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -1110,11 +1170,19 @@ std::unique_ptr<NodeRange> NodeFor::determine_loop_range() {
 }
 
 std::unique_ptr<NodeAST> NodeFor::get_num_iterations() {
-	// (end-start)/step
+	// abs((end-start)/step) + 1 -> to/downto loops are inclusive
 	auto start = iterator->r_value->clone();
 	auto end = iterator_end->clone();
-	auto node_range = std::make_unique<NodeRange>(std::move(start), std::move(end), nullptr, tok);
-	return node_range->get_num_iterations();
+	std::unique_ptr<NodeAST> expr = std::make_unique<NodeBinaryExpr>(token::SUB, std::move(end), std::move(start), tok);
+	expr->ty = TypeRegistry::Integer;
+	if(step) {
+		expr = std::make_unique<NodeBinaryExpr>(token::DIV, std::move(expr), step->clone(), tok);
+		expr->ty = TypeRegistry::Integer;
+	}
+	expr = DefinitionProvider::create_builtin_call("abs", std::move(expr));
+	expr = std::make_unique<NodeBinaryExpr>(token::ADD, std::move(expr), std::make_unique<NodeInt>(1, tok), tok);
+	expr->ty = TypeRegistry::Integer;
+	return expr;
 }
 
 // ************* NodeForEach ***************
@@ -1144,6 +1212,7 @@ NodeAST *NodeForEach::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> 
 
 ASTLowering * NodeForEach::get_lowering(NodeProgram *program) const {
 	static LoweringForEach lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -1203,8 +1272,8 @@ bool NodePairs::check_environment() const {
 	if (parent->cast<NodeForEach>()) {
 		return true;
 	}
-	auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-	error.m_message = "As of v"+COMPILER_VERSION+", <pairs> can only be used in for-each loops.";
+	auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+	error.message = "As of v"+COMPILER_VERSION+", <pairs> can only be used in for-each loops.";
 	error.exit();
 	return false;
 }
@@ -1244,37 +1313,51 @@ NodeAST *NodeRange::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> ne
 }
 
 std::unique_ptr<NodeAST> NodeRange::get_num_iterations() {
-	auto start = this->start->clone();
-	auto stop = this->stop->clone();
-	std::unique_ptr<NodeAST> expr = std::make_unique<NodeBinaryExpr>(
+	// ceil(abs(stop-start) / abs(step)) -> ranges are exclusive
+	auto diff = std::make_unique<NodeBinaryExpr>(
 		token::SUB,
-		std::move(stop),
-		std::move(start),
+		this->stop->clone(),
+		this->start->clone(),
 		tok
 	);
-	expr->ty = TypeRegistry::Integer;
+	diff->ty = TypeRegistry::Integer;
+	std::unique_ptr<NodeAST> expr = DefinitionProvider::create_builtin_call("abs", std::move(diff));
 	if(step) {
-		expr = std::make_unique<NodeBinaryExpr>(
-		token::DIV,
-		std::move(expr),
-		std::move(step),
+		// ceil division: (abs(stop-start) + abs(step) - 1) / abs(step)
+		auto numerator = std::make_unique<NodeBinaryExpr>(
+			token::SUB,
+			std::make_unique<NodeBinaryExpr>(
+				token::ADD,
+				std::move(expr),
+				DefinitionProvider::create_builtin_call("abs", step->clone()),
+				tok
+			),
+			std::make_unique<NodeInt>(1, tok),
 			tok
 		);
+		numerator->left->ty = TypeRegistry::Integer;
+		numerator->ty = TypeRegistry::Integer;
+		expr = std::make_unique<NodeBinaryExpr>(
+			token::DIV,
+			std::move(numerator),
+			DefinitionProvider::create_builtin_call("abs", step->clone()),
+			tok
+		);
+		expr->ty = TypeRegistry::Integer;
 	}
-	expr->ty = TypeRegistry::Integer;
-	return DefinitionProvider::create_builtin_call("abs", std::move(expr));
+	return expr;
 }
 
 std::unique_ptr<NodeInitializerList> NodeRange::to_initializer_list() const {
 	if (!start or !stop) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-		error.m_message = "Cannot convert <range> to <initializer_list> because it is missing start or stop.";
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+		error.message = "Cannot convert <range> to <initializer_list> because it is missing start or stop.";
 		error.exit();
 		return nullptr;
 	}
 	if (!all_literals()) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-		error.m_message = "Cannot convert <range> to <initializer_list> because not all elements are literals.";
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+		error.message = "Cannot convert <range> to <initializer_list> because not all elements are literals.";
 		error.exit();
 	}
 	auto initializer_list = std::make_unique<NodeInitializerList>(tok);
@@ -1298,8 +1381,8 @@ std::unique_ptr<NodeInitializerList> NodeRange::to_initializer_list() const {
 		return initializer_list;
 	}
 
-	auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-	error.m_message = "Cannot convert <range> to <initializer_list> because it contains non-integer or non-real values.";
+	auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+	error.message = "Cannot convert <range> to <initializer_list> because it contains non-integer or non-real values.";
 	error.exit();
 	return nullptr;
 
@@ -1314,14 +1397,15 @@ bool NodeRange::check_environment() const {
 	if (parent->cast<NodeSingleAssignment>() or parent->cast<NodeSingleDeclaration>()) {
 		return true;
 	}
-	auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-	error.m_message = "As of v"+COMPILER_VERSION+", <range> can only be used in for-each loops, assignments or declarations.";
+	auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+	error.message = "As of v"+COMPILER_VERSION+", <range> can only be used in for-each loops, assignments or declarations.";
 	error.exit();
 	return false;
 }
 
 ASTLowering * NodeRange::get_lowering(NodeProgram *program) const {
 	static LoweringRange lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -1346,6 +1430,7 @@ NodeAST *NodeWhile::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> ne
 }
 ASTLowering* NodeWhile::get_lowering(NodeProgram *program) const {
 	static LoweringWhile lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -1427,6 +1512,7 @@ std::unique_ptr<NodeAST> NodeNamespace::clone() const {
 
 ASTDesugaring * NodeNamespace::get_desugaring(NodeProgram *program) const {
 	static DesugarNamespace desugaring(program);
+	desugaring.set_program(program);
 	return &desugaring;
 }
 

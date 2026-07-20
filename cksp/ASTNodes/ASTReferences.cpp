@@ -35,11 +35,13 @@ std::unique_ptr<NodePointerRef> NodeVariableRef::to_pointer_ref() {
 
 
 std::unique_ptr<NodeAccessChain> NodeVariableRef::to_method_chain() {
-	// split into variable references
+	// split into variable references, each carrying its own segment position
 	auto ptr_strings = this->get_ptr_chain();
 	auto method_chain = std::make_unique<NodeAccessChain>(tok);
+	size_t offset = 0;
 	for(auto &str : ptr_strings) {
-		method_chain->add_method(std::make_unique<NodeVariableRef>(str, tok));
+		method_chain->add_method(std::make_unique<NodeVariableRef>(str, segment_token(tok, offset, str)));
+		offset += str.length() + 1; // segment + '.'
 	}
 	method_chain->parent = this->parent;
 	return method_chain;
@@ -60,9 +62,9 @@ std::unique_ptr<NodeNumElements> NodeVariableRef::transform_ndarray_constant() {
 			tok
 		);
 	} catch (const std::invalid_argument&) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-		error.m_message = "Invalid dimension number in NDArray reference: " + name + ".";
-		error.m_got = dimension;
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+		error.message = "Invalid dimension number in NDArray reference: " + name + ".";
+		error.actual = dimension;
 		error.exit();
 	}
 	return nullptr;
@@ -95,8 +97,8 @@ NodeAST * NodeVariableRef::try_constant_value_replace() {
 	if (const auto declaration = get_declaration()) {
 		if (declaration->data_type == DataType::Const) {
 			if (!declaration->parent) {
-				auto error = CompileError(ErrorType::InternalError, "", "", tok);
-				error.m_message = "Variable declaration has no parent.";
+				auto error = Diagnostic(ErrorType::InternalError, "", "", tok);
+				error.message = "Variable declaration has no parent.";
 				error.exit();
 			}
 			if (const auto decl = declaration->parent->cast<NodeSingleDeclaration>()) {
@@ -148,10 +150,14 @@ std::unique_ptr<NodeAccessChain> NodeArrayRef::to_method_chain() {
 	auto method_chain = std::make_unique<NodeAccessChain>(tok);
 	auto array_ref = clone_as<NodeArrayRef>(this);
 	array_ref->name = ptr_strings.back();
-	ptr_strings.pop_back();
-	for(auto &str : ptr_strings) {
-		method_chain->add_method(std::make_unique<NodeVariableRef>(str, tok));
+	size_t offset = 0;
+	for(size_t i = 0; i + 1 < ptr_strings.size(); ++i) {
+		method_chain->add_method(std::make_unique<NodeVariableRef>(ptr_strings[i], segment_token(tok, offset, ptr_strings[i])));
+		offset += ptr_strings[i].length() + 1;
 	}
+	const Token last = segment_token(tok, offset, ptr_strings.back());
+	array_ref->tok = last;
+	array_ref->set_range(last);
 	method_chain->add_method(std::move(array_ref));
 	method_chain->parent = this->parent;
 	return method_chain;
@@ -232,6 +238,7 @@ std::unique_ptr<NodeAST> NodeNDArrayRef::clone() const {
 
 ASTLowering* NodeNDArrayRef::get_data_lowering(NodeProgram *program) const {
 	static DataLoweringNDArray lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -247,7 +254,7 @@ std::unique_ptr<NodeAST> NodeNDArrayRef::get_size() {
 	auto nd_array = decl->cast<NodeNDArray>();
 	if (!nd_array) DefinitionProvider::internal_missing_declaration_error(*this).exit();
 	if (!nd_array->sizes) {
-		auto error = CompileError(ErrorType::InternalError, "", "", nd_array->tok);
+		auto error = Diagnostic(ErrorType::InternalError, "", "", nd_array->tok);
 		error.set_message("Could not determine size of <NDArrayRef>. Declaration might be function param. This should not happen, please report this error.");
 		error.exit();
 	}
@@ -293,10 +300,14 @@ std::unique_ptr<NodeAccessChain> NodeNDArrayRef::to_method_chain() {
 	auto method_chain = std::make_unique<NodeAccessChain>(tok);
 	auto array_ref = clone_as<NodeNDArrayRef>(this);
 	array_ref->name = ptr_strings.back();
-	ptr_strings.pop_back();
-	for(auto &str : ptr_strings) {
-		method_chain->add_method(std::make_unique<NodeVariableRef>(str, tok));
+	size_t offset = 0;
+	for(size_t i = 0; i + 1 < ptr_strings.size(); ++i) {
+		method_chain->add_method(std::make_unique<NodeVariableRef>(ptr_strings[i], segment_token(tok, offset, ptr_strings[i])));
+		offset += ptr_strings[i].length() + 1;
 	}
+	const Token last = segment_token(tok, offset, ptr_strings.back());
+	array_ref->tok = last;
+	array_ref->set_range(last);
 	method_chain->add_method(std::move(array_ref));
 	method_chain->parent = this->parent;
 	return method_chain;
@@ -318,9 +329,9 @@ bool NodeNDArrayRef::determine_sizes() {
 	}
 	if(get_declaration()->get_node_type() != NodeType::NDArray) {
 		if(get_declaration()->get_node_type() == NodeType::List) return false;
-		auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-		error.m_message = "<NDArray> reference has to be declared as <NDArray>.";
-		error.m_got = get_declaration()->tok.val;
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+		error.message = "<NDArray> reference has to be declared as <NDArray>.";
+		error.actual = get_declaration()->tok.val;
 		error.exit();
 		return false;
 	}
@@ -366,7 +377,7 @@ std::unique_ptr<NodeReference> NodeNDArrayRef::expand_dimension(std::unique_ptr<
 }
 
 std::pair<int, int> NodeNDArrayRef::get_wildcard_dimensions() const {
-	auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
+	auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
 	std::vector<bool> wildcards;
 	// get wildcard dimension
 	int wildcard_start = -1;
@@ -381,7 +392,7 @@ std::pair<int, int> NodeNDArrayRef::get_wildcard_dimensions() const {
 		if(wildcards.size() > 2) {
 			// (1,0,1....)
 			if(wildcards[wildcards.size()-2] and !wildcards[wildcards.size()-1]) {
-				error.m_message = "Wildcards must be contiguous in <NDArray> index when assigning list.";
+				error.message = "Wildcards must be contiguous in <NDArray> index when assigning list.";
 				error.exit();
 			}
 		}
@@ -393,12 +404,12 @@ std::pair<int, int> NodeNDArrayRef::get_wildcard_dimensions() const {
 		}
 	}
 	if(wildcard_start == -1) {
-		error.m_message = "No wildcard found in <NDArray> index when assigning list.";
+		error.message = "No wildcard found in <NDArray> index when assigning list.";
 		error.exit();
 	}
 	// if more than one wildcard and it is not right aligned:
 	if(wildcard_end-wildcard_start > 1 and wildcard_end < wildcards.size()-1) {
-		error.m_message = "Wildcards have to be right aligned in index list.";
+		error.message = "Wildcards have to be right aligned in index list.";
 		error.exit();
 	}
 	return {wildcard_start, wildcard_end};
@@ -484,7 +495,7 @@ bool NodeFunctionHeaderRef::has_no_args() const {
 
 std::unique_ptr<NodeAST>& NodeFunctionHeaderRef::get_arg(const int i) const {
 	if(get_num_args() <= i) {
-		CompileError(ErrorType::InternalError, "Index out of bounds", "Function call argument index out of bounds", tok).exit();
+		Diagnostic(ErrorType::InternalError, "Index out of bounds", "Function call argument index out of bounds", tok).exit();
 	}
 	return args->params[i];
 }
@@ -519,6 +530,7 @@ std::unique_ptr<NodeAST> NodeListRef::clone() const {
 
 ASTLowering* NodeListRef::get_lowering(NodeProgram *program) const {
 	static LoweringList lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -547,6 +559,7 @@ std::unique_ptr<NodeVariableRef> NodePointerRef::to_variable_ref() {
 
 ASTLowering* NodePointerRef::get_lowering(NodeProgram *program) const {
 	static LoweringPointer lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -567,6 +580,7 @@ std::unique_ptr<NodeAST> NodeNil::clone() const {
 
 ASTLowering* NodeNil::get_lowering(NodeProgram *program) const {
 	static LoweringNil lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -576,7 +590,8 @@ NodeAST *NodeAccessChain::accept(struct ASTVisitor &visitor) {
 }
 
 NodeAccessChain::NodeAccessChain(const NodeAccessChain& other)
-	: NodeReference(other), chain(clone_vector(other.chain)), types(other.types) {
+	: NodeReference(other), chain(clone_vector(other.chain)), types(other.types),
+	opt_chaining_indexes(other.opt_chaining_indexes) {
 	set_child_parents();
 }
 
@@ -594,8 +609,39 @@ std::unique_ptr<NodeAST> NodeAccessChain::clone() const {
 	return std::make_unique<NodeAccessChain>(*this);
 }
 
+std::unique_ptr<NodeAST> NodeAccessChain::split(const size_t idx) {
+	std::vector<std::unique_ptr<NodeAST>> left;
+	left.reserve(idx);
+	for (size_t i = 0; i<idx; i++) {
+		left.push_back(chain[i]->clone());
+	}
+	auto first_chain = std::make_unique<NodeAccessChain>(std::move(left), tok);
+	first_chain->update_types();
+	opt_chaining_indexes[std::max((size_t)0,idx-1)].reset();
+	if (first_chain->chain.size() == 1) {
+		return std::move(first_chain->chain[0]);
+	}
+	return std::move(first_chain);
+}
+
+NodeAST* NodeAccessChain::accept_locals(ASTVisitor& visitor) {
+	for (size_t i = 0; i < chain.size(); i++) {
+		if (i == 0) {
+			chain[i]->accept(visitor);
+		} else if (const auto arr = chain[i]->cast<NodeArrayRef>()) {
+			if (arr->index) arr->index->accept(visitor);
+		} else if (const auto nd = chain[i]->cast<NodeNDArrayRef>()) {
+			if (nd->indexes) nd->indexes->accept(visitor);
+		} else if (const auto call = chain[i]->cast<NodeFunctionCall>()) {
+			if (call->function->args) call->function->args->accept(visitor);
+		}
+	}
+	return this;
+}
+
 ASTLowering* NodeAccessChain::get_lowering(NodeProgram *program) const {
 	static LoweringAccessChain lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -640,6 +686,7 @@ NodeAST *NodeGetControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAS
 
 ASTLowering* NodeGetControl::get_lowering(NodeProgram *program) const {
 	static LoweringGetControl lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 
@@ -700,6 +747,7 @@ NodeAST *NodeSetControl::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAS
 
 ASTLowering* NodeSetControl::get_lowering(NodeProgram *program) const {
 	static LoweringGetControl lowering(program);
+	lowering.set_program(program);
 	return &lowering;
 }
 

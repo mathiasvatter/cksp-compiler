@@ -30,18 +30,26 @@ class LoweringTernaryOperator final : public ASTLowering {
 public:
 	explicit LoweringTernaryOperator(NodeProgram *program) : ASTLowering(program) {}
 
+	void set_program(NodeProgram* program) override {
+		ASTLowering::set_program(program);
+		m_local_vars.clear();
+	}
+
 private:
 
 	NodeAST *visit(NodeTernary &node) override {
+		m_local_vars.clear();
 		auto type = node.if_branch->ty; // should be the same as else_branch->ty
 		auto if_return = std::make_unique<NodeReturn>(
 			node.tok,
 			std::move(node.if_branch)
 		);
+		const auto if_return_ptr = if_return.get();
 		auto else_return = std::make_unique<NodeReturn>(
 			node.tok,
 			std::move(node.else_branch)
 		);
+		const auto else_return_ptr = else_return.get();
 
 		auto if_statement = std::make_unique<NodeIf>(node.tok);
 		if_statement->set_condition(std::move(node.condition));
@@ -74,9 +82,13 @@ private:
 			),
 			node.tok
 		);
+		if_return_ptr->definition = ternary_def;
+		else_return_ptr->definition = ternary_def;
 
 		// add local vars as params to ternary function
-		for (auto& local_var : m_local_vars) {
+		auto local_vars = std::move(m_local_vars);
+		m_local_vars.clear();
+		for (auto& local_var : local_vars) {
 			auto param_var = clone_as<NodeDataStructure>(local_var.get());
 			param_var->clear_references();
 
@@ -107,7 +119,7 @@ private:
 				decl->remove_reference(&node);
 				node.declaration.reset();
 			} else {
-				auto error = CompileError(ErrorType::VariableError, "Local variable used in ternary operator has not been declared: " + node.name, "", node.tok);
+				auto error = Diagnostic(ErrorType::VariableError, "Local variable used in ternary operator has not been declared: " + node.name, "", node.tok);
 				error.exit();
 			}
 		}
@@ -135,5 +147,8 @@ private:
 		return &node;
 	}
 
+	NodeAST* visit(NodeAccessChain& node) override {
+		return node.accept_locals(*this);
+	}
 
 };

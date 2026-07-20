@@ -5,38 +5,36 @@
 #pragma once
 
 #include "PreASTVisitor.h"
-#include "../../../misc/PathHandler.h"
-#include "../../Compiler.h"
+#include "../../Source/SourceParser.h"
 #include "../../../JSON/NCKPTranslator.h"
 
 class PreASTImport final : public PreASTVisitor {
 	std::string m_debug_token;
-	std::string m_current_file;
-	std::string m_base_file;
-
-	std::string m_root_directory;
+	SourceId m_current_source;
+	SourceId m_root_source;
+	SourceParser& m_parser;
 	std::unordered_set<std::string> &m_imported_files; // Um zirkuläre Abhängigkeiten zu vermeiden
 	std::unordered_map<std::string, std::string> &m_basename_map; // Map to store basename to full path mapping
-	LinesProcessed *m_lines_processed;
 
 public:
-	// root directory is the base directory of the main file
-	PreASTImport(const std::string &base_file,
-				 const std::string &current_file,
+	PreASTImport(const SourceId& root_source,
+				 const SourceId& current_source,
+				 SourceParser& parser,
 	             std::unordered_set<std::string> &imported_files,
-	             std::unordered_map<std::string, std::string> &basename_map,
-	             LinesProcessed* lines_collect)
-		: PreASTVisitor(), m_current_file(current_file), m_base_file(base_file),
-		m_imported_files(imported_files), m_basename_map(basename_map), m_lines_processed(lines_collect) {
-		m_root_directory = std::filesystem::path(m_base_file).parent_path().string();
-	}
+	             std::unordered_map<std::string, std::string> &basename_map)
+		: PreASTVisitor(), m_current_source(current_source), m_root_source(root_source),
+		  m_parser(parser), m_imported_files(imported_files), m_basename_map(basename_map) {}
 
 	PreNodeAST *visit(PreNodeImport &node) override {
-		PathHandler path_handler(node.tok, m_current_file, m_root_directory);
-		auto path = path_handler.resolve_import_path(node.path);
-		if (path.is_error()) path.get_error().exit();
+		auto source_result = m_parser.resolve_import(m_root_source, m_current_source, node.path);
+		if (source_result.is_error()) {
+			auto error = source_result.get_error();
+			error.set_token(node.tok);
+			error.exit();
+		}
 
-		std::filesystem::path current_file_path(path.unwrap());
+		const auto import_source = source_result.unwrap();
+		std::filesystem::path current_file_path(import_source.value);
 		std::string import_path = current_file_path.string();
 		// check for circular dependencies
 		if (!m_imported_files.contains(import_path)) {
@@ -46,17 +44,17 @@ public:
 			auto basename = current_file_path.filename().string();
 			auto it = m_basename_map.find(basename);
 			if (it != m_basename_map.end() && it->second != import_path) {
-				auto error = CompileError(ErrorType::CompileWarning, "", "", node.tok);
-				error.m_message = "File with basename '" + basename + "' already imported from: " +
+				auto error = Diagnostic(ErrorType::CompileWarning, "", "", node.tok);
+				error.message = "File with basename '" + basename + "' already imported from: " +
 								  m_basename_map[basename] + ". \nImporting again from: " + import_path + ".";
-				error.m_message += " This may lead to unexpected behavior.";
+				error.message += " This may lead to unexpected behavior.";
 				// return Result<SuccessTag>(error);
-				error.print();
+				error.report(diagnostics());
 			}
 			m_basename_map[basename] = import_path;
 
 			// parse
-			auto program_result = Compiler::preproc_parse(import_path, m_program->def_provider, m_lines_processed);
+			auto program_result = m_parser.parse_pre_ast(import_source);
 			if (program_result.is_error()) {
 				program_result.get_error().exit();
 			}
@@ -65,7 +63,8 @@ public:
 			import_program->program->chunk.pop_back();
 
 			// recursively preprocess imports in the imported program to handle nested imports
-			import_program->do_import_processing(m_base_file, import_path, m_imported_files, m_basename_map, m_lines_processed);
+			import_program->do_import_processing(
+				m_root_source, import_source, m_parser, m_imported_files, m_basename_map);
 
 			for (auto& macro_def : import_program->macro_definitions) {
 				macro_def->parent = m_program;
@@ -89,12 +88,16 @@ public:
 	}
 
 	PreNodeAST *visit(PreNodeImportNCKP& node) override {
-		PathHandler path_handler(node.tok, m_current_file, m_root_directory);
-		// try to resolve current_file and import_path into absolute path
-		auto path = path_handler.resolve_import_path(node.path);
-		if(path.is_error()) path.get_error().exit();
+		auto source_result = m_parser.resolve_import(m_root_source, m_current_source, node.path);
+		if (source_result.is_error()) {
+			auto error = source_result.get_error();
+			error.set_token(node.tok);
+			error.exit();
+		}
 
-		auto json = Compiler::parse_json(path.unwrap());
+		auto json_result = m_parser.parse_json(source_result.unwrap());
+		if (json_result.is_error()) json_result.get_error().exit();
+		auto json = std::move(json_result.unwrap());
 		NCKPTranslator translator(m_program->def_provider);
 		json->accept(translator);
 		auto ui_variables = translator.collect_ui_variables();

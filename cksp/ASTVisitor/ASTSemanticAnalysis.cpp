@@ -3,6 +3,7 @@
 //
 
 #include "ASTSemanticAnalysis.h"
+#include "../CompilerConfig.h"
 
 ASTSemanticAnalysis::ASTSemanticAnalysis(NodeProgram *main)
 : m_def_provider(main->def_provider) {
@@ -33,8 +34,8 @@ NodeAST * ASTSemanticAnalysis::visit(NodeProgram& node) {
 
 NodeAST * ASTSemanticAnalysis::visit(NodeWildcard& node) {
 	if(!node.check_semantic()) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-		error.m_message = "Wildcard is not allowed in this context";
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+		error.message = "Wildcard is not allowed in this context";
 		error.exit();
 	}
 	return &node;
@@ -46,6 +47,9 @@ NodeAST * ASTSemanticAnalysis::visit(NodeNumElements& node) {
 
 	// transform var ref to composite type
 	if(auto var = node.array->cast<NodeVariableRef>()) {
+		if (!var->get_declaration()) {
+			DefinitionProvider::throw_declaration_error(*var, "", m_def_provider).exit();
+		}
 		auto node_array_ref = var->to_array_ref(nullptr);
 		return var->replace_reference(std::move(node_array_ref));
 	}
@@ -60,6 +64,9 @@ NodeAST * ASTSemanticAnalysis::visit(NodeSortSearch& node) {
 
 	// transform var ref to composite type
 	if(const auto var = node.array->cast<NodeVariableRef>()) {
+		if (!var->get_declaration()) {
+			DefinitionProvider::throw_declaration_error(*var, "", m_def_provider).exit();
+		}
 		auto node_array_ref = var->to_array_ref(nullptr);
 		return var->replace_reference(std::move(node_array_ref));
 	}
@@ -84,7 +91,30 @@ NodeAST * ASTSemanticAnalysis::visit(NodePairs &node) {
 NodeAST* ASTSemanticAnalysis::visit(NodeSingleAssignment& node) {
 	node.l_value->accept(*this);
 	node.r_value->accept(*this);
+	if (const auto ref = cast_node<NodeReference>(node.l_value.get())) {
+		check_param_modification(*ref);
+	}
 	return &node;
+}
+
+void ASTSemanticAnalysis::check_param_modification(NodeReference& ref) {
+	// in pass-by-reference mode (SublimeKSP behavior) modifications reach the caller
+	if (m_program->compiler_config
+		and m_program->compiler_config->parameter_passing == ParameterPassing::ByReference) return;
+	const auto declaration = ref.get_declaration();
+	if (!declaration) return;
+	// composite parameters (arrays, structs, pointers) are implicitly passed by reference
+	if (!declaration->cast<NodeVariable>()) return;
+	const auto param = declaration->is_function_param();
+	if (!param or param->is_pass_by_ref) return;
+	if (!m_warned_params.insert(param).second) return;
+
+	auto warning = Diagnostic(ErrorType::CompileWarning, "", "", ref.tok);
+	warning.message = "Function parameter <"+declaration->name+"> is passed by value but modified here. Function "
+		"parameters have function-local scope: this modification is not visible at the call site. "
+		"Declare the parameter as <ref "+declaration->name+"> to pass it by reference if the change should take "
+		"effect outside the function.";
+	warning.report(diagnostics());
 }
 
 NodeAST * ASTSemanticAnalysis::visit(NodeCallback& node) {
@@ -108,8 +138,8 @@ NodeAST * ASTSemanticAnalysis::visit(NodeSingleDeclaration &node) {
 	// check if static variable is class member
 	if (node.variable->kind == NodeDataStructure::Kind::Static) {
 		if (!node.variable->is_member()) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-			error.m_message = "<static> variables can only be declared as <struct> members in order for the fields to be used without instantiation.";
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+			error.message = "<static> variables can only be declared as <struct> members in order for the fields to be used without instantiation.";
 			error.exit();
 		}
 	}
@@ -164,10 +194,32 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 		}
 	}
 
+	// destructive builtin commands modify their argument in place
+	if (node.is_builtin_kind() and node.function->get_num_args() == 1
+		and (node.function->name == "inc" or node.function->name == "dec")) {
+		if (const auto ref = cast_node<NodeReference>(node.function->get_arg(0).get())) {
+			check_param_modification(*ref);
+		}
+	}
+
+	// a bare statement call to a function with return values discards them -> warn,
+	// since this is usually an oversight
+	if (definition and node.kind == NodeFunctionCall::Kind::UserDefined
+		and node.parent->cast<NodeStatement>() and definition->num_return_params > 0) {
+		auto warning = Diagnostic(ErrorType::CompileWarning, "", "", node.tok);
+		const std::string values = definition->num_return_params > 1 ? "values" : "value";
+		warning.message = "The return "+values+" of function <"+node.function->name+"> "
+			+ (definition->num_return_params > 1 ? "are" : "is")
+			+ " discarded here. Assign the result <result := "+node.function->name+"(...)> if it is needed.\n"
+			"To get rid of this warning use a throwaway variable <_ := ...> to assign to.";
+		warning.report(diagnostics());
+	}
+
 	// visit the function definition
 	if(definition and node.kind == NodeFunctionCall::UserDefined) {
 		check_recursion(definition.get());
 		if(!definition->visited) {
+			FunctionCallStackScope diagnostic_frame(*m_program, node);
 			m_program->function_definition_stack.push(definition);
 			// check all return paths
 			definition->do_return_path_validation();
@@ -205,7 +257,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeArrayRef &node) {
 NodeAST * ASTSemanticAnalysis::visit(NodeString &node) {
 	node.check_string_length();
 	if (!node.is_valid_string()) {
-		auto error = ASTVisitor::get_raw_compile_error(ErrorType::CompileError, node);
+		auto error = ASTVisitor::make_diagnostic(ErrorType::CompileError, node);
 		error.add_message("Invalid string literal: " + node.value);
 		error.add_message(". This might have been caused by faulty preprocessor macros.");
 		error.exit();
@@ -237,8 +289,8 @@ NodeAST * ASTSemanticAnalysis::visit(NodeNDArrayRef& node) {
 
 	// check if indices have same size as dimensions of declaration
 	if(node.indexes and node.indexes->params.size() != static_pointer_cast<NodeNDArray>(node.get_declaration())->dimensions) {
-		auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-		error.m_message = "Number of indices does not match number of dimensions: " + node.name;
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+		error.message = "Number of indices does not match number of dimensions: " + node.name;
 		error.exit();
 	}
 	return &node;
@@ -289,13 +341,15 @@ NodeAST * ASTSemanticAnalysis::visit(NodeListRef& node) {
 	return replace_incorrectly_detected_data_struct(new_node->get_declaration());
 }
 
-void ASTSemanticAnalysis::update_func_call_node_types(const NodeFunctionCall* func_call) {
+void ASTSemanticAnalysis::update_func_call_node_types(const NodeFunctionCall* func_call) const {
 	if(const auto definition = func_call->get_definition()) {
 		for(int i=0; i<func_call->function->get_num_args(); i++) {
 			const auto & arg = func_call->function->get_arg(i);
 			const auto & param = definition->get_param(i);
 			if(const auto node_var_ref = arg->cast<NodeVariableRef>(); node_var_ref and param->cast<NodeArray>()) {
-//				if(!node_var_ref->get_declaration()) return;
+				if(!node_var_ref->get_declaration()) {
+					DefinitionProvider::throw_declaration_error(*node_var_ref, "", m_def_provider).exit();
+				}
 				auto node_array_ref = std::make_unique<NodeArrayRef>(
 					node_var_ref->name,
 					nullptr,
@@ -366,12 +420,12 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 	// 			}
 	// 		}
 	// 	}
-	// 	auto error = CompileError(ErrorType::SyntaxError, "", "", data_struct->tok);
-	// 	error.m_message = "Found different types of reference for the same variable: " + data_struct->tok.val + ".";
+	// 	auto error = Diagnostic(ErrorType::SyntaxError, "", "", data_struct->tok);
+	// 	error.message = "Found different types of reference for the same variable: " + data_struct->tok.val + ".";
 	// 	for(const auto & ref : ref_names) {
-	// 		error.m_got += " as <" + ref + ">, ";
+	// 		error.actual += " as <" + ref + ">, ";
 	// 	}
-	// 	error.m_got.erase(error.m_got.size() - 2);
+	// 	error.actual.erase(error.actual.size() - 2);
 	// 	error.exit();
 	// }
 
@@ -418,8 +472,8 @@ NodeDataStructure* ASTSemanticAnalysis::replace_incorrectly_detected_data_struct
 		node_var->ty = data_struct->ty;
 		new_data_struct = std::move(node_var);
 //	} else if(!ref_types.empty()) {
-//		auto error = CompileError(ErrorType::SyntaxError, "", "", data_struct->tok);
-//		error.m_message = "Reference type does not match declaration type: " + data_struct->name;
+//		auto error = Diagnostic(ErrorType::SyntaxError, "", "", data_struct->tok);
+//		error.message = "Reference type does not match declaration type: " + data_struct->name;
 //		error.exit();
 	}
 
@@ -479,8 +533,8 @@ NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(NodeR
 		node_replacement->ty = reference->ty;
 	} else if(auto node_arr_ref = reference->cast<NodeArrayRef>(); node_array_ref and declaration->cast<NodeNDArray>()) {
 		if (!node_arr_ref->is_raw_array()) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", reference->tok);
-			error.m_message =
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", reference->tok);
+			error.message =
 				"<ArrayRef> was declared as <NDArray> but is no raw array. To reference a raw <NDArray> use '_' as prefix.";
 			error.exit();
 		}
@@ -494,7 +548,5 @@ NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(NodeR
 	}
 	return nullptr;
 }
-
-
 
 

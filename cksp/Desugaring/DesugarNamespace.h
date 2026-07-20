@@ -43,7 +43,7 @@ class DesugarNamespace final : public ASTDesugaring {
 			it->second->variables.insert(base);
 		}
 
-		var.name = StringUtils::join(prefix, '.') + "." + base;
+		var.name = StringUtils::join(prefix, ".") + "." + base;
 		all_prefixed_variables.insert(var.name);
 	}
 	void add_namespace_prefix(NodeReference& ref) const {
@@ -81,7 +81,7 @@ class DesugarNamespace final : public ASTDesugaring {
 			if (result != it->second->path.end()) {
 				// merge without removing the first element
 				splits.insert(splits.begin(), it->second->path.begin(), result);
-				ref.name = StringUtils::join(splits, '.');
+				ref.name = StringUtils::join(splits, ".");
 			}
 		}
 
@@ -231,7 +231,7 @@ public:
 			++p;
 		}
 
-		return StringUtils::join(splits, '.');
+		return StringUtils::join(splits, ".");
 	}
 
 };

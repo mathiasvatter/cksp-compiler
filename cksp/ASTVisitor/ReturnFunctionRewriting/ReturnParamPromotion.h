@@ -20,6 +20,11 @@ public:
         m_program = main;
     }
 
+	void set_program(NodeProgram* program) override {
+		ASTVisitor::set_program(program);
+		m_def_provider = program ? program->def_provider : nullptr;
+	}
+
 	void do_return_param_promotion(NodeFunctionDefinition& def) {
 		def.accept(*this);
 		m_return_param_names.clear();
@@ -55,10 +60,10 @@ private:
 
 	NodeAST* visit(NodeReturn &node) override {
 		if(node.return_variables.size() != m_current_function->num_return_params) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-			error.m_message = "Return Statement has incorrect number of return values.";
-			error.m_expected = std::to_string(m_current_function->num_return_params);
-			error.m_got = std::to_string(node.return_variables.size());
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+			error.message = "Return Statement has incorrect number of return values.";
+			error.expected = std::to_string(m_current_function->num_return_params);
+			error.actual = std::to_string(node.return_variables.size());
 			error.exit();
 		}
 		m_current_function->return_stmts.push_back(&node);
@@ -96,8 +101,8 @@ private:
 						);
 					} else {
 						if(node_ref->get_node_type() != NodeType::NDArrayRef) {
-							auto error = CompileError(ErrorType::InternalError, "", "", node_ref->tok);
-							error.m_message = "Got incorrect type of return parameter. Expected NDArrayRef.";
+							auto error = Diagnostic(ErrorType::InternalError, "", "", node_ref->tok);
+							error.message = "Got incorrect type of return parameter. Expected NDArrayRef.";
 							error.exit();
 						}
 						auto node_ndarray_ref = node_ref->cast<NodeNDArrayRef>();
@@ -110,8 +115,8 @@ private:
 						);
 					}
 				} else {
-					auto error = CompileError(ErrorType::InternalError, "", "", node_return->tok);
-					error.m_message = "Return Type not supported. Object Pointers should not exist anymore.";
+					auto error = Diagnostic(ErrorType::InternalError, "", "", node_return->tok);
+					error.message = "Return Type not supported. Object Pointers should not exist anymore.";
 					error.exit();
 				}
 			// when param list -> array return var

@@ -105,8 +105,8 @@ class LoweringStruct final : public ASTLowering {
 		if (m_current_self) {
 			return m_current_self->to_reference();
 		} else {
-			auto error = CompileError(ErrorType::InternalError, "", "", m_current_struct->tok);
-			error.m_message = "Current self is not set in LoweringStruct. This should never happen.";
+			auto error = Diagnostic(ErrorType::InternalError, "", "", m_current_struct->tok);
+			error.message = "Current self is not set in LoweringStruct. This should never happen.";
 			error.exit();
 		}
 		return m_current_struct->node_self->to_reference();
@@ -240,8 +240,8 @@ public:
 		if(node.header->name == m_current_struct->name+OBJ_DELIMITER+NodeStruct::CONSTRUCTOR) {
 			node.mark_threadsafety(m_program);
 			if (!node.is_thread_safe) {
-				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-				error.m_message = "Constructor of struct <"+m_current_struct->name+"> contains non-threadsafe builtin commands"
+				auto error = make_diagnostic(ErrorType::SyntaxError, node);
+				error.message = "Constructor of struct <"+m_current_struct->name+"> contains non-threadsafe builtin commands"
 									" which can corrupt value consistency within it. "
 									"Do not use commands like <wait> or <wait_async> in constructors.";
 				error.exit();

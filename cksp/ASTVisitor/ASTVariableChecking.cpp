@@ -4,6 +4,7 @@
 
 #include "ASTVariableChecking.h"
 
+#include "../CompilerConfig.h"
 #include "ReferenceManagement/ASTCollectDeclarations.h"
 
 ASTVariableChecking::ASTVariableChecking(NodeProgram* main)
@@ -14,8 +15,11 @@ ASTVariableChecking::ASTVariableChecking(NodeProgram* main)
 
 NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 	m_program = &node;
-	// add all function definition header variables to global scope
-	parallel_for_each(node.function_lookup.begin(), node.function_lookup.end(),
+	// add all function definition header variables to global scope.
+	// set_declaration has order-sensitive side effects (gensym, redeclaration errors,
+	// renaming), so run sequentially in LSP mode to keep diagnostics deterministic.
+	parallel_for_each_unless(node.compiler_config && node.compiler_config->lsp,
+			node.function_lookup.begin(), node.function_lookup.end(),
 			[&](auto const& defs) {
 				for (auto & def : defs.second) {
 					if (auto func = def.lock()) {
@@ -67,10 +71,10 @@ NodeAST* ASTVariableChecking::visit(NodeUIControl& node) {
 	//check param size
 	const auto engine_widget = node.get_declaration()->cast<NodeUIControl>();
 	if(engine_widget->params->params.size() != node.params->params.size()) {
-		auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-		error.m_message = "Engine Widget has incorrect number of parameters.";
-		error.m_expected = std::to_string(engine_widget->params->params.size());
-		error.m_got = std::to_string(node.params->params.size());
+		auto error = make_diagnostic(ErrorType::SyntaxError, node);
+		error.message = "Engine Widget has incorrect number of parameters.";
+		error.expected = std::to_string(engine_widget->params->params.size());
+		error.actual = std::to_string(node.params->params.size());
 		error.exit();
 	}
 	return &node;
@@ -138,6 +142,7 @@ NodeAST* ASTVariableChecking::visit(NodeAccessChain& node) {
 	m_current_access.push(&node);
 	// collect args of func calls in access chain or indexes of arrays etc w/o errors
 	static ASTCollectDeclarations collect(m_program);
+	collect.set_program(m_program);
 	for (int i = 1; i<node.chain.size(); i++) {
 		auto& ref = node.chain[i];
 		if (auto array_ref = ref->cast<NodeArrayRef>()) {
@@ -174,8 +179,8 @@ NodeAST* ASTVariableChecking::visit(NodeSingleDeclaration& node) {
 	node.variable->determine_locality(m_program, get_current_block());
 
 	if(node.variable->cast<NodeUIControl>() and node.variable->is_local) {
-		auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-		error.m_message = "<UIControls> cannot be declared as local variables or in local scopes. They have "
+		auto error = make_diagnostic(ErrorType::SyntaxError, node);
+		error.message = "<UIControls> cannot be declared as local variables or in local scopes. They have "
 						  "to be declared in the <on init> callback.";
 		error.exit();
 	}
@@ -381,7 +386,7 @@ NodeAST* ASTVariableChecking::visit(NodeListRef& node) {
 	if(node.get_declaration()) return &node;
 	auto node_declaration = m_def_provider->get_declaration(node);
 	if(!node_declaration) {
-		CompileError(ErrorType::VariableError, "List has not been declared: "+node.name, node.tok.line, "", node.name, node.tok.file).exit();
+		Diagnostic(ErrorType::VariableError, "List has not been declared: "+node.name, "", node.tok).exit();
 		return &node;
 	}
 	return &node;
@@ -422,7 +427,5 @@ NodeAST* ASTVariableChecking::visit(NodeStruct& node) {
 	m_current_struct = nullptr;
 	return &node;
 }
-
-
 
 

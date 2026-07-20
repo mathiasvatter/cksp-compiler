@@ -33,34 +33,32 @@ class ASTKSPSyntaxCheck final : public ASTVisitor {
 	DefinitionProvider *m_def_provider;
 	std::unordered_map<std::string, int> m_ui_control_count;
 
-	static void check_max_array_size(const NodeArray& node) {
-		if(auto node_int = node.size->cast<NodeInt>()) {
-			
-			if(node_int->value > MAX_ARRAY_ELEMENTS) {
-				auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, node);
-				error.m_message = "Array size exceeds maximum of " + std::to_string(MAX_ARRAY_ELEMENTS) + ".";
-				if (!node.is_thread_safe) {
-					error.add_message("Since the array was declared locally in environment of asynchronous function calls,"
-					   " this might have been caused by the compiler and can be prevented by either declaring the array globally or reducing <max_callback_depth> via #pragma.");
-				}
-				error.m_got = std::to_string(node_int->value);
-				error.exit();
-			}
-		}
+public:
+	explicit ASTKSPSyntaxCheck(NodeProgram *main) : m_def_provider(main->def_provider) {
+		m_program = main;
 	}
 
-	void check_max_ui_controls(const NodeUIControl& node) {
-		if(m_ui_control_count[node.ui_control_type] > MAX_UI_CONTROLS) {
-			auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, node);
-			error.m_message = "Maximum number of UI controls exceeded for <"+node.ui_control_type+">. Counted "+std::to_string(m_ui_control_count[node.ui_control_type])+" controls.";
+	static void check_max_ui_controls(const int count, const NodeUIControl& node) {
+		if(count > MAX_UI_CONTROLS) {
+			auto error = ASTVisitor::make_diagnostic(ErrorType::SyntaxError, node);
+			error.message = "Maximum number of UI controls exceeded for <"+node.ui_control_type+">. Counted "+std::to_string(count)+" controls.";
 			error.exit();
 		}
 	}
 
-
-public:
-	explicit ASTKSPSyntaxCheck(NodeProgram *main) : m_def_provider(main->def_provider) {
-		m_program = main;
+	static void check_max_array_size(const NodeArray& node) {
+		if(auto node_int = node.size->cast<NodeInt>()) {
+			if(node_int->value > MAX_ARRAY_ELEMENTS) {
+				auto error = ASTVisitor::make_diagnostic(ErrorType::SyntaxError, *node_int);
+				error.message = "Array size exceeds maximum of " + std::to_string(MAX_ARRAY_ELEMENTS) + ".";
+				if (!node.is_thread_safe) {
+					error.add_message("Since the array was declared locally in environment of asynchronous function calls,"
+					   " this might have been caused by the compiler and can be prevented by either declaring the array globally or reducing <max_callback_depth> via #pragma.");
+				}
+				error.actual = std::to_string(node_int->value);
+				error.exit();
+			}
+		}
 	}
 
 	static NodeAST* fix_memory_exhausted_error(NodeAST& node) {
@@ -70,37 +68,46 @@ public:
 
 	NodeAST* visit(NodeIf& node) override {
 		ASTVisitor::visit(node);
+		if (m_program->compiler_config->lsp) {
+			return &node;
+		}
 		return KSPConditions::sanitize_condition(node);
 	}
 
 	NodeAST* visit(NodeWhile& node) override {
 		ASTVisitor::visit(node);
+		if (m_program->compiler_config->lsp) {
+			return &node;
+		}
 		return KSPConditions::sanitize_condition(node);
 	}
 
 	NodeAST* visit(NodeSingleDeclaration& node) override {
 		node.variable->accept(*this);
-		if (TypeRegistry::get_identifier_from_type(node.variable->ty) == ' ') {
-			auto error = ASTVisitor::get_raw_compile_error(ErrorType::InternalError, node);
-			error.set_message("Type identifier for variable '" + node.variable->name + "' is empty. This should not happen.");
-			error.exit();
-		}
 		if(node.value) node.value->accept(*this);
 
+		if (m_program->compiler_config->lsp) {
+			return &node;
+		}
 		static KSPDeclarations declarations;
+		declarations.set_program(m_program);
 		auto new_node = node.accept(declarations);
 		static KSPPersistency persistency;
+		persistency.set_program(m_program);
 		return new_node->accept(persistency);
 	}
 
 	NodeAST* visit(NodeFunctionCall& node) override {
+		if (m_program->compiler_config->lsp) {
+			return ASTVisitor::visit(node);
+		}
 		if (node.function->get_num_args() > 0 and node.function->get_arg(0)->ty->get_type_kind() == TypeKind::Composite and
 				BuiltinRestrictionValidator::is_load_save_function(node.function->name)) {
 			// check if we have a load/save array function -> check if first param is local array
 			// -> issue error since those function can only be used with global arrays
 			const auto arr_ref = node.function->get_arg(0)->is_reference();
 			if (!arr_ref) {
-				auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, node);
+				auto error = ASTVisitor::make_diagnostic(ErrorType::SyntaxError, node);
 				error.set_message("First argument of load/save functions must be an array reference.");
 				error.exit();
 			}
@@ -110,20 +117,13 @@ public:
 				error.exit();
 			}
 			if (decl->renamed) {
-				auto error = CompileError(ErrorType::SyntaxError, "", "", arr_ref->tok);
+				auto error = Diagnostic(ErrorType::SyntaxError, "", "", arr_ref->tok);
 				error.set_message("<load/save_array> functions can only be used with global arrays. Place the array declaration"
 						 " into the global scope or add the <global> keyword when declaring.");
 				error.exit();
 			}
 		}
 		return ASTVisitor::visit(node);
-	}
-
-	NodeAST* visit(NodeWildcard& node) override {
-		auto error = ASTVisitor::get_raw_compile_error(ErrorType::InternalError, node);
-		error.set_message("<wildcard> node should not exist anymore in AST.");
-		error.exit();
-		return &node;
 	}
 
 	NodeAST* visit(NodeBlock& node) override {
@@ -135,12 +135,18 @@ public:
 	}
 
 	NodeAST* visit(NodeArray& node) override {
-		node.size->accept(*this);
+		if (m_program->compiler_config->lsp) {
+			return ASTVisitor::visit(node);
+		}
+		if (node.size) node.size->accept(*this);
 		check_max_array_size(node);
 		return &node;
 	}
 
 	NodeAST* visit(NodeArrayRef& node) override {
+		if (m_program->compiler_config->lsp) {
+			return ASTVisitor::visit(node);
+		}
 		if(node.index) node.index->accept(*this);
 		check_nested_get_ui_id(node);
 		if(LoweringFunctionCall::needs_get_ui_id(node)) {
@@ -150,6 +156,9 @@ public:
 	}
 
 	NodeAST* visit(NodeVariableRef& node) override {
+		if (m_program->compiler_config->lsp) {
+			return ASTVisitor::visit(node);
+		}
 		check_nested_get_ui_id(node);
 		if(LoweringFunctionCall::needs_get_ui_id(node)) {
 			return node.replace_with(std::move(LoweringFunctionCall::wrap_in_get_ui_id(node)));
@@ -158,8 +167,11 @@ public:
 	}
 
 	NodeAST* visit(NodeUIControl& node) override {
+		// if (m_program->compiler_config->lsp) {
+		// 	return ASTVisitor::visit(node);
+		// }
 		m_ui_control_count[node.ui_control_type]++;
-		check_max_ui_controls(node);
+		check_max_ui_controls(m_ui_control_count[node.ui_control_type], node);
 		node.control_var->accept(*this);
 		node.params->accept(*this);
 		return &node;
@@ -172,8 +184,8 @@ public:
 				if (auto fun = header->parent->cast<NodeFunctionCall>()) {
 					if (!fun->is_builtin_kind()) return;
 					if (fun->function->name == "get_ui_id") {
-						auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, ref);
-						error.m_message = "Found nested <get_ui_id> call. This will cause a <script error> in Kontakt.";
+						auto error = ASTVisitor::make_diagnostic(ErrorType::SyntaxError, ref);
+						error.message = "Found nested <get_ui_id> call. This will cause a <script error> in Kontakt.";
 						error.exit();
 					}
 				}

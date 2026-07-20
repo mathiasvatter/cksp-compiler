@@ -39,9 +39,9 @@ public:
 
 	bool add_external_variables_to_global_scope() {
 		if (m_declared_data_structures.empty()) {
-			auto compile_error = CompileError(ErrorType::InternalError, "", -1, "", "", "");
-			compile_error.m_message = "Tried to add external variables to global scope, but there is no global scope.";
-			compile_error.exit();
+			auto diagnostic = Diagnostic(ErrorType::InternalError, "", -1, "", "", "");
+			diagnostic.message = "Tried to add external variables to global scope, but there is no global scope.";
+			diagnostic.exit();
 			return false;
 		}
 		for(const auto& var : external_variables) {
@@ -84,8 +84,8 @@ public:
 	/// detects if user-variable is declared throwaway and throws error if it is
 	static void handle_throwaway_var(const NodeDataStructure& var) {
 		if(var.name == "_") {
-			auto error = CompileError(ErrorType::VariableError, "", "", var.tok);
-			error.m_message = "Throwaway variable cannot be declared.";
+			auto error = Diagnostic(ErrorType::VariableError, "", "", var.tok);
+			error.message = "Throwaway variable cannot be declared.";
 			error.exit();
 		}
 	}
@@ -180,22 +180,23 @@ public:
 	[[nodiscard]] std::shared_ptr<NodeDataStructure> get_scoped_data_structure(const std::string& data, bool global_scope) const;
 
 	/// variable error handling
-	static CompileError throw_declaration_error(NodeReference &node, const std::string& add_msg="", const DefinitionProvider* ctx = nullptr, const std::string& alternate_name = "") {
-		auto compile_error = CompileError(ErrorType::VariableError, "", "", node.tok);
+	static Diagnostic throw_declaration_error(NodeReference &node, const std::string& add_msg="", const DefinitionProvider* ctx = nullptr, const std::string& alternate_name = "") {
+		auto diagnostic = Diagnostic(ErrorType::VariableError, "", "", node.tok);
 		std::string type = "<Variable>";
 		if(node.cast<NodeArrayRef>()) type = "<Array>";
 		if(node.cast<NodeNDArrayRef>()) type = "<NDArray>";
 		if(node.cast<NodePointerRef>()) type = "<Pointer>";
 		if(node.cast<NodeListRef>()) type = "<List>";
 		if (node.cast<NodeFunctionHeaderRef>()) type = "<Function> Variable of this name";
-		compile_error.m_message = type+" has not been declared: " + node.tok.val+". "+add_msg;
-		compile_error.m_expected = "Valid declaration";
+		diagnostic.message = type+" has not been declared: " + node.tok.val+".";
+		if (!add_msg.empty()) diagnostic.message += " " + add_msg;
+		diagnostic.expected = "Valid declaration";
 
 		// check if reference is assignment in declaration of global variable
 		// like : declare global ctrl := control <- where control is a lokal variable
 		if (auto single_decl = node.parent->cast<NodeSingleDeclaration>()) {
 			if (single_decl->variable->is_global) {
-				compile_error.m_message += "This <Reference> is assigned in a global declaration. Local variables should "
+				diagnostic.message += "This <Reference> is assigned in a global declaration. Local variables should "
 							   "not be assigned in global declarations. \nTry splitting this into a declaration and an assignment.";
 			}
 		}
@@ -204,30 +205,30 @@ public:
 			auto name = alternate_name.empty() ? node.tok.val : alternate_name;
 			auto suggestions = ctx->misspelled_suggestions(name);
 			if (!suggestions.empty()) {
-				compile_error.m_message += " Did you mean: "
-					+ StringUtils::join(suggestions, ',') + "?";
+				diagnostic.message += " Did you mean: "
+					+ StringUtils::join(suggestions, ", ") + "?";
 			}
 		}
 
-		return compile_error;
+		return diagnostic;
 	}
 
-	static CompileError internal_missing_declaration_error(const NodeReference& node) {
-		auto compile_error = CompileError(ErrorType::InternalError, "", "", node.tok);
-		compile_error.m_message = "Internal Error: No declaration found for reference: " + node.tok.val + ". This should not happen. Please report this error to the developers.";
-		return compile_error;
+	static Diagnostic internal_missing_declaration_error(const NodeReference& node) {
+		auto diagnostic = Diagnostic(ErrorType::InternalError, "", "", node.tok);
+		diagnostic.message = "Internal Error: No declaration found for reference: " + node.tok.val + ". This should not happen. Please report this error to the developers.";
+		return diagnostic;
 	}
 
-	static CompileError internal_missing_definition_error(const NodeFunctionCall& node) {
-		auto compile_error = CompileError(ErrorType::InternalError, "", "", node.tok);
-		compile_error.m_message = "Internal Error: No definition found for function: " + node.tok.val + ". This should not happen. Please report this error to the developers.";
-		return compile_error;
+	static Diagnostic internal_missing_definition_error(const NodeFunctionCall& node) {
+		auto diagnostic = Diagnostic(ErrorType::InternalError, "", "", node.tok);
+		diagnostic.message = "Internal Error: No definition found for function: " + node.tok.val + ". This should not happen. Please report this error to the developers.";
+		return diagnostic;
 	}
 
 	/// Checks for "CKSP" prefix in function name and throws a meaningful error if found
 	static bool check_engine_helper_function(const NodeFunctionHeader& node) {
 		if (node.kind != NodeDataStructure::Compiler and StringUtils::starts_with(node.name, "CKSP"+ OBJ_DELIMITER)) {
-			auto error = CompileError(ErrorType::VariableError, "", "", node.tok);
+			auto error = Diagnostic(ErrorType::VariableError, "", "", node.tok);
 			error.set_message("Functions starting with 'CKSP____' are reserved for internal use. Try renaming the function.");
 			error.exit();
 			return true;
@@ -319,22 +320,22 @@ public:
 	}
 
 
-	// static CompileError throw_declaration_type_error(NodeReference* node) {
-	// 	auto compile_error = CompileError(ErrorType::VariableError, "", "", node->tok);
+	// static Diagnostic throw_declaration_type_error(NodeReference* node) {
+	// 	auto diagnostic = Diagnostic(ErrorType::VariableError, "", "", node->tok);
 	// 	if(!node->get_declaration()) throw_declaration_error(*node).exit();
 	// 	if(node->get_declaration()->get_node_type() == NodeType::Array && node->get_node_type() == NodeType::Variable) {
-	// 		compile_error.m_message = "Incorrect Reference type. Reference was declared as <Array>: " + node->tok.val+".";
-	// 		compile_error.m_expected = "<Array>";
-	// 		compile_error.m_got = "<Variable>";
-	// 		compile_error.exit();
+	// 		diagnostic.message = "Incorrect Reference type. Reference was declared as <Array>: " + node->tok.val+".";
+	// 		diagnostic.expected = "<Array>";
+	// 		diagnostic.actual = "<Variable>";
+	// 		diagnostic.exit();
 	// 	}
 	// 	if(node->get_declaration()->get_node_type() == NodeType::Variable && node->get_node_type() == NodeType::Array) {
-	// 		compile_error.m_message = "Incorrect Reference type. Reference was declared as <Variable>: " + node->tok.val+".";
-	// 		compile_error.m_expected = "<Variable>";
-	// 		compile_error.m_got = "<Array>";
-	// 		compile_error.exit();
+	// 		diagnostic.message = "Incorrect Reference type. Reference was declared as <Variable>: " + node->tok.val+".";
+	// 		diagnostic.expected = "<Variable>";
+	// 		diagnostic.actual = "<Array>";
+	// 		diagnostic.exit();
 	// 	}
-	// 	return compile_error;
+	// 	return diagnostic;
 	// }
 
 

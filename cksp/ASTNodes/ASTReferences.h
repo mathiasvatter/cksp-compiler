@@ -129,8 +129,8 @@ struct NodeArrayRef final : NodeCompositeRef {
 	}
 	NodeAST* get_index(const size_t i) const override {
 		if(index) return index.get();
-		auto error = CompileError(ErrorType::InternalError, "", "", tok);
-		error.m_message = "ArrayRef has no index: " + name + ".";
+		auto error = Diagnostic(ErrorType::InternalError, "", "", tok);
+		error.message = "ArrayRef has no index: " + name + ".";
 		error.exit();
 		return nullptr;
 	}
@@ -160,9 +160,11 @@ struct NodeNDArrayRef final : NodeCompositeRef {
 	void update_parents(NodeAST* new_parent) override {
 		parent = new_parent;
 		if(indexes) indexes ->update_parents(this);
+		if(sizes) sizes->update_parents(this);
 	}
 	void set_child_parents() override {
 		if(indexes) indexes->parent = this;
+		if(sizes) sizes->parent = this;
 	};
 	std::string get_string() override {
 		return name;
@@ -194,17 +196,17 @@ struct NodeNDArrayRef final : NodeCompositeRef {
 	[[nodiscard]] int num_wildcards() const override;
 	/// clones sizes list from declaration if it is a NDArray
 	bool determine_sizes();
-	[[nodiscard]] CompileError throw_missing_indexes_error() const {
-		auto compile_error = CompileError(ErrorType::SyntaxError, "","", tok);
-		compile_error.m_message = "NDArray reference requires indexes in this context: " + tok.val + ".";
-		compile_error.m_expected = "Valid indexes";
-		return compile_error;
+	[[nodiscard]] Diagnostic throw_missing_indexes_error() const {
+		auto diagnostic = Diagnostic(ErrorType::SyntaxError, "","", tok);
+		diagnostic.message = "NDArray reference requires indexes in this context: " + tok.val + ".";
+		diagnostic.expected = "Valid indexes";
+		return diagnostic;
 	}
-	[[nodiscard]] CompileError throw_missing_sizes_error() const {
-		auto compile_error = CompileError(ErrorType::InternalError, "","", tok);
-		compile_error.m_message = "NDArray reference has unknown sizes: " + tok.val + ".";
-		compile_error.m_expected = "Valid sizes";
-		return compile_error;
+	[[nodiscard]] Diagnostic throw_missing_sizes_error() const {
+		auto diagnostic = Diagnostic(ErrorType::InternalError, "","", tok);
+		diagnostic.message = "NDArray reference has unknown sizes: " + tok.val + ".";
+		diagnostic.expected = "Valid sizes";
+		return diagnostic;
 	}
 	/// adds wildcard indexes to ndarray reference if there are no indexes present
 	/// depends on the size -> size has to be known beforehand
@@ -267,7 +269,7 @@ struct NodeFunctionHeaderRef final : NodeReference {
 	void set_arg(const int i, std::unique_ptr<NodeAST> arg) const {
 		args->set_param(i, std::move(arg));
 //		if(i >= get_num_args()) {
-//			auto error = CompileError(ErrorType::InternalError, "Index out of bounds", "", tok);
+//			auto error = Diagnostic(ErrorType::InternalError, "Index out of bounds", "", tok);
 //			error.exit();
 //		}
 //		args->params[i] = std::move(arg);
@@ -345,6 +347,7 @@ struct NodeNil final : NodePointerRef {
 struct NodeAccessChain final : NodeReference {
 	std::vector<std::unique_ptr<NodeAST>> chain;
 	std::vector<Type*> types;
+	std::vector<std::optional<Token>> opt_chaining_indexes{};
 	NodeAccessChain(std::vector<std::unique_ptr<NodeAST>> method_chain, Token tok, DataType data_type=DataType::Mutable)
 		: NodeReference("", NodeType::AccessChain, std::move(tok), data_type), chain(std::move(method_chain)) {
 		NodeAccessChain::set_child_parents();
@@ -372,6 +375,15 @@ struct NodeAccessChain final : NodeReference {
 	void add_method(std::unique_ptr<NodeAST> m) {
 		m->parent = this;
 		chain.push_back(std::move(m));
+	}
+	void add_opt_chaining(const std::optional<Token> &tok) {
+		opt_chaining_indexes.push_back(tok);
+	}
+	bool has_opt_chaining() const {
+		return std::ranges::any_of(
+			opt_chaining_indexes,
+			[](const auto& tok) { return tok.has_value(); }
+		);
 	}
 	void update_types() {
 		for(const auto& c: chain) {
@@ -413,6 +425,15 @@ struct NodeAccessChain final : NodeReference {
 		chain = std::move(flat_list);
 	}
 
+	/// non-destructive, returns nodes split at the idx point where chain[0, idx)
+	std::unique_ptr<NodeAST> split(size_t idx);
+	/// Visits only the parts of the chain that can reference a real local variable: the head
+	/// (chain[0], an ordinary reference) and the index/argument sub-expressions of every later
+	/// element. Later elements are struct members resolved by name, not local variables
+	/// themselves, so they must not be visited as a whole -> passes that promote local
+	/// variables to function parameters (LoweringTernaryOperator, LoweringNullCoalescing) use
+	/// this instead of a plain chain traversal to avoid mistaking a member's declaration for one.
+	NodeAST* accept_locals(ASTVisitor& visitor);
 	/// returns variable ref if access chain is incorrectly detected array/list/ndarray size constant
 //	std::unique_ptr<NodeVariableRef> is_size_constant();
 

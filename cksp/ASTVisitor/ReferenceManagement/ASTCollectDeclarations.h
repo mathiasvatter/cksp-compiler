@@ -22,6 +22,11 @@ public:
 		m_program = main;
 	}
 
+	void set_program(NodeProgram* program) override {
+		ASTVisitor::set_program(program);
+		m_def_provider = program ? program->def_provider : nullptr;
+	}
+
 	NodeAST* do_collect_declarations(NodeAST& node) {
 		// update function lookup map because of altered param counts after lambda lifting
 		m_program->merge_function_definitions();

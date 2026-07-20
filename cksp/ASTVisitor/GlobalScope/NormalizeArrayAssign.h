@@ -50,15 +50,15 @@ private:
 			// error handling
 			// if lhs is arrayref and has no index, check if array is initialized with a list of values or array copy
 			if(!node_array_ref->index and not(node.r_value->cast<NodeInitializerList>() or node.r_value->cast<NodeArrayRef>())) {
-				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-				error.m_message = "<Array> can only be assigned with a list of values.";
-				error.m_expected = "<InitializerList>";
+				auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+				error.message = "<Array> can only be assigned with a list of values.";
+				error.expected = "<InitializerList>";
 				error.exit();
 			} else if (node_array_ref->index and node.r_value->cast<NodeInitializerList>()) {
-				auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-				error.m_message = "Array element can only be assigned with a single value.";
-				error.m_expected = "<Variable>";
-				error.m_got = "<InitializerList>";
+				auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+				error.message = "Array element can only be assigned with a single value.";
+				error.expected = "<Variable>";
+				error.actual = "<InitializerList>";
 				error.exit();
 			} else if (node_array_ref->index) {
 				return &node;

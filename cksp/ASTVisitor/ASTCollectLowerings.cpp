@@ -8,6 +8,7 @@
 #include "../Lowering/PreLoweringStruct.h"
 #include "../Lowering/LoweringBoolean.h"
 #include "../Lowering/LoweringBooleanExpression.h"
+#include "../Lowering/LoweringOptionalChaining.h"
 #include "FunctionHandling/UIControlParamHandling.h"
 
 NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
@@ -22,6 +23,7 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 
 	for(const auto & struct_def : node.struct_definitions) {
 		static PreLoweringStruct pre_lowering_struct(m_program);
+		pre_lowering_struct.set_program(m_program);
 		struct_def->accept(pre_lowering_struct);
 	}
 	for(const auto & struct_def : node.struct_definitions) {
@@ -30,6 +32,7 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 	node.update_function_lookup();
 	for(const auto & struct_def : node.struct_definitions) {
 		static LoweringStructMembers lowering_struct_members(m_program);
+		lowering_struct_members.set_program(m_program);
 		struct_def->accept(lowering_struct_members);
 	}
 	for(const auto & struct_def : node.struct_definitions) {
@@ -92,6 +95,7 @@ NodeAST * ASTCollectLowerings::visit(NodeNil& node) {
 
 NodeAST * ASTCollectLowerings::visit(NodeBoolean &node) {
 	static LoweringBoolean bool_lowering(m_program);
+	bool_lowering.set_program(m_program);
 	return node.accept(bool_lowering);
 }
 
@@ -131,6 +135,11 @@ NodeAST * ASTCollectLowerings::visit(NodeSingleDeclaration &node) {
 
 NodeAST * ASTCollectLowerings::visit(NodeSingleAssignment& node) {
 	//TRACE();
+	// obj?.member := value is wrapped into a nil-guard before the chain lowering runs
+	LoweringOptionalChaining opt_chaining(m_program);
+	if (const auto new_node = node.accept(opt_chaining); new_node != &node) {
+		return new_node->accept(*this);
+	}
 	node.r_value->accept(*this);
 	node.l_value->accept(*this);
 	node.check_for_constant_assignment();
@@ -159,6 +168,7 @@ NodeAST * ASTCollectLowerings::visit(NodeFunctionCall& node) {
 	node.bind_definition(m_program, true);
 	if (const auto& definition = node.get_definition()) {
 		if(!definition->visited) {
+			FunctionCallStackScope diagnostic_frame(*m_program, node);
 			m_program->function_definition_stack.emplace(definition);
 			definition->accept(*this);
 			m_program->function_definition_stack.pop();
@@ -224,8 +234,10 @@ NodeAST * ASTCollectLowerings::visit(NodePointerRef& node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeAccessChain& node) {
+	LoweringOptionalChaining opt_chaining(m_program);
+	const auto new_node = node.accept(opt_chaining);
 	//TRACE();
-	return node.lower(m_program)->accept(*this);
+	return new_node->lower(m_program)->accept(*this);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeSingleRetain& node) {
@@ -257,7 +269,24 @@ NodeAST * ASTCollectLowerings::visit(NodeIf &node) {
 NodeAST * ASTCollectLowerings::visit(NodeTernary &node) {
 	ASTVisitor::visit(node);
 	static LoweringTernaryOperator ternary(m_program);
+	ternary.set_program(m_program);
 	return node.accept(ternary);
+}
+
+NodeAST * ASTCollectLowerings::visit(NodeNullCoalesce &node) {
+	// only lower the fallback here: the chain has to stay untouched so the
+	// nullish coalescing lowering can build the nil guards from it
+	node.fallback->accept(*this);
+	static LoweringNullCoalescing coalesce(m_program);
+	coalesce.set_program(m_program);
+	const auto call = node.accept(coalesce);
+	// the generated function body still contains the raw chain -> lower it now
+	if (const auto func_call = call->cast<NodeFunctionCall>()) {
+		if (const auto def = func_call->get_definition()) {
+			def->body->accept(*this);
+		}
+	}
+	return call;
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeBreak& node) {
@@ -290,14 +319,15 @@ NodeAST * ASTCollectLowerings::visit(NodeRange &node) {
 NodeAST * ASTCollectLowerings::visit(NodeBinaryExpr &node) {
 	ASTVisitor::visit(node);
 	static LoweringBooleanExpression bool_expr_lowering(m_program);
+	bool_expr_lowering.set_program(m_program);
 	return bool_expr_lowering.lower_expression(node);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeUnaryExpr &node) {
 	ASTVisitor::visit(node);
 	static LoweringBooleanExpression bool_expr_lowering(m_program);
+	bool_expr_lowering.set_program(m_program);
 	return bool_expr_lowering.lower_expression(node);
 }
-
 
 

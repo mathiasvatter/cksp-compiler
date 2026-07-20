@@ -5,6 +5,7 @@
 #pragma once
 
 #include "ASTVisitor.h"
+#include "../CompilerConfig.h"
 
 /**
  * Renames function formal parameters to prevent name collisions with sizes of ndarrays
@@ -39,7 +40,11 @@ public:
 
 	// do renaming by visiting all program functions
 	NodeAST* do_parallel_renaming(NodeProgram& node) {
-		parallel_for_each(node.function_lookup.begin(), node.function_lookup.end(),
+		// Each iteration mutates the shared visitor (*this) while renaming; running this
+		// concurrently is a data race, so run sequentially in LSP mode for deterministic
+		// diagnostics.
+		parallel_for_each_unless(node.compiler_config && node.compiler_config->lsp,
+			node.function_lookup.begin(), node.function_lookup.end(),
 			[&](const auto & func_pair) {
 				for (auto& func_def : func_pair.second) {
 					if (auto func = func_def.lock()) {

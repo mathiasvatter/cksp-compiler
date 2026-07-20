@@ -58,6 +58,7 @@ public:
     NodeAST * visit(NodeBlock& node) override;
 	NodeAST * visit(NodeIf& node) override;
 	NodeAST * visit(NodeTernary& node) override;
+	NodeAST * visit(NodeNullCoalesce& node) override;
 	NodeAST * visit(NodeWhile& node) override;
 	NodeAST * visit(NodeFor& node) override;
 	NodeAST * visit(NodeForEach& node) override;

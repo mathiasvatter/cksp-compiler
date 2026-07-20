@@ -4,6 +4,7 @@
 
 #include "PreASTMacros.h"
 #include "../../Interpreter/SimpleExprInterpreter.h"
+#include "../../Source/ReferenceIndex.h"
 
 PreNodeAST *PreASTMacros::visit(PreNodeProgram &node) {
     m_program = &node;
@@ -15,7 +16,7 @@ PreNodeAST *PreASTMacros::visit(PreNodeProgram &node) {
 	// 			m_macro_string_lookup.insert({def->header->get_name(), def.get()});
 	// 		});
     for(auto & def : node.macro_definitions) {
-    	m_program->add_to_macro_lookup(def);
+	m_program->add_to_macro_lookup(def);
 		m_macro_string_lookup.insert({def->header->get_name(), def.get()});
     }
 	node.program->accept(*this);
@@ -44,11 +45,19 @@ PreNodeMacroDefinition *PreASTMacros::get_macro_string_definition(const PreNodeM
 PreNodeAST *PreASTMacros::do_substitution(PreNodeLiteral &node) {
 	if (!m_substitution_stack.empty()) {
 		if (auto substitute = get_substitute(node.tok.val)) {
+			// go-to-definition: this is a parameter usage inside the macro body (the clone
+			// still carries definition-site positions) -> link it to the header parameter
+			if (m_reference_index && !m_param_token_stack.empty()) {
+				const auto& params = m_param_token_stack.top();
+				if (const auto it = params.find(node.tok.val); it != params.end()) {
+					m_reference_index->add_link(node.tok, it->second);
+				}
+			}
 			return node.replace_with(std::move(substitute));
 		} else if(node.cast<PreNodeKeyword>()) {
 			// in case there are more # substitutions in one word
 			if (StringUtils::count_char(node.tok.val, '#') >= 2) {
-				node.tok.val = get_text_replacement(node.tok);
+				node.tok = get_text_replacement_token(node.tok);
 			}
 		}
 	}
@@ -113,9 +122,9 @@ PreNodeAST *PreASTMacros::visit(PreNodeList &node) {
 void PreASTMacros::check_recursion(const Token &tok) const {
 	if(m_macros_used.contains(tok.val)) {
 		// recursive function call detected
-		auto error = CompileError(ErrorType::PreprocessorError, "", "", tok);
-		error.m_message = "Recursive macro call detected. Calling macros inside their definition is not allowed.";
-		error.m_got = tok.val;
+		auto error = Diagnostic(ErrorType::PreprocessorError, "", "", tok);
+		error.message = "Recursive macro call detected. Calling macros inside their definition is not allowed.";
+		error.actual = tok.val;
 		error.exit();
 	}
 }
@@ -130,8 +139,8 @@ visit(PreNodeMacroCall &node) {
     const Token token_name = node.macro->name->tok;
 	check_recursion(token_name);
 	if (!node.definition) {
-		// auto error = CompileError(ErrorType::InternalError, "", "", token_name);
-		// error.m_message = "Undefined <define> called. This construct was marked as a <define-call> during parsing, but no definition was found during preprocessing. This is likely a bug in the preprocessor.";
+		// auto error = Diagnostic(ErrorType::InternalError, "", "", token_name);
+		// error.message = "Undefined <define> called. This construct was marked as a <define-call> during parsing, but no definition was found during preprocessing. This is likely a bug in the preprocessor.";
 		// error.exit();
 
 		// this could still be a wrongly detected macro call inside interate
@@ -139,30 +148,47 @@ visit(PreNodeMacroCall &node) {
 		return &node;
 	}
 
+	// go-to-definition: link this macro usage to its definition's name
+	if (m_reference_index) {
+		m_reference_index->add_link(token_name, node.definition->header->name->tok);
+	}
+
     // substitution
     auto node_new_chunk = std::make_unique<PreNodeChunk>(node.tok, node.parent);
 
 	// see if parent is iterate or literate -> ignore amount of parameters then
-    if(node.definition) {
-    	const auto macro_definition = clone_as<PreNodeMacroDefinition>(node.definition);
+	if(node.definition) {
+	const auto macro_definition = clone_as<PreNodeMacroDefinition>(node.definition);
         m_macros_used.insert(token_name.val);
         // macro_definition->parent = node.parent;
 		if(node.macro->has_args()) {
 			auto substitution_vec = get_substitution_map(*macro_definition->header, *node.macro);
+			inherit_substitutions(substitution_vec);
 			m_substitution_stack.push(std::move(substitution_vec));
+			if (m_reference_index) {
+				// remember the header parameter tokens so body usages can link to them
+				std::unordered_map<std::string, Token> param_tokens;
+				const auto& header = *node.definition->header;
+				for (int i = 0; i < header.num_args(); i++) {
+					if (header.args->params[i]->chunk.empty()) continue;
+					const auto& var = header.args->params[i]->chunk[0];
+					param_tokens[var->get_string()] = var->tok;
+				}
+				m_param_token_stack.push(std::move(param_tokens));
+			}
 		} else {
         // if parent is literate -> replace #l# in substitution vector with first arg of macro
             if(!node.macro->has_args() and macro_definition->header->num_args() == 1) {
                 if(!m_substitution_stack.empty()) {
-                	auto& top_map = m_substitution_stack.top();
-                	// replace #l# with first arg of macro if first arg of macro is not already #l#
-                	const auto first_arg = macro_definition->header->get_arg(0)->get_chunk(0)->get_string();
-                	if (first_arg != "#l#") {
+	auto& top_map = m_substitution_stack.top();
+	// replace #l# with first arg of macro if first arg of macro is not already #l#
+	const auto first_arg = macro_definition->header->get_arg(0)->get_chunk(0)->get_string();
+	if (first_arg != "#l#") {
 		                if (const auto it = top_map.find("#l#"); it != top_map.end()) {
-                			top_map[first_arg] = std::move(it->second);
-                			top_map.erase(it);
-                		}
-                	}
+			top_map[first_arg] = std::move(it->second);
+			top_map.erase(it);
+		}
+	}
 				}
             }
         }
@@ -173,10 +199,13 @@ visit(PreNodeMacroCall &node) {
         // node_new_chunk->parent = node.parent;
 		if(node.macro->has_args()) {
 			m_substitution_stack.pop();
+			if (m_reference_index && !m_param_token_stack.empty()) {
+				m_param_token_stack.pop();
+			}
 		}
         m_macros_used.erase(token_name.val);
 		m_program->macro_call_stack.pop();
-    	return node.replace_with(std::move(node_new_chunk));
+	return node.replace_with(std::move(node_new_chunk));
     }
 	return &node;
 }
@@ -189,9 +218,9 @@ PreNodeAST *PreASTMacros::visit(PreNodeMacroHeader &node) {
 
 PreNodeAST *PreASTMacros::visit(PreNodeIterateMacro &node) {
     if(node.macro_call->params.size()>1) {
-    	auto error = CompileError(ErrorType::PreprocessorError,"",  "", node.tok);
-    	error.m_message = "Found incorrect <iterate_macro> syntax.";
-    	error.exit();
+	auto error = Diagnostic(ErrorType::PreprocessorError,"",  "", node.tok);
+	error.message = "Found incorrect <iterate_macro> syntax.";
+	error.exit();
     }
 
 	auto linebreak_tok = node.tok; linebreak_tok.set_type(token::LINEBRK); linebreak_tok.set_val("\n");
@@ -219,7 +248,7 @@ PreNodeAST *PreASTMacros::visit(PreNodeIterateMacro &node) {
     int32_t i = from;
     while(node.to.type == token::DOWNTO ? i >= to : i <= to) {
         auto node_number_chunk = std::make_unique<PreNodeChunk>(node.tok, node.parent);
-    	auto int_tok = node.tok; int_tok.set_type(token::INT); int_tok.set_val(std::to_string(i));
+	auto int_tok = node.tok; int_tok.set_type(token::INT); int_tok.set_val(std::to_string(i));
         auto node_statement = std::make_unique<PreNodeStatement>(
 			std::make_unique<PreNodeInt>(
 				i,
@@ -234,13 +263,14 @@ PreNodeAST *PreASTMacros::visit(PreNodeIterateMacro &node) {
 
         std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> subst_map;
         subst_map.insert({"#n#", std::move(node_number_chunk)});
+		inherit_substitutions(subst_map);
         m_substitution_stack.push(std::move(subst_map));
 
         auto macro_call = node.macro_call->params[0]->clone();
         // macro_call->update_parents(node_new_chunk.get());
 
 		// if is real macro call, add #n# to its arguments
-    	PreNodeMacroCall* node_macro_call = nullptr;
+	PreNodeMacroCall* node_macro_call = nullptr;
 		if (auto node_chunk = macro_call->cast<PreNodeChunk>()) {
 			if (auto node_stmt = node_chunk->chunk[0]->cast<PreNodeStatement>()) {
 				node_macro_call = node_stmt->statement->cast<PreNodeMacroCall>();
@@ -256,12 +286,12 @@ PreNodeAST *PreASTMacros::visit(PreNodeIterateMacro &node) {
 			}
 		}
 
-    	// skip the call and visit the header to replace #n#
-    	if (node_macro_call) {
-    		node_macro_call->macro->accept(*this);
-    	} else {
-    		macro_call->accept(*this);
-    	}
+	// skip the call and visit the header to replace #n#
+	if (node_macro_call) {
+		node_macro_call->macro->accept(*this);
+	} else {
+		macro_call->accept(*this);
+	}
         m_substitution_stack.pop();
 
         node_new_chunk->add_chunk(std::move(macro_call));
@@ -273,7 +303,7 @@ PreNodeAST *PreASTMacros::visit(PreNodeIterateMacro &node) {
 
 PreNodeAST *PreASTMacros::visit(PreNodeLiterateMacro &node) {
     if(node.macro_call->params.size()>1) {
-        CompileError(ErrorType::PreprocessorError,"Found incorrect <literate_macro> syntax.", -1, "", "", "").exit();
+        Diagnostic(ErrorType::PreprocessorError,"Found incorrect <literate_macro> syntax.", "", node.tok).exit();
     }
 	auto linebreak_tok = node.tok; linebreak_tok.set_type(token::LINEBRK); linebreak_tok.set_val("\n");
     node.macro_call->get_element(0)->add_chunk(std::make_unique<PreNodeOther>(linebreak_tok,nullptr));
@@ -291,7 +321,7 @@ PreNodeAST *PreASTMacros::visit(PreNodeLiterateMacro &node) {
     auto node_new_chunk = std::make_unique<PreNodeChunk>(node.tok, node.parent);
     for (int i = 0; i<node.literate_tokens->chunk.size(); i++) {
         auto node_number_chunk = std::make_unique<PreNodeChunk>(node.tok, node.parent);
-    	auto int_tok = node.tok; int_tok.set_type(token::INT); int_tok.set_val(std::to_string(i));
+	auto int_tok = node.tok; int_tok.set_type(token::INT); int_tok.set_val(std::to_string(i));
         auto node_number_statement = std::make_unique<PreNodeStatement>(std::make_unique<PreNodeInt>(i, int_tok,nullptr), node.tok, nullptr);
         node_number_chunk->chunk.push_back(std::move(node_number_statement));
 
@@ -303,17 +333,18 @@ PreNodeAST *PreASTMacros::visit(PreNodeLiterateMacro &node) {
         std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> subst_map;
         subst_map.insert({"#l#", std::move(node_literate_chunk)});
         subst_map.insert({"#n#", std::move(node_number_chunk)});
+		inherit_substitutions(subst_map);
         m_substitution_stack.push(std::move(subst_map));
 
         auto macro_call = node.macro_call->params[0]->clone();
-    	if (auto node_chunk = macro_call->cast<PreNodeChunk>()) {
-    		if (auto node_stmt = node_chunk->chunk[0]->cast<PreNodeStatement>()) {
-    			auto node_macro_call = node_stmt->statement->cast<PreNodeMacroCall>();
-    			if(node_macro_call) {
-    				node_macro_call->definition = get_macro_string_definition(*node_macro_call->macro);
-    			}
-    		}
-    	}
+	if (auto node_chunk = macro_call->cast<PreNodeChunk>()) {
+		if (auto node_stmt = node_chunk->chunk[0]->cast<PreNodeStatement>()) {
+			auto node_macro_call = node_stmt->statement->cast<PreNodeMacroCall>();
+			if(node_macro_call) {
+				node_macro_call->definition = get_macro_string_definition(*node_macro_call->macro);
+			}
+		}
+	}
         macro_call->accept(*this);
         node_new_chunk->chunk.push_back(std::move(macro_call));
         m_substitution_stack.pop();
@@ -328,11 +359,22 @@ std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> PreASTMacros::get
 	for(int i= 0; i<definition.num_args(); i++) {
 		const auto &var = definition.args->params[i]->chunk[0];
 		if(definition.args->params[i]->chunk.size() > 1) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", definition.name->tok);
-			error.m_message = "Unable to substitute <macro> arguments. Found wrong number of substitution tokens in <macro-header>. Only <keywords> or <numbers> can be substituted.";
-			error.m_expected = "<keyword> or <number>";
-			error.m_got = definition.get_string();
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", definition.name->tok);
+			error.message = "Unable to substitute <macro> arguments. Found wrong number of substitution tokens in <macro-header>. Only <keywords> or <numbers> can be substituted.";
+			error.expected = "<keyword> or <number>";
+			error.actual = definition.get_string();
 			error.exit();
+		}
+		if (call.args->params[i]) {
+			// Fast path: an argument that is exactly an enclosing substitution parameter
+			// (e.g. inner(#x#) inside another macro) is resolved eagerly so its source-token
+			// position is preserved for go-to-definition. Arguments that only *contain* a
+			// parameter, in particular token-pasted ones like #control#0, must NOT be
+			// substituted here: eager substitution collapses the pasting and drops the
+			// pasted suffix. Those are left raw for the body's lazy substitution.
+			if (auto substitute = clone_substitution_chunk(call.args->params[i]->get_string())) {
+				call.args->params[i] = std::move(substitute);
+			}
 		}
 		map[var->get_string()] = std::move(call.args->params[i]);
 	}
@@ -361,5 +403,3 @@ std::unique_ptr<PreNodeAST> PreASTMacros::get_substitute(const std::string& name
 	}
 	return nullptr;
 }
-
-

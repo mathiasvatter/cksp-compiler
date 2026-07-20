@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <limits>
+#include <string>
 #include <utility>
 
 #include "JSONTokenizer.h"
@@ -20,15 +22,23 @@ public:
 	explicit JSONParser() = default;
 	explicit JSONParser(std::vector<JSONToken> tokens) : m_tokens(std::move(tokens)) {}
 
-	std::unique_ptr<JSONValue> parse() {
-		return parse_value();
+	static std::unique_ptr<JSONValue> parse(std::string json, std::string file = "<string>") {
+		JSONTokenizer tokenizer(std::move(json), std::move(file));
+		JSONParser parser(tokenizer.tokenize());
+		return parser.parse();
 	}
 
-	std::unique_ptr<JSONValue> parse(const std::string& json, std::string file) {
-		static JSONTokenizer tokenizer(json, std::move(file));
-		m_tokens = tokenizer.tokenize();
+	std::unique_ptr<JSONValue> parse() {
 		m_pos = 0;
-		return JSONParser::parse();
+		auto value = parse_value();
+		const auto tok = peek();
+		if (tok.type != jtoken::END_TOKEN) {
+			throw JSONParseError("Found content after valid json value.",
+				"end token",
+				tok
+			);
+		}
+		return value;
 	}
 
 private:
@@ -189,29 +199,32 @@ private:
     }
 
 	JSONToken peek(const int ahead = 0) {
-		m_curr_token = m_tokens.at(m_pos);
-		m_curr_token_type = m_curr_token.type;
-		m_curr_token_value = m_curr_token.val;
-		if (m_tokens.size() < m_pos+ahead) {
+		if (m_pos + ahead >= m_tokens.size()) {
+			const auto token = m_tokens.empty() ? JSONToken{} : m_tokens.back();
 			throw JSONParseError("Reached the end of the tokens. Wrong Syntax discovered.",
 				"end token",
-				m_curr_token
+				token
 			);
 		}
-		return m_tokens.at(m_pos+ahead);
+		m_curr_token = m_tokens.at(m_pos + ahead);
+		m_curr_token_type = m_curr_token.type;
+		m_curr_token_value = m_curr_token.val;
+		return m_curr_token;
 	}
 
 	JSONToken consume() {
-		m_curr_token = m_tokens.at(m_pos+1);
-		m_curr_token_type = m_curr_token.type;
-		m_curr_token_value = m_curr_token.val;
 		if (m_pos >= m_tokens.size()) {
+			const auto token = m_tokens.empty() ? JSONToken{} : m_tokens.back();
 			throw JSONParseError("Reached the end of the tokens. Wrong Syntax discovered.",
 				"end token",
-				m_curr_token
+				token
 			);
 		}
-		return m_tokens.at(m_pos++);
+		const auto consumed = m_tokens.at(m_pos++);
+		m_curr_token = m_pos < m_tokens.size() ? m_tokens.at(m_pos) : consumed;
+		m_curr_token_type = m_curr_token.type;
+		m_curr_token_value = m_curr_token.val;
+		return consumed;
 	}
 
 	static std::string unescape_string(const std::string& s) {

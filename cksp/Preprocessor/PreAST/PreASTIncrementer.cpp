@@ -61,7 +61,7 @@ bool PreASTIncrementer::update_last_incrementer_var(const PreNodeAST* node, PreN
 
 PreNodeAST *PreASTIncrementer::visit(PreNodeIncrementer &node) {
 	auto node_chunk = node.counter->cast<PreNodeChunk>();
-	auto error = CompileError(ErrorType::PreprocessorError, "", "", node.tok);
+	auto error = Diagnostic(ErrorType::PreprocessorError, "", "", node.tok);
     if(!node_chunk) {
     	error.set_message("Found unknown syntax in <START_INC> arguments.");
 		error.set_expected("<name>, <start>, <step>");

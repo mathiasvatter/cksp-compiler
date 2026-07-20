@@ -12,9 +12,9 @@ class ASTCollectReferences final : public ASTVisitor {
 
 	static void check_for_valid_declaration(const NodeReference& ref) {
 		if(!ref.get_declaration()) {
-			auto error = CompileError(ErrorType::InternalError, "", "", ref.tok);
-			error.m_message = "Declaration was not set.";
-			error.m_got = ref.name;
+			auto error = Diagnostic(ErrorType::InternalError, "", "", ref.tok);
+			error.message = "Declaration was not set.";
+			error.actual = ref.name;
 			error.exit();
 		}
 	}
@@ -31,9 +31,9 @@ public:
 		m_program->global_declarations->accept(*this);
 		m_program->init_callback->accept(*this);
 
-		for(const auto & s : node.struct_definitions) {
-			s->accept(*this);
-		}
+		// for(const auto & s : node.struct_definitions) {
+		// 	s->accept(*this);
+		// }
 		for(const auto & callback : node.callbacks) {
 			if(callback.get() != m_program->init_callback) callback->accept(*this);
 		}

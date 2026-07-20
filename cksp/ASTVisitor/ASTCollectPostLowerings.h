@@ -50,7 +50,10 @@ public:
 		node.function->accept(*this);
 		if(node.bind_definition(m_program)) {
 			const auto& def = node.get_definition();
-			if(!def->visited) def->accept(*this);
+			if(!def->visited) {
+				FunctionCallStackScope diagnostic_frame(*m_program, node);
+				def->accept(*this);
+			}
 			def->visited = true;
 		}
 		return &node;
@@ -60,6 +63,7 @@ public:
 		node.variable->accept(*this);
 		if(node.value) node.value->accept(*this);
 		static ArrayDimensionConstants lowering(m_program);
+		lowering.set_program(m_program);
 		return node.accept(lowering);
 	}
 
@@ -84,5 +88,4 @@ public:
 	}
 
 };
-
 

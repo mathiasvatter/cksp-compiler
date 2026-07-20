@@ -658,8 +658,8 @@ struct NodeSingleDeclaration final : NodeInstruction {
 	void check_constant_initialization() const {
 		if (variable->is_member()) return;
 		if (variable->data_type == DataType::Const and !value) {
-			auto error = CompileError(ErrorType::VariableError, "", "", tok);
-			error.m_message = "Constant variables must be initialized upon declaration.";
+			auto error = Diagnostic(ErrorType::VariableError, "", "", tok);
+			error.message = "Constant variables must be initialized upon declaration.";
 			error.exit();
 		}
 	}
@@ -946,7 +946,7 @@ struct NodeIf final : NodeInstruction {
     std::unique_ptr<NodeAST> condition;
     std::unique_ptr<NodeBlock> if_body;
     std::unique_ptr<NodeBlock> else_body;
-    explicit NodeIf(Token tok) : NodeInstruction(NodeType::If, std::move(tok)) {
+    explicit NodeIf(const Token& tok) : NodeInstruction(NodeType::If, tok) {
 	    set_else_body(std::make_unique<NodeBlock>(tok, true));
     	set_if_body(std::make_unique<NodeBlock>(tok, true));
     }
@@ -994,6 +994,38 @@ struct NodeIf final : NodeInstruction {
 		condition->parent = this;
 	}
 	NodeAST* do_short_circuit_transform(NodeProgram* program);
+};
+
+/// nullish coalescing: <optional chain> ?? <fallback expression>
+struct NodeNullCoalesce final : NodeInstruction {
+	std::unique_ptr<NodeAST> chain;
+	std::unique_ptr<NodeAST> fallback;
+	explicit NodeNullCoalesce(Token tok) : NodeInstruction(NodeType::NullCoalesce, std::move(tok)) {}
+	NodeNullCoalesce(std::unique_ptr<NodeAST> chain, std::unique_ptr<NodeAST> fallback, Token tok)
+	: NodeInstruction(NodeType::NullCoalesce, std::move(tok)), chain(std::move(chain)), fallback(std::move(fallback)) {
+		NodeNullCoalesce::set_child_parents();
+	}
+	NodeAST * accept(ASTVisitor &visitor) override;
+	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
+	NodeNullCoalesce(const NodeNullCoalesce& other);
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		chain->update_parents(this);
+		fallback->update_parents(this);
+	}
+	void set_child_parents() override {
+		chain->parent = this;
+		fallback->parent = this;
+	}
+	std::string get_string() override { return ""; }
+	std::string get_token_string() const override {
+		return chain->get_token_string() + " ?? " + fallback->get_token_string();
+	}
+	void update_token_data(const Token& token) override {
+		chain->update_token_data(token);
+		fallback->update_token_data(token);
+	}
 };
 
 struct NodeTernary final : NodeInstruction {
@@ -1329,8 +1361,8 @@ struct NodeBreak final : NodeInstruction {
 			loop = loop->parent;
 		}
 		if(!loop) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", tok);
-			error.m_message = "<Break> statement outside of loop. The <break> keyword can only be used inside a for- or while-loop.";
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+			error.message = "<Break> statement outside of loop. The <break> keyword can only be used inside a for- or while-loop.";
 			error.exit();
 		}
 		return static_cast<NodeWhile*>(loop);

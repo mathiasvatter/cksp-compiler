@@ -20,6 +20,7 @@ void ASTGenerator::print() const {
 
 
 NodeAST * ASTGenerator::visit(NodeProgram &node) {
+	m_program = &node;
     os << get_compiled_date_time() << std::endl;
     // get init callback first
     node.callbacks[0]->accept(*this);
@@ -66,18 +67,18 @@ NodeAST * ASTGenerator::visit(NodeVariableRef &node) {
 }
 
 NodeAST * ASTGenerator::visit(NodePointer &node) {
-	auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
-	error.m_message = "<Pointer> Nodes should have been lowered already.";
-	error.print();
+	auto error = Diagnostic(ErrorType::InternalError, "", "", node.tok);
+	error.message = "<Pointer> Nodes should have been lowered already.";
+	error.report(diagnostics());
 	os << TypeRegistry::get_identifier_from_type(node.ty);
 	os << sanitize_dots(node.name);
 	return &node;
 }
 
 NodeAST * ASTGenerator::visit(NodePointerRef &node) {
-	auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
-	error.m_message = "<PointerRef> Nodes should have been lowered already.";
-	error.print();
+	auto error = Diagnostic(ErrorType::InternalError, "", "", node.tok);
+	error.message = "<PointerRef> Nodes should have been lowered already.";
+	error.report(diagnostics());
 	os << TypeRegistry::get_identifier_from_type(node.ty);
 	os << sanitize_dots(node.name);
 	return &node;
@@ -293,15 +294,15 @@ NodeAST * ASTGenerator::visit(NodeFunctionDefinition &node) {
 }
 
 NodeAST * ASTGenerator::visit(NodeGetControl &node) {
-	auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
-	error.m_message = "<GetControl> Nodes should have been lowered already.";
+	auto error = Diagnostic(ErrorType::InternalError, "", "", node.tok);
+	error.message = "<GetControl> Nodes should have been lowered already.";
 	error.exit();
 	return &node;
 }
 
 NodeAST * ASTGenerator::visit(NodeNumElements &node) {
-	auto error = CompileError(ErrorType::InternalError, "", "", node.tok);
-	error.m_message = "<NumElements> Nodes should have been lowered already.";
+	auto error = Diagnostic(ErrorType::InternalError, "", "", node.tok);
+	error.message = "<NumElements> Nodes should have been lowered already.";
 	error.exit();
 	return &node;
 }

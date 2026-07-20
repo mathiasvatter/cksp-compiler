@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../ASTVisitor.h"
+#include "../../Preprocessor/PreAST/PreASTConditions.h"
 
 /**
  * Stores restrictive and thread unsafe ksp commands
@@ -64,6 +65,12 @@ public:
 		{ "NI_SIGNAL_TYPE", {"listener"} },
 		{ "CC_NUM", {"controller"} },
 		{ "POLY_AT_NUM", {"poly_at"} },
+		{"NI_MOUSE_EVENT_TYPE", {"ui_control", "ui_controls"} },
+		{"NI_MOUSE_EVENT_TYPE_DRAG", {"ui_control", "ui_controls"} },
+		{"NI_MOUSE_EVENT_TYPE_DROP", {"ui_control", "ui_controls"} },
+		{"NI_MOUSE_EVENT_TYPE_LEFT_BUTTON_DOWN", {"ui_control", "ui_controls"} },
+		{"NI_MOUSE_EVENT_TYPE_LEFT_BUTTON_UP", {"ui_control", "ui_controls"} },
+		{"NI_MOUSE_OVER_CONTROL", {"ui_control", "ui_controls"} },
 	};
 
 	inline static const std::unordered_map<std::string, std::unordered_set<std::string>> m_thread_unsafe_functions = {
@@ -101,24 +108,37 @@ public:
 		if (!declaration) {
 			// will (probably with ui controls) always lead to errors
 			return true;
-			// auto error = get_raw_compile_error(ErrorType::InternalError, node);
-			// error.m_message = "Unable to find builtin variable declaration for <" + node.name + ">.";
+			// auto error = make_diagnostic(ErrorType::InternalError, node);
+			// error.message = "Unable to find builtin variable declaration for <" + node.name + ">.";
 			// error.exit();
 		}
 		if (declaration->is_restricted) {
 			const auto callback_name = StringUtils::remove(callback->begin_callback, "on ");
 			const auto allowed_callbacks = get_allowed_callbacks(node);
 			if (!allowed_callbacks.contains(callback_name)) {
-				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-				error.m_message = "Found restricted variable. <" + node.name + "> can not be used in <" + callback->begin_callback + "> callback.";
-				error.m_expected = "Allowed Callbacks are: \n";
+				auto error = make_diagnostic(ErrorType::SyntaxError, node);
+				error.message = "Found restricted variable. <" + node.name + "> can not be used in <" + callback->begin_callback + "> callback.";
+				error.expected = "Allowed Callbacks are: \n";
 				for (const auto& allowed_callback : allowed_callbacks) {
-					error.m_expected += "<" + allowed_callback + ">, ";
+					error.expected += "<" + allowed_callback + ">, ";
 				}
-				error.m_expected.erase(error.m_expected.size() - 2);
-				error.m_got = "<" + callback->begin_callback + ">";
+				error.expected.erase(error.expected.size() - 2);
+				error.actual = "<" + callback->begin_callback + ">";
 				error.exit();
 				return false;
+			}
+		}
+		if (PreASTConditions::is_builtin_condition(node.tok)) {
+			auto func_header = node.is_direct_func_arg();
+			bool throw_error = !func_header;
+			if (!throw_error) {
+				throw_error = !PREPROCESSOR_SYNTAX.contains(func_header->name);
+			}
+			if(throw_error) {
+				auto error = ASTVisitor::make_diagnostic(ErrorType::SyntaxError, node);
+				error.set_message("Found built-in preprocessor variable in incorrcet environment. "
+				"<" + StringUtils::join(PreASTConditions::BUILTIN_CONDITIONS, ", ") + "> can only be used in <(RE)SET_CONDITION>");
+				error.exit();
 			}
 		}
 		return true;
@@ -129,8 +149,8 @@ public:
 		if (!callback) return true;
 		const auto definition = node.get_definition();
 		if (!definition) {
-			auto error = get_raw_compile_error(ErrorType::InternalError, node);
-			error.m_message = "Unable to find builtin function definition for <" + node.function->name + ">.";
+			auto error = make_diagnostic(ErrorType::InternalError, node);
+			error.message = "Unable to find builtin function definition for <" + node.function->name + ">.";
 			error.exit();
 		}
 		// check if called in restricted callback
@@ -138,14 +158,14 @@ public:
 			const auto callback_name = StringUtils::remove(callback->begin_callback, "on ");
 			const auto allowed_callbacks = get_allowed_callbacks(*node.function);
 			if (!allowed_callbacks.contains(callback_name)) {
-				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-				error.m_message = "Found restricted function. <" + node.function->name + "> can not be used in <" + callback->begin_callback + "> callback.";
-				error.m_expected = "Allowed Callbacks are: \n";
+				auto error = make_diagnostic(ErrorType::SyntaxError, node);
+				error.message = "Found restricted function. <" + node.function->name + "> can not be used in <" + callback->begin_callback + "> callback.";
+				error.expected = "Allowed Callbacks are: \n";
 				for (const auto& allowed_callback : allowed_callbacks) {
-					error.m_expected += "<" + allowed_callback + ">, ";
+					error.expected += "<" + allowed_callback + ">, ";
 				}
-				error.m_expected.erase(error.m_expected.size() - 2);
-				error.m_got = "<" + callback->begin_callback + ">";
+				error.expected.erase(error.expected.size() - 2);
+				error.actual = "<" + callback->begin_callback + ">";
 				error.exit();
 				return false;
 			}

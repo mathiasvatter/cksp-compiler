@@ -86,8 +86,8 @@ private:
 		if (const auto node_int = array->size->cast<NodeInt>()) {
 			// check if size is negative due to buffer overflow
 			if (node_int->value < 0) {
-				auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-				error.m_message = "Array size cannot be negative. This is most likely due to a buffer overflow.";
+				auto error = make_diagnostic(ErrorType::SyntaxError, node);
+				error.message = "Array size cannot be negative. This is most likely due to a buffer overflow.";
 				error.exit();
 			}
 			if (node_int->value > MAX_ARRAY_ELEMENTS) {
@@ -117,9 +117,9 @@ private:
 						}
 					}
 				// } else {
-				// 	auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-				// 	error.m_message = "<Array> can only be assigned with a list of values.";
-				// 	error.m_expected = "<InitializerList>";
+				// 	auto error = make_diagnostic(ErrorType::SyntaxError, node);
+				// 	error.message = "<Array> can only be assigned with a list of values.";
+				// 	error.expected = "<InitializerList>";
 				// 	error.exit();
 				}
 				return &node;
@@ -147,8 +147,8 @@ private:
 			if (const auto node_int = idx->cast<NodeInt>()) {
 				auto& init_list = initializer_list[arr_ref->name];
 				if (init_list.size() <= node_int->value) {
-					auto error = get_raw_compile_error(ErrorType::SyntaxError, node);
-					error.m_message = "Array index out of bounds. Index exceeds the array size given in its declaration: "+std::to_string(init_list.size())+".";
+					auto error = make_diagnostic(ErrorType::SyntaxError, node);
+					error.message = "Array index out of bounds. Index exceeds the array size given in its declaration: "+std::to_string(init_list.size())+".";
 					error.exit();
 				}
 				// if this idx was not already set

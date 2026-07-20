@@ -45,16 +45,16 @@ private:
 		auto node_body = std::make_unique<NodeBlock>(var->tok);
 
 		if(!var->persistence.has_value()) {
-			auto error = ASTVisitor::get_raw_compile_error(ErrorType::InternalError, *var);
-			error.m_message = "Variable ist not persistent.";
+			auto error = ASTVisitor::make_diagnostic(ErrorType::InternalError, *var);
+			error.message = "Variable ist not persistent.";
 			error.exit();
 		}
 		auto persistence = var->persistence.value();
 		var->persistence = std::nullopt;
 		auto it = PERSISTENCE_TOKENS.find(persistence.type);
 		if(it == PERSISTENCE_TOKENS.end()) {
-			auto error = ASTVisitor::get_raw_compile_error(ErrorType::SyntaxError, *var);
-			error.m_message = "Persistence keyword not recognized.";
+			auto error = ASTVisitor::make_diagnostic(ErrorType::SyntaxError, *var);
+			error.message = "Persistence keyword not recognized.";
 			error.exit();
 		}
 		for(auto &pers_func : it->second) {

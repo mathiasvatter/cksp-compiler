@@ -6,7 +6,7 @@
 
 #include <filesystem>
 #include <unordered_map>
-#include "CompileError.h"
+#include "Diagnostic.h"
 #include "../utils/StringUtils.h"
 
 enum class FileType {
@@ -47,7 +47,7 @@ public:
                 },
             ",");
 
-            CompileError(ErrorType::FileError, "Unable to open file. Not a valid file type.", -1, "*.ksp or *.nckp",extension, "").exit();
+            Diagnostic(ErrorType::FileError, "Unable to open file. Not a valid file type.", -1, "*.ksp or *.nckp",extension, "").exit();
             return FileType::unknown;
         }
         return it->second;

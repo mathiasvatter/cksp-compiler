@@ -17,16 +17,10 @@
 class ASTStructInstanceAnalysis: public ASTVisitor {
 	std::vector<NodeLoop*> m_loop_stack;
 	std::unordered_map<NodeStruct*, std::unique_ptr<NodeAST>> m_num_constructors;
-	std::unordered_map<NodeFunctionDefinition*, std::unordered_map<NodeStruct*, std::unique_ptr<NodeAST>>> m_num_constructors_per_func;
 	std::vector<NodeFunctionDefinition*> m_function_call_stack;
+	std::unordered_set<NodeStruct*> m_unbounded_structs;
 
-	DefinitionProvider* m_def_provider = nullptr;
-
-	//------- Nodes for struct instance analysis -------
-	[[nodiscard]] bool is_linear_environment() const {
-		if (!m_program->function_definition_stack.empty()) return false;
-		return is_static_callback();
-	}
+	const ConstantDatabase& database;
 
 	bool is_static_callback() const {
 		if (!m_program->current_callback) return true; // this is the case if we are in global_declarations
@@ -36,7 +30,8 @@ class ASTStructInstanceAnalysis: public ASTVisitor {
 	}
 
 public:
-	explicit ASTStructInstanceAnalysis(NodeProgram *main) : m_def_provider(main->def_provider) {
+	explicit ASTStructInstanceAnalysis(NodeProgram *main, const ConstantDatabase& database)
+		: database(database) {
 		m_program = main;
 	}
 
@@ -49,18 +44,10 @@ public:
 			if(callback.get() != m_program->init_callback) callback->accept(*this);
 		}
 
-		node.reset_function_visited_flag();
-
-		// for (auto & func : m_num_constructors_per_func) {
-		// 	for (auto& struct_def : func.second) {
-		// 		add_expr_to_num_constructors(m_num_constructors, struct_def.first, std::move(struct_def.second));
-		// 	}
-		// }
-
 		for(auto & struct_def : m_num_constructors) {
-			auto bin = std::make_unique<NodeBinaryExpr>(token::MULT, std::move(struct_def.second), std::make_unique<NodeInt>(1, Token()), Token());
-			bin->left->do_constant_folding();
-			struct_def.first->max_individual_structs_count = std::move(bin);
+			auto statement = std::make_unique<NodeStatement>(std::move(struct_def.second), Token());
+			statement->do_constant_folding(&database);
+			struct_def.first->max_individual_structs_count = std::move(statement->statement);
 			struct_def.first->max_individual_structs_count->parent = struct_def.first;
 		}
 
@@ -74,7 +61,6 @@ public:
 
 	NodeAST* visit(NodeCallback& node) override {
 		m_program->current_callback = &node;
-
 
 		if(node.callback_id) node.callback_id->accept(*this);
 		node.statements->accept(*this);
@@ -119,21 +105,26 @@ public:
 		node.bind_definition(m_program);
 		auto definition = node.get_definition();
 		if(definition and node.kind != NodeFunctionCall::Kind::Builtin) {
-			if(!definition->visited) {
+			// Analyze every call site in its callback/loop context. The global visited flag
+			// would otherwise discard calls reached through functions after their first use.
+			// Only suppress a definition that is already active to avoid recursive traversal.
+			if(std::ranges::find(m_function_call_stack, definition.get()) == m_function_call_stack.end()) {
+				FunctionCallStackScope diagnostic_frame(*m_program, node);
 				m_function_call_stack.push_back(definition.get());
 				m_program->function_definition_stack.push(definition);
 				definition->accept(*this);
 				m_program->function_definition_stack.pop();
 				m_function_call_stack.pop_back();
 			}
-			definition->visited = true;
 		}
 
 		if(node.kind == NodeFunctionCall::Kind::Constructor) {
 			// temporary constructor only  when in access chain or func arg of func that is not constructor
 			node.is_temporary_constructor = node.is_func_arg() || node.parent->cast<NodeAccessChain>();
-			if(auto struct_def = definition->parent->cast<NodeStruct>()) {
-				increase_num_constructors(struct_def);
+			if(definition and definition->parent) {
+				if(auto struct_def = definition->parent->cast<NodeStruct>()) {
+					increase_num_constructors(struct_def);
+				}
 			}
 		}
 
@@ -152,12 +143,6 @@ private:
 	static void add_expr_to_num_constructors(std::unordered_map<NodeStruct*, std::unique_ptr<NodeAST>> &map, NodeStruct* key, std::unique_ptr<NodeAST> expr) {
 		if (expr == nullptr) return;
 		map[key] = add(map[key], expr);
-		// auto it = m_num_constructors.find(key);
-		// if(it != m_num_constructors.end()) {
-		// 	auto& num = it->second;
-		// 	num = std::move(add(expr, num));
-		// } else {
-		// }
 	}
 
 	static std::unique_ptr<NodeAST> add(std::unique_ptr<NodeAST>& left, std::unique_ptr<NodeAST>& right) {
@@ -167,46 +152,59 @@ private:
 		} else if (!right) {
 			return std::move(left);
 		}
-		return std::make_unique<NodeBinaryExpr>(token::ADD, std::move(left), std::move(right), left->tok);
+		const Token tok = left->tok;
+		return std::make_unique<NodeBinaryExpr>(token::ADD, std::move(left), std::move(right), tok);
+	}
+
+	[[nodiscard]] std::unique_ptr<NodeAST> resolve_fixed_value(const NodeAST& expr) const {
+		auto statement = std::make_unique<NodeStatement>(expr.clone(), expr.tok);
+		statement->do_constant_folding(&database);
+		auto folded = std::move(statement->statement);
+		folded->parent = nullptr;
+		return folded->cast<NodeInt>() ? std::move(folded) : nullptr;
 	}
 
 	// multiply all loop iterations together if there are multiple loops
 	[[nodiscard]] std::unique_ptr<NodeAST> determine_num_iterations() const {
 		std::unique_ptr<NodeAST> all_num;
 		for(auto loop: m_loop_stack) {
-			if(loop->determine_linear()) {
-				if(auto num = loop->get_num_iterations()) {
-					all_num = all_num ? std::make_unique<NodeBinaryExpr>(token::MULT, std::move(all_num), std::move(num), num->tok) : std::move(num);
-				}
-			} else {
-				return nullptr;
-			}
+			auto num = loop->get_num_iterations();
+			if (!num) return nullptr;
+			num = resolve_fixed_value(*num);
+			if (!num) return nullptr;
+			const Token tok = num->tok;
+			all_num = all_num
+				? std::make_unique<NodeBinaryExpr>(token::MULT, std::move(all_num), std::move(num), tok)
+				: std::move(num);
 		}
-		return all_num;
+		return all_num ? resolve_fixed_value(*all_num) : nullptr;
+	}
+
+	void mark_unbounded(NodeStruct* struct_def) {
+		m_unbounded_structs.insert(struct_def);
+		m_num_constructors.erase(struct_def);
 	}
 
 	void increase_num_constructors(NodeStruct* struct_def) {
+		if (m_unbounded_structs.contains(struct_def)) return;
+
 		// if we are in on init or persistence (and maybe in a function call stack)
 		if (is_static_callback()) {
 			std::unique_ptr<NodeAST> num_constructor_calls = std::make_unique<NodeInt>(1, Token());
 			// if the constructor is called in a linear loop environment, add the number of iterations to the constructor count
 			if (!m_loop_stack.empty()) {
 				num_constructor_calls = determine_num_iterations();
+				if (!num_constructor_calls) {
+					mark_unbounded(struct_def);
+					return;
+				}
 			}
 
-			if (m_function_call_stack.empty()) {
-				add_expr_to_num_constructors(m_num_constructors, struct_def, std::move(num_constructor_calls));
-			} else {
-				// for (auto func : std::ranges::reverse_view(m_function_call_stack)) {
-				// 	// if we are in a function then first add to map
-				// 	add_expr_to_num_constructors(m_num_constructors_per_func[func], struct_def, std::move(num_constructor_calls));
-				// }
-			}
-
-
+			add_expr_to_num_constructors(m_num_constructors, struct_def, std::move(num_constructor_calls));
 		} else {
-			// if it is not called in a linear env, remove from constructor count map
-			m_num_constructors.erase(struct_def);
+			// A constructor reachable from a dynamic callback cannot be bounded by the
+			// number of static call sites, so keep the regular fallback heap size.
+			mark_unbounded(struct_def);
 		}
 	}
 };

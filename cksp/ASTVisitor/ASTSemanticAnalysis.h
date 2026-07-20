@@ -65,29 +65,34 @@ public:
 
 	/// updates the node types of parameters at call sites regarding the function definition
 	/// e.g. params can be incorrectly detected as variable refs at call sites, but they are arrays in the definition
-	static void update_func_call_node_types(const NodeFunctionCall* func_call);
+	void update_func_call_node_types(const NodeFunctionCall* func_call) const;
 	/// updates incorrectly detected function params (eg arrays detected as variables)
 	static NodeDataStructure* replace_incorrectly_detected_data_struct(const std::shared_ptr<NodeDataStructure>& data_struct);
 	/// updated incorrectly detected references of function params
 	static NodeReference* replace_incorrectly_detected_reference(NodeReference* reference);
 
+	/// warns when a pass-by-value function parameter is modified in the function body,
+	/// once per parameter. The modification is local and lost at the call site
+	void check_param_modification(NodeReference& ref);
+
 	/// track functions in use to search for recursive calls
 	std::unordered_set<NodeFunctionDefinition*> m_functions_in_use{};
+	/// parameters already warned about being modified while passed by value
+	std::unordered_set<const NodeFunctionParam*> m_warned_params{};
 	bool check_recursion(NodeFunctionDefinition* func) const {
 		if(m_functions_in_use.contains(func)) {
 			// recursive function call detected
-			auto error = CompileError(ErrorType::SyntaxError, "", "", func->tok);
-			error.m_message = "Found recursive function call <"+func->header->name+">. Calling functions inside their definition is not allowed.";
-			error.m_got = "Function cycle with: ";
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", func->tok);
+			error.message = "Found recursive function call <"+func->header->name+">. Calling functions inside their definition is not allowed.";
+			error.actual = "Function cycle with: ";
 			for (const auto fun : m_functions_in_use) {
-				error.m_got += "<"+fun->header->name+">, ";
+				error.actual += "<"+fun->header->name+">, ";
 			}
-			error.m_got.erase(error.m_got.size() - 2);
-			error.exit();
+			error.actual.erase(error.actual.size() - 2);
+			diagnostics().fatal(std::move(error));
 			return true;
 		}
 		return false;
 	}
 
 };
-

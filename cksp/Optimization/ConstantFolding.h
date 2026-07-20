@@ -6,8 +6,11 @@
 
 #include <functional>
 #include "../ASTVisitor/ASTOptimizations.h"
+#include "ConstantDatabase.h"
+#include "../Lowering/LoweringNumElements.h"
 
 class ConstantFolding final : public ASTOptimizations {
+	const ConstantDatabase* m_database = nullptr;
 	// if it is a pass over the whole program, this will be set to true
 	// if it is only locally over a node, this pass will not visit functions as to
 	// not set function definitions to visited in another pass
@@ -16,7 +19,6 @@ class ConstantFolding final : public ASTOptimizations {
 	// when visiting a variableRef, it will NOT try to do a constant value replacement
 	// since that is the task of another optimization pass
 	bool m_complete_traversal = false;
-	std::mutex m_mutex;
 	static bool is_zero(const NodeInt* node) {
 		return node && node->value == 0;
 	}
@@ -26,6 +28,11 @@ class ConstantFolding final : public ASTOptimizations {
 	static std::unique_ptr<NodeInt> get_int(int32_t value, const Token& tok) {
 		return std::make_unique<NodeInt>(value, tok);
 	}
+	static NodeAST* replace_with_int(NodeAST& node, const int32_t value) {
+		auto replacement = get_int(value, node.tok);
+		replacement->ty = TypeRegistry::Integer;
+		return node.replace_with(std::move(replacement));
+	}
 	static bool all_params_are_type(const NodeFunctionCall& node, NodeType type) {
 		for(const auto & param : node.function->args->params) {
 			if(param->get_node_type() != type) return false;
@@ -34,6 +41,9 @@ class ConstantFolding final : public ASTOptimizations {
 	}
 
 public:
+	explicit ConstantFolding(const ConstantDatabase* database = nullptr)
+		: m_database(database) {}
+
 	NodeAST *do_parallel_traversal(NodeProgram &node) {
 		m_visit_functions = false;
 		m_complete_traversal = true;
@@ -76,17 +86,89 @@ private:
 		// only try to substitute variable references with constants if we are doing
 		// this pass locally
 		if (!m_complete_traversal) {
+			if(m_database and !node.is_engine) {
+				const auto declaration = node.get_declaration();
+				if(m_database->contains(declaration.get())) {
+					if(auto value = m_database->clone_value(declaration.get())) {
+						if(!value->ty or !node.ty or value->ty->is_compatible(node.ty)) {
+							return node.replace_with(std::move(value));
+						}
+					}
+				}
+			}
 			return node.try_constant_value_replace();
 		}
 		return &node;
 	}
 
-	// NodeAST* visit(NodeNumElements& node) override {
-	// 	if (!m_complete_traversal) {
-	// 		return node.post_lower(nullptr)->accept(*this);
-	// 	}
-	// 	return ASTVisitor::visit(node);
-	// }
+	NodeAST* visit(NodeArrayRef& node) override {
+		if(node.index) node.index->accept(*this);
+		if(m_complete_traversal or !m_database or node.is_engine or node.data_type != DataType::Const) {
+			return &node;
+		}
+		const auto index = node.index ? node.index->cast<NodeInt>() : nullptr;
+		if(!index) return &node;
+		if(auto value = m_database->clone_element(node.get_declaration().get(), index->value)) {
+			return node.replace_with(std::move(value));
+		}
+		return &node;
+	}
+
+	NodeAST* visit(NodeNumElements& node) override {
+		if(m_complete_traversal or !m_database or !node.array) {
+			return ASTVisitor::visit(node);
+		}
+		if(node.dimension) node.dimension->accept(*this);
+
+		const auto declaration = node.array->get_declaration();
+		if(!declaration) return &node;
+
+		if(declaration->cast<NodeArray>()) {
+			if(node.dimension) return &node;
+			if(const auto size = m_database->get_array_size(declaration.get())) {
+				return replace_with_int(node, *size);
+			}
+			return &node;
+		}
+
+		if(const auto nd_array = declaration->cast<NodeNDArray>()) {
+			if(const auto nd_ref = node.array->cast<NodeNDArrayRef>()) {
+				if(nd_ref->indexes and nd_ref->num_wildcards()) {
+					LoweringNumElements::handle_wildcard_notation(*nd_ref, *nd_array, node);
+				}
+			}
+
+			int32_t dimension = 0;
+			if(node.dimension) {
+				const auto dimension_node = node.dimension->cast<NodeInt>();
+				if(!dimension_node) return &node;
+				dimension = dimension_node->value;
+			}
+
+			const auto num_dimensions = m_database->get_num_dimensions(declaration.get());
+			if(num_dimensions == 0 or dimension < 0 or dimension > static_cast<int32_t>(num_dimensions)) {
+				return &node;
+			}
+			if(dimension > 0) {
+				if(const auto size = m_database->get_array_size(declaration.get(), dimension - 1)) {
+					return replace_with_int(node, *size);
+				}
+				return &node;
+			}
+
+			int64_t total_size = 1;
+			for(size_t idx = 0; idx < num_dimensions; ++idx) {
+				const auto size = m_database->get_array_size(declaration.get(), idx);
+				if(!size) return &node;
+				total_size *= *size;
+			}
+			if(total_size <= std::numeric_limits<int32_t>::max()) {
+				return replace_with_int(node, static_cast<int32_t>(total_size));
+			}
+		}
+
+		return &node;
+	}
 
 	NodeAST* visit(NodeFunctionCall& node) override {
 		if (m_visit_functions) {
@@ -260,8 +342,8 @@ private:
 					}
 				// division by zero
 				} else if (is_zero(right_int) and node.op == token::DIV) {
-					auto error = CompileError(ErrorType::MathError,"","", node.tok);
-					error.m_message = "Found division by zero. Result will be infinite.";
+					auto error = Diagnostic(ErrorType::MathError,"","", node.tok);
+					error.message = "Found division by zero. Result will be infinite.";
 					error.exit();
 				} else if (left_int or right_int) {
 					// der bekannte  Integer
@@ -375,8 +457,8 @@ private:
 			if (MATH_TOKENS.contains(node.op)) {
 				// check division by zero
 				if (node.op == token::DIV && is_zero(right_real)) {
-					auto error = CompileError(ErrorType::MathError,"","", node.tok);
-					error.m_message = "Found division by zero. Result will be infinite.";
+					auto error = Diagnostic(ErrorType::MathError,"","", node.tok);
+					error.message = "Found division by zero. Result will be infinite.";
 					error.exit();
 				}
 				// constant folding
@@ -406,7 +488,7 @@ private:
 						{token::GREATER_EQUAL, [](const double a, const double b) { return (a >= b) ? 1 : 0; }},
 					};
 					if (bool_operations.contains(node.op)) {
-						int32_t result = bool_operations[node.op](left_real->value, left_real->value);
+						int32_t result = bool_operations[node.op](left_real->value, right_real->value);
 						auto new_node = std::make_unique<NodeInt>(result, node.tok);
 						new_node->ty = TypeRegistry::Integer;
 						return node.replace_with(std::move(new_node));
@@ -417,4 +499,3 @@ private:
 		return &node;
 	}
 };
-

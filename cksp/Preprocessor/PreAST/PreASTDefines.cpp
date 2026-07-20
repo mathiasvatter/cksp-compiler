@@ -7,6 +7,7 @@
 #include <sstream>
 
 #include "PreASTPragma.h"
+#include "../../Source/ReferenceIndex.h"
 
 PreNodeAST *PreASTDefines::visit(PreNodeProgram &node) {
 	m_program = &node;
@@ -27,11 +28,19 @@ PreNodeAST *PreASTDefines::do_substitution(PreNodeLiteral &node) {
 	if(m_program->define_call_stack.empty()) return &node;
 	if (!m_substitution_stack.empty()) {
 		if (auto substitute = get_substitute(node.tok.val)) {
+			// go-to-definition: this is an argument usage inside the define body (the clone
+			// still carries definition-site positions) -> link it to the header argument
+			if (m_reference_index && !m_param_token_stack.empty()) {
+				const auto& params = m_param_token_stack.top();
+				if (const auto it = params.find(node.tok.val); it != params.end()) {
+					m_reference_index->add_link(node.tok, it->second);
+				}
+			}
 			return node.replace_with(std::move(substitute));
 		} else if(node.cast<PreNodeKeyword>()) {
 			// in case there are more # substitutions in one word
 			if (StringUtils::count_char(node.tok.val, '#') >= 2) {
-				node.tok.val = get_text_replacement(node.tok);
+				node.tok = get_text_replacement_token(node.tok);
 			}
 		}
 	}
@@ -114,9 +123,9 @@ PreNodeAST *PreASTDefines::visit(PreNodeDefineStatement &node) {
 void PreASTDefines::check_recursion(const Token &tok) const {
 	if(m_defines_used.contains(tok.val)) {
 		// recursive function call detected
-		auto error = CompileError(ErrorType::PreprocessorError, "", "", tok);
-		error.m_message = "Recursive <define> call detected. Calling <defines> inside their definition is not allowed.";
-		error.m_got = tok.val;
+		auto error = Diagnostic(ErrorType::PreprocessorError, "", "", tok);
+		error.message = "Recursive <define> call detected. Calling <defines> inside their definition is not allowed.";
+		error.actual = tok.val;
 		error.exit();
 	}
 }
@@ -129,9 +138,14 @@ PreNodeAST *PreASTDefines::visit(PreNodeDefineCall &node) {
 	//substitution
 	// auto node_new_chunk = std::make_unique<PreNodeChunk>(Token(), node.parent);
 	if (!node.definition) {
-		auto error = CompileError(ErrorType::InternalError, "", "", token_name);
-		error.m_message = "Undefined <define> called. This construct was marked as a <define-call> during parsing, but no definition was found during preprocessing. This is likely a bug in the preprocessor.";
+		auto error = Diagnostic(ErrorType::InternalError, "", "", token_name);
+		error.message = "Undefined <define> called. This construct was marked as a <define-call> during parsing, but no definition was found during preprocessing. This is likely a bug in the preprocessor.";
 		error.exit();
+	}
+
+	// go-to-definition: link this define usage to its definition's name
+	if (m_reference_index) {
+		m_reference_index->add_link(token_name, node.definition->header->name->tok);
 	}
 
 	m_defines_used.insert(token_name.val);
@@ -141,10 +155,24 @@ PreNodeAST *PreASTDefines::visit(PreNodeDefineCall &node) {
 	auto define_body = clone_as<PreNodeChunk>(node.definition->body.get());
 	// node_define_definition->parent = node.parent;
 	auto substitution_map = get_substitution_map(*define_header, *node.define);
+	inherit_substitutions(substitution_map);
 	m_substitution_stack.push(std::move(substitution_map));
+	if (m_reference_index) {
+		// remember the header argument tokens so body usages can link to them
+		std::unordered_map<std::string, Token> param_tokens;
+		const auto& header = *node.definition->header;
+		for (int i = 0; i < header.num_args(); i++) {
+			const auto* var = header.get_arg(i)->get_chunk(0);
+			if (var) param_tokens[var->tok.val] = var->tok;
+		}
+		m_param_token_stack.push(std::move(param_tokens));
+	}
 	define_body->accept(*this);
 	define_body->parent = node.parent;
 	m_substitution_stack.pop();
+	if (m_reference_index && !m_param_token_stack.empty()) {
+		m_param_token_stack.pop();
+	}
 	m_program->define_call_stack.pop();
 	m_defines_used.erase(token_name.val);
 	return node.replace_with(std::move(define_body));
@@ -164,9 +192,9 @@ std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> PreASTDefines::ge
 	for(int i= 0; i<definition.num_args(); i++) {
 		const auto &var = definition.get_arg(i)->get_chunk(0);
 		if(definition.get_arg(i)->num_chunks() > 1) {
-			auto error = CompileError(ErrorType::SyntaxError,"", "", definition.name->tok);
-			error.m_message = "Unable to substitute <define> arguments. Found wrong number of substitution tokens in <define-header>.";
-			error.m_got = definition.get_string();
+			auto error = Diagnostic(ErrorType::SyntaxError,"", "", definition.name->tok);
+			error.message = "Unable to substitute <define> arguments. Found wrong number of substitution tokens in <define-header>.";
+			error.actual = definition.get_string();
 			error.exit();
 		}
 		map[var->get_string()] = std::move(call.args->params[i]);

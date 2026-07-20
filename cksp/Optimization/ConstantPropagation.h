@@ -102,13 +102,13 @@ public:
 	}
 
 	NodeAST* visit(NodeGetControl& node) override {
-		auto error = CompileError(ErrorType::InternalError, "GetControl node should exist anymore in ConstantPropagation", "", node.tok);
+		auto error = Diagnostic(ErrorType::InternalError, "GetControl node should exist anymore in ConstantPropagation", "", node.tok);
 		error.exit();
 		return &node;
 	}
 
 	NodeAST* visit(NodeSetControl& node) override {
-		auto error = CompileError(ErrorType::InternalError, "SetControl node should exist anymore in ConstantPropagation", "", node.tok);
+		auto error = Diagnostic(ErrorType::InternalError, "SetControl node should exist anymore in ConstantPropagation", "", node.tok);
 		error.exit();
 		return &node;
 	}

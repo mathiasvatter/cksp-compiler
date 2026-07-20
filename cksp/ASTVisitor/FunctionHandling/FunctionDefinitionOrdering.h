@@ -44,7 +44,7 @@ private:
 		node.bind_definition(m_program, true);
 
 		if(node.kind == NodeFunctionCall::Kind::Property) {
-			CompileError(ErrorType::InternalError,"Found undefined property function.", "", node.tok).exit();
+			Diagnostic(ErrorType::InternalError,"Found undefined property function.", "", node.tok).exit();
 		}
 
 		if(node.kind == NodeFunctionCall::Kind::Builtin) return &node;

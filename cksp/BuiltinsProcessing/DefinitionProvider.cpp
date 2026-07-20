@@ -39,9 +39,9 @@ bool DefinitionProvider::add_scope() {
 
 bool DefinitionProvider::copy_last_scope() {
 	if(m_declared_data_structures.size() < 2) {
-		auto compile_error = CompileError(ErrorType::InternalError, "",-1, "","","");
-		compile_error.m_message = "Tried to copy last scope, but there is no last scope to copy.";
-		compile_error.exit();
+		auto diagnostic = Diagnostic(ErrorType::InternalError, "",-1, "","","");
+		diagnostic.message = "Tried to copy last scope, but there is no last scope to copy.";
+		diagnostic.exit();
 		return false;
 	}
 	const auto& last_scope = m_declared_data_structures[m_declared_data_structures.size() - 2];
@@ -56,10 +56,10 @@ bool DefinitionProvider::copy_last_scope() {
 
 std::unordered_map<std::string, std::shared_ptr<NodeDataStructure>, StringHash, StringEqual>
     DefinitionProvider::remove_scope() {
-    auto compile_error = CompileError(ErrorType::InternalError, "",-1, "","","");
+    auto diagnostic = Diagnostic(ErrorType::InternalError, "",-1, "","","");
     if(m_declared_data_structures.empty()) {
-        compile_error.m_message = "Tried to remove global scope.";
-        compile_error.exit();
+        diagnostic.message = "Tried to remove global scope.";
+        diagnostic.exit();
     }
 	auto passive_scope = std::move(m_declared_data_structures.back());
 	m_declared_data_structures.pop_back();
@@ -95,10 +95,10 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::get_declaration(NodeRefer
 		var.kind = NodeReference::Kind::User;
 		return pgs_decl;
 	}
-	// if(const auto &throwaway = get_throwaway_declaration(var)) {
-	// 	var.kind = NodeReference::Kind::Throwaway;
-	// 	return throwaway;
-	// }
+	if(const auto &throwaway = get_throwaway_declaration(var)) {
+		var.kind = NodeReference::Kind::Throwaway;
+		return throwaway;
+	}
 
 	// get builtin declaration if it exists
 	std::shared_ptr<NodeDataStructure> node_builtin_declaration = nullptr;
@@ -134,27 +134,27 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::set_declaration(const std
 
 	// is declaration and is builtin -> compile error
 	if (node_builtin_declaration) {
-		auto compile_error = CompileError(ErrorType::VariableError, "", "", var->tok);
-		compile_error.m_message = "Variable shadows builtin variable. Try renaming the variable.";
-		compile_error.exit();
+		auto diagnostic = Diagnostic(ErrorType::VariableError, "", "", var->tok);
+		diagnostic.message = "Variable shadows builtin variable. Try renaming the variable.";
+		diagnostic.exit();
 	}
 
 	// input var is declaration
 	if (auto data_struct = get_scoped_data_structure(var->name, global_scope)) {
-		auto compile_error = CompileError(ErrorType::VariableError, "", "", var->tok);
-		compile_error.m_message = "Data Structure has already been declared in this scope. Variables with different types but same names are not allowed. ";
+		auto diagnostic = Diagnostic(ErrorType::VariableError, "", "", var->tok);
+		diagnostic.message = "Data Structure has already been declared in this scope. Variables with different types but same names are not allowed. ";
 		if (data_struct->kind == NodeDataStructure::Compiler or var->kind == NodeDataStructure::Compiler) {
-			compile_error.m_message = "A variable of this name is needed internally by cksp. ";
+			diagnostic.message = "A variable of this name is needed internally by cksp. ";
 		} else {
-			compile_error.m_message += var->name + " is a redeclaration of " + data_struct->tok.val + " in line " + std::to_string(data_struct->tok.line) +". ";
+			diagnostic.message += var->name + " is a redeclaration of " + data_struct->tok.val + " in line " + std::to_string(data_struct->tok.line) +". ";
 		}
 		if(data_struct->is_function_param()) {
-			compile_error.m_message += "The original declaration is a function parameter. Function parameters cannot be shadowed.";
+			diagnostic.message += "The original declaration is a function parameter. Function parameters cannot be shadowed.";
 		} else {
-			compile_error.m_message += "Try renaming the variable to avoid shadowing.";
+			diagnostic.message += "Try renaming the variable to avoid shadowing.";
 		}
-        if(global_scope and !data_struct->is_engine) compile_error.m_message += "\nVariables declared in the <init> callback are always considered global, no local scopes are created.";
-		compile_error.exit();
+		if(global_scope and !data_struct->is_engine) diagnostic.message += "\nVariables declared in the <init> callback are always considered global, no local scopes are created.";
+		diagnostic.exit();
 	} else {
 		if(global_scope) {
 			m_declared_data_structures.at(0).insert({var->name, var});
@@ -225,6 +225,9 @@ void DefinitionProvider::set_builtin_widgets(std::unordered_map<std::string, std
 }
 
 std::shared_ptr<NodeFunctionDefinition> DefinitionProvider::get_builtin_function(const NodeFunctionHeaderRef *function) {
+	if (!function || !function->args) {
+		return nullptr;
+	}
 	const auto it = builtin_functions.find({function->name, (int)function->args->size()});
 	if(it != builtin_functions.end()) {
 		return it->second;
@@ -250,6 +253,9 @@ void DefinitionProvider::set_boolean_functions(
 }
 
 std::shared_ptr<NodeFunctionDefinition> DefinitionProvider::get_property_function(const NodeFunctionHeaderRef *function) {
+	if (!function || !function->args) {
+		return nullptr;
+	}
 	if(auto it = property_functions.find(function->name); it != property_functions.end()) {
 		return it->second;
 	}
@@ -259,6 +265,3 @@ std::shared_ptr<NodeFunctionDefinition> DefinitionProvider::get_property_functio
 void DefinitionProvider::set_property_functions(std::unordered_map<std::string, std::shared_ptr<NodeFunctionDefinition>> property_functions) {
 	DefinitionProvider::property_functions = std::move(property_functions);
 }
-
-
-

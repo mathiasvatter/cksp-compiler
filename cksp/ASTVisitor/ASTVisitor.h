@@ -4,12 +4,16 @@
 
 #pragma once
 
+#include <stdexcept>
+#include <fstream>
+
 #include "../Types/TypeRegistry.h"
 #include "../ASTNodes/AST.h"
 #include "../ASTNodes/ASTInstructions.h"
 #include "../ASTNodes/ASTDataStructures.h"
 #include "../ASTNodes/ASTReferences.h"
 #include "../BuiltinsProcessing/DefinitionProvider.h"
+#include "../../misc/DiagnosticEngine.h"
 
 #define TRACE() \
 std::fprintf(stderr, ">> %s\n", __PRETTY_FUNCTION__);
@@ -18,9 +22,24 @@ class ASTVisitor {
 protected:
 	NodeProgram* m_program = nullptr;
 
+	/**
+	 * Returns the diagnostic context attached to the visited program.
+	 * Compiler installs this context before starting any AST pass, so derived
+	 * visitors do not need global or thread-local diagnostic lookup.
+	 */
+	[[nodiscard]] DiagnosticEngine& diagnostics() const {
+		if (!m_program || !m_program->diagnostic_engine) {
+			throw std::logic_error("ASTVisitor has no DiagnosticEngine");
+		}
+		return *m_program->diagnostic_engine;
+	}
+
 public:
 	virtual ~ASTVisitor() = default;
-	static CompileError get_raw_compile_error(ErrorType err_type, const NodeAST& node);
+	virtual void set_program(NodeProgram* program) {
+		m_program = program;
+	}
+	static Diagnostic make_diagnostic(ErrorType err_type, const NodeAST& node);
     static std::unique_ptr<NodeBlock> make_while_loop(NodeReference* var, int32_t from, int32_t to, std::unique_ptr<NodeBlock> body, NodeAST* parent);
 	static std::unique_ptr<NodeIf> make_nil_check(std::unique_ptr<NodeReference> ref);
 	static std::shared_ptr<NodeVariable> get_iterator_var(const Token& tok, const std::string& name="_iter") {
@@ -167,7 +186,7 @@ public:
 		return &node;
 	}
 	virtual NodeAST* visit(NodeDelete& node) {
-//		CompileError(ErrorType::InternalError, "<Delete> node not yet implemented.", "", node.tok).exit();
+//		Diagnostic(ErrorType::InternalError, "<Delete> node not yet implemented.", "", node.tok).exit();
 		for(const auto &del : node.ptrs) {
 			del->accept(*this);
 		}
@@ -271,6 +290,11 @@ public:
 		node.else_branch->accept(*this);
 		return &node;
 	}
+	virtual NodeAST* visit(NodeNullCoalesce& node) {
+		node.chain->accept(*this);
+		node.fallback->accept(*this);
+		return &node;
+	}
     virtual NodeAST* visit(NodeFor& node) {
 		node.iterator->accept(*this);
 		node.iterator_end->accept(*this);
@@ -336,11 +360,11 @@ public:
 		node.reset_function_visited_flag();
 		return &node;
 	}
-    virtual NodeAST* visit(NodeBlock& node) {
+	virtual NodeAST* visit(NodeBlock& node) {
         for(const auto & stmt : node.statements) {
 			if(!stmt) {
-				auto error = CompileError(ErrorType::InternalError, "Null statement in block.", "", node.tok);
-				error.exit();
+				auto error = Diagnostic(ErrorType::InternalError, "Null statement in block.", "", node.tok);
+				diagnostics().fatal(std::move(error));
 			}
 			stmt->accept(*this);
 		}
@@ -350,6 +374,3 @@ public:
 		return &node;
     }
 };
-
-
-

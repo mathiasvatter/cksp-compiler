@@ -17,7 +17,7 @@ const Token &Processor::peek(const std::vector<Token> &tok, const int ahead) {
 	const auto idx = static_cast<long long>(m_pos) + ahead;
 	if (idx < 0 || idx >= static_cast<long long>(tok.size())) {
 		auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
-		CompileError(ErrorType::PreprocessorError, err_msg, tok.at(m_pos).line, "end token", tok.at(m_pos).val, tok.at(m_pos).file).exit();
+		Diagnostic(ErrorType::PreprocessorError, err_msg, "end token", m_curr_token).exit();
 	}
 	m_curr_token = tok[m_pos];
 	m_curr_token_type = m_curr_token.type;
@@ -32,7 +32,7 @@ const Token &Processor::peek(const int ahead) {
 const Token &Processor::consume(const std::vector<Token> &tok) {
 	if (m_pos >= tok.size()) {
 		const auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
-		CompileError(ErrorType::PreprocessorError, err_msg, tok.at(m_pos).line, "end token", tok.at(m_pos).val, tok.at(m_pos).file).exit();
+		Diagnostic(ErrorType::PreprocessorError, err_msg, "end token", m_curr_token).exit();
 	}
 	if (m_pos + 1 < tok.size()) {
 		m_curr_token = tok[m_pos + 1];
@@ -50,7 +50,7 @@ token Processor::peek_type(const int ahead) const {
 	const auto idx = static_cast<long long>(m_pos) + ahead;
 	if (idx < 0 || idx >= static_cast<long long>(m_tokens.size())) {
 		auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
-		CompileError(ErrorType::PreprocessorError, err_msg, m_tokens.at(m_pos).line, "end token", m_tokens.at(m_pos).val, m_tokens.at(m_pos).file).exit();
+		Diagnostic(ErrorType::PreprocessorError, err_msg, "end token", m_curr_token).exit();
 	}
 	return m_tokens[static_cast<size_t>(idx)].type;
 }
@@ -75,24 +75,23 @@ void Processor::remove_tokens(std::vector<Token> &tok, const size_t start, const
 			m_pos -= (end - start);
 	} else {
 		const auto err_msg = "Attempted to remove a token range out of bounds.";
-		CompileError(ErrorType::PreprocessorError, err_msg, tok.at(m_pos).line, "unknown", tok.at(m_pos).val, tok.at(m_pos).file).print();
-		exit(EXIT_FAILURE);
+		Diagnostic(ErrorType::PreprocessorError, err_msg, "unknown", m_curr_token).exit();
 	}
 }
 
-Result<Type*> Processor::parse_type_annotation(Type* ty) {
+Result<Type*> Processor::parse_type_annotation(Type* ty, TypeReferences* references) {
 	Type* type = TypeRegistry::Unknown;
 	if(peek().type == token::TYPE) {
 		consume(); // consume semicolon
-		auto parsed_type = parse_type();
+		auto parsed_type = parse_type(references);
 		if(parsed_type.is_error()) return Result<Type*>(parsed_type.get_error());
 		type = parsed_type.unwrap();
 		// if existing type is already not Unknown then there was an identifier
 		if (ty and ty != TypeRegistry::Unknown and ty != type) {
-			auto error = CompileError(ErrorType::ParseError,"", "", get_tok());
-			error.m_message = "Found identifier combined with differing type annotation. Identifier type must match annotation type.";
-			error.m_expected = type->to_string();
-			error.m_got = ty->to_string();
+			auto error = Diagnostic(ErrorType::ParseError,"", "", get_tok());
+			error.message = "Found identifier combined with differing type annotation. Identifier type must match annotation type.";
+			error.expected = type->to_string();
+			error.actual = ty->to_string();
 			return Result<Type *>(error);
 		}
 	// if no type annotation was provided but an identifier was
@@ -102,20 +101,20 @@ Result<Type*> Processor::parse_type_annotation(Type* ty) {
 	return Result<Type*>(type);
 }
 
-Result<Type*> Processor::parse_type() {
+Result<Type*> Processor::parse_type(TypeReferences* references) {
 	Type* type = TypeRegistry::Unknown;
-	auto error = CompileError(ErrorType::ParseError,"", "", get_tok());
+	auto error = Diagnostic(ErrorType::ParseError,"", "", get_tok());
 	if(peek().type != token::KEYWORD and peek().type != token::OPEN_PARENTH) {
-		error.m_message = "Found incorrect Type annotation syntax.";
+		error.message = "Found incorrect Type annotation syntax.";
 		return Result<Type*>(error);
 	}
 
 	if(peek().type == token::OPEN_PARENTH) {
-		auto func_type = _parse_function_type();
+		auto func_type = _parse_function_type(references);
 		if(func_type.is_error()) return Result<Type*>(func_type.get_error());
 		type = func_type.unwrap();
 	} else if(peek().type == token::KEYWORD) {
-		auto single_type = _parse_single_types();
+		auto single_type = _parse_single_types(references);
 		if(single_type.is_error()) return Result<Type*>(single_type.get_error());
 		type = single_type.unwrap();
 	}
@@ -123,16 +122,16 @@ Result<Type*> Processor::parse_type() {
 }
 
 
-Result<Type*> Processor::_parse_single_types() {
+Result<Type*> Processor::_parse_single_types(TypeReferences* references) {
 	auto type_token = consume(m_tokens);
 	Type* type = nullptr;
 	int dimensions = 0;
-	auto error = CompileError(ErrorType::ParseError,"", "", get_tok());
+	auto error = Diagnostic(ErrorType::ParseError,"", "", get_tok());
 	while (peek().type == token::OPEN_BRACKET) {
 		consume(); // consume the open bracket [
 		if (peek().type != token::CLOSED_BRACKET) {
-			error.m_message = "Expected closed bracket in Type annotation syntax.";
-			error.m_expected = type_token.val + "[]";
+			error.message = "Expected closed bracket in Type annotation syntax.";
+			error.expected = type_token.val + "[]";
 			return Result<Type *>(error);
 		}
 		consume(); // consume the closed bracket
@@ -144,10 +143,14 @@ Result<Type*> Processor::_parse_single_types() {
 		type = TypeRegistry::add_object_type(type_token.val);
 	}
 	if (!type) {
-		error.m_message = "Unknown Type annotation.";
-		error.m_expected = "valid type annotation";
+		error.message = "Unknown Type annotation.";
+		error.expected = "valid type annotation";
 		return Result<Type *>(error);
 	}
+	// Retain every written type name independently from the interned semantic Type.
+	// For composite annotations such as Foo[][] this intentionally records Foo,
+	// while the returned semantic type is wrapped below.
+	if (references) references->push_back({type, type_token});
 	// if composite type
 	if (dimensions > 0) {
 		type = TypeRegistry::add_composite_type(CompoundKind::Array, type, dimensions);
@@ -155,12 +158,12 @@ Result<Type*> Processor::_parse_single_types() {
 	return Result<Type*>(type);
 }
 
-Result<Type*> Processor::_parse_function_type() {
+Result<Type*> Processor::_parse_function_type(TypeReferences* references) {
 	std::vector<Type*> params;
 	// consume the open parenthesis
 	consume();
 	while(peek().type != token::CLOSED_PARENTH) {
-		auto type = parse_type();
+		auto type = parse_type(references);
 		if(type.is_error()) return Result<Type*>(type.get_error());
 		params.push_back(type.unwrap());
 		if(peek().type == token::COMMA) {
@@ -169,14 +172,14 @@ Result<Type*> Processor::_parse_function_type() {
 	}
 	consume(); // consume the closed parenthesis
 	if(peek().type != token::TYPE) {
-		auto error = CompileError(ErrorType::ParseError,"", "", get_tok());
-		error.m_message = "Found incorrect Function type syntax. Expected return type annotation.";
-		error.m_got = peek().val;
-		error.m_expected = ":";
+		auto error = Diagnostic(ErrorType::ParseError,"", "", get_tok());
+		error.message = "Found incorrect Function type syntax. Expected return type annotation.";
+		error.actual = peek().val;
+		error.expected = ":";
 		return Result<Type*>(error);
 	}
 	consume(); // consume the colon
-	auto return_type = parse_type();
+	auto return_type = parse_type(references);
 	if(return_type.is_error()) return Result<Type*>(return_type.get_error());
 	return Result<Type*>(TypeRegistry::add_function_type(params, return_type.unwrap()));
 }

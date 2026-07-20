@@ -21,13 +21,13 @@ public:
 
 	NodeAST *visit(NodeUseCount &node) override {
 		if (node.ref->ty->get_element_type()->get_type_kind() != TypeKind::Object) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-			error.m_message = "<use_count> can only be used with <Object> types. "+node.ref->tok.val+ " has to be a <Pointer> to an <Object> instance.";
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+			error.message = "<use_count> can only be used with <Object> types. "+node.ref->tok.val+ " has to be a <Pointer> to an <Object> instance.";
 			error.exit();
 		}
 		if(node.ref->ty->get_type_kind() == TypeKind::Composite) {
-			auto error = CompileError(ErrorType::SyntaxError, "", "", node.tok);
-			error.m_message = "<use_count> can not be used with <Composite> types. Use single <Array> or <NDArray> elements instead.";
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+			error.message = "<use_count> can not be used with <Composite> types. Use single <Array> or <NDArray> elements instead.";
 		}
 
 		std::string prefix = node.ref->ty->to_string();

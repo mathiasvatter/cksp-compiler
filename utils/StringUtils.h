@@ -51,6 +51,31 @@ template <typename StringType, typename... OtherReplacements>
     }
 }
 
+/// Escapes a string so it can be safely embedded as a JSON string literal content.
+inline std::string escape_json_string(const std::string& input) {
+    std::ostringstream out;
+    for (unsigned char c : input) {
+        switch (c) {
+            case '"':  out << "\\\""; break;
+            case '\\': out << "\\\\"; break;
+            case '\b': out << "\\b"; break;
+            case '\f': out << "\\f"; break;
+            case '\n': out << "\\n"; break;
+            case '\r': out << "\\r"; break;
+            case '\t': out << "\\t"; break;
+            default:
+                if (c < 0x20) {
+                    out << "\\u"
+                        << std::hex << std::uppercase
+                        << std::setw(4) << std::setfill('0')
+                        << static_cast<int>(c);
+                } else {
+                    out << static_cast<char>(c);
+                }
+        }
+    }
+    return out.str();
+}
 
 inline std::string escape_spaces(const std::string& path) {
     return StringUtils::replace(path, " ", "\\ ");
@@ -186,11 +211,19 @@ inline std::string normalize_sentence(std::string s) {
     return s;
 }
 
-// Hilfsfunktion für einzeilige Felder (Expected/Got)
+/// Helper function for Diagnostic fields, tims whitespace and adds a space after ","
 inline std::string normalize_field(std::string s) {
     s = StringUtils::trim(std::move(s));
     s = std::regex_replace(s, std::regex(R"(\s{2,})"), " ");
     return s;
+}
+
+inline std::string replace_tabs_with_spaces(const std::string& input, const int spaces_per_tab = 4) {
+    std::string output;
+    for (const char character : input) {
+        output += character == '\t' ? std::string(spaces_per_tab, ' ') : std::string(1, character);
+    }
+    return output;
 }
 
 /// Splits a string into a vector of substrings based on a delimiter character.
@@ -209,19 +242,25 @@ inline std::vector<std::string> split(const std::string& s, char delimiter) {
 }
 
 /// Joins a vector of strings into a single string using a delimiter character.
-inline std::string join(const std::vector<std::string>& elements, char delimiter) {
-    if (elements.empty()) {
+template <typename Container>
+inline std::string join(const Container& elements, const std::string& delimiter) {
+    auto it  = std::begin(elements);
+    auto end = std::end(elements);
+    if (it == end) {
         return "";
     }
 
     std::ostringstream oss;
-    for (size_t i = 0; i < elements.size(); ++i) {
-        oss << elements[i];
-        if (i < elements.size() - 1) {
-            oss << delimiter;
-        }
+    oss << *it;
+    for (++it; it != end; ++it) {
+        oss << delimiter << *it;
     }
     return oss.str();
+}
+
+template <typename Container>
+inline std::string join(const Container& elements, char delimiter) {
+    return join(elements, std::string(1, delimiter));
 }
 
 template<typename Container, typename Protector = std::string, typename Proj>
