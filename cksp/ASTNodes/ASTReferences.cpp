@@ -617,17 +617,32 @@ std::unique_ptr<NodeAST> NodeAccessChain::split(const size_t idx) {
 	}
 	auto first_chain = std::make_unique<NodeAccessChain>(std::move(left), tok);
 	first_chain->update_types();
-	std::vector<std::optional<Token>> opt_chains{};
-	opt_chains.reserve(idx);
-	for (size_t i = 0; i < idx; i++) {
-		opt_chains.push_back(std::move(opt_chaining_indexes[i]));
-		opt_chaining_indexes[i].reset();
-	}
-	first_chain->opt_chaining_indexes = std::move(opt_chains);
+	// std::vector<std::optional<Token>> opt_chains{};
+	// opt_chains.reserve(idx);
+	// for (size_t i = 0; i < idx; i++) {
+	// 	opt_chains.push_back(std::move(opt_chaining_indexes[i]));
+	// 	opt_chaining_indexes[i].reset();
+	// }
+	// first_chain->opt_chaining_indexes = std::move(opt_chains);
 	if (first_chain->chain.size() == 1) {
 		return std::move(first_chain->chain[0]);
 	}
 	return std::move(first_chain);
+}
+
+NodeAST* NodeAccessChain::accept_locals(ASTVisitor& visitor) {
+	for (size_t i = 0; i < chain.size(); i++) {
+		if (i == 0) {
+			chain[i]->accept(visitor);
+		} else if (const auto arr = chain[i]->cast<NodeArrayRef>()) {
+			if (arr->index) arr->index->accept(visitor);
+		} else if (const auto nd = chain[i]->cast<NodeNDArrayRef>()) {
+			if (nd->indexes) nd->indexes->accept(visitor);
+		} else if (const auto call = chain[i]->cast<NodeFunctionCall>()) {
+			if (call->function->args) call->function->args->accept(visitor);
+		}
+	}
+	return this;
 }
 
 ASTLowering* NodeAccessChain::get_lowering(NodeProgram *program) const {

@@ -100,19 +100,21 @@ public:
 		return 0;
 	}
 
-	/// builds the `<chain prefix> # nil` guard for the ?. at idx and consumes its token
+	/// builds the `<chain prefix> # nil` guard for the ?. at idx and consumes its token.
+	/// Resets the token on `node` itself rather than relying on split() to do so, so repeated
+	/// calls for a chain with multiple ?. (here and in LoweringNullCoalescing) terminate
+	/// regardless of what split() does with its own copy of the indexes.
 	static std::unique_ptr<NodeBinaryExpr> make_nil_check(NodeAccessChain& node, const size_t idx, const Token& opt_tok) {
 		auto first = node.split(idx + 1);
-		// the check itself guards this ?. -> the split-off prefix carries no optional token
-		if (const auto first_chain = cast_node<NodeAccessChain>(first.get())) {
-			first_chain->opt_chaining_indexes[idx].reset();
-		}
-		return std::make_unique<NodeBinaryExpr>(
+		node.opt_chaining_indexes[idx].reset();
+		auto condition = std::make_unique<NodeBinaryExpr>(
 			token::NOT_EQUAL,
 			std::move(first),
 			std::make_unique<NodeNil>(opt_tok),
 			opt_tok
 		);
+		condition->collect_references();
+		return condition;
 	}
 
 	static Diagnostic throw_value_context_error(const NodeAccessChain& node) {
@@ -279,21 +281,7 @@ private:
 	}
 
 	NodeAST* visit(NodeAccessChain& node) override {
-		// only the head of a chain is a variable; the later elements are struct members
-		// and must keep their member declarations. Indexes and call arguments of the
-		// later elements can still reference local variables
-		for (size_t i = 0; i < node.chain.size(); i++) {
-			if (i == 0) {
-				node.chain[i]->accept(*this);
-			} else if (const auto arr = node.chain[i]->cast<NodeArrayRef>()) {
-				if (arr->index) arr->index->accept(*this);
-			} else if (const auto nd = node.chain[i]->cast<NodeNDArrayRef>()) {
-				if (nd->indexes) nd->indexes->accept(*this);
-			} else if (const auto call = node.chain[i]->cast<NodeFunctionCall>()) {
-				if (call->function->args) call->function->args->accept(*this);
-			}
-		}
-		return &node;
+		return node.accept_locals(*this);
 	}
 
 };

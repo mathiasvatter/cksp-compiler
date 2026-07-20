@@ -44,10 +44,12 @@ private:
 			node.tok,
 			std::move(node.if_branch)
 		);
+		const auto if_return_ptr = if_return.get();
 		auto else_return = std::make_unique<NodeReturn>(
 			node.tok,
 			std::move(node.else_branch)
 		);
+		const auto else_return_ptr = else_return.get();
 
 		auto if_statement = std::make_unique<NodeIf>(node.tok);
 		if_statement->set_condition(std::move(node.condition));
@@ -80,6 +82,8 @@ private:
 			),
 			node.tok
 		);
+		if_return_ptr->definition = ternary_def;
+		else_return_ptr->definition = ternary_def;
 
 		// add local vars as params to ternary function
 		auto local_vars = std::move(m_local_vars);
@@ -143,5 +147,8 @@ private:
 		return &node;
 	}
 
+	NodeAST* visit(NodeAccessChain& node) override {
+		return node.accept_locals(*this);
+	}
 
 };

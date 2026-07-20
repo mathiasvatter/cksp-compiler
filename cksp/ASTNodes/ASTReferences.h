@@ -427,6 +427,13 @@ struct NodeAccessChain final : NodeReference {
 
 	/// non-destructive, returns nodes split at the idx point where chain[0, idx)
 	std::unique_ptr<NodeAST> split(size_t idx);
+	/// Visits only the parts of the chain that can reference a real local variable: the head
+	/// (chain[0], an ordinary reference) and the index/argument sub-expressions of every later
+	/// element. Later elements are struct members resolved by name, not local variables
+	/// themselves, so they must not be visited as a whole -> passes that promote local
+	/// variables to function parameters (LoweringTernaryOperator, LoweringNullCoalescing) use
+	/// this instead of a plain chain traversal to avoid mistaking a member's declaration for one.
+	NodeAST* accept_locals(ASTVisitor& visitor);
 	/// returns variable ref if access chain is incorrectly detected array/list/ndarray size constant
 //	std::unique_ptr<NodeVariableRef> is_size_constant();
 
