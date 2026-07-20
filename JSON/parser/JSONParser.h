@@ -59,10 +59,10 @@ private:
 			case jtoken::NUL:
 				consume();
 				return std::make_unique<JSONNull>();
-			case jtoken::TRUE:
+			case jtoken::BOOLEAN_TRUE:
 				consume();
 				return std::make_unique<JSONBool>(true);
-			case jtoken::FALSE:
+			case jtoken::BOOLEAN_FALSE:
 				consume();
 				return std::make_unique<JSONBool>(false);
 			default:

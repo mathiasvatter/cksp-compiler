@@ -159,7 +159,7 @@ Result<std::unique_ptr<NodeString>> Parser::parse_string(NodeAST* parent) {
 
 Result<std::unique_ptr<NodeAST> > Parser::parse_boolean(NodeAST *parent) {
 	auto boolean = consume(); // consume 'true'/'false'
-	auto node_boolean = std::make_unique<NodeBoolean>(boolean.type == token::TRUE, boolean);
+	auto node_boolean = std::make_unique<NodeBoolean>(boolean.type == token::BOOLEAN_TRUE, boolean);
 	node_boolean->set_range(boolean);
 	node_boolean->parent = parent;
 	return Result<std::unique_ptr<NodeAST>>(std::move(node_boolean));
@@ -610,7 +610,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr(NodeAST* parent) {
 		return parse_unary_expr(parent);
 	} else if (peek().type == token::OPEN_BRACKET) {
 		return parse_init_list(parent);
-	} else if (peek().type == token::TRUE || peek().type == token::FALSE) {
+	} else if (peek().type == token::BOOLEAN_TRUE || peek().type == token::BOOLEAN_FALSE) {
 		return parse_boolean(parent);
 	} else if (peek().type == token::NIL) {
 		return parse_nil(parent);

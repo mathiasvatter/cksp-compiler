@@ -4,7 +4,12 @@
 
 #pragma once
 
-#include <iostream>
+#include <cstddef>
+#include <optional>
+#include <ostream>
+#include <string>
+#include <unordered_map>
+#include <utility>
 
 /**
  * Defines the token types used in the JSON parser.
@@ -31,8 +36,8 @@
     XX(OPEN_CURLY, "closed_curly") \
     XX(CLOSED_CURLY, "closed_curly") \
     XX(NUL, "null") \
-	XX(TRUE, "true") \
-	XX(FALSE, "false")
+	XX(BOOLEAN_TRUE, "true") \
+	XX(BOOLEAN_FALSE, "false")
 
 
 #define JSON_ENUM(name, str) name,
@@ -65,8 +70,8 @@ inline std::unordered_map<char, jtoken> JSON_PUNCTUATION = {
 
 inline std::optional<jtoken> get_json_keyword_token(const std::string& value) {
 	std::unordered_map<std::string, jtoken> JSON_KEYWORDS = {
-		{"false", jtoken::FALSE},
-		{"true", jtoken::TRUE},
+		{"false", jtoken::BOOLEAN_FALSE},
+		{"true", jtoken::BOOLEAN_TRUE},
 		{"null", jtoken::NUL},
 	};
 	if (auto const it = JSON_KEYWORDS.find(value); it != JSON_KEYWORDS.end()) {
