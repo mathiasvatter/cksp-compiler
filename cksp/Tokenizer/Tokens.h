@@ -4,10 +4,13 @@
 
 #pragma once
 #include <iostream>
+#include <optional>
+#include <set>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
-#include <set>
 
 #include "version.h"
 
@@ -298,4 +301,3 @@ inline static std::unordered_map<token, std::string> GENERATE_ALL_OPERATORS = []
 	ops.insert(GENERATE_STRING_OPERATOR.begin(), GENERATE_STRING_OPERATOR.end());
 	return ops;
 }();
-

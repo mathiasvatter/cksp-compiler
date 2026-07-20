@@ -11,6 +11,7 @@
 #include <ostream>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include "JsonRpcMessage.h"
@@ -53,7 +54,7 @@ inline std::optional<JsonRpcMessage> JsonRpcConnection::read_message() const {
 		}
 		if (line.empty()) break;
 
-		constexpr std::string prefix = "Content-Length:";
+		constexpr std::string_view prefix = "Content-Length:";
 		if (StringUtils::starts_with(line, prefix)) {
 			const std::string value = line.substr(prefix.length());
 			content_length = (std::size_t)std::stoul(value);
