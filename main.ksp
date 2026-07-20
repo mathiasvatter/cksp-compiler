@@ -38,7 +38,7 @@ declare empty_wrapper: Wrapper := nil
 
 on init
     // standalone method call: only runs if point is not nil
-    point?.get_x()
+    _ := point?.get_x() ?? 0
 
     // assignment target: only assigns if point is not nil
     point?.x := 5

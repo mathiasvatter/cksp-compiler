@@ -136,6 +136,7 @@ add_library(cksp_core STATIC
         utils/Gensym.h
         utils/Timer.h
         cksp/Compiler.h
+        cksp/CompilerConfig.h
         cksp/ASTVisitor/ASTOptimizations.h
         cksp/ASTVisitor/ASTOptimizations.cpp
         cksp/ASTVisitor/ASTVariableChecking.h
@@ -260,6 +261,8 @@ add_library(cksp_core STATIC
         cksp/ASTVisitor/ASTCheck.h
         cksp/ASTVisitor/ASTObfuscate.h
         cksp/BuiltinsProcessing/EngineConstantsIntegers.h
+        utils/IdentifierObfuscator.h
+        cksp/Lowering/LoweringOptionalChaining.h
 )
 add_dependencies(cksp_core generate_headers)
 
@@ -274,7 +277,6 @@ add_executable(cksp
         main.cpp
         misc/CommandLineOptions.cpp
         misc/CrashReporter.h
-        cksp/CompilerConfig.h
         lsp/JsonRpcConnection.h
         lsp/JsonRpcMessage.h
         lsp/LanguageServer.cpp
@@ -290,7 +292,5 @@ add_executable(cksp
         lsp/DiagnosticPublisher.h
         lsp/EntryPointResolver.cpp
         lsp/EntryPointResolver.h
-        utils/IdentifierObfuscator.h
-        cksp/Lowering/LoweringOptionalChaining.h
 )
 target_link_libraries(cksp PRIVATE cksp_core)
