@@ -4,6 +4,11 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cctype>
+#include <functional>
+#include <iterator>
+#include <memory>
 #include <string>
 #include "../cksp/ASTNodes/ASTHelper.h"
 #include "../cksp/Types/Types.h"

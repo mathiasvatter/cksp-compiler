@@ -4,13 +4,16 @@
 
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
 #include <map>
+#include <memory>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include <memory>
 
 class JSONVisitor;
 class JSONPrintVisitor;

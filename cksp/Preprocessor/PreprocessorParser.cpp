@@ -293,7 +293,7 @@ Result<std::unique_ptr<PreNodePragma>> PreprocessorParser::parse_pragma(PreNodeA
         return Result<std::unique_ptr<PreNodePragma>>(Diagnostic(ErrorType::PreprocessorError, pragma_error_msg, "(", peek()));
     }
     consume(); // consume (
-    if(peek().type != token::KEYWORD and peek().type != token::STRING and peek().type != token::INT and peek().type != token::TRUE and peek().type != token::FALSE) {
+    if(peek().type != token::KEYWORD and peek().type != token::STRING and peek().type != token::INT and peek().type != token::BOOLEAN_TRUE and peek().type != token::BOOLEAN_FALSE) {
         return Result<std::unique_ptr<PreNodePragma>>(Diagnostic(ErrorType::PreprocessorError, pragma_error_msg, "Valid pragma parameter in <string>, <integer>, <bool> format.", peek()));
     }
     auto result_keyword = parse_keyword(node_pragma.get());

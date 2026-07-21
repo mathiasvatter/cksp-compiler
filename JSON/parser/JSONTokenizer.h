@@ -4,7 +4,12 @@
 
 #pragma once
 
+#include <cctype>
+#include <cstddef>
+#include <string>
 #include <utility>
+#include <vector>
+
 #include "JSONTokens.h"
 #include "../error/JSONError.h"
 

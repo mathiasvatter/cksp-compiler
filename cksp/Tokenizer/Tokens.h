@@ -4,10 +4,13 @@
 
 #pragma once
 #include <iostream>
+#include <optional>
+#include <set>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
-#include <set>
 
 #include "version.h"
 
@@ -127,8 +130,8 @@
     XX(UI_CONTROL, "ui_control")\
     XX(RETURN, "return")\
     XX(REF, "ref")\
-    XX(FALSE, "false")\
-    XX(TRUE, "true")\
+    XX(BOOLEAN_FALSE, "false")\
+	XX(BOOLEAN_TRUE, "true")\
     XX(NEW, "new")\
     XX(DELETE, "delete")\
     XX(STATIC, "static")\
@@ -202,7 +205,7 @@ inline std::unordered_map<std::string, token> STATEMENT_SYNTAX = {{"to", token::
 																  {"case", token::CASE}, {"in", token::IN}, {"default", token::DEFAULT}, {"break", token::BREAK}};
 inline std::unordered_map<std::string, token> FUNCTION_SYNTAX = {{"override", token::OVERRIDE}, {"call", token::CALL}, {"return", token::RETURN}, {"ref", token::REF}};
 inline std::unordered_map<std::string, token> OBJECT_SYNTAX = {{"new", token::NEW}, {"delete", token::DELETE}, {"nil", token::NIL}, {"static", token::STATIC}};
-inline std::unordered_map<std::string, token> BOOLEAN_SYNTAX = {{"false", token::FALSE}, {"true", token::TRUE}, {"?", token::TERNARY}};
+inline std::unordered_map<std::string, token> BOOLEAN_SYNTAX = {{"false", token::BOOLEAN_FALSE}, {"true", token::BOOLEAN_TRUE}, {"?", token::TERNARY}};
 
 
 // control statements that also have an end
@@ -298,4 +301,3 @@ inline static std::unordered_map<token, std::string> GENERATE_ALL_OPERATORS = []
 	ops.insert(GENERATE_STRING_OPERATOR.begin(), GENERATE_STRING_OPERATOR.end());
 	return ops;
 }();
-
