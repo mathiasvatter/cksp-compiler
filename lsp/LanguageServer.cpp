@@ -78,6 +78,8 @@ void LanguageServer::handle_notification(const JsonRpcMessage& message) {
 		handle_did_change(message);
 	} else if (method->value == "textDocument/didClose") {
 		handle_did_close(message);
+	} else if (method->value == "workspace/didChangeWatchedFiles") {
+		handle_did_change_watched_files(message);
 	} else if (method->value == "exit") {
 		m_exit_requested = true;
 	}
@@ -168,6 +170,11 @@ void LanguageServer::analyze_entry(const SourceId& entry_source) {
 	}
 	std::lock_guard lock(m_state_mutex);
 	const auto entry = FileSystemSourceProvider::normalize(entry_source.value);
+	// A filesystem notification may arrive while this analysis is running. Do not let
+	// its now-stale result resurrect an entry that has already been removed.
+	if (m_deleted_sources.contains(entry.value)) {
+		return;
+	}
 	const bool has_successful_graph = m_references.has_successful_snapshot(entry);
 	// A failed analysis often has only a partial import graph. Use it to establish a new
 	// entry, but never replace graph ownership learned from a complete analysis.
@@ -177,6 +184,39 @@ void LanguageServer::analyze_entry(const SourceId& entry_source) {
 
 	m_references.publish(entry, compiler.reference_index(), result.success, std::move(successful_sources));
 	m_diagnostic_publisher.publish(entry_source, diagnostics.diagnostics());
+}
+
+void LanguageServer::mark_source_available(const SourceId& source) {
+	std::lock_guard lock(m_state_mutex);
+	m_deleted_sources.erase(FileSystemSourceProvider::normalize(source.value).value);
+}
+
+void LanguageServer::handle_deleted_source(const SourceId& deleted_source) {
+	const auto source = FileSystemSourceProvider::normalize(deleted_source.value);
+	std::vector<SourceId> affected_entries;
+	{
+		std::lock_guard lock(m_state_mutex);
+		m_deleted_sources.insert(source.value);
+		affected_entries = m_entry_points.affected_entries(source);
+
+		if (m_entry_points.is_known_entry(source)) {
+			m_entry_points.remove_entry(source);
+			m_diagnostic_publisher.discard_entry(source);
+			m_references.erase(source);
+		}
+		// Diagnostics located in the removed file must disappear immediately, including
+		// diagnostics owned by an importing entry point.
+		m_diagnostic_publisher.clear_source(source);
+	}
+
+	// Resolve dependents before removing the deleted entry above, then schedule the
+	// surviving entries directly. The deleted source itself must not be analyzed as a
+	// new standalone entry.
+	for (const auto& entry : affected_entries) {
+		if (FileSystemSourceProvider::normalize(entry.value) != source) {
+			schedule_analysis_for_source(entry);
+		}
+	}
 }
 
 void LanguageServer::analyze_entries_for_sources(const std::vector<SourceId>& changed_sources, const uint64_t generation) {
@@ -435,6 +475,7 @@ void LanguageServer::handle_did_open(const JsonRpcMessage& message) {
 	const auto version = text_document->get_int("version").value_or(0);
 	const auto source = source_from_uri(uri->value);
 	m_sources.update(source, text->value, version);
+	mark_source_available(source);
 	schedule_analysis_for_source(source);
 }
 
@@ -456,6 +497,7 @@ void LanguageServer::handle_did_change(const JsonRpcMessage& message) {
 	const auto version = text_document->get_int("version").value_or(0);
 	const auto source = source_from_uri(uri->value);
 	m_sources.update(source, text->value, version);
+	mark_source_available(source);
 	schedule_analysis_for_source(source);
 }
 
@@ -468,6 +510,13 @@ void LanguageServer::handle_did_close(const JsonRpcMessage& message) {
 	const auto source = source_from_uri(uri->value);
 	// Drop the in-memory buffer so reads fall back to disk again.
 	m_sources.close(source);
+	std::error_code exists_error;
+	const bool source_exists = std::filesystem::exists(
+		FileSystemSourceProvider::normalize(source.value).value, exists_error);
+	if (!source_exists && !exists_error) {
+		handle_deleted_source(source);
+		return;
+	}
 
 	bool standalone_entry = false;
 	{
@@ -492,5 +541,36 @@ void LanguageServer::handle_did_close(const JsonRpcMessage& message) {
 	} else {
 		// Re-analyse so any unsaved edits that were just discarded are reflected from disk.
 		schedule_analysis_for_source(source);
+	}
+}
+
+void LanguageServer::handle_did_change_watched_files(const JsonRpcMessage& message) {
+	// LSP FileChangeType: Created = 1, Changed = 2, Deleted = 3.
+	static constexpr int64_t DELETED = 3;
+	const auto* params = message.params() ? message.params()->as<JSONObject>() : nullptr;
+	const auto* changes_value = params ? params->get("changes") : nullptr;
+	const auto* changes = changes_value ? changes_value->as<JSONArray>() : nullptr;
+	if (!changes) return;
+
+	for (size_t i = 0; i < changes->size(); ++i) {
+		const auto* change_value = changes->at(i);
+		const auto* change = change_value ? change_value->as<JSONObject>() : nullptr;
+		const auto* uri = string_at(change, "uri");
+		const auto type = change ? change->get_int("type") : std::nullopt;
+		if (!uri || !type) continue;
+
+		const auto source = source_from_uri(uri->value);
+		if (*type == DELETED) {
+			// An open document remains authoritative even if its backing file disappears.
+			// didClose will perform the deletion cleanup once the overlay is released.
+			if (!m_sources.load(source).is_error()) {
+				schedule_analysis_for_source(source);
+				continue;
+			}
+			handle_deleted_source(source);
+		} else {
+			mark_source_available(source);
+			schedule_analysis_for_source(source);
+		}
 	}
 }
