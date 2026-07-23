@@ -6,6 +6,7 @@
 
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -47,6 +48,7 @@ class ReferenceIndex {
 	std::unordered_set<std::string> m_seen_references;
 	std::vector<QualifierDefinition> m_qualifier_definitions;
 	std::unordered_set<std::string> m_seen_qualifier_definitions;
+	mutable std::unordered_map<std::string, std::string> m_normalized_files;
 
 public:
 	/// Records a reference -> declaration link. The same visible source range can legitimately
@@ -59,6 +61,8 @@ public:
 	/// Same as add(), with a separate name range when the declaration range spans more than
 	/// the declared name (function headers span name, parameters and parenthesis).
 	void add(std::string ref_file, const SourceRange& ref_range, std::string def_file, const SourceRange& def_range, const SourceRange& def_name_range) {
+		ref_file = normalized_file(ref_file);
+		def_file = normalized_file(def_file);
 		const auto ref_key = reference_key(ref_file, ref_range);
 		const auto link_key = ref_key + "=>" + reference_key(def_file, def_range);
 		if (!m_seen_links.insert(link_key).second) return;
@@ -74,8 +78,7 @@ public:
 		const auto ref_range = source_range_from_token(reference);
 		const auto def_range = source_range_from_token(declaration);
 		if (!ref_range.is_valid() || !def_range.is_valid()) return;
-		add(FileSystemSourceProvider::normalize(reference.file).value, ref_range,
-			FileSystemSourceProvider::normalize(declaration.file).value, def_range);
+		add(reference.file, ref_range, declaration.file, def_range);
 	}
 
 	/// Records a named qualifier definition before desugaring removes its AST node.
@@ -83,7 +86,7 @@ public:
 		if (declaration.file.empty()) return;
 		const auto range = source_range_from_token(declaration);
 		if (!range.is_valid()) return;
-		auto file = FileSystemSourceProvider::normalize(declaration.file).value;
+		auto file = normalized_file(declaration.file);
 		auto key = name + "@" + file + "@" + range.to_string();
 		if (!m_seen_qualifier_definitions.insert(std::move(key)).second) return;
 		m_qualifier_definitions.push_back({std::move(name), std::move(file), range});
@@ -94,7 +97,7 @@ public:
 	[[nodiscard]] std::optional<QualifierDefinition> qualifier_definition(
 		const std::string& name,
 		const std::string& preferred_file) const {
-		const auto normalized_preferred = FileSystemSourceProvider::normalize(preferred_file).value;
+		const auto normalized_preferred = normalized_file(preferred_file);
 		for (const auto& definition : m_qualifier_definitions) {
 			if (definition.name == name && definition.file == normalized_preferred) return definition;
 		}
@@ -161,6 +164,15 @@ public:
 	}
 
 private:
+	[[nodiscard]] std::string normalized_file(const std::string& file) const {
+		if (const auto found = m_normalized_files.find(file); found != m_normalized_files.end()) {
+			return found->second;
+		}
+		auto normalized = FileSystemSourceProvider::normalize(file).value;
+		m_normalized_files.emplace(file, normalized);
+		return normalized;
+	}
+
 	static std::string reference_key(const std::string& file, const SourceRange& range) {
 		return file + "@"
 			+ std::to_string(range.start.line) + ":" + std::to_string(range.start.column) + "-"

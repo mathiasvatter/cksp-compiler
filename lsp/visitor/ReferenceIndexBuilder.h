@@ -58,7 +58,7 @@ private:
 			if (const auto definition = m_index.qualifier_definition(prefix, target.tok.file)) {
 				const auto token = segment_token(reference, offset, segments[i]);
 				m_index.add(
-					FileSystemSourceProvider::normalize(token.file).value,
+					token.file,
 					source_range_from_token(token),
 					definition->file,
 					definition->range);
@@ -135,8 +135,8 @@ private:
 		// the name range carries the exact identifier at the declaration, which rename
 		// edits replace; def_range may span the whole header for functions
 		m_index.add(
-			FileSystemSourceProvider::normalize(direct_reference.file).value, ref_range,
-			FileSystemSourceProvider::normalize(target.tok.file).value, def_range,
+			direct_reference.file, ref_range,
+			target.tok.file, def_range,
 			source_range_from_token(target.tok));
 	}
 
