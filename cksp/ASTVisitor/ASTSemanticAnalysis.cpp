@@ -256,6 +256,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeArrayRef &node) {
 
 NodeAST * ASTSemanticAnalysis::visit(NodeString &node) {
 	node.check_string_length();
+	node.check_ascii_characters();
 	if (!node.is_valid_string()) {
 		auto error = ASTVisitor::make_diagnostic(ErrorType::CompileError, node);
 		error.add_message("Invalid string literal: " + node.value);
@@ -548,5 +549,4 @@ NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(NodeR
 	}
 	return nullptr;
 }
-
 

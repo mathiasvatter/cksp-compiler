@@ -65,7 +65,7 @@ private:
 
 			decide_by_ref_or_value(*definition->header);
 
-			const bool is_callable_env = m_current_callback != m_program->init_callback and !definition->is_restricted;
+			const bool is_callable_env = m_current_callback and m_current_callback != m_program->init_callback and !definition->is_restricted;
 
 			if (definition->is_expression_function()) {
 				definition->is_inlined = true;
