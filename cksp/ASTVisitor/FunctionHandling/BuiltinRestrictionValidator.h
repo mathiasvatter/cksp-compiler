@@ -97,6 +97,18 @@ public:
 	   })() }
 	};
 
+	static bool is_persistence_command(const std::string& func_name) {
+		// built once from the existing PERSISTENCE_TOKENS map (values are vectors of command names)
+		static const std::unordered_set<std::string> persistence_commands = [] {
+			std::unordered_set<std::string> commands;
+			for (const auto& [tok, names] : PERSISTENCE_TOKENS) {
+				commands.insert(names.begin(), names.end());
+			}
+			return commands;
+		}();
+		return persistence_commands.contains(func_name);
+	}
+
 	static bool is_builtin_with_side_effects(const std::string& func_name) {
 		return func_name == "message" || m_restricted_functions.contains(func_name) || m_thread_unsafe_functions.contains(func_name);
 	}

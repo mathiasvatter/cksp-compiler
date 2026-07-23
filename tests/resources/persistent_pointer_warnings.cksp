@@ -1,0 +1,14 @@
+struct PersistentWarningObject
+	declare value: int
+end struct
+
+on init
+	declare pers declared_pointer: PersistentWarningObject
+	declare pers declared_pointer_array[2]: PersistentWarningObject[]
+	declare builtin_pointer: PersistentWarningObject
+	declare read_pointer: PersistentWarningObject
+	declare pers ordinary_value: int
+
+	make_persistent(builtin_pointer)
+	read_persistent_var(read_pointer)
+end on

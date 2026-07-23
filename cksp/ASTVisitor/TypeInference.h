@@ -13,8 +13,28 @@
 class TypeInference final : public ASTVisitor {
 	DefinitionProvider* m_def_provider;
 	std::vector<NodeFunctionCall*> m_func_calls;
-	/// positions of already reported discarded-return warnings for method calls
+	/// positions of already reported discarded-return warnings for method calls 
+	/// because type inference vists nodes multiple time
 	std::unordered_set<std::string> m_discard_warnings;
+	/// source locations and contexts of already reported persistent-pointer warnings
+	std::unordered_set<std::string> m_persistent_pointer_warnings;
+
+	static bool has_pointer_element_type(const NodeAST& node) {
+		const auto element_type = node.ty ? node.ty->get_element_type() : nullptr;
+		return element_type and element_type->get_type_kind() == TypeKind::Object;
+	}
+
+	void warn_if_persistent_pointer(const NodeAST& node, const std::string& context) {
+		if (!has_pointer_element_type(node)) return;
+		/// check if already visited
+		if (!m_persistent_pointer_warnings.insert(context + node.tok.get_position()).second) return;
+
+		auto warning = Diagnostic(ErrorType::CompileWarning, "", "", node.tok);
+		warning.message =
+			"Pointer variables should not be persistent because object references are not stable "
+			"across sessions or code changes.";
+		warning.report(diagnostics());
+	}
 
 	void do_monomorphization() {
 		// copy m_func_calls to avoid modification during iteration (especially when visiting nodes again
@@ -234,6 +254,7 @@ public:
 	NodeAST* do_complete_traversal(NodeProgram& node) {
 		m_func_calls.clear();
 		m_discard_warnings.clear();
+		m_persistent_pointer_warnings.clear();
 		m_def_provider->m_all_declarations.clear();
 		m_def_provider->m_all_references.clear();
 		m_def_provider->m_all_data_structures.clear();
@@ -271,6 +292,7 @@ public:
 	NodeAST* do_reachable_traversal(NodeProgram& node) {
 		m_func_calls.clear();
 		m_discard_warnings.clear();
+		m_persistent_pointer_warnings.clear();
 		m_def_provider->m_all_declarations.clear();
 		m_def_provider->m_all_references.clear();
 		m_def_provider->m_all_data_structures.clear();

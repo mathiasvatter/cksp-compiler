@@ -32,7 +32,7 @@ end struct
 declare x
 declare point_array := new Array()
 
-declare point := new Point(1, 2)
+declare read point := new Point(1, 2)
 declare wrapper := new Wrapper(new Point(3, 4))
 declare empty_wrapper: Wrapper := nil
 
