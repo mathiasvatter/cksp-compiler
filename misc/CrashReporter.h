@@ -16,6 +16,15 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
+#ifdef CONST
+#undef CONST
+#endif
+#ifdef IN
+#undef IN
+#endif
+#ifdef DELETE
+#undef DELETE
+#endif
 #endif
 
 #include "version.h"
