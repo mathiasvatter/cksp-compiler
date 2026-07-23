@@ -1,5 +1,10 @@
 #include <cstdlib>
 
+#if defined(_WIN32)
+#include <fcntl.h>
+#include <io.h>
+#endif
+
 #include "misc/CommandLineOptions.h"
 #include "misc/CrashReporter.h"
 #include "cksp/Compiler.h"
@@ -14,6 +19,16 @@ int main(int argc, char* argv[]) {
 	try {
 		CommandLineOptions cli_options(argc, argv);
 		if (cli_options.is_lsp_mode()) {
+#if defined(_WIN32)
+			// LSP Content-Length framing is byte-oriented. The Windows CRT defaults
+			// stdio to text mode, which would expand every '\n' written in the
+			// explicit "\r\n" headers to another "\r\n" and corrupt the protocol.
+			if (_setmode(_fileno(stdin), _O_BINARY) == -1
+				|| _setmode(_fileno(stdout), _O_BINARY) == -1) {
+				std::cerr << "Unable to put LSP stdio into binary mode.\n";
+				return EXIT_FAILURE;
+			}
+#endif
 			CrashReporter::install("lsp", argc, argv);
 			JsonRpcConnection connection(std::cin, std::cout);
 			LanguageServer server(connection);
