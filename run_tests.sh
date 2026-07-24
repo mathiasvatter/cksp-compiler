@@ -38,18 +38,16 @@ DEFAULT_FILES=(
   "/Users/mathias/Scripting/legato-dev/legato.ksp"
   "/Users/mathias/Scripting/legato-dev/keyswitch.ksp"
   "/Users/mathias/Scripting/fluegel/fluegel.ksp"
-  "/Users/mathias/Scripting/chroma-upright-piano/Chroma Upright.ksp"
   "/Users/mathias/Scripting/chroma-cimbalom/Chroma Cimbalom.ksp"
   "/Users/mathias/Scripting/ro-ki/rho_des.ksp"
   "/Users/mathias/Scripting/pipe-organ/pipe-organ.ksp"
   "/Users/Mathias/Scripting/the-score/the-score-lead.ksp"
   "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp"
-  "/Users/Mathias/Scripting/action-strings-2/action_strings2_V0.1.ksp"
-  "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp"
   "/Users/mathias/Scripting/dark-matter/Dark Horizon.ksp"
   "/Users/mathias/Scripting/fragments-modern-percussion/Fragments.ksp"
   "/Users/mathias/Scripting/sonu-northern-spheres/Nordic Spheres.ksp"
   "/Users/mathias/Scripting/the-sculpture/sculpture-engine.cksp"
+  "/Users/mathias/Scripting/kui-test/main.cksp"
 )
 
 # Effective file selection (computed from CLI args)

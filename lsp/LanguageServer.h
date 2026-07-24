@@ -33,6 +33,7 @@ class LanguageServer {
 	std::optional<SourceId> m_configured_entry_source;
 	std::optional<SourceId> m_workspace_root;
 	EntryPointResolver m_entry_points;
+	std::unordered_set<std::string> m_deleted_sources;
 	mutable std::mutex m_state_mutex;
 
 	mutable std::mutex m_analysis_mutex;
@@ -51,6 +52,8 @@ class LanguageServer {
 	void stop_analysis_worker();
 	void analyze_entry(const SourceId& entry_source);
 	void analyze_entries_for_sources(const std::vector<SourceId>& changed_sources, uint64_t generation);
+	void mark_source_available(const SourceId& source);
+	void handle_deleted_source(const SourceId& source);
 	[[nodiscard]] bool is_analysis_current(uint64_t generation) const;
 	[[nodiscard]] std::optional<ReferenceLink> resolve_navigation_target(
 		const JsonRpcMessage& message);
@@ -91,4 +94,5 @@ public:
 	void handle_did_open(const JsonRpcMessage& message);
 	void handle_did_change(const JsonRpcMessage& message);
 	void handle_did_close(const JsonRpcMessage& message);
+	void handle_did_change_watched_files(const JsonRpcMessage& message);
 };

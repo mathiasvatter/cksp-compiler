@@ -5,6 +5,7 @@
 #include "TypeInference.h"
 
 #include "ASTSemanticAnalysis.h"
+#include "FunctionHandling/BuiltinRestrictionValidator.h"
 
 NodeAST * TypeInference::visit(NodeProgram& node) {
 	m_program = &node;
@@ -701,6 +702,10 @@ NodeAST * TypeInference::visit(NodeSingleDeclaration& node) {
 
 	m_def_provider->add_to_declarations(&node);
 
+	if (node.variable->persistence.has_value()) {
+		warn_if_persistent_pointer(*node.variable, "declaration:");
+	}
+
 	// if declaration is pointer -> always initialize with nil!
 	if(node.variable->ty->get_element_type()->cast<ObjectType>()) {
 		if(!node.value) {
@@ -794,6 +799,15 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 	node.function->accept(*this);
 
 	node.bind_definition(m_program);
+	if (node.kind == NodeFunctionCall::Kind::Builtin
+		and node.function->get_num_args() > 0
+		and BuiltinRestrictionValidator::is_persistence_command(node.function->name)) {
+		warn_if_persistent_pointer(
+			*node.function->get_arg(0),
+			"builtin:" + node.function->name + ":"
+		);
+	}
+
 	auto definition = node.get_definition();
 	if (definition) {
 		// do not do this with property functions/ui controls because of ui_text_edit being string and throwing error then

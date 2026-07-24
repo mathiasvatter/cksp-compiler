@@ -503,6 +503,8 @@ struct NodeString final : NodeAST {
 
 	/// issue #101: strings in Kontakt can have a maximum of 320 characters
 	bool check_string_length() const;
+	/// issue #116: non-ASCII characters in strings may not be displayed by Kontakt
+	bool check_ascii_characters() const;
 };
 
 struct NodeFormatString final : NodeAST {

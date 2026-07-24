@@ -1,5 +1,6 @@
 #include "SourceProvider.h"
 
+#include <algorithm>
 #include <cctype>
 #include <cstdlib>
 #include <filesystem>
@@ -55,14 +56,37 @@ std::string percent_decode_uri(std::string_view value) {
 SourceId source_from_uri(const std::string_view uri) {
     static constexpr std::string_view file_scheme = "file://";
     if (uri.starts_with(file_scheme)) {
-        return FileSystemSourceProvider::normalize(percent_decode_uri(uri.substr(file_scheme.size())));
+        auto path = percent_decode_uri(uri.substr(file_scheme.size()));
+#if defined(_WIN32)
+        // A local Windows file URI has the form file:///C:/path. The slash before
+        // the drive letter belongs to the URI syntax, but makes std::filesystem
+        // treat the decoded value as a rooted path on the current drive.
+        if (path.size() >= 3 && path[0] == '/'
+            && std::isalpha(static_cast<unsigned char>(path[1]))
+            && path[2] == ':') {
+            path.erase(path.begin());
+        } else if (!path.empty() && path[0] != '/') {
+            // A non-empty file URI authority denotes a UNC host.
+            path.insert(0, "//");
+        }
+#endif
+        return FileSystemSourceProvider::normalize(path);
     }
     return FileSystemSourceProvider::normalize(uri);
 }
 
 std::string uri_from_source(const SourceId& source) {
-    return "file://" + StringUtils::percent_encode_uri_path(
-        FileSystemSourceProvider::normalize(source.value).value);
+    auto path = FileSystemSourceProvider::normalize(source.value).value;
+#if defined(_WIN32)
+    std::ranges::replace(path, '\\', '/');
+    const auto encoded = StringUtils::percent_encode_uri_path(path);
+    if (path.starts_with("//")) {
+        return "file:" + encoded;
+    }
+    return "file:///" + encoded;
+#else
+    return "file://" + StringUtils::percent_encode_uri_path(path);
+#endif
 }
 
 SourceId FileSystemSourceProvider::normalize(const std::string_view path) {

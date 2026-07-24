@@ -164,6 +164,7 @@ log10(value: real): real
 lsb(value: int): int
 make_instr_persistent(variable: any)
 make_perfview
+expose_controls
 make_persistent(variable: any)
 message(value: any)
 mf_copy_export_area(zone_id: int)

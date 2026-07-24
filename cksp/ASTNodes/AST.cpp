@@ -608,6 +608,18 @@ bool NodeString::check_string_length() const {
 	return true;
 }
 
+bool NodeString::check_ascii_characters() const {
+	for (const unsigned char character : value) {
+		if (character <= 0x7F) continue;
+
+		auto warning = Diagnostic(ErrorType::CompileWarning, "", "", tok);
+		warning.set_message("This String Literal contains non-ASCII characters and may not be displayed properly by Kontakt.");
+		warning.report(diagnostics());
+		return false;
+	}
+	return true;
+}
+
 // ************* NodeFormatString ***************
 NodeAST *NodeFormatString::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);

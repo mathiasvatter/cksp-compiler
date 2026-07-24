@@ -235,7 +235,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 	// if definition parameters of this function have different node types as the call site -> update
 	update_func_call_node_types(&node);
 
-	node.function->accept(*this);
+	// node.function->accept(*this);
 	return &node;
 }
 
@@ -256,6 +256,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeArrayRef &node) {
 
 NodeAST * ASTSemanticAnalysis::visit(NodeString &node) {
 	node.check_string_length();
+	node.check_ascii_characters();
 	if (!node.is_valid_string()) {
 		auto error = ASTVisitor::make_diagnostic(ErrorType::CompileError, node);
 		error.add_message("Invalid string literal: " + node.value);
@@ -341,7 +342,8 @@ NodeAST * ASTSemanticAnalysis::visit(NodeListRef& node) {
 	return replace_incorrectly_detected_data_struct(new_node->get_declaration());
 }
 
-void ASTSemanticAnalysis::update_func_call_node_types(const NodeFunctionCall* func_call) const {
+void ASTSemanticAnalysis::update_func_call_node_types(const NodeFunctionCall *func_call) {
+	NodeAST* new_node = nullptr;
 	if(const auto definition = func_call->get_definition()) {
 		for(int i=0; i<func_call->function->get_num_args(); i++) {
 			const auto & arg = func_call->function->get_arg(i);
@@ -354,19 +356,19 @@ void ASTSemanticAnalysis::update_func_call_node_types(const NodeFunctionCall* fu
 					node_var_ref->name,
 					nullptr,
 					node_var_ref->tok);
-				node_var_ref->replace_reference(std::move(node_array_ref));
+				new_node = node_var_ref->replace_reference(std::move(node_array_ref));
 			// problem when desugaring return stmts with multiple return variables -> all get to be variables
 			} else if (arg->cast<NodeArrayRef>() and param->cast<NodeVariable>()) {
 				// only permissible if return variable as function param
 				if(param->data_type == DataType::Return) {
 					auto node_array = param->to_array(nullptr);
-					param->replace_datastruct(std::move(node_array));
+					new_node = param->replace_datastruct(std::move(node_array));
 				}
 			} else if (arg->cast<NodeNDArrayRef>() and param->cast<NodeVariable>()) {
 				// only permissible if return variable
 				if(param->data_type == DataType::Return) {
 					auto node_ndarray = param->to_ndarray();
-					param->replace_datastruct(std::move(node_ndarray));
+					new_node = param->replace_datastruct(std::move(node_ndarray));
 				}
 			} else if (auto node_var_ref = arg->cast<NodeVariableRef>(); node_var_ref and param->cast<NodeFunctionHeader>()) {
 				auto func_var_ref = std::make_unique<NodeFunctionHeaderRef>(
@@ -375,9 +377,13 @@ void ASTSemanticAnalysis::update_func_call_node_types(const NodeFunctionCall* fu
 					node_var_ref->tok
 					);
 				func_var_ref->ty = node_var_ref->ty;
-				node_var_ref->replace_reference(std::move(func_var_ref));
+				new_node = node_var_ref->replace_reference(std::move(func_var_ref));
 			}
 		}
+	}
+	// if sth was replaced, visit the function arguments again
+	if (new_node) {
+		new_node->accept(*this);
 	}
 }
 
@@ -548,5 +554,4 @@ NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(NodeR
 	}
 	return nullptr;
 }
-
 
