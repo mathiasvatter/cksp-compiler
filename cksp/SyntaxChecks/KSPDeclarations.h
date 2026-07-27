@@ -17,11 +17,14 @@ public:
 
 	NodeAST* visit(NodeSingleDeclaration& node) override {
 		if(node.value) {
-			if(!node.value->is_constant(false, false) or node.value->ty->get_element_type() == TypeRegistry::String) {
+			if(!node.value->is_constant(false, false)
+				or node.value->ty->get_element_type() == TypeRegistry::String
+				or node.variable->cast<NodeUIControl>()
+			) {
 				auto body = std::make_unique<NodeBlock>(node.tok);
-
+				auto ui_control = node.variable->cast<NodeUIControl>();
 				// get correct declarations and stuff
-				auto new_assignment = std::make_unique<NodeSingleAssignment>(node.variable->to_reference(), std::move(node.value), node.tok);
+				auto new_assignment = std::make_unique<NodeSingleAssignment>(ui_control ? ui_control->control_var->to_reference() : node.variable->to_reference(), std::move(node.value), node.tok);
 				auto new_declaration = std::make_unique<NodeSingleDeclaration>(node.variable, nullptr, node.tok);
 				new_declaration->variable->data_type = DataType::Mutable; // all declarations without values have to be non-constant
 				new_assignment->l_value->ty = new_declaration->variable->ty;
