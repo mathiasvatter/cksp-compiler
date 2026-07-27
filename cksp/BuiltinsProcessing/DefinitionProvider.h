@@ -103,6 +103,7 @@ public:
 			Token(),
 			DataType::Mutable
 		);
+		node_var->ty = TypeRegistry::Unknown;
 		return node_var;
 	}
 	/// returns a static global dummy datastructure that can be used for declarations of compiler vars
@@ -116,6 +117,7 @@ public:
 			Token(),
 			DataType::Mutable
 		);
+		node_var->ty = TypeRegistry::Unknown;
 		return node_var;
 	}
 	/// returns a static global dummy datastructure that can be used for declarations of pgs vars
@@ -128,6 +130,7 @@ public:
 			Token(),
 			DataType::Mutable
 		);
+		node_var->ty = TypeRegistry::PGS;
 		return node_var;
 	}
 

@@ -106,10 +106,7 @@ NodeAST * ASTCollectLowerings::visit(NodeStruct& node) {
 	node.inline_struct(m_program);
 	// program->global_declarations->append_body(std::move(members));
 	// // program->init_callback->statements->prepend_body(std::move(members));
-	node.replace_with(std::move(node.members));
-	node.members = std::make_unique<NodeBlock>(Token());
-	node.set_child_parents();
-	return &node;
+	return node.replace_with(std::move(node.members));
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeFunctionDefinition& node) {
