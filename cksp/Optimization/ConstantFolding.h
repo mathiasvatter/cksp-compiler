@@ -291,17 +291,17 @@ private:
     NodeAST* visit(NodeUnaryExpr& node) override {
         node.operand->accept(*this);
 		if (const auto int_node = node.operand->cast<NodeInt>()) {
-			if (node.op == token::SUB) {
+			if (node.op.type == token::SUB) {
 				auto new_node = std::make_unique<NodeInt>(-int_node->value, node.tok);
 				new_node->ty = TypeRegistry::Integer;
 				return node.replace_with(std::move(new_node));
-			} else if (node.op == token::BOOL_NOT) {
+			} else if (node.op.type == token::BOOL_NOT) {
 				auto new_node = std::make_unique<NodeInt>(int_node->value == 0 ? 1 : 0, node.tok);
 				new_node->ty = TypeRegistry::Integer;
 				return node.replace_with(std::move(new_node));
 			}
 		} else if (const auto real_node = node.operand->cast<NodeReal>()) {
-			if (node.op == token::SUB) {
+			if (node.op.type == token::SUB) {
 				auto new_node = std::make_unique<NodeReal>(-real_node->value, node.tok);
 				new_node->ty = TypeRegistry::Real;
 				return node.replace_with(std::move(new_node));

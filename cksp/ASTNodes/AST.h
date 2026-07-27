@@ -796,13 +796,18 @@ struct NodeInitializerList final : NodeAST {
 };
 
 struct NodeUnaryExpr final : NodeAST {
-    token op;
+    Token op;
     std::unique_ptr<NodeAST> operand;
     explicit NodeUnaryExpr(const Token& tok) : NodeAST(tok, NodeType::UnaryExpr) {}
-    NodeUnaryExpr(token op, std::unique_ptr<NodeAST> operand, const Token& tok)
-	: NodeAST(tok, NodeType::UnaryExpr), op(std::move(op)), operand(std::move(operand)) {
+    NodeUnaryExpr(const Token& op, std::unique_ptr<NodeAST> operand, const Token& tok)
+	: NodeAST(tok, NodeType::UnaryExpr), op(op), operand(std::move(operand)) {
 		NodeUnaryExpr::set_child_parents();
 	}
+	NodeUnaryExpr(const token op, std::unique_ptr<NodeAST> operand, const Token& tok) : NodeAST(tok, NodeType::UnaryExpr), operand(std::move(operand)) {
+    	this->op = tok;
+    	this->op.type = op;
+	    NodeUnaryExpr::set_child_parents();
+    }
     NodeAST* accept(ASTVisitor &visitor) override;
     NodeAST* replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     // Copy Constructor
@@ -817,10 +822,10 @@ struct NodeUnaryExpr final : NodeAST {
 		if(operand) operand->parent = this;
 	}
     std::string get_string() override {
-        return ::get_token_string(op) + operand->get_string();
+        return ::get_token_string(op.type) + operand->get_string();
     }
 	std::string get_token_string() const override {
-		return ::get_token_string(op) + operand->get_token_string();
+		return ::get_token_string(op.type) + operand->get_token_string();
 	}
     void update_token_data(const Token& token) override {
         operand -> update_token_data(token);

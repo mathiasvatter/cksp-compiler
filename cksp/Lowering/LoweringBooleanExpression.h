@@ -42,7 +42,7 @@ public:
 		node.operand->accept(*this);
 
 		// check if it is a boolean operator
-		if (not BOOL_TOKENS.contains(node.op)) {
+		if (not BOOL_TOKENS.contains(node.op.type)) {
 			return &node;
 		}
 
@@ -65,7 +65,7 @@ public:
 		// if boolean operator, replace operand with 1-operand
 		// e.g. not a --> 1 - a
 		// only NOT is supported as unary boolean operator
-		if (node.op == token::BOOL_NOT) {
+		if (node.op.type == token::BOOL_NOT) {
 			auto expression = std::make_unique<NodeBinaryExpr>(
 				token::SUB,
 				std::make_unique<NodeInt>(1, node.tok),

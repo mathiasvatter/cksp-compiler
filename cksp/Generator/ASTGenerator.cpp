@@ -168,7 +168,7 @@ NodeAST * ASTGenerator::visit(NodeBinaryExpr &node) {
 }
 
 NodeAST * ASTGenerator::visit(NodeUnaryExpr &node) {
-    os << GENERATE_ALL_OPERATORS[node.op] << " ";
+    os << GENERATE_ALL_OPERATORS[node.op.type] << " ";
     node.operand->accept(*this);
 	return &node;
 }

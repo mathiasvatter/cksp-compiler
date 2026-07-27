@@ -137,7 +137,7 @@ private:
 			            left_is_simple = false;
 			        }
 			    } else if (auto* left_as_unary = bin_expr->left->cast<NodeUnaryExpr>()) {
-			        if (left_as_unary->op == token::BOOL_NOT) {
+			        if (left_as_unary->op.type == token::BOOL_NOT) {
 			            left_is_simple = false;
 			        }
 			    }
@@ -203,7 +203,7 @@ private:
 			}
 		} else if (auto unary_expr = condition->cast<NodeUnaryExpr>(); unary_expr and unary_expr->needs_short_circuiting()) {
 			// ----- HIER IST DIE NEUE NOT-LOGIK -----
-			if (unary_expr->op == token::BOOL_NOT) {
+			if (unary_expr->op.type == token::BOOL_NOT) {
 				// Strategie für 'not E':
 				// 1. Erzeuge Block: { declare _temp=0; }
 				// 2. Fülle ihn mit: <Logik für E, die bei Erfolg _temp=1 setzt>

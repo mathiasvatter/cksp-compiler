@@ -1133,7 +1133,7 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 	// if type if object -> check for operator overloading
 	if(node.operand->ty->get_type_kind() == TypeKind::Object) {
 		auto strct = NodeReference::get_object_ptr(m_program, node.operand->ty->to_string());
-		if(auto def = strct->get_overloaded_method(node.op)) {
+		if(auto def = strct->get_overloaded_method(node.op.type)) {
 			auto call = std::make_unique<NodeFunctionCall>(
 				false,
 				std::make_unique<NodeFunctionHeaderRef>(
@@ -1153,7 +1153,7 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 	auto error = throw_type_error(*node.operand, node.ty);
 	if(!is_compatible) error.exit();
 
-	if(node.op == token::SUB) {
+	if(node.op.type == token::SUB) {
 		// can only be int or float
 		is_compatible = node.operand->ty->is_compatible(TypeRegistry::Integer);
 		if(is_compatible) node.ty = TypeRegistry::Number;
@@ -1164,10 +1164,10 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 			node.ty = TypeRegistry::Real;
 		}
 		error.add_message("Please use real() and int() to use <Real> and <Integer> numbers in a single expression.");
-	} else if (node.op == token::BIT_NOT) {
+	} else if (node.op.type == token::BIT_NOT) {
 		node.ty = TypeRegistry::Integer;
 		is_compatible = node.operand->ty->is_compatible(node.ty);
-	} else if(node.op == token::BOOL_NOT) {
+	} else if(node.op.type == token::BOOL_NOT) {
 		node.ty = TypeRegistry::Boolean;
 		is_compatible = node.operand->ty->is_compatible(node.ty) || is_object;
 		error.add_message("<Bool Operators> can only be used in between <Boolean> or <Comparison> values. Be sure to use correct parentheses.");
@@ -1176,7 +1176,7 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 	}
 
 	if (is_object) {
-		error.add_message(" Operator <"+get_token_string(node.op) +"> has not been overloaded for type "+node.operand->ty->to_string()+".");
+		error.add_message(" Operator <"+get_token_string(node.op.type) +"> has not been overloaded for type "+node.operand->ty->to_string()+".");
 	}
 
 	if(!is_compatible)

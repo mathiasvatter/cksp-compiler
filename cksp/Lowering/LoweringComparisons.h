@@ -69,7 +69,7 @@ private:
 	NodeAST *visit(NodeUnaryExpr &node) override {
 		node.operand->accept(*this);
 
-		if (not BOOL_TOKENS.contains(node.op)) {
+		if (not BOOL_TOKENS.contains(node.op.type)) {
 			return &node;
 		}
 

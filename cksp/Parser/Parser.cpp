@@ -547,7 +547,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_unary_expr(NodeAST* parent) {
 	if(expr.is_error()) {
 		return Result<std::unique_ptr<NodeAST>>(expr.get_error());
 	}
-	node_unary_expr->op = unary_op.type;
+	node_unary_expr->op = unary_op;
 	node_unary_expr->operand = std::move(expr.unwrap());
 	// node_unary_expr->set_child_parents();
 	node_unary_expr->set_range(unary_op, peek(-1));

@@ -187,11 +187,11 @@ Result<int> SimpleInterpreter::evaluate_int_expression(std::unique_ptr<NodeAST>&
         auto operand_value_stmt = evaluate_int_expression(unary_expr_node->operand);
         if (operand_value_stmt.is_error()) return Result<int>(operand_value_stmt.get_error());
         int operandValue = operand_value_stmt.unwrap();
-        if (unary_expr_node->op == token::SUB) { // Assuming SUB represents the '-' unary operator
+        if (unary_expr_node->op.type == token::SUB) { // Assuming SUB represents the '-' unary operator
             return Result<int>(-operandValue);
         }
     	auto error = Diagnostic(ErrorType::PreprocessorError,"Unsupported unary operation. " + preprocessor_error,"-", root->tok);
-    	error.actual = get_token_string(unary_expr_node->op);
+    	error.actual = get_token_string(unary_expr_node->op.type);
         return Result<int>(std::move(error));
         // Add other unary operations here if needed
     } else if (auto binary_expr_node = root->cast<NodeBinaryExpr>()) {

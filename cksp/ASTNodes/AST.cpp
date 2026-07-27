@@ -984,7 +984,7 @@ bool NodeUnaryExpr::has_return_func() const {
 
 bool NodeUnaryExpr::has_return_func_and_bool() const {
 	if (has_return_func()) {
-		return BOOL_TOKENS.contains(op);
+		return BOOL_TOKENS.contains(op.type);
 	}
 	return false;
 }
