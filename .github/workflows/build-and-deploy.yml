@@ -14,12 +14,7 @@ jobs:
       tag: ${{ steps.extract-tag-macos.outputs.tag }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up CMake
-        uses: jwlawson/actions-setup-cmake@v1
-        with:
-          cmake-version: '3.27.0'
+        uses: actions/checkout@v5
 
       - name: Install dependencies
         run: brew install ninja || echo "Ninja is already installed"
@@ -65,7 +60,7 @@ jobs:
             echo "Detected TAG: $TAG"
 
       - name: Upload macOS artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: macos-build
           path: _Releases/${{ steps.extract-version-macos.outputs.version_dir }} # Upload release files for macOS
@@ -74,7 +69,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Check and install dependencies
         shell: pwsh
@@ -115,7 +110,7 @@ jobs:
     
 
       - name: Upload Windows artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: windows-build
           path: _Releases/${{ env.VERSION_DIR }} # Upload release files for Windows
@@ -125,7 +120,7 @@ jobs:
     needs: [build-macos, build-windows]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0 # important for pushing tags and commits
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -138,13 +133,13 @@ jobs:
           exit 1
 
       - name: Download Windows artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: windows-build
           path: windows-release/
 
       - name: Download macOS artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: macos-build
           path: macos-release/
