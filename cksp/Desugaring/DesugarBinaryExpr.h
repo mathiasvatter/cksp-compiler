@@ -29,7 +29,7 @@ public:
 		node.left ->accept(*this);
 		node.right->accept(*this);
 
-		auto it = operator_to_function.find(node.op);
+		const auto it = operator_to_function.find(node.op.type);
 		if(it == operator_to_function.end()) {
 			return &node;
 		}

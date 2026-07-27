@@ -320,7 +320,7 @@ private:
 		auto left_real = node.left->cast<NodeReal>();
 
 		if(right_int || left_int) {
-			if (MATH_TOKENS.contains(node.op) or BITWISE_TOKENS.contains(node.op)) {
+			if (MATH_TOKENS.contains(node.op.type) or BITWISE_TOKENS.contains(node.op.type)) {
 				// constant folding
 				if (left_int and right_int) {
 					// Beide Operanden sind Integers. Führe die Operation aus und ersetze den Knoten.
@@ -334,21 +334,21 @@ private:
 						{token::BIT_OR, [](const int32_t a, const int32_t b) { return a | b; }},
 						{token::BIT_XOR, [](const int32_t a, const int32_t b) { return a ^ b; }}
 					};
-					if (int_operations.contains(node.op)) {
-						int32_t result = int_operations[node.op](left_int->value, right_int->value);
+					if (int_operations.contains(node.op.type)) {
+						int32_t result = int_operations[node.op.type](left_int->value, right_int->value);
 						auto new_node = std::make_unique<NodeInt>(result, node.tok);
 						new_node->ty = TypeRegistry::Integer;
 						return node.replace_with(std::move(new_node));
 					}
 				// division by zero
-				} else if (is_zero(right_int) and node.op == token::DIV) {
+				} else if (is_zero(right_int) and node.op.type == token::DIV) {
 					auto error = Diagnostic(ErrorType::MathError,"","", node.tok);
 					error.message = "Found division by zero. Result will be infinite.";
 					error.exit();
 				} else if (left_int or right_int) {
 					// der bekannte  Integer
 					NodeInt* known_int = left_int ? left_int : right_int;
-					switch (node.op) {
+					switch (node.op.type) {
 						case token::ADD:
 							if (known_int->value == 0) {
 								// Absorbierendes Element, das Ergebnis ist immer der andere Ausdruck
@@ -391,15 +391,15 @@ private:
 						default: break;
 					}
 				}
-			} else if (BOOL_TOKENS.contains(node.op)) {
+			} else if (BOOL_TOKENS.contains(node.op.type)) {
 				if (left_int and right_int) {
 					auto static bool_operations = std::unordered_map<token, std::function<int32_t(int32_t, int32_t)>>{
 						{token::BOOL_AND, [](const int32_t a, const int32_t b) { return (a && b) ? 1 : 0; }},
 						{token::BOOL_OR, [](const int32_t a, const int32_t b) { return (a || b) ? 1 : 0; }},
 						{token::BOOL_XOR, [](const int32_t a, const int32_t b) { return (a ^ b) ? 1 : 0; }},
 					};
-					if (bool_operations.contains(node.op)) {
-						int32_t result = bool_operations[node.op](left_int->value, right_int->value);
+					if (bool_operations.contains(node.op.type)) {
+						int32_t result = bool_operations[node.op.type](left_int->value, right_int->value);
 						auto new_node = std::make_unique<NodeInt>(result, node.tok);
 						new_node->ty = TypeRegistry::Integer;
 						return node.replace_with(std::move(new_node));
@@ -411,7 +411,7 @@ private:
 					// der unbekannte Ausdruck
 					std::unique_ptr<NodeAST> other_expr = left_int ? std::move(node.right) : std::move(node.left);
 					std::unique_ptr<NodeAST> result = std::move(other_expr);
-					switch (node.op) {
+					switch (node.op.type) {
 						case token::BOOL_AND:
 							if (known_int->value == 0) {
 								// Absorbierendes Element, das Ergebnis ist immer 0
@@ -435,7 +435,7 @@ private:
 					result->ty = TypeRegistry::Integer;
 					return node.replace_with(std::move(result));
 				}
-			} else if (COMPARISON_TOKENS.contains(node.op)) {
+			} else if (COMPARISON_TOKENS.contains(node.op.type)) {
 				if (left_int and right_int) {
 					auto static bool_operations = std::unordered_map<token, std::function<int32_t(int32_t, int32_t)>>{
 						{token::LESS_THAN, [](const int32_t a, const int32_t b) { return (a < b) ? 1 : 0; }},
@@ -445,8 +445,8 @@ private:
 						{token::LESS_EQUAL, [](const int32_t a, const int32_t b) { return (a <= b) ? 1 : 0; }},
 						{token::GREATER_EQUAL, [](const int32_t a, const int32_t b) { return (a >= b) ? 1 : 0; }},
 					};
-					if (bool_operations.contains(node.op)) {
-						int32_t result = bool_operations[node.op](left_int->value, right_int->value);
+					if (bool_operations.contains(node.op.type)) {
+						int32_t result = bool_operations[node.op.type](left_int->value, right_int->value);
 						auto new_node = std::make_unique<NodeInt>(result, node.tok);
 						new_node->ty = TypeRegistry::Integer;
 						return node.replace_with(std::move(new_node));
@@ -454,9 +454,9 @@ private:
 				}
 			}
 		} else if (right_real or left_real) {
-			if (MATH_TOKENS.contains(node.op)) {
+			if (MATH_TOKENS.contains(node.op.type)) {
 				// check division by zero
-				if (node.op == token::DIV && is_zero(right_real)) {
+				if (node.op.type == token::DIV && is_zero(right_real)) {
 					auto error = Diagnostic(ErrorType::MathError,"","", node.tok);
 					error.message = "Found division by zero. Result will be infinite.";
 					error.exit();
@@ -470,14 +470,14 @@ private:
 						{token::DIV, [](const double a, const double b) { return a / b; }},
 						{token::MODULO, [](const double a, const double b) { return std::fmod(a, b); }}
 					};
-					if (real_operations.contains(node.op)) {
-						double result = real_operations[node.op](left_real->value, right_real->value);
+					if (real_operations.contains(node.op.type)) {
+						double result = real_operations[node.op.type](left_real->value, right_real->value);
 						auto new_node = std::make_unique<NodeReal>(result, node.tok);
 						new_node->ty = TypeRegistry::Real;
 						return node.replace_with(std::move(new_node));
 					}
 				}
-			} else if (COMPARISON_TOKENS.contains(node.op)) {
+			} else if (COMPARISON_TOKENS.contains(node.op.type)) {
 				if (left_real and right_real) {
 					auto static bool_operations = std::unordered_map<token, std::function<int32_t(double, double)>>{
 						{token::LESS_THAN, [](const double a, const double b) { return (a < b) ? 1 : 0; }},
@@ -487,8 +487,8 @@ private:
 						{token::LESS_EQUAL, [](const double a, const double b) { return (a <= b) ? 1 : 0; }},
 						{token::GREATER_EQUAL, [](const double a, const double b) { return (a >= b) ? 1 : 0; }},
 					};
-					if (bool_operations.contains(node.op)) {
-						int32_t result = bool_operations[node.op](left_real->value, right_real->value);
+					if (bool_operations.contains(node.op.type)) {
+						int32_t result = bool_operations[node.op.type](left_real->value, right_real->value);
 						auto new_node = std::make_unique<NodeInt>(result, node.tok);
 						new_node->ty = TypeRegistry::Integer;
 						return node.replace_with(std::move(new_node));

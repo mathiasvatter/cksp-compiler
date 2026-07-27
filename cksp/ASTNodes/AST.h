@@ -841,13 +841,19 @@ struct NodeUnaryExpr final : NodeAST {
 
 struct NodeBinaryExpr final : NodeAST {
 	std::unique_ptr<NodeAST> left, right;
-	token op;
+	Token op;
     bool has_forced_parenth = false;
     explicit NodeBinaryExpr(const Token& tok) : NodeAST(tok, NodeType::BinaryExpr) {}
-    NodeBinaryExpr(const token op, std::unique_ptr<NodeAST> left, std::unique_ptr<NodeAST> right, const Token& tok)
+    NodeBinaryExpr(const Token& op, std::unique_ptr<NodeAST> left, std::unique_ptr<NodeAST> right, const Token& tok)
     	: NodeAST(tok, NodeType::BinaryExpr), left(std::move(left)), right(std::move(right)), op(op) {
 		set_child_parents();
 	}
+	NodeBinaryExpr(const token op, std::unique_ptr<NodeAST> left, std::unique_ptr<NodeAST> right, const Token& tok)
+		: NodeAST(tok, NodeType::BinaryExpr), left(std::move(left)), right(std::move(right)) {
+    	this->op = tok;
+    	this->op.type = op;
+    	set_child_parents();
+    }
 	NodeAST* accept(ASTVisitor &visitor) override;
 	NodeAST* replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
     // Copy Constructor
@@ -864,10 +870,10 @@ struct NodeBinaryExpr final : NodeAST {
 		if(right) right->parent = this;
 	}
     std::string get_string() override {
-        return left->get_string() + ::get_token_string(op) + right->get_string();
+        return left->get_string() + ::get_token_string(op.type) + right->get_string();
     }
 	std::string get_token_string() const override {
-		return left->get_token_string() + ::get_token_string(op) + right->get_token_string();
+		return left->get_token_string() + ::get_token_string(op.type) + right->get_token_string();
 	}
     void update_token_data(const Token& token) override {
         left -> update_token_data(token);

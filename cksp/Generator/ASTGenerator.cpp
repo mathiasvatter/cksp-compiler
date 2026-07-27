@@ -161,7 +161,7 @@ NodeAST * ASTGenerator::visit(NodeBinaryExpr &node) {
     if(is_nested_bin_expr and node.ty != TypeRegistry::String) os << "(";
 
     node.left->accept(*this);
-    os << " " << GENERATE_ALL_OPERATORS[node.op] << " ";
+    os << " " << GENERATE_ALL_OPERATORS[node.op.type] << " ";
     node.right->accept(*this);
     if(is_nested_bin_expr and node.ty != TypeRegistry::String) os << ")";
 	return &node;

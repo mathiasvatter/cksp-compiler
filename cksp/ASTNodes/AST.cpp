@@ -1049,7 +1049,7 @@ bool NodeBinaryExpr::has_return_func_and_bool() const {
 	auto right_binary = right->cast<NodeBinaryExpr>();
 	if (left_binary and left_binary->has_return_func() or right_binary and right_binary->has_return_func()) {
 		// check if operator is boolean
-		if (BOOL_TOKENS.contains(op)) {
+		if (BOOL_TOKENS.contains(op.type)) {
 			return true;
 		}
 	}

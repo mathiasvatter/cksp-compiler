@@ -524,7 +524,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_string_expr_rhs(std::unique_ptr<
 		if (rhs.is_error()) {
 			return Result<std::unique_ptr<NodeAST>>(rhs.get_error());
 		}
-		auto node_binary_expr = std::make_unique<NodeBinaryExpr>(string_op.type, std::move(lhs), std::move(rhs.unwrap()), get_tok());
+		auto node_binary_expr = std::make_unique<NodeBinaryExpr>(string_op, std::move(lhs), std::move(rhs.unwrap()), get_tok());
 		node_binary_expr->set_range(node_binary_expr->left->range, node_binary_expr->right->range);
 		lhs = std::move(node_binary_expr);
 		lhs->ty = TypeRegistry::String;
@@ -585,7 +585,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_binary_expr_rhs(const int preced
 			type = TypeRegistry::Boolean;
 		}
 
-		auto node_binary_expr = std::make_unique<NodeBinaryExpr>(bin_op.type, std::move(lhs), std::move(rhs.unwrap()), get_tok());
+		auto node_binary_expr = std::make_unique<NodeBinaryExpr>(bin_op, std::move(lhs), std::move(rhs.unwrap()), get_tok());
 		node_binary_expr->set_range(node_binary_expr->left->range, node_binary_expr->right->range);
 		node_binary_expr->parent = parent;
 		lhs = std::move(node_binary_expr);
