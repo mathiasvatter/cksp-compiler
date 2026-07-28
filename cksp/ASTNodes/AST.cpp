@@ -536,6 +536,15 @@ bool NodeReference::check_restricted_environment(NodeCallback *current_callback)
 	return BuiltinRestrictionValidator::check_variable_callability(*this, current_callback);
 }
 
+bool NodeReference::in_access_chain() const {
+	if (parent) {
+		if (const auto chain = parent->cast<NodeAccessChain>()) {
+			return chain->member(0).get() != this;
+		}
+	}
+	return false;
+}
+
 std::unique_ptr<NodeAST> NodePrefix::clone() const {
 	return std::make_unique<NodePrefix>(*this);
 }

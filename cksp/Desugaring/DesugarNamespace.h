@@ -55,7 +55,10 @@ class DesugarNamespace final : public ASTDesugaring {
 	}
 	void add_namespace_prefix(NodeReference& ref) const {
 		if (all_prefixed_variables.empty()) return;
-		if (in_access_chain(ref)) return;
+		/// important because we do not want to add namespace prefix to references that are
+		/// already part of an access chain (e.g. "A.x") but only to the first member ("A")
+		/// issue #21
+		if (ref.in_access_chain()) return;
 		// assume that the reference is only the base and has not already been prefixed
 		// Try to find the declaration level for the *basename* (shadowing-aware).
 		for (int lvl = static_cast<int>(m_namespace_variables.size()) - 1; lvl >= 0; --lvl) {
@@ -203,22 +206,7 @@ public:
 
 	// ---------- helpers ----------
 
-	/// returns true if ref node is within access chain but not first member
-	/// important because we do not want to add namespace prefix to references that are
-	/// already part of an access chain (e.g. "A.x") but only to the first member ("A")
-	/// issue #21
-	static bool in_access_chain(const NodeReference& node) {
-		if (node.parent) {
-			if (const auto chain = node.parent->cast<NodeAccessChain>()) {
-				if (chain->member(0).get() == &node) {
-					return false;
-				} else {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
+
 
 	// Return last identifier (after the last '.')
 	static std::string basename_of(const std::string& name, const std::vector<Token>& prefixes) {

@@ -37,12 +37,16 @@ declare read point := new Point(1, 2)
 declare wrapper := new Wrapper(new Point(3, 4))
 declare empty_wrapper: Wrapper := nil
 
-family pups
+namespace pups
     declare pops
-    family pupu
+    namespace pupu
         declare popo := pups.pops
-    end family        
-end family    
+    end namespace
+
+    // on release
+    //     pops := 34
+    // end on        
+end namespace    
 
 on init
     message(x, arr[0], pups.pupu.popo)

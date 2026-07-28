@@ -281,7 +281,7 @@ NodeAST *NodeFunctionCall::do_function_inlining(NodeProgram *program) {
 }
 
 bool NodeFunctionCall::is_destructive_builtin_func() const {
-	return kind == NodeFunctionCall::Kind::Builtin and destructive_functions.contains(function->name);
+	return kind == NodeFunctionCall::Kind::Builtin and BuiltinRestrictionValidator::is_destructive_func(function->name);
 }
 
 bool NodeFunctionCall::check_restricted_environment(NodeCallback *current_callback) const {

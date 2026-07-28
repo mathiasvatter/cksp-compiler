@@ -300,6 +300,8 @@ struct NodeReference : NodeAST {
 	[[nodiscard]] Token get_prefix(const size_t idx) const {
 		return prefix->at(idx);
 	}
+	/// returns true if ref node is within access chain but not first member
+	[[nodiscard]] bool in_access_chain() const;
 };
 
 struct NodeVariable;
