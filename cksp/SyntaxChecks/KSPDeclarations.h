@@ -11,6 +11,7 @@
  * Checks that declarations with values have non-constant values.
  * if not -> split declaration into declaration and assignment statement.
  * if value is string -> split declaration into declaration and assignment statement.
+ * if variable is a ui_control -> also split in any r_value case
  */
 class KSPDeclarations final : public ASTVisitor {
 public:
@@ -22,7 +23,7 @@ public:
 				or node.variable->cast<NodeUIControl>()
 			) {
 				auto body = std::make_unique<NodeBlock>(node.tok);
-				auto ui_control = node.variable->cast<NodeUIControl>();
+				const auto ui_control = node.variable->cast<NodeUIControl>();
 				// get correct declarations and stuff
 				auto new_assignment = std::make_unique<NodeSingleAssignment>(ui_control ? ui_control->control_var->to_reference() : node.variable->to_reference(), std::move(node.value), node.tok);
 				auto new_declaration = std::make_unique<NodeSingleDeclaration>(node.variable, nullptr, node.tok);

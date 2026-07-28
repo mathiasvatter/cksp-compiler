@@ -71,12 +71,12 @@ private:
 	}
 
 	NodeAST* visit(NodeVariableRef& node) override {
-		if (node.kind == NodeReference::Kind::Builtin) {
-			auto substitute = EngineConstantsIntegers::get_constant_node(node.name, node.tok);
-			if (substitute) {
-				return node.replace_with(std::move(substitute));
-			}
-		}
+		// if (node.kind == NodeReference::Kind::Builtin) {
+		// 	auto substitute = EngineConstantsIntegers::get_constant_node(node.name, node.tok);
+		// 	if (substitute) {
+		// 		return node.replace_with(std::move(substitute));
+		// 	}
+		// }
 		get_new_name(node);
 		return &node;
 	}
