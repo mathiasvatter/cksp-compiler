@@ -18,6 +18,7 @@ public:
 		m_program->update_function_lookup();
 		// erase all previously saved scopes
 		m_def_provider->refresh_scopes();
+		m_def_provider->refresh_declaration_candidates();
 		m_def_provider->refresh_data_vectors();
         node.accept(*this);
 		for(const auto & func_def : node.function_definitions) {

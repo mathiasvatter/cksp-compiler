@@ -167,7 +167,6 @@ std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_constructor_defin
 	return nullptr;
 }
 
-
 bool NodeFunctionCall::bind_definition(NodeProgram* program, const bool fail, const bool force) {
     if (get_definition() and !force) {
 		// update call sites
@@ -192,8 +191,10 @@ bool NodeFunctionCall::bind_definition(NodeProgram* program, const bool fail, co
     	if (decl and decl->is_function_param()) {
     		return true;
     	}
-        auto error = Diagnostic(ErrorType::SyntaxError,"A function with this signature has not been declared.", "", tok);
-    	error.exit();
+        auto error = program->def_provider
+			? program->def_provider->make_missing_function_definition_error(*this)
+			: DefinitionProvider::internal_missing_definition_error(*this);
+        error.exit();
     }
     return false;
 }

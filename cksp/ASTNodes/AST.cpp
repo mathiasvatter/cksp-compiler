@@ -1477,22 +1477,30 @@ NodeFunctionDefinition * NodeProgram::replace_function_definition(const std::sha
 
 void NodeProgram::update_function_lookup() {
 	function_lookup.clear();
-	for(const auto & def : function_definitions) {
+	std::vector<std::weak_ptr<NodeFunctionHeader>> function_headers;
+	auto add_definition = [&](const std::shared_ptr<NodeFunctionDefinition>& def) {
 		function_lookup[{def->header->name, static_cast<int>(def->header->params.size())}].push_back(def);
+		function_headers.push_back(def->header);
+	};
+	for(const auto & def : function_definitions) {
+		add_definition(def);
 	}
 	for(const auto & def : additional_function_definitions) {
-		function_lookup[{def->header->name, static_cast<int>(def->header->params.size())}].push_back(def);
+		add_definition(def);
 	}
 	// add all struct methods to the lookup
 	for(const auto & struct_def : struct_definitions) {
 		for(const auto & method : struct_def->methods) {
-			function_lookup[{method->header->name, static_cast<int>(method->header->params.size())}].push_back(method);
+			add_definition(method);
 		}
 	}
 	for (const auto & namespace_def : namespaces) {
 		for (const auto & def : namespace_def->function_definitions) {
-			function_lookup[{def->header->name, static_cast<int>(def->header->params.size())}].push_back(def);
+			add_definition(def);
 		}
+	}
+	if (def_provider) {
+		def_provider->set_function_headers(std::move(function_headers));
 	}
 }
 

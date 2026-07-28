@@ -943,8 +943,12 @@ NodeAST * TypeInference::visit(NodeFunctionHeaderRef& node) {
 		}
 		decl_type = decl->ty->cast<FunctionType>();
 		if(!decl_type) {
-			auto error = Diagnostic(ErrorType::TypeError, "", "", node.tok);
-			error.message = "Function type expected.";
+			if (node.parent) {
+				if (const auto function_call = node.parent->cast<NodeFunctionCall>()) {
+					m_def_provider->make_missing_function_definition_error(*function_call).exit();
+				}
+			}
+			auto error = Diagnostic(ErrorType::TypeError, "Function type expected.", "", node.tok);
 			error.exit();
 		} else if (decl_type->get_params().empty() and ref_type) {
 			decl->ty = node.ty;
