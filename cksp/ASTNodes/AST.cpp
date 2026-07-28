@@ -311,7 +311,8 @@ NodeReference::~NodeReference() {
 }
 
 NodeReference::NodeReference(const NodeReference& other)
-	: NodeAST(other), name(other.name), declaration(other.declaration),
+	: NodeAST(other), prefix(clone_unique(other.prefix)),
+	  name(other.name), declaration(other.declaration),
 	  is_engine(other.is_engine), is_local(other.is_local),
 	  kind(other.kind),
 	  data_type(other.data_type) {
@@ -364,7 +365,7 @@ NodeSingleAssignment* NodeReference::is_l_value() const {
 
 // ************* NodeDataStructure ***************
 NodeDataStructure::NodeDataStructure(const NodeDataStructure& other)
-	: NodeAST(other),
+	: NodeAST(other), prefix(clone_unique(other.prefix)),
 	  is_used(other.is_used), is_engine(other.is_engine), persistence(other.persistence),
 	  is_local(other.is_local), is_global(other.is_global), kind(other.kind),
 	  has_obj_assigned(other.has_obj_assigned), is_thread_safe(other.is_thread_safe),
@@ -434,6 +435,7 @@ Type* NodeDataStructure::cast_type() {
 }
 
 void NodeDataStructure::match_metadata(const std::shared_ptr<NodeDataStructure>& data_structure) {
+	prefix = clone_unique(data_structure->prefix);
 	is_engine = data_structure->is_engine;
 	is_local = data_structure->is_local;
 	is_global = data_structure->is_global;
@@ -532,6 +534,19 @@ NodeFunctionCall* NodeReference::is_in_get_ui_id() const {
 
 bool NodeReference::check_restricted_environment(NodeCallback *current_callback) const {
 	return BuiltinRestrictionValidator::check_variable_callability(*this, current_callback);
+}
+
+std::unique_ptr<NodeAST> NodePrefix::clone() const {
+	return std::make_unique<NodePrefix>(*this);
+}
+
+Token NodePrefix::at(const size_t index) const {
+	if (index >= size()) {
+		auto err = ASTVisitor::make_diagnostic(ErrorType::InternalError, *this);
+		err.set_message("Expected incorrect number of prefixes");
+		err.exit();
+	}
+	return prefixes[index];
 }
 
 // ************* NodeInstruction ***************

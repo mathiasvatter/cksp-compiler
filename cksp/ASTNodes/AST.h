@@ -175,13 +175,44 @@ T* get_parent_of_type(const NodeAST& node) {
 struct NodeDeadCode final : NodeAST {
     explicit NodeDeadCode(const Token &tok) : NodeAST(tok, NodeType::DeadCode) {};
     NodeAST *accept(ASTVisitor &visitor) override;
-    NodeDeadCode(const NodeDeadCode& other) : NodeAST(other) {}
+    NodeDeadCode(const NodeDeadCode& other) = default;
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
     std::string get_string() override {return "";}
-	std::string get_token_string() const override { return ""; }
+	[[nodiscard]] std::string get_token_string() const override { return ""; }
+};
+
+
+struct NodePrefix : NodeAST {
+	std::vector<Token> prefixes{};
+	explicit NodePrefix(std::vector<Token> prefixes, const Token& tok) : NodeAST(tok, NodeType::Prefix), prefixes(std::move(prefixes)) {}
+	explicit NodePrefix(const Token& tok) : NodeAST(tok, NodeType::Prefix) {}
+	NodePrefix(const NodePrefix& other) = default;
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	std::string get_string() override {
+		return StringUtils::join_apply(
+			prefixes,
+			[](const Token& prefix) { return prefix.val; },
+			"."
+		);
+	}
+	[[nodiscard]] std::string get_token_string() const override {
+		return StringUtils::join_apply(
+			prefixes,
+			[](const Token& prefix) { return prefix.val; },
+			"."
+		);
+	}
+	void add(const Token &prefix) {
+		prefixes.push_back(prefix);
+	}
+	[[nodiscard]] size_t size() const {
+		return prefixes.size();
+	}
+	[[nodiscard]] Token at(size_t index) const;
 };
 
 struct NodeReference : NodeAST {
+	std::unique_ptr<NodePrefix> prefix = std::make_unique<NodePrefix>(tok);
     std::string name;
     std::weak_ptr<class NodeDataStructure> declaration;
     bool is_engine = false;
@@ -190,7 +221,7 @@ struct NodeReference : NodeAST {
 	Kind kind = User;
 	DataType data_type = DataType::Mutable;
     explicit NodeReference(const Token& tok) : NodeAST(tok, NodeType::DeadCode) {}
-    NodeReference(std::string name, const NodeType node_type, const Token& tok, DataType data_type)
+    NodeReference(std::string name, const NodeType node_type, const Token& tok, const DataType data_type)
             : NodeAST(tok, node_type), name(std::move(name)), data_type(data_type) {}
 	~NodeReference() override;
     // Kopierkonstruktor
@@ -200,8 +231,8 @@ struct NodeReference : NodeAST {
     std::string get_string() override {
         return name;
     }
-	std::string get_token_string() const override {
-		return name;
+	[[nodiscard]] std::string get_token_string() const override {
+		return tok.val;
 	}
 	virtual std::unique_ptr<struct NodeArrayRef> to_array_ref(std::unique_ptr<NodeAST> index) {return nullptr;}
 	virtual std::unique_ptr<struct NodeVariableRef> to_variable_ref() {return nullptr;}
@@ -263,6 +294,12 @@ struct NodeReference : NodeAST {
 	virtual std::unique_ptr<NodeAST> get_size();
 	[[nodiscard]] struct NodeFunctionCall* is_in_get_ui_id() const;
 	bool check_restricted_environment(NodeCallback *current_callback) const;
+	void add_prefix(const Token& tok) const {
+		prefix->add(tok);
+	}
+	[[nodiscard]] Token get_prefix(const size_t idx) const {
+		return prefix->at(idx);
+	}
 };
 
 struct NodeVariable;
@@ -272,6 +309,7 @@ struct NodeNDArray;
 struct NodeList;
 
 struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructure> {
+	std::unique_ptr<NodePrefix> prefix = std::make_unique<NodePrefix>(tok);
 	bool is_used = false;
 	bool is_engine = false;
 	std::optional<Token> persistence;
@@ -299,7 +337,7 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 		return name;
 	}
 	std::string get_token_string() const override {
-		return name;
+		return tok.val;
 	}
     virtual std::unique_ptr<NodeReference> to_reference();
 	/// determines if current data structure is local variable and sets is_local flag
@@ -366,6 +404,12 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 		return nullptr;
 	}
 	class NodeSingleDeclaration* is_in_declaration() const;
+	void add_prefix(const Token& tok) const {
+		prefix->add(tok);
+	}
+	[[nodiscard]] Token get_prefix(const size_t idx) const {
+		return prefix->at(idx);
+	}
 };
 
 struct NodeInstruction : NodeAST {

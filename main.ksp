@@ -37,8 +37,15 @@ declare read point := new Point(1, 2)
 declare wrapper := new Wrapper(new Point(3, 4))
 declare empty_wrapper: Wrapper := nil
 
+family pups
+    declare pops
+    family pupu
+        declare popo := pups.pops
+    end family        
+end family    
+
 on init
-    message(x, arr[0])
+    message(x, arr[0], pups.pupu.popo)
     // standalone method call: only runs if point is not nil
     _ := point?.get_x() ?? 0
 

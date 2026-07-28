@@ -912,10 +912,10 @@ struct NodeBlock final : NodeInstruction {
 };
 
 struct NodeFamily final : NodeInstruction {
-    std::string prefix;
+    Token prefix;
     std::unique_ptr<NodeBlock> members;
-    explicit NodeFamily(Token tok) : NodeInstruction(NodeType::Family, std::move(tok)) {}
-    NodeFamily(std::string prefix, std::unique_ptr<NodeBlock> members, Token tok)
+    explicit NodeFamily(const Token& tok) : NodeInstruction(NodeType::Family, std::move(tok)) {}
+    NodeFamily(Token prefix, std::unique_ptr<NodeBlock> members, Token tok)
             : NodeInstruction(NodeType::Family, std::move(tok)), prefix(std::move(prefix)), members(std::move(members)) {
         NodeFamily::set_child_parents();
     }
@@ -933,7 +933,7 @@ struct NodeFamily final : NodeInstruction {
     }
     std::string get_string() override { return ""; }
 	std::string get_token_string() const override {
-		return "family " + prefix + " " + members->get_token_string();
+		return "family " + prefix.val + " " + members->get_token_string();
 	}
     void update_token_data(const Token& token) override {
         members->update_token_data(token);
@@ -1355,9 +1355,9 @@ struct NodeBreak final : NodeInstruction {
 	std::string get_token_string() const override {
 		return "break";
 	}
-	NodeWhile* get_nearest_loop() const {
+	[[nodiscard]] NodeWhile* get_nearest_loop() const {
 		NodeAST* loop = parent;
-		while(loop and loop->get_node_type() != NodeType::While) {
+		while(loop and !loop->cast<NodeWhile>()) {
 			loop = loop->parent;
 		}
 		if(!loop) {
@@ -1365,17 +1365,17 @@ struct NodeBreak final : NodeInstruction {
 			error.message = "<Break> statement outside of loop. The <break> keyword can only be used inside a for- or while-loop.";
 			error.exit();
 		}
-		return static_cast<NodeWhile*>(loop);
+		return loop->cast<NodeWhile>();
 	}
 };
 
 struct NodeNamespace final : NodeInstruction {
-	std::string prefix;
+	Token prefix;
 	std::unique_ptr<NodeBlock> members;
 	std::vector<std::shared_ptr<NodeFunctionDefinition>> function_definitions{};
 
 	explicit NodeNamespace(const Token& tok) : NodeInstruction(NodeType::Namespace, tok) {}
-	NodeNamespace(std::string prefix, std::unique_ptr<NodeBlock> members, std::vector<std::shared_ptr<NodeFunctionDefinition>> funcs, Token tok)
+	NodeNamespace(Token prefix, std::unique_ptr<NodeBlock> members, std::vector<std::shared_ptr<NodeFunctionDefinition>> funcs, Token tok)
 			: NodeInstruction(NodeType::Namespace, tok), prefix(std::move(prefix)), members(std::move(members)),
 			function_definitions(std::move(funcs)) {
 		NodeNamespace::set_child_parents();
@@ -1397,8 +1397,8 @@ struct NodeNamespace final : NodeInstruction {
 		}
 	}
 	std::string get_string() override { return ""; }
-	std::string get_token_string() const override {
-		std::string str = "namespace " + prefix;
+	[[nodiscard]] std::string get_token_string() const override {
+		std::string str = "namespace " + prefix.val;
 		if (members) str += " " + members->get_token_string();
 		for (const auto& func_def : function_definitions) str += " " + func_def->get_token_string();
 		return str;

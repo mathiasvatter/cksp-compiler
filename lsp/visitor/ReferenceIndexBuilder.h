@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <memory>
 #include <optional>
-#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -36,32 +35,37 @@ private:
 	Pass m_pass;
 	SourceProvider* m_sources = nullptr;
 	mutable std::unordered_map<std::string, std::shared_ptr<const std::string>> m_source_cache;
-	std::vector<std::string> m_prefix_stack;
 
-	[[nodiscard]] std::string qualified_name(const std::string& name) const {
-		return m_prefix_stack.empty() ? name : m_prefix_stack.back() + "." + name;
+	[[nodiscard]] static const NodePrefix* prefixes_of(const NodeAST& target) {
+		const auto* declaration = dynamic_cast<const NodeDataStructure*>(&target);
+		return declaration ? declaration->prefix.get() : nullptr;
 	}
 
 	void add_qualifier_links(const Token& reference, const NodeAST& target) const {
-		std::vector<std::string> segments;
-		std::istringstream names(reference.val);
-		for (std::string segment; std::getline(names, segment, '.');) {
-			segments.push_back(std::move(segment));
-		}
+		const auto* target_prefixes = prefixes_of(target);
+		if (!target_prefixes || target_prefixes->prefixes.empty()) return;
+
+		const auto segments = StringUtils::split(reference.val, '.');
 		if (segments.size() < 2) return;
 
-		std::string prefix;
+		// A reference may omit leading qualifiers inside its current scope. Align the
+		// visible qualifier suffix with the declaration's complete desugared prefix path.
+		// The stored tokens identify the exact block even when names and files are equal.
+		const size_t visible_prefix_count = segments.size() - 1;
+		const size_t comparable_count = std::min(
+			visible_prefix_count,
+			target_prefixes->prefixes.size());
+		const size_t source_start = visible_prefix_count - comparable_count;
+		const size_t target_start = target_prefixes->prefixes.size() - comparable_count;
+
 		size_t offset = 0;
-		for (size_t i = 0; i + 1 < segments.size(); ++i) {
-			if (!prefix.empty()) prefix += '.';
-			prefix += segments[i];
-			if (const auto definition = m_index.qualifier_definition(prefix, target.tok.file)) {
-				const auto token = segment_token(reference, offset, segments[i]);
-				m_index.add(
-					token.file,
-					source_range_from_token(token),
-					definition->file,
-					definition->range);
+		for (size_t i = 0; i < visible_prefix_count; ++i) {
+			if (i >= source_start) {
+				const auto& declaration = target_prefixes->prefixes[target_start + i - source_start];
+				if (segments[i] == declaration.val) {
+					const auto token = segment_token(reference, offset, segments[i]);
+					m_index.add_link(token, declaration);
+				}
 			}
 			offset += segments[i].size() + 1;
 		}
@@ -113,7 +117,6 @@ private:
 		if (!verified_reference) return;
 		const auto def_range = declaration_range(target);
 		if (!def_range.is_valid()) return;
-		add_qualifier_links(*verified_reference, target);
 
 		Token direct_reference = *verified_reference;
 		if (verified_reference->val != target.tok.val) {
@@ -126,6 +129,8 @@ private:
 			if (!verified_direct_reference) return;
 			direct_reference = *verified_direct_reference;
 		}
+
+		add_qualifier_links(*verified_reference, target);
 
 		// The reference side stays on the token: access-chain members carry per-segment
 		// tokens (see the to_method_chain overrides), so the token spans exactly the
@@ -166,13 +171,11 @@ private:
 	}
 
 	template<typename Node>
-	NodeAST* record_definition(Node& node, const std::string& local_name) {
-		if (m_pass != Pass::Definitions) return ASTVisitor::visit(node);
-		const auto name = qualified_name(local_name);
-		m_index.add_qualifier_definition(name, node.tok);
-		m_prefix_stack.push_back(name);
+	NodeAST* record_definition(Node& node, const Token& declaration) {
+		if (m_pass == Pass::Definitions) {
+			add_link(declaration, node);
+		}
 		ASTVisitor::visit(node);
-		m_prefix_stack.pop_back();
 		return &node;
 	}
 
@@ -238,7 +241,7 @@ public:
 	}
 
 	NodeAST* visit(NodeConst& node) override {
-		return record_definition(node, node.name);
+		return record_definition(node, node.const_prefix);
 	}
 
 	NodeAST* visit(NodeFunctionCall& node) override {

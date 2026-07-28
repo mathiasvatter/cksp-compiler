@@ -381,10 +381,14 @@ struct NodeList final : NodeDataStructure {
 };
 
 struct NodeConst final : NodeDataStructure {
+	Token const_prefix;
     std::unique_ptr<NodeBlock> constants;
-    explicit NodeConst(const Token& tok) : NodeDataStructure("", TypeRegistry::Unknown, tok, NodeType::Const, DataType::Const) {}
-    NodeConst(std::string name, std::unique_ptr<NodeBlock> constants, const Token &tok)
-            : NodeDataStructure(std::move(name), TypeRegistry::Unknown, tok, NodeType::Const, DataType::Const), constants(std::move(constants)) {
+    explicit NodeConst(const Token& tok)
+		: NodeDataStructure(tok.val, TypeRegistry::Unknown, tok, NodeType::Const, DataType::Const),
+		  const_prefix(tok) {}
+    NodeConst(Token prefix, std::unique_ptr<NodeBlock> constants, const Token &tok)
+            : NodeDataStructure(prefix.val, TypeRegistry::Unknown, tok, NodeType::Const, DataType::Const),
+              const_prefix(std::move(prefix)), constants(std::move(constants)) {
         NodeConst::set_child_parents();
     }
     NodeAST * accept(ASTVisitor &visitor) override;
@@ -401,7 +405,7 @@ struct NodeConst final : NodeDataStructure {
     }
     std::string get_string() override { return ""; }
 	std::string get_token_string() const override {
-		std::string str = name;
+		std::string str = const_prefix.val;
 		if (constants) {
 			if (!str.empty()) str += " ";
 			str += constants->get_token_string();

@@ -1277,7 +1277,7 @@ Result<std::unique_ptr<NodeNamespace>> Parser::parse_namespace(NodeAST *parent) 
 	}
 	auto end_token = consume(); // consume end struct
 	auto node_namespace = std::make_unique<NodeNamespace>(
-		name.val,
+		name,
 		std::move(node_declarations),
 		std::move(node_functions),
 		name);
@@ -2487,7 +2487,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_family_statement(NodeAST* parent)
 	}
 	auto end_token = consume(); // consume end family
 	node_family_statement->set_range(start_token, end_token);
-	node_family_statement->prefix = prefix.val;
+	node_family_statement->prefix = prefix;
 	node_family_statement->members = std::move(node_block);
 	node_family_statement->set_child_parents();
 	node_family_statement -> parent = parent;
@@ -2674,7 +2674,6 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_const_statement(NodeAST* parent) 
 	auto end_token = consume(); // consume end_const
 	node_const_statement->set_range(start_token, end_token);
 	node_const_statement -> parent = parent;
-	node_const_statement->name = prefix.val;
 	node_const_statement->constants = std::move(node_body);
 	node_const_statement->set_child_parents();
 	// set the parent for each statement in stmts

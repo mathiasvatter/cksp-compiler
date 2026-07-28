@@ -113,6 +113,15 @@ std::vector<ReferenceLocation> ReferenceProvider::references_to(
 	std::lock_guard lock(m_mutex);
 	for (const auto& [_, state] : m_states) {
 		for (const auto& reference : references_from_state(state, target)) {
+			// Qualifier blocks and function headers carry a self-link so their declaration
+			// remains addressable even without usages. Do not expose that implementation
+			// detail when the client explicitly excludes declarations.
+			const bool is_declaration = reference.ref_file == reference.def_file
+				&& reference.ref_range.start.line == reference.def_name_range.start.line
+				&& reference.ref_range.start.column == reference.def_name_range.start.column
+				&& reference.ref_range.end.line == reference.def_name_range.end.line
+				&& reference.ref_range.end.column == reference.def_name_range.end.column;
+			if (is_declaration && !include_declaration) continue;
 			add(reference.ref_file, reference.ref_range);
 		}
 	}

@@ -46,6 +46,7 @@ enum class NodeStructureType {
 };
 
 enum class NodeType {
+	Prefix,
 	Variable,
 	VariableRef,
 	Array,

@@ -28,13 +28,6 @@ struct ReferenceLink {
 	SourceRange def_name_range;  ///< exactly the declared name, e.g. the range a rename edit replaces
 };
 
-/** A named source construct which can be used as a qualifier, such as a namespace. */
-struct QualifierDefinition {
-	std::string name;
-	std::string file;
-	SourceRange range;
-};
-
 /**
  * Position -> declaration index built for one analyzed entry.
  *
@@ -46,8 +39,6 @@ class ReferenceIndex {
 	std::vector<ReferenceLink> m_links;
 	std::unordered_set<std::string> m_seen_links;
 	std::unordered_set<std::string> m_seen_references;
-	std::vector<QualifierDefinition> m_qualifier_definitions;
-	std::unordered_set<std::string> m_seen_qualifier_definitions;
 	mutable std::unordered_map<std::string, std::string> m_normalized_files;
 
 public:
@@ -71,37 +62,14 @@ public:
 	}
 
 	/// Records a link between two source tokens (reference -> declaration). Tokens without a
-	/// real source file (builtins, synthesized nodes) are skipped. Used by the preprocessor
-	/// passes for define and macro usages.
+	/// real source file (builtins, synthesized nodes) are skipped. Used by preprocessing and
+	/// by AST prefix provenance, where the declaration token is the symbol identity.
 	void add_link(const Token& reference, const Token& declaration) {
 		if (reference.file.empty() || declaration.file.empty()) return;
 		const auto ref_range = source_range_from_token(reference);
 		const auto def_range = source_range_from_token(declaration);
 		if (!ref_range.is_valid() || !def_range.is_valid()) return;
 		add(reference.file, ref_range, declaration.file, def_range);
-	}
-
-	/// Records a named qualifier definition before desugaring removes its AST node.
-	void add_qualifier_definition(std::string name, const Token& declaration) {
-		if (declaration.file.empty()) return;
-		const auto range = source_range_from_token(declaration);
-		if (!range.is_valid()) return;
-		auto file = normalized_file(declaration.file);
-		auto key = name + "@" + file + "@" + range.to_string();
-		if (!m_seen_qualifier_definitions.insert(std::move(key)).second) return;
-		m_qualifier_definitions.push_back({std::move(name), std::move(file), range});
-	}
-
-	/// Finds the qualifier in the file which owns the referenced member. Requiring the same
-	/// file prevents equal namespace/family names in separate imports from being conflated.
-	[[nodiscard]] std::optional<QualifierDefinition> qualifier_definition(
-		const std::string& name,
-		const std::string& preferred_file) const {
-		const auto normalized_preferred = normalized_file(preferred_file);
-		for (const auto& definition : m_qualifier_definitions) {
-			if (definition.name == name && definition.file == normalized_preferred) return definition;
-		}
-		return std::nullopt;
 	}
 
 	[[nodiscard]] bool empty() const { return m_links.empty(); }
