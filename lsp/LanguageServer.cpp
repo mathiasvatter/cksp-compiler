@@ -10,6 +10,7 @@
 #include "../misc/DiagnosticSink.h"
 #include "version.h"
 
+#include <algorithm>
 #include <filesystem>
 #include <unordered_set>
 
@@ -179,7 +180,19 @@ void LanguageServer::analyze_entry(const SourceId& entry_source) {
 	// A failed analysis often has only a partial import graph. Use it to establish a new
 	// entry, but never replace graph ownership learned from a complete analysis.
 	if (result.success || !has_successful_graph) {
-		m_entry_points.register_analysis(entry, compiler.import_graph());
+		const auto subsumed_entries =
+			m_entry_points.register_analysis(entry, compiler.import_graph());
+		if (result.success) {
+			// A source may have been analysed standalone before this owning entry was
+			// opened and its import graph became known. Remove that out-of-context
+			// snapshot immediately so its diagnostics cannot remain merged into the
+			// imported source until the source happens to change again.
+			for (const auto& subsumed_entry : subsumed_entries) {
+				m_entry_points.remove_entry(subsumed_entry);
+				m_diagnostic_publisher.discard_entry(subsumed_entry);
+				m_references.erase(subsumed_entry);
+			}
+		}
 	}
 
 	m_references.publish(entry, compiler.reference_index(), result.success, std::move(successful_sources));
@@ -263,6 +276,25 @@ void LanguageServer::analyze_entries_for_sources(const std::vector<SourceId>& ch
 					m_pending_analysis_sources.insert(entries[remaining].value);
 				}
 				return;
+			}
+
+			{
+				std::lock_guard lock(m_state_mutex);
+				const auto current_entries = m_entry_points.affected_entries(entries[i]);
+				const bool still_analyzed_as_entry = std::ranges::any_of(
+					current_entries,
+					[&entry = entries[i]](const SourceId& current_entry) {
+						return current_entry == entry;
+					});
+				if (!still_analyzed_as_entry) {
+					// An earlier analysis in this batch discovered that this queued
+					// standalone source is imported by another entry. Do not let the
+					// obsolete queued analysis recreate the snapshot just discarded.
+					m_entry_points.remove_entry(entries[i]);
+					m_diagnostic_publisher.discard_entry(entries[i]);
+					m_references.erase(entries[i]);
+					continue;
+				}
 			}
 			analyze_entry(entries[i]);
 		}

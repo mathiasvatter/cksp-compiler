@@ -22,13 +22,27 @@ void EntryPointResolver::set_configured_entry(std::optional<SourceId> configured
     m_configured_entry = std::move(configured_entry);
 }
 
-void EntryPointResolver::register_analysis(const SourceId& entry_source, ImportGraph import_graph) {
+std::vector<SourceId> EntryPointResolver::register_analysis(
+    const SourceId& entry_source, ImportGraph import_graph) {
     const auto entry = FileSystemSourceProvider::normalize(entry_source.value);
     m_known_entries.insert(entry.value);
     m_import_graphs.insert_or_assign(entry.value, std::move(import_graph));
+
+    std::vector<SourceId> subsumed_standalone_entries;
+    for (const auto& candidate_value : m_known_entries) {
+        const SourceId candidate(candidate_value);
+        if (candidate == entry || is_configured_entry(candidate)) {
+            continue;
+        }
+        if (entry_depends_on(entry, candidate)) {
+            subsumed_standalone_entries.push_back(candidate);
+        }
+    }
+
     if (std::getenv("CKSP_LSP_DUMP_GRAPHS")) {
         dump_import_graphs();
     }
+    return subsumed_standalone_entries;
 }
 
 void EntryPointResolver::remove_entry(const SourceId& entry_source) {

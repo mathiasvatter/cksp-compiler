@@ -30,7 +30,15 @@ class EntryPointResolver {
 public:
 	void set_workspace_root(std::optional<SourceId> workspace_root);
 	void set_configured_entry(std::optional<SourceId> configured_entry);
-	void register_analysis(const SourceId& entry_source, ImportGraph import_graph);
+	/**
+	 * Registers the latest import graph for an entry point.
+	 *
+	 * Returns previously known non-configured entries that the new graph now imports.
+	 * Those entries were analysed standalone before their owning entry was known and
+	 * should be discarded by the language server together with their diagnostics.
+	 */
+	[[nodiscard]] std::vector<SourceId> register_analysis(
+		const SourceId& entry_source, ImportGraph import_graph);
 
 	void remove_entry(const SourceId& entry_source);
 	[[nodiscard]] std::vector<SourceId> affected_entries(const SourceId& changed_source) const;
