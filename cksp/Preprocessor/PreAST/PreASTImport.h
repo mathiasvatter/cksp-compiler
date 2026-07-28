@@ -16,6 +16,52 @@ class PreASTImport final : public PreASTVisitor {
 	std::unordered_set<std::string> &m_imported_files; // Um zirkuläre Abhängigkeiten zu vermeiden
 	std::unordered_map<std::string, std::string> &m_basename_map; // Map to store basename to full path mapping
 
+	static void wrap_imported_program_in_namespace(const PreNodeImport& import, PreNodeChunk& program) {
+		if (!import.alias) return;
+
+		Token namespace_token = import.tok;
+		namespace_token.type = token::NAMESPACE;
+		namespace_token.val = "namespace";
+
+		Token alias_token = import.alias->tok;
+
+		Token opening_linebreak = alias_token;
+		opening_linebreak.type = token::LINEBRK;
+		opening_linebreak.val = "\n";
+		opening_linebreak.pos += alias_token.val.size();
+
+		Token end_namespace_token = alias_token;
+		end_namespace_token.type = token::END_NAMESPACE;
+		end_namespace_token.val = "end namespace";
+		end_namespace_token.pos += alias_token.val.size();
+
+		Token body_linebreak = end_namespace_token;
+		body_linebreak.type = token::LINEBRK;
+		body_linebreak.val = "\n";
+
+		Token closing_linebreak = end_namespace_token;
+		closing_linebreak.type = token::LINEBRK;
+		closing_linebreak.val = "\n";
+		closing_linebreak.pos += end_namespace_token.val.size();
+
+		std::vector<std::unique_ptr<PreNodeAST>> namespaced_program;
+		namespaced_program.reserve(program.chunk.size() + 6);
+		namespaced_program.push_back(std::make_unique<PreNodeOther>(std::move(namespace_token), &program));
+		namespaced_program.push_back(std::make_unique<PreNodeKeyword>(std::move(alias_token), &program));
+		namespaced_program.push_back(std::make_unique<PreNodeOther>(std::move(opening_linebreak), &program));
+		namespaced_program.insert(
+			namespaced_program.end(),
+			std::make_move_iterator(program.chunk.begin()),
+			std::make_move_iterator(program.chunk.end())
+		);
+		namespaced_program.push_back(std::make_unique<PreNodeOther>(std::move(body_linebreak), &program));
+		namespaced_program.push_back(std::make_unique<PreNodeOther>(std::move(end_namespace_token), &program));
+		namespaced_program.push_back(std::make_unique<PreNodeOther>(std::move(closing_linebreak), &program));
+
+		program.chunk = std::move(namespaced_program);
+		// program.set_child_parents();
+	}
+
 public:
 	PreASTImport(const SourceId& root_source,
 				 const SourceId& current_source,
@@ -80,6 +126,7 @@ public:
 				std::make_move_iterator(import_program->macro_definitions.begin()),
 				std::make_move_iterator(import_program->macro_definitions.end())
 			);
+			wrap_imported_program_in_namespace(node, *import_program->program);
 			node.replace_with(std::move(import_program->program));
 		}
 

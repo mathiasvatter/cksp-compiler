@@ -206,25 +206,55 @@ std::unique_ptr<PreNodeAST> PreNodeChunk::clone() const {
 	return std::make_unique<PreNodeChunk>(*this);
 }
 
-void PreNodeChunk::flatten() {
-	std::vector<std::unique_ptr<PreNodeAST>> temp;
-	temp.reserve(chunk.size()); // Speicherreservierung um unnötige Allokationen zu vermeiden
+// void PreNodeChunk::flatten() {
+// 	std::vector<std::unique_ptr<PreNodeAST>> temp;
+// 	temp.reserve(chunk.size()); // Speicherreservierung um unnötige Allokationen zu vermeiden
+//
+// 	for (auto& i : chunk) {
+// 		if (const auto& node_statement = i->cast<PreNodeStatement>()) {
+// 			if (const auto& node_chunk = node_statement->statement->cast<PreNodeChunk>()) {
+// 				// Fügen Sie die inneren Statements zum temporären Vector hinzu
+// 				auto& inner_chunk = node_chunk->chunk;
+// 				for (const auto& c : inner_chunk) {
+// 					c->parent = this;
+// 				}
+// 				temp.insert(temp.end(),
+// 							std::make_move_iterator(inner_chunk.begin()),
+// 							std::make_move_iterator(inner_chunk.end()));
+// 				continue; // Weiter zur nächsten Iteration
+// 			}
+// 		}
+// 		// Fügen Sie das aktuelle Element zum temporären Vector hinzu
+// 		temp.push_back(std::move(i));
+// 	}
+// 	chunk = std::move(temp);
+// }
 
-	for (auto& i : chunk) {
-		if (const auto node_statement = i->cast<PreNodeStatement>()) {
-			if (const auto node_chunk = node_statement->statement->cast<PreNodeChunk>()) {
-				// Fügen Sie die inneren Statements zum temporären Vector hinzu
-				auto& inner_chunk = node_chunk->chunk;
-				temp.insert(temp.end(),
-							std::make_move_iterator(inner_chunk.begin()),
-							std::make_move_iterator(inner_chunk.end()));
-				continue; // Weiter zur nächsten Iteration
+void PreNodeChunk::flatten() {
+	size_t final_size = chunk.size();
+	for (const auto& node : chunk) {
+		if (auto* statement = node->cast<PreNodeStatement>()) {
+			if (auto* inner = statement->statement->cast<PreNodeChunk>()) {
+				final_size += inner->chunk.size() - 1;
 			}
 		}
-		// Fügen Sie das aktuelle Element zum temporären Vector hinzu
-		temp.push_back(std::move(i));
 	}
-	chunk = std::move(temp);
+
+	std::vector<std::unique_ptr<PreNodeAST>> flattened;
+	flattened.reserve(final_size);
+	for (auto& node : chunk) {
+		if (auto* statement = node->cast<PreNodeStatement>()) {
+			if (auto* inner = statement->statement->cast<PreNodeChunk>()) {
+				for (auto& child : inner->chunk) {
+					child->parent = this;
+					flattened.push_back(std::move(child));
+				}
+				continue;
+			}
+		}
+		flattened.push_back(std::move(node));
+	}
+	chunk = std::move(flattened);
 }
 
 // ************* PreNodeList *************

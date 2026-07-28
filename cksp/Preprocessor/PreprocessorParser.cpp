@@ -707,10 +707,10 @@ Result<std::unique_ptr<PreNodeImport>> PreprocessorParser::parse_import(PreNodeA
     std::string filepath = StringUtils::remove_quotes(path.val);
     std::unique_ptr<PreNodeKeyword> alias;
     if(peek().type == token::AS) {
-        auto error = Diagnostic(ErrorType::ParseError, "", "", peek());
-        error.set_message("Importing file with alias is not supported in as of version " + COMPILER_VERSION + ". "+
-            "Please remove the 'as <alias>' part from the import statement.");
-        error.exit();
+        // auto error = Diagnostic(ErrorType::ParseError, "", "", peek());
+        // error.set_message("Importing file with alias is not supported in as of version " + COMPILER_VERSION + ". "+
+        //     "Please remove the 'as <alias>' part from the import statement.");
+        // error.exit();
 
         consume(); // consume <as> token
         auto alias_keyword = parse_keyword(parent);
