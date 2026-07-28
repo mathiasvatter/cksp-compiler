@@ -1114,9 +1114,9 @@ std::unique_ptr<NodeAST> NodeBinaryExpr::calculate_index_expression(const std::v
 }
 
 // ************* NodeCallback ***************
-NodeCallback::NodeCallback(const Token& tok) : NodeAST(tok, NodeType::Callback) {}
-NodeCallback::NodeCallback(std::string begin_callback, std::unique_ptr<NodeBlock> statements, std::string end_callback, const Token& tok)
-: NodeAST(tok, NodeType::Callback), begin_callback(std::move(begin_callback)), statements(std::move(statements)), end_callback(std::move(end_callback)) {
+NodeCallback::NodeCallback(Token tok) : NodeAST(std::move(tok), NodeType::Callback) {}
+NodeCallback::NodeCallback(std::string begin_callback, std::unique_ptr<NodeBlock> statements, std::string end_callback, Token tok)
+		: NodeAST(std::move(tok), NodeType::Callback), begin_callback(std::move(begin_callback)), statements(std::move(statements)), end_callback(std::move(end_callback)) {
     NodeCallback::set_child_parents();
 }
 // NodeCallback::~NodeCallback() = default;
@@ -1177,11 +1177,11 @@ std::unique_ptr<NodeAST> NodeImport::clone() const {
 }
 
 // ************* NodeFunctionDefinition ***************
-NodeFunctionDefinition::NodeFunctionDefinition(const Token& tok) : NodeAST(tok, NodeType::FunctionDefinition) {}
+NodeFunctionDefinition::NodeFunctionDefinition(Token tok) : NodeAST(std::move(tok), NodeType::FunctionDefinition) {}
 NodeFunctionDefinition::NodeFunctionDefinition(std::unique_ptr<NodeFunctionHeader> header,
 											   std::optional<std::unique_ptr<NodeDataStructure>> returnVariable,
-											   const bool override, std::unique_ptr<NodeBlock> body, const Token& tok)
-        : NodeAST(tok, NodeType::FunctionDefinition), header(std::move(header)),
+											   const bool override, std::unique_ptr<NodeBlock> body, Token tok)
+        : NodeAST(std::move(tok), NodeType::FunctionDefinition), header(std::move(header)),
 		return_variable(std::move(returnVariable)), override(override),body(std::move(body)) {
     NodeFunctionDefinition::set_child_parents();
 }
@@ -1327,15 +1327,15 @@ void NodeFunctionDefinition::mark_threadsafety(NodeProgram *program) {
 }
 
 // ************* NodeProgramm ***************
-NodeProgram::NodeProgram(const Token& tok) : NodeAST(tok, NodeType::Program) {
+NodeProgram::NodeProgram(Token tok) : NodeAST(std::move(tok), NodeType::Program) {
 	global_declarations = std::make_unique<NodeBlock>(Token());
 	set_child_parents();
 }
 
 NodeProgram::NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
 						 std::vector<std::shared_ptr<NodeFunctionDefinition>> functionDefinitions,
-						 const Token& tok)
-	: NodeAST(tok, NodeType::Program), callbacks(std::move(callbacks)), function_definitions(std::move(functionDefinitions)) {
+						 Token tok)
+	: NodeAST(std::move(tok), NodeType::Program), callbacks(std::move(callbacks)), function_definitions(std::move(functionDefinitions)) {
 	global_declarations = std::make_unique<NodeBlock>(Token());
 	set_child_parents();
 }

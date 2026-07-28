@@ -682,7 +682,7 @@ struct NodeFunctionParam final : NodeInstruction {
 		NodeFunctionParam::set_child_parents();
 	}
 	explicit NodeFunctionParam(std::unique_ptr<NodeDataStructure> variable)
-		: NodeInstruction(NodeType::FunctionParam, std::move(variable->tok)), variable(std::move(variable)) {
+		: NodeInstruction(NodeType::FunctionParam, variable->tok), variable(std::move(variable)) {
 		NodeFunctionParam::set_child_parents();
 	}
 	NodeAST * accept(ASTVisitor &visitor) override;
@@ -914,7 +914,7 @@ struct NodeBlock final : NodeInstruction {
 struct NodeFamily final : NodeInstruction {
     Token prefix;
     std::unique_ptr<NodeBlock> members;
-    explicit NodeFamily(const Token& tok) : NodeInstruction(NodeType::Family, std::move(tok)) {}
+    explicit NodeFamily(Token tok) : NodeInstruction(NodeType::Family, std::move(tok)) {}
     NodeFamily(Token prefix, std::unique_ptr<NodeBlock> members, Token tok)
             : NodeInstruction(NodeType::Family, std::move(tok)), prefix(std::move(prefix)), members(std::move(members)) {
         NodeFamily::set_child_parents();
@@ -946,9 +946,9 @@ struct NodeIf final : NodeInstruction {
     std::unique_ptr<NodeAST> condition;
     std::unique_ptr<NodeBlock> if_body;
     std::unique_ptr<NodeBlock> else_body;
-    explicit NodeIf(const Token& tok) : NodeInstruction(NodeType::If, tok) {
+    explicit NodeIf(Token tok) : NodeInstruction(NodeType::If, tok) {
 	    set_else_body(std::make_unique<NodeBlock>(tok, true));
-    	set_if_body(std::make_unique<NodeBlock>(tok, true));
+		set_if_body(std::make_unique<NodeBlock>(std::move(tok), true));
     }
     NodeIf(std::unique_ptr<NodeAST> condition, std::unique_ptr<NodeBlock> statements, std::unique_ptr<NodeBlock> elseStatements, Token tok)
             : NodeInstruction(NodeType::If, std::move(tok)), condition(std::move(condition)), if_body(std::move(statements)), else_body(std::move(elseStatements)) {
@@ -1080,9 +1080,9 @@ struct NodeFor final : NodeLoop {
     std::unique_ptr<NodeAST> iterator_end;
     std::unique_ptr<NodeAST> step = nullptr;
     std::unique_ptr<NodeBlock> body;
-    explicit NodeFor(const Token& tok) : NodeLoop(NodeType::For, tok) {}
-    NodeFor(std::unique_ptr<NodeSingleAssignment> iterator, token to, std::unique_ptr<NodeAST> iterator_end, std::unique_ptr<NodeBlock> statements, const Token& tok)
-            : NodeLoop(NodeType::For, tok), iterator(std::move(iterator)), to(std::move(to)), iterator_end(std::move(iterator_end)), body(std::move(statements)) {
+    explicit NodeFor(Token tok) : NodeLoop(NodeType::For, std::move(tok)) {}
+    NodeFor(std::unique_ptr<NodeSingleAssignment> iterator, token to, std::unique_ptr<NodeAST> iterator_end, std::unique_ptr<NodeBlock> statements, Token tok)
+            : NodeLoop(NodeType::For, std::move(tok)), iterator(std::move(iterator)), to(to), iterator_end(std::move(iterator_end)), body(std::move(statements)) {
         set_child_parents();
     }
     NodeAST * accept(ASTVisitor &visitor) override;
@@ -1131,8 +1131,8 @@ struct NodeForEach final : NodeLoop {
     std::unique_ptr<NodeFunctionParam> value;
     std::unique_ptr<NodeAST> range;
     std::unique_ptr<NodeBlock> body;
-    explicit NodeForEach(const Token& tok) : NodeLoop(NodeType::ForEach, std::move(tok)) {}
-    NodeForEach(std::unique_ptr<NodeFunctionParam> key, std::unique_ptr<NodeAST> range, std::unique_ptr<NodeBlock> statements, const Token& tok)
+    explicit NodeForEach(Token tok) : NodeLoop(NodeType::ForEach, std::move(tok)) {}
+    NodeForEach(std::unique_ptr<NodeFunctionParam> key, std::unique_ptr<NodeAST> range, std::unique_ptr<NodeBlock> statements, Token tok)
             : NodeLoop(NodeType::ForEach, std::move(tok)), key(std::move(key)), range(std::move(range)), body(std::move(statements)) {
         set_child_parents();
     }
@@ -1374,9 +1374,9 @@ struct NodeNamespace final : NodeInstruction {
 	std::unique_ptr<NodeBlock> members;
 	std::vector<std::shared_ptr<NodeFunctionDefinition>> function_definitions{};
 
-	explicit NodeNamespace(const Token& tok) : NodeInstruction(NodeType::Namespace, tok) {}
+	explicit NodeNamespace(Token tok) : NodeInstruction(NodeType::Namespace, std::move(tok)) {}
 	NodeNamespace(Token prefix, std::unique_ptr<NodeBlock> members, std::vector<std::shared_ptr<NodeFunctionDefinition>> funcs, Token tok)
-			: NodeInstruction(NodeType::Namespace, tok), prefix(std::move(prefix)), members(std::move(members)),
+			: NodeInstruction(NodeType::Namespace, std::move(tok)), prefix(std::move(prefix)), members(std::move(members)),
 			function_definitions(std::move(funcs)) {
 		NodeNamespace::set_child_parents();
 	}
