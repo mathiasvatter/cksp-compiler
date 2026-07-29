@@ -28,7 +28,9 @@ class ASTSourceMapGenerator final : public ASTVisitor {
 	size_t m_generated_line = 1;
 
 	[[nodiscard]] static bool has_source(const NodeAST& node);
+	[[nodiscard]] static SourceRange statement_range(const NodeAST& statement, const NodeAST& end);
 	void record(const NodeAST& node);
+	void record(const NodeAST& node, const SourceRange& range);
 	void record_with_fallback(const NodeAST& preferred, const NodeAST& fallback);
 	void advance_line() { ++m_generated_line; }
 
@@ -40,6 +42,9 @@ public:
 
 	NodeAST* visit(NodeProgram& node) override;
 	NodeAST* visit(NodeStatement& node) override;
+	NodeAST* visit(NodeSingleDeclaration& node) override;
+	NodeAST* visit(NodeSingleAssignment& node) override;
+	NodeAST* visit(NodeFunctionCall& node) override;
 	NodeAST* visit(NodeBlock& node) override;
 	NodeAST* visit(NodeIf& node) override;
 	NodeAST* visit(NodeWhile& node) override;
