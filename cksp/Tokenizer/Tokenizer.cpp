@@ -333,20 +333,30 @@ void Tokenizer::get_keyword_or_num() {
 
     // check if is float or bitwise operator
 	if (peek() == '.') {
-		consume();
-		if (std::isdigit(peek())) {
-			while (std::isdigit(peek())) {
-				consume();
-			}
-			// also allow an exponent after a leading-dot float like .5e2
-			if (is_scientific_exponent_start()) {
-				consume_exponent();
-			}
-			add_token(token::FLOAT, m_buffer);
-		} else {
-			auto err_msg = "Found unknown keyword.";
-			Diagnostic(ErrorType::TokenError, err_msg, m_line, "valid keyword", m_buffer, m_current_file).exit();
+		// An exponent already completes a scientific literal. A decimal point may only
+		// occur before it, never afterwards (e.g. reject 1e3. and 1e3.5).
+		if (is_float) {
+			auto err_msg = "Found malformed real literal.";
+			Diagnostic(
+				ErrorType::TokenError,
+				err_msg,
+				m_line,
+				"decimal point before exponent",
+				m_buffer,
+				m_current_file).exit();
 		}
+		consume();
+		// Fractional digits are optional when the literal already had leading digits:
+		// 960. is a real just like 960.0. Leading-dot forms still enter this function
+		// only when is_keyword_or_num() has verified that a digit follows the dot.
+		while (std::isdigit(peek())) {
+			consume();
+		}
+		// Also allow an exponent after decimal forms such as .5e2 and 960.e2.
+		if (is_scientific_exponent_start()) {
+			consume_exponent();
+		}
+		add_token(token::FLOAT, m_buffer);
 	// check if optional chaining ?.
 	} else if (peek() == '?' and peek(1) == '.') {
 		consume();
