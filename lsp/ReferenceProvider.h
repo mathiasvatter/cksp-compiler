@@ -33,6 +33,14 @@ public:
 	void erase(const SourceId& entry);
 
 	[[nodiscard]] bool has_successful_snapshot(const SourceId& entry) const;
+	[[nodiscard]] std::optional<DefinitionLink> resolve_definition(
+		const std::vector<SourceId>& preferred_entries,
+		const SourceId& source,
+		size_t line,
+		size_t character);
+	[[nodiscard]] std::vector<DefinitionLink> document_links(
+		const std::vector<SourceId>& preferred_entries,
+		const SourceId& source);
 	[[nodiscard]] std::optional<ReferenceLink> resolve_target(
 		const std::vector<SourceId>& preferred_entries,
 		const SourceId& source,
@@ -57,6 +65,14 @@ private:
 	mutable std::mutex m_mutex;
 
 	[[nodiscard]] bool source_matches_snapshot(const SourceContents& snapshot, const std::string& source);
+	[[nodiscard]] std::optional<DefinitionLink> resolve_definition_from_state(
+		const State& state,
+		const SourceId& source,
+		size_t line,
+		size_t character);
+	[[nodiscard]] std::vector<DefinitionLink> document_links_from_state(
+		const State& state,
+		const SourceId& source);
 	[[nodiscard]] std::optional<ReferenceLink> resolve_from_state(
 		const State& state,
 		const SourceId& source,

@@ -118,8 +118,9 @@ public:
 		auto pre_ast = std::move(pre_ast_result.unwrap());
 		std::unordered_set<std::string> imported_files{};
 		std::unordered_map<std::string, std::string> basename_map{};
+		ReferenceIndex* reference_index = m_cli_config->lsp ? &m_reference_index : nullptr;
 		pre_ast->do_import_processing(
-			entry_source, entry_source, parser, imported_files, basename_map);
+			entry_source, entry_source, parser, imported_files, basename_map, reference_index);
 
 		m_timer.stop("Import");
 		m_timer.start("Preprocessor");
@@ -127,11 +128,10 @@ public:
 		PreASTConditions conditions_processor;
 		pre_ast->accept(conditions_processor);
 
-		PreASTPragma pragma(m_pragma_config.get());
+		PreASTPragma pragma(m_pragma_config.get(), reference_index);
 		pre_ast->accept(pragma);
 
 		// in lsp mode the substitution passes record define/macro usage -> definition links
-		ReferenceIndex* reference_index = m_cli_config->lsp ? &m_reference_index : nullptr;
 		PreASTDefines defines(reference_index);
 		pre_ast->accept(defines);
 		pre_ast->debug_print();

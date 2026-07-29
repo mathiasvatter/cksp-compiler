@@ -47,6 +47,9 @@ struct SourceRange {
         : start(first.start),
           end(last.end) {}
 
+    constexpr SourceRange(const SourcePosition first, const SourcePosition last)
+        : start(first), end(last) {}
+
     [[nodiscard]] bool is_valid() const noexcept {
         return start.line != static_cast<size_t>(-1);
     }

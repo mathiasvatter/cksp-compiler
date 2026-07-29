@@ -729,7 +729,7 @@ Result<std::unique_ptr<PreNodeImport>> PreprocessorParser::parse_import(PreNodeA
 
     }
     consume(); //consume linebreak
-    auto import_statement = std::make_unique<PreNodeImport>(filepath, token, parent);
+    auto import_statement = std::make_unique<PreNodeImport>(filepath, token, path, parent);
     import_statement->set_alias(std::move(alias));
     import_statement->set_range(token, end_token);
     return Result<std::unique_ptr<PreNodeImport>>(std::move(import_statement));
@@ -757,7 +757,7 @@ Result<std::unique_ptr<PreNodeImportNCKP>> PreprocessorParser::parse_import_nckp
         return Result<std::unique_ptr<PreNodeImportNCKP>>(Diagnostic(ErrorType::ParseError,
                                                                        "Incorrect import Syntax.","linebreak",peek()));
     consume(); //consume linebreak
-    auto return_value = std::make_unique<PreNodeImportNCKP>(filepath, token, parent);
+    auto return_value = std::make_unique<PreNodeImportNCKP>(filepath, token, path, parent);
     return_value->set_range(token, end_token);
     return Result<std::unique_ptr<PreNodeImportNCKP>>(std::move(return_value));
 }

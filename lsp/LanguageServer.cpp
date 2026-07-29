@@ -56,6 +56,8 @@ void LanguageServer::handle_request(const JsonRpcMessage& message) {
 		handle_shutdown(message);
 	} else if (method->value == "textDocument/definition") {
 		handle_definition(message);
+	} else if (method->value == "textDocument/documentLink") {
+		handle_document_link(message);
 	} else if (method->value == "textDocument/references") {
 		handle_references(message);
 	} else if (method->value == "textDocument/prepareRename") {
@@ -329,9 +331,13 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 	JSONObject rename_options;
 	rename_options.add("prepareProvider", std::make_unique<JSONBool>(true));
 
+	JSONObject document_link_options;
+	document_link_options.add("resolveProvider", std::make_unique<JSONBool>(false));
+
 	JSONObject capabilities;
 	capabilities.add("textDocumentSync", std::make_unique<JSONObject>(sync));
 	capabilities.add("definitionProvider", std::make_unique<JSONBool>(true));
+	capabilities.add("documentLinkProvider", std::make_unique<JSONObject>(document_link_options));
 	capabilities.add("referencesProvider", std::make_unique<JSONBool>(true));
 	capabilities.add("renameProvider", std::make_unique<JSONObject>(rename_options));
 	capabilities.add("documentHighlightProvider", std::make_unique<JSONBool>(true));
@@ -370,19 +376,70 @@ std::optional<ReferenceLink> LanguageServer::resolve_target_at(
 		m_entry_points.affected_entries(source), source, line, character);
 }
 
+std::optional<DefinitionLink> LanguageServer::resolve_definition_target(
+	const JsonRpcMessage& message) {
+	const auto position = position_params(message);
+	if (!position) return std::nullopt;
+	std::lock_guard lock(m_state_mutex);
+	return m_references.resolve_definition(
+		m_entry_points.affected_entries(position->source),
+		position->source,
+		position->line,
+		position->character);
+}
+
 void LanguageServer::handle_definition(const JsonRpcMessage& message) {
-	const auto found = resolve_navigation_target(message);
+	const auto found = resolve_definition_target(message);
 
 	const auto* id = message.id();
 	if (!id) return;
 	if (found) {
-		JSONObject location;
-		location.add("uri", std::make_unique<JSONString>(uri_from_source(SourceId(found->def_file))));
-		location.add("range", found->def_range.get_lsp_range());
-		m_connection.send_response(*id, location);
+		auto link = std::make_unique<JSONObject>();
+		link->add("originSelectionRange", found->ref_range.get_lsp_range());
+		link->add("targetUri", std::make_unique<JSONString>(
+			uri_from_source(SourceId(found->def_file))));
+		link->add("targetRange", found->def_range.get_lsp_range());
+		link->add("targetSelectionRange", found->def_selection_range.get_lsp_range());
+		JSONArray links;
+		links.add(std::move(link));
+		m_connection.send_response(*id, links);
 	} else {
 		m_connection.send_response(*id, JSONNull{});
 	}
+}
+
+void LanguageServer::handle_document_link(const JsonRpcMessage& message) {
+	const auto* id = message.id();
+	if (!id) return;
+
+	const auto* params = message.params() ? message.params()->as<JSONObject>() : nullptr;
+	const auto* text_document = object_at(params, "textDocument");
+	const auto* uri = string_at(text_document, "uri");
+	if (!uri) {
+		m_connection.send_response(*id, JSONArray{});
+		return;
+	}
+
+	const auto source = source_from_uri(uri->value);
+	std::vector<DefinitionLink> found;
+	{
+		std::lock_guard lock(m_state_mutex);
+		found = m_references.document_links(
+			m_entry_points.affected_entries(source), source);
+	}
+
+	JSONArray links;
+	for (const auto& item : found) {
+		auto link = std::make_unique<JSONObject>();
+		link->add("range", item.ref_range.get_lsp_range());
+		link->add("target", std::make_unique<JSONString>(
+			uri_from_source(SourceId(item.def_file))));
+		if (!item.tooltip.empty()) {
+			link->add("tooltip", std::make_unique<JSONString>(item.tooltip));
+		}
+		links.add(std::move(link));
+	}
+	m_connection.send_response(*id, links);
 }
 
 void LanguageServer::handle_references(const JsonRpcMessage& message) {

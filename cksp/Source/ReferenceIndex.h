@@ -29,6 +29,22 @@ struct ReferenceLink {
 };
 
 /**
+ * One definition-only navigation link.
+ *
+ * Unlike ReferenceLink, this is deliberately not a symbol relationship: references,
+ * rename and document highlights must ignore it. Import path -> imported file is the
+ * primary use case.
+ */
+struct DefinitionLink {
+	std::string ref_file;
+	SourceRange ref_range;
+	std::string def_file;
+	SourceRange def_range;
+	SourceRange def_selection_range;
+	std::string tooltip;
+};
+
+/**
  * Position -> declaration index built for one analyzed entry.
  *
  * It is a flat snapshot of copied ranges and paths, so it stays valid after the AST that
@@ -37,7 +53,9 @@ struct ReferenceLink {
  */
 class ReferenceIndex {
 	std::vector<ReferenceLink> m_links;
+	std::vector<DefinitionLink> m_definition_links;
 	std::unordered_set<std::string> m_seen_links;
+	std::unordered_set<std::string> m_seen_definition_links;
 	std::unordered_set<std::string> m_seen_references;
 	mutable std::unordered_map<std::string, std::string> m_normalized_files;
 
@@ -72,7 +90,91 @@ public:
 		add(reference.file, ref_range, declaration.file, def_range);
 	}
 
-	[[nodiscard]] bool empty() const { return m_links.empty(); }
+	/// Records a path token -> file link for go-to-definition and document links.
+	/// String quotes are excluded from the clickable source range.
+	void add_file_link(
+		const Token& path_token,
+		std::string target_file,
+		std::string tooltip = {}) {
+		if (path_token.file.empty()) return;
+		auto path_range = source_range_from_token(path_token);
+		if (path_token.type == token::STRING && path_token.val.size() >= 2) {
+			++path_range.start.column;
+			--path_range.end.column;
+		}
+		add_definition_link(
+			path_token.file,
+			path_range,
+			std::move(target_file),
+			SourceRange{{0, 0}, {0, 0}},
+			std::move(tooltip));
+	}
+
+	/// Records a one-way go-to-definition link that is invisible to symbol operations.
+	void add_definition_link(
+		std::string ref_file,
+		const SourceRange& ref_range,
+		std::string def_file,
+		const SourceRange& def_range,
+		std::string tooltip = {}) {
+		if (!ref_range.is_valid() || !def_range.is_valid()) return;
+		ref_file = normalized_file(ref_file);
+		def_file = normalized_file(def_file);
+		const auto link_key = reference_key(ref_file, ref_range)
+			+ "=>" + reference_key(def_file, def_range);
+		if (!m_seen_definition_links.insert(link_key).second) return;
+		m_definition_links.push_back({
+			std::move(ref_file), ref_range, std::move(def_file), def_range, def_range,
+			std::move(tooltip)
+		});
+	}
+
+	[[nodiscard]] bool empty() const { return m_links.empty() && m_definition_links.empty(); }
+
+	/// Resolves definition-only navigation first, then falls back to normal symbols.
+	[[nodiscard]] std::optional<DefinitionLink> resolve_definition(
+		const std::string& file,
+		const size_t line,
+		const size_t character) const {
+		const DefinitionLink* best = nullptr;
+		for (const auto& link : m_definition_links) {
+			if (link.ref_file != file) continue;
+			if (!covers(link.ref_range, line, character)) continue;
+			if (!best || is_narrower(link.ref_range, best->ref_range)) best = &link;
+		}
+		if (best) return *best;
+
+		if (auto symbol = resolve_target(file, line, character)) {
+			return DefinitionLink{
+				symbol->ref_file,
+				symbol->ref_range,
+				symbol->def_file,
+				symbol->def_range,
+				symbol->def_name_range,
+				{}
+			};
+		}
+		return std::nullopt;
+	}
+
+	/// Returns definition-only links originating in one document.
+	[[nodiscard]] std::vector<DefinitionLink> definition_links_in(const std::string& file) const {
+		std::vector<DefinitionLink> links;
+		for (const auto& link : m_definition_links) {
+			if (link.ref_file == file) links.push_back(link);
+		}
+		return links;
+	}
+
+	/// True when current analysis already owns a definition-only link at this source range.
+	[[nodiscard]] bool contains_definition_link(
+		const std::string& file,
+		const SourceRange& range) const {
+		for (const auto& link : m_definition_links) {
+			if (link.ref_file == file && same_range(link.ref_range, range)) return true;
+		}
+		return false;
+	}
 
 	/// Resolves a zero-based (LSP) position in `file` to a declaration location, if a
 	/// reference covers it. Prefers the narrowest covering reference.

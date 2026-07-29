@@ -55,6 +55,8 @@ class LanguageServer {
 	void mark_source_available(const SourceId& source);
 	void handle_deleted_source(const SourceId& source);
 	[[nodiscard]] bool is_analysis_current(uint64_t generation) const;
+	[[nodiscard]] std::optional<DefinitionLink> resolve_definition_target(
+		const JsonRpcMessage& message);
 	[[nodiscard]] std::optional<ReferenceLink> resolve_navigation_target(
 		const JsonRpcMessage& message);
 	[[nodiscard]] std::optional<ReferenceLink> resolve_target_at(
@@ -86,6 +88,7 @@ public:
 	void handle_initialize(const JsonRpcMessage& message);
 	void handle_shutdown(const JsonRpcMessage& message);
 	void handle_definition(const JsonRpcMessage& message);
+	void handle_document_link(const JsonRpcMessage& message);
 	void handle_references(const JsonRpcMessage& message);
 	void handle_prepare_rename(const JsonRpcMessage& message);
 	void handle_rename(const JsonRpcMessage& message);

@@ -32,8 +32,10 @@ PreNodeAST * PreNodeAST::do_import_processing(
 	const SourceId& current,
 	SourceParser& parser,
 	std::unordered_set<std::string>& imported_files,
-	std::unordered_map<std::string, std::string>& basename_map) {
-	PreASTImport import_processor(root, current, parser, imported_files, basename_map);
+	std::unordered_map<std::string, std::string>& basename_map,
+	ReferenceIndex* reference_index) {
+	PreASTImport import_processor(
+		root, current, parser, imported_files, basename_map, reference_index);
 	return accept(import_processor);
 }
 
@@ -278,7 +280,8 @@ PreNodeAST * PreNodeImport::accept(PreASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 
-PreNodeImport::PreNodeImport(const PreNodeImport &other): PreNodeAST(other), path(other.path) {
+PreNodeImport::PreNodeImport(const PreNodeImport &other)
+	: PreNodeAST(other), path(other.path), path_token(other.path_token) {
 	PreNodeImport::set_child_parents();
 }
 
@@ -291,7 +294,8 @@ PreNodeAST * PreNodeImportNCKP::accept(PreASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 
-PreNodeImportNCKP::PreNodeImportNCKP(const PreNodeImportNCKP &other): PreNodeAST(other), path(other.path) {
+PreNodeImportNCKP::PreNodeImportNCKP(const PreNodeImportNCKP &other)
+	: PreNodeAST(other), path(other.path), path_token(other.path_token) {
 }
 
 std::unique_ptr<PreNodeAST> PreNodeImportNCKP::clone() const {
