@@ -296,3 +296,7 @@ add_executable(cksp
         lsp/EntryPointResolver.h
 )
 target_link_libraries(cksp PRIVATE cksp_core)
+
+if(WIN32)
+    target_link_libraries(cksp PRIVATE dbghelp)
+endif()
