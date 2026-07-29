@@ -21,7 +21,7 @@ public:
 		: m_connection(connection) {}
 
 	/// Provides the entry-point ownership information used to suppress diagnostics
-	/// that standalone entries produce for files owned by the configured entry.
+	/// that standalone entries produce for files owned by configured entries.
 	void set_entry_resolver(const EntryPointResolver* entries) { m_entries = entries; }
 
 	/**

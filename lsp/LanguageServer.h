@@ -30,7 +30,7 @@ class LanguageServer {
 	OverlaySourceProvider m_sources;
 	ReferenceProvider m_references;
 	RenameProvider m_rename;
-	std::optional<SourceId> m_configured_entry_source;
+	std::vector<SourceId> m_configured_entry_sources;
 	std::optional<SourceId> m_workspace_root;
 	EntryPointResolver m_entry_points;
 	std::unordered_set<std::string> m_deleted_sources;

@@ -119,7 +119,7 @@ std::unique_ptr<JSONObject> DiagnosticPublisher::make_lsp_diagnostic(const Diagn
 }
 
 void DiagnosticPublisher::publish_merged_source(const SourceId& source) const {
-	// A file that is owned by the configured entry receives diagnostics only from
+	// A file that is owned by a configured entry receives diagnostics only from
 	// configured entries. Standalone entries that merely include it as a shared
 	// dependency (e.g. an opened sibling script) must not contribute, otherwise their
 	// out-of-context analysis leaks false diagnostics onto the shared file.

@@ -18,7 +18,7 @@ using lsp::object_at;
 using lsp::string_at;
 using lsp::position_params;
 using lsp::source_from_optional_uri_or_path;
-using lsp::resolve_configured_entry;
+using lsp::resolve_configured_entries;
 
 LanguageServer::~LanguageServer() {
 	stop_analysis_worker();
@@ -308,18 +308,18 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 	if (m_workspace_root) {
 		m_workspace_root = FileSystemSourceProvider::normalize(m_workspace_root->value);
 	}
-	m_configured_entry_source = resolve_configured_entry(params, m_workspace_root);
+	m_configured_entry_sources = resolve_configured_entries(params, m_workspace_root);
 	{
 		std::lock_guard lock(m_state_mutex);
 		m_entry_points.set_workspace_root(m_workspace_root);
-		m_entry_points.set_configured_entry(m_configured_entry_source);
+		m_entry_points.set_configured_entries(m_configured_entry_sources);
 	}
 
-	// Analyse the configured entry up front so project-wide diagnostics are available
+	// Analyse configured entries up front so project-wide diagnostics are available
 	// without having to open one of its member files first, and so ownership of shared
 	// files is established early.
-	if (m_configured_entry_source) {
-		schedule_analysis_for_source(*m_configured_entry_source);
+	for (const auto& entry_source : m_configured_entry_sources) {
+		schedule_analysis_for_source(entry_source);
 	}
 
 	JSONObject sync;
@@ -554,7 +554,7 @@ void LanguageServer::handle_did_close(const JsonRpcMessage& message) {
 	{
 		std::lock_guard lock(m_state_mutex);
 		// Only tear down entries that exist solely because the file was open: a standalone
-		// orphan entry. The configured entry and files it owns keep their diagnostics so the
+		// orphan entry. Configured entries and files they own keep their diagnostics so the
 		// whole project's diagnostics do not vanish when a tab is closed.
 		standalone_entry = m_entry_points.is_known_entry(source)
 			&& !m_entry_points.is_configured_entry(source)

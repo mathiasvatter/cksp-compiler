@@ -15,11 +15,12 @@ void EntryPointResolver::set_workspace_root(std::optional<SourceId> workspace_ro
     m_workspace_root = std::move(workspace_root);
 }
 
-void EntryPointResolver::set_configured_entry(std::optional<SourceId> configured_entry) {
-    if (configured_entry) {
-        configured_entry = FileSystemSourceProvider::normalize(configured_entry->value);
+void EntryPointResolver::set_configured_entries(const std::vector<SourceId>& configured_entries) {
+    m_configured_entries.clear();
+    for (const auto& configured_entry : configured_entries) {
+        m_configured_entries.insert(
+            FileSystemSourceProvider::normalize(configured_entry.value).value);
     }
-    m_configured_entry = std::move(configured_entry);
 }
 
 std::vector<SourceId> EntryPointResolver::register_analysis(
@@ -62,24 +63,31 @@ std::vector<SourceId> EntryPointResolver::affected_entries(const SourceId& chang
         }
     };
 
-    // The configured/primary entry owns everything reachable from it. Re-analyse it
-    // whenever one of its (transitive) imports changes.
-    if (const auto configured = configured_entry_for(source)) {
-        if (*configured == source) {
-            return {*configured};
-        }
+    // Configured entries own everything reachable from them. Re-analyse every configured
+    // entry whose graph contains the changed source.
+    bool ownership_is_still_unknown = false;
+    if (belongs_to_workspace(source)) {
+        for (const auto& configured_value : m_configured_entries) {
+            const SourceId configured(configured_value);
+            if (configured == source) {
+                add_entry(configured);
+                continue;
+            }
 
-        const auto configured_graph = m_import_graphs.find(configured->value);
-        if (configured_graph == m_import_graphs.end()) {
-            // Ownership is not known yet: analyse the configured entry to establish it,
-            // and also analyse the source standalone in case it turns out to be an orphan.
-            // If it is actually owned, its standalone diagnostics are suppressed at publish
-            // time and the standalone entry is dropped on the next change.
-            add_entry(*configured);
-            add_entry(source);
-        } else if (entry_depends_on(*configured, source)) {
-            add_entry(*configured);
+            const auto configured_graph = m_import_graphs.find(configured.value);
+            if (configured_graph == m_import_graphs.end()) {
+                // Establish all configured graphs before deciding whether an opened source
+                // is an orphan. Its temporary standalone snapshot is discarded once an
+                // owning entry successfully imports it.
+                add_entry(configured);
+                ownership_is_still_unknown = true;
+            } else if (entry_depends_on(configured, source)) {
+                add_entry(configured);
+            }
         }
+    }
+    if (ownership_is_still_unknown) {
+        add_entry(source);
     }
 
     // Any other known entry that transitively imports the source must be refreshed too.
@@ -103,10 +111,8 @@ std::vector<SourceId> EntryPointResolver::affected_entries(const SourceId& chang
 }
 
 bool EntryPointResolver::is_configured_entry(const SourceId& source) const {
-    if (!m_configured_entry) {
-        return false;
-    }
-    return FileSystemSourceProvider::normalize(source.value) == *m_configured_entry;
+    return m_configured_entries.contains(
+        FileSystemSourceProvider::normalize(source.value).value);
 }
 
 bool EntryPointResolver::is_known_entry(const SourceId& source) const {
@@ -114,23 +120,19 @@ bool EntryPointResolver::is_known_entry(const SourceId& source) const {
 }
 
 bool EntryPointResolver::is_owned_by_configured_entry(const SourceId& source) const {
-    if (!m_configured_entry) {
-        return false;
-    }
     const auto normalized = FileSystemSourceProvider::normalize(source.value);
-    if (normalized == *m_configured_entry) {
-        return true;
+    for (const auto& configured_value : m_configured_entries) {
+        const SourceId configured(configured_value);
+        if (normalized == configured || entry_depends_on(configured, normalized)) {
+            return true;
+        }
     }
-    return entry_depends_on(*m_configured_entry, normalized);
+    return false;
 }
 
-std::optional<SourceId> EntryPointResolver::configured_entry_for(const SourceId& source) const {
-    if (!m_configured_entry) {
-        return std::nullopt;
-    }
-
+bool EntryPointResolver::belongs_to_workspace(const SourceId& source) const {
     if (!m_workspace_root) {
-        return m_configured_entry;
+        return true;
     }
 
     const auto source_path = std::filesystem::path(source.value);
@@ -139,15 +141,11 @@ std::optional<SourceId> EntryPointResolver::configured_entry_for(const SourceId&
     std::error_code error;
     const auto relative = std::filesystem::relative(source_path, root_path, error);
     if (error || relative.empty()) {
-        return std::nullopt;
+        return false;
     }
 
     const auto first_component = *relative.begin();
-    if (first_component == "..") {
-        return std::nullopt;
-    }
-
-    return m_configured_entry;
+    return first_component != "..";
 }
 
 bool EntryPointResolver::entry_depends_on(const SourceId& entry, const SourceId& source) const {
