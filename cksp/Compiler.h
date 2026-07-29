@@ -22,6 +22,7 @@
 #include "Generator/ASTGenerator.h"
 #include "Generator/ASTSourceMapGenerator.h"
 #include "ASTVisitor/ASTDesugar.h"
+#include "ASTVisitor/ASTReserveNames.h"
 #include "ASTVisitor/ASTCollectLowerings.h"
 #include "ASTVisitor/ASTSemanticAnalysis.h"
 #include "ASTVisitor/ASTVariableChecking.h"
@@ -195,6 +196,8 @@ private:
 			m_program->check_unique_callbacks();
 			m_program->init_callback = m_program->move_on_init_callback();
 		}
+		ASTReserveNames reserve_names(m_program);
+		ast->accept(reserve_names);
 		ASTDesugar desugar;
 		ast->accept(desugar);
 
@@ -358,6 +361,8 @@ private:
 		print_to_console(m_timer.print_timer("Parsing"));
 		m_timer.start("Desugaring");
 
+		ASTReserveNames reserve_names(m_program);
+		ast->accept(reserve_names);
 		ASTDesugar desugar;
 		ast->accept(desugar);
 		ast->debug_print();

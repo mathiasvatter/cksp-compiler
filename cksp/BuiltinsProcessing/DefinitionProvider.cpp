@@ -126,7 +126,7 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::get_declaration(NodeRefer
 
 std::shared_ptr<NodeDataStructure> DefinitionProvider::set_declaration(const std::shared_ptr<NodeDataStructure>& var, bool global_scope) {
 	// handle_throwaway_var(*var);
-	m_gensym.ingest(var->name);
+	reserve_name(var->name);
 	// get builtin declaration if it exists
 	std::shared_ptr<NodeDataStructure> node_builtin_declaration = nullptr;
 	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var->name);

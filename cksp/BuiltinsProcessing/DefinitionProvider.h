@@ -77,6 +77,33 @@ public:
 	/// adds existing declaration to declaration map for look up. Always returns nullptr.
 	std::shared_ptr<NodeDataStructure> set_declaration(const std::shared_ptr<NodeDataStructure>& var, bool global_scope);
 
+	void reserve_name(const std::string& name) {
+		m_gensym.ingest(name);
+	}
+
+	/**
+	 * Starts a new name-generation session. Builtin and externally supplied
+	 * declarations remain reserved; source declarations are added by
+	 * ASTReserveNames immediately afterwards.
+	 */
+	void reset_generated_names() {
+		m_gensym.refresh();
+		for (const auto& [name, _] : builtin_variables) {
+			m_gensym.ingest(name);
+		}
+		for (const auto& [name, _] : builtin_arrays) {
+			m_gensym.ingest(name);
+		}
+		for (const auto& external : external_variables) {
+			if (!external) continue;
+			if (const auto control = external->cast<NodeUIControl>()) {
+				if (control->control_var) m_gensym.ingest(control->control_var->name);
+			} else if (!external->name.empty()) {
+				m_gensym.ingest(external->name);
+			}
+		}
+	}
+
 	std::string get_fresh_name(const std::string& name) {
 		return m_gensym.fresh(name);
 	}

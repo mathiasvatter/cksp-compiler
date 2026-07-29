@@ -90,6 +90,7 @@ add_library(cksp_core STATIC
         cksp/ASTNodes/ASTReferences.cpp
         cksp/ASTVisitor/ASTVisitor.h
         cksp/ASTVisitor/ASTVisitor.cpp
+        cksp/ASTVisitor/ASTReserveNames.h
         cksp/ASTVisitor/debug/ASTPrinter.h
         cksp/ASTVisitor/debug/ASTPrinter.cpp
         cksp/ASTVisitor/ASTDesugar.h
