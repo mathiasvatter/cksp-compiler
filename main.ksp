@@ -2,7 +2,7 @@
 #pragma combine_callbacks(true)
 #pragma max_callback_depth(420)
 
-
+import "./importme.cksp" as bumbum
 
 declare const bum := 100
 
@@ -49,6 +49,7 @@ namespace pups
 end namespace    
 
 on init
+    bumbum.func(d)
     message(x, arr[0], pups.pupu.popo)
     // standalone method call: only runs if point is not nil
     _ := point?.get_x() ?? 0

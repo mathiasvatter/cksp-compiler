@@ -17,6 +17,7 @@ enum class CmdOptions {
     Version,
 	Lsp,
     Output,
+	SourceMap,
     Compression,
 	Optimization,
 	CallbackCombining,
@@ -43,6 +44,7 @@ private:
             {"h", "help", "", CmdOptions::Help, "Display usage information"},
 			{"", "lsp", "", CmdOptions::Lsp, "Run as a JSON-RPC language server over stdio"},
 			{"o", "output", "<file>", CmdOptions::Output, "Write output to <file>. May be specified multiple times. If omitted, default is <input_dir>/out.txt."},
+			{"", "source-map", "<file>", CmdOptions::SourceMap, "Write generated-to-original line mappings to a .ckspmap file."},
             {"v", "version", "", CmdOptions::Version, "Display version number"},
 			{"O", "optimize", "<level>", CmdOptions::Optimization, "Set optimization level: none, simple, standard, aggressive"},
 			{"", "-O0", "", CmdOptions::Optimization, "Equivalent to --optimize=none"},
@@ -58,4 +60,3 @@ private:
 
 	[[nodiscard]] std::string get_help_option() const;
 };
-

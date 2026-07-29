@@ -111,6 +111,8 @@ add_library(cksp_core STATIC
         cksp/BuiltinsProcessing/BuiltinsProcessor.cpp
         cksp/Generator/ASTGenerator.h
         cksp/Generator/ASTGenerator.cpp
+        cksp/Generator/ASTSourceMapGenerator.h
+        cksp/Generator/ASTSourceMapGenerator.cpp
         ${GENERATED_HEADERS}
         generated/version.h
         cksp/Preprocessor/PreAST/PreASTDefines.h

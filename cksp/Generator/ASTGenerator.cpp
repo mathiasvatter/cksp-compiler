@@ -21,7 +21,8 @@ void ASTGenerator::print() const {
 
 NodeAST * ASTGenerator::visit(NodeProgram &node) {
 	m_program = &node;
-    os << get_compiled_date_time() << std::endl;
+	m_compiled_header = get_compiled_date_time();
+    os << m_compiled_header << std::endl;
     // get init callback first
     node.callbacks[0]->accept(*this);
     for(const auto & function : node.function_definitions) {

@@ -20,6 +20,7 @@
 #include "ASTVisitor/FunctionHandling/ASTFunctionInlining.h"
 #include "BuiltinsProcessing/BuiltinsProcessor.h"
 #include "Generator/ASTGenerator.h"
+#include "Generator/ASTSourceMapGenerator.h"
 #include "ASTVisitor/ASTDesugar.h"
 #include "ASTVisitor/ASTCollectLowerings.h"
 #include "ASTVisitor/ASTSemanticAnalysis.h"
@@ -566,6 +567,14 @@ private:
 		ast->accept(generator);
 		for (auto & output_filename : m_final_config->outputs) {
 			generator.generate(output_filename);
+		}
+		if (m_final_config->source_map_file) {
+			ASTSourceMapGenerator source_map(
+				generator.compiled_header(),
+				m_final_config->input_filename.value(),
+				m_final_config->outputs);
+			ast->accept(source_map);
+			source_map.generate(m_final_config->source_map_file.value());
 		}
 
 		m_timer.stop("Generator");

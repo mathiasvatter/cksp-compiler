@@ -59,6 +59,22 @@ CommandLineOptions::CommandLineOptions(int argc, char **argv) {
         		std::cerr << "Error: -o option requires one argument.\n";
         		std::exit(1);
         	}
+		} else if (arg == "--source-map") {
+			if (i + 1 >= argc) {
+				std::cerr << "Error: --source-map requires a file path.\n";
+				std::exit(1);
+			}
+			const auto source_map_path = std::filesystem::path(to_abs_norm(argv[++i]));
+			if (source_map_path.extension() != ".ckspmap") {
+				std::cerr << "Error: --source-map path must use the .ckspmap extension.\n";
+				std::exit(1);
+			}
+			if (!std::filesystem::exists(source_map_path.parent_path())) {
+				std::cerr << "Error: --source-map parent folder does not exist: "
+				          << source_map_path.parent_path().string() << "\n";
+				std::exit(1);
+			}
+			m_compiler_config->source_map_file = source_map_path.string();
         } else if (arg == "-v" || arg == "--version") {
             std::cout << version;
             exit(0);

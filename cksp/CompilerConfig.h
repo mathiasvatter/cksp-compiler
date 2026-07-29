@@ -48,6 +48,7 @@ struct CompilerConfig {
 	std::optional<std::string> input_filename{};
 	std::vector<std::string> outputs{};
 	std::optional<std::string> standard_output_file{};
+	std::optional<std::string> source_map_file{};
 	OptimizationLevel optimization_level = OptimizationLevel::Unset;
 	DebugMode debug_mode = DebugMode::Unset;
 	bool lsp = false;
@@ -70,6 +71,9 @@ struct CompilerConfig {
 
 		if (other.standard_output_file.has_value())
 			standard_output_file = other.standard_output_file;
+
+		if (other.source_map_file.has_value())
+			source_map_file = other.source_map_file;
 
 		if (other.optimization_level != OptimizationLevel::Unset)
 			optimization_level = other.optimization_level;
@@ -98,6 +102,7 @@ struct CompilerConfig {
 		input_filename = "";
 		outputs = {};
 		standard_output_file = "out.txt";
+		source_map_file = std::nullopt;
 		optimization_level = OptimizationLevel::Standard;
 		debug_mode = DebugMode::Off;
 		parameter_passing = ParameterPassing::ByValue;
