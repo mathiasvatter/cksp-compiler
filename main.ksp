@@ -75,6 +75,12 @@ on init
     declare v3 := empty_wrapper?.inner?.x ?? -1
     message(v3)
 
+    select v3
+        case 3
+            message(2)
+        default
+            message(v3)
+    end select        
     // value context without ?? is rejected at compile time:
     // declare bad := point?.x
 end on

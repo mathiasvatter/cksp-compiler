@@ -2389,9 +2389,9 @@ Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* pare
     }
     consume(); //consume linebreak
     _skip_linebreaks();
-    if(peek().type != token::CASE) {
+    if(peek().type != token::CASE && peek().type != token::DEFAULT) {
         return Result<std::unique_ptr<NodeSelect>>(Diagnostic(ErrorType::SyntaxError,
-		"Expected cases in select-expression.", "case <expression>", peek()));
+		"Expected cases in select-expression.", "case <expression> or default", peek()));
     }
 	std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBlock>>> cases;
 	while (peek().type != token::END_SELECT) {
@@ -2400,10 +2400,11 @@ Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* pare
 		if (auto end_error = check_invalid_end_statement("select", token::END_SELECT, peek(), peek(1))) {
 			return Result<std::unique_ptr<NodeSelect>>(*end_error);
 		}
-	    if(peek().type == token::CASE) {
-	        consume(); //consume case
+	    if(peek().type == token::CASE || peek().type == token::DEFAULT) {
+		    const bool bare_default = peek().type == token::DEFAULT;
+		    if (!bare_default) consume(); // consume case
             std::vector<std::unique_ptr<NodeAST>> cas = {};
-            if(peek().type == token::DEFAULT) {
+            if(bare_default || peek().type == token::DEFAULT) {
                 auto default_token = consume(); // consume default token
                 Token low_end = Token(token::INT, "080000000H", default_token.line,default_token.pos, default_token.file);
                 Token high_end = Token(token::INT, "07FFFFFFH", default_token.line,default_token.pos, default_token.file);
@@ -2431,9 +2432,13 @@ Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* pare
 			consume(); //consume linebreak
 			_skip_linebreaks();
 			auto stmts = std::make_unique<NodeBlock>(get_tok());
-			while(peek().type != token::END_SELECT && peek().type != token::CASE) {
+			while(peek().type != token::END_SELECT
+				&& peek().type != token::CASE
+				&& peek().type != token::DEFAULT) {
 				_skip_linebreaks();
-				if(peek().type == token::END_SELECT || peek().type == token::CASE) break;
+				if(peek().type == token::END_SELECT
+					|| peek().type == token::CASE
+					|| peek().type == token::DEFAULT) break;
 				if (auto end_error = check_invalid_end_statement("select", token::END_SELECT, peek(), peek(1))) {
 					return Result<std::unique_ptr<NodeSelect>>(*end_error);
 				}
