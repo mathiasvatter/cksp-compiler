@@ -58,6 +58,8 @@
 #include "../misc/DiagnosticEngine.h"
 #include "../misc/DiagnosticReport.h"
 #include "ASTVisitor/ASTCheck.h"
+#include "ASTVisitor/ASTConstantVariableChecking.h"
+#include "ASTVisitor/ASTUIControlLowering.h"
 #include "ASTVisitor/ASTObfuscate.h"
 
 template <typename... Args>
@@ -284,7 +286,7 @@ private:
 		// input_filename = "/Users/mathias/Scripting/legato-dev/one-shot.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score-essentials/the-score-essentials.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
-		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
+		input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-brass/dev/Lux - Orchestral Brass Keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Ensemble.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Single.ksp";
@@ -377,6 +379,14 @@ private:
 		print_to_console(m_timer.print_timer("Desugaring"));
 		m_timer.start("Lexical Scope");
 
+		ASTConstantVariableChecking constant_checking(m_program);
+		ast->accept(constant_checking);
+		m_constant_db.build(*ast);
+
+		ASTUIControlLowering ui_control_lowering(m_program, m_constant_db);
+		ast->accept(ui_control_lowering);
+		m_constant_db.debug_print();
+
 		ASTTypeAnnotations type_annotations(m_program);
 		ast->accept(type_annotations);
 
@@ -401,7 +411,6 @@ private:
 		infer_types.do_complete_traversal(*ast);
 		ast->debug_print();
 
-		m_constant_db.build(*ast);
 
 		UniqueParameterNamesProvider unique_names_provider(m_program);
 		unique_names_provider.do_parallel_renaming(*m_program);

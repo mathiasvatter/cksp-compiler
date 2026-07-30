@@ -84,6 +84,7 @@ public:
 	NodeAST * visit(NodeAccessChain& node) override;
 
 	NodeAST * visit(NodeForEach& node) override;
+	// needs to be here, otherwise it gets seen as local declaration inside a block
 	NodeAST * visit(NodeConst& node) override;
 	NodeAST * visit(NodeStruct& node) override;
 

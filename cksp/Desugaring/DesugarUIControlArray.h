@@ -8,13 +8,12 @@
 #include "../ASTVisitor/ASTKSPSyntaxCheck.h"
 #include "../Interpreter/SimpleExprInterpreter.h"
 
-/// called bei NodeUIControl and NodeSingleDeclaration
+/// Called by ASTUIControlLowering for NodeSingleDeclaration.
 /**
  *	Lowers/Desugars ui control arrays into multiple ui controls and an ui array
- *	Pros of putting this in the lowering phase:
- *	 - size can have constant declarations
- *	Pros of putting this in the desugaring phase:
- *	 - better variable checking because the single ui controls can be linked via name
+ * This transformation runs after ConstantDatabase has been built and before
+ * ASTVariableChecking. This allows ordinary constant expressions as array
+ * sizes while keeping all generated declarations visible to variable checking.
  *
  * Example:
  * declare ui_label lbl_lbl[4,2](1,1)
@@ -45,12 +44,24 @@ class DesugarUIControlArray final : public ASTDesugaring {
 	std::optional<Token> m_persistence;
 	std::string m_single_control_name;
 	std::shared_ptr<NodeUIControl> m_engine_widget = nullptr;
+	const ConstantDatabase* m_constant_database = nullptr;
 public:
-	explicit DesugarUIControlArray(NodeProgram* program) : ASTDesugaring(program) {}
+	explicit DesugarUIControlArray(NodeProgram* program, const ConstantDatabase* constant_database = nullptr)
+		: ASTDesugaring(program), m_constant_database(constant_database) {}
+
+	void set_constant_database(const ConstantDatabase* constant_database) {
+		m_constant_database = constant_database;
+	}
 
 	NodeAST * visit(NodeSingleDeclaration &node) override {
 		const auto node_ui_control = node.variable->cast<NodeUIControl>();
 		if(!node_ui_control) return &node;
+
+		m_ui_control_var_size = nullptr;
+		m_ui_array_size = nullptr;
+		m_ui_control_array = nullptr;
+		m_persistence.reset();
+		m_single_control_name.clear();
 
 		m_engine_widget = node_ui_control->get_builtin_widget(m_program);
 		node_ui_control->declaration = m_engine_widget;
@@ -113,6 +124,12 @@ public:
 
 	std::unique_ptr<NodeBlock> create_ui_controls(NodeUIControl& ui_control, std::unique_ptr<NodeAST> size) {
 		auto node_body = std::make_unique<NodeBlock>(ui_control.tok);
+		if (m_constant_database) {
+			auto size_statement = std::make_unique<NodeStatement>(std::move(size), ui_control.tok);
+			size_statement->do_constant_folding(m_constant_database);
+			size = std::move(size_statement->statement);
+			size->parent = nullptr;
+		}
 		// calculate array size
 		static SimpleInterpreter eval;
 		auto array_size_res = eval.evaluate_int_expression(size);
@@ -191,4 +208,3 @@ public:
 		return node_body;
 	}
 };
-

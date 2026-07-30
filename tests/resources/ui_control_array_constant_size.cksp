@@ -1,0 +1,6 @@
+declare const NUM_CONTROLS := 2
+declare const EXTRA_CONTROLS := 2
+
+on init
+	declare ui_button controls[NUM_CONTROLS + EXTRA_CONTROLS]
+end on

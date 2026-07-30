@@ -403,7 +403,7 @@ NodeAST* ASTVariableChecking::visit(NodeForEach& node) {
 	m_def_provider->remove_scope();
 
 	return &node;
-};
+}
 
 NodeAST* ASTVariableChecking::visit(NodeConst& node) {
 	for(auto& stmt : node.constants->statements) {

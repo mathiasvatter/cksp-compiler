@@ -93,7 +93,7 @@ NodeAST* ASTDesugar::visit(NodeSingleDeclaration& node) {
     	// m_global_variable_declarations->get_last_statement()->desugar(m_program);
 		return node.remove_node();
     }
-	return node.desugar(m_program);
+	return &node;
 }
 
 NodeAST* ASTDesugar::visit(NodeAssignment &node) {

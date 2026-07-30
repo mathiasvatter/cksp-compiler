@@ -18,7 +18,6 @@
 #include "../Lowering/LoweringMemAlloc.h"
 #include "../Lowering/LoweringNumElements.h"
 #include "../Desugaring/DesugarSingleAssignment.h"
-#include "../Desugaring/DesugarUIControlArray.h"
 #include "../Desugaring/DesugarNamespace.h"
 #include "../Lowering/LoweringRange.h"
 #include "../Lowering/PostLowering/PostLoweringNumElements.h"
@@ -697,12 +696,6 @@ NodeAST *NodeSingleDeclaration::replace_child(NodeAST* oldChild, std::unique_ptr
         return value.get();
     }
     return nullptr;
-}
-
-ASTDesugaring * NodeSingleDeclaration::get_desugaring(NodeProgram *program) const {
-	static DesugarUIControlArray desugaring(program);
-	desugaring.set_program(program);
-	return &desugaring;
 }
 
 ASTLowering* NodeSingleDeclaration::get_lowering(NodeProgram *program) const {

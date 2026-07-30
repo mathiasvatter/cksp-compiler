@@ -268,6 +268,8 @@ add_library(cksp_core STATIC
         cksp/BuiltinsProcessing/EngineConstantsIntegers.h
         utils/IdentifierObfuscator.h
         cksp/Lowering/LoweringOptionalChaining.h
+        cksp/ASTVisitor/ASTConstantVariableChecking.h
+        cksp/ASTVisitor/ASTUIControlLowering.h
 )
 add_dependencies(cksp_core generate_headers)
 
