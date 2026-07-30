@@ -44,6 +44,11 @@ enum class DebugMode {
 	Full    // Volles Debugging
 };
 
+enum class AnalysisMode {
+	Default,
+	SyntaxOnly
+};
+
 struct CompilerConfig {
 	std::optional<std::string> input_filename{};
 	std::vector<std::string> outputs{};
@@ -52,6 +57,7 @@ struct CompilerConfig {
 	OptimizationLevel optimization_level = OptimizationLevel::Unset;
 	DebugMode debug_mode = DebugMode::Unset;
 	bool lsp = false;
+	AnalysisMode analysis_mode = AnalysisMode::Default;
 	ParameterPassing parameter_passing = ParameterPassing::Unset;
 	std::optional<bool> combine_callbacks;
 	std::optional<int> max_callback_depth;
@@ -82,6 +88,7 @@ struct CompilerConfig {
 			debug_mode = other.debug_mode;
 
 		lsp = other.lsp;
+		analysis_mode = other.analysis_mode;
 
 		if (other.parameter_passing != ParameterPassing::Unset)
 			parameter_passing = other.parameter_passing;
@@ -109,6 +116,7 @@ struct CompilerConfig {
 		combine_callbacks = false;
 		max_callback_depth = 1000;
 		lsp = false;
+		analysis_mode = AnalysisMode::Default;
 		obfuscate = false;
 	}
 

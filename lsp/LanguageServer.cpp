@@ -153,12 +153,26 @@ bool LanguageServer::is_analysis_current(const uint64_t generation) const {
 }
 
 void LanguageServer::analyze_entry(const SourceId& entry_source) {
+	const auto entry = FileSystemSourceProvider::normalize(entry_source.value);
+	auto analysis_mode = AnalysisMode::Default;
+	{
+		// Imported files are analyzed through their configured owning entry point. Only a
+		// source that remains a standalone root gets syntax-only analysis. With no configured
+		// entries, preserve the original behavior and treat opened files as full entry points.
+		std::lock_guard lock(m_state_mutex);
+		if (!m_configured_entry_sources.empty()
+			&& !m_entry_points.is_configured_entry(entry)) {
+			analysis_mode = AnalysisMode::SyntaxOnly;
+		}
+	}
+
 	CollectingDiagnosticSink diagnostics;
 	auto config = std::make_unique<CompilerConfig>();
 	config->lsp = true;
+	config->analysis_mode = analysis_mode;
 	TrackingSourceProvider analysis_sources(m_sources);
 	Compiler compiler(std::move(config), analysis_sources);
-	const auto result = compiler.analyze(entry_source, diagnostics);
+	const auto result = compiler.analyze(entry, diagnostics);
 	auto successful_sources = result.success
 		? analysis_sources.take_loaded_contents()
 		: ReferenceProvider::SourceContents{};
@@ -172,7 +186,6 @@ void LanguageServer::analyze_entry(const SourceId& entry_source) {
 		}
 	}
 	std::lock_guard lock(m_state_mutex);
-	const auto entry = FileSystemSourceProvider::normalize(entry_source.value);
 	// A filesystem notification may arrive while this analysis is running. Do not let
 	// its now-stale result resurrect an entry that has already been removed.
 	if (m_deleted_sources.contains(entry.value)) {

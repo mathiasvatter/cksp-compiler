@@ -196,6 +196,12 @@ private:
 			m_program->check_unique_callbacks();
 			m_program->init_callback = m_program->move_on_init_callback();
 		}
+		// Standalone source files lack the declaration context of an entry point. Stop
+		// before any pass that requires resolving variables, types, or data structures.
+		if (m_program->compiler_config->analysis_mode == AnalysisMode::SyntaxOnly) {
+			return;
+		}
+
 		ASTReserveNames reserve_names(m_program);
 		ast->accept(reserve_names);
 		ASTDesugar desugar;
