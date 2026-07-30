@@ -549,7 +549,7 @@ std::unique_ptr<NodeAST> NodePrefix::clone() const {
 	return std::make_unique<NodePrefix>(*this);
 }
 
-Token NodePrefix::at(const size_t index) const {
+NodePrefix::PrefixSegment NodePrefix::at(const size_t index) const {
 	if (index >= size()) {
 		auto err = ASTVisitor::make_diagnostic(ErrorType::InternalError, *this);
 		err.set_message("Expected incorrect number of prefixes");

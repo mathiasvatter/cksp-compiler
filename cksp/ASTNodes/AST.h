@@ -183,32 +183,39 @@ struct NodeDeadCode final : NodeAST {
 
 
 struct NodePrefix : NodeAST {
-	std::vector<Token> prefixes{};
-	explicit NodePrefix(std::vector<Token> prefixes, Token tok) : NodeAST(std::move(tok), NodeType::Prefix), prefixes(std::move(prefixes)) {}
+	enum class PrefixKind {
+		Namespace, Family, Const
+	};
+	struct PrefixSegment {
+		Token token;
+		PrefixKind kind;
+	};
+	std::vector<PrefixSegment> prefixes{};
+	explicit NodePrefix(std::vector<PrefixSegment> prefixes, Token tok) : NodeAST(std::move(tok), NodeType::Prefix), prefixes(std::move(prefixes)) {}
 	explicit NodePrefix(Token tok) : NodeAST(std::move(tok), NodeType::Prefix) {}
 	NodePrefix(const NodePrefix& other) = default;
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 	std::string get_string() override {
 		return StringUtils::join_apply(
 			prefixes,
-			[](const Token& prefix) { return prefix.val; },
+			[](const PrefixSegment& prefix) { return prefix.token.val; },
 			"."
 		);
 	}
 	[[nodiscard]] std::string get_token_string() const override {
 		return StringUtils::join_apply(
 			prefixes,
-			[](const Token& prefix) { return prefix.val; },
+			[](const PrefixSegment& prefix) { return prefix.token.val; },
 			"."
 		);
 	}
-	void add(const Token &prefix) {
+	void add(const PrefixSegment &prefix) {
 		prefixes.push_back(prefix);
 	}
 	[[nodiscard]] size_t size() const {
 		return prefixes.size();
 	}
-	[[nodiscard]] Token at(size_t index) const;
+	[[nodiscard]] PrefixSegment at(size_t index) const;
 };
 
 struct NodeReference : NodeAST {
@@ -294,10 +301,10 @@ struct NodeReference : NodeAST {
 	virtual std::unique_ptr<NodeAST> get_size();
 	[[nodiscard]] struct NodeFunctionCall* is_in_get_ui_id() const;
 	bool check_restricted_environment(NodeCallback *current_callback) const;
-	void add_prefix(const Token& tok) const {
+	void add_prefix(const NodePrefix::PrefixSegment& tok) const {
 		prefix->add(tok);
 	}
-	[[nodiscard]] Token get_prefix(const size_t idx) const {
+	[[nodiscard]] NodePrefix::PrefixSegment get_prefix(const size_t idx) const {
 		return prefix->at(idx);
 	}
 	/// returns true if ref node is within access chain but not first member
@@ -406,10 +413,10 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 		return nullptr;
 	}
 	class NodeSingleDeclaration* is_in_declaration() const;
-	void add_prefix(const Token& tok) const {
+	void add_prefix(const NodePrefix::PrefixSegment& tok) const {
 		prefix->add(tok);
 	}
-	[[nodiscard]] Token get_prefix(const size_t idx) const {
+	[[nodiscard]] NodePrefix::PrefixSegment get_prefix(const size_t idx) const {
 		return prefix->at(idx);
 	}
 };

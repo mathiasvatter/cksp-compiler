@@ -92,10 +92,7 @@ public:
 
 	/// Records a path token -> file link for go-to-definition and document links.
 	/// String quotes are excluded from the clickable source range.
-	void add_file_link(
-		const Token& path_token,
-		std::string target_file,
-		std::string tooltip = {}) {
+	void add_file_link(const Token& path_token, std::string target_file, std::string tooltip = {}) {
 		if (path_token.file.empty()) return;
 		auto path_range = source_range_from_token(path_token);
 		if (path_token.type == token::STRING && path_token.val.size() >= 2) {
@@ -107,7 +104,8 @@ public:
 			path_range,
 			std::move(target_file),
 			SourceRange{{0, 0}, {0, 0}},
-			std::move(tooltip));
+			std::move(tooltip)
+		);
 	}
 
 	/// Records a one-way go-to-definition link that is invisible to symbol operations.

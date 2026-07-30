@@ -11,7 +11,7 @@
  * - Variables, NDArrays, Arrays, Lists, Constblocks, UIControls
  */
 class DesugarFamily final : public ASTDesugaring {
-    std::vector<Token> m_family_prefixes;
+    std::vector<NodePrefix::PrefixSegment> m_family_prefixes;
 
 	void add_family_prefix(NodeDataStructure& ref) const {
 		for (const auto &pref : m_family_prefixes) {
@@ -19,7 +19,7 @@ class DesugarFamily final : public ASTDesugaring {
 		}
     	auto prefixes = StringUtils::join_apply(
 			m_family_prefixes,
-			[](const Token& prefix) { return prefix.val; },
+			[](const NodePrefix::PrefixSegment& prefix) { return prefix.token.val; },
 			"."
 		);
     	ref.name = prefixes + "." + ref.name;
@@ -66,7 +66,7 @@ public:
 
     NodeAST * visit(NodeFamily& node) override {
         const auto pref = node.prefix;
-        m_family_prefixes.push_back(pref);
+        m_family_prefixes.push_back({pref, NodePrefix::PrefixKind::Family});
         node.members->accept(*this);
         m_family_prefixes.pop_back();
         return node.replace_with(std::move(node.members));

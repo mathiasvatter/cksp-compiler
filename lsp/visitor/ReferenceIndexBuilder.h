@@ -62,9 +62,9 @@ private:
 		for (size_t i = 0; i < visible_prefix_count; ++i) {
 			if (i >= source_start) {
 				const auto& declaration = target_prefixes->prefixes[target_start + i - source_start];
-				if (segments[i] == declaration.val) {
+				if (segments[i] == declaration.token.val) {
 					const auto token = segment_token(reference, offset, segments[i]);
-					m_index.add_link(token, declaration);
+					m_index.add_link(token, declaration.token);
 				}
 			}
 			offset += segments[i].size() + 1;

@@ -22,7 +22,7 @@
  */
 
 class DesugarConst final : public ASTDesugaring {
-    std::vector<Token> m_const_prefixes;
+    std::vector<NodePrefix::PrefixSegment> m_const_prefixes;
     std::unique_ptr<NodeAST> m_pre = nullptr;
     std::unique_ptr<NodeAST> m_iter = nullptr;
 
@@ -68,7 +68,7 @@ public:
     };
 
     NodeAST * visit(NodeConst& node) override {
-        m_const_prefixes.push_back(node.const_prefix);
+        m_const_prefixes.push_back({node.const_prefix, NodePrefix::PrefixKind::Const});
         std::vector<std::unique_ptr<NodeAST>> const_indexes;
         m_iter = std::make_unique<NodeInt>(0, node.tok);
         m_pre = std::make_unique<NodeInt>(0, node.tok);
