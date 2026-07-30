@@ -892,42 +892,54 @@ NodeStatement* NodeBlock::add_stmt(std::unique_ptr<NodeStatement> stmt) {
 //}
 
 void NodeBlock::flatten(const bool force) {
-	// Reserviere genug Platz für den schlimmsten Fall, in dem keine Flattening nötig ist
-	std::vector<std::unique_ptr<NodeStatement>> new_statements;
-	new_statements.reserve(statements.size());
+	const auto is_dead_code = [](const std::unique_ptr<NodeStatement>& statement) {
+		return statement->statement->cast<NodeDeadCode>() != nullptr;
+	};
 
-	for (auto& statement : statements) {
-		if (const auto inner_body = statement->statement->cast<NodeBlock>()) {
-//			node_innner_body->flatten();
-			auto& inner_statements = inner_body->statements;
-
-			// Entfernen Sie DeadCode-Nodes in einem Schritt
-			auto new_end = std::remove_if(inner_statements.begin(), inner_statements.end(),
-										  [](const std::unique_ptr<NodeStatement>& stmt) {
-											return stmt->statement->cast<NodeDeadCode>();
-										  });
-			inner_statements.erase(new_end, inner_statements.end());
-
-			if(inner_body->scope and !force) {
-				new_statements.push_back(std::move(statement));
-				continue;
-			}
-			// Aktualisieren Sie das parent-Attribut und fügen Sie sie zu new_statements hinzu
-			for (auto& stmt : inner_statements) {
-				stmt->parent = this;
-				new_statements.push_back(std::move(stmt));
-			}
-
-			// Continue, um das Hinzufügen des aktuellen NodeBlock-Elements zu überspringen
+	// Calculate a safe upper bound without walking the inner statements. This
+	// guarantees a single allocation while keeping the fast-path scan cheap.
+	size_t flattened_capacity = statements.size();
+	bool has_flattenable_block = false;
+	for (const auto& statement : statements) {
+		const auto inner_body = statement->statement->cast<NodeBlock>();
+		if (!inner_body) continue;
+		if (inner_body->scope && !force) {
+			std::erase_if(inner_body->statements, is_dead_code);
 			continue;
 		}
 
-		// Fügen Sie das aktuelle Element hinzu, wenn es nicht speziell behandelt wird
-		new_statements.push_back(std::move(statement));
+		has_flattenable_block = true;
+		flattened_capacity = flattened_capacity - 1 + inner_body->statements.size();
 	}
 
-	// Ersetzen Sie die alte Liste durch die neue
-	statements = std::move(new_statements);
+	// The common case is an already-flat block. Scoped child blocks remain in
+	// place and have already had their DeadCode nodes removed above.
+	if (!has_flattenable_block) return;
+
+	std::vector<std::unique_ptr<NodeStatement>> flattened_statements;
+	flattened_statements.reserve(flattened_capacity);
+
+	for (auto& statement : statements) {
+		const auto inner_body = statement->statement->cast<NodeBlock>();
+		if (!inner_body) {
+			flattened_statements.push_back(std::move(statement));
+			continue;
+		}
+
+		auto& inner_statements = inner_body->statements;
+		if (inner_body->scope && !force) {
+			flattened_statements.push_back(std::move(statement));
+			continue;
+		}
+
+		for (auto& inner_statement : inner_statements) {
+			if (is_dead_code(inner_statement)) continue;
+			inner_statement->parent = this;
+			flattened_statements.push_back(std::move(inner_statement));
+		}
+	}
+
+	statements = std::move(flattened_statements);
 }
 
 bool NodeBlock::determine_scope() {
