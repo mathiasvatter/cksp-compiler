@@ -210,6 +210,8 @@ add_library(cksp_core STATIC
         cksp/Lowering/LoweringInitializerList.h
         cksp/ASTVisitor/ASTTemporaryPointerScope.h
         cksp/ASTVisitor/FunctionHandling/ReturnPathValidator.h
+        cksp/ASTVisitor/FunctionHandling/DeprecatedReturnSyntaxAnalyzer.cpp
+        cksp/ASTVisitor/FunctionHandling/DeprecatedReturnSyntaxAnalyzer.h
         cksp/ASTVisitor/GlobalScope/MarkThreadSafe.h
         cksp/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h
         cksp/ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h

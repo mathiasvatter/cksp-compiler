@@ -4,7 +4,9 @@
 
 #include "ASTDesugar.h"
 
+#include "../CompilerConfig.h"
 #include "../Desugaring/DesugarNamespace.h"
+#include "FunctionHandling/DeprecatedReturnSyntaxAnalyzer.h"
 
 NodeAST* ASTDesugar::visit(NodeProgram& node) {
     m_program = &node;
@@ -59,8 +61,13 @@ NodeAST* ASTDesugar::visit(NodeFunctionDefinition& node) {
 	node.header->accept(*this);
 	node.body->accept(*this);
 	m_program->function_definition_stack.pop();
+	if (m_program->compiler_config->lsp && node.return_variable) {
+		DeprecatedReturnSyntaxAnalyzer deprecated_returns(m_program);
+		deprecated_returns.analyze(node);
+	}
 	return node.desugar(m_program);
 }
+
 
 NodeAST* ASTDesugar::visit(NodeFunctionCall& node) {
 	node.function->accept(*this);
@@ -159,4 +166,3 @@ NodeAST *ASTDesugar::visit(NodeBinaryExpr &node) {
 	node.right->accept(*this);
 	return node.desugar(m_program);
 }
-

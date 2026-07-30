@@ -49,7 +49,7 @@ namespace pups
 end namespace    
 
 on init
-    bumbum.func(d)
+    bumbum.func(5)
     message(x, arr[0], pups.pupu.popo)
     // standalone method call: only runs if point is not nil
     _ := point?.get_x() ?? 0

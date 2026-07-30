@@ -2,6 +2,8 @@
 
 #include "RequestParams.h"
 
+#include <map>
+
 namespace {
 	bool requests_quick_fixes(const JSONObject* context) {
 		const auto* only_value = context ? context->get("only") : nullptr;
@@ -27,21 +29,40 @@ namespace {
 		const auto* diagnostic = diagnostic_value.as<JSONObject>();
 		const auto* data = lsp::object_at(diagnostic, "data");
 		const auto* title = lsp::string_at(data, "title");
-		const auto* target_uri = lsp::string_at(data, "targetUri");
-		const auto* edit_range = lsp::object_at(data, "editRange");
-		const auto* new_text = lsp::string_at(data, "newText");
-		if (!title || !target_uri || !edit_range || !new_text) {
+		const auto* edits_value = data ? data->get("edits") : nullptr;
+		const auto* fix_edits = edits_value ? edits_value->as<JSONArray>() : nullptr;
+		if (!title || !fix_edits || fix_edits->size() == 0) {
 			return nullptr;
 		}
 
-		auto edit = std::make_unique<JSONObject>();
-		edit->add("range", edit_range->clone());
-		edit->add("newText", std::make_unique<JSONString>(new_text->value));
+		std::map<std::string, std::unique_ptr<JSONArray>> edits_by_uri;
+		for (size_t index = 0; index < fix_edits->size(); ++index) {
+			const auto* edit_data_value = fix_edits->at(index);
+			const auto* edit_data = edit_data_value
+				? edit_data_value->as<JSONObject>()
+				: nullptr;
+			const auto* target_uri = lsp::string_at(edit_data, "targetUri");
+			const auto* edit_range = lsp::object_at(edit_data, "range");
+			const auto* new_text = lsp::string_at(edit_data, "newText");
+			if (!target_uri || !edit_range || !new_text) {
+				return nullptr;
+			}
 
-		auto edits = std::make_unique<JSONArray>();
-		edits->add(std::move(edit));
+			auto edit = std::make_unique<JSONObject>();
+			edit->add("range", edit_range->clone());
+			edit->add("newText", std::make_unique<JSONString>(new_text->value));
+
+			auto& uri_edits = edits_by_uri[target_uri->value];
+			if (!uri_edits) {
+				uri_edits = std::make_unique<JSONArray>();
+			}
+			uri_edits->add(std::move(edit));
+		}
+
 		auto changes = std::make_unique<JSONObject>();
-		changes->add(target_uri->value, std::move(edits));
+		for (auto& [uri, edits] : edits_by_uri) {
+			changes->add(uri, std::move(edits));
+		}
 		auto workspace_edit = std::make_unique<JSONObject>();
 		workspace_edit->add("changes", std::move(changes));
 

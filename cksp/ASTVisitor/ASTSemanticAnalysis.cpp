@@ -117,12 +117,12 @@ void ASTSemanticAnalysis::check_param_modification(NodeReference& ref) {
 	warning.fix = Diagnostic::DiagnosticFix{
 		.kind = Diagnostic::DiagnosticFix::FixKind::AddRefToFuncParam,
 		.title = "Pass '" + declaration->name + "' by reference",
-		.edit = {
+		.edits = {{
 			.kind = Diagnostic::DiagnosticFix::EditKind::InsertBefore,
 			.file = declaration->tok.file,
 			.range = source_range_from_token(declaration->tok),
 			.new_text = "ref "
-		},
+		}},
 		.is_preferred = true
 	};
 	warning.report(diagnostics());
@@ -565,4 +565,3 @@ NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(NodeR
 	}
 	return nullptr;
 }
-

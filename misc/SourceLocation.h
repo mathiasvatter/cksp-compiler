@@ -10,6 +10,8 @@ struct SourcePosition {
     size_t line = static_cast<size_t>(-1);
     size_t column = 0;
 
+    friend bool operator==(const SourcePosition&, const SourcePosition&) = default;
+
     /// convert to lsp diagnostics which are 0 indexed
     [[nodiscard]] size_t get_lsp_line() const {
         if (line == static_cast<size_t>(-1) || line == 0) return 0;
@@ -41,6 +43,8 @@ struct SourceRange {
     SourcePosition end;
 
     SourceRange() = default;
+
+    friend bool operator==(const SourceRange&, const SourceRange&) = default;
 
     /// Builds a range spanning from the start of `first` to the end of `last`.
     SourceRange(const SourceRange& first, const SourceRange& last)

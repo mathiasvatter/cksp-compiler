@@ -64,18 +64,22 @@ private:
 			if (const auto ref = func_call->function->get_arg(0)->is_reference()) {
 				if (const auto decl = ref->get_declaration()) {
 					if (const auto param = decl->is_function_param(); param and !param->is_pass_by_ref) {
-						auto error = Diagnostic(ErrorType::CompileWarning, "", "", node.tok);
-						error.message = "Found <get_ui_id> call in function body with a parameter as argument. Due to pass-by-value"
+						auto warning = Diagnostic(ErrorType::CompileWarning, "", "", node.tok);
+						warning.message = "Found <get_ui_id> call in function body with a parameter as argument. Due to pass-by-value"
 								 " semantics this will not work as expected since <get_ui_id> can only be used directly with <ui controls>.\n "
 								"Try passing <ui control> variables by reference instead (using <ref> keyword before the parameter) or using <get_ui_id> when passing the parameter to the function.";
-						error.report(node.diagnostics());
-						// // get all actual parameters to this formal param -> if none is get_ui_id -> make pass-by-reference
-						// auto actual_params = get_actual_params(*param);
-						// for (auto& arg : actual_params) {
-						// 	if (auto r = arg->is_reference()) {
-						//
-						// 	}
-						// }
+						warning.report(node.diagnostics());
+						warning.fix = Diagnostic::DiagnosticFix{
+							.kind = Diagnostic::DiagnosticFix::FixKind::AddRefToFuncParam,
+							.title = "Pass '" + decl->name + "' by reference",
+							.edits = {{
+								.kind = Diagnostic::DiagnosticFix::EditKind::InsertBefore,
+								.file = decl->tok.file,
+								.range = source_range_from_token(decl->tok),
+								.new_text = "ref "
+							}},
+							.is_preferred = true
+						};
 						param->is_pass_by_ref = true;
 					}
 				}

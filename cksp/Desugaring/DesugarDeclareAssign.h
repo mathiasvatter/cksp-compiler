@@ -33,7 +33,7 @@ public:
 
 		std::vector<std::unique_ptr<NodeSingleDeclaration>> declare_statements;
         for(auto &declaration : node.variable) {
-        	auto tok = declaration->tok;
+            auto tok = node.tok;
             auto node_single_declare_stmt = std::make_unique<NodeSingleDeclaration>(std::move(declaration), nullptr, tok);
             declare_statements.push_back(std::move(node_single_declare_stmt));
         }

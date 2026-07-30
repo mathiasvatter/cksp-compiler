@@ -45,8 +45,15 @@ public:
 private:
 
 	[[nodiscard]] static SourceId diagnostic_source(const Diagnostic& diagnostic, const SourceId& entry_source);
+	[[nodiscard]] static bool same_published_diagnostic(
+		const Diagnostic& left,
+		const Diagnostic& right
+	);
 	[[nodiscard]] static std::unique_ptr<JSONObject> make_lsp_diagnostic(const Diagnostic& diagnostic);
 	[[nodiscard]] static std::unique_ptr<JSONObject> make_lsp_fix_data(const Diagnostic::DiagnosticFix& fix);
+	[[nodiscard]] static std::unique_ptr<JSONObject> make_lsp_edit_data(
+		const Diagnostic::DiagnosticFix::Edit& edit
+	);
 	void publish_merged_source(const SourceId& source) const;
 	void publish_source(const SourceId& source, const std::vector<Diagnostic>& diagnostics) const;
 };

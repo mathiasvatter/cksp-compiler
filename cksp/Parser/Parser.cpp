@@ -669,11 +669,15 @@ Parser::_parse_ternary_rhs(std::unique_ptr<NodeAST> condition, NodeAST* parent) 
 Result<std::unique_ptr<NodeAST>> Parser::_parse_parenth_expr(NodeAST* parent) {
     auto start_tok = consume(); // eat (
     auto expr = parse_expression(parent);
+    if (expr.is_error()) {
+        return expr;
+    }
     if (peek().type != token::CLOSED_PARENTH) {
 		return Result<std::unique_ptr<NodeAST>>(Diagnostic(ErrorType::ParseError,
 		 "Missing parenthesis.",  ")", peek()));
     }
     auto end_tok = consume(); // eat )
+    expr.unwrap()->set_range(start_tok, end_tok);
     return expr;
 }
 

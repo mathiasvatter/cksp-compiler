@@ -67,3 +67,14 @@ void Diagnostic::set_token(const Token& token) {
     file = token.file;
     range = source_range_from_token(token);
 }
+
+std::string Diagnostic::display_message() const {
+    if (!message.empty()) {
+        return message;
+    }
+    auto result = error_type_to_string(type);
+    if (!actual.empty()) {
+        result += ": " + actual;
+    }
+    return result;
+}
