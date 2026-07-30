@@ -284,6 +284,8 @@ add_executable(cksp
         lsp/JsonRpcMessage.h
         lsp/LanguageServer.cpp
         lsp/LanguageServer.h
+        lsp/CodeActionProvider.cpp
+        lsp/CodeActionProvider.h
         lsp/ReferenceProvider.cpp
         lsp/ReferenceProvider.h
         lsp/RenameProvider.cpp

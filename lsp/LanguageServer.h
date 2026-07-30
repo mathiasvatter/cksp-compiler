@@ -89,6 +89,7 @@ public:
 	void handle_shutdown(const JsonRpcMessage& message);
 	void handle_definition(const JsonRpcMessage& message);
 	void handle_document_link(const JsonRpcMessage& message);
+	void handle_code_action(const JsonRpcMessage& message) const;
 	void handle_references(const JsonRpcMessage& message);
 	void handle_prepare_rename(const JsonRpcMessage& message);
 	void handle_rename(const JsonRpcMessage& message);

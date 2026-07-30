@@ -114,6 +114,17 @@ void ASTSemanticAnalysis::check_param_modification(NodeReference& ref) {
 		"parameters have function-local scope: this modification is not visible at the call site. "
 		"Declare the parameter as <ref "+declaration->name+"> to pass it by reference if the change should take "
 		"effect outside the function.";
+	warning.fix = Diagnostic::DiagnosticFix{
+		.kind = Diagnostic::DiagnosticFix::FixKind::AddRefToFuncParam,
+		.title = "Pass '" + declaration->name + "' by reference",
+		.edit = {
+			.kind = Diagnostic::DiagnosticFix::EditKind::InsertBefore,
+			.file = declaration->tok.file,
+			.range = source_range_from_token(declaration->tok),
+			.new_text = "ref "
+		},
+		.is_preferred = true
+	};
 	warning.report(diagnostics());
 }
 

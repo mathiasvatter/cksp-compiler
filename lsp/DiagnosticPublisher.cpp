@@ -108,6 +108,33 @@ SourceId DiagnosticPublisher::diagnostic_source(const Diagnostic& diagnostic, co
 	return FileSystemSourceProvider::normalize(diagnostic.file);
 }
 
+std::unique_ptr<JSONObject> DiagnosticPublisher::make_lsp_fix_data(
+	const Diagnostic::DiagnosticFix& fix) {
+	auto edit_range = std::make_unique<JSONObject>();
+	switch (fix.edit.kind) {
+		case Diagnostic::DiagnosticFix::EditKind::InsertBefore:
+			edit_range->add("start", fix.edit.range.start.get_lsp_position());
+			edit_range->add("end", fix.edit.range.start.get_lsp_position());
+			break;
+		case Diagnostic::DiagnosticFix::EditKind::InsertAfter:
+			edit_range->add("start", fix.edit.range.end.get_lsp_position());
+			edit_range->add("end", fix.edit.range.end.get_lsp_position());
+			break;
+		case Diagnostic::DiagnosticFix::EditKind::Replace:
+			edit_range = fix.edit.range.get_lsp_range();
+			break;
+	}
+
+	auto data = std::make_unique<JSONObject>();
+	data->add("fixKind",std::make_unique<JSONString>(Diagnostic::fix_kind_to_string(fix.kind)));
+	data->add("title", std::make_unique<JSONString>(fix.title));
+	data->add("targetUri",std::make_unique<JSONString>(uri_from_source(SourceId(fix.edit.file))));
+	data->add("editRange", std::move(edit_range));
+	data->add("newText", std::make_unique<JSONString>(fix.edit.new_text));
+	data->add("isPreferred", std::make_unique<JSONBool>(fix.is_preferred));
+	return data;
+}
+
 std::unique_ptr<JSONObject> DiagnosticPublisher::make_lsp_diagnostic(const Diagnostic& diagnostic) {
 	auto result = std::make_unique<JSONObject>();
 	result->add("range", diagnostic.range.get_lsp_range());
@@ -115,6 +142,10 @@ std::unique_ptr<JSONObject> DiagnosticPublisher::make_lsp_diagnostic(const Diagn
 	result->add("source", std::make_unique<JSONString>("cksp"));
 	result->add("code", std::make_unique<JSONString>(error_type_to_string(diagnostic.type)));
 	result->add("message", std::make_unique<JSONString>(diagnostic_message(diagnostic)));
+
+	if (diagnostic.fix) {
+		result->add("data", make_lsp_fix_data(*diagnostic.fix));
+	}
 	return result;
 }
 

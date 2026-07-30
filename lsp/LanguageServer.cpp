@@ -4,6 +4,7 @@
 
 #include "LanguageServer.h"
 
+#include "CodeActionProvider.h"
 #include "RequestParams.h"
 #include "TrackingSourceProvider.h"
 #include "../cksp/Compiler.h"
@@ -66,6 +67,8 @@ void LanguageServer::handle_request(const JsonRpcMessage& message) {
 		handle_rename(message);
 	} else if (method->value == "textDocument/documentHighlight") {
 		handle_document_highlight(message);
+	} else if (method->value == "textDocument/codeAction") {
+		handle_code_action(message);
 	}
 }
 
@@ -347,6 +350,15 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 	JSONObject document_link_options;
 	document_link_options.add("resolveProvider", std::make_unique<JSONBool>(false));
 
+	auto code_action_options = std::make_unique<JSONObject>();
+	auto code_action_kinds = std::make_unique<JSONArray>();
+	code_action_kinds->add(std::make_unique<JSONString>("quickfix"));
+	code_action_options->add("codeActionKinds", std::move(code_action_kinds));
+	code_action_options->add(
+		"resolveProvider",
+		std::make_unique<JSONBool>(false)
+	);
+
 	JSONObject capabilities;
 	capabilities.add("textDocumentSync", std::make_unique<JSONObject>(sync));
 	capabilities.add("definitionProvider", std::make_unique<JSONBool>(true));
@@ -354,6 +366,7 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 	capabilities.add("referencesProvider", std::make_unique<JSONBool>(true));
 	capabilities.add("renameProvider", std::make_unique<JSONObject>(rename_options));
 	capabilities.add("documentHighlightProvider", std::make_unique<JSONBool>(true));
+	capabilities.add("codeActionProvider", std::move(code_action_options));
 
 	JSONObject server_info;
 	server_info.add("name", std::make_unique<JSONString>("cksp-lsp"));
@@ -453,6 +466,14 @@ void LanguageServer::handle_document_link(const JsonRpcMessage& message) {
 		links.add(std::move(link));
 	}
 	m_connection.send_response(*id, links);
+}
+
+void LanguageServer::handle_code_action(const JsonRpcMessage& message) const {
+	const auto* id = message.id();
+	if (id) {
+		const auto* params = message.params() ? message.params()->as<JSONObject>() : nullptr;
+		m_connection.send_response(*id, CodeActionProvider::provide(params));
+	}
 }
 
 void LanguageServer::handle_references(const JsonRpcMessage& message) {

@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <exception>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -23,7 +24,7 @@ enum class ErrorType {
     MathError,
     InternalError
 };
-std::string error_type_to_string(const ErrorType type);
+std::string error_type_to_string(ErrorType type);
 
 
 enum class DiagnosticSeverity {
@@ -50,6 +51,36 @@ struct DiagnosticFrame {
  * active DiagnosticEngine when the diagnostic is emitted.
  */
 struct Diagnostic {
+
+    struct DiagnosticFix {
+        enum class FixKind {
+            AddRefToFuncParam
+        };
+        enum class EditKind {
+            InsertBefore,
+            InsertAfter,
+            Replace
+        };
+        struct Edit {
+            EditKind kind = EditKind::Replace;
+            std::string file;
+            SourceRange range;
+            std::string new_text;
+        };
+
+        FixKind kind;
+        std::string title;
+        Edit edit;
+        bool is_preferred = false;
+    };
+    static std::string fix_kind_to_string(const DiagnosticFix::FixKind kind) {
+        switch (kind) {
+            case DiagnosticFix::FixKind::AddRefToFuncParam: return "AddRefToFuncParam";
+            default: break;
+        }
+        return "unknown";
+    }
+
     ErrorType type = ErrorType::CompileError;
     DiagnosticSeverity severity = DiagnosticSeverity::Error;
     std::string message;
@@ -59,6 +90,7 @@ struct Diagnostic {
     std::string file;
     SourceRange range;
     std::vector<DiagnosticFrame> call_stack;
+    std::optional<DiagnosticFix> fix;
 
     Diagnostic() = default;
     Diagnostic(ErrorType type, std::string message, std::string expected, const struct Token& token);
