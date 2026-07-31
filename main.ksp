@@ -2,7 +2,6 @@
 #pragma combine_callbacks(true)
 #pragma max_callback_depth(420)
 
-import "./importme.cksp" as bumbum
 
 declare const bum := 100
 
@@ -54,7 +53,6 @@ declare ui_slider sli[num_elements(ahdsr)](1,2)
 on init
 
     message(sli[0])
-    bumbum.func(5.)
     message(x, arr[0], pups.pupu.popo)
     // standalone method call: only runs if point is not nil
     _ := point?.get_x() ?? 0
