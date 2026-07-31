@@ -40,7 +40,7 @@ private:
 		node.left->accept(*this);
 		node.right->accept(*this);
 
-		if (not BOOL_TOKENS.contains(node.op)) {
+		if (not BOOL_TOKENS.contains(node.op.type)) {
 			return &node;
 		}
 
@@ -69,7 +69,7 @@ private:
 	NodeAST *visit(NodeUnaryExpr &node) override {
 		node.operand->accept(*this);
 
-		if (not BOOL_TOKENS.contains(node.op)) {
+		if (not BOOL_TOKENS.contains(node.op.type)) {
 			return &node;
 		}
 
@@ -93,7 +93,7 @@ private:
 		auto bin_exp = node.parent->cast<NodeBinaryExpr>();
 		if (!bin_exp) return &node;
 
-		if (not COMPARISON_TOKENS.contains(bin_exp->op)) {
+		if (not COMPARISON_TOKENS.contains(bin_exp->op.type)) {
 			return &node;
 		}
 

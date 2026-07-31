@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 project(CKSP_Compiler VERSION 0.1.0)
-set(PRE_RELEASE_VERSION "-alpha.2")
+set(PRE_RELEASE_VERSION "-alpha.3")
 
 set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
 configure_file(
@@ -90,6 +90,7 @@ add_library(cksp_core STATIC
         cksp/ASTNodes/ASTReferences.cpp
         cksp/ASTVisitor/ASTVisitor.h
         cksp/ASTVisitor/ASTVisitor.cpp
+        cksp/ASTVisitor/ASTReserveNames.h
         cksp/ASTVisitor/debug/ASTPrinter.h
         cksp/ASTVisitor/debug/ASTPrinter.cpp
         cksp/ASTVisitor/ASTDesugar.h
@@ -111,6 +112,8 @@ add_library(cksp_core STATIC
         cksp/BuiltinsProcessing/BuiltinsProcessor.cpp
         cksp/Generator/ASTGenerator.h
         cksp/Generator/ASTGenerator.cpp
+        cksp/Generator/ASTSourceMapGenerator.h
+        cksp/Generator/ASTSourceMapGenerator.cpp
         ${GENERATED_HEADERS}
         generated/version.h
         cksp/Preprocessor/PreAST/PreASTDefines.h
@@ -207,6 +210,8 @@ add_library(cksp_core STATIC
         cksp/Lowering/LoweringInitializerList.h
         cksp/ASTVisitor/ASTTemporaryPointerScope.h
         cksp/ASTVisitor/FunctionHandling/ReturnPathValidator.h
+        cksp/ASTVisitor/FunctionHandling/DeprecatedReturnSyntaxAnalyzer.cpp
+        cksp/ASTVisitor/FunctionHandling/DeprecatedReturnSyntaxAnalyzer.h
         cksp/ASTVisitor/GlobalScope/MarkThreadSafe.h
         cksp/ASTVisitor/FunctionHandling/ASTFunctionStrategy.h
         cksp/ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h
@@ -263,6 +268,8 @@ add_library(cksp_core STATIC
         cksp/BuiltinsProcessing/EngineConstantsIntegers.h
         utils/IdentifierObfuscator.h
         cksp/Lowering/LoweringOptionalChaining.h
+        cksp/ASTVisitor/ASTConstantVariableChecking.h
+        cksp/ASTVisitor/ASTUIControlLowering.h
 )
 add_dependencies(cksp_core generate_headers)
 
@@ -281,6 +288,8 @@ add_executable(cksp
         lsp/JsonRpcMessage.h
         lsp/LanguageServer.cpp
         lsp/LanguageServer.h
+        lsp/CodeActionProvider.cpp
+        lsp/CodeActionProvider.h
         lsp/ReferenceProvider.cpp
         lsp/ReferenceProvider.h
         lsp/RenameProvider.cpp
@@ -294,3 +303,7 @@ add_executable(cksp
         lsp/EntryPointResolver.h
 )
 target_link_libraries(cksp PRIVATE cksp_core)
+
+if(WIN32)
+    target_link_libraries(cksp PRIVATE dbghelp)
+endif()

@@ -42,7 +42,7 @@ public:
 		node.operand->accept(*this);
 
 		// check if it is a boolean operator
-		if (not BOOL_TOKENS.contains(node.op)) {
+		if (not BOOL_TOKENS.contains(node.op.type)) {
 			return &node;
 		}
 
@@ -65,7 +65,7 @@ public:
 		// if boolean operator, replace operand with 1-operand
 		// e.g. not a --> 1 - a
 		// only NOT is supported as unary boolean operator
-		if (node.op == token::BOOL_NOT) {
+		if (node.op.type == token::BOOL_NOT) {
 			auto expression = std::make_unique<NodeBinaryExpr>(
 				token::SUB,
 				std::make_unique<NodeInt>(1, node.tok),
@@ -89,7 +89,7 @@ public:
 		node.right->accept(*this);
 
 		// check if it is a boolean operator
-		if (not(BOOL_TOKENS.contains(node.op) || COMPARISON_TOKENS.contains(node.op))) {
+		if (not(BOOL_TOKENS.contains(node.op.type) || COMPARISON_TOKENS.contains(node.op.type))) {
 			return &node;
 		}
 
@@ -111,14 +111,14 @@ public:
 		}
 
 		// if boolean operator, replace with bitwise operator
-		if (BOOL_TOKENS.contains(node.op)) {
-			const auto it = boolean_to_bitwise.find(node.op);
+		if (BOOL_TOKENS.contains(node.op.type)) {
+			const auto it = boolean_to_bitwise.find(node.op.type);
 			if (it == boolean_to_bitwise.end()) {
 				auto error = Diagnostic(ErrorType::InternalError, "", "", node.tok);
 				error.message = "<LoweringBooleanExpression>: Boolean operator not found in mapping.";
 				error.exit();
 			}
-			node.op = it->second;
+			node.op.type = it->second;
 			node.ty = TypeRegistry::Integer;
 			node.left->set_element_type(TypeRegistry::Integer);
 			node.right->set_element_type(TypeRegistry::Integer);
@@ -126,8 +126,8 @@ public:
 		}
 
 		// if comparison operator, replace with function call
-		if (COMPARISON_TOKENS.contains(node.op)) {
-			const auto it = BOOLEAN_FUNCTIONS.find(node.op);
+		if (COMPARISON_TOKENS.contains(node.op.type)) {
+			const auto it = BOOLEAN_FUNCTIONS.find(node.op.type);
 			if (it == BOOLEAN_FUNCTIONS.end()) {
 				auto error = Diagnostic(ErrorType::InternalError, "", "", node.tok);
 				error.message = "<LoweringBooleanExpression>: Comparison operator not found in mapping.";

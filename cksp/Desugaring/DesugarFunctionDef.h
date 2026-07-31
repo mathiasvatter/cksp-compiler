@@ -5,6 +5,7 @@
 #pragma once
 
 #include "ASTDesugaring.h"
+#include "../ASTVisitor/FunctionHandling/DeprecatedReturnSyntaxAnalyzer.h"
 #include "../ASTVisitor/FunctionHandling/ReturnPathValidator.h"
 #include "../../utils/Gensym.h"
 #include "../CompilerConfig.h"
@@ -17,13 +18,6 @@ class DesugarFunctionDef : public ASTDesugaring {
 	bool throw_deprecated_warning = false;
 	NodeFunctionDefinition* m_current_function = nullptr;
 	int m_num_last_ret_values = 0; // saves the number of return values of last return statement
-
-	static Diagnostic throw_function_deprecation_error(Token tok) {
-		auto error = Diagnostic(ErrorType::SyntaxError, "", "<Return> Statement", tok);
-		error.message = "Deprecated return syntax used in function definition. For type safety, using"
-						  " multiple return values or returning arrays, use <return> statement syntax instead.";
-		return error;
-	}
 
 	/// transforms expression only function into return statement functions
 	static bool transform_expr_only_to_return_function(NodeFunctionDefinition* def) {
@@ -50,8 +44,10 @@ public:
 		m_current_function = &node;
 		if(node.return_variable.has_value()) {
 			node.num_return_params = 1;
-			if(!throw_deprecated_warning or m_program->compiler_config->lsp) {
-				throw_function_deprecation_error(node.return_variable.value()->tok).report(diagnostics());
+			if(!m_program->compiler_config->lsp and !throw_deprecated_warning) {
+				DeprecatedReturnSyntaxAnalyzer::make_warning(
+					node.return_variable.value()->tok
+				).report(diagnostics());
 				throw_deprecated_warning = true;
 			}
 			transform_expr_only_to_return_function(&node);

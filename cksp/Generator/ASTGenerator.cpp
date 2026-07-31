@@ -21,7 +21,8 @@ void ASTGenerator::print() const {
 
 NodeAST * ASTGenerator::visit(NodeProgram &node) {
 	m_program = &node;
-    os << get_compiled_date_time() << std::endl;
+	m_compiled_header = get_compiled_date_time();
+    os << m_compiled_header << std::endl;
     // get init callback first
     node.callbacks[0]->accept(*this);
     for(const auto & function : node.function_definitions) {
@@ -161,14 +162,14 @@ NodeAST * ASTGenerator::visit(NodeBinaryExpr &node) {
     if(is_nested_bin_expr and node.ty != TypeRegistry::String) os << "(";
 
     node.left->accept(*this);
-    os << " " << GENERATE_ALL_OPERATORS[node.op] << " ";
+    os << " " << GENERATE_ALL_OPERATORS[node.op.type] << " ";
     node.right->accept(*this);
     if(is_nested_bin_expr and node.ty != TypeRegistry::String) os << ")";
 	return &node;
 }
 
 NodeAST * ASTGenerator::visit(NodeUnaryExpr &node) {
-    os << GENERATE_ALL_OPERATORS[node.op] << " ";
+    os << GENERATE_ALL_OPERATORS[node.op.type] << " ";
     node.operand->accept(*this);
 	return &node;
 }

@@ -112,15 +112,6 @@ class LoweringStruct final : public ASTLowering {
 		return m_current_struct->node_self->to_reference();
 	}
 
-	// checks if the node is in an access chain and not the first element
-	static bool is_in_access_chain_and_not_first(const NodeAST& node) {
-		if (!node.parent) return false;
-		if (auto chain = node.parent->cast<NodeAccessChain>()) {
-			if (chain->chain[0].get() == &node) return false;
-			return true;
-		}
-		return false;
-	}
 public:
 	explicit LoweringStruct(NodeProgram *program) : ASTLowering(program) {}
 
@@ -254,7 +245,7 @@ public:
 
 private:
 	[[nodiscard]] bool determine_inflation_need(const NodeReference& ref) const {
-		if (is_in_access_chain_and_not_first(ref)) return false;
+		if (ref.in_access_chain()) return false;
 		auto strct = ref.is_member_ref();
 		// check with name to only inflate members with prefix
 		if (strct and strct->name == m_current_struct->name) {

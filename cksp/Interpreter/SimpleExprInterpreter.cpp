@@ -187,11 +187,11 @@ Result<int> SimpleInterpreter::evaluate_int_expression(std::unique_ptr<NodeAST>&
         auto operand_value_stmt = evaluate_int_expression(unary_expr_node->operand);
         if (operand_value_stmt.is_error()) return Result<int>(operand_value_stmt.get_error());
         int operandValue = operand_value_stmt.unwrap();
-        if (unary_expr_node->op == token::SUB) { // Assuming SUB represents the '-' unary operator
+        if (unary_expr_node->op.type == token::SUB) { // Assuming SUB represents the '-' unary operator
             return Result<int>(-operandValue);
         }
     	auto error = Diagnostic(ErrorType::PreprocessorError,"Unsupported unary operation. " + preprocessor_error,"-", root->tok);
-    	error.actual = get_token_string(unary_expr_node->op);
+    	error.actual = get_token_string(unary_expr_node->op.type);
         return Result<int>(std::move(error));
         // Add other unary operations here if needed
     } else if (auto binary_expr_node = root->cast<NodeBinaryExpr>()) {
@@ -201,13 +201,13 @@ Result<int> SimpleInterpreter::evaluate_int_expression(std::unique_ptr<NodeAST>&
         auto right_value_stmt = evaluate_int_expression(binary_expr_node->right);
         if (right_value_stmt.is_error()) return Result<int>(right_value_stmt.get_error());
         int right_value = right_value_stmt.unwrap();
-        if (binary_expr_node->op == token::ADD) {
+        if (binary_expr_node->op.type == token::ADD) {
             return Result<int>(left_value + right_value);
-        } else if (binary_expr_node->op == token::SUB) {
+        } else if (binary_expr_node->op.type == token::SUB) {
             return Result<int>(left_value - right_value);
-        } else if (binary_expr_node->op == token::MULT) {
+        } else if (binary_expr_node->op.type == token::MULT) {
             return Result<int>(left_value * right_value);
-        } else if (binary_expr_node->op == token::DIV) {
+        } else if (binary_expr_node->op.type == token::DIV) {
             if (right_value == 0) {
                 auto error = Diagnostic(ErrorType::PreprocessorError, "Divison by zero. " + preprocessor_error,
                                         "", root->tok);
@@ -215,13 +215,13 @@ Result<int> SimpleInterpreter::evaluate_int_expression(std::unique_ptr<NodeAST>&
                 return Result<int>(std::move(error));
             }
             return Result<int>(left_value / right_value);
-        } else if (binary_expr_node->op == token::MODULO) {
+        } else if (binary_expr_node->op.type == token::MODULO) {
             return Result<int>(left_value % right_value);
         }
         // Add other binary operations here if needed
         auto error = Diagnostic(ErrorType::PreprocessorError, "Unsupported binary operation. " + preprocessor_error,
                                 "*, /, -, +, mod", root->tok);
-        error.actual = token_strings[(int)binary_expr_node->op];
+        error.actual = token_strings[(int)binary_expr_node->op.type];
         return Result<int>(std::move(error));
     }
     return Result<int>(Diagnostic(ErrorType::PreprocessorError,

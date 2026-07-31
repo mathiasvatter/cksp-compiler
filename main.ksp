@@ -3,7 +3,6 @@
 #pragma max_callback_depth(420)
 
 
-
 declare const bum := 100
 
 struct Array
@@ -29,14 +28,32 @@ struct Wrapper
 end struct
 
 // declare ui_slider sli[5](1,2)
-declare x
+declare x := 45
+declare arr := [11,2,3,4]
 declare point_array := new Array()
-
+// declare ui_slider sli(0,1) := 4
 declare read point := new Point(1, 2)
 declare wrapper := new Wrapper(new Point(3, 4))
 declare empty_wrapper: Wrapper := nil
 
+namespace pups
+    declare pops
+    namespace pupu
+        declare popo := pups.pops
+    end namespace
+
+    // on release
+    //     pops := 34
+    // end on        
+end namespace    
+
+declare ahdsr := ["Attack", "Hold", "Decay", "Sustain", "Release"]
+declare ui_slider sli[num_elements(ahdsr)](1,2)
+
 on init
+
+    message(sli[0])
+    message(x, arr[0], pups.pupu.popo)
     // standalone method call: only runs if point is not nil
     _ := point?.get_x() ?? 0
 
@@ -61,6 +78,12 @@ on init
     declare v3 := empty_wrapper?.inner?.x ?? -1
     message(v3)
 
+    select v3
+        case 3
+            message(2)
+        default
+            message(v3)
+    end select        
     // value context without ?? is rejected at compile time:
     // declare bad := point?.x
 end on

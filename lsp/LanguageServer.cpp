@@ -4,12 +4,14 @@
 
 #include "LanguageServer.h"
 
+#include "CodeActionProvider.h"
 #include "RequestParams.h"
 #include "TrackingSourceProvider.h"
 #include "../cksp/Compiler.h"
 #include "../misc/DiagnosticSink.h"
 #include "version.h"
 
+#include <algorithm>
 #include <filesystem>
 #include <unordered_set>
 
@@ -17,7 +19,7 @@ using lsp::object_at;
 using lsp::string_at;
 using lsp::position_params;
 using lsp::source_from_optional_uri_or_path;
-using lsp::resolve_configured_entry;
+using lsp::resolve_configured_entries;
 
 LanguageServer::~LanguageServer() {
 	stop_analysis_worker();
@@ -55,6 +57,8 @@ void LanguageServer::handle_request(const JsonRpcMessage& message) {
 		handle_shutdown(message);
 	} else if (method->value == "textDocument/definition") {
 		handle_definition(message);
+	} else if (method->value == "textDocument/documentLink") {
+		handle_document_link(message);
 	} else if (method->value == "textDocument/references") {
 		handle_references(message);
 	} else if (method->value == "textDocument/prepareRename") {
@@ -63,6 +67,8 @@ void LanguageServer::handle_request(const JsonRpcMessage& message) {
 		handle_rename(message);
 	} else if (method->value == "textDocument/documentHighlight") {
 		handle_document_highlight(message);
+	} else if (method->value == "textDocument/codeAction") {
+		handle_code_action(message);
 	}
 }
 
@@ -150,12 +156,26 @@ bool LanguageServer::is_analysis_current(const uint64_t generation) const {
 }
 
 void LanguageServer::analyze_entry(const SourceId& entry_source) {
+	const auto entry = FileSystemSourceProvider::normalize(entry_source.value);
+	auto analysis_mode = AnalysisMode::Default;
+	{
+		// Imported files are analyzed through their configured owning entry point. Only a
+		// source that remains a standalone root gets syntax-only analysis. With no configured
+		// entries, preserve the original behavior and treat opened files as full entry points.
+		std::lock_guard lock(m_state_mutex);
+		if (!m_configured_entry_sources.empty()
+			&& !m_entry_points.is_configured_entry(entry)) {
+			analysis_mode = AnalysisMode::SyntaxOnly;
+		}
+	}
+
 	CollectingDiagnosticSink diagnostics;
 	auto config = std::make_unique<CompilerConfig>();
 	config->lsp = true;
+	config->analysis_mode = analysis_mode;
 	TrackingSourceProvider analysis_sources(m_sources);
 	Compiler compiler(std::move(config), analysis_sources);
-	const auto result = compiler.analyze(entry_source, diagnostics);
+	const auto result = compiler.analyze(entry, diagnostics);
 	auto successful_sources = result.success
 		? analysis_sources.take_loaded_contents()
 		: ReferenceProvider::SourceContents{};
@@ -169,7 +189,6 @@ void LanguageServer::analyze_entry(const SourceId& entry_source) {
 		}
 	}
 	std::lock_guard lock(m_state_mutex);
-	const auto entry = FileSystemSourceProvider::normalize(entry_source.value);
 	// A filesystem notification may arrive while this analysis is running. Do not let
 	// its now-stale result resurrect an entry that has already been removed.
 	if (m_deleted_sources.contains(entry.value)) {
@@ -179,7 +198,19 @@ void LanguageServer::analyze_entry(const SourceId& entry_source) {
 	// A failed analysis often has only a partial import graph. Use it to establish a new
 	// entry, but never replace graph ownership learned from a complete analysis.
 	if (result.success || !has_successful_graph) {
-		m_entry_points.register_analysis(entry, compiler.import_graph());
+		const auto subsumed_entries =
+			m_entry_points.register_analysis(entry, compiler.import_graph());
+		if (result.success) {
+			// A source may have been analysed standalone before this owning entry was
+			// opened and its import graph became known. Remove that out-of-context
+			// snapshot immediately so its diagnostics cannot remain merged into the
+			// imported source until the source happens to change again.
+			for (const auto& subsumed_entry : subsumed_entries) {
+				m_entry_points.remove_entry(subsumed_entry);
+				m_diagnostic_publisher.discard_entry(subsumed_entry);
+				m_references.erase(subsumed_entry);
+			}
+		}
 	}
 
 	m_references.publish(entry, compiler.reference_index(), result.success, std::move(successful_sources));
@@ -264,6 +295,25 @@ void LanguageServer::analyze_entries_for_sources(const std::vector<SourceId>& ch
 				}
 				return;
 			}
+
+			{
+				std::lock_guard lock(m_state_mutex);
+				const auto current_entries = m_entry_points.affected_entries(entries[i]);
+				const bool still_analyzed_as_entry = std::ranges::any_of(
+					current_entries,
+					[&entry = entries[i]](const SourceId& current_entry) {
+						return current_entry == entry;
+					});
+				if (!still_analyzed_as_entry) {
+					// An earlier analysis in this batch discovered that this queued
+					// standalone source is imported by another entry. Do not let the
+					// obsolete queued analysis recreate the snapshot just discarded.
+					m_entry_points.remove_entry(entries[i]);
+					m_diagnostic_publisher.discard_entry(entries[i]);
+					m_references.erase(entries[i]);
+					continue;
+				}
+			}
 			analyze_entry(entries[i]);
 		}
 	}
@@ -276,18 +326,18 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 	if (m_workspace_root) {
 		m_workspace_root = FileSystemSourceProvider::normalize(m_workspace_root->value);
 	}
-	m_configured_entry_source = resolve_configured_entry(params, m_workspace_root);
+	m_configured_entry_sources = resolve_configured_entries(params, m_workspace_root);
 	{
 		std::lock_guard lock(m_state_mutex);
 		m_entry_points.set_workspace_root(m_workspace_root);
-		m_entry_points.set_configured_entry(m_configured_entry_source);
+		m_entry_points.set_configured_entries(m_configured_entry_sources);
 	}
 
-	// Analyse the configured entry up front so project-wide diagnostics are available
+	// Analyse configured entries up front so project-wide diagnostics are available
 	// without having to open one of its member files first, and so ownership of shared
 	// files is established early.
-	if (m_configured_entry_source) {
-		schedule_analysis_for_source(*m_configured_entry_source);
+	for (const auto& entry_source : m_configured_entry_sources) {
+		schedule_analysis_for_source(entry_source);
 	}
 
 	JSONObject sync;
@@ -297,12 +347,26 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 	JSONObject rename_options;
 	rename_options.add("prepareProvider", std::make_unique<JSONBool>(true));
 
+	JSONObject document_link_options;
+	document_link_options.add("resolveProvider", std::make_unique<JSONBool>(false));
+
+	auto code_action_options = std::make_unique<JSONObject>();
+	auto code_action_kinds = std::make_unique<JSONArray>();
+	code_action_kinds->add(std::make_unique<JSONString>("quickfix"));
+	code_action_options->add("codeActionKinds", std::move(code_action_kinds));
+	code_action_options->add(
+		"resolveProvider",
+		std::make_unique<JSONBool>(false)
+	);
+
 	JSONObject capabilities;
 	capabilities.add("textDocumentSync", std::make_unique<JSONObject>(sync));
 	capabilities.add("definitionProvider", std::make_unique<JSONBool>(true));
+	capabilities.add("documentLinkProvider", std::make_unique<JSONObject>(document_link_options));
 	capabilities.add("referencesProvider", std::make_unique<JSONBool>(true));
 	capabilities.add("renameProvider", std::make_unique<JSONObject>(rename_options));
 	capabilities.add("documentHighlightProvider", std::make_unique<JSONBool>(true));
+	capabilities.add("codeActionProvider", std::move(code_action_options));
 
 	JSONObject server_info;
 	server_info.add("name", std::make_unique<JSONString>("cksp-lsp"));
@@ -338,18 +402,77 @@ std::optional<ReferenceLink> LanguageServer::resolve_target_at(
 		m_entry_points.affected_entries(source), source, line, character);
 }
 
+std::optional<DefinitionLink> LanguageServer::resolve_definition_target(
+	const JsonRpcMessage& message) {
+	const auto position = position_params(message);
+	if (!position) return std::nullopt;
+	std::lock_guard lock(m_state_mutex);
+	return m_references.resolve_definition(
+		m_entry_points.affected_entries(position->source),
+		position->source,
+		position->line,
+		position->character);
+}
+
 void LanguageServer::handle_definition(const JsonRpcMessage& message) {
-	const auto found = resolve_navigation_target(message);
+	const auto found = resolve_definition_target(message);
 
 	const auto* id = message.id();
 	if (!id) return;
 	if (found) {
-		JSONObject location;
-		location.add("uri", std::make_unique<JSONString>(uri_from_source(SourceId(found->def_file))));
-		location.add("range", found->def_range.get_lsp_range());
-		m_connection.send_response(*id, location);
+		auto link = std::make_unique<JSONObject>();
+		link->add("originSelectionRange", found->ref_range.get_lsp_range());
+		link->add("targetUri", std::make_unique<JSONString>(
+			uri_from_source(SourceId(found->def_file))));
+		link->add("targetRange", found->def_range.get_lsp_range());
+		link->add("targetSelectionRange", found->def_selection_range.get_lsp_range());
+		JSONArray links;
+		links.add(std::move(link));
+		m_connection.send_response(*id, links);
 	} else {
 		m_connection.send_response(*id, JSONNull{});
+	}
+}
+
+void LanguageServer::handle_document_link(const JsonRpcMessage& message) {
+	const auto* id = message.id();
+	if (!id) return;
+
+	const auto* params = message.params() ? message.params()->as<JSONObject>() : nullptr;
+	const auto* text_document = object_at(params, "textDocument");
+	const auto* uri = string_at(text_document, "uri");
+	if (!uri) {
+		m_connection.send_response(*id, JSONArray{});
+		return;
+	}
+
+	const auto source = source_from_uri(uri->value);
+	std::vector<DefinitionLink> found;
+	{
+		std::lock_guard lock(m_state_mutex);
+		found = m_references.document_links(
+			m_entry_points.affected_entries(source), source);
+	}
+
+	JSONArray links;
+	for (const auto& item : found) {
+		auto link = std::make_unique<JSONObject>();
+		link->add("range", item.ref_range.get_lsp_range());
+		link->add("target", std::make_unique<JSONString>(
+			uri_from_source(SourceId(item.def_file))));
+		if (!item.tooltip.empty()) {
+			link->add("tooltip", std::make_unique<JSONString>(item.tooltip));
+		}
+		links.add(std::move(link));
+	}
+	m_connection.send_response(*id, links);
+}
+
+void LanguageServer::handle_code_action(const JsonRpcMessage& message) const {
+	const auto* id = message.id();
+	if (id) {
+		const auto* params = message.params() ? message.params()->as<JSONObject>() : nullptr;
+		m_connection.send_response(*id, CodeActionProvider::provide(params));
 	}
 }
 
@@ -522,7 +645,7 @@ void LanguageServer::handle_did_close(const JsonRpcMessage& message) {
 	{
 		std::lock_guard lock(m_state_mutex);
 		// Only tear down entries that exist solely because the file was open: a standalone
-		// orphan entry. The configured entry and files it owns keep their diagnostics so the
+		// orphan entry. Configured entries and files they own keep their diagnostics so the
 		// whole project's diagnostics do not vanish when a tab is closed.
 		standalone_entry = m_entry_points.is_known_entry(source)
 			&& !m_entry_points.is_configured_entry(source)

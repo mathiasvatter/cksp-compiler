@@ -109,6 +109,26 @@ NodeAST * TypeInference::visit(NodeVariableRef& node) {
 			const auto new_node = node.replace_reference(std::move(pointer_ref));
 			return new_node->accept(*this);
 		}
+		// scalar reference to a composite declaration
+		//	declare ahdsr := ("Attack", "Release")
+		//	ahdsr := 4
+		// declarations written without brackets are still a <NodeVariable> while ASTSemanticAnalysis runs,
+		// so replace_incorrectly_detected_reference() could not rewrite this reference yet. Doing it here
+		// keeps whole-array semantics (num_elements, function arguments) and makes the composite type reach
+		// the type checks instead of silently collapsing to the element type in match_reference_declaration()
+		if(const auto composite_type = decl->ty->cast<CompositeType>();
+			composite_type and node.ty->get_type_kind() != TypeKind::Composite
+			and !decl->cast<NodeList>() and !decl->cast<NodeStruct>()) {
+			std::unique_ptr<NodeReference> composite_ref = nullptr;
+			if(composite_type->get_dimensions() > 1 and !node.is_raw_array()) {
+				composite_ref = std::make_unique<NodeNDArrayRef>(node.name, nullptr, node.tok);
+			} else {
+				composite_ref = std::make_unique<NodeArrayRef>(node.name, nullptr, node.tok);
+			}
+			composite_ref->match_data_structure(decl);
+			const auto new_node = node.replace_reference(std::move(composite_ref));
+			return new_node->accept(*this);
+		}
 	}
 	// if (node.needs_get_ui_id()) {
 	// 	return node.replace_reference(node.wrap_in_get_ui_id())->accept(*this);
@@ -943,8 +963,12 @@ NodeAST * TypeInference::visit(NodeFunctionHeaderRef& node) {
 		}
 		decl_type = decl->ty->cast<FunctionType>();
 		if(!decl_type) {
-			auto error = Diagnostic(ErrorType::TypeError, "", "", node.tok);
-			error.message = "Function type expected.";
+			if (node.parent) {
+				if (const auto function_call = node.parent->cast<NodeFunctionCall>()) {
+					m_def_provider->make_missing_function_definition_error(*function_call).exit();
+				}
+			}
+			auto error = Diagnostic(ErrorType::TypeError, "Function type expected.", "", node.tok);
 			error.exit();
 		} else if (decl_type->get_params().empty() and ref_type) {
 			decl->ty = node.ty;
@@ -1033,16 +1057,16 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	// if type is object -> check for operator overloading
 	if(node.left->ty->cast<ObjectType>()) {
 		auto strct = NodeReference::get_object_ptr(m_program, node.left->ty->to_string());
-		if(auto def = strct->get_overloaded_method(node.op)) {
+		if(auto def = strct->get_overloaded_method(node.op.type)) {
 			match_type(*node.right, *def->header->get_param(1), "Second argument of overloaded operator does not match expected type.");
 			auto call = std::make_unique<NodeFunctionCall>(
 				false,
 				std::make_unique<NodeFunctionHeaderRef>(
 					def->header->name,
 					std::make_unique<NodeParamList>(node.left->tok, std::move(node.left), std::move(node.right)),
-					node.tok
+					node.op
 				),
-				node.tok
+				node.op
 			);
 			// do not yet add definition to call -> will be done in function call
 			return node.replace_with(std::move(call))->accept(*this);
@@ -1052,7 +1076,7 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	}
 
 	// do not infer type if together in string
-	if(STRING_TOKENS.contains(node.op)) {
+	if(STRING_TOKENS.contains(node.op.type)) {
 		node.ty = TypeRegistry::String;
 		return &node;
 	}
@@ -1073,7 +1097,7 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	node.right->set_element_type(specialize_type(node.right->ty, node.left->ty));
 
 	// check type of this node by looking at operator and node.left and node.right
-	if (MATH_TOKENS.contains(node.op)) {
+	if (MATH_TOKENS.contains(node.op.type)) {
 		// can only be int op int || float op float
 		is_compatible = node.left->ty->is_compatible(node.right->ty) and node.right->ty->is_compatible(node.left->ty);
 		// is_compatible = node.left->ty->is_compatible(TypeRegistry::Integer) and node.right->ty->is_compatible(TypeRegistry::Integer);
@@ -1093,16 +1117,16 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 			is_compatible = false;
 		error.add_message("Please use real() and int() to use <Real> and <Integer> numbers in a single expression.");
 
-	} else if (BITWISE_TOKENS.contains(node.op)) {
+	} else if (BITWISE_TOKENS.contains(node.op.type)) {
 		node.ty = TypeRegistry::Integer;
 		is_compatible = node.left->ty->is_compatible(node.ty) and node.right->ty->is_compatible(node.ty);
 		error.add_message("<Bitwise Operators> can only be used in between <Integer> values.");
-	} else if (BOOL_TOKENS.contains(node.op)) {
+	} else if (BOOL_TOKENS.contains(node.op.type)) {
 		node.ty = TypeRegistry::Boolean;
 		is_compatible = node.left->ty->is_compatible(node.ty) and node.right->ty->is_compatible(node.ty);
 		error.add_message("<Bool Operators> can only be used in between <Boolean> or <Comparison> values.");
 
-	} else if (COMPARISON_TOKENS.contains(node.op)) {
+	} else if (COMPARISON_TOKENS.contains(node.op.type)) {
 		node.ty = TypeRegistry::Comparison;
 		is_compatible = node.left->ty->is_compatible(node.ty) and node.right->ty->is_compatible(node.ty);
 		is_compatible |= is_object;
@@ -1113,7 +1137,7 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	}
 
 	if (is_object) {
-		error.add_message(" Operator <"+ get_token_string(node.op) +"> has not been overloaded for type "+node.left->ty->to_string()+".");
+		error.add_message(" Operator <"+ get_token_string(node.op.type) +"> has not been overloaded for type "+node.left->ty->to_string()+".");
 	}
 
 	if(!is_compatible) {
@@ -1133,15 +1157,15 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 	// if type if object -> check for operator overloading
 	if(node.operand->ty->get_type_kind() == TypeKind::Object) {
 		auto strct = NodeReference::get_object_ptr(m_program, node.operand->ty->to_string());
-		if(auto def = strct->get_overloaded_method(node.op)) {
+		if(auto def = strct->get_overloaded_method(node.op.type)) {
 			auto call = std::make_unique<NodeFunctionCall>(
 				false,
 				std::make_unique<NodeFunctionHeaderRef>(
 					def->header->name,
 					std::make_unique<NodeParamList>(node.operand->tok, std::move(node.operand)),
-					node.tok
+					node.op
 				),
-				node.tok
+				node.op
 			);
 			// do not yet add definition to call -> will be done in function call
 			return node.replace_with(std::move(call))->accept(*this);
@@ -1153,7 +1177,7 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 	auto error = throw_type_error(*node.operand, node.ty);
 	if(!is_compatible) error.exit();
 
-	if(node.op == token::SUB) {
+	if(node.op.type == token::SUB) {
 		// can only be int or float
 		is_compatible = node.operand->ty->is_compatible(TypeRegistry::Integer);
 		if(is_compatible) node.ty = TypeRegistry::Number;
@@ -1164,10 +1188,10 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 			node.ty = TypeRegistry::Real;
 		}
 		error.add_message("Please use real() and int() to use <Real> and <Integer> numbers in a single expression.");
-	} else if (node.op == token::BIT_NOT) {
+	} else if (node.op.type == token::BIT_NOT) {
 		node.ty = TypeRegistry::Integer;
 		is_compatible = node.operand->ty->is_compatible(node.ty);
-	} else if(node.op == token::BOOL_NOT) {
+	} else if(node.op.type == token::BOOL_NOT) {
 		node.ty = TypeRegistry::Boolean;
 		is_compatible = node.operand->ty->is_compatible(node.ty) || is_object;
 		error.add_message("<Bool Operators> can only be used in between <Boolean> or <Comparison> values. Be sure to use correct parentheses.");
@@ -1176,7 +1200,7 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 	}
 
 	if (is_object) {
-		error.add_message(" Operator <"+get_token_string(node.op) +"> has not been overloaded for type "+node.operand->ty->to_string()+".");
+		error.add_message(" Operator <"+get_token_string(node.op.type) +"> has not been overloaded for type "+node.operand->ty->to_string()+".");
 	}
 
 	if(!is_compatible)

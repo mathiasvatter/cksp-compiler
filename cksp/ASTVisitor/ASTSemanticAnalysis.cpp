@@ -50,7 +50,16 @@ NodeAST * ASTSemanticAnalysis::visit(NodeNumElements& node) {
 		if (!var->get_declaration()) {
 			DefinitionProvider::throw_declaration_error(*var, "", m_def_provider).exit();
 		}
-		auto node_array_ref = var->to_array_ref(nullptr);
+		// A dimension argument denotes NDArray semantics. Keeping the parsed
+		// reference neutral until here lets early constant folding handle inferred
+		// composites before type inference has replaced their declarations.
+		if (node.dimension) {
+			auto node_ndarray_ref = std::make_unique<NodeNDArrayRef>(
+				var->name, nullptr, var->tok);
+			return var->replace_reference(std::move(node_ndarray_ref));
+		}
+		auto node_array_ref = std::make_unique<NodeArrayRef>(
+			var->name, nullptr, var->tok);
 		return var->replace_reference(std::move(node_array_ref));
 	}
 	return &node;
@@ -114,6 +123,17 @@ void ASTSemanticAnalysis::check_param_modification(NodeReference& ref) {
 		"parameters have function-local scope: this modification is not visible at the call site. "
 		"Declare the parameter as <ref "+declaration->name+"> to pass it by reference if the change should take "
 		"effect outside the function.";
+	warning.fix = Diagnostic::DiagnosticFix{
+		.kind = Diagnostic::DiagnosticFix::FixKind::AddRefToFuncParam,
+		.title = "Pass '" + declaration->name + "' by reference",
+		.edits = {{
+			.kind = Diagnostic::DiagnosticFix::EditKind::InsertBefore,
+			.file = declaration->tok.file,
+			.range = source_range_from_token(declaration->tok),
+			.new_text = "ref "
+		}},
+		.is_preferred = true
+	};
 	warning.report(diagnostics());
 }
 
@@ -308,7 +328,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeVariableRef &node) {
 		new_node->accept(*this);
 	}
 	// checks for restricted functions and allowed callbacks -> throws error
-	node.check_restricted_environment(m_program->current_callback);
+	new_node->check_restricted_environment(m_program->current_callback);
 	return replace_incorrectly_detected_data_struct(new_node->get_declaration());
 }
 
@@ -554,4 +574,3 @@ NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(NodeR
 	}
 	return nullptr;
 }
-

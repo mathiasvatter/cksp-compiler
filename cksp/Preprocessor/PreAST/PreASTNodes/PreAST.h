@@ -14,6 +14,7 @@
 #include "../../../../utils/StringUtils.h"
 
 class DiagnosticEngine;
+class ReferenceIndex;
 class SourceParser;
 struct SourceId;
 
@@ -73,7 +74,8 @@ struct PreNodeAST {
 		const SourceId& current,
 		SourceParser& parser,
 		std::unordered_set<std::string>& imported_files,
-		std::unordered_map<std::string, std::string>& basename_map);
+		std::unordered_map<std::string, std::string>& basename_map,
+		ReferenceIndex* reference_index = nullptr);
 };
 
 // Template-Funktion für sicheren Cast
@@ -398,11 +400,13 @@ struct PreNodeList final : PreNodeAST {
 
 struct PreNodeImport final : PreNodeAST {
 	std::string path;
+	Token path_token;
 	std::unique_ptr<PreNodeKeyword> alias;
 	PreNodeImport(Token tok, PreNodeAST *parent)
 		: PreNodeAST(std::move(tok), parent, PreNodeType::IMPORT) {}
-	PreNodeImport(std::string path, Token tok, PreNodeAST *parent)
-		: PreNodeAST(std::move(tok), parent, PreNodeType::IMPORT), path(std::move(path)) {
+	PreNodeImport(std::string path, Token tok, Token path_token, PreNodeAST *parent)
+		: PreNodeAST(std::move(tok), parent, PreNodeType::IMPORT),
+		  path(std::move(path)), path_token(std::move(path_token)) {
 	}
 	PreNodeAST *accept(PreASTVisitor &visitor) override;
 	PreNodeImport(const PreNodeImport& other);
@@ -419,6 +423,7 @@ struct PreNodeImport final : PreNodeAST {
 	}
 	void update_token_data(const Token &token) override {
 		tok.line = token.line; tok.file = token.file;
+		path_token.line = token.line; path_token.file = token.file;
 		if (alias) alias->update_token_data(token);
 	}
 	void set_alias(std::unique_ptr<PreNodeKeyword> new_alias) {
@@ -429,10 +434,12 @@ struct PreNodeImport final : PreNodeAST {
 
 struct PreNodeImportNCKP final : PreNodeAST {
 	std::string path;
+	Token path_token;
 	PreNodeImportNCKP(Token tok, PreNodeAST *parent)
 		: PreNodeAST(std::move(tok), parent, PreNodeType::IMPORT_NCKP) {}
-	PreNodeImportNCKP(std::string path, Token tok, PreNodeAST *parent)
-		: PreNodeAST(std::move(tok), parent, PreNodeType::IMPORT_NCKP), path(std::move(path)) {
+	PreNodeImportNCKP(std::string path, Token tok, Token path_token, PreNodeAST *parent)
+		: PreNodeAST(std::move(tok), parent, PreNodeType::IMPORT_NCKP),
+		  path(std::move(path)), path_token(std::move(path_token)) {
 	}
 	PreNodeAST *accept(PreASTVisitor &visitor) override;
 	PreNodeImportNCKP(const PreNodeImportNCKP& other);
@@ -445,6 +452,7 @@ struct PreNodeImportNCKP final : PreNodeAST {
 	}
 	void update_token_data(const Token &token) override {
 		tok.line = token.line; tok.file = token.file;
+		path_token.line = token.line; path_token.file = token.file;
 	}
 };
 

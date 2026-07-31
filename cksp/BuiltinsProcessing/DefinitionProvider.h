@@ -77,6 +77,33 @@ public:
 	/// adds existing declaration to declaration map for look up. Always returns nullptr.
 	std::shared_ptr<NodeDataStructure> set_declaration(const std::shared_ptr<NodeDataStructure>& var, bool global_scope);
 
+	void reserve_name(const std::string& name) {
+		m_gensym.ingest(name);
+	}
+
+	/**
+	 * Starts a new name-generation session. Builtin and externally supplied
+	 * declarations remain reserved; source declarations are added by
+	 * ASTReserveNames immediately afterwards.
+	 */
+	void reset_generated_names() {
+		m_gensym.refresh();
+		for (const auto& [name, _] : builtin_variables) {
+			m_gensym.ingest(name);
+		}
+		for (const auto& [name, _] : builtin_arrays) {
+			m_gensym.ingest(name);
+		}
+		for (const auto& external : external_variables) {
+			if (!external) continue;
+			if (const auto control = external->cast<NodeUIControl>()) {
+				if (control->control_var) m_gensym.ingest(control->control_var->name);
+			} else if (!external->name.empty()) {
+				m_gensym.ingest(external->name);
+			}
+		}
+	}
+
 	std::string get_fresh_name(const std::string& name) {
 		return m_gensym.fresh(name);
 	}
@@ -103,6 +130,7 @@ public:
 			Token(),
 			DataType::Mutable
 		);
+		node_var->ty = TypeRegistry::Unknown;
 		return node_var;
 	}
 	/// returns a static global dummy datastructure that can be used for declarations of compiler vars
@@ -116,6 +144,7 @@ public:
 			Token(),
 			DataType::Mutable
 		);
+		node_var->ty = TypeRegistry::Unknown;
 		return node_var;
 	}
 	/// returns a static global dummy datastructure that can be used for declarations of pgs vars
@@ -128,6 +157,7 @@ public:
 			Token(),
 			DataType::Mutable
 		);
+		node_var->ty = TypeRegistry::PGS;
 		return node_var;
 	}
 
@@ -145,6 +175,22 @@ public:
 	}
 	[[nodiscard]] const std::vector<std::weak_ptr<NodeDataStructure>> &get_all_data_structures() const {
 		return m_all_data_structures;
+	}
+	/// Function headers are global declarations, but unlike m_all_data_structures
+	/// they must remain available after TypeInference has cleared its work list.
+	std::vector<std::weak_ptr<NodeFunctionHeader>> m_function_headers;
+	void set_function_headers(std::vector<std::weak_ptr<NodeFunctionHeader>> function_headers) {
+		m_function_headers = std::move(function_headers);
+	}
+	[[nodiscard]] const std::vector<std::weak_ptr<NodeFunctionHeader>>& get_function_headers() const {
+		return m_function_headers;
+	}
+	/// Declarations registered during the complete scope pass. This keeps
+	/// out-of-scope candidates available for diagnostics without reusing
+	/// TypeInference's temporary m_all_data_structures work list.
+	std::vector<std::weak_ptr<NodeDataStructure>> m_declaration_candidates;
+	void refresh_declaration_candidates() {
+		m_declaration_candidates.clear();
 	}
 	/// All declaration statements
     std::vector<NodeSingleDeclaration*> m_all_declarations;
@@ -236,88 +282,32 @@ public:
 		return false;
 	}
 
-	[[nodiscard]] std::vector<std::string> misspelled_suggestions(const std::string& name, size_t max_results = 4) const {
-	    // Heuristik: dynamische Distanz-Schranke relativ zur Länge
-	    const size_t L = name.size();
-	    const size_t max_dist = std::clamp<size_t>((L <= 4 ? 1 : (L <= 8 ? 2 : 3)), 1, 4);
+	/// Returns declarations known to the provider. When include_collected is true,
+	/// declarations collected by TypeInference are included even if their scope is
+	/// no longer active.
+	[[nodiscard]] std::vector<std::shared_ptr<NodeDataStructure>> get_data_structure_candidates(
+		bool include_collected = false) const;
 
-	    // Wenn nur die Groß-/Kleinschreibung falsch ist → genau diesen Kandidaten vorschlagen und fertig
-	    {
-	        const auto lname = StringUtils::to_lower(name);
-	        for (const auto& scope : std::ranges::reverse_view(m_declared_data_structures)) {
-	            if (auto it = std::ranges::find_if(scope, [&](auto& kv){
-	                return StringUtils::to_lower(kv.first) == lname;
-	            }); it != scope.end()) {
-	                return { it->first };
-	            }
-	        }
-	    }
+	/// Finds declarations by their actual NodeDataStructure name. This is also used
+	/// for function calls because NodeFunctionHeader is a NodeDataStructure.
+	[[nodiscard]] std::vector<std::shared_ptr<NodeDataStructure>> find_data_structures(
+		const std::string& name,
+		bool include_collected = false) const;
 
-	    struct Cand { std::string key; int score; };
-	    std::vector<Cand> cands;
-	    cands.reserve(32);
+	/// Returns the actual declarations rather than losing type and node information
+	/// by reducing suggestions to strings too early.
+	[[nodiscard]] std::vector<std::shared_ptr<NodeDataStructure>> misspelled_data_structures(
+		const std::string& name,
+		std::optional<int> num_args = std::nullopt,
+		size_t max_results = 4,
+		bool include_collected = false) const;
 
-	    // Scopes von innen nach außen: kleinere Boni durch Score wirken implizit
-	    for (const auto& scope : std::ranges::reverse_view(m_declared_data_structures)) {
-	        for (const auto& key : scope | std::views::keys) {
-	            // Grobfilter: Längendifferenz > (max_dist+1) überspringen
-	            if (key.size() + (max_dist + 1) < L || L + (max_dist + 1) < key.size()) continue;
+	[[nodiscard]] std::vector<std::string> misspelled_suggestions(
+		const std::string& name,
+		size_t max_results = 4) const;
 
-	            size_t d = StringUtils::get_levenshtein_distance(name, key);
-	            if (d == 0) continue; // wäre „gleich“ – dann gäbe es keinen Fehler
-	            if (d <= max_dist) {
-	                int score = suggestion_score(name, key, d);
-	                cands.push_back({key, score});
-	            }
-	        }
-	    }
-
-	    // Optional: Builtins & externals auch vorschlagen (kostenfrei dranhängen)
-	    auto consider_map = [&](const auto& mp) {
-	        for (const auto& [key, _] : mp) {
-	            if (key.size() + (max_dist + 1) < L || L + (max_dist + 1) < key.size()) continue;
-	            size_t d = StringUtils::get_levenshtein_distance(name, key);
-	            if (d > 0 && d <= max_dist) {
-	                int score = suggestion_score(name, key, d) + 2; // leichter Malus ggü. lokalen Scopes
-	                cands.push_back({key, score});
-	            }
-	        }
-	    };
-	    auto consider_all_data_structures = [&]() {
-	        for (const auto& weak_data_struct : m_all_data_structures) {
-	            const auto data_struct = weak_data_struct.lock();
-	            if (!data_struct) continue;
-	            const auto& key = data_struct->name;
-	            if (key.empty()) continue;
-	            if (key.size() + (max_dist + 1) < L || L + (max_dist + 1) < key.size()) continue;
-	            size_t d = StringUtils::get_levenshtein_distance(name, key);
-	            if (d > 0 && d <= max_dist) {
-	                int score = suggestion_score(name, key, d) + 2;
-	                cands.push_back({key, score});
-	            }
-	        }
-	    };
-	    consider_map(builtin_variables);
-	    consider_map(builtin_arrays);
-	    consider_map(builtin_widgets);
-		if (m_declared_data_structures.size() == 1 && m_declared_data_structures[0].empty()) {
-			consider_all_data_structures();
-		}
-	    // property_functions / builtin_functions haben Signaturen – fürs Var-Suggest meist weglassen
-
-	    // Deduplizieren und sortieren
-	    std::sort(cands.begin(), cands.end(), [](const Cand& a, const Cand& b){
-	        if (a.score != b.score) return a.score < b.score;
-	        return a.key < b.key;
-	    });
-	    cands.erase(std::ranges::unique(cands, [](const Cand& a, const Cand& b){ return a.key == b.key; }).begin(), cands.end());
-
-	    std::vector<std::string> out;
-	    out.reserve(std::min(max_results, cands.size()));
-	    for (size_t i = 0; i < cands.size() && out.size() < max_results; ++i)
-	        out.push_back(cands[i].key);
-	    return out;
-	}
+	[[nodiscard]] Diagnostic make_missing_function_definition_error(
+		const NodeFunctionCall& node) const;
 
 
 	// static Diagnostic throw_declaration_type_error(NodeReference* node) {

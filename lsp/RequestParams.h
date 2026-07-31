@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "JsonRpcMessage.h"
 #include "../cksp/Source/SourceProvider.h"
@@ -36,8 +37,9 @@ struct TextDocumentPosition {
 	const std::string& uri_key,
 	const std::string& path_key);
 
-/// The configured main file from the initialize request, resolved against the workspace root.
-[[nodiscard]] std::optional<SourceId> resolve_configured_entry(
+/// The configured entry points from the initialize request, resolved against the workspace root.
+/// The legacy mainFilePath/mainFileUri option is included for backwards compatibility.
+[[nodiscard]] std::vector<SourceId> resolve_configured_entries(
 	const JSONObject* initialize_params,
 	const std::optional<SourceId>& workspace_root);
 

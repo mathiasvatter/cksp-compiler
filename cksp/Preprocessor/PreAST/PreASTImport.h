@@ -4,7 +4,10 @@
 
 #pragma once
 
+#include <utility>
+
 #include "PreASTVisitor.h"
+#include "../../Source/ReferenceIndex.h"
 #include "../../Source/SourceParser.h"
 #include "../../../JSON/NCKPTranslator.h"
 
@@ -15,15 +18,64 @@ class PreASTImport final : public PreASTVisitor {
 	SourceParser& m_parser;
 	std::unordered_set<std::string> &m_imported_files; // Um zirkuläre Abhängigkeiten zu vermeiden
 	std::unordered_map<std::string, std::string> &m_basename_map; // Map to store basename to full path mapping
+	ReferenceIndex* m_reference_index;
+
+	static void wrap_imported_program_in_namespace(const PreNodeImport& import, PreNodeChunk& program) {
+		if (!import.alias) return;
+
+		Token namespace_token = import.tok;
+		namespace_token.type = token::NAMESPACE;
+		namespace_token.val = "namespace";
+
+		Token alias_token = import.alias->tok;
+
+		Token opening_linebreak = alias_token;
+		opening_linebreak.type = token::LINEBRK;
+		opening_linebreak.val = "\n";
+		opening_linebreak.pos += alias_token.val.size();
+
+		Token end_namespace_token = alias_token;
+		end_namespace_token.type = token::END_NAMESPACE;
+		end_namespace_token.val = "end namespace";
+		end_namespace_token.pos += alias_token.val.size();
+
+		Token body_linebreak = end_namespace_token;
+		body_linebreak.type = token::LINEBRK;
+		body_linebreak.val = "\n";
+
+		Token closing_linebreak = end_namespace_token;
+		closing_linebreak.type = token::LINEBRK;
+		closing_linebreak.val = "\n";
+		closing_linebreak.pos += end_namespace_token.val.size();
+
+		std::vector<std::unique_ptr<PreNodeAST>> namespaced_program;
+		namespaced_program.reserve(program.chunk.size() + 6);
+		namespaced_program.push_back(std::make_unique<PreNodeOther>(std::move(namespace_token), &program));
+		namespaced_program.push_back(std::make_unique<PreNodeKeyword>(std::move(alias_token), &program));
+		namespaced_program.push_back(std::make_unique<PreNodeOther>(std::move(opening_linebreak), &program));
+		namespaced_program.insert(
+			namespaced_program.end(),
+			std::make_move_iterator(program.chunk.begin()),
+			std::make_move_iterator(program.chunk.end())
+		);
+		namespaced_program.push_back(std::make_unique<PreNodeOther>(std::move(body_linebreak), &program));
+		namespaced_program.push_back(std::make_unique<PreNodeOther>(std::move(end_namespace_token), &program));
+		namespaced_program.push_back(std::make_unique<PreNodeOther>(std::move(closing_linebreak), &program));
+
+		program.chunk = std::move(namespaced_program);
+		// program.set_child_parents();
+	}
 
 public:
-	PreASTImport(const SourceId& root_source,
-				 const SourceId& current_source,
-				 SourceParser& parser,
-	             std::unordered_set<std::string> &imported_files,
-	             std::unordered_map<std::string, std::string> &basename_map)
-		: PreASTVisitor(), m_current_source(current_source), m_root_source(root_source),
-		  m_parser(parser), m_imported_files(imported_files), m_basename_map(basename_map) {}
+	PreASTImport(SourceId  root_source,
+	             SourceId  current_source,
+	             SourceParser& parser,
+	             std::unordered_set<std::string>& imported_files,
+	             std::unordered_map<std::string, std::string>& basename_map,
+	             ReferenceIndex* reference_index = nullptr)
+		: PreASTVisitor(), m_current_source(std::move(current_source)), m_root_source(std::move(root_source)),
+		  m_parser(parser), m_imported_files(imported_files), m_basename_map(basename_map),
+		  m_reference_index(reference_index) {}
 
 	PreNodeAST *visit(PreNodeImport &node) override {
 		auto source_result = m_parser.resolve_import(m_root_source, m_current_source, node.path);
@@ -34,6 +86,10 @@ public:
 		}
 
 		const auto import_source = source_result.unwrap();
+		if (m_reference_index) {
+			m_reference_index->add_file_link(
+				node.path_token, import_source.value, node.path);
+		}
 		std::filesystem::path current_file_path(import_source.value);
 		std::string import_path = current_file_path.string();
 		// check for circular dependencies
@@ -64,7 +120,8 @@ public:
 
 			// recursively preprocess imports in the imported program to handle nested imports
 			import_program->do_import_processing(
-				m_root_source, import_source, m_parser, m_imported_files, m_basename_map);
+				m_root_source, import_source, m_parser, m_imported_files, m_basename_map,
+				m_reference_index);
 
 			for (auto& macro_def : import_program->macro_definitions) {
 				macro_def->parent = m_program;
@@ -80,6 +137,7 @@ public:
 				std::make_move_iterator(import_program->macro_definitions.begin()),
 				std::make_move_iterator(import_program->macro_definitions.end())
 			);
+			wrap_imported_program_in_namespace(node, *import_program->program);
 			node.replace_with(std::move(import_program->program));
 		}
 
@@ -95,7 +153,12 @@ public:
 			error.exit();
 		}
 
-		auto json_result = m_parser.parse_json(source_result.unwrap());
+		const auto import_source = source_result.unwrap();
+		if (m_reference_index) {
+			m_reference_index->add_file_link(
+				node.path_token, import_source.value, node.path);
+		}
+		auto json_result = m_parser.parse_json(import_source);
 		if (json_result.is_error()) json_result.get_error().exit();
 		auto json = std::move(json_result.unwrap());
 		NCKPTranslator translator(m_program->def_provider);

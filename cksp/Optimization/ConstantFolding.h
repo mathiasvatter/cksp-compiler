@@ -123,48 +123,26 @@ private:
 		const auto declaration = node.array->get_declaration();
 		if(!declaration) return &node;
 
-		if(declaration->cast<NodeArray>()) {
-			if(node.dimension) return &node;
-			if(const auto size = m_database->get_array_size(declaration.get())) {
-				return replace_with_int(node, *size);
-			}
-			return &node;
-		}
-
 		if(const auto nd_array = declaration->cast<NodeNDArray>()) {
 			if(const auto nd_ref = node.array->cast<NodeNDArrayRef>()) {
 				if(nd_ref->indexes and nd_ref->num_wildcards()) {
 					LoweringNumElements::handle_wildcard_notation(*nd_ref, *nd_array, node);
 				}
 			}
+		}
 
-			int32_t dimension = 0;
-			if(node.dimension) {
-				const auto dimension_node = node.dimension->cast<NodeInt>();
-				if(!dimension_node) return &node;
-				dimension = dimension_node->value;
-			}
+		std::optional<int32_t> dimension = std::nullopt;
+		if(node.dimension) {
+			const auto dimension_node = node.dimension->cast<NodeInt>();
+			if(!dimension_node) return &node;
+			dimension = dimension_node->value;
+		}
 
-			const auto num_dimensions = m_database->get_num_dimensions(declaration.get());
-			if(num_dimensions == 0 or dimension < 0 or dimension > static_cast<int32_t>(num_dimensions)) {
-				return &node;
-			}
-			if(dimension > 0) {
-				if(const auto size = m_database->get_array_size(declaration.get(), dimension - 1)) {
-					return replace_with_int(node, *size);
-				}
-				return &node;
-			}
-
-			int64_t total_size = 1;
-			for(size_t idx = 0; idx < num_dimensions; ++idx) {
-				const auto size = m_database->get_array_size(declaration.get(), idx);
-				if(!size) return &node;
-				total_size *= *size;
-			}
-			if(total_size <= std::numeric_limits<int32_t>::max()) {
-				return replace_with_int(node, static_cast<int32_t>(total_size));
-			}
+		// Use declaration metadata rather than the parsed reference kind. Before
+		// semantic analysis, inferred composites are still NodeVariable/VariableRef;
+		// their shape is nevertheless known by the constant database.
+		if(const auto size = m_database->get_num_elements(declaration.get(), dimension)) {
+			return replace_with_int(node, *size);
 		}
 
 		return &node;
@@ -291,17 +269,17 @@ private:
     NodeAST* visit(NodeUnaryExpr& node) override {
         node.operand->accept(*this);
 		if (const auto int_node = node.operand->cast<NodeInt>()) {
-			if (node.op == token::SUB) {
+			if (node.op.type == token::SUB) {
 				auto new_node = std::make_unique<NodeInt>(-int_node->value, node.tok);
 				new_node->ty = TypeRegistry::Integer;
 				return node.replace_with(std::move(new_node));
-			} else if (node.op == token::BOOL_NOT) {
+			} else if (node.op.type == token::BOOL_NOT) {
 				auto new_node = std::make_unique<NodeInt>(int_node->value == 0 ? 1 : 0, node.tok);
 				new_node->ty = TypeRegistry::Integer;
 				return node.replace_with(std::move(new_node));
 			}
 		} else if (const auto real_node = node.operand->cast<NodeReal>()) {
-			if (node.op == token::SUB) {
+			if (node.op.type == token::SUB) {
 				auto new_node = std::make_unique<NodeReal>(-real_node->value, node.tok);
 				new_node->ty = TypeRegistry::Real;
 				return node.replace_with(std::move(new_node));
@@ -320,7 +298,7 @@ private:
 		auto left_real = node.left->cast<NodeReal>();
 
 		if(right_int || left_int) {
-			if (MATH_TOKENS.contains(node.op) or BITWISE_TOKENS.contains(node.op)) {
+			if (MATH_TOKENS.contains(node.op.type) or BITWISE_TOKENS.contains(node.op.type)) {
 				// constant folding
 				if (left_int and right_int) {
 					// Beide Operanden sind Integers. Führe die Operation aus und ersetze den Knoten.
@@ -334,21 +312,21 @@ private:
 						{token::BIT_OR, [](const int32_t a, const int32_t b) { return a | b; }},
 						{token::BIT_XOR, [](const int32_t a, const int32_t b) { return a ^ b; }}
 					};
-					if (int_operations.contains(node.op)) {
-						int32_t result = int_operations[node.op](left_int->value, right_int->value);
+					if (int_operations.contains(node.op.type)) {
+						int32_t result = int_operations[node.op.type](left_int->value, right_int->value);
 						auto new_node = std::make_unique<NodeInt>(result, node.tok);
 						new_node->ty = TypeRegistry::Integer;
 						return node.replace_with(std::move(new_node));
 					}
 				// division by zero
-				} else if (is_zero(right_int) and node.op == token::DIV) {
+				} else if (is_zero(right_int) and node.op.type == token::DIV) {
 					auto error = Diagnostic(ErrorType::MathError,"","", node.tok);
 					error.message = "Found division by zero. Result will be infinite.";
 					error.exit();
 				} else if (left_int or right_int) {
 					// der bekannte  Integer
 					NodeInt* known_int = left_int ? left_int : right_int;
-					switch (node.op) {
+					switch (node.op.type) {
 						case token::ADD:
 							if (known_int->value == 0) {
 								// Absorbierendes Element, das Ergebnis ist immer der andere Ausdruck
@@ -391,15 +369,15 @@ private:
 						default: break;
 					}
 				}
-			} else if (BOOL_TOKENS.contains(node.op)) {
+			} else if (BOOL_TOKENS.contains(node.op.type)) {
 				if (left_int and right_int) {
 					auto static bool_operations = std::unordered_map<token, std::function<int32_t(int32_t, int32_t)>>{
 						{token::BOOL_AND, [](const int32_t a, const int32_t b) { return (a && b) ? 1 : 0; }},
 						{token::BOOL_OR, [](const int32_t a, const int32_t b) { return (a || b) ? 1 : 0; }},
 						{token::BOOL_XOR, [](const int32_t a, const int32_t b) { return (a ^ b) ? 1 : 0; }},
 					};
-					if (bool_operations.contains(node.op)) {
-						int32_t result = bool_operations[node.op](left_int->value, right_int->value);
+					if (bool_operations.contains(node.op.type)) {
+						int32_t result = bool_operations[node.op.type](left_int->value, right_int->value);
 						auto new_node = std::make_unique<NodeInt>(result, node.tok);
 						new_node->ty = TypeRegistry::Integer;
 						return node.replace_with(std::move(new_node));
@@ -411,7 +389,7 @@ private:
 					// der unbekannte Ausdruck
 					std::unique_ptr<NodeAST> other_expr = left_int ? std::move(node.right) : std::move(node.left);
 					std::unique_ptr<NodeAST> result = std::move(other_expr);
-					switch (node.op) {
+					switch (node.op.type) {
 						case token::BOOL_AND:
 							if (known_int->value == 0) {
 								// Absorbierendes Element, das Ergebnis ist immer 0
@@ -435,7 +413,7 @@ private:
 					result->ty = TypeRegistry::Integer;
 					return node.replace_with(std::move(result));
 				}
-			} else if (COMPARISON_TOKENS.contains(node.op)) {
+			} else if (COMPARISON_TOKENS.contains(node.op.type)) {
 				if (left_int and right_int) {
 					auto static bool_operations = std::unordered_map<token, std::function<int32_t(int32_t, int32_t)>>{
 						{token::LESS_THAN, [](const int32_t a, const int32_t b) { return (a < b) ? 1 : 0; }},
@@ -445,8 +423,8 @@ private:
 						{token::LESS_EQUAL, [](const int32_t a, const int32_t b) { return (a <= b) ? 1 : 0; }},
 						{token::GREATER_EQUAL, [](const int32_t a, const int32_t b) { return (a >= b) ? 1 : 0; }},
 					};
-					if (bool_operations.contains(node.op)) {
-						int32_t result = bool_operations[node.op](left_int->value, right_int->value);
+					if (bool_operations.contains(node.op.type)) {
+						int32_t result = bool_operations[node.op.type](left_int->value, right_int->value);
 						auto new_node = std::make_unique<NodeInt>(result, node.tok);
 						new_node->ty = TypeRegistry::Integer;
 						return node.replace_with(std::move(new_node));
@@ -454,9 +432,9 @@ private:
 				}
 			}
 		} else if (right_real or left_real) {
-			if (MATH_TOKENS.contains(node.op)) {
+			if (MATH_TOKENS.contains(node.op.type)) {
 				// check division by zero
-				if (node.op == token::DIV && is_zero(right_real)) {
+				if (node.op.type == token::DIV && is_zero(right_real)) {
 					auto error = Diagnostic(ErrorType::MathError,"","", node.tok);
 					error.message = "Found division by zero. Result will be infinite.";
 					error.exit();
@@ -470,14 +448,14 @@ private:
 						{token::DIV, [](const double a, const double b) { return a / b; }},
 						{token::MODULO, [](const double a, const double b) { return std::fmod(a, b); }}
 					};
-					if (real_operations.contains(node.op)) {
-						double result = real_operations[node.op](left_real->value, right_real->value);
+					if (real_operations.contains(node.op.type)) {
+						double result = real_operations[node.op.type](left_real->value, right_real->value);
 						auto new_node = std::make_unique<NodeReal>(result, node.tok);
 						new_node->ty = TypeRegistry::Real;
 						return node.replace_with(std::move(new_node));
 					}
 				}
-			} else if (COMPARISON_TOKENS.contains(node.op)) {
+			} else if (COMPARISON_TOKENS.contains(node.op.type)) {
 				if (left_real and right_real) {
 					auto static bool_operations = std::unordered_map<token, std::function<int32_t(double, double)>>{
 						{token::LESS_THAN, [](const double a, const double b) { return (a < b) ? 1 : 0; }},
@@ -487,8 +465,8 @@ private:
 						{token::LESS_EQUAL, [](const double a, const double b) { return (a <= b) ? 1 : 0; }},
 						{token::GREATER_EQUAL, [](const double a, const double b) { return (a >= b) ? 1 : 0; }},
 					};
-					if (bool_operations.contains(node.op)) {
-						int32_t result = bool_operations[node.op](left_real->value, right_real->value);
+					if (bool_operations.contains(node.op.type)) {
+						int32_t result = bool_operations[node.op.type](left_real->value, right_real->value);
 						auto new_node = std::make_unique<NodeInt>(result, node.tok);
 						new_node->ty = TypeRegistry::Integer;
 						return node.replace_with(std::move(new_node));

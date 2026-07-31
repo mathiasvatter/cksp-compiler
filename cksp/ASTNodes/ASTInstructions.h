@@ -104,10 +104,7 @@ struct NodeFunctionCall final : NodeInstruction {
 	NodeAST* do_function_call_hoisting(NodeProgram* program);
 	NodeAST* do_function_inlining(NodeProgram* program);
 
-	/// builtin functions with side effects and alter the value (variable) put in
-	inline static const std::unordered_set<std::string> destructive_functions = {
-		"inc", "dec",
-	};
+
 	bool is_destructive_builtin_func() const;
 	bool check_restricted_environment(NodeCallback *current_callback) const;
 	void determine_function_strategy(NodeProgram* program, NodeCallback* current_callback);
@@ -645,8 +642,7 @@ struct NodeSingleDeclaration final : NodeInstruction {
         variable -> update_token_data(token);
         if(value) value -> update_token_data(token);
     }
-	[[nodiscard]] ASTDesugaring *get_desugaring(NodeProgram *program) const override;
-    ASTLowering* get_lowering(NodeProgram *program) const override;
+	ASTLowering* get_lowering(NodeProgram *program) const override;
     /// returns new assign statement with the declared variable and r_value or neutral element. Can optionally take new
     /// variable to make reference of
     [[nodiscard]] std::unique_ptr<NodeSingleAssignment> to_assign_stmt(NodeDataStructure* var=nullptr);
@@ -682,7 +678,7 @@ struct NodeFunctionParam final : NodeInstruction {
 		NodeFunctionParam::set_child_parents();
 	}
 	explicit NodeFunctionParam(std::unique_ptr<NodeDataStructure> variable)
-		: NodeInstruction(NodeType::FunctionParam, std::move(variable->tok)), variable(std::move(variable)) {
+		: NodeInstruction(NodeType::FunctionParam, variable->tok), variable(std::move(variable)) {
 		NodeFunctionParam::set_child_parents();
 	}
 	NodeAST * accept(ASTVisitor &visitor) override;
@@ -912,10 +908,10 @@ struct NodeBlock final : NodeInstruction {
 };
 
 struct NodeFamily final : NodeInstruction {
-    std::string prefix;
+    Token prefix;
     std::unique_ptr<NodeBlock> members;
     explicit NodeFamily(Token tok) : NodeInstruction(NodeType::Family, std::move(tok)) {}
-    NodeFamily(std::string prefix, std::unique_ptr<NodeBlock> members, Token tok)
+    NodeFamily(Token prefix, std::unique_ptr<NodeBlock> members, Token tok)
             : NodeInstruction(NodeType::Family, std::move(tok)), prefix(std::move(prefix)), members(std::move(members)) {
         NodeFamily::set_child_parents();
     }
@@ -933,7 +929,7 @@ struct NodeFamily final : NodeInstruction {
     }
     std::string get_string() override { return ""; }
 	std::string get_token_string() const override {
-		return "family " + prefix + " " + members->get_token_string();
+		return "family " + prefix.val + " " + members->get_token_string();
 	}
     void update_token_data(const Token& token) override {
         members->update_token_data(token);
@@ -946,9 +942,9 @@ struct NodeIf final : NodeInstruction {
     std::unique_ptr<NodeAST> condition;
     std::unique_ptr<NodeBlock> if_body;
     std::unique_ptr<NodeBlock> else_body;
-    explicit NodeIf(const Token& tok) : NodeInstruction(NodeType::If, tok) {
+    explicit NodeIf(Token tok) : NodeInstruction(NodeType::If, tok) {
 	    set_else_body(std::make_unique<NodeBlock>(tok, true));
-    	set_if_body(std::make_unique<NodeBlock>(tok, true));
+		set_if_body(std::make_unique<NodeBlock>(std::move(tok), true));
     }
     NodeIf(std::unique_ptr<NodeAST> condition, std::unique_ptr<NodeBlock> statements, std::unique_ptr<NodeBlock> elseStatements, Token tok)
             : NodeInstruction(NodeType::If, std::move(tok)), condition(std::move(condition)), if_body(std::move(statements)), else_body(std::move(elseStatements)) {
@@ -1080,9 +1076,9 @@ struct NodeFor final : NodeLoop {
     std::unique_ptr<NodeAST> iterator_end;
     std::unique_ptr<NodeAST> step = nullptr;
     std::unique_ptr<NodeBlock> body;
-    explicit NodeFor(const Token& tok) : NodeLoop(NodeType::For, tok) {}
-    NodeFor(std::unique_ptr<NodeSingleAssignment> iterator, token to, std::unique_ptr<NodeAST> iterator_end, std::unique_ptr<NodeBlock> statements, const Token& tok)
-            : NodeLoop(NodeType::For, tok), iterator(std::move(iterator)), to(std::move(to)), iterator_end(std::move(iterator_end)), body(std::move(statements)) {
+    explicit NodeFor(Token tok) : NodeLoop(NodeType::For, std::move(tok)) {}
+    NodeFor(std::unique_ptr<NodeSingleAssignment> iterator, token to, std::unique_ptr<NodeAST> iterator_end, std::unique_ptr<NodeBlock> statements, Token tok)
+            : NodeLoop(NodeType::For, std::move(tok)), iterator(std::move(iterator)), to(to), iterator_end(std::move(iterator_end)), body(std::move(statements)) {
         set_child_parents();
     }
     NodeAST * accept(ASTVisitor &visitor) override;
@@ -1131,8 +1127,8 @@ struct NodeForEach final : NodeLoop {
     std::unique_ptr<NodeFunctionParam> value;
     std::unique_ptr<NodeAST> range;
     std::unique_ptr<NodeBlock> body;
-    explicit NodeForEach(const Token& tok) : NodeLoop(NodeType::ForEach, std::move(tok)) {}
-    NodeForEach(std::unique_ptr<NodeFunctionParam> key, std::unique_ptr<NodeAST> range, std::unique_ptr<NodeBlock> statements, const Token& tok)
+    explicit NodeForEach(Token tok) : NodeLoop(NodeType::ForEach, std::move(tok)) {}
+    NodeForEach(std::unique_ptr<NodeFunctionParam> key, std::unique_ptr<NodeAST> range, std::unique_ptr<NodeBlock> statements, Token tok)
             : NodeLoop(NodeType::ForEach, std::move(tok)), key(std::move(key)), range(std::move(range)), body(std::move(statements)) {
         set_child_parents();
     }
@@ -1355,9 +1351,9 @@ struct NodeBreak final : NodeInstruction {
 	std::string get_token_string() const override {
 		return "break";
 	}
-	NodeWhile* get_nearest_loop() const {
+	[[nodiscard]] NodeWhile* get_nearest_loop() const {
 		NodeAST* loop = parent;
-		while(loop and loop->get_node_type() != NodeType::While) {
+		while(loop and !loop->cast<NodeWhile>()) {
 			loop = loop->parent;
 		}
 		if(!loop) {
@@ -1365,18 +1361,18 @@ struct NodeBreak final : NodeInstruction {
 			error.message = "<Break> statement outside of loop. The <break> keyword can only be used inside a for- or while-loop.";
 			error.exit();
 		}
-		return static_cast<NodeWhile*>(loop);
+		return loop->cast<NodeWhile>();
 	}
 };
 
 struct NodeNamespace final : NodeInstruction {
-	std::string prefix;
+	Token prefix;
 	std::unique_ptr<NodeBlock> members;
 	std::vector<std::shared_ptr<NodeFunctionDefinition>> function_definitions{};
 
-	explicit NodeNamespace(const Token& tok) : NodeInstruction(NodeType::Namespace, tok) {}
-	NodeNamespace(std::string prefix, std::unique_ptr<NodeBlock> members, std::vector<std::shared_ptr<NodeFunctionDefinition>> funcs, Token tok)
-			: NodeInstruction(NodeType::Namespace, tok), prefix(std::move(prefix)), members(std::move(members)),
+	explicit NodeNamespace(Token tok) : NodeInstruction(NodeType::Namespace, std::move(tok)) {}
+	NodeNamespace(Token prefix, std::unique_ptr<NodeBlock> members, std::vector<std::shared_ptr<NodeFunctionDefinition>> funcs, Token tok)
+			: NodeInstruction(NodeType::Namespace, std::move(tok)), prefix(std::move(prefix)), members(std::move(members)),
 			function_definitions(std::move(funcs)) {
 		NodeNamespace::set_child_parents();
 	}
@@ -1397,8 +1393,8 @@ struct NodeNamespace final : NodeInstruction {
 		}
 	}
 	std::string get_string() override { return ""; }
-	std::string get_token_string() const override {
-		std::string str = "namespace " + prefix;
+	[[nodiscard]] std::string get_token_string() const override {
+		std::string str = "namespace " + prefix.val;
 		if (members) str += " " + members->get_token_string();
 		for (const auto& func_def : function_definitions) str += " " + func_def->get_token_string();
 		return str;

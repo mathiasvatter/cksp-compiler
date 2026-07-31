@@ -11,35 +11,42 @@
  * - Variables, NDArrays, Arrays, Lists, Constblocks, UIControls
  */
 class DesugarFamily final : public ASTDesugaring {
-    std::stack<std::string> m_family_prefixes;
-    std::string add_family_prefix(const std::string& name) {
-        if(!m_family_prefixes.empty()) {
-            return m_family_prefixes.top() + "." + name;
-        }
-        return name;
+    std::vector<NodePrefix::PrefixSegment> m_family_prefixes;
+
+	void add_family_prefix(NodeDataStructure& ref) const {
+		for (const auto &pref : m_family_prefixes) {
+			ref.add_prefix(pref);
+		}
+    	auto prefixes = StringUtils::join_apply(
+			m_family_prefixes,
+			[](const NodePrefix::PrefixSegment& prefix) { return prefix.token.val; },
+			"."
+		);
+    	ref.name = prefixes + "." + ref.name;
     }
+
 public:
 	explicit DesugarFamily(NodeProgram* program) : ASTDesugaring(program) {};
 
     NodeAST * visit(NodeVariable& node) override {
-        node.name = add_family_prefix(node.name);
+        add_family_prefix(node);
 		return &node;
     }
 
 	NodeAST * visit(NodePointer& node) override {
-	    node.name = add_family_prefix(node.name);
+	    add_family_prefix(node);
     	return &node;
     }
 
 	NodeAST * visit(NodeArray& node) override {
         if(node.size) node.size->accept(*this);
-        node.name = add_family_prefix(node.name);
+        add_family_prefix(node);
 		return &node;
     }
 
 	NodeAST * visit(NodeNDArray& node) override {
         if(node.sizes) node.sizes->accept(*this);
-        node.name = add_family_prefix(node.name);
+        add_family_prefix(node);
 		return &node;
     }
 
@@ -47,22 +54,21 @@ public:
         for(auto &b : node.body) {
             b->accept(*this);
         }
-        node.name = add_family_prefix(node.name);
+        add_family_prefix(node);
 		return &node;
     }
 
     NodeAST * visit(NodeConst& node) override {
-        node.name = add_family_prefix(node.name);
+        add_family_prefix(node);
         node.constants->accept(*this);
 		return &node;
     }
 
     NodeAST * visit(NodeFamily& node) override {
-        std::string pref = node.prefix;
-        if(!m_family_prefixes.empty()) pref = m_family_prefixes.top() + "." + node.prefix;
-        m_family_prefixes.push(pref);
+        const auto pref = node.prefix;
+        m_family_prefixes.push_back({pref, NodePrefix::PrefixKind::Family});
         node.members->accept(*this);
-        m_family_prefixes.pop();
+        m_family_prefixes.pop_back();
         return node.replace_with(std::move(node.members));
     };
 };

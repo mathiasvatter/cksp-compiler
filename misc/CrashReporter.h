@@ -16,6 +16,7 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
+#include <dbghelp.h>
 #ifdef CONST
 #undef CONST
 #endif
@@ -174,14 +175,118 @@ namespace CrashReporter {
 			}
 		}
 
-		inline void write_stack_addresses(const HANDLE output) {
+		inline bool& symbol_handler_ready() {
+			static bool ready = false;
+			return ready;
+		}
+
+		inline void initialize_symbol_handler() {
+			const DWORD options = ::SymGetOptions()
+				| SYMOPT_DEFERRED_LOADS
+				| SYMOPT_UNDNAME
+				| SYMOPT_LOAD_LINES;
+			::SymSetOptions(options);
+			symbol_handler_ready() = ::SymInitialize(::GetCurrentProcess(), nullptr, TRUE) == TRUE;
+		}
+
+		struct ResolvedAddress {
+			char module_name[MAX_PATH]{};
+			char symbol_name[MAX_SYM_NAME]{};
+			DWORD64 module_offset = 0;
+			DWORD64 symbol_displacement = 0;
+			bool has_module = false;
+			bool has_symbol = false;
+		};
+
+		inline ResolvedAddress resolve_address(const void* address) {
+			ResolvedAddress resolved;
+			const auto numeric_address = reinterpret_cast<DWORD64>(address);
+
+			MEMORY_BASIC_INFORMATION memory_info{};
+			if (::VirtualQuery(address, &memory_info, sizeof(memory_info)) != 0
+				&& memory_info.AllocationBase) {
+				char module_path[MAX_PATH]{};
+				const auto module = static_cast<HMODULE>(memory_info.AllocationBase);
+				if (::GetModuleFileNameA(module, module_path, MAX_PATH) > 0) {
+					const char* basename = module_path;
+					if (const char* separator = std::strrchr(module_path, '\\')) {
+						basename = separator + 1;
+					}
+					if (const char* separator = std::strrchr(basename, '/')) {
+						basename = separator + 1;
+					}
+					std::snprintf(resolved.module_name, sizeof(resolved.module_name), "%s", basename);
+					resolved.module_offset = numeric_address
+						- reinterpret_cast<DWORD64>(memory_info.AllocationBase);
+					resolved.has_module = true;
+				}
+			}
+
+			if (symbol_handler_ready()) {
+				alignas(SYMBOL_INFO) unsigned char symbol_buffer[
+					sizeof(SYMBOL_INFO) + MAX_SYM_NAME
+				]{};
+				auto* symbol = reinterpret_cast<SYMBOL_INFO*>(symbol_buffer);
+				symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+				symbol->MaxNameLen = MAX_SYM_NAME;
+				if (::SymFromAddr(
+					::GetCurrentProcess(),
+					numeric_address,
+					&resolved.symbol_displacement,
+					symbol)) {
+					std::snprintf(
+						resolved.symbol_name,
+						sizeof(resolved.symbol_name),
+						"%s",
+						symbol->Name);
+					resolved.has_symbol = true;
+				}
+			}
+			return resolved;
+		}
+
+		inline void write_address(const HANDLE output, const char* prefix, const void* address) {
+			const ResolvedAddress resolved = resolve_address(address);
+			char line[4096];
+			int length = 0;
+			if (resolved.has_symbol) {
+				length = std::snprintf(
+					line,
+					sizeof(line),
+					"%s%p %s%s%s+0x%llX\n",
+					prefix,
+					address,
+					resolved.has_module ? resolved.module_name : "",
+					resolved.has_module ? "!" : "",
+					resolved.symbol_name,
+					static_cast<unsigned long long>(resolved.symbol_displacement));
+			} else if (resolved.has_module) {
+				length = std::snprintf(
+					line,
+					sizeof(line),
+					"%s%p %s+0x%llX\n",
+					prefix,
+					address,
+					resolved.module_name,
+					static_cast<unsigned long long>(resolved.module_offset));
+			} else {
+				length = std::snprintf(line, sizeof(line), "%s%p\n", prefix, address);
+			}
+			if (length > 0) {
+				const auto safe_length = static_cast<size_t>(length) < sizeof(line)
+					? static_cast<size_t>(length)
+					: sizeof(line) - 1;
+				write_text(output, std::string(line, safe_length));
+			}
+		}
+
+		inline void write_stacktrace(const HANDLE output) {
 			void* frames[64]{};
 			const USHORT frame_count = ::CaptureStackBackTrace(0, 64, frames, nullptr);
-			char line[64];
 			for (USHORT index = 0; index < frame_count; ++index) {
-				const int length = std::snprintf(
-					line, sizeof(line), "  #%u %p\n", static_cast<unsigned>(index), frames[index]);
-				if (length > 0) write_text(output, std::string(line, static_cast<size_t>(length)));
+				char prefix[32];
+				std::snprintf(prefix, sizeof(prefix), "  #%u ", static_cast<unsigned>(index));
+				write_address(output, prefix, frames[index]);
 			}
 		}
 
@@ -206,13 +311,17 @@ namespace CrashReporter {
 					static_cast<unsigned long>(exception_code),
 					exception_address);
 				if (length > 0) write_text(output, std::string(exception, static_cast<size_t>(length)));
+				if (exception_address) {
+					write_text(output, "\n");
+					write_address(output, "exception location: ", exception_address);
+				}
 			}
 			write_text(output, "\ncwd: ");
 			write_text(output, crash_state.cwd);
 			write_text(output, "\ncommand: ");
 			write_text(output, crash_state.command_line);
-			write_text(output, "\n\nstack addresses:\n");
-			write_stack_addresses(output);
+			write_text(output, "\n\nstacktrace:\n");
+			write_stacktrace(output);
 		}
 
 		inline HANDLE open_crash_log() {
@@ -291,6 +400,7 @@ namespace CrashReporter {
 		std::signal(SIGBUS, detail::crash_handler);
 		std::signal(SIGILL, detail::crash_handler);
 #elif defined(_WIN32)
+		detail::initialize_symbol_handler();
 		::SetUnhandledExceptionFilter(detail::unhandled_exception_handler);
 		std::signal(SIGSEGV, detail::crash_handler);
 		std::signal(SIGABRT, detail::crash_handler);

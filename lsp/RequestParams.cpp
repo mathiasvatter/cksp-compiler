@@ -1,6 +1,7 @@
 #include "RequestParams.h"
 
 #include <filesystem>
+#include <unordered_set>
 
 namespace lsp {
 
@@ -40,18 +41,41 @@ std::optional<SourceId> source_from_optional_uri_or_path(
 	return std::nullopt;
 }
 
-std::optional<SourceId> resolve_configured_entry(
+std::vector<SourceId> resolve_configured_entries(
 	const JSONObject* initialize_params,
 	const std::optional<SourceId>& workspace_root) {
 	const auto* options = object_at(initialize_params, "initializationOptions");
-	auto entry = source_from_optional_uri_or_path(options, "mainFileUri", "mainFilePath");
-	if (!entry) return std::nullopt;
+	std::vector<SourceId> entries;
+	std::unordered_set<std::string> seen;
+	const auto add_entry = [&](SourceId entry) {
+		std::filesystem::path path(entry.value);
+		if (path.is_relative() && workspace_root) {
+			path = std::filesystem::path(workspace_root->value) / path;
+		}
+		entry = FileSystemSourceProvider::normalize(path.string());
+		if (seen.insert(entry.value).second) {
+			entries.push_back(std::move(entry));
+		}
+	};
 
-	std::filesystem::path path(entry->value);
-	if (path.is_relative() && workspace_root) {
-		path = std::filesystem::path(workspace_root->value) / path;
+	if (auto main_entry = source_from_optional_uri_or_path(options, "mainFileUri", "mainFilePath")) {
+		add_entry(std::move(*main_entry));
 	}
-	return FileSystemSourceProvider::normalize(path.string());
+
+	const auto* entry_points_value = options ? options->get("entryPoints") : nullptr;
+	const auto* entry_points = entry_points_value ? entry_points_value->as<JSONArray>() : nullptr;
+	if (!entry_points) {
+		return entries;
+	}
+
+	for (size_t index = 0; index < entry_points->size(); ++index) {
+		const auto* entry = entry_points->at(index);
+		const auto* entry_path = entry ? entry->as<JSONString>() : nullptr;
+		if (entry_path && !entry_path->value.empty()) {
+			add_entry(SourceId(entry_path->value));
+		}
+	}
+	return entries;
 }
 
 }

@@ -51,12 +51,16 @@ public:
 	NodeAST * visit(NodeNumElements& node) override;
     std::ostringstream os;
 
+	[[nodiscard]] const std::string& compiled_header() const {
+		return m_compiled_header;
+	}
 
 	void generate(const std::string& path) const;
 	void print() const;
 
 private:
 	std::string m_indent = "  ";
+	std::string m_compiled_header;
 	int m_scope_count = 0;
 	std::string get_indent() const {
 		std::string result;
@@ -67,5 +71,4 @@ private:
 	}
     static std::string get_compiled_date_time();
 };
-
 

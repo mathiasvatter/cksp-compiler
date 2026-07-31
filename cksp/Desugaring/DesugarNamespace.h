@@ -12,14 +12,14 @@
 
 struct NamespaceData {
 	std::unordered_set<std::string> variables; // all variables declared in this namespace
-	std::vector<std::string> path; // path to the namespace, e.g. "a.b.c" for namespace "c" in "a.b"
+	std::vector<NodePrefix::PrefixSegment> path; // path to the namespace, e.g. "a.b.c" for namespace "c" in "a.b"
 };
 
 /**
  * Prepending prefix to variables and references that were declared in namespace
  */
 class DesugarNamespace final : public ASTDesugaring {
-	std::vector<std::string> prefix;
+	std::vector<NodePrefix::PrefixSegment> prefix;
 	std::vector<std::unordered_set<std::string>> m_namespace_variables;
 	// collects all basenames of variables by the namespace prefix
 	std::unordered_map<std::string, std::unique_ptr<NamespaceData>> namespace_data;
@@ -32,23 +32,33 @@ class DesugarNamespace final : public ASTDesugaring {
 		const std::string base = basename_of(var.name, prefix);
 		m_namespace_variables.back().insert(base);
 
-		const auto it = namespace_data.find(prefix.back());
+		const auto it = namespace_data.find(prefix.back().token.val);
 		if (it == namespace_data.end()) {
 			// create new namespace data for this prefix
 			auto data = std::make_unique<NamespaceData>();
 			data->variables.insert(base);
 			data->path = prefix;
-			namespace_data[prefix.back()] = std::move(data);
+			namespace_data[prefix.back().token.val] = std::move(data);
 		} else {
 			it->second->variables.insert(base);
 		}
 
-		var.name = StringUtils::join(prefix, ".") + "." + base;
+		for (const auto& namespace_prefix : prefix) {
+			var.add_prefix(namespace_prefix);
+		}
+		var.name = StringUtils::join_apply(
+			prefix,
+			[](const NodePrefix::PrefixSegment& namespace_prefix) { return namespace_prefix.token.val; },
+			"."
+		) + "." + base;
 		all_prefixed_variables.insert(var.name);
 	}
 	void add_namespace_prefix(NodeReference& ref) const {
 		if (all_prefixed_variables.empty()) return;
-		if (in_access_chain(ref)) return;
+		/// important because we do not want to add namespace prefix to references that are
+		/// already part of an access chain (e.g. "A.x") but only to the first member ("A")
+		/// issue #21
+		if (ref.in_access_chain()) return;
 		// assume that the reference is only the base and has not already been prefixed
 		// Try to find the declaration level for the *basename* (shadowing-aware).
 		for (int lvl = static_cast<int>(m_namespace_variables.size()) - 1; lvl >= 0; --lvl) {
@@ -59,7 +69,8 @@ class DesugarNamespace final : public ASTDesugaring {
 			std::string needed;
 			for (size_t i = 0; i <= lvl; ++i) {
 				if (!needed.empty()) needed += '.';
-				needed += prefix[i];
+				needed += prefix[i].token.val;
+				ref.add_prefix(prefix[i]);
 			}
 
 			ref.name = needed + "." + ref.name;
@@ -74,13 +85,18 @@ class DesugarNamespace final : public ASTDesugaring {
 		if (it != namespace_data.end()) {
 			// find this prefix (splits[0]) in the namespaceData path
 			auto result = std::ranges::find_if(it->second->path,
-			   [&](const std::string& var) -> bool {
-				   return var == splits[0];
+			   [&](const NodePrefix::PrefixSegment& var) -> bool {
+				   return var.token.val == splits[0];
 			   }
 			);
 			if (result != it->second->path.end()) {
 				// merge without removing the first element
-				splits.insert(splits.begin(), it->second->path.begin(), result);
+				std::vector<std::string> missing_prefixes;
+				for (auto prefix_it = it->second->path.begin(); prefix_it != result; ++prefix_it) {
+					missing_prefixes.push_back(prefix_it->token.val);
+					ref.add_prefix(*prefix_it);
+				}
+				splits.insert(splits.begin(), missing_prefixes.begin(), missing_prefixes.end());
 				ref.name = StringUtils::join(splits, ".");
 			}
 		}
@@ -93,7 +109,7 @@ public:
 
 	NodeAST * visit(NodeNamespace& node) override {
 		m_namespace_variables.emplace_back();
-		prefix.push_back(node.prefix);
+		prefix.push_back({node.prefix, NodePrefix::PrefixKind::Namespace});
 		node.members->accept(*this);
 		for(const auto & m: node.function_definitions) {
 			m->accept(*this);
@@ -190,25 +206,10 @@ public:
 
 	// ---------- helpers ----------
 
-	/// returns true if ref node is within access chain but not first member
-	/// important because we do not want to add namespace prefix to references that are
-	/// already part of an access chain (e.g. "A.x") but only to the first member ("A")
-	/// issue #21
-	static bool in_access_chain(const NodeReference& node) {
-		if (node.parent) {
-			if (const auto chain = node.parent->cast<NodeAccessChain>()) {
-				if (chain->member(0).get() == &node) {
-					return false;
-				} else {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
+
 
 	// Return last identifier (after the last '.')
-	static std::string basename_of(const std::string& name, const std::vector<std::string>& prefixes) {
+	static std::string basename_of(const std::string& name, const std::vector<NodePrefix::PrefixSegment>& prefixes) {
 		auto splits = StringUtils::split(name, '.');
 		if (splits.empty()) return name;
 		if (splits.size() == 1) return name;
@@ -216,7 +217,7 @@ public:
 		// check if the first segment matches any of the prefixes
 		int nesting_lvl = -1;
 		for (int i = 0; i< prefixes.size(); ++i) {
-			if (splits[0] == prefixes[i]) {
+			if (splits[0] == prefixes[i].token.val) {
 				nesting_lvl = i;
 				break;
 			}
@@ -225,7 +226,7 @@ public:
 		if (nesting_lvl == -1) return name; // no prefix match, return as-is
 
 		size_t p = nesting_lvl;
-		while (!splits.empty() && p < prefixes.size() && splits.front() == prefixes[p]) {
+		while (!splits.empty() && p < prefixes.size() && splits.front() == prefixes[p].token.val) {
 			// pop front (O(n))
 			splits.erase(splits.begin());
 			++p;

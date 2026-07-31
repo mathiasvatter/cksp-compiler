@@ -9,15 +9,27 @@
 class ASTVariableChecking final : public ASTVisitor {
 	std::mutex mutex;
 public:
-	explicit ASTVariableChecking(NodeProgram* main);
+	// in PreUIControlLowering we do not do access chain transform if no declaration is found
+	// and no ui control data type checking in callback id
+	// PostLowering fails hard if no declaration is found
+	enum class Pass {
+		PreUIControlLowering,
+		PostUIControlLowering,
+		PostLowering
+	};
+	void set_pass(const Pass pass) {
+		this->pass = pass;
+	}
 
-	NodeAST* do_complete_traversal(NodeProgram& node, const bool fail) {
-		this->fail = fail;
+	explicit ASTVariableChecking(NodeProgram* main, Pass pass = Pass::PreUIControlLowering);
+
+	NodeAST* do_complete_traversal(NodeProgram& node) {
 		// update function lookup map because of altered param counts after lambda lifting
 		m_program->merge_function_definitions();
 		m_program->update_function_lookup();
 		// erase all previously saved scopes
 		m_def_provider->refresh_scopes();
+		m_def_provider->refresh_declaration_candidates();
 		m_def_provider->refresh_data_vectors();
         node.accept(*this);
 		for(const auto & func_def : node.function_definitions) {
@@ -30,8 +42,7 @@ public:
 		return &node;
     }
 
-	NodeAST* do_reachable_traversal(NodeProgram& node, const bool fail) {
-		this->fail = fail;
+	NodeAST* do_reachable_traversal(NodeProgram& node) {
 		// update function lookup map because of altered param counts after lambda lifting
 		m_program->merge_function_definitions();
 		m_program->update_function_lookup();
@@ -83,12 +94,13 @@ public:
 	NodeAST * visit(NodeAccessChain& node) override;
 
 	NodeAST * visit(NodeForEach& node) override;
+	// needs to be here, otherwise it gets seen as local declaration inside a block
 	NodeAST * visit(NodeConst& node) override;
 	NodeAST * visit(NodeStruct& node) override;
 
 private:
 	// boolean to continue after not finding declaration or fail
-	bool fail = false;
+	Pass pass = Pass::PreUIControlLowering;
 	NodeStruct* m_current_struct = nullptr;
 	std::stack<NodeAccessChain*> m_current_access;
     std::stack<NodeBlock*> m_current_block;

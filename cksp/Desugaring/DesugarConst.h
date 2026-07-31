@@ -22,9 +22,16 @@
  */
 
 class DesugarConst final : public ASTDesugaring {
-    std::stack<std::string> m_const_prefixes;
+    std::vector<NodePrefix::PrefixSegment> m_const_prefixes;
     std::unique_ptr<NodeAST> m_pre = nullptr;
     std::unique_ptr<NodeAST> m_iter = nullptr;
+
+	void add_const_prefix(NodeDataStructure& node) const {
+		for (const auto& prefix : m_const_prefixes) {
+			node.add_prefix(prefix);
+		}
+		node.name = node.prefix->get_string() + "." + node.tok.val;
+	}
 
 public:
 	explicit DesugarConst(NodeProgram* program) : ASTDesugaring(program) {}
@@ -32,7 +39,7 @@ public:
     NodeAST * visit(NodeVariable& node) override {
 //		if(node.ty == TypeRegistry::Unknown) node.ty = TypeRegistry::Integer;
         if(!m_const_prefixes.empty()) {
-            node.name = m_const_prefixes.top() + "." + node.name;
+            add_const_prefix(node);
         }
 		return &node;
     };
@@ -61,9 +68,7 @@ public:
     };
 
     NodeAST * visit(NodeConst& node) override {
-        std::string pref = node.name;
-        if(!m_const_prefixes.empty()) pref = m_const_prefixes.top() + "." + node.name;
-        m_const_prefixes.push(pref);
+        m_const_prefixes.push_back({node.const_prefix, NodePrefix::PrefixKind::Const});
         std::vector<std::unique_ptr<NodeAST>> const_indexes;
         m_iter = std::make_unique<NodeInt>(0, node.tok);
         m_pre = std::make_unique<NodeInt>(0, node.tok);
@@ -88,6 +93,7 @@ public:
 			std::make_unique<NodeInt>(node.constants->statements.size(), node.tok),
 			node.tok
 		);
+		node_array->prefix = clone_unique(node.prefix);
         auto node_declare_statement = std::make_unique<NodeSingleDeclaration>(
 			std::move(node_array),
 			std::make_unique<NodeInitializerList>(std::move(const_indexes), node.tok),
@@ -103,7 +109,7 @@ public:
 //		);
 
 //        node.constants->add_stmt(std::make_unique<NodeStatement>(std::move(constant), node.tok));
-        m_const_prefixes.pop();
+        m_const_prefixes.pop_back();
 		node.constants->do_constant_folding();
     	return node.constants.get();
     }

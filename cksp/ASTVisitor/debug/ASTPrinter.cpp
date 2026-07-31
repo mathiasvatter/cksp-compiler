@@ -354,14 +354,14 @@ NodeAST * ASTPrinter::visit(NodeBinaryExpr &node) {
     if(is_nested_bin_expr and node.ty != TypeRegistry::String) os << "(";
 
     node.left->accept(*this);
-    os << " " << GENERATE_ALL_OPERATORS[node.op] << " ";
+    os << " " << GENERATE_ALL_OPERATORS[node.op.type] << " ";
     node.right->accept(*this);
     if(is_nested_bin_expr and node.ty != TypeRegistry::String) os << ")";
 	return &node;
 }
 
 NodeAST * ASTPrinter::visit(NodeUnaryExpr &node) {
-	os << GENERATE_ALL_OPERATORS[node.op] << " ";
+	os << GENERATE_ALL_OPERATORS[node.op.type] << " ";
 	node.operand->accept(*this);
 	return &node;
 }
@@ -383,7 +383,7 @@ NodeAST * ASTPrinter::visit(NodeSingleAssignment &node) {
 }
 
 NodeAST * ASTPrinter::visit(NodeConst &node) {
-    os << "const " << node.name << std::endl;
+    os << "const " << node.const_prefix.val << std::endl;
     node.constants->accept(*this);
     os << "end const";
 	return &node;
@@ -410,14 +410,14 @@ NodeAST * ASTPrinter::visit(NodeStruct &node) {
 }
 
 NodeAST * ASTPrinter::visit(NodeFamily &node) {
-    os << "family " << node.prefix << std::endl;
+    os << "family " << node.prefix.val << std::endl;
     node.members->accept(*this);
     os << "end family";
 	return &node;
 }
 
 NodeAST * ASTPrinter::visit(NodeNamespace &node) {
-	os << "namespace " << node.prefix << std::endl;
+	os << "namespace " << node.prefix.val << std::endl;
 	node.members->accept(*this);
 	os << std::endl;
 	m_scope_count++;

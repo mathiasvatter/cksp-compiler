@@ -524,7 +524,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_string_expr_rhs(std::unique_ptr<
 		if (rhs.is_error()) {
 			return Result<std::unique_ptr<NodeAST>>(rhs.get_error());
 		}
-		auto node_binary_expr = std::make_unique<NodeBinaryExpr>(string_op.type, std::move(lhs), std::move(rhs.unwrap()), get_tok());
+		auto node_binary_expr = std::make_unique<NodeBinaryExpr>(string_op, std::move(lhs), std::move(rhs.unwrap()), get_tok());
 		node_binary_expr->set_range(node_binary_expr->left->range, node_binary_expr->right->range);
 		lhs = std::move(node_binary_expr);
 		lhs->ty = TypeRegistry::String;
@@ -547,7 +547,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_unary_expr(NodeAST* parent) {
 	if(expr.is_error()) {
 		return Result<std::unique_ptr<NodeAST>>(expr.get_error());
 	}
-	node_unary_expr->op = unary_op.type;
+	node_unary_expr->op = unary_op;
 	node_unary_expr->operand = std::move(expr.unwrap());
 	// node_unary_expr->set_child_parents();
 	node_unary_expr->set_range(unary_op, peek(-1));
@@ -585,7 +585,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_binary_expr_rhs(const int preced
 			type = TypeRegistry::Boolean;
 		}
 
-		auto node_binary_expr = std::make_unique<NodeBinaryExpr>(bin_op.type, std::move(lhs), std::move(rhs.unwrap()), get_tok());
+		auto node_binary_expr = std::make_unique<NodeBinaryExpr>(bin_op, std::move(lhs), std::move(rhs.unwrap()), get_tok());
 		node_binary_expr->set_range(node_binary_expr->left->range, node_binary_expr->right->range);
 		node_binary_expr->parent = parent;
 		lhs = std::move(node_binary_expr);
@@ -669,11 +669,15 @@ Parser::_parse_ternary_rhs(std::unique_ptr<NodeAST> condition, NodeAST* parent) 
 Result<std::unique_ptr<NodeAST>> Parser::_parse_parenth_expr(NodeAST* parent) {
     auto start_tok = consume(); // eat (
     auto expr = parse_expression(parent);
+    if (expr.is_error()) {
+        return expr;
+    }
     if (peek().type != token::CLOSED_PARENTH) {
 		return Result<std::unique_ptr<NodeAST>>(Diagnostic(ErrorType::ParseError,
 		 "Missing parenthesis.",  ")", peek()));
     }
     auto end_tok = consume(); // eat )
+    expr.unwrap()->set_range(start_tok, end_tok);
     return expr;
 }
 
@@ -1277,7 +1281,7 @@ Result<std::unique_ptr<NodeNamespace>> Parser::parse_namespace(NodeAST *parent) 
 	}
 	auto end_token = consume(); // consume end struct
 	auto node_namespace = std::make_unique<NodeNamespace>(
-		name.val,
+		name,
 		std::move(node_declarations),
 		std::move(node_functions),
 		name);
@@ -2389,9 +2393,9 @@ Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* pare
     }
     consume(); //consume linebreak
     _skip_linebreaks();
-    if(peek().type != token::CASE) {
+    if(peek().type != token::CASE && peek().type != token::DEFAULT) {
         return Result<std::unique_ptr<NodeSelect>>(Diagnostic(ErrorType::SyntaxError,
-		"Expected cases in select-expression.", "case <expression>", peek()));
+		"Expected cases in select-expression.", "case <expression> or default", peek()));
     }
 	std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBlock>>> cases;
 	while (peek().type != token::END_SELECT) {
@@ -2400,10 +2404,11 @@ Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* pare
 		if (auto end_error = check_invalid_end_statement("select", token::END_SELECT, peek(), peek(1))) {
 			return Result<std::unique_ptr<NodeSelect>>(*end_error);
 		}
-	    if(peek().type == token::CASE) {
-	        consume(); //consume case
+	    if(peek().type == token::CASE || peek().type == token::DEFAULT) {
+		    const bool bare_default = peek().type == token::DEFAULT;
+		    if (!bare_default) consume(); // consume case
             std::vector<std::unique_ptr<NodeAST>> cas = {};
-            if(peek().type == token::DEFAULT) {
+            if(bare_default || peek().type == token::DEFAULT) {
                 auto default_token = consume(); // consume default token
                 Token low_end = Token(token::INT, "080000000H", default_token.line,default_token.pos, default_token.file);
                 Token high_end = Token(token::INT, "07FFFFFFH", default_token.line,default_token.pos, default_token.file);
@@ -2431,9 +2436,13 @@ Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* pare
 			consume(); //consume linebreak
 			_skip_linebreaks();
 			auto stmts = std::make_unique<NodeBlock>(get_tok());
-			while(peek().type != token::END_SELECT && peek().type != token::CASE) {
+			while(peek().type != token::END_SELECT
+				&& peek().type != token::CASE
+				&& peek().type != token::DEFAULT) {
 				_skip_linebreaks();
-				if(peek().type == token::END_SELECT || peek().type == token::CASE) break;
+				if(peek().type == token::END_SELECT
+					|| peek().type == token::CASE
+					|| peek().type == token::DEFAULT) break;
 				if (auto end_error = check_invalid_end_statement("select", token::END_SELECT, peek(), peek(1))) {
 					return Result<std::unique_ptr<NodeSelect>>(*end_error);
 				}
@@ -2487,7 +2496,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_family_statement(NodeAST* parent)
 	}
 	auto end_token = consume(); // consume end family
 	node_family_statement->set_range(start_token, end_token);
-	node_family_statement->prefix = prefix.val;
+	node_family_statement->prefix = prefix;
 	node_family_statement->members = std::move(node_block);
 	node_family_statement->set_child_parents();
 	node_family_statement -> parent = parent;
@@ -2674,7 +2683,6 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_const_statement(NodeAST* parent) 
 	auto end_token = consume(); // consume end_const
 	node_const_statement->set_range(start_token, end_token);
 	node_const_statement -> parent = parent;
-	node_const_statement->name = prefix.val;
 	node_const_statement->constants = std::move(node_body);
 	node_const_statement->set_child_parents();
 	// set the parent for each statement in stmts

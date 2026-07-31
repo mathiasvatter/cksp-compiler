@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <exception>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -23,7 +24,7 @@ enum class ErrorType {
     MathError,
     InternalError
 };
-std::string error_type_to_string(const ErrorType type);
+std::string error_type_to_string(ErrorType type);
 
 
 enum class DiagnosticSeverity {
@@ -50,6 +51,42 @@ struct DiagnosticFrame {
  * active DiagnosticEngine when the diagnostic is emitted.
  */
 struct Diagnostic {
+
+    struct DiagnosticFix {
+        enum class FixKind {
+            AddRefToFuncParam,
+            ConvertDeprecatedFunctionReturn
+        };
+        enum class EditKind {
+            InsertBefore,
+            InsertAfter,
+            Replace
+        };
+        struct Edit {
+            EditKind kind = EditKind::Replace;
+            std::string file;
+            SourceRange range;
+            std::string new_text;
+
+            friend bool operator==(const Edit&, const Edit&) = default;
+        };
+
+        FixKind kind;
+        std::string title;
+        std::vector<Edit> edits;
+        bool is_preferred = false;
+
+        friend bool operator==(const DiagnosticFix&, const DiagnosticFix&) = default;
+    };
+    static std::string fix_kind_to_string(const DiagnosticFix::FixKind kind) {
+        switch (kind) {
+            case DiagnosticFix::FixKind::AddRefToFuncParam: return "AddRefToFuncParam";
+            case DiagnosticFix::FixKind::ConvertDeprecatedFunctionReturn: return "ConvertDeprecatedFunctionReturn";
+            default: break;
+        }
+        return "unknown";
+    }
+
     ErrorType type = ErrorType::CompileError;
     DiagnosticSeverity severity = DiagnosticSeverity::Error;
     std::string message;
@@ -59,6 +96,7 @@ struct Diagnostic {
     std::string file;
     SourceRange range;
     std::vector<DiagnosticFrame> call_stack;
+    std::optional<DiagnosticFix> fix;
 
     Diagnostic() = default;
     Diagnostic(ErrorType type, std::string message, std::string expected, const struct Token& token);
@@ -77,6 +115,7 @@ struct Diagnostic {
     }
     void set_expected(const std::string& value) { expected = value; }
     void set_token(const Token& token);
+    [[nodiscard]] std::string display_message() const;
 
 };
 

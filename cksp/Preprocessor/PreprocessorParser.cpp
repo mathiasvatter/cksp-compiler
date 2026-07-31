@@ -707,10 +707,10 @@ Result<std::unique_ptr<PreNodeImport>> PreprocessorParser::parse_import(PreNodeA
     std::string filepath = StringUtils::remove_quotes(path.val);
     std::unique_ptr<PreNodeKeyword> alias;
     if(peek().type == token::AS) {
-        auto error = Diagnostic(ErrorType::ParseError, "", "", peek());
-        error.set_message("Importing file with alias is not supported in as of version " + COMPILER_VERSION + ". "+
-            "Please remove the 'as <alias>' part from the import statement.");
-        error.exit();
+        // auto error = Diagnostic(ErrorType::ParseError, "", "", peek());
+        // error.set_message("Importing file with alias is not supported in as of version " + COMPILER_VERSION + ". "+
+        //     "Please remove the 'as <alias>' part from the import statement.");
+        // error.exit();
 
         consume(); // consume <as> token
         auto alias_keyword = parse_keyword(parent);
@@ -729,7 +729,7 @@ Result<std::unique_ptr<PreNodeImport>> PreprocessorParser::parse_import(PreNodeA
 
     }
     consume(); //consume linebreak
-    auto import_statement = std::make_unique<PreNodeImport>(filepath, token, parent);
+    auto import_statement = std::make_unique<PreNodeImport>(filepath, token, path, parent);
     import_statement->set_alias(std::move(alias));
     import_statement->set_range(token, end_token);
     return Result<std::unique_ptr<PreNodeImport>>(std::move(import_statement));
@@ -757,7 +757,7 @@ Result<std::unique_ptr<PreNodeImportNCKP>> PreprocessorParser::parse_import_nckp
         return Result<std::unique_ptr<PreNodeImportNCKP>>(Diagnostic(ErrorType::ParseError,
                                                                        "Incorrect import Syntax.","linebreak",peek()));
     consume(); //consume linebreak
-    auto return_value = std::make_unique<PreNodeImportNCKP>(filepath, token, parent);
+    auto return_value = std::make_unique<PreNodeImportNCKP>(filepath, token, path, parent);
     return_value->set_range(token, end_token);
     return Result<std::unique_ptr<PreNodeImportNCKP>>(std::move(return_value));
 }

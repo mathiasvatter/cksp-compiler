@@ -369,7 +369,7 @@ NodeAST *NodeConst::accept(struct ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeConst::NodeConst(const NodeConst& other)
-        : NodeDataStructure(other), constants(clone_unique(other.constants)) {
+        : NodeDataStructure(other), const_prefix(other.const_prefix), constants(clone_unique(other.constants)) {
 	set_child_parents();
 }
 

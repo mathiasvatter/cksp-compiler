@@ -311,7 +311,8 @@ NodeReference::~NodeReference() {
 }
 
 NodeReference::NodeReference(const NodeReference& other)
-	: NodeAST(other), name(other.name), declaration(other.declaration),
+	: NodeAST(other), prefix(clone_unique(other.prefix)),
+	  name(other.name), declaration(other.declaration),
 	  is_engine(other.is_engine), is_local(other.is_local),
 	  kind(other.kind),
 	  data_type(other.data_type) {
@@ -364,7 +365,7 @@ NodeSingleAssignment* NodeReference::is_l_value() const {
 
 // ************* NodeDataStructure ***************
 NodeDataStructure::NodeDataStructure(const NodeDataStructure& other)
-	: NodeAST(other),
+	: NodeAST(other), prefix(clone_unique(other.prefix)),
 	  is_used(other.is_used), is_engine(other.is_engine), persistence(other.persistence),
 	  is_local(other.is_local), is_global(other.is_global), kind(other.kind),
 	  has_obj_assigned(other.has_obj_assigned), is_thread_safe(other.is_thread_safe),
@@ -434,6 +435,7 @@ Type* NodeDataStructure::cast_type() {
 }
 
 void NodeDataStructure::match_metadata(const std::shared_ptr<NodeDataStructure>& data_structure) {
+	prefix = clone_unique(data_structure->prefix);
 	is_engine = data_structure->is_engine;
 	is_local = data_structure->is_local;
 	is_global = data_structure->is_global;
@@ -532,6 +534,28 @@ NodeFunctionCall* NodeReference::is_in_get_ui_id() const {
 
 bool NodeReference::check_restricted_environment(NodeCallback *current_callback) const {
 	return BuiltinRestrictionValidator::check_variable_callability(*this, current_callback);
+}
+
+bool NodeReference::in_access_chain() const {
+	if (parent) {
+		if (const auto chain = parent->cast<NodeAccessChain>()) {
+			return chain->member(0).get() != this;
+		}
+	}
+	return false;
+}
+
+std::unique_ptr<NodeAST> NodePrefix::clone() const {
+	return std::make_unique<NodePrefix>(*this);
+}
+
+NodePrefix::PrefixSegment NodePrefix::at(const size_t index) const {
+	if (index >= size()) {
+		auto err = ASTVisitor::make_diagnostic(ErrorType::InternalError, *this);
+		err.set_message("Expected incorrect number of prefixes");
+		err.exit();
+	}
+	return prefixes[index];
 }
 
 // ************* NodeInstruction ***************
@@ -984,7 +1008,7 @@ bool NodeUnaryExpr::has_return_func() const {
 
 bool NodeUnaryExpr::has_return_func_and_bool() const {
 	if (has_return_func()) {
-		return BOOL_TOKENS.contains(op);
+		return BOOL_TOKENS.contains(op.type);
 	}
 	return false;
 }
@@ -1049,7 +1073,7 @@ bool NodeBinaryExpr::has_return_func_and_bool() const {
 	auto right_binary = right->cast<NodeBinaryExpr>();
 	if (left_binary and left_binary->has_return_func() or right_binary and right_binary->has_return_func()) {
 		// check if operator is boolean
-		if (BOOL_TOKENS.contains(op)) {
+		if (BOOL_TOKENS.contains(op.type)) {
 			return true;
 		}
 	}
@@ -1099,9 +1123,9 @@ std::unique_ptr<NodeAST> NodeBinaryExpr::calculate_index_expression(const std::v
 }
 
 // ************* NodeCallback ***************
-NodeCallback::NodeCallback(const Token& tok) : NodeAST(tok, NodeType::Callback) {}
-NodeCallback::NodeCallback(std::string begin_callback, std::unique_ptr<NodeBlock> statements, std::string end_callback, const Token& tok)
-: NodeAST(tok, NodeType::Callback), begin_callback(std::move(begin_callback)), statements(std::move(statements)), end_callback(std::move(end_callback)) {
+NodeCallback::NodeCallback(Token tok) : NodeAST(std::move(tok), NodeType::Callback) {}
+NodeCallback::NodeCallback(std::string begin_callback, std::unique_ptr<NodeBlock> statements, std::string end_callback, Token tok)
+		: NodeAST(std::move(tok), NodeType::Callback), begin_callback(std::move(begin_callback)), statements(std::move(statements)), end_callback(std::move(end_callback)) {
     NodeCallback::set_child_parents();
 }
 // NodeCallback::~NodeCallback() = default;
@@ -1162,11 +1186,11 @@ std::unique_ptr<NodeAST> NodeImport::clone() const {
 }
 
 // ************* NodeFunctionDefinition ***************
-NodeFunctionDefinition::NodeFunctionDefinition(const Token& tok) : NodeAST(tok, NodeType::FunctionDefinition) {}
+NodeFunctionDefinition::NodeFunctionDefinition(Token tok) : NodeAST(std::move(tok), NodeType::FunctionDefinition) {}
 NodeFunctionDefinition::NodeFunctionDefinition(std::unique_ptr<NodeFunctionHeader> header,
 											   std::optional<std::unique_ptr<NodeDataStructure>> returnVariable,
-											   const bool override, std::unique_ptr<NodeBlock> body, const Token& tok)
-        : NodeAST(tok, NodeType::FunctionDefinition), header(std::move(header)),
+											   const bool override, std::unique_ptr<NodeBlock> body, Token tok)
+        : NodeAST(std::move(tok), NodeType::FunctionDefinition), header(std::move(header)),
 		return_variable(std::move(returnVariable)), override(override),body(std::move(body)) {
     NodeFunctionDefinition::set_child_parents();
 }
@@ -1312,15 +1336,15 @@ void NodeFunctionDefinition::mark_threadsafety(NodeProgram *program) {
 }
 
 // ************* NodeProgramm ***************
-NodeProgram::NodeProgram(const Token& tok) : NodeAST(tok, NodeType::Program) {
+NodeProgram::NodeProgram(Token tok) : NodeAST(std::move(tok), NodeType::Program) {
 	global_declarations = std::make_unique<NodeBlock>(Token());
 	set_child_parents();
 }
 
 NodeProgram::NodeProgram(std::vector<std::unique_ptr<NodeCallback>> callbacks,
 						 std::vector<std::shared_ptr<NodeFunctionDefinition>> functionDefinitions,
-						 const Token& tok)
-	: NodeAST(tok, NodeType::Program), callbacks(std::move(callbacks)), function_definitions(std::move(functionDefinitions)) {
+						 Token tok)
+	: NodeAST(std::move(tok), NodeType::Program), callbacks(std::move(callbacks)), function_definitions(std::move(functionDefinitions)) {
 	global_declarations = std::make_unique<NodeBlock>(Token());
 	set_child_parents();
 }
@@ -1453,22 +1477,30 @@ NodeFunctionDefinition * NodeProgram::replace_function_definition(const std::sha
 
 void NodeProgram::update_function_lookup() {
 	function_lookup.clear();
-	for(const auto & def : function_definitions) {
+	std::vector<std::weak_ptr<NodeFunctionHeader>> function_headers;
+	auto add_definition = [&](const std::shared_ptr<NodeFunctionDefinition>& def) {
 		function_lookup[{def->header->name, static_cast<int>(def->header->params.size())}].push_back(def);
+		function_headers.push_back(def->header);
+	};
+	for(const auto & def : function_definitions) {
+		add_definition(def);
 	}
 	for(const auto & def : additional_function_definitions) {
-		function_lookup[{def->header->name, static_cast<int>(def->header->params.size())}].push_back(def);
+		add_definition(def);
 	}
 	// add all struct methods to the lookup
 	for(const auto & struct_def : struct_definitions) {
 		for(const auto & method : struct_def->methods) {
-			function_lookup[{method->header->name, static_cast<int>(method->header->params.size())}].push_back(method);
+			add_definition(method);
 		}
 	}
 	for (const auto & namespace_def : namespaces) {
 		for (const auto & def : namespace_def->function_definitions) {
-			function_lookup[{def->header->name, static_cast<int>(def->header->params.size())}].push_back(def);
+			add_definition(def);
 		}
+	}
+	if (def_provider) {
+		def_provider->set_function_headers(std::move(function_headers));
 	}
 }
 

@@ -20,7 +20,9 @@
 #include "ASTVisitor/FunctionHandling/ASTFunctionInlining.h"
 #include "BuiltinsProcessing/BuiltinsProcessor.h"
 #include "Generator/ASTGenerator.h"
+#include "Generator/ASTSourceMapGenerator.h"
 #include "ASTVisitor/ASTDesugar.h"
+#include "ASTVisitor/ASTReserveNames.h"
 #include "ASTVisitor/ASTCollectLowerings.h"
 #include "ASTVisitor/ASTSemanticAnalysis.h"
 #include "ASTVisitor/ASTVariableChecking.h"
@@ -56,6 +58,8 @@
 #include "../misc/DiagnosticEngine.h"
 #include "../misc/DiagnosticReport.h"
 #include "ASTVisitor/ASTCheck.h"
+#include "ASTVisitor/ASTConstantVariableChecking.h"
+#include "ASTVisitor/ASTUIControlLowering.h"
 #include "ASTVisitor/ASTObfuscate.h"
 
 template <typename... Args>
@@ -117,8 +121,9 @@ public:
 		auto pre_ast = std::move(pre_ast_result.unwrap());
 		std::unordered_set<std::string> imported_files{};
 		std::unordered_map<std::string, std::string> basename_map{};
+		ReferenceIndex* reference_index = m_cli_config->lsp ? &m_reference_index : nullptr;
 		pre_ast->do_import_processing(
-			entry_source, entry_source, parser, imported_files, basename_map);
+			entry_source, entry_source, parser, imported_files, basename_map, reference_index);
 
 		m_timer.stop("Import");
 		m_timer.start("Preprocessor");
@@ -126,11 +131,10 @@ public:
 		PreASTConditions conditions_processor;
 		pre_ast->accept(conditions_processor);
 
-		PreASTPragma pragma(m_pragma_config.get());
+		PreASTPragma pragma(m_pragma_config.get(), reference_index);
 		pre_ast->accept(pragma);
 
 		// in lsp mode the substitution passes record define/macro usage -> definition links
-		ReferenceIndex* reference_index = m_cli_config->lsp ? &m_reference_index : nullptr;
 		PreASTDefines defines(reference_index);
 		pre_ast->accept(defines);
 		pre_ast->debug_print();
@@ -194,17 +198,30 @@ private:
 			m_program->check_unique_callbacks();
 			m_program->init_callback = m_program->move_on_init_callback();
 		}
+		// Standalone source files lack the declaration context of an entry point. Stop
+		// before any pass that requires resolving variables, types, or data structures.
+		if (m_program->compiler_config->analysis_mode == AnalysisMode::SyntaxOnly) {
+			return;
+		}
+
+		ASTReserveNames reserve_names(m_program);
+		ast->accept(reserve_names);
 		ASTDesugar desugar;
 		ast->accept(desugar);
 
 		ASTTypeAnnotations type_annotations(m_program);
 		ast->accept(type_annotations);
 
-		ASTVariableChecking variable_checking(m_program);
-		variable_checking.do_complete_traversal(*ast, false);
+		ASTVariableChecking variable_checking(m_program, ASTVariableChecking::Pass::PreUIControlLowering);
+		variable_checking.do_complete_traversal(*ast);
+		m_constant_db.build(*ast);
+		ASTUIControlLowering ui_control_lowering(m_program, m_constant_db, variable_checking);
+		ast->accept(ui_control_lowering);
+		// second pass to transform to access chains and get missing ui controls from ui control arrays
+		variable_checking.set_pass(ASTVariableChecking::Pass::PostUIControlLowering);
+		variable_checking.do_complete_traversal(*ast);
 		ast->collect_references();
 
-		
 		ASTSemanticAnalysis data_structures(ast.get());
 		ast->accept(data_structures);
 		
@@ -231,8 +248,8 @@ private:
 		ASTCollectLowerings lowering(m_program);
 		ast->accept(lowering);
 
-		ASTVariableChecking variable_checking2(m_program);
-		variable_checking2.do_reachable_traversal(*ast, true);
+		ASTVariableChecking variable_checking2(m_program, ASTVariableChecking::Pass::PostLowering);
+		variable_checking2.do_reachable_traversal(*ast);
 
 		// Second pass: pick up references only resolved after the final variable check.
 		// Dedup keeps the first pass's ranges for references seen in both.
@@ -357,6 +374,8 @@ private:
 		print_to_console(m_timer.print_timer("Parsing"));
 		m_timer.start("Desugaring");
 
+		ASTReserveNames reserve_names(m_program);
+		ast->accept(reserve_names);
 		ASTDesugar desugar;
 		ast->accept(desugar);
 		ast->debug_print();
@@ -368,8 +387,14 @@ private:
 		ASTTypeAnnotations type_annotations(m_program);
 		ast->accept(type_annotations);
 
-		ASTVariableChecking variable_checking(m_program);
-		variable_checking.do_complete_traversal(*ast, false);
+		ASTVariableChecking variable_checking(m_program, ASTVariableChecking::Pass::PreUIControlLowering);
+		variable_checking.do_complete_traversal(*ast);
+		m_constant_db.build(*ast);
+		ASTUIControlLowering ui_control_lowering(m_program, m_constant_db, variable_checking);
+		ast->accept(ui_control_lowering);
+		// second pass to transform to access chains and get missing ui controls from ui control arrays
+		variable_checking.set_pass(ASTVariableChecking::Pass::PostUIControlLowering);
+		variable_checking.do_complete_traversal(*ast);
 		ast->collect_references();
 		ast->debug_print();
 
@@ -389,7 +414,6 @@ private:
 		infer_types.do_complete_traversal(*ast);
 		ast->debug_print();
 
-		m_constant_db.build(*ast);
 
 		UniqueParameterNamesProvider unique_names_provider(m_program);
 		unique_names_provider.do_parallel_renaming(*m_program);
@@ -446,8 +470,8 @@ private:
 		ast->debug_print();
 
 		{
-			ASTVariableChecking variable_checking(m_program);
-			variable_checking.do_reachable_traversal(*ast, true);
+			ASTVariableChecking variable_checking(m_program, ASTVariableChecking::Pass::PostLowering);
+			variable_checking.do_reachable_traversal(*ast);
 			ast->remove_references();
 			ast->collect_references(); // >> those two are also only needed for LUX???
 			TypeInference infer_types(ast.get());
@@ -566,6 +590,14 @@ private:
 		ast->accept(generator);
 		for (auto & output_filename : m_final_config->outputs) {
 			generator.generate(output_filename);
+		}
+		if (m_final_config->source_map_file) {
+			ASTSourceMapGenerator source_map(
+				generator.compiled_header(),
+				m_final_config->input_filename.value(),
+				m_final_config->outputs);
+			ast->accept(source_map);
+			source_map.generate(m_final_config->source_map_file.value());
 		}
 
 		m_timer.stop("Generator");

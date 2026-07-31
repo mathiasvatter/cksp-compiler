@@ -17,6 +17,9 @@ struct Token {
     Token(token type, std::string val, size_t line, size_t pos, const std::string &file)
         : type(type), val(std::move(val)), line(line), pos(pos), file(file) {}
     Token(const Token& other) = default;
+    Token(Token&& other) noexcept = default;
+    Token& operator=(const Token& other) = default;
+    Token& operator=(Token&& other) noexcept = default;
     void set_val(const std::string& value) {val = value;}
     void set_type(const token token_type) { type = token_type; }
     /// helper function to print Token objects via std::out

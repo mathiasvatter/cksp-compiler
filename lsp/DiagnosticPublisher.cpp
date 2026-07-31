@@ -7,27 +7,6 @@
 #include <memory>
 #include <utility>
 
-namespace {
-	bool diagnostic_belongs_to_source(const Diagnostic& diagnostic, const SourceId& source) {
-		if (diagnostic.file.empty()) {
-			return true;
-		}
-
-		return FileSystemSourceProvider::normalize(diagnostic.file) == source;
-	}
-
-	std::string diagnostic_message(const Diagnostic& diagnostic) {
-		if (!diagnostic.message.empty()) {
-			return diagnostic.message;
-		}
-		auto message = error_type_to_string(diagnostic.type);
-		if (!diagnostic.actual.empty()) {
-			message += ": " + diagnostic.actual;
-		}
-		return message;
-	}
-} // namespace
-
 void DiagnosticPublisher::publish(const SourceId& entry_source, const std::vector<Diagnostic>& diagnostics) {
 	const auto entry = FileSystemSourceProvider::normalize(entry_source.value);
 	std::unordered_map<std::string, std::vector<Diagnostic>> diagnostics_by_source;
@@ -108,18 +87,70 @@ SourceId DiagnosticPublisher::diagnostic_source(const Diagnostic& diagnostic, co
 	return FileSystemSourceProvider::normalize(diagnostic.file);
 }
 
+bool DiagnosticPublisher::same_published_diagnostic(
+	const Diagnostic& left,
+	const Diagnostic& right) {
+	return left.type == right.type
+		&& left.severity == right.severity
+		&& left.display_message() == right.display_message()
+		&& left.range == right.range
+		&& left.fix == right.fix;
+}
+
+std::unique_ptr<JSONObject> DiagnosticPublisher::make_lsp_edit_data(
+	const Diagnostic::DiagnosticFix::Edit& edit) {
+	auto edit_range = std::make_unique<JSONObject>();
+	switch (edit.kind) {
+		case Diagnostic::DiagnosticFix::EditKind::InsertBefore:
+			edit_range->add("start", edit.range.start.get_lsp_position());
+			edit_range->add("end", edit.range.start.get_lsp_position());
+			break;
+		case Diagnostic::DiagnosticFix::EditKind::InsertAfter:
+			edit_range->add("start", edit.range.end.get_lsp_position());
+			edit_range->add("end", edit.range.end.get_lsp_position());
+			break;
+		case Diagnostic::DiagnosticFix::EditKind::Replace:
+			edit_range = edit.range.get_lsp_range();
+			break;
+	}
+
+	auto data = std::make_unique<JSONObject>();
+	data->add("targetUri", std::make_unique<JSONString>(uri_from_source(SourceId(edit.file))));
+	data->add("range", std::move(edit_range));
+	data->add("newText", std::make_unique<JSONString>(edit.new_text));
+	return data;
+}
+
+std::unique_ptr<JSONObject> DiagnosticPublisher::make_lsp_fix_data(
+	const Diagnostic::DiagnosticFix& fix) {
+	auto data = std::make_unique<JSONObject>();
+	data->add("fixKind",std::make_unique<JSONString>(Diagnostic::fix_kind_to_string(fix.kind)));
+	data->add("title", std::make_unique<JSONString>(fix.title));
+	data->add("isPreferred", std::make_unique<JSONBool>(fix.is_preferred));
+	auto edits = std::make_unique<JSONArray>();
+	for (const auto& edit : fix.edits) {
+		edits->add(make_lsp_edit_data(edit));
+	}
+	data->add("edits", std::move(edits));
+	return data;
+}
+
 std::unique_ptr<JSONObject> DiagnosticPublisher::make_lsp_diagnostic(const Diagnostic& diagnostic) {
 	auto result = std::make_unique<JSONObject>();
 	result->add("range", diagnostic.range.get_lsp_range());
 	result->add("severity", std::make_unique<JSONInt>((int)diagnostic.severity));
 	result->add("source", std::make_unique<JSONString>("cksp"));
 	result->add("code", std::make_unique<JSONString>(error_type_to_string(diagnostic.type)));
-	result->add("message", std::make_unique<JSONString>(diagnostic_message(diagnostic)));
+	result->add("message", std::make_unique<JSONString>(diagnostic.display_message()));
+
+	if (diagnostic.fix) {
+		result->add("data", make_lsp_fix_data(*diagnostic.fix));
+	}
 	return result;
 }
 
 void DiagnosticPublisher::publish_merged_source(const SourceId& source) const {
-	// A file that is owned by the configured entry receives diagnostics only from
+	// A file that is owned by a configured entry receives diagnostics only from
 	// configured entries. Standalone entries that merely include it as a shared
 	// dependency (e.g. an opened sibling script) must not contribute, otherwise their
 	// out-of-context analysis leaks false diagnostics onto the shared file.
@@ -134,7 +165,18 @@ void DiagnosticPublisher::publish_merged_source(const SourceId& source) const {
 		if (it == diagnostics_by_source.end()) {
 			continue;
 		}
-		diagnostics.insert(diagnostics.end(), it->second.begin(), it->second.end());
+		for (const auto& diagnostic : it->second) {
+			bool already_published = false;
+			for (const auto& existing : diagnostics) {
+				if (same_published_diagnostic(existing, diagnostic)) {
+					already_published = true;
+					break;
+				}
+			}
+			if (!already_published) {
+				diagnostics.push_back(diagnostic);
+			}
+		}
 	}
 	publish_source(source, diagnostics);
 }
@@ -142,7 +184,7 @@ void DiagnosticPublisher::publish_merged_source(const SourceId& source) const {
 void DiagnosticPublisher::publish_source(const SourceId& source, const std::vector<Diagnostic>& diagnostics) const {
 	auto items = std::make_unique<JSONArray>();
 	for (const auto& diagnostic : diagnostics) {
-		if (!diagnostic_belongs_to_source(diagnostic, source)) {
+		if (diagnostic_source(diagnostic, source) != source) {
 			continue;
 		}
 		items->add(make_lsp_diagnostic(diagnostic));

@@ -8,14 +8,15 @@
 #include "../../ASTVisitor/ASTKSPSyntaxCheck.h"
 #include "../../../misc/CommandLineOptions.h"
 #include "../../../misc/PathHandler.h"
-
+#include "../../Source/ReferenceIndex.h"
 
 class PreASTPragma final : public PreASTVisitor {
 	CompilerConfig* m_config = nullptr;
 	std::unordered_map<std::string, std::function<void(const std::string&, const Token&)>> pragma_handlers{};
-
+	ReferenceIndex* m_reference_index = nullptr;
 public:
-	explicit PreASTPragma(CompilerConfig* config) : m_config(config) {
+	explicit PreASTPragma(CompilerConfig* config, ReferenceIndex* reference_index = nullptr)
+		: m_config(config), m_reference_index(reference_index) {
 		register_pragma_handlers();
 	}
 
@@ -74,6 +75,10 @@ private:
 				auto error = valid_output_path.get_error();
 				error.message.insert(0, error_message);
 				error.exit();
+			}
+			if (m_reference_index) {
+				m_reference_index->add_file_link(
+					token, valid_output_path.unwrap(), path);
 			}
 			m_config->outputs.push_back(valid_output_path.unwrap());
 		};

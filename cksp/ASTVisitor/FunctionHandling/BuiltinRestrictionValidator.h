@@ -57,6 +57,15 @@ public:
 		return m_restricted_functions.contains(func_name);
 	}
 
+	/// builtin functions with side effects and alter the value (variable) put in
+	inline static const std::unordered_set<std::string> destructive_functions = {
+		"inc", "dec",
+	};
+
+	static bool is_destructive_func(const std::string& func_name) {
+		return destructive_functions.contains(func_name);
+	}
+
 	inline static const std::unordered_map<std::string, std::unordered_set<std::string>> m_restricted_variables = {
 	// EVENT_NOTE only allowed in on note, on release and on midi_in
 		{ "EVENT_NOTE", { "note", "release", "midi_in" } },

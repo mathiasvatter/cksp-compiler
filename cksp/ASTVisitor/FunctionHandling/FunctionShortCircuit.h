@@ -99,7 +99,7 @@ private:
 		}
 
 		if (auto* bin_expr = condition->cast<NodeBinaryExpr>(); bin_expr and bin_expr->needs_short_circuiting()) {
-			if (bin_expr->op == token::BOOL_XOR) {
+			if (bin_expr->op.type == token::BOOL_XOR) {
 				// ----- XOR-LOGIK -----
 				// Erzeugt einen Block mit temp. Variablen für L und R.
 
@@ -126,18 +126,18 @@ private:
 
 				return xor_block;
 
-			} else if (bin_expr->op == token::BOOL_AND) {
+			} else if (bin_expr->op.type == token::BOOL_AND) {
 				// ----- HYBRIDE AND-LOGIK -----
 
 			    // Prüfe, ob die linke Seite (L) "einfach" ist, d.h. nicht selbst
 			    // AND, OR, XOR oder NOT enthält und somit direkt als Bedingung dienen kann.
 			    bool left_is_simple = true;
 			    if (auto* left_as_bin = bin_expr->left->cast<NodeBinaryExpr>()) {
-			        if (left_as_bin->op == token::BOOL_AND || left_as_bin->op == token::BOOL_OR || left_as_bin->op == token::BOOL_XOR) {
+			        if (left_as_bin->op.type == token::BOOL_AND || left_as_bin->op.type == token::BOOL_OR || left_as_bin->op.type == token::BOOL_XOR) {
 			            left_is_simple = false;
 			        }
 			    } else if (auto* left_as_unary = bin_expr->left->cast<NodeUnaryExpr>()) {
-			        if (left_as_unary->op == token::BOOL_NOT) {
+			        if (left_as_unary->op.type == token::BOOL_NOT) {
 			            left_is_simple = false;
 			        }
 			    }
@@ -178,7 +178,7 @@ private:
 			        return and_block;
 			    }
 
-			} else if (bin_expr->op == token::BOOL_OR) {
+			} else if (bin_expr->op.type == token::BOOL_OR) {
 				// 'L or R' wird zu -> if(L){ ERFOLG } else { <Logik für R> }
 
 				// KORREKTUR: Rufe auch hier den Haupt-Disponenten `build_sc_logic` auf!
@@ -203,7 +203,7 @@ private:
 			}
 		} else if (auto unary_expr = condition->cast<NodeUnaryExpr>(); unary_expr and unary_expr->needs_short_circuiting()) {
 			// ----- HIER IST DIE NEUE NOT-LOGIK -----
-			if (unary_expr->op == token::BOOL_NOT) {
+			if (unary_expr->op.type == token::BOOL_NOT) {
 				// Strategie für 'not E':
 				// 1. Erzeuge Block: { declare _temp=0; }
 				// 2. Fülle ihn mit: <Logik für E, die bei Erfolg _temp=1 setzt>

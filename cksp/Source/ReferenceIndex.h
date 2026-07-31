@@ -28,11 +28,20 @@ struct ReferenceLink {
 	SourceRange def_name_range;  ///< exactly the declared name, e.g. the range a rename edit replaces
 };
 
-/** A named source construct which can be used as a qualifier, such as a namespace. */
-struct QualifierDefinition {
-	std::string name;
-	std::string file;
-	SourceRange range;
+/**
+ * One definition-only navigation link.
+ *
+ * Unlike ReferenceLink, this is deliberately not a symbol relationship: references,
+ * rename and document highlights must ignore it. Import path -> imported file is the
+ * primary use case.
+ */
+struct DefinitionLink {
+	std::string ref_file;
+	SourceRange ref_range;
+	std::string def_file;
+	SourceRange def_range;
+	SourceRange def_selection_range;
+	std::string tooltip;
 };
 
 /**
@@ -44,10 +53,10 @@ struct QualifierDefinition {
  */
 class ReferenceIndex {
 	std::vector<ReferenceLink> m_links;
+	std::vector<DefinitionLink> m_definition_links;
 	std::unordered_set<std::string> m_seen_links;
+	std::unordered_set<std::string> m_seen_definition_links;
 	std::unordered_set<std::string> m_seen_references;
-	std::vector<QualifierDefinition> m_qualifier_definitions;
-	std::unordered_set<std::string> m_seen_qualifier_definitions;
 	mutable std::unordered_map<std::string, std::string> m_normalized_files;
 
 public:
@@ -71,8 +80,8 @@ public:
 	}
 
 	/// Records a link between two source tokens (reference -> declaration). Tokens without a
-	/// real source file (builtins, synthesized nodes) are skipped. Used by the preprocessor
-	/// passes for define and macro usages.
+	/// real source file (builtins, synthesized nodes) are skipped. Used by preprocessing and
+	/// by AST prefix provenance, where the declaration token is the symbol identity.
 	void add_link(const Token& reference, const Token& declaration) {
 		if (reference.file.empty() || declaration.file.empty()) return;
 		const auto ref_range = source_range_from_token(reference);
@@ -81,30 +90,89 @@ public:
 		add(reference.file, ref_range, declaration.file, def_range);
 	}
 
-	/// Records a named qualifier definition before desugaring removes its AST node.
-	void add_qualifier_definition(std::string name, const Token& declaration) {
-		if (declaration.file.empty()) return;
-		const auto range = source_range_from_token(declaration);
-		if (!range.is_valid()) return;
-		auto file = normalized_file(declaration.file);
-		auto key = name + "@" + file + "@" + range.to_string();
-		if (!m_seen_qualifier_definitions.insert(std::move(key)).second) return;
-		m_qualifier_definitions.push_back({std::move(name), std::move(file), range});
+	/// Records a path token -> file link for go-to-definition and document links.
+	/// String quotes are excluded from the clickable source range.
+	void add_file_link(const Token& path_token, std::string target_file, std::string tooltip = {}) {
+		if (path_token.file.empty()) return;
+		auto path_range = source_range_from_token(path_token);
+		if (path_token.type == token::STRING && path_token.val.size() >= 2) {
+			++path_range.start.column;
+			--path_range.end.column;
+		}
+		add_definition_link(
+			path_token.file,
+			path_range,
+			std::move(target_file),
+			SourceRange{{0, 0}, {0, 0}},
+			std::move(tooltip)
+		);
 	}
 
-	/// Finds the qualifier in the file which owns the referenced member. Requiring the same
-	/// file prevents equal namespace/family names in separate imports from being conflated.
-	[[nodiscard]] std::optional<QualifierDefinition> qualifier_definition(
-		const std::string& name,
-		const std::string& preferred_file) const {
-		const auto normalized_preferred = normalized_file(preferred_file);
-		for (const auto& definition : m_qualifier_definitions) {
-			if (definition.name == name && definition.file == normalized_preferred) return definition;
+	/// Records a one-way go-to-definition link that is invisible to symbol operations.
+	void add_definition_link(
+		std::string ref_file,
+		const SourceRange& ref_range,
+		std::string def_file,
+		const SourceRange& def_range,
+		std::string tooltip = {}) {
+		if (!ref_range.is_valid() || !def_range.is_valid()) return;
+		ref_file = normalized_file(ref_file);
+		def_file = normalized_file(def_file);
+		const auto link_key = reference_key(ref_file, ref_range)
+			+ "=>" + reference_key(def_file, def_range);
+		if (!m_seen_definition_links.insert(link_key).second) return;
+		m_definition_links.push_back({
+			std::move(ref_file), ref_range, std::move(def_file), def_range, def_range,
+			std::move(tooltip)
+		});
+	}
+
+	[[nodiscard]] bool empty() const { return m_links.empty() && m_definition_links.empty(); }
+
+	/// Resolves definition-only navigation first, then falls back to normal symbols.
+	[[nodiscard]] std::optional<DefinitionLink> resolve_definition(
+		const std::string& file,
+		const size_t line,
+		const size_t character) const {
+		const DefinitionLink* best = nullptr;
+		for (const auto& link : m_definition_links) {
+			if (link.ref_file != file) continue;
+			if (!covers(link.ref_range, line, character)) continue;
+			if (!best || is_narrower(link.ref_range, best->ref_range)) best = &link;
+		}
+		if (best) return *best;
+
+		if (auto symbol = resolve_target(file, line, character)) {
+			return DefinitionLink{
+				symbol->ref_file,
+				symbol->ref_range,
+				symbol->def_file,
+				symbol->def_range,
+				symbol->def_name_range,
+				{}
+			};
 		}
 		return std::nullopt;
 	}
 
-	[[nodiscard]] bool empty() const { return m_links.empty(); }
+	/// Returns definition-only links originating in one document.
+	[[nodiscard]] std::vector<DefinitionLink> definition_links_in(const std::string& file) const {
+		std::vector<DefinitionLink> links;
+		for (const auto& link : m_definition_links) {
+			if (link.ref_file == file) links.push_back(link);
+		}
+		return links;
+	}
+
+	/// True when current analysis already owns a definition-only link at this source range.
+	[[nodiscard]] bool contains_definition_link(
+		const std::string& file,
+		const SourceRange& range) const {
+		for (const auto& link : m_definition_links) {
+			if (link.ref_file == file && same_range(link.ref_range, range)) return true;
+		}
+		return false;
+	}
 
 	/// Resolves a zero-based (LSP) position in `file` to a declaration location, if a
 	/// reference covers it. Prefers the narrowest covering reference.

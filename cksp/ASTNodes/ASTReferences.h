@@ -11,13 +11,10 @@
 struct NodeNumElements;
 
 struct NodeVariableRef final : NodeReference {
-	NodeVariableRef(std::string name, const Token& tok, DataType data_type=DataType::Mutable)
-		: NodeReference(std::move(name), NodeType::VariableRef, tok, data_type) {
-		set_range(tok);
-	}
-	NodeVariableRef(std::string name, Type* ty, const Token& tok, DataType data_type=DataType::Mutable)
-		: NodeReference(std::move(name), NodeType::VariableRef, tok, data_type) {
-		set_range(tok);
+	NodeVariableRef(std::string name, Token tok, DataType data_type=DataType::Mutable)
+		: NodeReference(std::move(name), NodeType::VariableRef, std::move(tok), data_type) {}
+	NodeVariableRef(std::string name, Type* ty, Token tok, DataType data_type=DataType::Mutable)
+		: NodeReference(std::move(name), NodeType::VariableRef, std::move(tok), data_type) {
 		this->ty = ty;
 	}
 	NodeAST * accept(ASTVisitor &visitor) override;
@@ -242,8 +239,8 @@ struct NodeNDArrayRef final : NodeCompositeRef {
 struct NodeFunctionHeaderRef final : NodeReference {
 	bool has_forced_parenth = false;
 	std::unique_ptr<NodeParamList> args;
-	NodeFunctionHeaderRef(std::string name, Token tok) : NodeReference(std::move(name), NodeType::FunctionHeaderRef, std::move(tok), DataType::Mutable) {
-		set_args(std::make_unique<NodeParamList>(tok));
+	NodeFunctionHeaderRef(std::string name, Token tok) : NodeReference(std::move(name), NodeType::FunctionHeaderRef, tok, DataType::Mutable) {
+		set_args(std::make_unique<NodeParamList>(std::move(tok)));
 	}
 	NodeFunctionHeaderRef(std::string name, std::unique_ptr<NodeParamList> args, Token tok, DataType data_type=DataType::Mutable) :
 	NodeReference(std::move(name), NodeType::FunctionHeaderRef, std::move(tok), data_type), args(std::move(args)) {
@@ -335,7 +332,7 @@ struct NodePointerRef : NodeReference {
 };
 
 struct NodeNil final : NodePointerRef {
-	explicit NodeNil(Token tok) : NodePointerRef(std::move("nil"), std::move(tok)) {node_type = NodeType::Nil;}
+	explicit NodeNil(Token tok) : NodePointerRef("nil", std::move(tok)) {node_type = NodeType::Nil;}
 	NodeAST * accept(ASTVisitor &visitor) override;
 	// Kopierkonstruktor
 	NodeNil(const NodeNil& other) : NodePointerRef(other) {}

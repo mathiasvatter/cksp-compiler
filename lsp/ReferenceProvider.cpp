@@ -41,6 +41,26 @@ bool ReferenceProvider::source_matches_snapshot(const SourceContents& snapshot, 
 	return *current.unwrap().text == *expected->second;
 }
 
+std::optional<DefinitionLink> ReferenceProvider::resolve_definition_from_state(
+	const State& state,
+	const SourceId& source,
+	const size_t line,
+	const size_t character) {
+	if (state.current) {
+		if (auto link = state.current->resolve_definition(source.value, line, character)) return link;
+	}
+
+	if (!state.last_successful || state.last_successful == state.current
+		|| !source_matches_snapshot(state.last_successful_sources, source.value)) {
+		return std::nullopt;
+	}
+	auto link = state.last_successful->resolve_definition(source.value, line, character);
+	if (!link || !source_matches_snapshot(state.last_successful_sources, link->def_file)) {
+		return std::nullopt;
+	}
+	return link;
+}
+
 std::optional<ReferenceLink> ReferenceProvider::resolve_from_state(
 	const State& state,
 	const SourceId& source,
@@ -59,6 +79,82 @@ std::optional<ReferenceLink> ReferenceProvider::resolve_from_state(
 		return std::nullopt;
 	}
 	return link;
+}
+
+std::optional<DefinitionLink> ReferenceProvider::resolve_definition(
+	const std::vector<SourceId>& preferred_entries,
+	const SourceId& source,
+	const size_t line,
+	const size_t character) {
+	const auto normalized_source = FileSystemSourceProvider::normalize(source.value);
+	std::lock_guard lock(m_mutex);
+
+	for (const auto& entry : preferred_entries) {
+		const auto state = m_states.find(FileSystemSourceProvider::normalize(entry.value).value);
+		if (state == m_states.end()) continue;
+		if (auto target = resolve_definition_from_state(
+			state->second, normalized_source, line, character)) {
+			return target;
+		}
+	}
+	for (const auto& [_, state] : m_states) {
+		if (auto target = resolve_definition_from_state(
+			state, normalized_source, line, character)) {
+			return target;
+		}
+	}
+	return std::nullopt;
+}
+
+std::vector<DefinitionLink> ReferenceProvider::document_links_from_state(
+	const State& state,
+	const SourceId& source) {
+	std::vector<DefinitionLink> links;
+	if (state.current) links = state.current->definition_links_in(source.value);
+
+	if (!state.last_successful || state.last_successful == state.current
+		|| !source_matches_snapshot(state.last_successful_sources, source.value)) {
+		return links;
+	}
+	for (auto& link : state.last_successful->definition_links_in(source.value)) {
+		if (state.current
+			&& state.current->contains_definition_link(link.ref_file, link.ref_range)) {
+			continue;
+		}
+		if (!source_matches_snapshot(state.last_successful_sources, link.def_file)) continue;
+		links.push_back(std::move(link));
+	}
+	return links;
+}
+
+std::vector<DefinitionLink> ReferenceProvider::document_links(
+	const std::vector<SourceId>& preferred_entries,
+	const SourceId& source) {
+	const auto normalized_source = FileSystemSourceProvider::normalize(source.value);
+	std::vector<DefinitionLink> links;
+	std::unordered_set<std::string> seen;
+	const auto add_state = [this, &normalized_source, &links, &seen](const State& state) {
+		for (auto& link : document_links_from_state(state, normalized_source)) {
+			const auto key = link.ref_file + "@" + link.ref_range.to_string()
+				+ "=>" + link.def_file;
+			if (seen.insert(key).second) links.push_back(std::move(link));
+		}
+	};
+
+	std::lock_guard lock(m_mutex);
+	for (const auto& entry : preferred_entries) {
+		const auto state = m_states.find(FileSystemSourceProvider::normalize(entry.value).value);
+		if (state != m_states.end()) add_state(state->second);
+	}
+	for (const auto& [_, state] : m_states) add_state(state);
+
+	std::ranges::sort(links, [](const DefinitionLink& a, const DefinitionLink& b) {
+		if (a.ref_range.start.line != b.ref_range.start.line) {
+			return a.ref_range.start.line < b.ref_range.start.line;
+		}
+		return a.ref_range.start.column < b.ref_range.start.column;
+	});
+	return links;
 }
 
 std::optional<ReferenceLink> ReferenceProvider::resolve_target(
@@ -113,6 +209,15 @@ std::vector<ReferenceLocation> ReferenceProvider::references_to(
 	std::lock_guard lock(m_mutex);
 	for (const auto& [_, state] : m_states) {
 		for (const auto& reference : references_from_state(state, target)) {
+			// Qualifier blocks and function headers carry a self-link so their declaration
+			// remains addressable even without usages. Do not expose that implementation
+			// detail when the client explicitly excludes declarations.
+			const bool is_declaration = reference.ref_file == reference.def_file
+				&& reference.ref_range.start.line == reference.def_name_range.start.line
+				&& reference.ref_range.start.column == reference.def_name_range.start.column
+				&& reference.ref_range.end.line == reference.def_name_range.end.line
+				&& reference.ref_range.end.column == reference.def_name_range.end.column;
+			if (is_declaration && !include_declaration) continue;
 			add(reference.ref_file, reference.ref_range);
 		}
 	}

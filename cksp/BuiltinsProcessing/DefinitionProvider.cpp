@@ -126,7 +126,7 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::get_declaration(NodeRefer
 
 std::shared_ptr<NodeDataStructure> DefinitionProvider::set_declaration(const std::shared_ptr<NodeDataStructure>& var, bool global_scope) {
 	// handle_throwaway_var(*var);
-	m_gensym.ingest(var->name);
+	reserve_name(var->name);
 	// get builtin declaration if it exists
 	std::shared_ptr<NodeDataStructure> node_builtin_declaration = nullptr;
 	if (!node_builtin_declaration) node_builtin_declaration = get_builtin_array(var->name);
@@ -161,6 +161,7 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::set_declaration(const std
 		} else {
 			m_declared_data_structures.back().insert({var->name, var});
 		}
+		m_declaration_candidates.push_back(var);
 	}
 	return nullptr;
 }
@@ -185,6 +186,249 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::get_scoped_data_structure
 		return it->second;
 	}
 	return nullptr;
+}
+
+std::vector<std::shared_ptr<NodeDataStructure>> DefinitionProvider::get_data_structure_candidates(
+	const bool include_collected) const {
+	std::vector<std::shared_ptr<NodeDataStructure>> candidates;
+	std::unordered_set<const NodeDataStructure*> seen;
+
+	auto add = [&](const std::shared_ptr<NodeDataStructure>& candidate) {
+		if (candidate && seen.insert(candidate.get()).second) {
+			candidates.push_back(candidate);
+		}
+	};
+	auto add_function_definitions = [&](const auto& definitions) {
+		for (const auto& [_, definition] : definitions) {
+			if (definition) add(definition->header);
+		}
+	};
+
+	for (const auto& scope : std::ranges::reverse_view(m_declared_data_structures)) {
+		for (const auto& declaration : scope | std::views::values) {
+			add(declaration);
+		}
+	}
+	for (const auto& weak_header : m_function_headers) {
+		add(weak_header.lock());
+	}
+	for (const auto& weak_declaration : m_declaration_candidates) {
+		add(weak_declaration.lock());
+	}
+
+	if (include_collected) {
+		for (const auto& weak_declaration : m_all_data_structures) {
+			add(weak_declaration.lock());
+		}
+	}
+
+	for (const auto& declaration : external_variables) add(declaration);
+	for (const auto& declaration : builtin_variables | std::views::values) add(declaration);
+	for (const auto& declaration : builtin_arrays | std::views::values) add(declaration);
+	for (const auto& declaration : builtin_widgets | std::views::values) add(declaration);
+	add_function_definitions(builtin_functions);
+	add_function_definitions(boolean_functions);
+	add_function_definitions(property_functions);
+
+	return candidates;
+}
+
+std::vector<std::shared_ptr<NodeDataStructure>> DefinitionProvider::find_data_structures(
+	const std::string& name,
+	const bool include_collected) const {
+	auto candidates = get_data_structure_candidates(include_collected);
+	std::erase_if(candidates, [&](const auto& candidate) {
+		return candidate->name != name;
+	});
+	return candidates;
+}
+
+std::vector<std::shared_ptr<NodeDataStructure>> DefinitionProvider::misspelled_data_structures(
+	const std::string& name,
+	const std::optional<int> num_args,
+	const size_t max_results,
+	const bool include_collected) const {
+	const auto lower_name = StringUtils::to_lower(name);
+	const size_t name_length = name.size();
+	const size_t max_distance =
+		std::clamp<size_t>(name_length <= 4 ? 1 : (name_length <= 8 ? 2 : 3), 1, 4);
+
+	struct RankedDeclaration {
+		std::shared_ptr<NodeDataStructure> declaration;
+		int score;
+	};
+	std::vector<RankedDeclaration> ranked;
+
+	for (const auto& declaration : get_data_structure_candidates(include_collected)) {
+		const auto& candidate_name = declaration->name;
+		if (candidate_name.empty() || candidate_name == name
+			|| StringUtils::starts_with(candidate_name, "CKSP" + OBJ_DELIMITER)) {
+			continue;
+		}
+		if (candidate_name.size() + max_distance + 1 < name_length
+			|| name_length + max_distance + 1 < candidate_name.size()) {
+			continue;
+		}
+
+		const auto lower_candidate = StringUtils::to_lower(candidate_name);
+		const size_t distance = StringUtils::get_levenshtein_distance(lower_name, lower_candidate);
+		if (distance > max_distance) continue;
+
+		int score = suggestion_score(lower_name, lower_candidate, distance);
+		if (num_args) {
+			if (const auto header = declaration->cast<NodeFunctionHeader>()) {
+				score += std::abs(*num_args - static_cast<int>(header->get_num_params())) * 3;
+			} else {
+				// Keep non-functions in the result: the parentheses themselves may
+				// be the typo, but prefer a similarly named callable declaration.
+				score += 3;
+			}
+		}
+		ranked.push_back({declaration, score});
+	}
+
+	std::ranges::sort(ranked, [](const auto& left, const auto& right) {
+		if (left.score != right.score) return left.score < right.score;
+		return left.declaration->name < right.declaration->name;
+	});
+
+	std::vector<std::shared_ptr<NodeDataStructure>> suggestions;
+	std::unordered_set<std::string> seen_names;
+	for (const auto& candidate : ranked) {
+		if (suggestions.size() >= max_results) break;
+		if (seen_names.insert(candidate.declaration->name).second) {
+			suggestions.push_back(candidate.declaration);
+		}
+	}
+	return suggestions;
+}
+
+std::vector<std::string> DefinitionProvider::misspelled_suggestions(
+	const std::string& name,
+	const size_t max_results) const {
+	const bool scopes_are_empty = m_declared_data_structures.size() == 1
+		&& m_declared_data_structures.front().empty();
+	const auto declarations = misspelled_data_structures(
+		name,
+		std::nullopt,
+		max_results,
+		scopes_are_empty
+	);
+
+	std::vector<std::string> suggestions;
+	suggestions.reserve(declarations.size());
+	for (const auto& declaration : declarations) {
+		suggestions.push_back(declaration->name);
+	}
+	return suggestions;
+}
+
+Diagnostic DefinitionProvider::make_missing_function_definition_error(
+	const NodeFunctionCall& node) const {
+	const auto* function = node.function.get();
+	const std::string function_name = function ? function->name : node.tok.val;
+	const int num_args = function ? function->get_num_args() : 0;
+
+	auto declarations = find_data_structures(function_name, true);
+	if (function) {
+		if (const auto declaration = function->get_declaration();
+			declaration && std::ranges::find(declarations, declaration) == declarations.end()) {
+			declarations.insert(declarations.begin(), declaration);
+		}
+	}
+
+	std::vector<std::shared_ptr<NodeFunctionHeader>> same_name;
+	std::vector<std::shared_ptr<NodeFunctionHeader>> same_arity;
+	std::shared_ptr<NodeDataStructure> non_callable;
+	for (const auto& declaration : declarations) {
+		if (auto header = std::dynamic_pointer_cast<NodeFunctionHeader>(declaration)) {
+			same_name.push_back(header);
+			if (static_cast<int>(header->get_num_params()) == num_args) {
+				same_arity.push_back(std::move(header));
+			}
+		} else if (!non_callable) {
+			non_callable = declaration;
+		}
+	}
+
+	const auto diagnostic_type = !same_arity.empty()
+		? ErrorType::TypeError
+		: ErrorType::SyntaxError;
+	auto diagnostic = Diagnostic(
+		diagnostic_type,
+		"",
+		"",
+		function ? function->tok : node.tok
+	);
+
+	if (function) {
+		std::vector<Type*> argument_types;
+		if (function->args) {
+			argument_types.reserve(function->args->params.size());
+			for (const auto& argument : function->args->params) {
+				argument_types.push_back(argument->ty ? argument->ty : TypeRegistry::Unknown);
+			}
+		}
+		Type* return_type = TypeRegistry::Unknown;
+		if (function->ty) {
+			if (const auto function_type = function->ty->cast<FunctionType>()) {
+				return_type = function_type->get_return_type();
+			}
+		}
+		const FunctionType call_type(std::move(argument_types), return_type);
+		diagnostic.actual = function_name + call_type.to_string();
+	} else {
+		diagnostic.actual = function_name;
+	}
+
+	if (!same_arity.empty()) {
+		diagnostic.message = "No compatible overload of <" + function_name
+			+ "> was found for the given argument types.";
+	} else if (!same_name.empty()) {
+		diagnostic.message = "No overload of <" + function_name + "> accepts "
+			+ std::to_string(num_args) + (num_args == 1 ? " argument." : " arguments.");
+	} else if (non_callable) {
+		diagnostic.message = "A declaration named <" + function_name
+			+ "> exists, but its type is not callable.";
+		diagnostic.expected = "Function";
+		diagnostic.actual = non_callable->name + ": "
+			+ (non_callable->ty ? non_callable->ty->to_string() : "unknown");
+	} else {
+		diagnostic.message = "Function <" + function_name + "> has not been declared.";
+		const auto suggestions = misspelled_data_structures(
+			function_name,
+			num_args,
+			4,
+			true
+		);
+		if (!suggestions.empty()) {
+			std::vector<std::string> names;
+			names.reserve(suggestions.size());
+			for (const auto& suggestion : suggestions) {
+				names.push_back(suggestion->name);
+			}
+			diagnostic.message += " Did you mean: " + StringUtils::join(names, ", ") + "?";
+		}
+	}
+
+	const auto& available = same_arity.empty() ? same_name : same_arity;
+	if (!available.empty()) {
+		std::vector<std::string> signatures;
+		std::unordered_set<std::string> seen_signatures;
+		for (const auto& header : available) {
+			const std::string signature = header->name
+				+ (header->ty ? header->ty->to_string() : "(unknown): unknown");
+			if (seen_signatures.insert(signature).second) {
+				signatures.push_back(signature);
+			}
+		}
+		diagnostic.add_message(
+			"Available " + std::string(signatures.size() == 1 ? "signature:\n  " : "overloads:\n  ")
+			+ StringUtils::join(signatures, "\n  ")
+		);
+	}
+
+	return diagnostic;
 }
 
 void DefinitionProvider::set_external_variables(std::vector<std::shared_ptr<NodeDataStructure>> external_variables) {
