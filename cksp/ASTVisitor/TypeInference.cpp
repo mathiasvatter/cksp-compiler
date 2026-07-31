@@ -109,6 +109,26 @@ NodeAST * TypeInference::visit(NodeVariableRef& node) {
 			const auto new_node = node.replace_reference(std::move(pointer_ref));
 			return new_node->accept(*this);
 		}
+		// scalar reference to a composite declaration
+		//	declare ahdsr := ("Attack", "Release")
+		//	ahdsr := 4
+		// declarations written without brackets are still a <NodeVariable> while ASTSemanticAnalysis runs,
+		// so replace_incorrectly_detected_reference() could not rewrite this reference yet. Doing it here
+		// keeps whole-array semantics (num_elements, function arguments) and makes the composite type reach
+		// the type checks instead of silently collapsing to the element type in match_reference_declaration()
+		if(const auto composite_type = decl->ty->cast<CompositeType>();
+			composite_type and node.ty->get_type_kind() != TypeKind::Composite
+			and !decl->cast<NodeList>() and !decl->cast<NodeStruct>()) {
+			std::unique_ptr<NodeReference> composite_ref = nullptr;
+			if(composite_type->get_dimensions() > 1 and !node.is_raw_array()) {
+				composite_ref = std::make_unique<NodeNDArrayRef>(node.name, nullptr, node.tok);
+			} else {
+				composite_ref = std::make_unique<NodeArrayRef>(node.name, nullptr, node.tok);
+			}
+			composite_ref->match_data_structure(decl);
+			const auto new_node = node.replace_reference(std::move(composite_ref));
+			return new_node->accept(*this);
+		}
 	}
 	// if (node.needs_get_ui_id()) {
 	// 	return node.replace_reference(node.wrap_in_get_ui_id())->accept(*this);

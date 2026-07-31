@@ -7,9 +7,8 @@
 #include "../CompilerConfig.h"
 #include "ReferenceManagement/ASTCollectDeclarations.h"
 
-ASTVariableChecking::ASTVariableChecking(NodeProgram* main)
-	: m_def_provider(main->def_provider) {
-	fail = false;
+ASTVariableChecking::ASTVariableChecking(NodeProgram* main, const Pass pass)
+	: m_def_provider(main->def_provider), pass(pass) {
 	m_program = main;
 }
 
@@ -50,7 +49,9 @@ NodeAST* ASTVariableChecking::visit(NodeCallback& node) {
 
 	if(node.callback_id) {
 		node.callback_id->accept(*this);
-		check_callback_id_data_type(node.callback_id.get());
+		if (pass == Pass::PostUIControlLowering) {
+			check_callback_id_data_type(node.callback_id.get());
+		}
 	}
 	node.statements->accept(*this);
 
@@ -211,6 +212,7 @@ NodeAST* ASTVariableChecking::visit(NodeArrayRef& node) {
 	auto node_declaration = m_def_provider->get_declaration(node);
 	// maybe declaration comes after lowering, do not throw error
 	if(!node_declaration) {
+		if (pass == Pass::PreUIControlLowering) return &node;
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			node_declaration = access_chain->get_declaration();
 			node.declaration = node_declaration;
@@ -227,7 +229,7 @@ NodeAST* ASTVariableChecking::visit(NodeArrayRef& node) {
 			auto msg = "When referencing a struct member, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
 			DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
 		}
-        if(!fail) return &node;
+        if(pass == Pass::PostUIControlLowering) return &node;
 	    DefinitionProvider::throw_declaration_error(node, "", m_def_provider).exit();
     }
 
@@ -249,6 +251,7 @@ NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 	if(node.get_declaration()) return &node;
 	auto node_declaration = m_def_provider->get_declaration(node);
 	if(!node_declaration) {
+		if (pass == Pass::PreUIControlLowering) return &node;
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			access_chain->accept(*this);
 			return node.replace_with(std::move(access_chain));
@@ -316,6 +319,7 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 		return node.replace_with(std::move(array_constant))->accept(*this);
 	}
     if(!node_declaration) {
+		if (pass == Pass::PreUIControlLowering) return &node;
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			// check if its maybe a nd_Array size constant like nda.SIZE_D1
 			node_declaration = access_chain->get_declaration();
@@ -338,7 +342,7 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 				}
 			}
 			// could still fail on ui control array values or raw list subarrays
-			if(!fail)
+			if(pass == Pass::PostUIControlLowering)
 				return &node;
 			DefinitionProvider::throw_declaration_error(node, "", m_def_provider).exit();
 		}
@@ -359,6 +363,7 @@ NodeAST* ASTVariableChecking::visit(NodePointerRef& node) {
 	if(node.get_declaration()) return &node;
 	auto node_declaration = m_def_provider->get_declaration(node);
 	if(!node_declaration) {
+		if (pass == Pass::PreUIControlLowering) return &node;
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			access_chain->accept(*this);
 			return node.replace_with(std::move(access_chain));

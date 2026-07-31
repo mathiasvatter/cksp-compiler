@@ -50,7 +50,16 @@ NodeAST * ASTSemanticAnalysis::visit(NodeNumElements& node) {
 		if (!var->get_declaration()) {
 			DefinitionProvider::throw_declaration_error(*var, "", m_def_provider).exit();
 		}
-		auto node_array_ref = var->to_array_ref(nullptr);
+		// A dimension argument denotes NDArray semantics. Keeping the parsed
+		// reference neutral until here lets early constant folding handle inferred
+		// composites before type inference has replaced their declarations.
+		if (node.dimension) {
+			auto node_ndarray_ref = std::make_unique<NodeNDArrayRef>(
+				var->name, nullptr, var->tok);
+			return var->replace_reference(std::move(node_ndarray_ref));
+		}
+		auto node_array_ref = std::make_unique<NodeArrayRef>(
+			var->name, nullptr, var->tok);
 		return var->replace_reference(std::move(node_array_ref));
 	}
 	return &node;

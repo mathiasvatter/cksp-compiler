@@ -123,48 +123,26 @@ private:
 		const auto declaration = node.array->get_declaration();
 		if(!declaration) return &node;
 
-		if(declaration->cast<NodeArray>()) {
-			if(node.dimension) return &node;
-			if(const auto size = m_database->get_array_size(declaration.get())) {
-				return replace_with_int(node, *size);
-			}
-			return &node;
-		}
-
 		if(const auto nd_array = declaration->cast<NodeNDArray>()) {
 			if(const auto nd_ref = node.array->cast<NodeNDArrayRef>()) {
 				if(nd_ref->indexes and nd_ref->num_wildcards()) {
 					LoweringNumElements::handle_wildcard_notation(*nd_ref, *nd_array, node);
 				}
 			}
+		}
 
-			int32_t dimension = 0;
-			if(node.dimension) {
-				const auto dimension_node = node.dimension->cast<NodeInt>();
-				if(!dimension_node) return &node;
-				dimension = dimension_node->value;
-			}
+		std::optional<int32_t> dimension = std::nullopt;
+		if(node.dimension) {
+			const auto dimension_node = node.dimension->cast<NodeInt>();
+			if(!dimension_node) return &node;
+			dimension = dimension_node->value;
+		}
 
-			const auto num_dimensions = m_database->get_num_dimensions(declaration.get());
-			if(num_dimensions == 0 or dimension < 0 or dimension > static_cast<int32_t>(num_dimensions)) {
-				return &node;
-			}
-			if(dimension > 0) {
-				if(const auto size = m_database->get_array_size(declaration.get(), dimension - 1)) {
-					return replace_with_int(node, *size);
-				}
-				return &node;
-			}
-
-			int64_t total_size = 1;
-			for(size_t idx = 0; idx < num_dimensions; ++idx) {
-				const auto size = m_database->get_array_size(declaration.get(), idx);
-				if(!size) return &node;
-				total_size *= *size;
-			}
-			if(total_size <= std::numeric_limits<int32_t>::max()) {
-				return replace_with_int(node, static_cast<int32_t>(total_size));
-			}
+		// Use declaration metadata rather than the parsed reference kind. Before
+		// semantic analysis, inferred composites are still NodeVariable/VariableRef;
+		// their shape is nevertheless known by the constant database.
+		if(const auto size = m_database->get_num_elements(declaration.get(), dimension)) {
+			return replace_with_int(node, *size);
 		}
 
 		return &node;

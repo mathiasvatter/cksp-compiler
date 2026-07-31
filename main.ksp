@@ -32,7 +32,7 @@ end struct
 declare x := 45
 declare arr := [11,2,3,4]
 declare point_array := new Array()
-declare ui_slider sli(0,1) := 4
+// declare ui_slider sli(0,1) := 4
 declare read point := new Point(1, 2)
 declare wrapper := new Wrapper(new Point(3, 4))
 declare empty_wrapper: Wrapper := nil
@@ -48,8 +48,13 @@ namespace pups
     // end on        
 end namespace    
 
+declare ahdsr := ["Attack", "Hold", "Decay", "Sustain", "Release"]
+declare ui_slider sli[num_elements(ahdsr)](1,2)
+
 on init
-    bumbum.func(5)
+
+    message(sli[0])
+    bumbum.func(5.)
     message(x, arr[0], pups.pupu.popo)
     // standalone method call: only runs if point is not nil
     _ := point?.get_x() ?? 0

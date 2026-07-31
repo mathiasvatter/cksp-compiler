@@ -16,10 +16,11 @@
  */
 class ASTUIControlLowering final : public ASTVisitor {
 	DesugarUIControlArray m_lowering;
+	ASTVariableChecking& m_checker;
 
 public:
-	ASTUIControlLowering(NodeProgram* program, const ConstantDatabase& constant_database)
-		: m_lowering(program, &constant_database) {
+	ASTUIControlLowering(NodeProgram* program, const ConstantDatabase& constant_database, ASTVariableChecking& check)
+		: m_lowering(program, &constant_database), m_checker(check) {
 		m_program = program;
 	}
 
@@ -27,13 +28,28 @@ public:
 		m_program = &node;
 		m_program->global_declarations->accept(*this);
 		m_program->init_callback->accept(*this);
-		// no callback visiting necessary
-		for(const auto & func_def : node.function_definitions) {
-			if(!func_def->visited) func_def->accept(*this);
-		}
+		// for(const auto & callback : node.callbacks) {
+		// 	if(callback.get() != m_program->init_callback) callback->accept(*this);
+		// }
+		// for(const auto & func_def : node.function_definitions) {
+		// 	if(!func_def->visited) func_def->accept(*this);
+		// }
 		node.reset_function_visited_flag();
 		return &node;
 	}
+
+	// NodeAST* visit(NodeCallback& node) override {
+	// 	if (m_program->init_callback == &node) {
+	// 		node.statements->accept(*this);
+	// 		return &node;
+	// 	}
+	// 	// add possibly unknown ui control array controls to their new declarations
+	// 	if (node.callback_id) {
+	// 		node.callback_id->accept(m_checker);
+	// 		node.callback_id->collect_references();
+	// 	}
+	//
+	// }
 
 	NodeAST* visit(NodeBlock& node) override {
 		for (const auto& stmt : node.statements) {
@@ -45,6 +61,9 @@ public:
 
 	NodeAST* visit(NodeSingleDeclaration& node) override {
 		if (!node.variable->cast<NodeUIControl>()) return &node;
-		return node.accept(m_lowering);
+		auto lowered_node = node.accept(m_lowering);
+		// lowered_node->accept(m_checker);
+		// lowered_node->collect_references();
+		return lowered_node;
 	}
 };

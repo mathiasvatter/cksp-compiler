@@ -212,11 +212,16 @@ private:
 		ASTTypeAnnotations type_annotations(m_program);
 		ast->accept(type_annotations);
 
-		ASTVariableChecking variable_checking(m_program);
-		variable_checking.do_complete_traversal(*ast, false);
+		ASTVariableChecking variable_checking(m_program, ASTVariableChecking::Pass::PreUIControlLowering);
+		variable_checking.do_complete_traversal(*ast);
+		m_constant_db.build(*ast);
+		ASTUIControlLowering ui_control_lowering(m_program, m_constant_db, variable_checking);
+		ast->accept(ui_control_lowering);
+		// second pass to transform to access chains and get missing ui controls from ui control arrays
+		variable_checking.set_pass(ASTVariableChecking::Pass::PostUIControlLowering);
+		variable_checking.do_complete_traversal(*ast);
 		ast->collect_references();
 
-		
 		ASTSemanticAnalysis data_structures(ast.get());
 		ast->accept(data_structures);
 		
@@ -243,8 +248,8 @@ private:
 		ASTCollectLowerings lowering(m_program);
 		ast->accept(lowering);
 
-		ASTVariableChecking variable_checking2(m_program);
-		variable_checking2.do_reachable_traversal(*ast, true);
+		ASTVariableChecking variable_checking2(m_program, ASTVariableChecking::Pass::PostLowering);
+		variable_checking2.do_reachable_traversal(*ast);
 
 		// Second pass: pick up references only resolved after the final variable check.
 		// Dedup keeps the first pass's ranges for references seen in both.
@@ -286,7 +291,7 @@ private:
 		// input_filename = "/Users/mathias/Scripting/legato-dev/one-shot.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score-essentials/the-score-essentials.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-score/the-score-lead.ksp";
-		input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
+		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-brass/dev/Lux - Orchestral Brass Keyswitch.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Ensemble.ksp";
 		// input_filename = "/Users/mathias/Scripting/lux-strings/dev/Lux - Orchestral Strings Single.ksp";
@@ -301,7 +306,7 @@ private:
 		// input_filename = "/Users/mathias/Scripting/preset-system/main.ksp";
 		// input_filename = "/Users/mathias/Scripting/sonu-northern-spheres/Nordic Spheres.ksp";
 		// input_filename = "/Users/mathias/Scripting/fragments-modern-percussion/Fragments.ksp";
-		// input_filename = "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp";
+		input_filename = "/Users/Mathias/Scripting/action-woodwinds/action-ww.ksp";
 		// input_filename = "/Users/Mathias/Scripting/action-strings-2/action_strings2_V0.1.ksp";
 		// input_filename = "/Users/Mathias/Scripting/horizon-leads/Horizon Leads.ksp";
 		// input_filename = "/Users/Mathias/Scripting/the-pulse/the-pulse.ksp";
@@ -379,19 +384,17 @@ private:
 		print_to_console(m_timer.print_timer("Desugaring"));
 		m_timer.start("Lexical Scope");
 
-		ASTConstantVariableChecking constant_checking(m_program);
-		ast->accept(constant_checking);
-		m_constant_db.build(*ast);
-
-		ASTUIControlLowering ui_control_lowering(m_program, m_constant_db);
-		ast->accept(ui_control_lowering);
-		m_constant_db.debug_print();
-
 		ASTTypeAnnotations type_annotations(m_program);
 		ast->accept(type_annotations);
 
-		ASTVariableChecking variable_checking(m_program);
-		variable_checking.do_complete_traversal(*ast, false);
+		ASTVariableChecking variable_checking(m_program, ASTVariableChecking::Pass::PreUIControlLowering);
+		variable_checking.do_complete_traversal(*ast);
+		m_constant_db.build(*ast);
+		ASTUIControlLowering ui_control_lowering(m_program, m_constant_db, variable_checking);
+		ast->accept(ui_control_lowering);
+		// second pass to transform to access chains and get missing ui controls from ui control arrays
+		variable_checking.set_pass(ASTVariableChecking::Pass::PostUIControlLowering);
+		variable_checking.do_complete_traversal(*ast);
 		ast->collect_references();
 		ast->debug_print();
 
@@ -467,8 +470,8 @@ private:
 		ast->debug_print();
 
 		{
-			ASTVariableChecking variable_checking(m_program);
-			variable_checking.do_reachable_traversal(*ast, true);
+			ASTVariableChecking variable_checking(m_program, ASTVariableChecking::Pass::PostLowering);
+			variable_checking.do_reachable_traversal(*ast);
 			ast->remove_references();
 			ast->collect_references(); // >> those two are also only needed for LUX???
 			TypeInference infer_types(ast.get());

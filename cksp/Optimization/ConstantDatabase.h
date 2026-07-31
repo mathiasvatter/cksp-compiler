@@ -110,6 +110,38 @@ public:
 		return std::nullopt;
 	}
 
+	/// Evaluates num_elements from the recorded array shape with a single lookup
+	/// and lock. A missing dimension means total element count. Dimension 0 has
+	/// the same meaning for NDArrays, while Arrays reject an explicit dimension.
+	[[nodiscard]] std::optional<int32_t> get_num_elements(
+		NodeDataStructure* decl, const std::optional<int32_t> dimension = std::nullopt) const {
+		if (!decl) return std::nullopt;
+		std::shared_lock lock(m_mutex);
+		const auto it = m_array_sizes.find(decl);
+		if (it == m_array_sizes.end() or it->second.empty()) return std::nullopt;
+
+		const auto& sizes = it->second;
+		if (sizes.size() == 1 and dimension.has_value()) return std::nullopt;
+
+		const int32_t dim = dimension.value_or(0);
+		if (dim < 0 or dim > static_cast<int32_t>(sizes.size())) return std::nullopt;
+		if (dim > 0) {
+			if (const auto size = sizes[static_cast<size_t>(dim - 1)]->cast<NodeInt>()) {
+				return size->value;
+			}
+			return std::nullopt;
+		}
+
+		int64_t total_size = 1;
+		for (const auto& size_expr : sizes) {
+			const auto size = size_expr->cast<NodeInt>();
+			if (!size) return std::nullopt;
+			total_size *= size->value;
+			if (total_size > std::numeric_limits<int32_t>::max()) return std::nullopt;
+		}
+		return static_cast<int32_t>(total_size);
+	}
+
 	/// number of recorded dimensions of an array declaration, 0 if unknown
 	[[nodiscard]] size_t get_num_dimensions(NodeDataStructure* decl) const {
 		if (!decl) return 0;
@@ -161,6 +193,21 @@ private:
 		m_array_sizes[decl] = std::move(folded_sizes);
 	}
 
+	void add_inferred_array_sizes(
+		NodeDataStructure* decl, const NodeInitializerList& initializer, const Token& tok) {
+		const auto dimensions = initializer.get_dimensions();
+		std::vector<std::unique_ptr<NodeAST>> sizes;
+		sizes.reserve(dimensions.size());
+		for (const auto dimension : dimensions) {
+			auto size = std::make_unique<NodeInt>(dimension, tok);
+			size->ty = TypeRegistry::Integer;
+			sizes.push_back(std::move(size));
+		}
+		if (sizes.empty()) return;
+		std::unique_lock lock(m_mutex);
+		m_array_sizes[decl] = std::move(sizes);
+	}
+
 	NodeAST* visit(NodeSingleDeclaration& node) override {
 		// record array sizes, they must be compile-time constants in KSP
 		if (const auto array = node.variable->cast<NodeArray>()) {
@@ -184,6 +231,12 @@ private:
 				for (const auto& size : nd_array->sizes->params) sizes.push_back(size.get());
 				add_array_sizes(node.variable.get(), sizes);
 			}
+		} else if (const auto initializer =
+			node.value ? node.value->cast<NodeInitializerList>() : nullptr) {
+			// Type inference has not yet changed an inferred composite declaration
+			// from NodeVariable to NodeArray/NodeNDArray. Record the initializer
+			// shape without mutating the program AST.
+			add_inferred_array_sizes(node.variable.get(), *initializer, node.tok);
 		}
 		if (node.value and node.variable->data_type == DataType::Const) {
 			add_constant(node.variable.get(), *node.value);

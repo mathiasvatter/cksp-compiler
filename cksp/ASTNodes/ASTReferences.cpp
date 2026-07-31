@@ -53,11 +53,11 @@ std::unique_ptr<NodeNumElements> NodeVariableRef::transform_ndarray_constant() {
 	if(pos == std::string::npos) return nullptr;
 	auto array_name = name.substr(0, pos);
 	auto dimension = name.substr(pos+7, name.length());
-	auto nd_array_ref = std::make_unique<NodeNDArrayRef>(array_name, nullptr, tok);
+	auto array_ref = std::make_unique<NodeVariableRef>(array_name, tok);
 	try {
 		int dim_int = std::stoi(dimension);
 		return std::make_unique<NodeNumElements>(
-			std::move(nd_array_ref),
+			std::move(array_ref),
 			std::make_unique<NodeInt>(dim_int, tok),
 			tok
 		);

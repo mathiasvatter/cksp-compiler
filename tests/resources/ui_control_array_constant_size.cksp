@@ -1,6 +1,28 @@
 declare const NUM_CONTROLS := 2
 declare const EXTRA_CONTROLS := 2
+declare const TOTAL_CONTROLS := NUM_CONTROLS + EXTRA_CONTROLS
+declare const CONTROL_COUNTS := [2, 3]
+
+declare labels := ["Attack", "Decay", "Release"]
+declare const constant_labels := ["A", "B", "C", "D"]
+declare grid := [[1, 2, 3], [4, 5, 6]]
+
+declare explicit_values[TOTAL_CONTROLS]
+declare explicit_grid[NUM_CONTROLS, EXTRA_CONTROLS + 1]
+
+declare const LABEL_COUNT := num_elements(labels)
 
 on init
-	declare ui_button controls[NUM_CONTROLS + EXTRA_CONTROLS]
+	declare ui_button from_direct_constant[TOTAL_CONTROLS]
+	declare ui_button from_constant_array_elements[CONTROL_COUNTS[0] + CONTROL_COUNTS[1]]
+	declare ui_button from_inferred_array[num_elements(labels)]
+	declare ui_button from_inferred_constant_array[num_elements(constant_labels)]
+	declare ui_button from_num_elements_constant[LABEL_COUNT]
+	declare ui_button from_explicit_array[num_elements(explicit_values)]
+	declare ui_button from_explicit_ndarray_total[num_elements(explicit_grid)]
+	declare ui_button from_explicit_ndarray_dimension[num_elements(explicit_grid, 2)]
+	declare ui_button from_inferred_ndarray_total[num_elements(grid)]
+	declare ui_button from_inferred_ndarray_dimension[num_elements(grid, 1)]
+	declare ui_button from_size_alias[labels.SIZE]
+	declare ui_button from_nd_size_alias[grid.SIZE_D2]
 end on
