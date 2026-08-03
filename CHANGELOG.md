@@ -21,6 +21,8 @@
 - Obfuscation now preserves builtin KSP engine constants instead of replacing them with integer values.
 
 ### Fixed
+- Fixed a compiler crash when generating the `__decr__` method of structs with non-linear recursion, e.g. a struct with two members of a recursive struct type or a tree with several child members.
+- Fixed the ref counting of non-linearly recursive structs, which neither released the object itself nor the objects reachable through its members. The stack based traversal now pushes every reachable object on the stack of its own struct and drains all stacks of the recursion cycle.
 - Fixed generated helper variables such as `_iter0` potentially colliding with user-defined variables.
 - Fixed UI-control declarations incorrectly retaining their right-hand-side values ([#117](https://github.com/mathiasvatter/cksp-compiler/issues/117)).
 - Fixed array and ndarray references that could initially be interpreted as scalar variables during type inference.

@@ -196,6 +196,11 @@ public:
 		if(is_linear_recursive and m_recursive_member_structs[0]->ty->cast<CompositeType>()) {
 			is_linear_recursive = false;
 		}
+		// the chain is only homogeneous if the member is of the structs own type. otherwise walking
+		// it with the structs own allocation array and __del__ would touch the wrong object type
+		if(is_linear_recursive and m_recursive_member_structs[0]->ty->get_element_type() != m_struct.ty) {
+			is_linear_recursive = false;
+		}
 		return is_linear_recursive;
 	}
 
@@ -225,60 +230,52 @@ public:
 		}
 	}
 
+	/// the recursion runs through other structs (e.g. List -> Node -> List), so every struct of the
+	/// cycle keeps its own stack. self is pushed on the stack of its own struct and afterwards all
+	/// stacks are drained until every single one of them is empty
 	std::unique_ptr<NodeFunctionDefinition> create_non_lin_indirect_rec_decr() {
 		auto self = get_self_param();
 		m_self_ref = self->to_reference();
 		m_alloc_ref = get_alloc_ref(m_self_ref);
 		auto num_refs = get_num_refs_param();
 		m_num_refs_ref = num_refs->to_reference();
+		m_decr_func = get_base_func(
+			m_struct.name+OBJ_DELIMITER+"__decr__",
+			std::move(self),
+			std::move(num_refs)
+		);
 		auto &func_body = m_decr_func->body;
-		// Node::stack[Node::stack_top] := self
+		// List::stack[List::stack_top] := self
 		func_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
 			clone_as<NodeReference>(m_stack_ref.get()),
 			m_self_ref->clone(),
 			tok
 		));
-		// inc(Node::stack_top)
+		// inc(List::stack_top)
 		func_body->add_as_stmt(DefinitionProvider::inc(clone_as<NodeReference>(m_stack_top_ref.get())));
 		auto node_while = std::make_unique<NodeWhile>(
 			std::make_unique<NodeBinaryExpr>(tok),
 			std::make_unique<NodeBlock>(tok, true),
 			tok
 		);
-		std::unique_ptr<NodeBinaryExpr> condition = nullptr;
-		for(auto & rec : m_struct.recursive_structs) {
-			// STRUCT::stack_top
-			auto stack_var_ref = rec->stack_top_var->to_reference();
-			stack_var_ref->match_data_structure(rec->stack_top_var);
-			if(!condition) {
-				condition = std::make_unique<NodeBinaryExpr>(
-					token::GREATER_THAN,
-					stack_var_ref->clone(),
-					std::make_unique<NodeInt>(0, tok),
-					tok
-				);
-			} else {
-				condition = std::make_unique<NodeBinaryExpr>(
-					token::BOOL_AND,
-					std::move(condition),
-					std::make_unique<NodeBinaryExpr>(
-						token::GREATER_THAN,
-						stack_var_ref->clone(),
-						std::make_unique<NodeInt>(0, tok),
-						tok
-					),
-					tok
-				);
-			}
+		// while List::stack_top > 0 or Node::stack_top > 0 ...
+		auto condition = get_stack_not_empty_check(&m_struct);
+		// the own stack holds self and is drained first, the structs of the cycle keep filling each
+		// others stacks, which is why the outer loop has to run until all of them are empty
+		node_while->body->add_as_stmt(get_stack_while_loop(m_self_ref->get_declaration(), m_num_refs_ref->get_declaration()));
+		for(const auto rec : get_sorted_recursive_structs()) {
+			// the own stack is already drained above
+			if(rec == &m_struct) continue;
+			condition = std::make_unique<NodeBinaryExpr>(
+				token::BOOL_OR,
+				std::move(condition),
+				get_stack_not_empty_check(rec),
+				tok
+			);
 			auto while_body = rec->generate_ref_count_while(m_self_ref->get_declaration(), m_num_refs_ref->get_declaration(), m_program);
 			node_while->body->add_as_stmt(std::move(while_body));
 		}
 		node_while->set_condition(std::move(condition));
-		m_decr_func = get_base_func(
-					m_struct.name+OBJ_DELIMITER+"__decr__",
-					std::move(self),
-					std::move(num_refs)
-				);
 		m_decr_func->body->add_as_stmt(std::move(node_while));
 		m_decr_func->parent = &m_struct;
 		m_decr_func->ty = TypeRegistry::Void;
@@ -293,6 +290,8 @@ public:
 		m_self_ref->name = self->name;
 		m_num_refs_ref->declaration = num_refs;
 		m_num_refs_ref->name = num_refs->name;
+		// the allocation index still holds the unbound self clone from the constructor -> rebuild it
+		m_alloc_ref = get_alloc_ref(m_self_ref);
 		// while Node::stack_top > 0
 		auto node_while = std::make_unique<NodeWhile>(
 			std::make_unique<NodeBinaryExpr>(
@@ -347,20 +346,19 @@ public:
 				wrap_in_loop(node_while->body->statements.back(), mem, iter_decl->variable);
 			}
 			for(auto & mem : m_recursive_member_structs) {
+				// the member lives on the heap of its own struct, so it has to be pushed on that stack
+				const auto mem_struct = get_struct_of(mem);
+				if(!mem_struct) continue;
 				// if(self.next # nil)
 				auto nil_check = ASTVisitor::make_nil_check(to_member_chain_ref(mem));
-				// inc(Node::stack_top)
-				// stack_top has to have the prefix of its type this time!!
-				auto typed_stack_top = clone_as<NodeReference>(m_stack_top_ref.get());
-				typed_stack_top->remove_obj_prefix();
-				typed_stack_top->name = mem->ty->get_element_type()->to_string()+OBJ_DELIMITER+typed_stack_top->name;
-				nil_check->if_body->add_as_stmt(DefinitionProvider::inc(clone_as<NodeReference>(typed_stack_top.get())));
 				// Node::stack[Node::stack_top] := self.next
 				nil_check->if_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
-					std::move(typed_stack_top),
-					to_member_chain_ref(mem)->clone(),
+					get_stack_slot_ref(mem_struct),
+					to_member_chain_ref(mem),
 					mem->tok
 				));
+				// inc(Node::stack_top)
+				nil_check->if_body->add_as_stmt(DefinitionProvider::inc(get_stack_top_ref(mem_struct)));
 				node_while->body->add_as_stmt(std::move(nil_check));
 				wrap_in_loop(node_while->body->statements.back(), mem, iter_decl->variable);
 			}
@@ -386,6 +384,11 @@ public:
 		m_alloc_ref = get_alloc_ref(m_self_ref);
 		auto num_refs = get_num_refs_param();
 		m_num_refs_ref = num_refs->to_reference();
+		m_decr_func = get_base_func(
+			m_struct.name+OBJ_DELIMITER+"__decr__",
+			std::move(self),
+			std::move(num_refs)
+		);
 		auto &func_body = m_decr_func->body;
 		// Node::stack[Node::stack_top] := self
 		func_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
@@ -397,11 +400,6 @@ public:
 		func_body->add_as_stmt(DefinitionProvider::inc(clone_as<NodeReference>(m_stack_top_ref.get())));
 
 		auto node_while = get_stack_while_loop(m_self_ref->get_declaration(), m_num_refs_ref->get_declaration());
-		m_decr_func = get_base_func(
-			m_struct.name+OBJ_DELIMITER+"__decr__",
-			std::move(self),
-			std::move(num_refs)
-		);
 		m_decr_func->body->add_as_stmt(std::move(node_while));
 		m_decr_func->parent = &m_struct;
 		m_decr_func->ty = TypeRegistry::Void;
@@ -551,6 +549,46 @@ private:
 			func_def->header->add_param(std::move(add_param));
 		}
 		return func_def;
+	}
+
+	/// returns the struct definition of a member of object type
+	[[nodiscard]] NodeStruct* get_struct_of(const std::shared_ptr<NodeDataStructure>& mem) const {
+		const auto it = m_program->struct_lookup.find(mem->ty->get_element_type()->to_string());
+		return it == m_program->struct_lookup.end() ? nullptr : it->second;
+	}
+
+	/// STRUCT::stack_top
+	static std::unique_ptr<NodeReference> get_stack_top_ref(NodeStruct* strct) {
+		auto stack_top_ref = strct->stack_top_var->to_reference();
+		stack_top_ref->match_data_structure(strct->stack_top_var);
+		return stack_top_ref;
+	}
+
+	/// STRUCT::stack[STRUCT::stack_top]
+	static std::unique_ptr<NodeArrayRef> get_stack_slot_ref(NodeStruct* strct) {
+		auto stack_ref = unique_ptr_cast<NodeArrayRef>(strct->stack_var->to_reference());
+		stack_ref->set_index(get_stack_top_ref(strct));
+		stack_ref->ty = TypeRegistry::Integer;
+		return stack_ref;
+	}
+
+	/// STRUCT::stack_top > 0
+	[[nodiscard]] std::unique_ptr<NodeBinaryExpr> get_stack_not_empty_check(NodeStruct* strct) const {
+		return std::make_unique<NodeBinaryExpr>(
+			token::GREATER_THAN,
+			get_stack_top_ref(strct),
+			std::make_unique<NodeInt>(0, tok),
+			tok
+		);
+	}
+
+	/// the structs of the recursion cycle in a deterministic order (the set iteration order is not stable)
+	[[nodiscard]] std::vector<NodeStruct*> get_sorted_recursive_structs() const {
+		std::vector<NodeStruct*> sorted(m_struct.recursive_structs.begin(), m_struct.recursive_structs.end());
+		std::sort(sorted.begin(), sorted.end(), [](const NodeStruct* a, const NodeStruct* b) {
+			return a->name < b->name;
+		});
+		return sorted;
 	}
 
 	std::unique_ptr<NodeReference> to_member_chain_ref(std::shared_ptr<NodeDataStructure> mem, NodeReference* idx = nullptr) const {
