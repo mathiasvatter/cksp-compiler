@@ -88,7 +88,9 @@ exit
 exp(value: real): real
 exp2(value: real): real
 fade_in(event_id: int, fade_time: int)
+fade_in(event_id: int, fade_time: int, curve: int)
 fade_out(event_id: int, fade_time: int, stop_voice: int)
+fade_out(event_id: int, fade_time: int, stop_voice: int, curve: int)
 
 // deprecated
 find_group(group_name: string): int

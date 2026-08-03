@@ -8,8 +8,8 @@
 ## Language
 
 ### Added
-- Added support for constants and constant initializer lists as **UI-control array sizes** ([#6](https://github.com/mathiasvatter/cksp-compiler/issues/6)).
-- Added support for `import ... as <alias>`, allowing imported modules to be accessed through namespaces ([#115](https://github.com/mathiasvatter/cksp-compiler/issues/115)).
+- Added support for constants and constant initializer lists as **UI-control array sizes** ([#6](<https://github.com/mathiasvatter/cksp-compiler/issues/6>)).
+- Added support for `import ... as <alias>`, allowing imported modules to be accessed through namespaces ([#115](<https://github.com/mathiasvatter/cksp-compiler/issues/115>)).
 - Added **source-map generation** via `--source-map`. The compiler now generates a `.ckspmap` file that maps generated KSP lines back to the original cksp source.
 - Added `default` as shorthand for the default branch of a `select` statement.
 - Added support for real-number literals without digits after the decimal point (e.g. `960.`).

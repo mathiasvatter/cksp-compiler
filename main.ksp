@@ -48,7 +48,7 @@ namespace pups
 end namespace    
 
 declare ahdsr := ["Attack", "Hold", "Decay", "Sustain", "Release"]
-declare ui_slider sli[num_elements(ahdsr)](1,2)
+declare ui_slider sli_ahdsr[num_elements(ahdsr)](1,2)
 
 on init
 
