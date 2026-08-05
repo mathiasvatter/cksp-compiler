@@ -440,6 +440,9 @@ void NodeDataStructure::match_metadata(const std::shared_ptr<NodeDataStructure>&
 	is_local = data_structure->is_local;
 	is_global = data_structure->is_global;
 	data_type = data_structure->data_type;
+	// without this a <static> member silently degrades to a per-instance one when the declaration
+	// is re-typed (variable -> pointer/ndarray/list) after parsing
+	kind = data_structure->kind;
 	is_thread_safe = data_structure->is_thread_safe;
 	type_references = data_structure->type_references;
 }

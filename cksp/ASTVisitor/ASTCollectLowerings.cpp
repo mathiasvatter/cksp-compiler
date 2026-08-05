@@ -139,7 +139,6 @@ NodeAST * ASTCollectLowerings::visit(NodeSingleAssignment& node) {
 	}
 	node.r_value->accept(*this);
 	node.l_value->accept(*this);
-	node.check_for_constant_assignment();
 	return &node;
 }
 

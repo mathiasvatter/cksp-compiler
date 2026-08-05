@@ -16,6 +16,14 @@
 class LoweringAccessChain final : public ASTLowering {
 	NodeAST* start_pointer = nullptr;
 	Type* prev_type = nullptr;
+
+	/// <static> members are shared by all instances -> they are never expanded by an instance index
+	static NodeReference* get_shared_member_ref(NodeAST* node) {
+		const auto ref = node->is_reference();
+		if(!ref) return nullptr;
+		const auto declaration = ref->get_declaration();
+		return declaration and declaration->is_shared_member() ? ref : nullptr;
+	}
 public:
 	explicit LoweringAccessChain(NodeProgram *program) : ASTLowering(program) {}
 
@@ -35,6 +43,18 @@ public:
 		for(int i=1; i<node.chain.size(); i++) {
 			auto& prev_node = node.chain[i-1];
 			auto& curr_node = node.chain[i];
+			// <static> members have no per-instance storage -> the preceding object is not an
+			// index and is dropped. Only safe for side-effect free receivers: a call would be lost.
+			if(const auto shared_ref = get_shared_member_ref(curr_node.get())) {
+				if(prev_node->cast<NodeFunctionCall>()) {
+					auto error = make_diagnostic(ErrorType::SyntaxError, *curr_node);
+					error.message = "<static> member <"+shared_ref->name+
+						"> cannot be accessed on a temporary object. Its value does not depend on the instance, "
+						"so the object would never be created. Assign the result to a variable first.";
+					error.exit();
+				}
+				continue;
+			}
 			if(auto node_array_ref = curr_node->cast<NodeArrayRef>()) {
 				node_array_ref->set_index(std::move(prev_node));
 			} else if(auto node_ndarray_ref = curr_node->cast<NodeNDArrayRef>()) {
@@ -57,6 +77,8 @@ public:
 		}
 		if(&node == start_pointer) return &node;
 		node.name = prev_type->to_string() + OBJ_DELIMITER + node.name;
+		// <static> members are shared -> stay a plain pointer, no instance index
+		if(get_shared_member_ref(&node)) return &node;
 		auto node_array = node.expand_dimension(nullptr);
 		node_array->collect_references();
 		return node.replace_reference(std::move(node_array));
@@ -68,6 +90,8 @@ public:
 		// no index -> array -> List.array[sth, *]
 //		if(!node.index) node.set_index(std::make_unique<NodeWildcard>("*", node.tok));
 		node.name = prev_type->to_string()+OBJ_DELIMITER+node.name;
+		// <static const> members are shared -> stay a plain array ref, no extra dimension
+		if(get_shared_member_ref(&node)) return &node;
 		auto node_ndarray_ref = node.expand_dimension(nullptr);
 		node_ndarray_ref->collect_references();
 		return node.replace_reference(std::move(node_ndarray_ref));
@@ -76,6 +100,7 @@ public:
 	NodeAST * visit(NodeNDArrayRef& node) override {
 		if(&node == start_pointer) return &node;
 		node.name = prev_type->to_string()+OBJ_DELIMITER+node.name;
+		if(get_shared_member_ref(&node)) return &node;
 		auto node_ndarray_ref = node.expand_dimension(nullptr);
 		node_ndarray_ref->collect_references();
 		return &node;
@@ -84,6 +109,8 @@ public:
 	NodeAST * visit(NodeVariableRef& node) override {
 		if(&node == start_pointer) return &node;
 		node.name = prev_type->to_string()+OBJ_DELIMITER+node.name;
+		// <static const> members are shared -> stay a plain reference, no index
+		if(get_shared_member_ref(&node)) return &node;
 		auto node_array_ref = node.expand_dimension(nullptr);
 		node_array_ref->collect_references();
 		return node.replace_reference(std::move(node_array_ref));

@@ -100,9 +100,8 @@ NodeAST * ASTSemanticAnalysis::visit(NodePairs &node) {
 NodeAST* ASTSemanticAnalysis::visit(NodeSingleAssignment& node) {
 	node.l_value->accept(*this);
 	node.r_value->accept(*this);
-	if (const auto ref = cast_node<NodeReference>(node.l_value.get())) {
-		check_param_modification(*ref);
-	}
+	check_param_modification(*node.l_value);
+	node.check_for_constant_assignment();
 	return &node;
 }
 

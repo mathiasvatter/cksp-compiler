@@ -652,12 +652,16 @@ struct NodeSingleDeclaration final : NodeInstruction {
 	}
 	/// checks if declaration of a constant is properly initialized
 	void check_constant_initialization() const {
-		if (variable->is_member()) return;
-		if (variable->data_type == DataType::Const and !value) {
-			auto error = Diagnostic(ErrorType::VariableError, "", "", tok);
+		if (variable->is_engine or value) return;
+		if (variable->data_type != DataType::Const) return;
+		auto error = Diagnostic(ErrorType::VariableError, "", "", tok);
+		if (variable->is_shared_member()) {
+			error.message = "<static const> members must be initialized upon declaration. Their value is "
+				"shared by all instances of the struct, so a constructor cannot provide it.";
+		} else {
 			error.message = "Constant variables must be initialized upon declaration.";
-			error.exit();
 		}
+		error.exit();
 	}
 	/// optimization pass: checks if r_value is type neutral assignment and removes it since Kontakt always initializes
 	/// its variables upon declaration. Important: will not do this if variable is const

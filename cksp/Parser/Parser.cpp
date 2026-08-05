@@ -2010,6 +2010,7 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_declare_array(NodeAST* 
 	node_array->set_range(start_token, end_token);
     node_array->is_local = is_local;
     node_array->is_global = is_global;
+	node_array->kind = kind;
 	node_array->ty = type.unwrap();
 	node_array->type_references = std::move(type_references);
 	node_array->set_range(start_token, peek(-1));

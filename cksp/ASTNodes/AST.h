@@ -338,6 +338,9 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 	NodeDataStructure(std::string name, Type* ty, Token tok, const NodeType node_type, const DataType data_type) : NodeAST(std::move(tok), node_type), data_type(data_type), name(std::move(name)) {
         this->ty = ty;
     }
+	/// <static const> members hold one shared value for all instances: they are not expanded into
+	/// per-instance storage and are therefore required to be initialized at their declaration.
+	[[nodiscard]] bool is_shared_member() const { return kind == Static; }
 	// Kopierkonstruktor
 	NodeDataStructure(const NodeDataStructure& other);
 	// Clone Methode

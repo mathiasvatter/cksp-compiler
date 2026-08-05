@@ -157,6 +157,8 @@ public:
 			auto member = snd.lock();
 			if (member->is_engine) continue;
 			if (member == m_struct.node_self) continue;
+			// <static> members belong to the struct, not to the instance being freed
+			if (member->is_shared_member()) continue;
 			auto assignment = std::make_unique<NodeSingleAssignment>(
 				member->to_reference(),
 				TypeRegistry::get_neutral_element_from_type(member->ty),
@@ -618,6 +620,9 @@ private:
 			if(mem.first == "self") continue;
 			if(member->is_engine) continue;
 			if(member->data_type ==DataType::Const) continue;
+			// a <static> object member holds one shared reference and is reference counted like a
+			// global pointer, so it must not be decremented once per instance
+			if(member->is_shared_member()) continue;
 			if(member->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
 				const auto mem_type = member->ty->get_element_type();
 				if(recursive_structs.contains(mem_type->to_string())) {
