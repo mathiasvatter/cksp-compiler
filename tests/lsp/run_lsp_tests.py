@@ -467,6 +467,38 @@ def _(workspace, server):
         )
 
 
+@test("completion: defines and macros are offered", requires="completionProvider")
+def _(workspace, server):
+    # These are substituted away before the AST exists, so they come from the PreAST.
+    fixture = workspace.open("completion_preprocessor.cksp")
+    expect(server.diagnostics(fixture) == [], "precondition: the fixture compiles cleanly")
+    items = server.completion(fixture, "global", trigger_character=None)
+    expect_labels(items, ["MAX_VOICES", "SCALED", "AREA", "setup", "no_args"])
+    # The declarations a macro expands into are real and stay offered.
+    expect_labels(items, ["x", "vol_count", "plain_thing"])
+
+    for label, category, kind in [("MAX_VOICES", "define", 21), ("AREA", "define", 3),
+                                  ("setup", "macro", 3), ("no_args", "macro", 3)]:
+        item = item_named(items, label)
+        expect(item["kind"] == kind, f"{label}: kind {item['kind']}, expected {kind}")
+        expect(
+            item["labelDetails"]["description"] == category,
+            f"{label}: labelled {item['labelDetails'].get('description')!r}",
+        )
+
+    # A parameterless define stands for a value, and the harvest runs after the
+    # substitution pass folded it, so the detail shows what it actually expands to.
+    expect(
+        item_named(items, "SCALED")["detail"] == "define SCALED := 48",
+        f"unexpected define detail: {item_named(items, 'SCALED').get('detail')}",
+    )
+    # Parameter spelling is the source one, including the macro's # markers.
+    expect(
+        item_named(items, "setup")["labelDetails"]["detail"] == "(#name#)",
+        f"unexpected macro parameters: {item_named(items, 'setup').get('labelDetails')}",
+    )
+
+
 @test("completion: locals of another function stay invisible",
       requires="completionProvider")
 def _(workspace, server):

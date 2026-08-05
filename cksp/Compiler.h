@@ -28,6 +28,7 @@
 #include "ASTVisitor/ASTVariableChecking.h"
 #include "../lsp/visitor/ReferenceIndexBuilder.h"
 #include "../lsp/visitor/CompletionIndexBuilder.h"
+#include "../lsp/visitor/PreASTCompletionHarvester.h"
 #include "ASTVisitor/ASTOptimizations.h"
 #include "ASTVisitor/TypeInference.h"
 #include "ASTVisitor/ASTReturnFunctionRewriting.h"
@@ -144,6 +145,12 @@ public:
 		PreASTMacros macros(reference_index);
 		pre_ast->accept(macros);
 		pre_ast->debug_print();
+
+		// <define>s and <macro>s never reach the AST, so they are harvested here - after
+		// substitution, which folds constant define bodies into the value they stand for.
+		if (m_cli_config->lsp) {
+			lsp::harvest_preprocessor_definitions(*pre_ast, m_completion_index);
+		}
 
 		PreASTIncrementer incrementer;
 		pre_ast->accept(incrementer);
