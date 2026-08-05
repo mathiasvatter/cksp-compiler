@@ -1,0 +1,69 @@
+{ Dotted access whose qualifier lives inside a namespace.
+
+  Everything declared in a namespace carries the namespace in its name, so the
+  qualifier of an access chain can span several segments. Each check prints
+  "yes" when the qualifier resolved to the right declaration.
+
+  The constant checks are verifiable without running the script: they fold at
+  compile time, so a correct build emits only the "yes" branch for them. The
+  instance member depends on runtime state and keeps both branches.
+
+  - <audio.Envelope.MAX_STAGES>: struct statics through the full chain
+  - <Envelope.MAX_STAGES> inside the namespace: the shortened struct name
+  - <audio.inst.idx>: an instance declared in a namespace
+  - <mixer.*> in two namespaces: same-named nested blocks stay distinct }
+
+struct Zone
+    idx: int
+end struct
+
+namespace audio
+    struct Envelope
+        static const MAX_STAGES: int := 4
+        attack: int
+    end struct
+
+    namespace mixer
+        declare const volume: int := 100
+    end namespace
+
+    declare inst: Zone := new Zone(7)
+    { shortened struct name and shortened nested block, both resolved
+      against this namespace }
+    declare const summary: int := Envelope.MAX_STAGES + mixer.volume
+end namespace
+
+namespace midi
+    namespace mixer
+        declare const channel: int := 3
+    end namespace
+
+    { same block name as audio.mixer: must not resolve to audio's }
+    declare const echo: int := mixer.channel
+end namespace
+
+on init
+    if audio.Envelope.MAX_STAGES = 4
+        message("qualified struct static: yes")
+    else
+        message("qualified struct static: NO")
+    end if
+
+    if audio.summary = 104
+        message("shortened qualifiers inside namespace: yes")
+    else
+        message("shortened qualifiers inside namespace: NO")
+    end if
+
+    if midi.echo = 3
+        message("same-named nested blocks stay distinct: yes")
+    else
+        message("same-named nested blocks stay distinct: NO")
+    end if
+
+    if audio.inst.idx = 7
+        message("namespaced instance member: yes")
+    else
+        message("namespaced instance member: NO")
+    end if
+end on

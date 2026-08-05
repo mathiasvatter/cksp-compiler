@@ -32,13 +32,17 @@ class DesugarNamespace final : public ASTDesugaring {
 		const std::string base = basename_of(var.name, prefix);
 		m_namespace_variables.back().insert(base);
 
-		const auto it = namespace_data.find(prefix.back().token.val);
+		// Keyed by the full path, not by the innermost name: two blocks may share a
+		// name (<audio.mixer> and <midi.mixer>) and must stay distinct, otherwise the
+		// second one's members are attributed to the first one's path.
+		const auto path_key = path_string(prefix);
+		const auto it = namespace_data.find(path_key);
 		if (it == namespace_data.end()) {
 			// create new namespace data for this prefix
 			auto data = std::make_unique<NamespaceData>();
 			data->variables.insert(base);
 			data->path = prefix;
-			namespace_data[prefix.back().token.val] = std::move(data);
+			namespace_data[path_key] = std::move(data);
 		} else {
 			it->second->variables.insert(base);
 		}
@@ -61,9 +65,14 @@ class DesugarNamespace final : public ASTDesugaring {
 		if (ref.in_access_chain()) return;
 		// assume that the reference is only the base and has not already been prefixed
 		// Try to find the declaration level for the *basename* (shadowing-aware).
+		// A dotted reference is prefixed through its leading segment: <inst.idx> and
+		// <Envelope.MAX> both hang off a declaration named by their first segment. The
+		// full name is still matched first, because a <family> declared inside a
+		// namespace registers a dotted name of its own (<voice.index>).
+		const auto leading_segment = ref.name.substr(0, ref.name.find('.'));
 		for (int lvl = static_cast<int>(m_namespace_variables.size()) - 1; lvl >= 0; --lvl) {
 			const auto& scope = m_namespace_variables[lvl];
-			if (!scope.contains(ref.name)) continue;
+			if (!scope.contains(ref.name) && !scope.contains(leading_segment)) continue;
 
 			// Build the exact prefix up to the matched level (0..lvl)
 			std::string needed;
@@ -77,28 +86,23 @@ class DesugarNamespace final : public ASTDesugaring {
 			return;
 		}
 
-		// If not found in any namespace scope, we need to check if the first segment of the name
-		// matches any of the previous prefixes that might have been nested.
+		// Not a variable of an enclosing scope: the leading segment may name a nested
+		// namespace instead, written relative to the current one (<mixer.volume> inside
+		// <audio> means <audio.mixer.volume>). Walk the enclosing prefix from innermost
+		// outward and take the first block whose full path exists, so a nested block
+		// shadows a same-named one elsewhere.
 		auto splits = StringUtils::split(ref.name, '.');
-		// check if the first segment matches any of the previous prefixes that might have been nested
-		auto it = namespace_data.find(splits[0]);
-		if (it != namespace_data.end()) {
-			// find this prefix (splits[0]) in the namespaceData path
-			auto result = std::ranges::find_if(it->second->path,
-			   [&](const NodePrefix::PrefixSegment& var) -> bool {
-				   return var.token.val == splits[0];
-			   }
-			);
-			if (result != it->second->path.end()) {
-				// merge without removing the first element
-				std::vector<std::string> missing_prefixes;
-				for (auto prefix_it = it->second->path.begin(); prefix_it != result; ++prefix_it) {
-					missing_prefixes.push_back(prefix_it->token.val);
-					ref.add_prefix(*prefix_it);
-				}
-				splits.insert(splits.begin(), missing_prefixes.begin(), missing_prefixes.end());
-				ref.name = StringUtils::join(splits, ".");
-			}
+		for (int lvl = static_cast<int>(prefix.size()); lvl >= 0; --lvl) {
+			std::vector<std::string> candidate;
+			candidate.reserve(lvl + 1);
+			for (int i = 0; i < lvl; ++i) candidate.push_back(prefix[i].token.val);
+			candidate.push_back(splits[0]);
+			if (!namespace_data.contains(StringUtils::join(candidate, "."))) continue;
+
+			for (int i = 0; i < lvl; ++i) ref.add_prefix(prefix[i]);
+			splits.insert(splits.begin(), candidate.begin(), candidate.end() - 1);
+			ref.name = StringUtils::join(splits, ".");
+			return;
 		}
 
 		// Not found in any namespace scope -> leave as-is (could be global/other namespace).
@@ -207,6 +211,15 @@ public:
 	// ---------- helpers ----------
 
 
+
+	/// Dot-joined path of a prefix stack, used as the identity of a namespace block.
+	static std::string path_string(const std::vector<NodePrefix::PrefixSegment>& prefixes) {
+		return StringUtils::join_apply(
+			prefixes,
+			[](const NodePrefix::PrefixSegment& segment) { return segment.token.val; },
+			"."
+		);
+	}
 
 	// Return last identifier (after the last '.')
 	static std::string basename_of(const std::string& name, const std::vector<NodePrefix::PrefixSegment>& prefixes) {

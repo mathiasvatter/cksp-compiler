@@ -116,44 +116,71 @@ private:
 	/// node can be NodeFunctionCall or NodeReference
 	/// transformation when first object is clearly a reference this_list.next.next()
 	/// tries to get declaration of first object and if there is one, replaces it with method chain
+	/// The qualifier may span several dotted segments: anything declared inside a namespace
+	/// carries the namespace in its name, so <audio.inst.idx> hangs off the variable
+	/// <audio.inst> and <audio.Envelope.MAX> off the struct <audio.Envelope>. The shortest
+	/// qualifier that resolves wins, and at equal length a variable beats a struct - that
+	/// keeps the single-segment case behaving exactly as before.
 	std::unique_ptr<NodeAccessChain> try_access_chain_transform(const std::string& name, NodeAST* node) const {
-		// find object ptr name
-		const size_t pos = name.find('.');
-		if (pos == std::string::npos) {
-			return nullptr;
-		}
-		const auto ptr_name = name.substr(0, pos);
-		const auto node_declaration = m_def_provider->get_declared_data_structure(ptr_name);
-		// no instance of that name -> the leading element may name a struct instead: <Foo.MAX>.
-		// A variable always wins, so this is only reached when the name is not declared at all.
-		if(!node_declaration) return try_type_qualified_transform(ptr_name, node);
+		const auto segments = StringUtils::split(name, '.');
+		if (segments.size() < 2) return nullptr;
 
-		// different scenarios for different node types
-		// eq.lbl_param0 -> a reference originally recognized as a variable cannot have a variable or function declaration (eq)
-		if(node->cast<NodeVariableRef>()) {
-			if(node_declaration->cast<NodeFunctionHeader>()) {
-				return nullptr;
+		std::string qualifier;
+		// The last segment is the member being accessed and can never be part of the qualifier.
+		for (size_t count = 1; count < segments.size(); ++count) {
+			if (count > 1) qualifier += ".";
+			qualifier += segments[count - 1];
+
+			if (const auto node_declaration = m_def_provider->get_declared_data_structure(qualifier)) {
+				// eq.lbl_param0 -> a reference originally recognized as a variable cannot have a
+				// variable or function declaration (eq)
+				if (node->cast<NodeVariableRef>() && node_declaration->cast<NodeFunctionHeader>()) {
+					return nullptr;
+				}
+				auto method_chain = node->to_method_chain();
+				if (!method_chain) return nullptr;
+				merge_leading_segments(*method_chain, count);
+				const auto object = static_cast<NodeReference*>(method_chain->chain[0].get());
+				object->declaration = node_declaration;
+				method_chain->declaration = node_declaration;
+				return method_chain;
+			}
+
+			// no instance of that name -> the qualifier may name a struct instead: <Foo.MAX>.
+			if (auto type_qualified = try_type_qualified_transform(qualifier, count, node)) {
+				return type_qualified;
 			}
 		}
-
-		auto method_chain = node->to_method_chain();
-		if(!method_chain) return nullptr;
-		const auto object = static_cast<NodeReference*>(method_chain->chain[0].get());
-		object->declaration = node_declaration;
-		method_chain->declaration = node_declaration;
-		return method_chain;
+		return nullptr;
 	}
 
 	/// <Foo.MAX>: the chain is qualified by a struct name rather than by an instance. The leading
 	/// element gets no declaration - it only carries the type so the member can be looked up.
-	std::unique_ptr<NodeAccessChain> try_type_qualified_transform(const std::string& struct_name, NodeAST* node) const {
+	/// `count` is how many leading segments the struct name spans.
+	std::unique_ptr<NodeAccessChain> try_type_qualified_transform(
+		const std::string& struct_name, const size_t count, NodeAST* node) const {
 		if(!NodeReference::get_object_ptr(m_program, struct_name)) return nullptr;
 		auto method_chain = node->to_method_chain();
 		if(!method_chain) return nullptr;
+		merge_leading_segments(*method_chain, count);
 		const auto object = static_cast<NodeReference*>(method_chain->chain[0].get());
 		object->kind = NodeReference::Kind::TypeQualifier;
 		object->ty = TypeRegistry::get_object_type(struct_name);
 		return method_chain;
+	}
+
+	/// Collapses the first `count` elements of a chain into one. to_method_chain() splits at every
+	/// dot, but a qualifier naming a namespaced struct is one element spanning several segments.
+	static void merge_leading_segments(NodeAccessChain& chain, const size_t count) {
+		if (count <= 1 || count > chain.chain.size()) return;
+		std::string merged = chain.chain[0]->get_token_string();
+		for (size_t i = 1; i < count; ++i) merged += "." + chain.chain[i]->get_token_string();
+		// The leading element keeps its start position and grows to span the whole qualifier.
+		auto leading = std::make_unique<NodeVariableRef>(
+			merged, segment_token(chain.chain[0]->tok, 0, merged));
+		chain.chain.erase(chain.chain.begin(), chain.chain.begin() + static_cast<long>(count));
+		chain.chain.insert(chain.chain.begin(), std::move(leading));
+		chain.set_child_parents();
 	}
 
 	/// checks if given callback id is of type ui_control
