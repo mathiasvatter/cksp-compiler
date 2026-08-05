@@ -1,0 +1,27 @@
+{ A struct inside a namespace. Its statics are reachable both through the full
+  chain and, inside the namespace, through the bare struct name. }
+
+namespace audio
+    struct Envelope
+        static const MAX_STAGES: int := 4
+        static const DEFAULT_ATTACK: int := 10
+        attack: int
+        release: int
+
+        static function describe()
+            message("envelope")
+        end function
+
+        function retrigger(self)
+            self.attack := 0
+        end function
+    end struct
+
+    declare rate: int := 44100
+end namespace
+
+on init
+    message(audio.<|namespace_member|>rate)
+    message(audio.Envelope.<|qualified|>MAX_STAGES)
+    message(Envelope.<|shortened|>MAX_STAGES)
+end on

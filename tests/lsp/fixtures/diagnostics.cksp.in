@@ -1,0 +1,3 @@
+on init
+    message(<|undeclared|>undeclared_thing)
+end on

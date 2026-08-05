@@ -1,0 +1,61 @@
+{ Every access below is syntactically complete; the markers sit between the
+  dot and the existing member. This isolates "does the symbol index contain
+  the right members" from "does the server recover from a broken buffer",
+  which completion_broken.cksp.in covers. }
+
+const Levels
+    LOW := 0
+    MID := 1
+    HIGH := 2
+end const
+
+family voice
+    declare index: int
+    declare gain: int
+end family
+
+namespace audio
+    declare rate: int := 44100
+    declare channels: int := 2
+
+    namespace mixer
+        declare volume: int := 100
+        declare mute: int := 0
+    end namespace
+
+    function reset()
+        rate := 44100
+    end function
+
+    { parameter names must survive the internal uniquifying rename }
+    function fade(amount: int, target: int): int
+        return amount + target
+    end function
+end namespace
+
+struct Envelope
+    static const MAX_STAGES: int := 4
+    static const DEFAULT_ATTACK: int := 10
+    attack: int
+    release: int
+
+    static function describe(label: string, count: int): int
+        message(label)
+        return count
+    end function
+
+    function retrigger(self)
+        self.attack := 0
+    end function
+end struct
+
+on init
+    declare mode: int := Levels.<|const_member|>HIGH
+    voice.<|family_member|>index := 1
+    audio.<|namespace_member|>rate := 48000
+    audio.mixer.<|nested_member|>volume := 90
+    message(Envelope.<|struct_static|>MAX_STAGES)
+    message(Envelope.<|struct_static_method|>describe("x", 1))
+    message(audio.fade(1, 2))
+    message(mode)
+end on

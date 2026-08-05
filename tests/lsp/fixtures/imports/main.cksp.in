@@ -1,0 +1,6 @@
+import <|import_path|>"shared.cksp"
+
+on init
+    declare mode: int := Levels.<|const_use|>HIGH
+    message(<|call_use|>boost(mode))
+end on

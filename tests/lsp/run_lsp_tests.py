@@ -1,0 +1,509 @@
+#!/usr/bin/env python3
+"""
+Test cases for the cksp language server.
+
+Two groups:
+
+  * Navigation and diagnostics — features that exist today. They are what
+    validates the harness itself: a new harness asserting against new code
+    proves nothing.
+
+  * Completion — declared with requires="completionProvider". Until the server
+    advertises that capability they report as PENDING; the day the provider
+    lands they turn into real tests with no edit here.
+
+Run:  python3 tests/lsp/run_lsp_tests.py [--filter substring] [--trace]
+"""
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from lsp_harness import (  # noqa: E402
+    Position,
+    expect,
+    expect_definition,
+    expect_labels,
+    expect_no_labels,
+    expect_position,
+    item_named,
+    labels_of,
+    messages_of,
+    position_of,
+    run_suite,
+    same_path,
+    test,
+    uri_to_path,
+)
+
+
+# ==========================================================================
+# Navigation — exercises the existing ReferenceIndex end to end
+# ==========================================================================
+
+@test("definition: const member jumps to its declaration")
+def _(workspace, server):
+    fixture = workspace.open("navigation.cksp")
+    expect_definition(server.definition(fixture, "const_use"), fixture, "const_decl")
+
+
+@test("definition: namespace member jumps to its declaration")
+def _(workspace, server):
+    fixture = workspace.open("navigation.cksp")
+    expect_definition(server.definition(fixture, "rate_use"), fixture, "rate_decl")
+
+
+@test("definition: the qualifier segment jumps to the namespace block")
+def _(workspace, server):
+    # Clicking `audio` in `audio.rate` must land on the namespace, not on the
+    # member — this is what add_qualifier_links() builds.
+    fixture = workspace.open("navigation.cksp")
+    expect_definition(server.definition(fixture, "ns_use"), fixture, "ns_decl")
+
+
+@test("definition: function call jumps to its definition header")
+def _(workspace, server):
+    fixture = workspace.open("navigation.cksp")
+    links = server.definition(fixture, "reset_use")
+    expect(len(links) == 1, f"expected one link, got {links}")
+    # Function definitions expose the whole header as targetRange while
+    # targetSelectionRange stays on the name.
+    expect_position(
+        position_of(links[0], "targetSelectionRange"), fixture, "reset_decl",
+        what="function definition target",
+    )
+    header = links[0]["targetRange"]
+    expect(
+        header["start"]["line"] == fixture.at("reset_decl").line,
+        f"targetRange should start on the header line, got {header}",
+    )
+
+
+@test("definition: resolves across an import boundary")
+def _(workspace, server):
+    shared = workspace.add("imports/shared.cksp")
+    main = workspace.open("imports/main.cksp")
+    expect_definition(
+        server.definition(main, "const_use"), main, "const_decl", in_file=shared
+    )
+
+
+@test("definition: function imported from another file")
+def _(workspace, server):
+    shared = workspace.add("imports/shared.cksp")
+    main = workspace.open("imports/main.cksp")
+    links = server.definition(main, "call_use")
+    expect(len(links) == 1, f"expected one link, got {links}")
+    expect(
+        same_path(uri_to_path(links[0]["targetUri"]), shared.path),
+        f"expected target in shared.cksp, got {uri_to_path(links[0]['targetUri'])}",
+    )
+
+
+@test("documentLink: the import path points at the imported file")
+def _(workspace, server):
+    shared = workspace.add("imports/shared.cksp")
+    main = workspace.open("imports/main.cksp")
+    links = server.document_links(main)
+    expect(links, "expected at least one document link for the import statement")
+    targets = [uri_to_path(link["target"]) for link in links]
+    expect(
+        any(same_path(target, shared.path) for target in targets),
+        f"no link to shared.cksp; got {targets}",
+    )
+
+
+@test("references: finds every use of a namespace member")
+def _(workspace, server):
+    fixture = workspace.open("navigation.cksp")
+    found = server.references(fixture, "rate_decl", include_declaration=True)
+    # rate: declaration, the assignment in on init, twice in the following line
+    # and once inside reset().
+    expect(len(found) >= 4, f"expected at least 4 locations for rate, got {len(found)}: {found}")
+    expect(
+        all(same_path(uri_to_path(item["uri"]), fixture.path) for item in found),
+        "all references live in the fixture file",
+    )
+
+
+@test("references: excludes the declaration when not requested")
+def _(workspace, server):
+    fixture = workspace.open("navigation.cksp")
+    with_declaration = server.references(fixture, "rate_decl", include_declaration=True)
+    without = server.references(fixture, "rate_decl", include_declaration=False)
+    expect(
+        len(without) < len(with_declaration),
+        f"includeDeclaration=false must return fewer locations "
+        f"({len(without)} vs {len(with_declaration)})",
+    )
+
+
+@test("documentHighlight: highlights only same-file occurrences")
+def _(workspace, server):
+    fixture = workspace.open("navigation.cksp")
+    highlights = server.document_highlight(fixture, "rate_use")
+    expect(highlights, "expected highlights for a resolved symbol")
+    for highlight in highlights:
+        expect("range" in highlight, f"malformed highlight: {highlight}")
+
+
+@test("prepareRename: accepts a declared symbol")
+def _(workspace, server):
+    fixture = workspace.open("navigation.cksp")
+    result = server.prepare_rename(fixture, "rate_use")
+    expect(result is not None, "prepareRename must not refuse a declared symbol")
+    start = Position(result["start"]["line"], result["start"]["character"])
+    expect_position(start, fixture, "rate_use", what="prepareRename range")
+
+
+@test("prepareRename: refuses a position without a symbol")
+def _(workspace, server):
+    fixture = workspace.open("navigation.cksp")
+    # Column 0 of the `end on` line: whitespace/keyword, never renameable.
+    blank = Position(len(fixture.text.splitlines()) - 1, 0)
+    result = server.request("textDocument/prepareRename", {
+        "textDocument": {"uri": fixture.uri},
+        "position": blank.as_json(),
+    })
+    expect(result is None, f"expected null for a non-symbol position, got {result}")
+
+
+@test("rename: rewrites the declaration and every reference")
+def _(workspace, server):
+    fixture = workspace.open("navigation.cksp")
+    edit = server.rename(fixture, "rate_use", "sample_rate")
+    changes = (edit or {}).get("changes", {})
+    expect(changes, f"rename produced no changes: {edit}")
+    edits = next(iter(changes.values()))
+    expect(len(edits) >= 4, f"expected at least 4 edits, got {len(edits)}")
+    expect(
+        all(item["newText"] == "sample_rate" for item in edits),
+        "every edit must carry the new name",
+    )
+
+
+# ==========================================================================
+# Diagnostics and document lifecycle
+# ==========================================================================
+
+@test("diagnostics: an undeclared variable is reported at its position")
+def _(workspace, server):
+    fixture = workspace.open("diagnostics.cksp")
+    diagnostics = server.diagnostics(fixture)
+    expect(diagnostics, "expected a diagnostic for the undeclared variable")
+    expect(
+        any("undeclared_thing" in message for message in messages_of(diagnostics)),
+        f"diagnostic should name the variable; got {messages_of(diagnostics)}",
+    )
+    start = position_of(diagnostics[0])
+    expect(
+        start.line == fixture.at("undeclared").line,
+        f"diagnostic on line {start.line}, expected {fixture.at('undeclared').line}",
+    )
+
+
+@test("diagnostics: a clean file publishes an empty list")
+def _(workspace, server):
+    fixture = workspace.open("navigation.cksp")
+    expect(
+        server.diagnostics(fixture) == [],
+        f"expected no diagnostics, got {messages_of(server.diagnostics(fixture))}",
+    )
+
+
+@test("diagnostics: fixing an error clears it on the next analysis")
+def _(workspace, server):
+    fixture = workspace.open("diagnostics.cksp")
+    expect(server.diagnostics(fixture), "precondition: the file starts out broken")
+    fixed = server.did_change(fixture, "on init\n    message(42)\nend on\n")
+    expect(
+        server.diagnostics(fixed) == [],
+        f"diagnostics should be cleared, got {messages_of(server.diagnostics(fixed))}",
+    )
+
+
+@test("lifecycle: an unsaved edit is analysed from the buffer, not from disk")
+def _(workspace, server):
+    fixture = workspace.open("navigation.cksp")
+    expect(server.diagnostics(fixture) == [], "precondition: fixture is clean")
+    broken = server.did_change(
+        fixture, fixture.text.replace("message(mode)", "message(never_declared)")
+    )
+    expect(
+        any("never_declared" in message for message in messages_of(server.diagnostics(broken))),
+        "the in-memory buffer must win over the file on disk",
+    )
+
+
+# ==========================================================================
+# Completion — PENDING until the server advertises completionProvider
+# ==========================================================================
+
+@test("completion: capability is advertised with '.' as trigger character",
+      requires="completionProvider")
+def _(workspace, server):
+    options = server.capabilities.get("completionProvider")
+    expect(isinstance(options, dict), f"completionProvider should be an object, got {options}")
+    triggers = options.get("triggerCharacters", [])
+    expect("." in triggers, f"'.' must be a trigger character, got {triggers}")
+
+
+@test("completion: const block members", requires="completionProvider")
+def _(workspace, server):
+    fixture = workspace.open("completion_valid.cksp")
+    items = server.completion(fixture, "const_member")
+    expect_labels(items, ["LOW", "MID", "HIGH"], exactly=True)
+
+
+@test("completion: family members", requires="completionProvider")
+def _(workspace, server):
+    fixture = workspace.open("completion_valid.cksp")
+    items = server.completion(fixture, "family_member")
+    expect_labels(items, ["index", "gain"], exactly=True)
+
+
+@test("completion: namespace members include nested namespaces and functions",
+      requires="completionProvider")
+def _(workspace, server):
+    fixture = workspace.open("completion_valid.cksp")
+    items = server.completion(fixture, "namespace_member")
+    expect_labels(items, ["rate", "channels", "mixer", "reset"])
+    expect_no_labels(items, ["volume", "mute"])  # those need the mixer. qualifier
+
+
+@test("completion: nested namespace members", requires="completionProvider")
+def _(workspace, server):
+    fixture = workspace.open("completion_valid.cksp")
+    items = server.completion(fixture, "nested_member")
+    expect_labels(items, ["volume", "mute"], exactly=True)
+
+
+@test("completion: struct offers statics but never instance members",
+      requires="completionProvider")
+def _(workspace, server):
+    fixture = workspace.open("completion_valid.cksp")
+    items = server.completion(fixture, "struct_static")
+    expect_labels(items, ["MAX_STAGES", "DEFAULT_ATTACK", "describe"])
+    # The negative half is the actual claim: Foo. is not an instance.
+    expect_no_labels(items, ["attack", "release", "retrigger", "self"])
+
+
+@test("completion: signatures carry the source parameter names, not the renamed ones",
+      requires="completionProvider")
+def _(workspace, server):
+    # UniqueParameterNamesProvider uniquifies parameter names right before the index is
+    # harvested, which used to surface <amount0>. The signature must come from the
+    # declaration tokens instead.
+    fixture = workspace.open("completion_valid.cksp")
+    fade = item_named(server.completion(fixture, "namespace_member"), "fade")
+    expect(
+        fade["labelDetails"]["detail"] == "(amount: int, target: int)",
+        f"unexpected parameter list: {fade.get('labelDetails')}",
+    )
+    expect(
+        fade["detail"] == "function fade(amount: int, target: int): int",
+        f"unexpected signature: {fade.get('detail')}",
+    )
+
+    describe = item_named(server.completion(fixture, "struct_static"), "describe")
+    expect(
+        describe["detail"] == "static function describe(label: string, count: int): int",
+        f"unexpected static method signature: {describe.get('detail')}",
+    )
+
+
+@test("completion: items are shaped like the cksp-tools ones",
+      requires="completionProvider")
+def _(workspace, server):
+    fixture = workspace.open("completion_valid.cksp")
+    items = server.completion(fixture, "namespace_member")
+
+    # labelDetails.description is the construct word shown greyed after the label.
+    categories = {item["label"]: item["labelDetails"].get("description") for item in items}
+    expect(categories.get("fade") == "function", f"got {categories}")
+    expect(categories.get("rate") == "variable", f"got {categories}")
+    expect(categories.get("mixer") == "namespace", f"got {categories}")
+
+    # A callable documents its signature as a cksp code block; a variable does not,
+    # its bare type is already in the detail slot.
+    fade = item_named(items, "fade")
+    documentation = fade["documentation"]
+    expect(documentation["kind"] == "markdown", f"got {documentation}")
+    expect(
+        documentation["value"] == "```cksp\nfunction fade(amount: int, target: int): int\n```",
+        f"unexpected documentation: {documentation['value']!r}",
+    )
+    rate = item_named(items, "rate")
+    expect(rate["detail"] == "int", f"variable detail should be the type, got {rate.get('detail')}")
+    expect("documentation" not in rate, "a plain variable needs no documentation block")
+
+    const_item = item_named(server.completion(fixture, "const_member"), "HIGH")
+    expect(
+        const_item["labelDetails"].get("description") == "const",
+        f"got {const_item.get('labelDetails')}",
+    )
+
+
+@test("completion: statics of a struct declared inside a namespace",
+      requires="completionProvider")
+def _(workspace, server):
+    fixture = workspace.open("completion_namespaced_struct.cksp")
+    # The struct itself is a member of its namespace.
+    expect_labels(server.completion(fixture, "namespace_member"), ["rate", "Envelope"])
+    for marker in ("qualified", "shortened"):
+        items = server.completion(fixture, marker)
+        expect_labels(items, ["MAX_STAGES", "DEFAULT_ATTACK", "describe"], exactly=True)
+        expect_no_labels(items, ["attack", "release", "retrigger"])
+
+
+@test("completion: a shortened qualifier resolves against the enclosing namespace",
+      requires="completionProvider")
+def _(workspace, server):
+    fixture = workspace.open("completion_shadowed.cksp")
+    items = server.completion(fixture, "inner")
+    expect_labels(items, ["volume", "mute"])
+
+
+@test("completion: the enclosing block picks between same-named qualifiers",
+      requires="completionProvider")
+def _(workspace, server):
+    # Two nested `mixer` blocks exist. Without the scope pass, suffix matching
+    # merges both member sets; `exactly` is what makes this discriminating.
+    fixture = workspace.open("completion_ambiguous.cksp")
+    expect(server.diagnostics(fixture) == [], "precondition: the fixture compiles cleanly")
+    items = server.completion(fixture, "in_audio")
+    expect_labels(items, ["volume", "mute"], exactly=True)
+    items = server.completion(fixture, "in_midi")
+    expect_labels(items, ["channel", "port"], exactly=True)
+
+
+@test("completion: a fully qualified chain resolves without a scope",
+      requires="completionProvider")
+def _(workspace, server):
+    fixture = workspace.open("completion_ambiguous.cksp")
+    items = server.completion(fixture, "outside")
+    expect_labels(items, ["volume", "mute"], exactly=True)
+
+
+@test("completion: an unknown qualifier yields nothing", requires="completionProvider")
+def _(workspace, server):
+    fixture = workspace.open("completion_valid.cksp")
+    text = fixture.text.replace("message(mode)", "nichtda.<|unknown|>")
+    updated = server.did_change(fixture, text)
+    items = server.completion(updated, "unknown")
+    expect(items == [], f"unknown qualifier must not fall back to everything: {labels_of(items)}")
+
+
+@test("completion: answers from the last good snapshot while the buffer is broken",
+      requires="completionProvider")
+def _(workspace, server):
+    # Open valid, then break it with a trailing dot — the normal state while
+    # typing. The failed analysis must not take the previous snapshot with it.
+    fixture = workspace.open("completion_valid.cksp")
+    broken = server.did_change(
+        fixture, fixture.text.replace("audio.mixer.volume := 90", "audio.<|typing|>")
+    )
+    expect(server.diagnostics(broken), "precondition: the trailing dot breaks the file")
+    items = server.completion(broken, "typing")
+    expect_labels(items, ["rate", "channels", "mixer", "reset"])
+
+
+@test("completion: survives a semantic error in the buffer", requires="completionProvider")
+def _(workspace, server):
+    # A file that parses but fails later still yields a full index: the salvage
+    # in Compiler::analyze harvests the AST after desugaring attached the
+    # prefixes. No previous successful analysis is involved here.
+    fixture = workspace.write("semantic_error.cksp", (
+        "namespace audio\n"
+        "    declare rate: int := 44100\n"
+        "    declare channels: int := 2\n"
+        "end namespace\n"
+        "\n"
+        "on init\n"
+        "    message(undeclared_thing)\n"
+        "    audio.rate := 1\n"
+        "end on\n"
+    ))
+    server.did_open(fixture)
+    expect(server.diagnostics(fixture), "precondition: the file has a semantic error")
+    items = server.completion_at(fixture, Position(7, 10))
+    expect_labels(items, ["rate", "channels"])
+
+
+@test("completion: a file that never parsed has nothing to offer",
+      requires="completionProvider")
+def _(workspace, server):
+    # Documents the boundary of v1: a tokenizer/parser error leaves no AST, so
+    # completion needs one analysis of the entry that got at least past parsing.
+    # If parser error recovery is ever added, this expectation should flip.
+    fixture = workspace.open("completion_broken.cksp")
+    expect(server.diagnostics(fixture), "precondition: the fixture does not parse")
+    items = server.completion(fixture, "typing")
+    expect(items == [], f"expected no completions without a parsed AST, got {labels_of(items)}")
+
+
+@test("completion: no suggestions inside strings, comments or after a bracket",
+      requires="completionProvider")
+def _(workspace, server):
+    # The qualifier scanner reads raw text, so these are the cases where it can
+    # wrongly think it sits behind a qualifier.
+    fixture = workspace.open("completion_valid.cksp")
+    header = 'namespace audio\n    declare rate: int := 44100\nend namespace\n\non init\n'
+    cases = {
+        "string literal": '    message("audio.")\n',
+        "block comment": '    { audio. }\n',
+        "line comment": '    // audio.\n',
+        "after an index": '    declare arr[4]\n    arr[0].\n',
+        "after a number": '    declare x := 1.\n',
+    }
+    for index, (what, line) in enumerate(cases.items(), start=2):
+        body = header + line + "end on\n"
+        updated = server.did_change(fixture, body, version=index, wait=False)
+        cursor_line = 5 + line.count("\n") - 1
+        cursor = Position(cursor_line, line.splitlines()[-1].index(".") + 1)
+        items = server.completion_at(updated, cursor)
+        expect(items == [], f"{what}: expected no completions, got {labels_of(items)}")
+
+
+@test("completion: stays correct while the qualifier is typed character by character",
+      requires="completionProvider")
+def _(workspace, server):
+    # The hardest case: every keystroke re-triggers the debounced analysis, so
+    # this is where staleness and races surface. Static fixtures never show it.
+    fixture = workspace.write("typing.cksp", (
+        "namespace audio\n"
+        "    declare rate: int := 44100\n"
+        "    declare channels: int := 2\n"
+        "end namespace\n"
+        "\n"
+        "on init\n"
+        "    message(audio.rate)\n"
+        "end on\n"
+    ))
+    server.did_open(fixture)
+
+    head = (
+        "namespace audio\n"
+        "    declare rate: int := 44100\n"
+        "    declare channels: int := 2\n"
+        "end namespace\n"
+        "\n"
+        "on init\n"
+        "    message(audio.rate)\n"
+        "    "
+    )
+    tail = "\nend on\n"
+    typed = ""
+    for version, character in enumerate("audio.", start=2):
+        typed += character
+        current = server.did_change(fixture, head + typed + tail, version=version)
+        if character != ".":
+            continue
+        cursor = Position(7, len(typed) + 4)
+        items = server.completion_at(current, cursor)
+        expect_labels(items, ["rate", "channels"])
+
+
+if __name__ == "__main__":
+    raise SystemExit(run_suite())

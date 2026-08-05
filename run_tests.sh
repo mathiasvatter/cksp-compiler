@@ -11,6 +11,8 @@ RELEASE_EXEC="$BASE_DIR/cmake-build-release/cksp"
 
 # Kontakt toggle flags
 USE_KONTAKT=false        # compile + kontakt (enable via --with-kontakt)
+LSP_ONLY=false           # run only the LSP protocol suite (enable via --lsp)
+RUN_LSP=false            # run the LSP suite alongside the corpus (enable via --with-lsp)
 # KONTAKT_ONLY=false       # kontakt only (enable via --kontakt-only)
 
 # Kontakt executable and Python runner
@@ -65,6 +67,14 @@ while [[ $# -gt 0 ]]; do
       USE_KONTAKT=true
       shift
       ;;
+    --lsp)
+      LSP_ONLY=true
+      shift
+      ;;
+    --with-lsp)
+      RUN_LSP=true
+      shift
+      ;;
     --files)
       USE_CUSTOM_FILES=true
       shift
@@ -83,10 +93,14 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     -h|--help)
-      echo "Usage: $0 [--with-kontakt] [--files <file1> <file2> ...] [--file <file>] [extra-files...]"
+      echo "Usage: $0 [--with-kontakt] [--lsp|--with-lsp] [--files <file1> <file2> ...] [--file <file>] [extra-files...]"
+      echo ""
+      echo "  --lsp        run only the LSP protocol suite (fast, no project corpus)"
+      echo "  --with-lsp   run the LSP suite in addition to the compile corpus"
       echo ""
       echo "Examples:"
       echo "  $0"
+      echo "  $0 --lsp"
       echo "  $0 --with-kontakt"
       echo "  $0 --files /tmp/a.ksp /tmp/b.ksp"
       echo "  $0 --file /tmp/a.ksp --file /tmp/b.ksp"
@@ -102,6 +116,30 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+# -----------------------------
+# LSP protocol suite
+# -----------------------------
+LSP_RUNNER="$BASE_DIR/tests/lsp/run_lsp_tests.py"
+
+run_lsp_suite() {
+  if [[ ! -f "$LSP_RUNNER" ]]; then
+    echo "❗️ LSP test runner not found: $LSP_RUNNER"
+    return 2
+  fi
+  ./build.sh release || return $?
+  if [[ ! -x "$RELEASE_EXEC" ]]; then
+    echo "❗️ Executable not found or not executable: $RELEASE_EXEC"
+    return 127
+  fi
+  echo ""
+  python3 "$LSP_RUNNER" --binary "$RELEASE_EXEC"
+}
+
+if [[ "$LSP_ONLY" == true ]]; then
+  run_lsp_suite
+  exit $?
+fi
 
 if [[ "$USE_CUSTOM_FILES" == true ]]; then
   FILES=("${CUSTOM_FILES[@]}" "${POSITIONAL_FILES[@]}")
@@ -337,3 +375,9 @@ for entry in "${BUILDS[@]}"; do
 	echo -e "   ${YELLOW}Failed (kontakt):${RESET} ${failed_kontakt_list[*]}"
   fi
 done
+
+if [[ "$RUN_LSP" == true ]]; then
+  echo ""
+  run_lsp_suite
+  exit $?
+fi

@@ -1,0 +1,21 @@
+const Levels
+    <|const_decl|>LOW := 0
+    MID := 1
+    HIGH := 2
+end const
+
+namespace <|ns_decl|>audio
+    declare <|rate_decl|>rate: int := 44100
+
+    function <|reset_decl|>reset()
+        rate := 44100
+    end function
+end namespace
+
+on init
+    declare mode: int := Levels.<|const_use|>LOW
+    audio.<|rate_use|>rate := 48000
+    <|ns_use|>audio.rate := audio.rate + 1
+    audio.<|reset_use|>reset()
+    message(mode)
+end on
