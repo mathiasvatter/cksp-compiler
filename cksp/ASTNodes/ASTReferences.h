@@ -91,7 +91,7 @@ struct NodeArrayRef final : NodeCompositeRef {
 		return name;
 	}
 	std::string get_token_string() const override {
-		return name + (index ? "[" + index->get_token_string() + "]" : "");
+		return tok.val + (index ? "[" + index->get_token_string() + "]" : "");
 	}
 //    ASTLowering* get_lowering(NodeProgram *program) const override;
 	std::unique_ptr<NodeNDArrayRef> to_ndarray_ref() override;
@@ -167,7 +167,7 @@ struct NodeNDArrayRef final : NodeCompositeRef {
 		return name;
 	}
 	std::string get_token_string() const override {
-		return name + (indexes ? "["+indexes->get_token_string()+"]" : "");
+		return tok.val + (indexes ? "["+indexes->get_token_string()+"]" : "");
 	}
 //    ASTLowering* get_lowering(NodeProgram *program) const override;
 	ASTLowering *get_data_lowering(NodeProgram *program) const override;
@@ -257,7 +257,7 @@ struct NodeFunctionHeaderRef final : NodeReference {
 		return name + "(" + (args ? args->get_string() : "") + ")";
 	}
 	std::string get_token_string() const override {
-		return name + "(" + (args ? args->get_token_string() : "") + ")";
+		return tok.val + "(" + (args ? args->get_token_string() : "") + ")";
 	}
 	void set_child_parents() override;
 	[[nodiscard]] int get_num_args() const;
@@ -304,7 +304,7 @@ struct NodeListRef final : NodeReference {
 		return name;
 	}
 	std::string get_token_string() const override {
-		return name + "[" + (indexes ? indexes->get_token_string() : "") + "]";
+		return tok.val + "[" + (indexes ? indexes->get_token_string() : "") + "]";
 	}
 	void set_child_parents() override {
 		if(indexes) indexes->parent = this;
