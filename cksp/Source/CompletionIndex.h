@@ -46,6 +46,9 @@ struct CompletionMember {
 struct CompletionDeclaration {
 	std::string name;         ///< qualified name after desugaring, e.g. "audio.inst"
 	std::string object_type;  ///< struct it is an instance of, empty for non-objects
+	std::string parameters;   ///< "(a: int)" for callables
+	std::string detail;       ///< type annotation or full signature
+	CompletionKind kind = CompletionKind::Variable;
 	std::string file;
 	SourceRange scope;
 };
@@ -77,6 +80,8 @@ class CompletionIndex {
 	std::vector<CompletionDeclaration> m_declarations;
 	/// Method bodies, so <self> resolves to the struct the cursor is inside of.
 	std::vector<CompletionScope> m_self_scopes;
+	/// Kind of each qualifier block, so it can be offered with the right icon.
+	std::unordered_map<std::string, CompletionKind> m_container_kinds;
 
 public:
 	void add_type_member(const std::string& struct_name, CompletionMember member) {
@@ -244,6 +249,61 @@ public:
 		return sorted(members->second);
 	}
 
+	/**
+	 * Everything nameable at a position without a qualifier.
+	 *
+	 * A function body is the only construct in CKSP that hides a name, so the set is
+	 * the globals plus the locals of the enclosing function. Names are offered the way
+	 * they have to be written there: inside `namespace audio` the declaration
+	 * <audio.rate> is offered as <rate>, outside it as <audio.rate>.
+	 */
+	[[nodiscard]] std::vector<CompletionMember> visible_symbols(
+		const std::string& file, const size_t line, const size_t character) const {
+		const auto enclosing = enclosing_path(file, line, character);
+		const auto prefix = enclosing.empty() ? std::string{} : join(enclosing) + ".";
+
+		std::vector<CompletionMember> found;
+		std::unordered_set<std::string> seen;
+		const auto offer = [&](std::string label, const CompletionDeclaration& declaration) {
+			if (label.empty() || !seen.insert(label).second) return;
+			found.push_back({
+				std::move(label), declaration.parameters, declaration.detail, declaration.kind,
+			});
+		};
+
+		for (const auto& declaration : m_declarations) {
+			if (!is_visible(declaration, file, line, character)) continue;
+			if (!is_nameable(declaration.name)) continue;
+			// Inside its own block a declaration is written without the qualifiers.
+			if (!prefix.empty() && declaration.name.starts_with(prefix)) {
+				offer(declaration.name.substr(prefix.size()), declaration);
+			} else {
+				offer(declaration.name, declaration);
+			}
+		}
+
+		// Qualifier blocks themselves: at global scope their first segment, inside one
+		// the next segment down.
+		for (const auto& [path, _] : m_containers) {
+			const auto segments = split_path(path);
+			if (segments.size() <= enclosing.size()) continue;
+			if (!std::equal(enclosing.begin(), enclosing.end(), segments.begin())) continue;
+			const auto& label = segments[enclosing.size()];
+			if (label.empty() || !seen.insert(label).second) continue;
+			const auto kind = m_container_kinds.find(join(
+				std::vector(segments.begin(), segments.begin() + enclosing.size() + 1)));
+			found.push_back({
+				label, {}, {},
+				kind == m_container_kinds.end() ? CompletionKind::Module : kind->second,
+			});
+		}
+		return sorted(std::move(found));
+	}
+
+	void set_container_kind(const std::string& path, const CompletionKind kind) {
+		if (!path.empty()) m_container_kinds.emplace(path, kind);
+	}
+
 	/// Innermost method body containing the position, as a struct name.
 	[[nodiscard]] std::string enclosing_struct(
 		const std::string& file, const size_t line, const size_t character) const {
@@ -286,6 +346,25 @@ private:
 			return left.label < right.label;
 		});
 		return members;
+	}
+
+	/// A declaration is visible when it is global, or local to the function the cursor
+	/// is in.
+	[[nodiscard]] static bool is_visible(
+		const CompletionDeclaration& declaration,
+		const std::string& file,
+		const size_t line,
+		const size_t character) {
+		if (!declaration.scope.is_valid()) return true;
+		return declaration.file == file && covers(declaration.scope, line, character);
+	}
+
+	/// Struct members carry the OBJ_DELIMITER and are only reachable through an
+	/// instance; compiler-generated names are not something the user can write.
+	[[nodiscard]] static bool is_nameable(const std::string& name) {
+		if (name.empty() || name == "self" || name == "_") return false;
+		if (name.starts_with("__") || name.starts_with('$')) return false;
+		return name.find("::") == std::string::npos;
 	}
 
 	/// Longest leading run of `chain` that names a declaration, as its struct type.

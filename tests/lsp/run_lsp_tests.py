@@ -312,6 +312,26 @@ def _(workspace, server):
         f"unexpected static method signature: {describe.get('detail')}",
     )
 
+    # An array parameter is the case that regressed: NodeArray::get_token_string
+    # rendered `name`, so the uniquified name came back as <values0[]>.
+    scan = item_named(server.completion(fixture, "namespace_member"), "scan")
+    expect(
+        scan["labelDetails"]["detail"] == "(values: any[], depth: int)",
+        f"array parameter name is not the source one: {scan.get('labelDetails')}",
+    )
+
+
+@test("completion: function locals are not members of the enclosing namespace",
+      requires="completionProvider")
+def _(workspace, server):
+    # The namespace desugaring prefixes function-local declarations exactly like real
+    # members (<audio.hidden_local>), so they are indistinguishable in the index
+    # unless the harvest skips function bodies.
+    fixture = workspace.open("completion_valid.cksp")
+    items = server.completion(fixture, "namespace_member")
+    expect_no_labels(items, ["hidden_local", "values", "depth", "amount", "target"])
+    expect_labels(items, ["rate", "channels", "mixer", "reset", "fade", "scan"])
+
 
 @test("completion: items are shaped like the cksp-tools ones",
       requires="completionProvider")
@@ -394,6 +414,44 @@ def _(workspace, server):
     items = server.completion(fixture, "type_qualified")
     expect_labels(items, ["MAX"], exactly=True)
     expect_no_labels(items, ["idx", "file", "ping"])
+
+
+@test("completion: an unqualified position offers what is visible there",
+      requires="completionProvider")
+def _(workspace, server):
+    fixture = workspace.open("completion_instance.cksp")
+    items = server.completion(fixture, "inside_function", trigger_character=None)
+    # Globals, structs, functions - plus this function's own locals.
+    expect_labels(items, ["Zone", "Group", "Holder", "g", "h", "uses_zone", "uses_group",
+                          "item", "only_in_uses_zone", "audio"])
+    # Struct members are only reachable through an instance, and the compiler's
+    # renamed machinery is not nameable at all.
+    expect_no_labels(items, ["idx", "file", "ping", "count", "self", "MAX"])
+    for label in labels_of(items):
+        expect(
+            not label.endswith(("0", "1", "2")) or label in ("g", "h"),
+            f"{label!r} looks like a uniquified internal name",
+        )
+
+
+@test("completion: locals of another function stay invisible",
+      requires="completionProvider")
+def _(workspace, server):
+    fixture = workspace.open("completion_instance.cksp")
+    # `only_in_uses_zone` is declared in uses_zone; from the callback it must be gone.
+    items = server.completion(fixture, "instance_scope", trigger_character=None)
+    expect_no_labels(items, ["only_in_uses_zone"])
+    expect_labels(items, ["g", "h", "uses_zone"])
+
+
+@test("completion: inside a namespace its members are offered unqualified",
+      requires="completionProvider")
+def _(workspace, server):
+    fixture = workspace.open("completion_valid.cksp")
+    items = server.completion(fixture, "inside_namespace", trigger_character=None)
+    # Written inside `namespace audio`, <audio.rate> is typed as <rate>.
+    expect_labels(items, ["rate", "channels", "mixer", "fade", "scan"])
+    expect_no_labels(items, ["audio.rate", "audio.channels"])
 
 
 @test("completion: a shortened qualifier resolves against the enclosing namespace",

@@ -630,9 +630,9 @@ void LanguageServer::handle_completion(const JsonRpcMessage& message) {
 		m_connection.send_response(*id, JSONArray{});
 		return;
 	}
-	const auto chain = lsp::qualifier_chain_in(
+	const auto query = lsp::completion_query_in(
 		*document.unwrap().text, position->line, position->character);
-	if (!chain) {
+	if (query.context == lsp::CompletionContext::None) {
 		m_connection.send_response(*id, JSONArray{});
 		return;
 	}
@@ -644,7 +644,7 @@ void LanguageServer::handle_completion(const JsonRpcMessage& message) {
 	}
 
 	m_connection.send_response(*id, m_completion.items(
-		entries, *chain, position->source, position->line, position->character));
+		entries, query.chain, position->source, position->line, position->character));
 }
 
 void LanguageServer::handle_did_open(const JsonRpcMessage& message) {

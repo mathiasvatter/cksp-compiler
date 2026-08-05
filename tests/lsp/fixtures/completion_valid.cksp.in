@@ -25,11 +25,19 @@ namespace audio
 
     function reset()
         rate := 44100
+        <|inside_namespace|>
     end function
 
-    { parameter names must survive the internal uniquifying rename }
+    { parameter names must survive the internal uniquifying rename. The array
+      parameter is the interesting one: NodeArray used to render its name rather
+      than its token, which brought the rename right back in. }
     function fade(amount: int, target: int): int
         return amount + target
+    end function
+
+    function scan(values: any[], depth: int): int
+        declare hidden_local: int := depth
+        return num_elements(values) + hidden_local
     end function
 end namespace
 
@@ -57,5 +65,7 @@ on init
     message(Envelope.<|struct_static|>MAX_STAGES)
     message(Envelope.<|struct_static_method|>describe("x", 1))
     message(audio.fade(1, 2))
+    declare probe[4]
+    message(audio.scan(probe, 1))
     message(mode)
 end on

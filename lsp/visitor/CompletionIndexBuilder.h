@@ -121,7 +121,10 @@ private:
 		if (m_pass != Pass::Members || m_function_depth > 0) return;
 		if (node.prefix->prefixes.empty()) return;
 		record_nesting(node);
-		m_index.add(path_of(node), {basename_of(node.name), {}, detail_of(node), kind});
+		const auto path = path_of(node);
+		m_index.set_container_kind(
+			CompletionIndex::join(path), kind_of_segment(node.prefix->prefixes.back().kind));
+		m_index.add(path, {basename_of(node.name), {}, detail_of(node), kind});
 	}
 
 	void record_declaration(NodeDataStructure& node) const {
@@ -188,12 +191,25 @@ private:
 	/// scope, so they stay unscoped here.
 	void record_named_declaration(const NodeDataStructure& node) const {
 		if (m_pass != Pass::Members || node.name.empty()) return;
-		if (node.name == "self" && node.tok.val != "self") return;
+		// Synthesized declarations have no source token to offer.
+		if (node.tok.val.empty() || node.tok.file.empty()) return;
+		if (node.name == "self" || node.tok.val == "self") return;
+
+		std::string name = node.name;
+		if (basename_of(name) != node.tok.val) {
+			// The compiler renamed this one - a uniquified parameter, or machinery of a
+			// generated method. Only a declaration inside a real function body stays
+			// nameable, and then under the spelling the source actually uses.
+			if (!m_function_scope.is_valid()) return;
+			name = node.tok.val;
+		}
 		m_index.add_declaration({
-			node.name,
-			object_type_of(node.ty),
-			m_function_scope_file,
-			m_function_scope,
+			.name = std::move(name),
+			.object_type = object_type_of(node.ty),
+			.detail = detail_of(node),
+			.kind = kind_of_member(node),
+			.file = m_function_scope_file,
+			.scope = m_function_scope,
 		});
 	}
 
@@ -236,6 +252,16 @@ public:
 				CompletionKind::Function,
 			});
 		}
+		// Also nameable without a qualifier. Methods carry the OBJ_DELIMITER and are
+		// filtered out there; generated helpers have no source file.
+		if (m_pass == Pass::Members && !node.tok.file.empty()) {
+			m_index.add_declaration({
+				.name = node.name,
+				.parameters = parameters_of(node),
+				.detail = signature_of(node, false),
+				.kind = CompletionKind::Function,
+			});
+		}
 		return ASTVisitor::visit(node);
 	}
 
@@ -276,6 +302,11 @@ public:
 			if (!definition) continue;
 			const auto container = definition->name;
 			if (container.empty()) continue;
+			m_index.add_declaration({
+				.name = container,
+				.detail = "struct " + basename_of(container),
+				.kind = CompletionKind::Struct,
+			});
 
 			for (const auto& [name, member] : definition->member_table) {
 				const auto declaration = member.lock();

@@ -29,7 +29,6 @@ std::vector<CompletionMember> CompletionProvider::members(
 	const SourceId& source,
 	const size_t line,
 	const size_t character) const {
-	if (chain.empty()) return {};
 	const auto file = FileSystemSourceProvider::normalize(source.value).value;
 
 	std::lock_guard lock(m_mutex);
@@ -43,9 +42,12 @@ std::vector<CompletionMember> CompletionProvider::members(
 			? state->second.last_successful
 			: state->second.current;
 		if (!index) continue;
-		auto members = index->members_of(chain, file, line, character);
+		// An empty chain means a bare identifier is being typed.
+		auto members = chain.empty()
+			? index->visible_symbols(file, line, character)
+			: index->members_of(chain, file, line, character);
 		// A chain that names no qualifier may still name an instance: <inst.>, <self.>.
-		if (members.empty()) {
+		if (members.empty() && !chain.empty()) {
 			members = index->instance_members_of(chain, file, line, character);
 		}
 		for (auto& member : members) {

@@ -33,7 +33,9 @@ end namespace
   own struct. }
 function uses_zone()
     declare item: Zone := new Zone(1, "b")
-    message(item.<|local_zone|>idx)
+    declare only_in_uses_zone: int := 1
+    message(item.<|local_zone|>idx + only_in_uses_zone)
+    <|inside_function|>
 end function
 
 function uses_group()
@@ -45,7 +47,7 @@ on init
     declare g: Group := new Group(new Zone(1, "d"), 2)
     declare h: Holder := new Holder([new Zone(1, "e")])
     uses_zone()
-    uses_group()
+    <|instance_scope|>uses_group()
     message(g.<|instance|>count)
     message(g.zone.<|chained|>idx)
     message(audio.inst.<|qualified|>idx)

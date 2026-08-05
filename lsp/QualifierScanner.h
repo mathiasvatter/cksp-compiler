@@ -12,6 +12,21 @@
 
 namespace lsp {
 
+/// What the text before the cursor asks for.
+enum class CompletionContext {
+	/// Inside a string or comment, or behind something that is not a name.
+	None,
+	/// A bare identifier is being typed: everything visible at this position.
+	Unqualified,
+	/// Behind `a.b.`: the members of that chain.
+	Qualified,
+};
+
+struct CompletionQuery {
+	CompletionContext context = CompletionContext::None;
+	std::vector<std::string> chain;
+};
+
 /**
  * Extracts the qualifier chain the cursor sits behind.
  *
@@ -60,11 +75,15 @@ namespace lsp {
 	}
 	if (in_string || in_comment) return std::nullopt;
 
-	if (line[character - 1] != '.') return std::nullopt;
+	// Skip the partial identifier being typed, so completion keeps working when the
+	// request arrives mid-word (`audio.ra|`) and not only right behind the dot.
+	size_t dot = character;
+	while (dot > 0 && is_identifier_char(line[dot - 1])) --dot;
+	if (dot == 0 || line[dot - 1] != '.') return std::nullopt;
 
 	// Walk backwards over `identifier ('[' index ']')? ('.' ...)*` left of the dot.
 	std::vector<std::string> chain;
-	size_t end = character - 1;  // one past the last identifier character
+	size_t end = dot - 1;  // one past the last identifier character
 	while (true) {
 		// An indexed element has the type of its elements, so the subscript is skipped
 		// and the chain continues at the array's name: <zones[0].> completes a Zone.
@@ -97,9 +116,50 @@ namespace lsp {
 	return chain;
 }
 
-/// Convenience wrapper: picks the zero-based `line` out of `text` first.
-[[nodiscard]] inline std::optional<std::vector<std::string>> qualifier_chain_in(
-	const std::string_view text, const size_t line, const size_t character) {
+/// True when the position sits inside a string literal or a comment on its line.
+[[nodiscard]] inline bool in_string_or_comment(const std::string_view line, const size_t character) {
+	bool in_string = false;
+	bool in_comment = false;
+	for (size_t i = 0; i < character && i < line.size(); ++i) {
+		const char c = line[i];
+		if (in_comment) {
+			if (c == '}') in_comment = false;
+			continue;
+		}
+		if (in_string) {
+			if (c == '"') in_string = false;
+			continue;
+		}
+		if (c == '"') in_string = true;
+		else if (c == '{') in_comment = true;
+		else if (c == '/' && i + 1 < character && line[i + 1] == '/') return true;
+	}
+	return in_string || in_comment;
+}
+
+/// Classifies a position: nothing, a bare identifier, or a qualified chain.
+[[nodiscard]] inline CompletionQuery completion_query_at(
+	const std::string_view line, const size_t character) {
+	if (character > line.size() || in_string_or_comment(line, character)) return {};
+	if (auto chain = qualifier_chain_at(line, character)) {
+		return {CompletionContext::Qualified, std::move(*chain)};
+	}
+	// Behind a dot that leads nowhere (`1.`, `abs(1).`) nothing should be offered;
+	// anywhere else a bare name is being typed.
+	size_t start = character;
+	while (start > 0 && (line[start - 1] == '_'
+		|| (line[start - 1] >= 'a' && line[start - 1] <= 'z')
+		|| (line[start - 1] >= 'A' && line[start - 1] <= 'Z')
+		|| (line[start - 1] >= '0' && line[start - 1] <= '9'))) {
+		--start;
+	}
+	if (start > 0 && line[start - 1] == '.') return {};
+	return {CompletionContext::Unqualified, {}};
+}
+
+/// The zero-based `line` of `text`, without its line ending.
+[[nodiscard]] inline std::optional<std::string_view> line_at(
+	const std::string_view text, const size_t line) {
 	size_t offset = 0;
 	for (size_t current = 0; current < line; ++current) {
 		const auto newline = text.find('\n', offset);
@@ -110,7 +170,23 @@ namespace lsp {
 	if (end == std::string_view::npos) end = text.size();
 	auto content = text.substr(offset, end - offset);
 	if (!content.empty() && content.back() == '\r') content.remove_suffix(1);
-	return qualifier_chain_at(content, character);
+	return content;
+}
+
+/// Convenience wrapper: picks the zero-based `line` out of `text` first.
+[[nodiscard]] inline std::optional<std::vector<std::string>> qualifier_chain_in(
+	const std::string_view text, const size_t line, const size_t character) {
+	const auto content = line_at(text, line);
+	if (!content) return std::nullopt;
+	return qualifier_chain_at(*content, character);
+}
+
+/// Convenience wrapper for completion_query_at().
+[[nodiscard]] inline CompletionQuery completion_query_in(
+	const std::string_view text, const size_t line, const size_t character) {
+	const auto content = line_at(text, line);
+	if (!content) return {};
+	return completion_query_at(*content, character);
 }
 
 }
