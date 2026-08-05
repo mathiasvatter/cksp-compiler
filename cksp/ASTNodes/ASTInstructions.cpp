@@ -294,6 +294,11 @@ void NodeFunctionCall::determine_function_strategy(NodeProgram *program, NodeCal
 	function_strategy.determine_function_strategy(*this, current_callback);
 }
 
+int NodeFunctionCall::get_param_offset(const NodeFunctionDefinition* definition) const {
+	if (!definition or definition->is_static) return 0;
+	return is_in_access_chain() ? 1 : 0;
+}
+
 bool NodeFunctionCall::is_in_access_chain() const {
 	if (!parent) return false;
 	if (auto chain = parent->cast<NodeAccessChain>()) {

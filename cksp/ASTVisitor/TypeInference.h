@@ -44,7 +44,7 @@ class TypeInference final : public ASTVisitor {
 			if (call->kind != NodeFunctionCall::Kind::UserDefined) continue;
 			auto const def = call->get_definition();
 			if (!def) continue;
-			int method_idx = call->is_in_access_chain() ? 1 : 0;
+			const int method_idx = call->get_param_offset(def.get());
 			for (int i = 0; i < call->function->get_num_args(); i++) {
 				auto& func_arg = call->function->get_arg(i);
 				auto& param = def->get_param(i+method_idx);
@@ -92,7 +92,7 @@ class TypeInference final : public ASTVisitor {
 
 
 			if (def->header->has_union_params()) {
-				int method_idx = call->is_in_access_chain() ? 1 : 0;
+				const int method_idx = call->get_param_offset(def.get());
 
 				const bool arity_fits = call->function->get_num_args() + method_idx <= def->get_num_params();
 				std::vector<Type*> arg_types;

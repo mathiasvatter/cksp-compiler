@@ -33,6 +33,7 @@
  */
 class DesugarStruct final : public ASTDesugaring {
 	std::stack<NodeStruct*> m_structs;
+	bool m_in_static_method = false;
 	/// holds all declared members and local declarations to replace self
 	std::unordered_map<std::string, NodeDataStructure*> members;
 	void add_to_members(NodeDataStructure* node) {
@@ -51,7 +52,15 @@ class DesugarStruct final : public ASTDesugaring {
 		return name;
 	}
 	/// replace 'self.' only when struct member or declared var
-	std::string replace_self_struct_prefix(const std::string& name) {
+	std::string replace_self_struct_prefix(const std::string& name, const Token& tok) {
+		if (m_in_static_method && (name == "self" || name.find("self.") == 0)) {
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+			error.message = "<self> cannot be used inside a <static function>. A static method belongs to "
+				"the struct itself and is called without an instance, so there is no <self> to refer to. "
+				"Pass the object as a parameter, or remove <static> to make it a regular method.";
+			error.actual = name;
+			error.exit();
+		}
 		if (!m_structs.empty() && name.find("self.") == 0) {
 			std::string new_name = name;
 			new_name.replace(0, 5, m_structs.top()->name + OBJ_DELIMITER); // Ersetze 'self.' durch das Präfix
@@ -135,7 +144,40 @@ public:
 		return &node;
 	}
 
+	/// <static function foo()>: belongs to the struct, gets no <self> parameter and is called as
+	/// <Foo.foo()>. Everything that needs an instance is rejected here.
+	NodeAST* visit_static_method(NodeFunctionDefinition& node) {
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+		if (node.header->name.find('.') != std::string::npos) {
+			error.message = "Method name cannot contain '.' character. This is reserved for struct member access.";
+			error.exit();
+		}
+		if (!node.header->params.empty() and node.header->get_param(0)->name == "self") {
+			error.message = "A <static function> must not declare <self> as its first parameter. It is called "
+				"on the struct itself, not on an instance. Remove <self>, or remove <static>.";
+			error.exit();
+		}
+		if (node.header->name == NodeStruct::CONSTRUCTOR or node.header->name == "__repr__"
+			or node.header->name == "__del__") {
+			error.message = "<"+node.header->name+"> operates on an instance and cannot be declared <static>.";
+			error.exit();
+		}
+		if (get_operator_token(node.header->name, node.header->params.size())) {
+			error.message = "Operator overloads are resolved through their operands and cannot be declared <static>.";
+			error.exit();
+		}
+		m_in_static_method = true;
+		node.header->accept(*this);
+		node.header->name = add_struct_prefix(node.header->name);
+		node.body->accept(*this);
+		m_in_static_method = false;
+		return &node;
+	}
+
 	NodeAST* visit(NodeFunctionDefinition& node) override {
+		if(node.is_static) {
+			return visit_static_method(node);
+		}
 		if(!node.is_method()) {
 			auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.tok);
 			error.message = "Method definition must contain <self> as first parameter.";
@@ -230,21 +272,21 @@ public:
 	}
 
 	NodeAST* visit(NodeVariableRef& node) override {
-		node.name = replace_self_struct_prefix(node.name);
+		node.name = replace_self_struct_prefix(node.name, node.tok);
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			return node.replace_with(std::move(access_chain));
 		}
 		return &node;
 	}
 	NodeAST * visit(NodePointerRef& node) override {
-		node.name = replace_self_struct_prefix(node.name);
+		node.name = replace_self_struct_prefix(node.name, node.tok);
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			return node.replace_with(std::move(access_chain));
 		}
 		return &node;
 	}
 	NodeAST * visit(NodeArrayRef& node) override {
-		node.name = replace_self_struct_prefix(node.name);
+		node.name = replace_self_struct_prefix(node.name, node.tok);
 		if(node.index) node.index->accept(*this);
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			return node.replace_with(std::move(access_chain));
@@ -252,7 +294,7 @@ public:
 		return &node;
 	}
 	NodeAST * visit(NodeNDArrayRef& node) override {
-		node.name = replace_self_struct_prefix(node.name);
+		node.name = replace_self_struct_prefix(node.name, node.tok);
 		if(node.indexes) node.indexes->accept(*this);
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			return node.replace_with(std::move(access_chain));
@@ -260,7 +302,7 @@ public:
 		return &node;
 	}
 	NodeAST * visit(NodeListRef& node) override {
-		node.name = replace_self_struct_prefix(node.name);
+		node.name = replace_self_struct_prefix(node.name, node.tok);
 		node.indexes->accept(*this);
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			return node.replace_with(std::move(access_chain));
@@ -268,7 +310,7 @@ public:
 		return &node;
 	}
 	NodeAST * visit(NodeFunctionCall& node) override {
-		node.function->name = replace_self_struct_prefix(node.function->name);
+		node.function->name = replace_self_struct_prefix(node.function->name, node.tok);
 		node.function->accept(*this);
 		if(auto access_chain = try_access_chain_transform(node.function->name, &node)) {
 			return node.replace_with(std::move(access_chain));

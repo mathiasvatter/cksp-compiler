@@ -1023,6 +1023,8 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
     std::shared_ptr<NodeFunctionHeader> header;
     std::optional<std::shared_ptr<NodeDataStructure>> return_variable;
     bool override = false;
+	/// <static function> member: belongs to the struct, not to an instance, and takes no <self>
+	bool is_static = false;
     std::unique_ptr<NodeBlock> body;
     explicit NodeFunctionDefinition(Token tok);
     NodeFunctionDefinition(std::unique_ptr<NodeFunctionHeader> header,

@@ -2531,7 +2531,18 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 		if (auto end_error = check_invalid_end_statement("struct", end_construct, peek(), peek(1))) {
 			return Result<std::unique_ptr<NodeStruct>>(*end_error);
 		}
-		if(peek().type == token::DECLARE || peek().type == token::KEYWORD || modifier_keywords.contains(peek().type)) {
+		// <static function foo()> - a method on the struct itself, not on an instance
+		const bool is_static_method = peek().type == token::STATIC and peek(1).type == token::FUNCTION;
+		if(is_static_method) {
+			consume(); // consume static
+			auto func = parse_function_definition(node_struct.get());
+			if(func.is_error()) {
+				return Result<std::unique_ptr<NodeStruct>>(func.get_error());
+			}
+			auto method = std::move(func.unwrap());
+			method->is_static = true;
+			node_struct->add_method_or_override(method);
+		} else if(peek().type == token::DECLARE || peek().type == token::KEYWORD || modifier_keywords.contains(peek().type)) {
 			if (peek().type == token::UI_CONTROL) {
 				return Result<std::unique_ptr<NodeStruct>>(Diagnostic(ErrorType::SyntaxError,
 							 "Found unknown <struct> syntax. Can not declare <ui control> variables as <struct> members.", "valid <struct> member or method", peek()));

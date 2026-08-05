@@ -24,6 +24,14 @@ class LoweringAccessChain final : public ASTLowering {
 		const auto declaration = ref->get_declaration();
 		return declaration and declaration->is_shared_member() ? ref : nullptr;
 	}
+
+	/// <static function>: called on the struct, so the preceding chain element is not a receiver
+	static bool is_static_method_call(NodeAST* node) {
+		const auto func_call = node->cast<NodeFunctionCall>();
+		if(!func_call) return false;
+		const auto definition = func_call->get_definition();
+		return definition and definition->is_static;
+	}
 public:
 	explicit LoweringAccessChain(NodeProgram *program) : ASTLowering(program) {}
 
@@ -43,14 +51,18 @@ public:
 		for(int i=1; i<node.chain.size(); i++) {
 			auto& prev_node = node.chain[i-1];
 			auto& curr_node = node.chain[i];
-			// <static> members have no per-instance storage -> the preceding object is not an
-			// index and is dropped. Only safe for side-effect free receivers: a call would be lost.
-			if(const auto shared_ref = get_shared_member_ref(curr_node.get())) {
-				if(prev_node->cast<NodeFunctionCall>()) {
+			// <static> members and methods belong to the struct, not to an instance: the preceding
+			// element is not an index or receiver and is dropped. Only safe for side-effect free
+			// receivers, since a call would be lost entirely.
+			const auto shared_ref = get_shared_member_ref(curr_node.get());
+			if(shared_ref or is_static_method_call(curr_node.get())) {
+				if(auto func_call = prev_node->cast<NodeFunctionCall>()) {
+					const std::string what = shared_ref
+						? "<static> member <"+shared_ref->name+">"
+						: "<static function> <"+curr_node->cast<NodeFunctionCall>()->function->name+">";
 					auto error = make_diagnostic(ErrorType::SyntaxError, *curr_node);
-					error.message = "<static> member <"+shared_ref->name+
-						"> cannot be accessed on a temporary object. Its value does not depend on the instance, "
-						"so the object would never be created. Assign the result to a variable first.";
+					error.message = what+" cannot be accessed on a temporary object. It does not depend on the "
+						"instance, so the object would never be created. Assign the result to a variable first.";
 					error.exit();
 				}
 				continue;

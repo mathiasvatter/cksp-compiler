@@ -523,8 +523,21 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				// since the name is not yet right (struct name infront)
 				auto correct_name = prev_obj + OBJ_DELIMITER + func_call->function->name;
 				auto definition = func_call->find_definition(m_program, correct_name, func_call->function->get_num_args()+1, func_call->function->ty);
+				// a <static function> takes no receiver, so it is one argument shorter
+				if (!definition) {
+					definition = func_call->find_definition(m_program, correct_name, func_call->function->get_num_args(), func_call->function->ty);
+					if (definition and !definition->is_static) definition = nullptr;
+				}
 				if (!definition) {
 					error.message = "Method "+func_call->function->name+" does not exist in "+prev_obj+".";
+					error.exit();
+				}
+				// <Foo.bar()>: without an instance only a static method can be called
+				if(const auto object = node.chain[0]->is_reference();
+					i == 1 and object and object->kind == NodeReference::Kind::TypeQualifier and !definition->is_static) {
+					error.message = "Method <"+func_call->function->name+"> of struct <"+prev_obj+"> operates on an "
+						"instance and cannot be called on the struct itself. Declare it as <static function>, "
+						"or call it on a variable.";
 					error.exit();
 				}
 
@@ -850,7 +863,7 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 		// declare ui_text_edit txt_keyswitch_name
 		// set_text_edit_properties(txt_keyswitch_name, "-/-", "alpha")
 		// add method_idx because at this point method definitions have 1 more parameter than the call (self)
-		int method_idx = node.is_in_access_chain() ? 1 : 0;
+		const int method_idx = node.get_param_offset(definition.get());
 		for (int i = 0; i < node.function->get_num_args(); i++) {
 			auto &func_arg = node.function->get_arg(i);
 			if (auto reference = func_arg->is_reference()) {
@@ -908,7 +921,7 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 			m_func_calls.push_back(&node);
 		}
 
-		int method_idx = node.is_in_access_chain() ? 1 : 0;
+		const int method_idx = node.get_param_offset(definition.get());
 		// explicitly visit builtin functions regardless of visited flag since its not reset for those anyways
 		if (!definition->visited || node.is_builtin_kind()) {
 			if (node.kind != NodeFunctionCall::Property and node.function->get_num_args()+method_idx != definition->get_num_params()) {

@@ -222,8 +222,11 @@ public:
 
 	NodeAST * visit(NodeFunctionDefinition& node) override {
 		m_current_func = &node;
-		if (!in_constructor()) {
+		// a <static function> has no instance and therefore no self parameter to index members with
+		if (!in_constructor() and !node.is_static) {
 			m_current_self = node.header->get_param(0).get();
+		} else if (node.is_static) {
+			m_current_self = nullptr;
 		}
 		node.header->accept(*this);
 		node.body->accept(*this);

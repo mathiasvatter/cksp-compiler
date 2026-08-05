@@ -111,6 +111,11 @@ struct NodeFunctionCall final : NodeInstruction {
 	/// returns true if the function call is inside an access chain. NOT if it is the first member of
 	/// the chain
 	bool is_in_access_chain() const;
+	/// Distance between the call's arguments and the definition's parameters: a method carries <self>
+	/// as its first parameter, which the call site does not spell out (obj.foo(x) -> Foo::foo(self, x)).
+	/// A <static function> has no <self>, so its parameters line up with the arguments directly.
+	/// Use as: definition->get_param(arg_index + call->get_param_offset(definition))
+	int get_param_offset(const NodeFunctionDefinition* definition) const;
 	/// Checks if the function call or any of its arguments has side effects
 	/// this gets checked by giving a set of free variables that are being modified inside
 	/// or checking for builtin functions with side effects (message etc)

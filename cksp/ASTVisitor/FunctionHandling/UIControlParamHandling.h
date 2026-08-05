@@ -151,7 +151,7 @@ private:
 		auto func_def = param.parent->parent->cast<NodeFunctionDefinition>();
 		if (!func_def) return;
 		for (auto& call : func_def->call_sites) {
-			auto& arg = call->function->get_arg(index - (call->is_in_access_chain() ? 1 : 0));
+			auto& arg = call->function->get_arg(index - call->get_param_offset(func_def));
 			if ( auto ref = arg->is_reference()) {
 				find_declaration(*ref, references);
 			}
