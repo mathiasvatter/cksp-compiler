@@ -292,6 +292,9 @@ add_executable(cksp
         lsp/CodeActionProvider.h
         lsp/ReferenceProvider.cpp
         lsp/ReferenceProvider.h
+        lsp/CompletionProvider.cpp
+        lsp/CompletionProvider.h
+        lsp/QualifierScanner.h
         lsp/RenameProvider.cpp
         lsp/RenameProvider.h
         lsp/RequestParams.cpp

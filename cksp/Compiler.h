@@ -27,6 +27,7 @@
 #include "ASTVisitor/ASTSemanticAnalysis.h"
 #include "ASTVisitor/ASTVariableChecking.h"
 #include "../lsp/visitor/ReferenceIndexBuilder.h"
+#include "../lsp/visitor/CompletionIndexBuilder.h"
 #include "ASTVisitor/ASTOptimizations.h"
 #include "ASTVisitor/TypeInference.h"
 #include "ASTVisitor/ASTReturnFunctionRewriting.h"
@@ -84,6 +85,7 @@ class Compiler {
 	LinesProcessed m_lines_processed{};
 	ImportGraph m_import_graph;
 	ReferenceIndex m_reference_index;
+	CompletionIndex m_completion_index;
 	ConstantDatabase m_constant_db;
 
 //	bool tokenize();
@@ -174,6 +176,7 @@ private:
 		initialize(diagnostic_engine);
 		// reset before preprocess: the substitution passes already record define/macro links
 		m_reference_index = ReferenceIndex{};
+		m_completion_index = CompletionIndex{};
 		SourceParser source_parser(*m_sources, m_definition_provider, m_lines_processed, diagnostic_engine, m_import_graph);
 		preprocess(source_parser);
 		m_final_config = combine_configs(m_cli_config, m_pragma_config);
@@ -190,6 +193,7 @@ private:
 			m_program->compiler_config = m_final_config.get();
 			if (m_program->compiler_config->lsp) {
 				collect_reference_definitions();
+				collect_completion_scopes();
 			}
 			m_program->apply_callback_overrides();
 			if (m_pragma_config->combine_callbacks.value_or(false)) {
@@ -236,6 +240,7 @@ private:
 		// resolved only by the final variable check on top of this snapshot.
 		if (m_program->compiler_config->lsp) {
 			build_reference_index();
+			build_completion_index();
 		}
 
 		// ASTPointerScope pointer_scope(m_program);
@@ -269,6 +274,23 @@ private:
 		ReferenceIndexBuilder reference_index_builder(
 			m_reference_index, ReferenceIndexBuilder::Pass::References, m_sources);
 		ast->accept(reference_index_builder);
+	}
+
+	/// Harvests qualifier containers for completion. Runs at the same point as the
+	/// first reference harvest: desugaring has attached the full prefix paths and
+	/// ASTCollectLowerings has not yet removed the struct definitions.
+	void build_completion_index() {
+		CompletionIndexBuilder completion_index_builder(
+			m_completion_index, CompletionIndexBuilder::Pass::Members);
+		ast->accept(completion_index_builder);
+	}
+
+	/// Records qualifier block bodies before desugaring removes them. Their ranges
+	/// resolve a shortened qualifier against the block the cursor sits in.
+	void collect_completion_scopes() {
+		CompletionIndexBuilder scope_builder(
+			m_completion_index, CompletionIndexBuilder::Pass::Scopes);
+		ast->accept(scope_builder);
 	}
 
 	/// Records qualifier blocks before desugaring removes namespace/family/const nodes.
@@ -622,6 +644,11 @@ public:
 		return m_reference_index;
 	}
 
+	/// Qualifier -> members index built during analysis (populated in LSP mode).
+	[[nodiscard]] const CompletionIndex& completion_index() const {
+		return m_completion_index;
+	}
+
 	/// Folded values of all constants, built early in the pipeline (after type inference).
 	[[nodiscard]] const ConstantDatabase& constant_database() const {
 		return m_constant_db;
@@ -642,6 +669,11 @@ public:
 			if (ast) {
 				try {
 					build_reference_index();
+					// Same salvage for completion: an analysis that got past desugaring
+					// carries complete prefix paths even though a later pass failed, so a
+					// file with a semantic error still completes. A tokenizer or parser
+					// error leaves no AST at all and falls back to the previous snapshot.
+					build_completion_index();
 				} catch (...) {
 					// a partially transformed AST must never break diagnostics reporting
 				}
