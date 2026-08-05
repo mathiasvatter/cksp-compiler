@@ -33,6 +33,21 @@ struct CompletionMember {
 	std::string parameters;  ///< "(amount: int, target: int)" for callables, empty otherwise
 	std::string detail;      ///< a variable's type, or a callable's full signature
 	CompletionKind kind = CompletionKind::Variable;
+	/// Struct this member is itself an instance of, so a chain can walk on through it
+	/// (<inst.child.>). Index-internal; never serialized.
+	std::string object_type;
+};
+
+/// A named declaration the user can write, with the scope it is visible in.
+///
+/// CKSP hoists declarations in callbacks to the global scope, so the only construct
+/// that hides a name is a function body. `scope` is therefore either invalid (global)
+/// or the range of the enclosing function.
+struct CompletionDeclaration {
+	std::string name;         ///< qualified name after desugaring, e.g. "audio.inst"
+	std::string object_type;  ///< struct it is an instance of, empty for non-objects
+	std::string file;
+	SourceRange scope;
 };
 
 /// A qualifier block's body, used to resolve a shortened qualifier against the
@@ -56,9 +71,40 @@ struct CompletionScope {
  */
 class CompletionIndex {
 	std::unordered_map<std::string, std::vector<CompletionMember>> m_containers;
+	/// Struct name -> members reachable through an *instance* of it.
+	std::unordered_map<std::string, std::vector<CompletionMember>> m_type_members;
 	std::vector<CompletionScope> m_scopes;
+	std::vector<CompletionDeclaration> m_declarations;
+	/// Method bodies, so <self> resolves to the struct the cursor is inside of.
+	std::vector<CompletionScope> m_self_scopes;
 
 public:
+	void add_type_member(const std::string& struct_name, CompletionMember member) {
+		if (struct_name.empty() || member.label.empty()) return;
+		auto& members = m_type_members[struct_name];
+		const auto duplicate = std::ranges::find_if(
+			members,
+			[&](const CompletionMember& existing) { return existing.label == member.label; });
+		if (duplicate != members.end()) return;
+		members.push_back(std::move(member));
+	}
+
+	void add_declaration(CompletionDeclaration declaration) {
+		if (declaration.name.empty()) return;
+		declaration.file = declaration.file.empty()
+			? std::string{}
+			: FileSystemSourceProvider::normalize(declaration.file).value;
+		m_declarations.push_back(std::move(declaration));
+	}
+
+	/// Records a method body so <self.> inside it resolves to `struct_name`.
+	void add_self_scope(std::string file, const SourceRange& range, std::string struct_name) {
+		if (file.empty() || struct_name.empty() || !range.is_valid()) return;
+		m_self_scopes.push_back({
+			FileSystemSourceProvider::normalize(file).value, range, {std::move(struct_name)}
+		});
+	}
+
 	void add_scope(std::string file, const SourceRange& range, std::vector<std::string> path) {
 		if (file.empty() || path.empty() || !range.is_valid()) return;
 		// Token files come from the preprocessor and need not be canonical; lookups
@@ -101,7 +147,9 @@ public:
 		add(join(container_path), std::move(member));
 	}
 
-	[[nodiscard]] bool empty() const { return m_containers.empty(); }
+	[[nodiscard]] bool empty() const {
+		return m_containers.empty() && m_type_members.empty() && m_declarations.empty();
+	}
 
 	/**
 	 * Members visible under a typed qualifier chain, resolved lexically.
@@ -164,6 +212,49 @@ public:
 		return sorted(merged);
 	}
 
+	/**
+	 * Members reachable through an instance, for a chain the qualifier lookup did not
+	 * resolve: <inst.>, <audio.inst.>, <inst.child.> or <self.>.
+	 *
+	 * The longest leading run of the chain that names a declaration wins - a declaration
+	 * inside a namespace carries the namespace in its name, so the run can span several
+	 * segments. Whatever follows is walked member by member through the struct types.
+	 */
+	[[nodiscard]] std::vector<CompletionMember> instance_members_of(
+		const std::vector<std::string>& chain,
+		const std::string& file,
+		const size_t line,
+		const size_t character) const {
+		if (chain.empty()) return {};
+
+		// <self> is not a declaration one can look up by name: the struct desugaring gives
+		// it the struct's own token. Resolve it from the method body the cursor sits in.
+		size_t consumed = 1;
+		auto type = chain[0] == "self"
+			? enclosing_struct(file, line, character)
+			: resolve_declaration_type(chain, file, line, character, consumed);
+		if (type.empty()) return {};
+
+		for (size_t i = consumed; i < chain.size(); ++i) {
+			type = member_type(type, chain[i]);
+			if (type.empty()) return {};
+		}
+		const auto members = m_type_members.find(type);
+		if (members == m_type_members.end()) return {};
+		return sorted(members->second);
+	}
+
+	/// Innermost method body containing the position, as a struct name.
+	[[nodiscard]] std::string enclosing_struct(
+		const std::string& file, const size_t line, const size_t character) const {
+		const CompletionScope* best = nullptr;
+		for (const auto& scope : m_self_scopes) {
+			if (scope.file != file || !covers(scope.range, line, character)) continue;
+			if (!best || is_narrower(scope.range, best->range)) best = &scope;
+		}
+		return best && !best->path.empty() ? best->path.front() : std::string{};
+	}
+
 	static std::vector<std::string> split_path(const std::string& path) {
 		std::vector<std::string> segments;
 		size_t start = 0;
@@ -195,6 +286,76 @@ private:
 			return left.label < right.label;
 		});
 		return members;
+	}
+
+	/// Longest leading run of `chain` that names a declaration, as its struct type.
+	/// `consumed` receives how many segments that run spans.
+	[[nodiscard]] std::string resolve_declaration_type(
+		const std::vector<std::string>& chain,
+		const std::string& file,
+		const size_t line,
+		const size_t character,
+		size_t& consumed) const {
+		const auto enclosing = enclosing_path(file, line, character);
+		std::string best_type;
+		std::string qualified;
+		for (size_t count = 1; count <= chain.size(); ++count) {
+			if (count > 1) qualified += ".";
+			qualified += chain[count - 1];
+			// Written inside a namespace, a declaration may be named without its
+			// qualifiers, exactly like a container reference.
+			auto prefix = enclosing;
+			while (true) {
+				auto candidate = prefix;
+				candidate.push_back(qualified);
+				if (const auto type = declaration_type(join(candidate), file, line, character);
+					!type.empty()) {
+					best_type = type;
+					consumed = count;
+					break;
+				}
+				if (prefix.empty()) break;
+				prefix.pop_back();
+			}
+		}
+		return best_type;
+	}
+
+	/// Struct type of the declaration named `name` that is visible at the position.
+	/// A function-scoped declaration shadows a global one of the same name.
+	[[nodiscard]] std::string declaration_type(
+		const std::string& name,
+		const std::string& file,
+		const size_t line,
+		const size_t character) const {
+		const CompletionDeclaration* best = nullptr;
+		for (const auto& declaration : m_declarations) {
+			if (declaration.name != name) continue;
+			const bool is_local = declaration.scope.is_valid();
+			if (is_local
+				&& (declaration.file != file || !covers(declaration.scope, line, character))) {
+				continue;
+			}
+			if (!best || (is_local && !best->scope.is_valid())) best = &declaration;
+		}
+		return best ? best->object_type : std::string{};
+	}
+
+	/// Struct type of `member` inside `struct_name`, empty when it is not an object.
+	[[nodiscard]] std::string member_type(
+		const std::string& struct_name, const std::string& member) const {
+		const auto members = m_type_members.find(struct_name);
+		if (members == m_type_members.end()) return {};
+		for (const auto& entry : members->second) {
+			if (entry.label == member) return entry.object_type;
+		}
+		return {};
+	}
+
+	static bool is_narrower(const SourceRange& left, const SourceRange& right) {
+		const size_t left_lines = left.end.get_lsp_line() - left.start.get_lsp_line();
+		const size_t right_lines = right.end.get_lsp_line() - right.start.get_lsp_line();
+		return left_lines < right_lines;
 	}
 
 	/// True when the zero-based (LSP) position lies inside the one-based range.

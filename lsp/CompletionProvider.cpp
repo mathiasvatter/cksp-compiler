@@ -43,7 +43,12 @@ std::vector<CompletionMember> CompletionProvider::members(
 			? state->second.last_successful
 			: state->second.current;
 		if (!index) continue;
-		for (auto& member : index->members_of(chain, file, line, character)) {
+		auto members = index->members_of(chain, file, line, character);
+		// A chain that names no qualifier may still name an instance: <inst.>, <self.>.
+		if (members.empty()) {
+			members = index->instance_members_of(chain, file, line, character);
+		}
+		for (auto& member : members) {
 			if (seen.insert(member.label).second) found.push_back(std::move(member));
 		}
 	}

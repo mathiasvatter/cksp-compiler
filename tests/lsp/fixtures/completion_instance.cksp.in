@@ -1,0 +1,54 @@
+{ Instance member completion: the chain is resolved through the declared type of
+  its leading run, not through a qualifier path. }
+
+struct Zone
+    static const MAX: int := 8
+    idx: int
+    file: string
+
+    function ping(self): int
+        return self.<|self_member|>idx
+    end function
+end struct
+
+struct Group
+    zone: Zone
+    count: int
+
+    function tick(self): int
+        return self.count
+    end function
+end struct
+
+struct Holder
+    zones[4]: Zone[]
+end struct
+
+namespace audio
+    declare inst: Zone := new Zone(7, "a")
+end namespace
+
+{ Two functions declaring the same name with different types: a function body is
+  the only scope in CKSP that hides a declaration, so each has to resolve to its
+  own struct. }
+function uses_zone()
+    declare item: Zone := new Zone(1, "b")
+    message(item.<|local_zone|>idx)
+end function
+
+function uses_group()
+    declare item: Group := new Group(new Zone(2, "c"), 2)
+    message(item.<|local_group|>count)
+end function
+
+on init
+    declare g: Group := new Group(new Zone(1, "d"), 2)
+    declare h: Holder := new Holder([new Zone(1, "e")])
+    uses_zone()
+    uses_group()
+    message(g.<|instance|>count)
+    message(g.zone.<|chained|>idx)
+    message(audio.inst.<|qualified|>idx)
+    message(h.zones[0].<|element|>idx)
+    message(Zone.<|type_qualified|>MAX)
+end on

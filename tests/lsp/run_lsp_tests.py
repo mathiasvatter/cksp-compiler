@@ -357,6 +357,45 @@ def _(workspace, server):
         expect_no_labels(items, ["attack", "release", "retrigger"])
 
 
+@test("completion: instance members of a struct-typed declaration",
+      requires="completionProvider")
+def _(workspace, server):
+    fixture = workspace.open("completion_instance.cksp")
+    expect(server.diagnostics(fixture) == [], "precondition: the fixture compiles cleanly")
+    items = server.completion(fixture, "instance")
+    expect_labels(items, ["count", "zone", "tick"], exactly=True)
+    # An instance is not the type: statics and lifecycle methods stay out.
+    expect_no_labels(items, ["MAX", "__init__", "__del__", "__repr__", "self"])
+
+
+@test("completion: a chain walks on through member types", requires="completionProvider")
+def _(workspace, server):
+    fixture = workspace.open("completion_instance.cksp")
+    for marker in ("chained", "qualified", "element", "self_member"):
+        items = server.completion(fixture, marker)
+        expect_labels(items, ["idx", "file", "ping"], exactly=True)
+        expect_no_labels(items, ["MAX"])
+
+
+@test("completion: same-named locals resolve per function body",
+      requires="completionProvider")
+def _(workspace, server):
+    # A function body is the only scope in CKSP that hides a name, so this is the
+    # one case where the same identifier must yield different members.
+    fixture = workspace.open("completion_instance.cksp")
+    expect_labels(server.completion(fixture, "local_zone"), ["idx", "file", "ping"], exactly=True)
+    expect_labels(server.completion(fixture, "local_group"), ["zone", "count", "tick"], exactly=True)
+
+
+@test("completion: a struct name still offers only its statics",
+      requires="completionProvider")
+def _(workspace, server):
+    fixture = workspace.open("completion_instance.cksp")
+    items = server.completion(fixture, "type_qualified")
+    expect_labels(items, ["MAX"], exactly=True)
+    expect_no_labels(items, ["idx", "file", "ping"])
+
+
 @test("completion: a shortened qualifier resolves against the enclosing namespace",
       requires="completionProvider")
 def _(workspace, server):
@@ -450,11 +489,13 @@ def _(workspace, server):
     # wrongly think it sits behind a qualifier.
     fixture = workspace.open("completion_valid.cksp")
     header = 'namespace audio\n    declare rate: int := 44100\nend namespace\n\non init\n'
+    # An index is deliberately *not* listed here: `zones[0].` completes the element
+    # type, which completion_instance.cksp covers.
     cases = {
         "string literal": '    message("audio.")\n',
         "block comment": '    { audio. }\n',
         "line comment": '    // audio.\n',
-        "after an index": '    declare arr[4]\n    arr[0].\n',
+        "after a closing paren": '    declare x := abs(1).\n',
         "after a number": '    declare x := 1.\n',
     }
     for index, (what, line) in enumerate(cases.items(), start=2):

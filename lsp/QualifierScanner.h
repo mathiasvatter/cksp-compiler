@@ -62,13 +62,26 @@ namespace lsp {
 
 	if (line[character - 1] != '.') return std::nullopt;
 
-	// Walk backwards over `identifier ('.' identifier)*` immediately left of the dot.
+	// Walk backwards over `identifier ('[' index ']')? ('.' ...)*` left of the dot.
 	std::vector<std::string> chain;
 	size_t end = character - 1;  // one past the last identifier character
 	while (true) {
+		// An indexed element has the type of its elements, so the subscript is skipped
+		// and the chain continues at the array's name: <zones[0].> completes a Zone.
+		if (end > 0 && line[end - 1] == ']') {
+			size_t depth = 0;
+			size_t cursor = end;
+			while (cursor > 0) {
+				--cursor;
+				if (line[cursor] == ']') ++depth;
+				else if (line[cursor] == '[' && --depth == 0) break;
+			}
+			if (depth != 0 || line[cursor] != '[') return std::nullopt;
+			end = cursor;
+		}
 		size_t start = end;
 		while (start > 0 && is_identifier_char(line[start - 1])) --start;
-		if (start == end) return std::nullopt;  // empty segment: `.` or `].`
+		if (start == end) return std::nullopt;  // empty segment: `.` or `).`
 		chain.emplace_back(line.substr(start, end - start));
 		if (start == 0 || line[start - 1] != '.') break;
 		end = start - 1;

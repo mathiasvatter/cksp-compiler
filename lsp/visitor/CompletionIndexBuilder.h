@@ -44,6 +44,9 @@ private:
 	std::vector<std::string> m_scope_path;
 	/// Nesting depth inside function bodies; declarations there are not members.
 	size_t m_function_depth = 0;
+	/// Body of the function currently being visited; invalid at global scope.
+	SourceRange m_function_scope{};
+	std::string m_function_scope_file;
 
 	/// Records the block body so a shortened qualifier typed inside it can be
 	/// resolved against the enclosing path.
@@ -123,6 +126,7 @@ private:
 
 	void record_declaration(NodeDataStructure& node) const {
 		record(node, kind_of_member(node));
+		record_named_declaration(node);
 	}
 
 	/// "(amount: int, target: int)".
@@ -165,6 +169,32 @@ private:
 
 	static bool is_unknown(const Type* type) {
 		return !type || type->to_string() == "unknown";
+	}
+
+	/// Struct a declaration is an instance of. Arrays of structs resolve to their
+	/// element type, so <zones[0].> can walk on through it.
+	static std::string object_type_of(const Type* type) {
+		if (!type) return {};
+		if (type->get_type_kind() == TypeKind::Object) return type->to_string();
+		const auto* element = type->get_element_type();
+		if (element && element != type && element->get_type_kind() == TypeKind::Object) {
+			return element->to_string();
+		}
+		return {};
+	}
+
+	/// Every declaration the user can name, with the only scope CKSP actually hides
+	/// things in: a function body. Declarations in callbacks are hoisted to the global
+	/// scope, so they stay unscoped here.
+	void record_named_declaration(const NodeDataStructure& node) const {
+		if (m_pass != Pass::Members || node.name.empty()) return;
+		if (node.name == "self" && node.tok.val != "self") return;
+		m_index.add_declaration({
+			node.name,
+			object_type_of(node.ty),
+			m_function_scope_file,
+			m_function_scope,
+		});
 	}
 
 public:
@@ -220,21 +250,28 @@ public:
 	/// (<PathUtils._id>), and those are unreachable through the qualifier.
 	NodeAST* visit(NodeFunctionDefinition& node) override {
 		if (node.header) node.header->accept(*this);
+		const auto outer_scope = m_function_scope;
+		const auto outer_file = m_function_scope_file;
+		m_function_scope = node.range;
+		m_function_scope_file = node.tok.file;
 		++m_function_depth;
 		ASTVisitor::visit(node);
 		--m_function_depth;
+		m_function_scope = outer_scope;
+		m_function_scope_file = outer_file;
 		return &node;
 	}
 
 	NodeAST* visit(NodeProgram& node) override {
 		ASTVisitor::visit(node);
-		if (m_pass == Pass::Members) collect_struct_statics(node);
+		if (m_pass == Pass::Members) collect_struct_members(node);
 		return &node;
 	}
 
 	/// `Foo.` names the struct, not an instance, so only <static> members and
-	/// <static> methods are reachable through it.
-	void collect_struct_statics(const NodeProgram& program) const {
+	/// <static> methods are reachable through it; an instance reaches exactly the
+	/// others. Both come from the same tables, split by the static flag.
+	void collect_struct_members(const NodeProgram& program) const {
 		for (const auto* definition : program.struct_definitions) {
 			if (!definition) continue;
 			const auto container = definition->name;
@@ -242,23 +279,50 @@ public:
 
 			for (const auto& [name, member] : definition->member_table) {
 				const auto declaration = member.lock();
-				if (!declaration || !declaration->is_shared_member()) continue;
-				m_index.add(container, {
+				if (!declaration) continue;
+				// Struct desugaring prepends a synthetic <self> member; it is machinery,
+				// not something the user can complete to.
+				if (declaration->name == "self" || basename_of(declaration->name) == "self") {
+					continue;
+				}
+				CompletionMember item{
 					basename_of(declaration->name),
 					{},
 					detail_of(*declaration),
 					CompletionKind::Constant,
-				});
+					object_type_of(declaration->ty),
+				};
+				if (declaration->is_shared_member()) {
+					m_index.add(container, std::move(item));
+				} else {
+					item.kind = CompletionKind::Field;
+					m_index.add_type_member(container, std::move(item));
+				}
 			}
 
 			for (const auto& method : definition->methods) {
-				if (!method || !method->is_static || !method->header) continue;
-				m_index.add(container, {
-					basename_of(method->header->name),
+				if (!method || !method->header) continue;
+				const auto name = basename_of(method->header->name);
+				// Generated lifecycle methods are not part of the surface.
+				if (name == NodeStruct::CONSTRUCTOR || name == NodeStruct::DESTRUCTOR
+					|| name == "__repr__") {
+					continue;
+				}
+				CompletionMember item{
+					name,
 					parameters_of(*method->header),
-					signature_of(*method->header, true),
+					signature_of(*method->header, method->is_static),
 					CompletionKind::Method,
-				});
+				};
+				if (method->is_static) {
+					m_index.add(container, std::move(item));
+				} else {
+					m_index.add_type_member(container, std::move(item));
+					// <self.> inside this method resolves to the struct.
+					if (!method->tok.file.empty()) {
+						m_index.add_self_scope(method->tok.file, method->range, container);
+					}
+				}
 			}
 		}
 	}
