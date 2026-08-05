@@ -317,16 +317,17 @@ public:
 					continue;
 				}
 				CompletionMember item{
-					basename_of(declaration->name),
-					{},
-					detail_of(*declaration),
-					CompletionKind::Constant,
-					object_type_of(declaration->ty),
+					.label = basename_of(declaration->name),
+					.detail = detail_of(*declaration),
+					.object_type = object_type_of(declaration->ty),
 				};
 				if (declaration->is_shared_member()) {
+					item.kind = CompletionKind::Constant;
+					item.category = "static const";
 					m_index.add(container, std::move(item));
 				} else {
 					item.kind = CompletionKind::Field;
+					item.category = "member";
 					m_index.add_type_member(container, std::move(item));
 				}
 			}
@@ -340,10 +341,11 @@ public:
 					continue;
 				}
 				CompletionMember item{
-					name,
-					parameters_of(*method->header),
-					signature_of(*method->header, method->is_static),
-					CompletionKind::Method,
+					.label = name,
+					.parameters = parameters_of(*method->header),
+					.detail = signature_of(*method->header, method->is_static),
+					.kind = CompletionKind::Method,
+					.category = method->is_static ? "static function" : "method",
 				};
 				if (method->is_static) {
 					m_index.add(container, std::move(item));

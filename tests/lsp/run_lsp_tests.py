@@ -397,6 +397,39 @@ def _(workspace, server):
         expect_no_labels(items, ["MAX"])
 
 
+@test("completion: each construct is labelled as what it was declared as",
+      requires="completionProvider")
+def _(workspace, server):
+    # The construct word cannot be derived from the LSP kind: one Field covers a
+    # <family> member and a struct member, one Method covers a <static function> and a
+    # method. Kind and word are asserted together so neither can drift.
+    instance = workspace.open("completion_instance.cksp")
+    for label, kind, category in [("idx", 5, "member"), ("ping", 2, "method")]:
+        item = item_named(server.completion(instance, "chained"), label)
+        expect(item["kind"] == kind, f"{label}: kind {item['kind']}, expected {kind}")
+        expect(
+            item["labelDetails"]["description"] == category,
+            f"{label}: labelled {item['labelDetails'].get('description')!r}, expected {category!r}",
+        )
+
+    valid = workspace.open("completion_valid.cksp")
+    for marker, label, kind, category in [
+        ("struct_static", "MAX_STAGES", 21, "static const"),
+        ("struct_static", "describe", 2, "static function"),
+        ("const_member", "HIGH", 21, "const"),
+        ("family_member", "index", 5, "family"),
+        ("namespace_member", "rate", 6, "variable"),
+        ("namespace_member", "mixer", 9, "namespace"),
+        ("namespace_member", "fade", 3, "function"),
+    ]:
+        item = item_named(server.completion(valid, marker), label)
+        expect(item["kind"] == kind, f"{label}: kind {item['kind']}, expected {kind}")
+        expect(
+            item["labelDetails"]["description"] == category,
+            f"{label}: labelled {item['labelDetails'].get('description')!r}, expected {category!r}",
+        )
+
+
 @test("completion: same-named locals resolve per function body",
       requires="completionProvider")
 def _(workspace, server):

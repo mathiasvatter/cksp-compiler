@@ -81,7 +81,8 @@ std::unique_ptr<JSONObject> CompletionProvider::make_item(const CompletionMember
 	if (!member.parameters.empty()) {
 		label_details->add("detail", std::make_unique<JSONString>(member.parameters));
 	}
-	if (const auto category = category_of(member.kind); !category.empty()) {
+	if (const auto category = member.category.empty() ? category_of(member.kind) : member.category;
+		!category.empty()) {
 		label_details->add("description", std::make_unique<JSONString>(category));
 	}
 	item->add("labelDetails", std::move(label_details));

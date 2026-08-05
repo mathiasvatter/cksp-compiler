@@ -33,6 +33,10 @@ struct CompletionMember {
 	std::string parameters;  ///< "(amount: int, target: int)" for callables, empty otherwise
 	std::string detail;      ///< a variable's type, or a callable's full signature
 	CompletionKind kind = CompletionKind::Variable;
+	/// The CKSP construct this was declared as, shown greyed after the label. It cannot be
+	/// derived from `kind`: LSP has one Field for a <family> member and a struct member, and
+	/// one Method for a <static function> and a method. Empty falls back to the kind.
+	std::string category;
 	/// Struct this member is itself an instance of, so a chain can walk on through it
 	/// (<inst.child.>). Index-internal; never serialized.
 	std::string object_type;
@@ -49,6 +53,7 @@ struct CompletionDeclaration {
 	std::string parameters;   ///< "(a: int)" for callables
 	std::string detail;       ///< type annotation or full signature
 	CompletionKind kind = CompletionKind::Variable;
+	std::string category;     ///< see CompletionMember::category
 	std::string file;
 	SourceRange scope;
 };
@@ -268,6 +273,7 @@ public:
 			if (label.empty() || !seen.insert(label).second) return;
 			found.push_back({
 				std::move(label), declaration.parameters, declaration.detail, declaration.kind,
+				declaration.category,
 			});
 		};
 
