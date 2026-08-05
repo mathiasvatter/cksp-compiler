@@ -124,7 +124,9 @@ private:
 		}
 		const auto ptr_name = name.substr(0, pos);
 		const auto node_declaration = m_def_provider->get_declared_data_structure(ptr_name);
-		if(!node_declaration) return nullptr;
+		// no instance of that name -> the leading element may name a struct instead: <Foo.MAX>.
+		// A variable always wins, so this is only reached when the name is not declared at all.
+		if(!node_declaration) return try_type_qualified_transform(ptr_name, node);
 
 		// different scenarios for different node types
 		// eq.lbl_param0 -> a reference originally recognized as a variable cannot have a variable or function declaration (eq)
@@ -139,6 +141,18 @@ private:
 		const auto object = static_cast<NodeReference*>(method_chain->chain[0].get());
 		object->declaration = node_declaration;
 		method_chain->declaration = node_declaration;
+		return method_chain;
+	}
+
+	/// <Foo.MAX>: the chain is qualified by a struct name rather than by an instance. The leading
+	/// element gets no declaration - it only carries the type so the member can be looked up.
+	std::unique_ptr<NodeAccessChain> try_type_qualified_transform(const std::string& struct_name, NodeAST* node) const {
+		if(!NodeReference::get_object_ptr(m_program, struct_name)) return nullptr;
+		auto method_chain = node->to_method_chain();
+		if(!method_chain) return nullptr;
+		const auto object = static_cast<NodeReference*>(method_chain->chain[0].get());
+		object->kind = NodeReference::Kind::TypeQualifier;
+		object->ty = TypeRegistry::get_object_type(struct_name);
 		return method_chain;
 	}
 

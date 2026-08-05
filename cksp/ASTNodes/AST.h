@@ -224,7 +224,9 @@ struct NodeReference : NodeAST {
     std::weak_ptr<class NodeDataStructure> declaration;
     bool is_engine = false;
     bool is_local = false;
-	enum Kind{Builtin, Compiler, User, Throwaway};
+	/// TypeQualifier: the leading element of a type-qualified access chain (<Foo.MAX>). It names a
+	/// struct instead of an instance, so it has no declaration and is dropped during lowering.
+	enum Kind{Builtin, Compiler, User, Throwaway, TypeQualifier};
 	Kind kind = User;
 	DataType data_type = DataType::Mutable;
     explicit NodeReference(Token tok) : NodeAST(std::move(tok), NodeType::DeadCode) {}

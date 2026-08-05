@@ -490,7 +490,12 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 		auto& ptr = node.chain[i];
 		auto error = Diagnostic(ErrorType::SyntaxError, "", "", ptr->tok);
 		if(i == 0) {
-			ptr->accept(*this);
+			// <Foo.MAX>: the qualifier names a struct, so there is no instance to resolve. Its type
+			// was set when the chain was built and is all the member lookup below needs.
+			if(const auto object = ptr->is_reference();
+				!object or object->kind != NodeReference::Kind::TypeQualifier) {
+				ptr->accept(*this);
+			}
 		} else {
 			auto prev = i-1;
 			auto prev_ptr = node.chain[prev].get();
@@ -553,6 +558,16 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				}
 				if(!node_declaration) {
 					error.message = "Member "+reference->name+" does not exist in "+prev_obj+".";
+					error.exit();
+				}
+				// <Foo.MAX>: without an instance only a shared member can be reached. Only the element
+				// right after the qualifier is affected - beyond it the chain runs through real objects.
+				if(const auto object = node.chain[0]->is_reference();
+					i == 1 and object and object->kind == NodeReference::Kind::TypeQualifier
+					and !node_declaration->is_shared_member()) {
+					error.message = "Member <"+reference->name+"> of struct <"+prev_obj+"> can only be accessed "
+						"through an instance, because every instance holds its own value. Declare it as "
+						"<static> to give it one shared value, or access it through a variable.";
 					error.exit();
 				}
 				reference->match_data_structure(node_declaration);
