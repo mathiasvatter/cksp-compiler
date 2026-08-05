@@ -295,7 +295,7 @@ bool NodeAST::is_string_env() const {
 }
 
 NodeReference * NodeAST::is_reference() {
-	static ReferenceValidator ref_validator;
+	static thread_local ReferenceValidator ref_validator;
 	return ref_validator.cast_reference(*this);
 }
 
