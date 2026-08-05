@@ -471,6 +471,10 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_init_method() {
 		if(auto decl = member->statement->cast<NodeSingleDeclaration>()) {
 			auto mem = decl->variable;
 			if(mem->data_type == DataType::Const) continue;
+			// a <static> member holds one value that its declaration already provides. The
+			// constructor runs per instance, so it must neither take it as a parameter nor
+			// overwrite the value shared by every other instance.
+			if(mem->is_shared_member()) continue;
 			std::unique_ptr<NodeSingleAssignment> assignment;
 			auto member_ref = mem->to_reference();
 			member_ref->name = "self." + member_ref->name;
