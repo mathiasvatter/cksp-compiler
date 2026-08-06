@@ -128,7 +128,7 @@ public:
 			if (!declaration or !declaration->value) continue;
 			const auto& member = declaration->variable;
 			if (member->data_type == DataType::Const or member->is_shared_member()) continue;
-			if (member->get_node_type() == NodeType::NDArray) continue;
+			// if (member->get_node_type() == NodeType::NDArray) continue;
 			// only a list of several values spreads wrongly over the instances
 			const auto initializer = declaration->value->cast<NodeInitializerList>();
 			if (!initializer or initializer->size() <= 1) continue;
