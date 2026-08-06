@@ -3,53 +3,54 @@
 #pragma max_callback_depth(420)
 
 
-struct Instrument
-    static const bubu: int := 4500
-    next: Group
-    zones[1000000]: Zone[]    
+// struct Instrument
+//     static const bubu: int := 4500
+//     next: Group
+//     zones[1000000]: Zone[]    
 
-    // function find_zone(self)
-    //     return search(self.zones.id, 5)
-    // end function        
-end struct    
+//     // function find_zone(self)
+//     //     return search(self.zones.id, 5)
+//     // end function        
+// end struct    
   
-struct Zone
-    static const StartType
-        Beginning, Middle, End
-    end const
-    static const pupsen := 30
-    idx: int
-    id: int
-    file: string
-    startMod: int
+// struct Zone
+//     static const StartType
+//         Beginning, Middle, End
+//     end const
+//     arr[2,2]: int[][] := [[1,2], [2, 3]]
+//     idx: int
+//     id: int
+//     file: string
+//     startMod: int
 
-    function add(self)
-        message(self.StartType)
-        message(Zone.pupsen)
-    end function        
-end struct    
+//     function add(self)
+//         self.arr := [[3,4], [5,6]]
+//         message(self.StartType, self.arr[0,0])
+//     end function        
+// end struct    
 
-declare Instrument := new Instrument(nil, [nil])
-on note
-    message(Instrument.zones[0].StartType.Beginning)
-    message(Instrument.bubu)
-    declare arr[Instrument.bubu]
-    message(arr[0])
-end on
-//    function __init__(self) 
-//         for z in range(get_num_zones())
+// declare Instrument := new Instrument(nil, [nil])
+// on note
+//     Instrument.zones[0].add()
+//     message(Instrument.zones[0].StartType.Beginning)
+//     message(Instrument.bubu)
+//     declare arr[Instrument.bubu]
+//     message(arr[0])
+// end on
+// //    function __init__(self) 
+// //         for z in range(get_num_zones())
             
-//         end for            
-//     end function 
+// //         end for            
+// //     end function 
 
 
-struct Group
-    idx: int
-    zone: Zone
-    next: Group
+// struct Group
+//     idx: int
+//     zone: Zone
+//     next: Group
 
 
-end struct  
+// end struct  
 
 // function num_notes_pressed()
 //     declare num_notes: int
@@ -87,11 +88,21 @@ end struct
 //     return nil
 // end function
 
-const bu
-    bubu, bububu
-end const
+struct Foo
+    grid[2,2]: int[][] := [[3,4], [3,5]]
+    y: int
 
-on note
-    // message(bu.bubu)
+    function __init__(self, i: int)
+        self.y := i
+    end function
 
+    function fill(self)
+        self.grid := [[1,2],[3,4]]
+    end function
+end struct
+
+on init
+    declare a: Foo := new Foo(1)
+    a.fill()
+    message(a.grid[1,1])
 end on
