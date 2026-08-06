@@ -135,7 +135,12 @@ public:
 			node.indexes->accept(*this);
 			check_reference_annotation_with_expected(node, TypeRegistry::Unknown);
 		} else {
-			check_reference_annotation_with_expected(node, TypeRegistry::ArrayOfUnknown);
+			// the whole <NDArray> is meant, so any dimension count fits - <ArrayOfUnknown> would
+			// demand exactly one and reject every reference to a member of higher rank, such as
+			// the <self.arr := arr> the generated constructor writes
+			const auto any_dimensions = std::make_unique<CompositeType>(
+				CompoundKind::Array, TypeRegistry::Unknown, 0);
+			check_reference_annotation_with_expected(node, any_dimensions.get());
 		}
 		if(node.sizes) node.sizes->accept(*this);
 		convert_composite_to_reference(node);
@@ -209,8 +214,8 @@ private:
 		if(!node.ty->is_compatible(expected)) {
 			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
 			error.message = "Type Annotation of "+node.name+" does not match expected type kind.";
-			error.expected =  "<"+expected->get_type_kind_name()+"> Type";
-			error.actual = "<"+node.ty->get_type_kind_name()+"> Type";
+			error.expected =  "<"+expected->get_type_kind_name()+"> "+ expected->to_string()+" Type";
+			error.actual = "<"+node.ty->get_type_kind_name()+"> "+ node.ty->to_string()+" Type";
 			error.exit();
 		}
 		return nullptr;
