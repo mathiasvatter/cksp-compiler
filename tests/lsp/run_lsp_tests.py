@@ -499,6 +499,32 @@ def _(workspace, server):
     )
 
 
+@test("completion: a name that merely contains dots is reachable through them",
+      requires="completionProvider")
+def _(workspace, server):
+    # <macro nks.init()> is one flat name; nothing declares `nks`, so the qualified
+    # branch has to derive the members from the names.
+    fixture = workspace.open("completion_dotted_names.cksp")
+    expect(server.diagnostics(fixture) == [], "precondition: the fixture compiles cleanly")
+
+    items = server.completion(fixture, "dotted")
+    expect_labels(items, ["init", "update_labels", "MAX", "counter", "labels"], exactly=True)
+    expect(
+        item_named(items, "init")["labelDetails"]["description"] == "macro",
+        f"got {item_named(items, 'init').get('labelDetails')}",
+    )
+    # The signature keeps the dots, because that is how the name was written.
+    expect(
+        item_named(items, "update_labels")["detail"] == "function nks.update_labels()",
+        f"unexpected signature: {item_named(items, 'update_labels').get('detail')}",
+    )
+
+    # Unqualified they stay reachable under their full names, so typing "nks" matches.
+    unqualified = server.completion(fixture, "global", trigger_character=None)
+    expect_labels(unqualified, ["nks.init", "nks.update_labels", "nks.MAX",
+                                "nks.counter", "nks.labels", "nks_ready"])
+
+
 @test("completion: locals of another function stay invisible",
       requires="completionProvider")
 def _(workspace, server):

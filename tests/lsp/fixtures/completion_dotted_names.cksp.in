@@ -1,0 +1,25 @@
+{ Dots as a naming convention rather than a namespace. Nothing declares `nks`, so
+  neither the container nor the instance lookup can reach these; the members have to
+  come from the names themselves. }
+
+macro nks.init()
+    declare nks_ready := 1
+end macro
+
+function nks.update_labels()
+    message("labels")
+end function
+
+define nks.MAX := 8
+
+{ variables carry their dots in the token itself, unlike a namespace prefix }
+declare nks.counter := 0
+declare !nks.labels[2] := ("a", "b")
+
+on init
+    nks.<|dotted|>init()
+    nks.update_labels()
+    message(nks.MAX + nks.counter)
+    message(nks.labels[0])
+    <|global|>
+end on

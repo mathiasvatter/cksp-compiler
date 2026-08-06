@@ -310,6 +310,35 @@ public:
 		if (!path.empty()) m_container_kinds.emplace(path, kind);
 	}
 
+	/**
+	 * Members of a dotted name that is no qualifier block at all.
+	 *
+	 * <macro nks.init()> and <function nks.update_labels()> use dots as a naming
+	 * convention rather than a namespace, so their names are flat strings that happen to
+	 * contain a dot. Nothing declares `nks`, so neither the container nor the instance
+	 * lookup can reach them; the members have to be derived from the names themselves.
+	 */
+	[[nodiscard]] std::vector<CompletionMember> dotted_members_of(
+		const std::vector<std::string>& chain,
+		const std::string& file,
+		const size_t line,
+		const size_t character) const {
+		if (chain.empty()) return {};
+
+		auto enclosing = enclosing_path(file, line, character);
+		while (true) {
+			auto candidate = enclosing;
+			candidate.insert(candidate.end(), chain.begin(), chain.end());
+			if (auto found = dotted_members_under(join(candidate) + ".", file, line, character);
+				!found.empty()) {
+				return found;
+			}
+			if (enclosing.empty()) break;
+			enclosing.pop_back();
+		}
+		return {};
+	}
+
 	/// Innermost method body containing the position, as a struct name.
 	[[nodiscard]] std::string enclosing_struct(
 		const std::string& file, const size_t line, const size_t character) const {
@@ -352,6 +381,38 @@ private:
 			return left.label < right.label;
 		});
 		return members;
+	}
+
+	/// Declarations whose name continues past `prefix`, offered by their next segment.
+	[[nodiscard]] std::vector<CompletionMember> dotted_members_under(
+		const std::string& prefix,
+		const std::string& file,
+		const size_t line,
+		const size_t character) const {
+		std::vector<CompletionMember> found;
+		std::unordered_set<std::string> seen;
+		for (const auto& declaration : m_declarations) {
+			if (!declaration.name.starts_with(prefix)) continue;
+			if (!is_visible(declaration, file, line, character)) continue;
+			const auto remainder = declaration.name.substr(prefix.size());
+			if (remainder.empty()) continue;
+
+			const auto dot = remainder.find('.');
+			if (dot == std::string::npos) {
+				if (seen.insert(remainder).second) {
+					found.push_back({
+						remainder, declaration.parameters, declaration.detail,
+						declaration.kind, declaration.category,
+					});
+				}
+				continue;
+			}
+			// A longer name contributes only its next segment, as an intermediate node.
+			if (const auto segment = remainder.substr(0, dot); seen.insert(segment).second) {
+				found.push_back({segment, {}, {}, CompletionKind::Module, "prefix"});
+			}
+		}
+		return sorted(std::move(found));
 	}
 
 	/// A declaration is visible when it is global, or local to the function the cursor

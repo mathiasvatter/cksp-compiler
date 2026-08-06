@@ -156,9 +156,14 @@ private:
 	}
 
 	/// "function fade(amount: int, target: int): int".
+	///
+	/// The name comes from the token, which is how it was written: a function in a
+	/// namespace is declared as <reset>, while <function nks.update_labels()> carries the
+	/// dots in its own name and should show them.
 	static std::string signature_of(const NodeFunctionHeader& header, const bool is_static) {
 		std::string signature = is_static ? "static function " : "function ";
-		signature += basename_of(header.name) + parameters_of(header);
+		signature += (header.tok.val.empty() ? basename_of(header.name) : header.tok.val)
+			+ parameters_of(header);
 		// The header's own type is a FunctionType; its return type is Unknown for a
 		// function that returns nothing, which must not be printed.
 		if (const auto* function_type = header.ty ? header.ty->cast<FunctionType>() : nullptr) {
@@ -196,7 +201,10 @@ private:
 		if (node.name == "self" || node.tok.val == "self") return;
 
 		std::string name = node.name;
-		if (basename_of(name) != node.tok.val) {
+		// A name may equal the token outright when it carries dots of its own
+		// (<declare nks.counter>), or differ from it only by the qualifier the
+		// namespace desugaring prepended.
+		if (name != node.tok.val && basename_of(name) != node.tok.val) {
 			// The compiler renamed this one - a uniquified parameter, or machinery of a
 			// generated method. Only a declaration inside a real function body stays
 			// nameable, and then under the spelling the source actually uses.

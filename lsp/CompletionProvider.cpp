@@ -50,6 +50,10 @@ std::vector<CompletionMember> CompletionProvider::members(
 		if (members.empty() && !chain.empty()) {
 			members = index->instance_members_of(chain, file, line, character);
 		}
+		// Last: a name that merely contains dots, like <macro nks.init()>.
+		if (members.empty() && !chain.empty()) {
+			members = index->dotted_members_of(chain, file, line, character);
+		}
 		for (auto& member : members) {
 			if (seen.insert(member.label).second) found.push_back(std::move(member));
 		}
