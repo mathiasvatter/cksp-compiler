@@ -2531,6 +2531,33 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 		if (auto end_error = check_invalid_end_statement("struct", end_construct, peek(), peek(1))) {
 			return Result<std::unique_ptr<NodeStruct>>(*end_error);
 		}
+		// <const Name> + linebreak starts a constant block, <const Name:> a member declaration
+		if(peek().type == token::CONST and peek(1).type == token::KEYWORD and peek(2).type == token::LINEBRK) {
+			return Result<std::unique_ptr<NodeStruct>>(Diagnostic(ErrorType::SyntaxError,
+						 "Found unknown <struct> syntax. A <Constant Block> holds compile time values and is "
+						 "therefore shared by the whole <struct>. Declare it as <static const>.",
+						 "<static const> before the block name", peek()));
+		}
+		// <static const Name> ... <end const> - a constant block scoped to the struct
+		if(peek().type == token::STATIC and peek(1).type == token::CONST
+			and peek(2).type == token::KEYWORD and peek(3).type == token::LINEBRK) {
+			consume(); // consume static
+			auto const_block = parse_const_statement(m_program->global_declarations.get());
+			if(const_block.is_error()) {
+				return Result<std::unique_ptr<NodeStruct>>(const_block.get_error());
+			}
+			// The entries are compile time constants, not members: scope them to the struct and hoist
+			// them to global scope. The struct name is joined with a '.' so that <Voice.State.IDLE>
+			// resolves as one flat constant name instead of an access chain through a member.
+			auto block = std::move(const_block.unwrap());
+			if(const auto node_const = block->cast<NodeConst>()) {
+				node_const->const_prefix.val = name.val + "." + node_const->const_prefix.val;
+				node_const->name = node_const->const_prefix.val;
+			}
+			m_program->global_declarations->add_as_stmt(std::move(block));
+			_skip_linebreaks();
+			continue;
+		}
 		// <static function foo()> - a method on the struct itself, not on an instance
 		const bool is_static_method = peek().type == token::STATIC and peek(1).type == token::FUNCTION;
 		if(is_static_method) {
