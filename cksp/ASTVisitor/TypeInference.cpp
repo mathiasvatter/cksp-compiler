@@ -484,6 +484,31 @@ NodeAST * TypeInference::visit(NodeNullCoalesce &node) {
 	return &node;
 }
 
+/**
+ * <Zone.StartType.Beginning>: a constant block entry keeps the block name inside its own name, so
+ * the member spans two chain elements while every other member spans one. to_method_chain() split
+ * at every dot and cannot know the difference, so the elements are put back together here, where
+ * the owning struct is known.
+ *
+ * The longest match wins. The block is also declared under the shorter name - as the backing array
+ * that makes <Zone.StartType[i]> work - and would otherwise shadow all of its entries.
+ *
+ * Only plain references are joined: an index, a call or an optional chaining marker can never be
+ * part of a member name.
+ */
+void TypeInference::join_multi_segment_member(NodeAccessChain& node, const int i, NodeStruct& strct, const std::string& prev_obj) {
+	if (!node.chain[i]->cast<NodeVariableRef>()) return;
+	const bool has_opt_chaining = node.opt_chaining_indexes.size() >= node.chain.size();
+
+	int match_end = i;
+	for (int j = i + 1; j < static_cast<int>(node.chain.size()); j++) {
+		if (!node.chain[j]->cast<NodeVariableRef>()) break;
+		if (has_opt_chaining and node.opt_chaining_indexes[j].has_value()) break;
+		if (strct.get_member(prev_obj + OBJ_DELIMITER + node.joined_name(i, j))) match_end = j;
+	}
+	node.merge_members(i, match_end);
+}
+
 NodeAST * TypeInference::visit(NodeAccessChain& node) {
 
 	for(int i = 0; i<node.chain.size(); i++) {
@@ -559,7 +584,10 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				// func_call->function->match_data_structure(definition->header);
 				ptr->accept(*this);
 			} else {
-				auto reference = ptr->is_reference();
+				// a member name can span more than one chain element, so this may collapse the
+				// following ones into <ptr> before the lookup below sees it
+				join_multi_segment_member(node, i, *strct, prev_obj);
+				auto reference = node.chain[i]->is_reference();
 
 				auto node_declaration = strct->get_member(prev_obj+OBJ_DELIMITER+reference->name);
 				// could be nullptr because refs in accessChain are not yet reference-collected

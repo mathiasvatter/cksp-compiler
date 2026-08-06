@@ -353,6 +353,9 @@ public:
 	NodeAST * visit(NodeReturn& node) override;
 
 	NodeAST * visit(NodeAccessChain& node) override;
+	/// collapses the chain elements that together name one member, see the definition
+	static void join_multi_segment_member(
+		struct NodeAccessChain& node, int i, struct NodeStruct& strct, const std::string& prev_obj);
 	NodeAST * visit(NodeSingleDelete& node) override;
 	NodeAST * visit(NodeSingleRetain& node) override;
 	NodeAST * visit(NodeConst& node) override;

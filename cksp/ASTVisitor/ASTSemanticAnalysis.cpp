@@ -298,6 +298,11 @@ NodeAST * ASTSemanticAnalysis::visit(NodeNDArray& node) {
 NodeAST * ASTSemanticAnalysis::visit(NodeNDArrayRef& node) {
     if(node.indexes) node.indexes->accept(*this);
 
+	// A member reached through an access chain (<f.grid[1,1]>) is only bound to its declaration in
+	// TypeInference, which runs after this pass: the owning struct is not known before its type is.
+	// determine_sizes() would report a missing declaration as an internal error instead.
+	if (!node.get_declaration() and node.in_access_chain()) return &node;
+
 	if (!node.determine_sizes()) {
 		NodeReference *new_node = &node;
 		if (const auto repl = replace_incorrectly_detected_reference(&node)) {

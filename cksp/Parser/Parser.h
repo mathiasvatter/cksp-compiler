@@ -141,7 +141,7 @@ public:
     Result<std::unique_ptr<NodeVariable>> parse_declare_variable(NodeAST* parent);
     Result<std::unique_ptr<NodeDataStructure>> parse_declare_array(NodeAST* parent);
     Result<std::unique_ptr<NodeUIControl>> parse_declare_ui_control(NodeAST* parent);
-    Result<std::unique_ptr<NodeAST>> parse_const_statement(NodeAST* parent);
+    Result<std::unique_ptr<NodeConst>> parse_const_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeAST>> parse_list_block(NodeAST* parent);
 	Result<std::unique_ptr<NodeAST>> parse_family_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeStruct>> parse_struct(NodeAST* parent);

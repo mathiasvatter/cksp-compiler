@@ -91,7 +91,7 @@ class DesugarStruct final : public ASTDesugaring {
 			return result;
 		}();
 
-		auto it = operator_overload_methods.find(StringIntKey{name, num_args});
+		const auto it = operator_overload_methods.find(StringIntKey{name, num_args});
 		if (it != operator_overload_methods.end()) {
 			return it->second;
 		}
@@ -99,6 +99,46 @@ class DesugarStruct final : public ASTDesugaring {
 	}
 public:
 	explicit DesugarStruct(NodeProgram *program) : ASTDesugaring(program) {};
+
+	/// A member initialiser is emitted on the member's whole storage, which holds every instance
+	/// back to back. KSP repeats the last value of an initializer list over the remaining indices,
+	/// so a single value still reaches every instance - but a list of several does not: the second
+	/// instance gets the last value repeated instead of the pattern.
+	///
+	/// <row[3]: int[] := (7, 8, 9)> with two instances becomes <%row[6] := (7, 8, 9)>, so the
+	/// second instance reads (9, 9, 9). Such a value is moved into the constructor, which runs per
+	/// instance. A scalar or a one element list is left alone: KSP already fills it correctly and
+	/// an assignment per instance would only cost tokens.
+	///
+	/// Only for a hand written constructor. The generated one takes every member as a parameter
+	/// and assigns it, so the initialiser is already overwritten for every instance.
+	///
+	/// <const> and <static> members are skipped: they have no per-instance storage. <NDArrays> are
+	/// skipped as well - assigning one from an initializer list currently fails during function
+	/// inlining, so moving the value there would turn a wrong value into a compile error.
+	static void move_member_defaults_into_constructor(NodeStruct& node) {
+		std::shared_ptr<NodeFunctionDefinition> constructor = nullptr;
+		for (const auto& method : node.methods) {
+			if (method->header->name == NodeStruct::CONSTRUCTOR) constructor = method;
+		}
+		if (!constructor) return;
+		// walked backwards because each one is prepended: this keeps the declaration order
+		for (auto it = node.members->statements.rbegin(); it != node.members->statements.rend(); ++it) {
+			const auto declaration = (*it)->statement->cast<NodeSingleDeclaration>();
+			if (!declaration or !declaration->value) continue;
+			const auto& member = declaration->variable;
+			if (member->data_type == DataType::Const or member->is_shared_member()) continue;
+			if (member->get_node_type() == NodeType::NDArray) continue;
+			// only a list of several values spreads wrongly over the instances
+			const auto initializer = declaration->value->cast<NodeInitializerList>();
+			if (!initializer or initializer->size() <= 1) continue;
+
+			auto member_ref = member->to_reference();
+			member_ref->name = "self." + member_ref->name;
+			constructor->body->prepend_as_stmt(std::make_unique<NodeSingleAssignment>(
+				std::move(member_ref), std::move(declaration->value), member->tok));
+		}
+	}
 
 	NodeAST* visit(NodeStruct& node) override {
 		node.name = add_struct_prefix(node.name);
@@ -122,8 +162,10 @@ public:
 		// automatically generate init method if none provided by user
 		if(!has_init_method) node.generate_init_method();
 		if(!has_repr_method) node.generate_repr_method();
+		if(has_init_method) move_member_defaults_into_constructor(node);
 
 		node.members->accept(*this);
+		node.members->flatten(); // needed for const blocks nested NodeBlock stmts
 		// add self keyword for declarations
 		// node.members->prepend_as_stmt(std::make_unique<NodeSingleDeclaration>(node.node_self, nullptr, node.tok));
 		for(auto & m: node.methods) {
@@ -148,10 +190,6 @@ public:
 	/// <Foo.foo()>. Everything that needs an instance is rejected here.
 	NodeAST* visit_static_method(NodeFunctionDefinition& node) {
 		auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
-		if (node.header->name.find('.') != std::string::npos) {
-			error.message = "Method name cannot contain '.' character. This is reserved for struct member access.";
-			error.exit();
-		}
 		if (!node.header->params.empty() and node.header->get_param(0)->name == "self") {
 			error.message = "A <static function> must not declare <self> as its first parameter. It is called "
 				"on the struct itself, not on an instance. Remove <self>, or remove <static>.";
@@ -175,18 +213,18 @@ public:
 	}
 
 	NodeAST* visit(NodeFunctionDefinition& node) override {
+		// check if header name has dot in it -> this is not allowed
+		if (node.header->name.find('.') != std::string::npos) {
+			auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.tok);
+			error.message = "Method name cannot contain '.' character. This is reserved for struct member access.";
+			error.exit();
+		}
 		if(node.is_static) {
 			return visit_static_method(node);
 		}
 		if(!node.is_method()) {
 			auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.tok);
 			error.message = "Method definition must contain <self> as first parameter.";
-			error.exit();
-		}
-		// check if header name has dot in it -> this is not allowed
-		if (node.header->name.find('.') != std::string::npos) {
-			auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.tok);
-			error.message = "Method name cannot contain '.' character. This is reserved for struct member access.";
 			error.exit();
 		}
 		// every self as first parameter has to be of type object
@@ -240,9 +278,27 @@ public:
 		return &node;
 	}
 
+	/// const blocks are already desugared at this time
+	/// -> declaration statements inside a const blocks
+	/// const declaration members already should have the static kind from parsing and desugaring
+	NodeAST* visit(NodeConst& node) override {
+		ASTVisitor::visit(node);
+		return node.replace_with(std::move(node.constants));
+	}
+
+	static NodeConst* is_const_block_member(const NodeSingleDeclaration& node) {
+		if (node.parent) {
+			if (const auto stmt = node.parent->cast<NodeStatement>()) {
+				if (stmt->parent and stmt->parent->cast<NodeBlock>()) {
+					return stmt->parent->parent->cast<NodeConst>();
+				}
+			}
+		}
+		return nullptr;
+	}
 
 	NodeAST* visit(NodeSingleDeclaration& node) override {
-		if(node.variable->is_member()) {
+		if(node.variable->is_member() or is_const_block_member(node)) {
 			node.variable->name = add_struct_prefix(node.variable->name);
 			add_to_members(node.variable.get());
 			node.variable->accept(*this);

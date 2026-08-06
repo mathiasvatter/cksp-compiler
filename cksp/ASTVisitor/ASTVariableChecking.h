@@ -128,7 +128,7 @@ private:
 		std::string qualifier;
 		// The last segment is the member being accessed and can never be part of the qualifier.
 		for (size_t count = 1; count < segments.size(); ++count) {
-			if (count > 1) qualifier += ".";
+			if (count > 1) qualifier += '.';
 			qualifier += segments[count - 1];
 
 			if (const auto node_declaration = m_def_provider->get_declared_data_structure(qualifier)) {
@@ -139,7 +139,7 @@ private:
 				}
 				auto method_chain = node->to_method_chain();
 				if (!method_chain) return nullptr;
-				merge_leading_segments(*method_chain, count);
+				method_chain->merge_members(0, count - 1);
 				const auto object = static_cast<NodeReference*>(method_chain->chain[0].get());
 				object->declaration = node_declaration;
 				method_chain->declaration = node_declaration;
@@ -162,27 +162,18 @@ private:
 		if(!NodeReference::get_object_ptr(m_program, struct_name)) return nullptr;
 		auto method_chain = node->to_method_chain();
 		if(!method_chain) return nullptr;
-		merge_leading_segments(*method_chain, count);
-		const auto object = static_cast<NodeReference*>(method_chain->chain[0].get());
+		method_chain->merge_members(0, count - 1);
+		const auto object = method_chain->member(0)->is_reference();
+		if (!object) {
+			auto error = ASTVisitor::make_diagnostic(ErrorType::InternalError, *method_chain);
+			error.set_message("node was flagged as access chain with TypeQualifier but has no NodeReference at idx 0");
+			error.exit();
+		}
 		object->kind = NodeReference::Kind::TypeQualifier;
 		object->ty = TypeRegistry::get_object_type(struct_name);
 		return method_chain;
 	}
-
-	/// Collapses the first `count` elements of a chain into one. to_method_chain() splits at every
-	/// dot, but a qualifier naming a namespaced struct is one element spanning several segments.
-	static void merge_leading_segments(NodeAccessChain& chain, const size_t count) {
-		if (count <= 1 || count > chain.chain.size()) return;
-		std::string merged = chain.chain[0]->get_token_string();
-		for (size_t i = 1; i < count; ++i) merged += "." + chain.chain[i]->get_token_string();
-		// The leading element keeps its start position and grows to span the whole qualifier.
-		auto leading = std::make_unique<NodeVariableRef>(
-			merged, segment_token(chain.chain[0]->tok, 0, merged));
-		chain.chain.erase(chain.chain.begin(), chain.chain.begin() + static_cast<long>(count));
-		chain.chain.insert(chain.chain.begin(), std::move(leading));
-		chain.set_child_parents();
-	}
-
+	
 	/// checks if given callback id is of type ui_control
 	static bool check_callback_id_data_type(NodeAST* callback_id) {
 		std::string id_node_type = "<Array>";

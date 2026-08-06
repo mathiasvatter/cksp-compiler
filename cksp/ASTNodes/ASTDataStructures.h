@@ -425,10 +425,6 @@ struct NodeStruct final : NodeDataStructure {
 	inline static std::string DESTRUCTOR = "__del__";
 	std::shared_ptr<NodePointer> node_self = std::make_shared<NodePointer>(std::nullopt, "self", TypeRegistry::Unknown, this->tok);
 	std::unique_ptr<NodeBlock> members;
-	/// <static const> blocks written in the struct body. They hold compile time constants rather
-	/// than members, so they are kept out of <members> and hoisted to global scope during
-	/// desugaring, once the struct name carries its final namespace prefix.
-	std::unique_ptr<NodeBlock> const_blocks = nullptr;
 	std::unordered_map<std::string, std::weak_ptr<NodeDataStructure>> member_table;
 	std::set<std::string> member_set;
 	std::shared_ptr<NodeFunctionDefinition> constructor = nullptr;

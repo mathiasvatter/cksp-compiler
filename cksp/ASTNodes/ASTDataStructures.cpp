@@ -390,7 +390,6 @@ NodeAST *NodeStruct::accept(ASTVisitor &visitor) {
 }
 NodeStruct::NodeStruct(const NodeStruct& other)
 	: NodeDataStructure(other), members(clone_unique(other.members)),
-	  const_blocks(clone_unique(other.const_blocks)),
 	  methods(other.methods), constructor(other.constructor),
 	  member_table(other.member_table), method_table(other.method_table),
 	  member_node_types(other.member_node_types), max_individual_structs_var(other.max_individual_structs_var),
@@ -488,6 +487,8 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_init_method() {
 				mem->tok
 			);
 			node_block->add_stmt(std::make_unique<NodeStatement>(std::move(assignment), this->tok));
+		} else if (auto const_block = member->statement->cast<NodeConst>()) {
+			continue;
 		} else {
 			auto error = Diagnostic(ErrorType::VariableError, "<Struct> member must be a declaration", "", tok);
 			error.exit();

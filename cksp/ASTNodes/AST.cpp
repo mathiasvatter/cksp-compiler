@@ -389,7 +389,9 @@ bool NodeDataStructure::determine_locality(const NodeProgram* program, const Nod
 	const bool global_declarations = current_block and current_block == program->global_declarations.get();
 	const bool init_callback = (program->current_callback == program->init_callback and program->function_definition_stack.empty() and !is_local) or is_global;
 	bool local = (current_block and current_block->scope) and !init_callback and !global_declarations;
-	local = local or (is_function_param() or is_member() or is_local);
+	// a <static> member has no per-instance storage and no instance lifetime, so it is not local
+	// to the struct: registering it globally makes it known to the variable check right away
+	local = local or (is_function_param() or (is_member() and !is_shared_member()) or is_local);
 	// could also be an old school return variable which would have to be local
 	is_local = local or parent->cast<NodeFunctionDefinition>();
 	return is_local;

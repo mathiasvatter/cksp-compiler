@@ -2546,18 +2546,14 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 			if(const_block.is_error()) {
 				return Result<std::unique_ptr<NodeStruct>>(const_block.get_error());
 			}
-			// Kept apart from the members: the entries are compile time constants, not fields.
-			// Desugaring scopes them to the struct and hoists them to global scope.
-			if(!node_struct->const_blocks) {
-				node_struct->const_blocks = std::make_unique<NodeBlock>(start_token);
-			}
-			node_struct->const_blocks->add_as_stmt(std::move(const_block.unwrap()));
+			auto c = std::move(const_block.unwrap());
+			c->kind = NodeDataStructure::Kind::Static;
+			node_struct->members->add_as_stmt(std::move(c));
 			_skip_linebreaks();
 			continue;
 		}
 		// <static function foo()> - a method on the struct itself, not on an instance
-		const bool is_static_method = peek().type == token::STATIC and peek(1).type == token::FUNCTION;
-		if(is_static_method) {
+		if(peek().type == token::STATIC and peek(1).type == token::FUNCTION) {
 			consume(); // consume static
 			auto func = parse_function_definition(node_struct.get());
 			if(func.is_error()) {
@@ -2579,7 +2575,7 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 			if(declare_stmt.is_error()) {
 				return Result<std::unique_ptr<NodeStruct>>(declare_stmt.get_error());
 			}
-			node_member_block->add_stmt(std::make_unique<NodeStatement>(std::move(declare_stmt.unwrap()), start_token));
+			node_member_block->add_as_stmt(std::move(declare_stmt.unwrap()));
 		} else if (peek().type == token::FUNCTION) {
 			auto func = parse_function_definition(node_struct.get());
 			if(func.is_error()) {
@@ -2678,18 +2674,18 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 }
 
 
-Result<std::unique_ptr<NodeAST>> Parser::parse_const_statement(NodeAST* parent) {
+Result<std::unique_ptr<NodeConst>> Parser::parse_const_statement(NodeAST* parent) {
 	auto start_token = consume(); //consume family, struct, const
-	token end_construct = token::END_CONST;
+	auto end_construct = token::END_CONST;
 	if(peek().type != token::KEYWORD) {
-		return Result<std::unique_ptr<NodeAST>>(Diagnostic(ErrorType::SyntaxError,
+		return Result<std::unique_ptr<NodeConst>>(Diagnostic(ErrorType::SyntaxError,
 															 "Found unknown const syntax.", "valid prefix", peek()));
 	}
 	auto prefix = consume(); //consume prefix
 	auto node_const_statement = std::make_unique<NodeConst>(prefix);
 
 	if(peek().type != token::LINEBRK) {
-		return Result<std::unique_ptr<NodeAST>>(Diagnostic(ErrorType::SyntaxError,
+		return Result<std::unique_ptr<NodeConst>>(Diagnostic(ErrorType::SyntaxError,
 															 "Expected linebreak.", "linebreak", peek()));
 	}
 	consume(); // consume linebreak
@@ -2699,22 +2695,22 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_const_statement(NodeAST* parent) 
 		_skip_linebreaks();
 		if(peek().type == end_construct) break;
 		if (auto end_error = check_invalid_end_statement("const", end_construct, peek(), peek(1))) {
-			return Result<std::unique_ptr<NodeAST>>(*end_error);
+			return Result<std::unique_ptr<NodeConst>>(*end_error);
 		}
 		if(peek().type == token::DECLARE) {
-			return Result<std::unique_ptr<NodeAST>>(Diagnostic(ErrorType::SyntaxError,
+			return Result<std::unique_ptr<NodeConst>>(Diagnostic(ErrorType::SyntaxError,
 																 "Found unknown const syntax.", "const variable", peek()));
 		}
 		auto const_stmt = parse_declare_statement(node_const_statement.get());
 		if(const_stmt.is_error()) {
-			return Result<std::unique_ptr<NodeAST>>(const_stmt.get_error());
+			return Result<std::unique_ptr<NodeConst>>(const_stmt.get_error());
 		}
 		auto node_stmt = std::make_unique<NodeStatement>(std::move(const_stmt.unwrap()), get_tok());
 		node_stmt->parent = node_body.get();
 		node_body->statements.push_back(std::move(node_stmt));
 		auto l = consume_linebreak("<statement>");
 		if(l.is_error())
-			return Result<std::unique_ptr<NodeAST>>(l.get_error());
+			return Result<std::unique_ptr<NodeConst>>(l.get_error());
 	}
 	auto end_token = consume(); // consume end_const
 	node_const_statement->set_range(start_token, end_token);
@@ -2722,7 +2718,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_const_statement(NodeAST* parent) 
 	node_const_statement->constants = std::move(node_body);
 	node_const_statement->set_child_parents();
 	// set the parent for each statement in stmts
-	return Result<std::unique_ptr<NodeAST>>(std::move(node_const_statement));
+	return Result<std::unique_ptr<NodeConst>>(std::move(node_const_statement));
 }
 
 Result<SuccessTag> Parser::consume_linebreak(const std::string& construct) {

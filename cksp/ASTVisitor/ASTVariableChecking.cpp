@@ -318,7 +318,6 @@ NodeAST* ASTVariableChecking::visit(NodeVariable& node) {
 NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 	if(node.get_declaration()) return &node;
 	auto node_declaration = m_def_provider->get_declaration(node);
-
 	// check for array constants
 	if(auto nd_constant = node.transform_ndarray_constant()) {
 		return node.replace_with(std::move(nd_constant))->accept(*this);
@@ -329,8 +328,11 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 		if (pass == Pass::PreUIControlLowering) return &node;
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			// check if its maybe a nd_Array size constant like nda.SIZE_D1
-			node_declaration = access_chain->get_declaration();
-			node.declaration = node_declaration;
+			auto first_member_ref = access_chain->member(0)->is_reference();
+			if (first_member_ref and first_member_ref->kind != NodeReference::Kind::TypeQualifier) {
+				node_declaration = access_chain->get_declaration();
+				node.declaration = node_declaration;
+			}
 
 			access_chain->accept(*this);
 			return node.replace_with(std::move(access_chain));

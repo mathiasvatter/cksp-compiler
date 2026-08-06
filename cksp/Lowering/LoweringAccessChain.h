@@ -112,7 +112,12 @@ public:
 	NodeAST * visit(NodeNDArrayRef& node) override {
 		if(&node == start_pointer) return &node;
 		node.name = prev_type->to_string()+OBJ_DELIMITER+node.name;
-		if(get_shared_member_ref(&node)) return &node;
+		if(get_shared_member_ref(&node)) {
+			// no extra dimension, but the reference still needs its own dimensions to lower its
+			// index later - for a per-instance member expand_dimension() determines them on the way
+			node.determine_sizes();
+			return &node;
+		}
 		auto node_ndarray_ref = node.expand_dimension(nullptr);
 		node_ndarray_ref->collect_references();
 		return &node;
