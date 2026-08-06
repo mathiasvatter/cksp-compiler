@@ -155,7 +155,28 @@ NodeAST* ASTDesugar::visit(NodeStruct& node) {
 	for(auto & m: node.methods) {
 		m->accept(*this);
 	}
-	return node.desugar(m_program);
+	// DesugarStruct gives the struct its final, namespace qualified name, which the blocks need
+	// as their prefix - so they can only be hoisted once it has run
+	const auto desugared = node.desugar(m_program);
+	hoist_const_blocks(node);
+	return desugared;
+}
+
+void ASTDesugar::hoist_const_blocks(NodeStruct& node) {
+	if(!node.const_blocks) return;
+	for(auto& stmt : node.const_blocks->statements) {
+		// <Voice.State.IDLE>: the struct name is joined with a '.' rather than the '::' used for
+		// members, so the entry resolves as one flat constant name instead of being taken apart
+		// into an access chain through a member that does not exist
+		if(const auto node_const = stmt->statement->cast<NodeConst>()) {
+			node_const->const_prefix.val = node.name + "." + node_const->const_prefix.val;
+			node_const->name = node_const->const_prefix.val;
+		}
+		// staged rather than added to <global_declarations> directly: that block is being
+		// traversed right now. It is prepended once the traversal is done.
+		m_global_variable_declarations->add_stmt(std::move(stmt))->accept(*this);
+	}
+	node.const_blocks = nullptr;
 }
 
 NodeAST * ASTDesugar::visit(NodeFormatString &node) {

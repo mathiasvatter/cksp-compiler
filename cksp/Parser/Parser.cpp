@@ -2542,19 +2542,16 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 		if(peek().type == token::STATIC and peek(1).type == token::CONST
 			and peek(2).type == token::KEYWORD and peek(3).type == token::LINEBRK) {
 			consume(); // consume static
-			auto const_block = parse_const_statement(m_program->global_declarations.get());
+			auto const_block = parse_const_statement(node_struct.get());
 			if(const_block.is_error()) {
 				return Result<std::unique_ptr<NodeStruct>>(const_block.get_error());
 			}
-			// The entries are compile time constants, not members: scope them to the struct and hoist
-			// them to global scope. The struct name is joined with a '.' so that <Voice.State.IDLE>
-			// resolves as one flat constant name instead of an access chain through a member.
-			auto block = std::move(const_block.unwrap());
-			if(const auto node_const = block->cast<NodeConst>()) {
-				node_const->const_prefix.val = name.val + "." + node_const->const_prefix.val;
-				node_const->name = node_const->const_prefix.val;
+			// Kept apart from the members: the entries are compile time constants, not fields.
+			// Desugaring scopes them to the struct and hoists them to global scope.
+			if(!node_struct->const_blocks) {
+				node_struct->const_blocks = std::make_unique<NodeBlock>(start_token);
 			}
-			m_program->global_declarations->add_as_stmt(std::move(block));
+			node_struct->const_blocks->add_as_stmt(std::move(const_block.unwrap()));
 			_skip_linebreaks();
 			continue;
 		}

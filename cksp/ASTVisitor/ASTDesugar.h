@@ -48,6 +48,8 @@ public:
 	NodeAST* visit(NodeDelete& node) override;
 	/// add namespaces
 	NodeAST * visit(NodeStruct& node) override;
+	/// moves the struct's <static const> blocks to global scope, prefixed with the struct name
+	void hoist_const_blocks(struct NodeStruct& node);
 
 	NodeAST * visit(NodeFormatString& node) override;
 
