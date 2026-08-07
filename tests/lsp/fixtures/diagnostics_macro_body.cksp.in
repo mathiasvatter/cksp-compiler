@@ -1,0 +1,17 @@
+{ An error inside a macro body is reported where the substitution put the token - at the
+  call site that supplied the argument. The line that actually holds the mistake is the one
+  in the body, and it has to be reachable from the diagnostic. }
+
+struct Thing
+    value: int
+end struct
+
+declare inst: Thing := new Thing(1)
+
+macro use_it(#obj#)
+    #obj#.<|in_body|>no_such_member := 1
+end macro
+
+on init
+    <|call_site|>use_it(inst)
+end on

@@ -143,6 +143,28 @@ std::unique_ptr<JSONObject> DiagnosticPublisher::make_lsp_diagnostic(const Diagn
 	result->add("code", std::make_unique<JSONString>(error_type_to_string(diagnostic.type)));
 	result->add("message", std::make_unique<JSONString>(diagnostic.display_message()));
 
+	// A token a macro or define substitution produced is reported wherever the substitution
+	// left it - the call site for a body word, the <define> declaration for a define usage.
+	// Neither is where the user wrote it, so the spelling the source actually holds is
+	// attached as related information; the client renders it as a second, clickable
+	// location under the message.
+	if (diagnostic.expansion && !diagnostic.expansion->file.empty()) {
+		const auto& expansion = *diagnostic.expansion;
+		auto location = std::make_unique<JSONObject>();
+		location->add("uri", std::make_unique<JSONString>(
+			uri_from_source(SourceId(expansion.file))));
+		location->add("range", expansion.range.get_lsp_range());
+
+		auto entry = std::make_unique<JSONObject>();
+		entry->add("location", std::move(location));
+		entry->add("message", std::make_unique<JSONString>(
+			"substituted from <" + expansion.spelling + ">"));
+
+		auto related = std::make_unique<JSONArray>();
+		related->add(std::move(entry));
+		result->add("relatedInformation", std::move(related));
+	}
+
 	if (diagnostic.fix) {
 		result->add("data", make_lsp_fix_data(*diagnostic.fix));
 	}

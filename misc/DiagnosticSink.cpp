@@ -19,6 +19,41 @@ const char* severity_name(const DiagnosticSeverity severity) {
     }
     return "Diagnostic";
 }
+
+/// One line of a file, 1-based, with tabs normalized to single spaces so the caret below it
+/// lines up with the column numbers the compiler counts in.
+std::string read_source_line(const std::string& path, const size_t line_number) {
+    std::ifstream file(path);
+    std::string line;
+    for (size_t i = 0; file && i < line_number; ++i) {
+        std::getline(file, line);
+    }
+    if (!file && line.empty()) return {};
+    return StringUtils::replace_tabs_with_spaces(line, 1);
+}
+
+/// "12 | <source>" plus a caret under `range`.
+void print_snippet(
+    std::ostream& output,
+    const std::string& path,
+    const SourceRange& range,
+    const std::string& color) {
+    const auto line = read_source_line(path, range.start.line);
+    if (line.empty() && range.start.line == static_cast<size_t>(-1)) return;
+
+    const auto line_number = std::to_string(range.start.line);
+    const std::string gutter(line_number.length(), ' ');
+    output << ColorCode::Bold << line_number << " | " << ColorCode::Reset << line << '\n';
+    if (range.start.column == 0) return;
+
+    const auto marker_length = range.end.column > range.start.column
+        ? range.end.column - range.start.column
+        : size_t{1};
+    output << color << gutter << " | "
+           << std::string(range.start.column - 1, ' ')
+           << std::string(marker_length, '^')
+           << ColorCode::Reset << '\n';
+}
 }
 
 void ConsoleDiagnosticSink::report(Diagnostic diagnostic) {
@@ -50,30 +85,21 @@ void ConsoleDiagnosticSink::report(Diagnostic diagnostic) {
     m_output << ColorCode::Reset << std::endl;
 
     if (has_location) {
-        std::ifstream file(diagnostic.file);
-        std::string line;
-        for (size_t i = 0; file && i < diagnostic.range.start.line; ++i) {
-            std::getline(file, line);
-        }
-        if (file || !line.empty()) {
-            line = StringUtils::replace_tabs_with_spaces(line, 1);
-            const auto line_number = std::to_string(diagnostic.range.start.line);
-            const std::string gutter = std::string(line_number.length(), ' ');
+        print_snippet(m_output, diagnostic.file, diagnostic.range, color);
+    }
 
-            m_output << ColorCode::Bold << line_number << " | " << ColorCode::Reset << line << '\n';
-            if (diagnostic.range.start.column > 0) {
-                const auto marker_length =
-                    diagnostic.range.end.column > diagnostic.range.start.column
-                    ? diagnostic.range.end.column - diagnostic.range.start.column
-                    : size_t{1};
-                const auto marker_start = diagnostic.range.start.column - 1;
-                m_output << color
-                         << gutter << " | "
-                         << std::string(marker_start, ' ')
-                         << std::string(marker_length, '^')
-                         << ColorCode::Reset << '\n';
-            }
-        }
+    // The reported position is where the substitution put the token - the call site that
+    // supplied the argument. The line that actually contains the offending code is the one
+    // in the macro body, so it is shown too; without it the caret sits on a macro call that
+    // looks perfectly fine.
+    if (diagnostic.expansion && !diagnostic.expansion->file.empty()) {
+        const auto& expansion = *diagnostic.expansion;
+        m_output << '\n' << ColorCode::Bold
+                 << "Substituted from <" << expansion.spelling << ">"
+                 << ColorCode::Reset << '\n'
+                 << "  at " << expansion.file << ':' << expansion.range.start.line
+                 << ':' << expansion.range.start.column << '\n';
+        print_snippet(m_output, expansion.file, expansion.range, color);
     }
 
     // print call stack

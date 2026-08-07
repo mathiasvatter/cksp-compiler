@@ -261,6 +261,35 @@ def _(workspace, server):
     )
 
 
+@test("diagnostics: an error in a macro body points back at the body line")
+def _(workspace, server):
+    # The token was assembled by a <#param#> substitution, so it is reported at the call
+    # site. Without the related location the caret sits on a macro call that looks fine.
+    fixture = workspace.open("diagnostics_macro_body.cksp")
+    diagnostics = server.diagnostics(fixture)
+    expect(diagnostics, "expected a diagnostic for the missing member")
+
+    diagnostic = diagnostics[0]
+    expect(
+        position_of(diagnostic).line == fixture.at("call_site").line,
+        f"the diagnostic itself stays at the call site; got line {position_of(diagnostic).line}",
+    )
+    related = diagnostic.get("relatedInformation")
+    expect(related, f"expected relatedInformation on {diagnostic}")
+    location = related[0]["location"]
+    expect(
+        same_path(uri_to_path(location["uri"]), fixture.path),
+        f"related location should be in the fixture; got {location['uri']}",
+    )
+    expect_position(
+        position_of(location), fixture, "in_body", what="expansion location",
+    )
+    expect(
+        "no_such_member" in related[0]["message"],
+        f"the related message should name the word; got {related[0]['message']!r}",
+    )
+
+
 @test("diagnostics: a clean file publishes an empty list")
 def _(workspace, server):
     fixture = workspace.open("navigation.cksp")
