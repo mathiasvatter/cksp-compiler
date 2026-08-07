@@ -26,6 +26,11 @@ struct ReferenceLink {
 	std::string def_file;   ///< normalized path of the declaration's file
 	SourceRange def_range;  ///< the declaration's location (the jump target; spans the whole header for functions)
 	SourceRange def_name_range;  ///< exactly the declared name, e.g. the range a rename edit replaces
+	/// Whether the source text at `ref_range` is the declared name itself. A macro body
+	/// reaches a declaration through a parameter (<#browser#> for <browser>), so the text
+	/// the user sees there is the parameter, not the name: the reference is real and worth
+	/// navigating and listing, but a rename must not rewrite it.
+	bool spelled_as_declared = true;
 };
 
 /**
@@ -69,14 +74,16 @@ public:
 
 	/// Same as add(), with a separate name range when the declaration range spans more than
 	/// the declared name (function headers span name, parameters and parenthesis).
-	void add(std::string ref_file, const SourceRange& ref_range, std::string def_file, const SourceRange& def_range, const SourceRange& def_name_range) {
+	void add(std::string ref_file, const SourceRange& ref_range, std::string def_file, const SourceRange& def_range, const SourceRange& def_name_range, const bool spelled_as_declared = true) {
 		ref_file = normalized_file(ref_file);
 		def_file = normalized_file(def_file);
 		const auto ref_key = reference_key(ref_file, ref_range);
 		const auto link_key = ref_key + "=>" + reference_key(def_file, def_range);
 		if (!m_seen_links.insert(link_key).second) return;
 		m_seen_references.insert(ref_key);
-		m_links.push_back({std::move(ref_file), ref_range, std::move(def_file), def_range, def_name_range});
+		m_links.push_back({
+			std::move(ref_file), ref_range, std::move(def_file), def_range, def_name_range,
+			spelled_as_declared});
 	}
 
 	/// Records a link between two source tokens (reference -> declaration). Tokens without a

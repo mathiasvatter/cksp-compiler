@@ -62,6 +62,38 @@ def _(workspace, server):
     expect_definition(server.definition(fixture, "ns_use"), fixture, "ns_decl")
 
 
+@test("rename: leaves a usage that a macro parameter spells alone")
+def _(workspace, server):
+    # The macro body reaches `inst` through <#thing#>. That usage is listed and navigable,
+    # but the text there names the macro parameter - rewriting it would break the macro,
+    # and refusing over it would make the symbol unrenameable.
+    fixture = workspace.open("navigation_macro_params.cksp")
+    edit = server.rename(fixture, "inst_decl", "renamed")
+    changes = (edit or {}).get("changes", {})
+    expect(changes, f"rename produced no changes: {edit}")
+    edited = sorted(
+        (position_of(e).line, position_of(e).character) for e in next(iter(changes.values()))
+    )
+    # The declaration, the call-site argument, and the body line that spells `inst` outright.
+    # Not <#thing#>, which spells the parameter.
+    wanted = sorted(
+        (fixture.at(marker).line, fixture.at(marker).character)
+        for marker in ("inst_decl", "argument", "plain_inst")
+    )
+    expect(edited == wanted, f"expected edits at {wanted}, got {edited}")
+
+
+@test("references: a macro body usage is listed even though it spells the parameter")
+def _(workspace, server):
+    fixture = workspace.open("navigation_macro_params.cksp")
+    found = server.references(fixture, "inst_decl", include_declaration=True)
+    lines = {location["range"]["start"]["line"] for location in found}
+    expect(
+        fixture.at("param_half").line in lines,
+        f"the <#thing#> usage in the macro body must be listed; got lines {sorted(lines)}",
+    )
+
+
 @test("definition: function call jumps to its definition header")
 def _(workspace, server):
     fixture = workspace.open("navigation.cksp")

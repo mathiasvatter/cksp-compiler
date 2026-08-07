@@ -13,6 +13,9 @@
 struct ReferenceLocation {
 	std::string file;
 	SourceRange range;
+	/// See ReferenceLink::spelled_as_declared - false for a usage that reads as something
+	/// else than the declared name, which rename must leave alone.
+	bool spelled_as_declared = true;
 };
 
 /**

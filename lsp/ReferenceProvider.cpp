@@ -201,9 +201,12 @@ std::vector<ReferenceLocation> ReferenceProvider::references_to(
 	const bool include_declaration) {
 	std::vector<ReferenceLocation> locations;
 	std::unordered_set<std::string> seen;
-	const auto add = [&locations, &seen](const std::string& file, const SourceRange& range) {
+	const auto add = [&locations, &seen](
+		const std::string& file, const SourceRange& range, const bool spelled_as_declared = true) {
 		auto key = file + "@" + range.to_string();
-		if (seen.insert(std::move(key)).second) locations.push_back({file, range});
+		if (seen.insert(std::move(key)).second) {
+			locations.push_back({file, range, spelled_as_declared});
+		}
 	};
 
 	std::lock_guard lock(m_mutex);
@@ -218,7 +221,7 @@ std::vector<ReferenceLocation> ReferenceProvider::references_to(
 				&& reference.ref_range.end.line == reference.def_name_range.end.line
 				&& reference.ref_range.end.column == reference.def_name_range.end.column;
 			if (is_declaration && !include_declaration) continue;
-			add(reference.ref_file, reference.ref_range);
+			add(reference.ref_file, reference.ref_range, reference.spelled_as_declared);
 		}
 	}
 	// the declaration is listed (and rename-edited) at its name, not the whole header range
