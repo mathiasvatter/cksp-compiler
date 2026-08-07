@@ -11,9 +11,16 @@ struct Zone
     end function
 end struct
 
+{ A hand written constructor is a method body like any other: <self.> has to
+  resolve inside it, even though <__init__> itself is never offered. }
 struct Group
     zone: Zone
     count: int
+
+    function __init__(self, zone: Zone, count: int)
+        self.<|self_in_init|>zone := zone
+        self.count := count
+    end function
 
     function tick(self): int
         return self.count

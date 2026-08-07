@@ -343,6 +343,14 @@ public:
 			for (const auto& method : definition->methods) {
 				if (!method || !method->header) continue;
 				const auto name = basename_of(method->header->name);
+				// <self.> inside this method resolves to the struct. Recorded before the
+				// surface filter below: a hand written <__init__> is not offered as a
+				// member, but its body is source the user writes <self.> in like any
+				// other. A generated one carries the struct token and no range, which
+				// add_self_scope drops.
+				if (!method->is_static && !method->tok.file.empty()) {
+					m_index.add_self_scope(method->tok.file, method->range, container);
+				}
 				// Generated lifecycle methods are not part of the surface.
 				if (name == NodeStruct::CONSTRUCTOR || name == NodeStruct::DESTRUCTOR
 					|| name == "__repr__") {
@@ -359,10 +367,6 @@ public:
 					m_index.add(container, std::move(item));
 				} else {
 					m_index.add_type_member(container, std::move(item));
-					// <self.> inside this method resolves to the struct.
-					if (!method->tok.file.empty()) {
-						m_index.add_self_scope(method->tok.file, method->range, container);
-					}
 				}
 			}
 		}

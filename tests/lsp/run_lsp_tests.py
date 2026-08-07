@@ -388,6 +388,17 @@ def _(workspace, server):
     expect_no_labels(items, ["MAX", "__init__", "__del__", "__repr__", "self"])
 
 
+@test("completion: <self.> resolves inside a hand written constructor",
+      requires="completionProvider")
+def _(workspace, server):
+    # The lifecycle methods are filtered out of the offered surface; that filter must
+    # not also drop the self scope of the body they were written in.
+    fixture = workspace.open("completion_instance.cksp")
+    items = server.completion(fixture, "self_in_init")
+    expect_labels(items, ["count", "zone", "tick"], exactly=True)
+    expect_no_labels(items, ["__init__", "__repr__", "self"])
+
+
 @test("completion: a chain walks on through member types", requires="completionProvider")
 def _(workspace, server):
     fixture = workspace.open("completion_instance.cksp")
