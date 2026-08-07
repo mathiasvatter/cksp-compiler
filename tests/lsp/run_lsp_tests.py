@@ -290,6 +290,22 @@ def _(workspace, server):
     )
 
 
+@test("diagnostics: a declaration named after a define is reported on the declaration")
+def _(workspace, server):
+    fixture = workspace.open("diagnostics_define_name.cksp")
+    diagnostics = server.diagnostics(fixture)
+    expect(diagnostics, "expected a diagnostic for the borrowed name")
+
+    diagnostic = diagnostics[0]
+    expect_position(
+        position_of(diagnostic), fixture, "borrowed_name", what="diagnostic position",
+    )
+    expect(
+        "some_define" in diagnostic["message"],
+        f"the message must name what the source spells; got {diagnostic['message']!r}",
+    )
+
+
 @test("diagnostics: a clean file publishes an empty list")
 def _(workspace, server):
     fixture = workspace.open("navigation.cksp")

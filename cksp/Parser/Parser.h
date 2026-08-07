@@ -77,6 +77,7 @@ public:
 
     static std::optional<Token> get_persistent_keyword(const Token& tok);
 	int peek_past_modifiers();
+	static Diagnostic make_declare_modifier_diagnostic(const Token& found);
 	static std::optional<Diagnostic> check_invalid_end_statement(const std::string& construct, token expected_end, const Token& start, const Token& next);
 
 	static int get_binop_precedence(const token tok) {

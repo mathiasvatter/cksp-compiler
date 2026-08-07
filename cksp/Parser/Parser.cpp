@@ -10,6 +10,31 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse() {
 	return parse_program();
 }
 
+/// The <declare> found something that cannot name a declaration.
+///
+/// When that word was put there by a substitution the parser sees the value, not the name:
+/// <define some_define := 1> followed by <declare some_define: int> arrives as
+/// <declare 1: int>, and reporting the <1> names something that stands nowhere in the
+/// declaration. The origin still knows what the source spells, so the message can say what
+/// actually happened - and the sink shows the declaration line underneath.
+Diagnostic Parser::make_declare_modifier_diagnostic(const Token& found) {
+	Diagnostic error(ErrorType::ParseError,
+		"Incorrect syntax in declare statement. Found unknown <modifier>.",
+		"<ui_control>, <variable>, <array>", found);
+	if (!found.origin) return error;
+
+	// Report the declaration, not the substituted value: the <define> is written correctly,
+	// it is the declaration borrowing its name that cannot work. set_token() moves file,
+	// range and <Got> to the word the source holds - and clears the expansion note, which
+	// would now only repeat the position.
+	error.set_token(*found.origin);
+	error.set_message(
+		"Incorrect syntax in declare statement. <" + found.origin->val + "> stands for <"
+		+ found.val + "> here, and a substituted value cannot name a declaration."
+		" Give the declaration a name that no <define> or macro parameter uses.");
+	return error;
+}
+
 /// checks in block for expected end token and throws meaningful error msg if unexepcted
 std::optional<Diagnostic> Parser::check_invalid_end_statement(const std::string& construct, token expected_end, const Token& start, const Token& next) {
 	// gotten end statement is valid but not the expected closing stmt for this block
@@ -784,8 +809,7 @@ Result<std::unique_ptr<NodeSingleDeclaration>> Parser::parse_single_declare_stat
 	auto node_declare_statement = std::make_unique<NodeSingleDeclaration>(start_token);
 	if(peek().type == token::DECLARE) consume(); //consume declare
 	if(!modifier_keywords.contains(peek().type) and peek().type != token::KEYWORD) {
-		return Result<std::unique_ptr<NodeSingleDeclaration>>(Diagnostic(ErrorType::ParseError,
-																	 "Incorrect syntax in declare statement. Found unknown <modifier>.", "<ui_control>, <variable>, <array>", peek()));
+		return Result<std::unique_ptr<NodeSingleDeclaration>>(make_declare_modifier_diagnostic(peek()));
 	}
 	// ui_control
 	if (peek().type == token::UI_CONTROL xor peek(1).type == token::UI_CONTROL) {
@@ -1765,8 +1789,7 @@ Result<std::unique_ptr<NodeDeclaration>> Parser::parse_declare_statement(NodeAST
     if(peek().type == token::DECLARE) start_token = consume(); //consume declare
     std::vector<std::unique_ptr<NodeDataStructure>> to_be_declared;
 	if(!modifier_keywords.contains(peek().type) and peek().type != token::KEYWORD) {
-		return Result<std::unique_ptr<NodeDeclaration>>(Diagnostic(ErrorType::ParseError,
-																	 "Incorrect syntax in declare statement. Found unknown <modifier>.", "<ui_control>, <variable>, <array>", peek()));
+		return Result<std::unique_ptr<NodeDeclaration>>(make_declare_modifier_diagnostic(peek()));
 	}
     do {
         if(peek().type == token::COMMA) consume();
