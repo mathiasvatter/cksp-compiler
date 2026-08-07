@@ -74,7 +74,9 @@ Diagnostic Parser::make_invalid_end_statement_diagnostic(const std::string& cons
 		error.range = source_range_from_tokens(start, next);
 	}
 	error.actual = actual;
-	error.set_message("Invalid terminator for <" + construct + "> block. Expected <" + expected + ">.");
+	// The expected terminator rides along in `expected` and is rendered from there; naming
+	// it in the message too says the same thing twice on one line.
+	error.set_message("Invalid terminator for <" + construct + "> block.");
 	return error;
 }
 
