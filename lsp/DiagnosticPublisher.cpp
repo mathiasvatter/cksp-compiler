@@ -147,7 +147,7 @@ std::unique_ptr<JSONObject> DiagnosticPublisher::make_lsp_diagnostic(const Diagn
 	// expression token." unreadable while typing.
 	auto message = diagnostic.display_message();
 	if (const auto detail = diagnostic.display_detail(); !detail.empty()) {
-		message += "\n" + detail;
+		message += " " + detail;
 	}
 	result->add("message", std::make_unique<JSONString>(message));
 

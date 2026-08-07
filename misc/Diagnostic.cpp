@@ -86,13 +86,17 @@ std::string Diagnostic::display_detail() const {
         return StringUtils::normalize_field(field);
     };
 
+    // One line, appended to the message: a problems list gives each entry a single row, and
+    // a linebreak there costs a row per diagnostic while showing nothing more. Separated by
+    // a semicolon rather than a comma - an expected list carries commas of its own - and
+    // left unbracketed, because the fields already spell constructs as <declare>.
     std::string detail;
-    if (!expected.empty()) detail += "Expected: " + readable(expected);
+    if (!expected.empty()) detail += "expected: " + readable(expected);
     if (!actual.empty() || !expected.empty()) {
-        if (!detail.empty()) detail += '\n';
-        detail += "Got: " + readable(actual);
+        if (!detail.empty()) detail += "; ";
+        detail += "got: " + readable(actual);
     }
-    return detail;
+    return detail.empty() ? detail : "(" + detail + ")";
 }
 
 std::string Diagnostic::display_message() const {
