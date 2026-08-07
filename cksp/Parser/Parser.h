@@ -92,7 +92,8 @@ public:
     static std::string sanitize_hex(const std::string& input);
 
 	Result<std::unique_ptr<NodeAST>> parse_wildcard(NodeAST* parent);
-    static Result<std::unique_ptr<NodeInt>> parse_int(const Token& tok, int base, NodeAST* parent);
+	Result<std::unique_ptr<NodeAST>> parse_member_path(NodeAST* parent);
+	static Result<std::unique_ptr<NodeInt>> parse_int(const Token& tok, int base, NodeAST* parent);
     Result<std::unique_ptr<NodeAST>> parse_number(NodeAST* parent);
 	Result<std::unique_ptr<NodeAST>> parse_nil(NodeAST* parent);
     Result<std::unique_ptr<NodeString>> parse_string(NodeAST* parent);

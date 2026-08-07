@@ -595,6 +595,101 @@ bool NodeWildcard::check_semantic() const {
 	return check_parents;
 }
 
+// ************* NodeMemberPath ***************
+NodeAST *NodeMemberPath::accept(ASTVisitor& visitor) {
+	return visitor.visit(*this);
+}
+
+std::unique_ptr<NodeAST> NodeMemberPath::clone() const {
+	return std::make_unique<NodeMemberPath>(*this);
+}
+
+std::shared_ptr<NodeDataStructure> NodeMemberPath::resolve_members(NodeProgram* program, Type* receiver_type) {
+	if (!program) {
+		auto error = Diagnostic(ErrorType::InternalError, "", "", tok);
+		error.message = "Cannot resolve member path without a program context.";
+		error.exit();
+	}
+	if (segments.empty()) {
+		auto error = Diagnostic(ErrorType::InternalError, "", "", tok);
+		error.message = "Cannot resolve an empty member path.";
+		error.exit();
+	}
+	if (!receiver_type || receiver_type->get_type_kind() != TypeKind::Object) {
+		auto error = Diagnostic(ErrorType::TypeError, "", "", tok);
+		error.message = "Member path <" + get_token_string() + "> requires an object receiver type.";
+		if (receiver_type) error.actual = receiver_type->to_string();
+		error.exit();
+	}
+
+	resolved_members.clear();
+	resolved_members.reserve(segments.size());
+	Type* current_type = receiver_type;
+	std::shared_ptr<NodeDataStructure> member;
+
+	for (size_t i = 0; i < segments.size(); ++i) {
+		const Token& current_segment = segment(i);
+		const std::string object_name = current_type->to_string();
+		const auto struct_it = program->struct_lookup.find(object_name);
+		if (struct_it == program->struct_lookup.end() || !struct_it->second) {
+			auto error = Diagnostic(ErrorType::TypeError, "", "", current_segment);
+			error.message = "Struct <" + object_name + "> does not exist.";
+			error.exit();
+		}
+
+		auto* strct = struct_it->second;
+		member = strct->get_member(object_name + OBJ_DELIMITER + current_segment.val);
+		if (!member) {
+			// A previous inference visit may have replaced the member's concrete
+			// data-structure node, leaving an expired weak entry in the table.
+			strct->rebuild_member_table();
+			member = strct->get_member(object_name + OBJ_DELIMITER + current_segment.val);
+		}
+		if (!member) {
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", current_segment);
+			error.message = "Member <" + current_segment.val + "> does not exist in <" + object_name + ">.";
+			error.exit();
+		}
+
+		resolved_members.emplace_back(member);
+		current_type = member->ty->get_element_type();
+		if (i + 1 < segments.size()
+			&& (!current_type || current_type->get_type_kind() != TypeKind::Object)) {
+			auto error = Diagnostic(ErrorType::TypeError, "", "", current_segment);
+			error.message = "Member <" + current_segment.val + "> of <" + object_name
+				+ "> cannot be followed by another member because it is not an object.";
+			error.actual = member->ty->to_string();
+			error.exit();
+		}
+	}
+
+	ty = member->ty;
+	return member;
+}
+
+std::string NodeMemberPath::get_string() {
+	return get_token_string();
+}
+
+std::string NodeMemberPath::get_token_string() const {
+	std::string path;
+	for (const auto& member : segments) path += "." + member.val;
+	return path;
+}
+
+void NodeMemberPath::update_token_data(const Token& token) {
+	const auto old_line = tok.line;
+	NodeAST::update_token_data(token);
+	for (auto& member : segments) {
+		member.file = token.file;
+		if (old_line != static_cast<size_t>(-1) and member.line != static_cast<size_t>(-1)) {
+			const auto delta = static_cast<long long>(token.line) - static_cast<long long>(old_line);
+			const auto new_line = static_cast<long long>(member.line) + delta;
+			member.line = new_line < 0 ? 0 : static_cast<size_t>(new_line);
+		}
+	}
+}
+
 // ************* NodeInt ***************
 NodeAST *NodeInt::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);

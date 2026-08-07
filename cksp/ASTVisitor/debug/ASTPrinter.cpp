@@ -39,6 +39,11 @@ NodeAST * ASTPrinter::visit(NodeWildcard &node) {
 	return &node;
 }
 
+NodeAST * ASTPrinter::visit(NodeMemberPath& node) {
+	os << node.get_token_string();
+	return &node;
+}
+
 NodeAST * ASTPrinter::visit(NodeBreak& node) {
 	os << "break";
 	return &node;
@@ -69,6 +74,17 @@ NodeAST * ASTPrinter::visit(NodeSortSearch& node) {
 		node.to->accept(*this);
 	}
 	os << "]";
+	return &node;
+}
+
+NodeAST * ASTPrinter::visit(NodeArrayQuery& node) {
+	os << node.query_name() << "(";
+	node.array->accept(*this);
+	os << ", ";
+	node.member_path->accept(*this);
+	os << ", ";
+	node.value->accept(*this);
+	os << ")";
 	return &node;
 }
 

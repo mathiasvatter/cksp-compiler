@@ -463,6 +463,50 @@ struct NodeWildcard final : NodeAST {
 	[[nodiscard]] bool check_semantic() const;
 };
 
+/**
+ * A context-dependent path to one or more members, written without a receiver.
+ *
+ * Examples: <.id>, <.group.id>. Unlike NodeAccessChain this node does not denote
+ * a value by itself. A consuming construct such as an array query supplies the
+ * receiver type and resolves the individual path segments later.
+ */
+struct NodeMemberPath final : NodeAST {
+	std::vector<Token> segments;
+	/// One declaration per resolved segment. resolve_members() fills this while the
+	/// source-level struct definitions are still available; later query lowering
+	/// can therefore use the concrete member storage without repeating lookup.
+	std::vector<std::weak_ptr<NodeDataStructure>> resolved_members;
+
+	NodeMemberPath(std::vector<Token> segments, Token tok)
+		: NodeAST(std::move(tok), NodeType::MemberPath), segments(std::move(segments)) {}
+	NodeMemberPath(const NodeMemberPath& other)
+		: NodeAST(other), segments(other.segments), resolved_members(other.resolved_members) {}
+
+	NodeAST* accept(ASTVisitor& visitor) override;
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+
+	[[nodiscard]] bool empty() const { return segments.empty(); }
+	[[nodiscard]] bool is_resolved() const {
+		return resolved_members.size() == segments.size()
+			&& std::ranges::all_of(resolved_members, [](const auto& member) { return !member.expired(); });
+	}
+	[[nodiscard]] const Token& segment(const size_t index) const { return segments.at(index); }
+	[[nodiscard]] const std::string& leaf_name() const { return segments.back().val; }
+	[[nodiscard]] std::shared_ptr<NodeDataStructure> resolved_member(const size_t index) const {
+		return resolved_members.at(index).lock();
+	}
+	[[nodiscard]] std::shared_ptr<NodeDataStructure> resolved_leaf() const {
+		return resolved_members.empty() ? nullptr : resolved_members.back().lock();
+	}
+	/// Resolves every segment against the supplied receiver type, binds the concrete
+	/// declarations and sets this node's type to the leaf member type.
+	std::shared_ptr<NodeDataStructure> resolve_members(NodeProgram* program, Type* receiver_type);
+
+	std::string get_string() override;
+	std::string get_token_string() const override;
+	void update_token_data(const Token& token) override;
+};
+
 struct NodeInt final : NodeAST {
 	int32_t value;
 	explicit NodeInt(const int32_t v, Token tok) : NodeAST(std::move(tok), NodeType::Int), value(v) {}

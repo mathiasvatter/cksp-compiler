@@ -116,7 +116,7 @@ public:
 	/// <const> and <static> members are skipped: they have no per-instance storage. <NDArrays> are
 	/// skipped as well - assigning one from an initializer list currently fails during function
 	/// inlining, so moving the value there would turn a wrong value into a compile error.
-	static void move_member_defaults_into_constructor(NodeStruct& node) {
+	static void move_member_defaults_into_constructor(const NodeStruct& node) {
 		std::shared_ptr<NodeFunctionDefinition> constructor = nullptr;
 		for (const auto& method : node.methods) {
 			if (method->header->name == NodeStruct::CONSTRUCTOR) constructor = method;

@@ -365,6 +365,7 @@ public:
 	NodeAST * visit(NodeRange& node) override;
 	NodeAST * visit(NodeUseCount& node) override;
 	NodeAST * visit(NodeSortSearch& node) override;
+	NodeAST * visit(NodeArrayQuery& node) override;
 	NodeAST * visit(NodeForEach& node) override;
 	NodeAST * visit(NodeTernary& node) override;
 	NodeAST * visit(NodeNullCoalesce& node) override;

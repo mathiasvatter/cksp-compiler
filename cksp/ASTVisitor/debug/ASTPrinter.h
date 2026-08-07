@@ -20,10 +20,12 @@ public:
 	NodeAST * visit(NodeBoolean& node) override;
 	NodeAST * visit(NodeNil& node) override;
 	NodeAST * visit(NodeWildcard& node) override;
+	NodeAST * visit(NodeMemberPath& node) override;
 	NodeAST * visit(NodeReturn& node) override;
 	NodeAST * visit(NodeBreak& node) override;
 	NodeAST * visit(NodeNumElements& node) override;
 	NodeAST * visit(NodeSortSearch& node) override;
+	NodeAST * visit(NodeArrayQuery& node) override;
 	NodeAST * visit(NodePairs& node) override;
 	NodeAST * visit(NodeRange& node) override;
 	NodeAST * visit(NodeSingleReturn& node) override;

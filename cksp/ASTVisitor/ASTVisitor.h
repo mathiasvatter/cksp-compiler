@@ -62,6 +62,9 @@ public:
 	virtual NodeAST* visit(NodeWildcard& node) {
 		return &node;
 	}
+	virtual NodeAST* visit(NodeMemberPath& node) {
+		return &node;
+	}
 	virtual NodeAST* visit(NodeInt& node) {
 		return &node;
 	}
@@ -202,6 +205,12 @@ public:
 		node.value->accept(*this);
 		if(node.from) node.from->accept(*this);
 		if(node.to) node.to->accept(*this);
+		return &node;
+	}
+	virtual NodeAST* visit(NodeArrayQuery& node) {
+		node.array->accept(*this);
+		node.member_path->accept(*this);
+		node.value->accept(*this);
 		return &node;
 	}
 	virtual NodeAST* visit(NodeNumElements& node) {

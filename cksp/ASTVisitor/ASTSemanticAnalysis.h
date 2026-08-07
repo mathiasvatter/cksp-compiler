@@ -58,6 +58,8 @@ public:
     /// add function parameters to scope
 	NodeAST * visit(NodeFunctionDefinition& node) override;
 	NodeAST * visit(NodeWildcard& node) override;
+	NodeAST * visit(NodeMemberPath& node) override;
+	NodeAST * visit(NodeArrayQuery& node) override;
 	NodeAST * visit(NodeNumElements& node) override;
 	NodeAST * visit(NodeSortSearch& node) override;
 	NodeAST * visit(NodeRange& node) override;

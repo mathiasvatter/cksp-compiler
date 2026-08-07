@@ -86,6 +86,34 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_wildcard(NodeAST* parent) {
 	return Result<std::unique_ptr<NodeAST>>(std::move(node_wildcard));
 }
 
+Result<std::unique_ptr<NodeAST>> Parser::parse_member_path(NodeAST* parent) {
+	const auto start = consume(); // consume the leading '.'
+	std::vector<Token> segments;
+	Token end = start;
+
+	while (true) {
+		if (peek().type != token::KEYWORD or peek().val.empty()) {
+			return Result<std::unique_ptr<NodeAST>>(Diagnostic(
+				ErrorType::ParseError,
+				"Expected a member name after <.> in member path.",
+				"identifier",
+				peek()
+			));
+		}
+
+		end = consume();
+		segments.push_back(end);
+
+		if (peek().type != token::DOT) break;
+		consume(); // consume the separator before the next path segment
+	}
+
+	auto member_path = std::make_unique<NodeMemberPath>(std::move(segments), start);
+	member_path->set_range(start, end);
+	member_path->parent = parent;
+	return Result<std::unique_ptr<NodeAST>>(std::move(member_path));
+}
+
 
 Result<std::unique_ptr<NodeInt>> Parser::parse_int(const Token& tok, const int base, NodeAST* parent) {
 	auto value = tok.val;
@@ -616,6 +644,8 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr(NodeAST* parent) {
 		return parse_nil(parent);
 	} else if(peek().type == token::MULT) {
 		return parse_wildcard(parent);
+	} else if(peek().type == token::DOT) {
+		return parse_member_path(parent);
 	} else {
 		return Result<std::unique_ptr<NodeAST>>(
 			Diagnostic(ErrorType::ParseError,"Found unknown expression token.", "keyword, integer, parenthesis", peek()));

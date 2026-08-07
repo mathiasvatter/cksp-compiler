@@ -444,6 +444,68 @@ NodeAST * TypeInference::visit(NodeSortSearch& node) {
 	return &node;
 }
 
+NodeAST * TypeInference::visit(NodeArrayQuery& node) {
+	node.array->accept(*this);
+	// Type inference runs again after object types have been lowered to their integer
+	// representation. The selector was already resolved during the source-level pass;
+	// keep that result and only follow the array's now-lowered element type.
+	if (node.member_path->is_resolved() && node.ty != TypeRegistry::Unknown) {
+		node.value->accept(*this);
+		if (const auto lowered_array_type = node.array->ty->cast<CompositeType>()) {
+			node.ty = lowered_array_type->get_element_type();
+		}
+		return &node;
+	}
+
+	const auto array_type = node.array->ty->cast<CompositeType>();
+	if (!array_type || array_type->get_compound_type() != CompoundKind::Array) {
+		auto error = Diagnostic(ErrorType::TypeError, "", "", node.array->tok);
+		error.message = "<" + node.query_name() + "> expects an array as its first argument.";
+		error.actual = node.array->ty->to_string();
+		error.exit();
+	}
+	if (array_type->get_dimensions() != 1) {
+		auto error = Diagnostic(ErrorType::TypeError, "", "", node.array->tok);
+		error.message = "<" + node.query_name() + "> expects a one-dimensional object array.";
+		error.actual = node.array->ty->to_string();
+		error.exit();
+	}
+
+	Type* element_type = array_type->get_element_type();
+	if (!element_type || element_type->get_type_kind() != TypeKind::Object) {
+		auto error = Diagnostic(ErrorType::TypeError, "", "", node.array->tok);
+		error.message = "<" + node.query_name() + "> can only query arrays whose elements are objects.";
+		error.actual = node.array->ty->to_string();
+		error.exit();
+	}
+
+	const auto member = node.member_path->resolve_members(m_program, element_type);
+	node.value->accept(*this);
+	// Assignment compatibility is intentionally asymmetric for strings in the
+	// general type system (a number can be rendered as a string). A query compares
+	// values instead, so both directions must agree. This still permits the existing
+	// symmetric int/bool compatibility while rejecting string/int projections.
+	if (!member->ty->is_compatible(node.value->ty) || !node.value->ty->is_compatible(member->ty)) {
+		auto error = Diagnostic(ErrorType::TypeError, "", "", node.value->tok);
+		error.message = "The search value of <" + node.query_name() + "> must match member <"
+			+ node.member_path->get_token_string() + "> of <" + element_type->to_string() + ">.";
+		error.expected = member->ty->to_string();
+		error.actual = node.value->ty->to_string();
+		error.exit();
+	}
+	match_type(
+		*node.value,
+		*member,
+		"The search value of <" + node.query_name() + "> must match member <"
+			+ node.member_path->get_token_string() + "> of <" + element_type->to_string() + ">."
+	);
+
+	// SearchBy returns an object from the queried array, or nil after lowering.
+	// Nil is compatible with every concrete ObjectType in the existing type system.
+	node.ty = element_type;
+	return &node;
+}
+
 NodeAST * TypeInference::visit(NodeForEach& node) {
 	if(node.key) {
 		node.key->accept(*this);

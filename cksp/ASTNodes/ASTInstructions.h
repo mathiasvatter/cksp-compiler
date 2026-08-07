@@ -188,6 +188,63 @@ struct NodeSortSearch final : NodeInstruction {
 	}
 };
 
+/**
+ * A query over an array of objects.
+ *
+ * The member path is a compile-time selector rather than a value-producing
+ * expression. Later passes resolve it against the element type of `array` and
+ * materialize the operation-specific helper.
+ */
+struct NodeArrayQuery final : NodeInstruction {
+	enum class QueryKind {
+		SearchBy,
+	};
+
+	QueryKind query_kind;
+	std::unique_ptr<NodeAST> array;
+	std::unique_ptr<NodeMemberPath> member_path;
+	std::unique_ptr<NodeAST> value;
+
+	NodeArrayQuery(
+		QueryKind query_kind,
+		std::unique_ptr<NodeAST> array,
+		std::unique_ptr<NodeMemberPath> member_path,
+		std::unique_ptr<NodeAST> value,
+		Token tok
+	) : NodeInstruction(NodeType::ArrayQuery, std::move(tok)),
+		query_kind(query_kind), array(std::move(array)), member_path(std::move(member_path)),
+		value(std::move(value)) {
+		set_child_parents();
+	}
+	NodeArrayQuery(const NodeArrayQuery& other);
+
+	NodeAST* accept(ASTVisitor& visitor) override;
+	NodeAST* replace_child(NodeAST* old_child, std::unique_ptr<NodeAST> new_child) override;
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		array->update_parents(this);
+		member_path->update_parents(this);
+		value->update_parents(this);
+	}
+	void set_child_parents() override {
+		array->parent = this;
+		member_path->parent = this;
+		value->parent = this;
+	}
+	std::string get_string() override;
+	std::string get_token_string() const override;
+	void update_token_data(const Token& token) override {
+		NodeAST::update_token_data(token);
+		array->update_token_data(token);
+		member_path->update_token_data(token);
+		value->update_token_data(token);
+	}
+
+	[[nodiscard]] std::string query_name() const;
+};
+
 struct NodeNumElements final : NodeInstruction {
 	std::unique_ptr<NodeReference> array;
 	std::unique_ptr<NodeAST> dimension;

@@ -41,6 +41,23 @@ NodeAST * ASTSemanticAnalysis::visit(NodeWildcard& node) {
 	return &node;
 }
 
+NodeAST * ASTSemanticAnalysis::visit(NodeMemberPath& node) {
+	auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+	error.message = "Member path <" + node.get_token_string() + "> requires a context that provides an object type.";
+	error.add_message("Member paths can only be used as selectors in compiler-supported operations such as <search_by(array, .field, value)>.");
+	error.exit();
+	return &node;
+}
+
+NodeAST * ASTSemanticAnalysis::visit(NodeArrayQuery& node) {
+	// The query supplies the object-type context required by its member path.
+	// Resolution of that path is intentionally deferred until array element types
+	// are available.
+	node.array->accept(*this);
+	node.value->accept(*this);
+	return &node;
+}
+
 NodeAST * ASTSemanticAnalysis::visit(NodeNumElements& node) {
 	node.array->accept(*this);
 	if(node.dimension) node.dimension->accept(*this);

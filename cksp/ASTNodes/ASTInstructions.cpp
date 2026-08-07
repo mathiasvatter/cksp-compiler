@@ -378,6 +378,62 @@ ASTLowering* NodeSortSearch::get_post_lowering(NodeProgram *program) const {
 	return &lowering;
 }
 
+// ************* NodeArrayQuery ***************
+NodeAST* NodeArrayQuery::accept(ASTVisitor& visitor) {
+	return visitor.visit(*this);
+}
+
+NodeArrayQuery::NodeArrayQuery(const NodeArrayQuery& other)
+	: NodeInstruction(other), query_kind(other.query_kind), array(clone_unique(other.array)),
+	  member_path(clone_unique(other.member_path)), value(clone_unique(other.value)) {
+	set_child_parents();
+}
+
+std::unique_ptr<NodeAST> NodeArrayQuery::clone() const {
+	return std::make_unique<NodeArrayQuery>(*this);
+}
+
+NodeAST* NodeArrayQuery::replace_child(NodeAST* old_child, std::unique_ptr<NodeAST> new_child) {
+	if (array.get() == old_child) {
+		array = std::move(new_child);
+		array->parent = this;
+		return array.get();
+	}
+	if (member_path.get() == old_child) {
+		if (auto* path = dynamic_cast<NodeMemberPath*>(new_child.get())) {
+			new_child.release();
+			member_path.reset(path);
+			member_path->parent = this;
+			return member_path.get();
+		}
+		return nullptr;
+	}
+	if (value.get() == old_child) {
+		value = std::move(new_child);
+		value->parent = this;
+		return value.get();
+	}
+	return nullptr;
+}
+
+std::string NodeArrayQuery::query_name() const {
+	switch (query_kind) {
+	case QueryKind::SearchBy:
+		return "search_by";
+	}
+	return "";
+}
+
+std::string NodeArrayQuery::get_string() {
+	return query_name() + "(" + array->get_string() + ", " + member_path->get_string() + ", "
+		+ value->get_string() + ")";
+}
+
+std::string NodeArrayQuery::get_token_string() const {
+	return query_name() + "(" + array->get_token_string() + ", " + member_path->get_token_string() + ", "
+		+ value->get_token_string() + ")";
+}
+
 // ************* NodeNumElements ***************
 NodeAST *NodeNumElements::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);

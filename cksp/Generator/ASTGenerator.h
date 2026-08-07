@@ -49,6 +49,7 @@ public:
     NodeAST * visit(NodeFunctionDefinition& node) override;
     NodeAST * visit(NodeGetControl& node) override;
 	NodeAST * visit(NodeNumElements& node) override;
+	NodeAST * visit(NodeArrayQuery& node) override;
     std::ostringstream os;
 
 	[[nodiscard]] const std::string& compiled_header() const {
@@ -71,4 +72,3 @@ private:
 	}
     static std::string get_compiled_date_time();
 };
-
