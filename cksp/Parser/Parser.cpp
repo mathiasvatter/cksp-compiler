@@ -21,6 +21,12 @@ Diagnostic Parser::make_declare_modifier_diagnostic(const Token& found) {
 	Diagnostic error(ErrorType::ParseError,
 		"Incorrect syntax in declare statement. Found unknown <modifier>.",
 		"<ui_control>, <variable>, <array>", found);
+	// The line just ends: the declaration is being typed and has no name yet. Saying that
+	// beats sending the reader looking for a modifier they never wrote.
+	if (found.type == token::LINEBRK || found.type == token::END_TOKEN) {
+		error.set_message("The <declare> statement has no name yet.");
+		return error;
+	}
 	if (!found.origin) return error;
 
 	// Report the declaration, not the substituted value: the <define> is written correctly,
@@ -679,7 +685,8 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr(NodeAST* parent) {
 		return parse_member_path(parent);
 	} else {
 		return Result<std::unique_ptr<NodeAST>>(
-			Diagnostic(ErrorType::ParseError,"Found unknown expression token.", "keyword, integer, parenthesis", peek()));
+			Diagnostic(ErrorType::ParseError,"Expected an expression here.",
+				"a name, a number, a string or a parenthesised expression", peek()));
 	}
 }
 
