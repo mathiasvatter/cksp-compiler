@@ -47,6 +47,9 @@ private:
 	/// Body of the function currently being visited; invalid at global scope.
 	SourceRange m_function_scope{};
 	std::string m_function_scope_file;
+	/// Innermost construct that hides a declaration: the function, or the loop or
+	/// branch inside it the cursor would have to be in to still see the name.
+	SourceRange m_declaration_scope{};
 
 	/// Records the block body so a shortened qualifier typed inside it can be
 	/// resolved against the enclosing path.
@@ -191,9 +194,10 @@ private:
 		return {};
 	}
 
-	/// Every declaration the user can name, with the only scope CKSP actually hides
-	/// things in: a function body. Declarations in callbacks are hoisted to the global
-	/// scope, so they stay unscoped here.
+	/// Every declaration the user can name, with the construct it is hidden in: the
+	/// enclosing function, or the loop or branch inside it that ends the name's life.
+	/// Declarations in callbacks are hoisted to the global scope, so they stay unscoped
+	/// here no matter how deeply they are nested.
 	void record_named_declaration(const NodeDataStructure& node) const {
 		if (m_pass != Pass::Members || node.name.empty()) return;
 		// Synthesized declarations have no source token to offer.
@@ -217,8 +221,32 @@ private:
 			.detail = detail_of(node),
 			.kind = kind_of_member(node),
 			.file = m_function_scope_file,
-			.scope = m_function_scope,
+			.scope = m_declaration_scope,
 		});
+	}
+
+	/**
+	 * Visits a construct whose body is a scope of its own.
+	 *
+	 * A NodeBlock is a scope unless its parent is a statement (NodeBlock::determine_scope),
+	 * so every loop and branch body hides the declarations written in it - but only inside
+	 * a function. A declaration in a callback is hoisted to the global scope and outlives
+	 * the block it stands in, which is why the narrowing is gated on the function depth.
+	 *
+	 * The construct's own range stands in for the body's: a NodeBlock carries no source
+	 * range. For <if>/<else> that makes both branches one scope, which offers a name
+	 * across the <else> it does not reach - it never hides one that is in scope.
+	 */
+	template<typename Node>
+	NodeAST* visit_nested_scope(Node& node) {
+		// Qualified: NodeForEach::range is the iterable being walked, not a source range.
+		const auto& source_range = static_cast<const NodeAST&>(node).range;
+		const bool narrows = m_function_depth > 0 && source_range.is_valid();
+		const auto outer = m_declaration_scope;
+		if (narrows) m_declaration_scope = source_range;
+		ASTVisitor::visit(node);
+		if (narrows) m_declaration_scope = outer;
+		return &node;
 	}
 
 public:
@@ -282,19 +310,34 @@ public:
 	/// A function declared in a namespace is a member of it, but its body is not: the
 	/// namespace desugaring prefixes function-local declarations just like real members
 	/// (<PathUtils._id>), and those are unreachable through the qualifier.
+	///
+	/// The header is left to the base traversal below rather than being visited up front:
+	/// ASTVisitor::visit() accepts it too, and a parameter harvested by that first visit
+	/// carried the scope of whatever encloses the *definition* - none, for a function at
+	/// global scope - which offered every parameter of every function everywhere.
 	NodeAST* visit(NodeFunctionDefinition& node) override {
-		if (node.header) node.header->accept(*this);
 		const auto outer_scope = m_function_scope;
 		const auto outer_file = m_function_scope_file;
+		const auto outer_declaration_scope = m_declaration_scope;
 		m_function_scope = node.range;
 		m_function_scope_file = node.tok.file;
+		// Until a loop or a branch narrows it, the whole body is the scope.
+		m_declaration_scope = node.range;
 		++m_function_depth;
 		ASTVisitor::visit(node);
 		--m_function_depth;
 		m_function_scope = outer_scope;
 		m_function_scope_file = outer_file;
+		m_declaration_scope = outer_declaration_scope;
 		return &node;
 	}
+
+	// Loop and branch bodies are scopes of their own; see visit_nested_scope().
+	NodeAST* visit(NodeFor& node) override { return visit_nested_scope(node); }
+	NodeAST* visit(NodeForEach& node) override { return visit_nested_scope(node); }
+	NodeAST* visit(NodeWhile& node) override { return visit_nested_scope(node); }
+	NodeAST* visit(NodeIf& node) override { return visit_nested_scope(node); }
+	NodeAST* visit(NodeSelect& node) override { return visit_nested_scope(node); }
 
 	NodeAST* visit(NodeProgram& node) override {
 		ASTVisitor::visit(node);

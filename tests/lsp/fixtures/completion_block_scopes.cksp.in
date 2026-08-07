@@ -1,0 +1,47 @@
+{ Block scopes: inside a function every loop and branch body hides the declarations
+  written in it, so a name must stop being offered past its <end>. In a callback the
+  same declaration is hoisted to the global scope and stays visible. }
+
+function outer_helper(only_in_helper: int): int
+    return only_in_helper
+end function
+
+function scopes(set_id: int)
+    declare in_function: int := 1
+
+    for inst in range(4)
+        declare in_outer_loop: int := inst
+
+        for ks in range(4)
+            declare in_inner_loop: int := ks
+
+            if set_id < 0
+                declare in_branch: int := 1
+                message(<|in_branch|>in_branch)
+            end if
+
+            message(<|in_inner_loop|>in_inner_loop)
+        end for
+
+        message(<|after_inner_loop|>in_outer_loop)
+    end for
+
+    message(<|after_outer_loop|>in_function)
+
+    while set_id > 0
+        declare in_while: int := 1
+        message(<|in_while|>in_while)
+    end while
+
+    message(<|after_while|>set_id)
+end function
+
+on init
+    for i in range(4)
+        declare hoisted_from_loop: int := i
+    end for
+    { Callback declarations are hoisted to the global scope, so the loop body is no
+      barrier here. }
+    message(<|after_callback_loop|>hoisted_from_loop)
+    scopes(1)
+end on

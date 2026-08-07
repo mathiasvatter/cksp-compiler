@@ -546,6 +546,35 @@ def _(workspace, server):
     expect_labels(items, ["g", "h", "uses_zone"])
 
 
+@test("completion: a loop or branch body ends the life of its declarations",
+      requires="completionProvider")
+def _(workspace, server):
+    fixture = workspace.open("completion_block_scopes.cksp")
+    expect(server.diagnostics(fixture) == [], "precondition: the fixture compiles cleanly")
+
+    def offered(marker):
+        return server.completion(fixture, marker, trigger_character=None)
+
+    # Innermost out: each <end> takes the names declared behind it with it.
+    expect_labels(offered("in_branch"),
+                  ["in_branch", "in_inner_loop", "in_outer_loop", "in_function", "set_id"])
+    expect_no_labels(offered("in_inner_loop"), ["in_branch"])
+    expect_labels(offered("in_inner_loop"), ["in_inner_loop", "ks", "in_outer_loop"])
+    expect_no_labels(offered("after_inner_loop"), ["in_branch", "in_inner_loop", "ks"])
+    expect_labels(offered("after_inner_loop"), ["in_outer_loop", "inst"])
+    expect_no_labels(offered("after_outer_loop"), ["in_outer_loop", "inst"])
+    expect_labels(offered("after_outer_loop"), ["in_function", "set_id"])
+
+    expect_labels(offered("in_while"), ["in_while"])
+    expect_no_labels(offered("after_while"), ["in_while"])
+
+    # A parameter belongs to its own function and to no other.
+    expect_no_labels(offered("after_outer_loop"), ["only_in_helper"])
+
+    # A callback declaration is hoisted to the global scope, so no block hides it.
+    expect_labels(offered("after_callback_loop"), ["hoisted_from_loop"])
+
+
 @test("completion: inside a namespace its members are offered unqualified",
       requires="completionProvider")
 def _(workspace, server):
