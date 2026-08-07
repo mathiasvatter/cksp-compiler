@@ -501,8 +501,10 @@ private:
 		{
 			ASTVariableChecking variable_checking(m_program, ASTVariableChecking::Pass::PostLowering);
 			variable_checking.do_reachable_traversal(*ast);
-			ast->remove_references();
-			ast->collect_references(); // >> those two are also only needed for LUX???
+			// Re-register references introduced by rewriting. Removed references
+			// unregister themselves in NodeReference::~NodeReference(), so a full
+			// remove_references() traversal before this is redundant.
+			ast->collect_references();
 			TypeInference infer_types(ast.get());
 			infer_types.do_reachable_traversal(*ast);
 			ast->debug_print();

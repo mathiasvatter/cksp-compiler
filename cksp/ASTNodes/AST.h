@@ -471,32 +471,44 @@ struct NodeWildcard final : NodeAST {
  * receiver type and resolves the individual path segments later.
  */
 struct NodeMemberPath final : NodeAST {
+	/**
+	 * Stable semantic information recorded for one path segment during type
+	 * inference. Struct lowering later replaces the source member declaration,
+	 * but the generated heap name and type remain valid.
+	 */
+	struct ResolvedMemberSegment {
+		std::string heap_name;
+		Type* value_type = nullptr;
+		Type* heap_type = nullptr;
+		bool has_scalar_heap = false;
+	};
+
 	std::vector<Token> segments;
-	/// One declaration per resolved segment. resolve_members() fills this while the
-	/// source-level struct definitions are still available; later query lowering
-	/// can therefore use the concrete member storage without repeating lookup.
-	std::vector<std::weak_ptr<NodeDataStructure>> resolved_members;
+	/// One stable descriptor per segment. Query lowering uses these descriptors to
+	/// create unresolved heap references; post-lowering variable checking binds the
+	/// references to the concrete arrays created by struct lowering.
+	std::vector<ResolvedMemberSegment> resolved_segments;
 
 	NodeMemberPath(std::vector<Token> segments, Token tok)
 		: NodeAST(std::move(tok), NodeType::MemberPath), segments(std::move(segments)) {}
-	NodeMemberPath(const NodeMemberPath& other)
-		: NodeAST(other), segments(other.segments), resolved_members(other.resolved_members) {}
-
+	NodeMemberPath(const NodeMemberPath& other) = default;
 	NodeAST* accept(ASTVisitor& visitor) override;
 	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
 
 	[[nodiscard]] bool empty() const { return segments.empty(); }
 	[[nodiscard]] bool is_resolved() const {
-		return resolved_members.size() == segments.size()
-			&& std::ranges::all_of(resolved_members, [](const auto& member) { return !member.expired(); });
+		return resolved_segments.size() == segments.size()
+			&& std::ranges::all_of(resolved_segments, [](const auto& member) {
+				return !member.heap_name.empty() && member.value_type && member.heap_type;
+			});
 	}
 	[[nodiscard]] const Token& segment(const size_t index) const { return segments.at(index); }
 	[[nodiscard]] const std::string& leaf_name() const { return segments.back().val; }
-	[[nodiscard]] std::shared_ptr<NodeDataStructure> resolved_member(const size_t index) const {
-		return resolved_members.at(index).lock();
+	[[nodiscard]] const ResolvedMemberSegment& resolved_member(const size_t index) const {
+		return resolved_segments.at(index);
 	}
-	[[nodiscard]] std::shared_ptr<NodeDataStructure> resolved_leaf() const {
-		return resolved_members.empty() ? nullptr : resolved_members.back().lock();
+	[[nodiscard]] const ResolvedMemberSegment* resolved_leaf() const {
+		return resolved_segments.empty() ? nullptr : &resolved_segments.back();
 	}
 	/// Resolves every segment against the supplied receiver type, binds the concrete
 	/// declarations and sets this node's type to the leaf member type.

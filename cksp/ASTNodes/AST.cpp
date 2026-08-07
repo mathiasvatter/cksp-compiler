@@ -622,8 +622,8 @@ std::shared_ptr<NodeDataStructure> NodeMemberPath::resolve_members(NodeProgram* 
 		error.exit();
 	}
 
-	resolved_members.clear();
-	resolved_members.reserve(segments.size());
+	resolved_segments.clear();
+	resolved_segments.reserve(segments.size());
 	Type* current_type = receiver_type;
 	std::shared_ptr<NodeDataStructure> member;
 
@@ -651,7 +651,18 @@ std::shared_ptr<NodeDataStructure> NodeMemberPath::resolve_members(NodeProgram* 
 			error.exit();
 		}
 
-		resolved_members.emplace_back(member);
+		const bool has_scalar_heap = !member->is_shared_member()
+			&& (member->get_node_type() == NodeType::Variable
+				|| member->get_node_type() == NodeType::Pointer);
+		resolved_segments.push_back({
+			member->name,
+			member->ty,
+			TypeRegistry::add_composite_type(
+				CompoundKind::Array,
+				member->ty->get_element_type()
+			),
+			has_scalar_heap
+		});
 		current_type = member->ty->get_element_type();
 		if (i + 1 < segments.size()
 			&& (!current_type || current_type->get_type_kind() != TypeKind::Object)) {
@@ -1816,23 +1827,16 @@ void NodeProgram::inline_structs_and_constants() {
 }
 
 void NodeProgram::reset_function_visited_flag() {
-//	for(const auto & def : function_definitions) def->visited = false;
-	// parallel_for_each(function_definitions.begin(), function_definitions.end(),
-	// 			  [](auto const& def) {
-	// 					def->visited = false;
-	// 			  });
-	// parallel_for_each(additional_function_definitions.begin(), additional_function_definitions.end(),
-	// 		  [](auto const& def) {
-	// 				def->visited = false;
-	// 		  });
-	parallel_for_each(function_lookup.begin(), function_lookup.end(),
-			  [](auto const& defs) {
-			  		for (auto & def : defs.second) {
-			  			if (auto func = def.lock()) {
-			  				func->visited = false;
-						}
-			  		}
-			  });
+	// Resetting one boolean per function is too little work to amortize spawning
+	// worker threads. This method is called repeatedly by reachable-AST passes,
+	// so thread setup otherwise dominates the actual reset work.
+	for (auto& entry : function_lookup) {
+		for (auto& definition : entry.second) {
+			if (auto function = definition.lock()) {
+				function->visited = false;
+			}
+		}
+	}
 }
 
 void NodeProgram::reset_function_used_flag() const {

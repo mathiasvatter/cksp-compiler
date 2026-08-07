@@ -5,6 +5,7 @@
 #include "ASTCollectLowerings.h"
 #include "../Lowering/LoweringStruct.h"
 #include "../Lowering/LoweringTernaryOperator.h"
+#include "../Lowering/LoweringArrayQuery.h"
 #include "../Lowering/PreLoweringStruct.h"
 #include "../Lowering/LoweringBoolean.h"
 #include "../Lowering/LoweringBooleanExpression.h"
@@ -269,6 +270,12 @@ NodeAST * ASTCollectLowerings::visit(NodeTernary &node) {
 	return node.accept(ternary);
 }
 
+NodeAST * ASTCollectLowerings::visit(NodeArrayQuery& node) {
+	static LoweringArrayQuery array_query(m_program);
+	array_query.set_program(m_program);
+	return node.accept(array_query)->accept(*this);
+}
+
 NodeAST * ASTCollectLowerings::visit(NodeNullCoalesce &node) {
 	// only lower the fallback here: the chain has to stay untouched so the
 	// nullish coalescing lowering can build the nil guards from it
@@ -325,5 +332,3 @@ NodeAST * ASTCollectLowerings::visit(NodeUnaryExpr &node) {
 	bool_expr_lowering.set_program(m_program);
 	return bool_expr_lowering.lower_expression(node);
 }
-
-

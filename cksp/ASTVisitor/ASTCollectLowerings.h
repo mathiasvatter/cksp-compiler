@@ -68,6 +68,7 @@ public:
 	NodeAST * visit(NodeWhile& node) override;
 	NodeAST * visit(NodeIf& node) override;
 	NodeAST * visit(NodeTernary& node) override;
+	NodeAST * visit(NodeArrayQuery& node) override;
 	NodeAST * visit(NodeNullCoalesce& node) override;
 	/// throw error since they are not in loop
 	NodeAST * visit(NodeBreak& node) override;
@@ -97,5 +98,4 @@ public:
 private:
     DefinitionProvider* m_def_provider;
 };
-
 
