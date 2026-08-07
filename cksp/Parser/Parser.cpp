@@ -37,8 +37,14 @@ Diagnostic Parser::make_declare_modifier_diagnostic(const Token& found) {
 
 /// checks in block for expected end token and throws meaningful error msg if unexepcted
 std::optional<Diagnostic> Parser::check_invalid_end_statement(const std::string& construct, token expected_end, const Token& start, const Token& next) {
-	// gotten end statement is valid but not the expected closing stmt for this block
-	if (END_STATEMENTS.contains(start.val) && start.type != expected_end) {
+	// gotten end statement is valid but not the expected closing stmt for this block.
+	// <end on> closes a callback and is no member of END_STATEMENTS, but running into it
+	// while an <if> or <for> is still open means that block was never closed - the shape
+	// every unfinished edit passes through, and the one that used to fall all the way
+	// through to the shrug of "Found invalid Statement Syntax".
+	const bool is_block_terminator =
+		END_STATEMENTS.contains(start.val) || start.type == token::END_CALLBACK;
+	if (is_block_terminator && start.type != expected_end) {
 		return make_invalid_end_statement_diagnostic(construct, get_token_string(expected_end), start, next);
 	}
 	if (!is_malformed_end_statement_start(start, next)) {
