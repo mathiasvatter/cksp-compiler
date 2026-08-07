@@ -1476,11 +1476,18 @@ Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(NodeAST* parent,
 			return Result<std::unique_ptr<NodeParamList>>(err);
 		}
 
+		// Remembered before parsing: only an argument that opens with '(' is the nested group
+		// the hint below describes, and by the time the parse fails the position has moved on.
+		const Token argument_start = peek();
 		if (auto exprResult = parse_expression(parent); !exprResult.is_error()) {
 			param_list->add_param(std::move(exprResult.unwrap()));
 		} else {
 			auto error = exprResult.get_error();
-            error.add_message(" Found possible nested <ParameterList> Syntax. To denote <Array> initializers inside <ParameterLists>, use '[' and ']'.");
+			// Added unconditionally the hint lands on every half-typed argument too, telling
+			// the reader about array initializers they never wrote.
+			if (argument_start.type == token::OPEN_PARENTH) {
+				error.add_message(" Found possible nested <ParameterList> Syntax. To denote <Array> initializers inside <ParameterLists>, use '[' and ']'.");
+			}
 			return Result<std::unique_ptr<NodeParamList>>(error);
 		}
 		if (allow_linebreaks) _skip_linebreaks();
