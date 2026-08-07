@@ -57,6 +57,11 @@ public:
 		return m_restricted_functions.contains(func_name);
 	}
 
+	/// Builtins that fill their array argument at runtime. Their counterparts only read it.
+	static bool is_array_loading_function(const std::string& func_name) {
+		return func_name == "load_array" or func_name == "load_array_str";
+	}
+
 	/// builtin functions with side effects and alter the value (variable) put in
 	inline static const std::unordered_set<std::string> destructive_functions = {
 		"inc", "dec",
