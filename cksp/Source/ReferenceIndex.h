@@ -137,7 +137,8 @@ public:
 	[[nodiscard]] bool empty() const { return m_links.empty() && m_definition_links.empty(); }
 
 	/// Resolves definition-only navigation first, then falls back to normal symbols.
-	[[nodiscard]] std::optional<DefinitionLink> resolve_definition(
+	/// A position may lead to several declarations; see resolve_all().
+	[[nodiscard]] std::vector<DefinitionLink> resolve_definition(
 		const std::string& file,
 		const size_t line,
 		const size_t character) const {
@@ -147,19 +148,33 @@ public:
 			if (!covers(link.ref_range, line, character)) continue;
 			if (!best || is_narrower(link.ref_range, best->ref_range)) best = &link;
 		}
-		if (best) return *best;
+		if (best) return {*best};
 
-		if (auto symbol = resolve_target(file, line, character)) {
-			return DefinitionLink{
-				symbol->ref_file,
-				symbol->ref_range,
-				symbol->def_file,
-				symbol->def_range,
-				symbol->def_name_range,
+		std::vector<DefinitionLink> found;
+		for (const auto& symbol : resolve_all(file, line, character)) {
+			found.push_back(DefinitionLink{
+				symbol.ref_file,
+				symbol.ref_range,
+				symbol.def_file,
+				symbol.def_range,
+				symbol.def_name_range,
 				{}
-			};
+			});
 		}
-		return std::nullopt;
+		// The position may sit on a declaration rather than on a usage.
+		if (found.empty()) {
+			if (auto symbol = resolve_target(file, line, character)) {
+				found.push_back(DefinitionLink{
+					symbol->ref_file,
+					symbol->ref_range,
+					symbol->def_file,
+					symbol->def_range,
+					symbol->def_name_range,
+					{}
+				});
+			}
+		}
+		return found;
 	}
 
 	/// Returns definition-only links originating in one document.
@@ -184,14 +199,36 @@ public:
 	/// Resolves a zero-based (LSP) position in `file` to a declaration location, if a
 	/// reference covers it. Prefers the narrowest covering reference.
 	[[nodiscard]] std::optional<ReferenceLink> resolve(const std::string& file, size_t line, size_t character) const {
-		const ReferenceLink* best = nullptr;
+		auto found = resolve_all(file, line, character);
+		if (found.empty()) return std::nullopt;
+		return std::move(found.front());
+	}
+
+	/**
+	 * Every declaration the narrowest reference covering a position leads to.
+	 *
+	 * Usually one, but a macro parameter genuinely has two: the parameter in the macro
+	 * header, recorded while substituting, and whatever the argument passed at the call
+	 * site resolves to. Both are written at the same place in the body, so both are the
+	 * honest answer to "where is this defined" - the editor lets the user pick.
+	 *
+	 * Ordered as recorded, so the preprocessor's parameter link leads.
+	 */
+	[[nodiscard]] std::vector<ReferenceLink> resolve_all(const std::string& file, size_t line, size_t character) const {
+		const SourceRange* narrowest = nullptr;
 		for (const auto& link : m_links) {
 			if (link.ref_file != file) continue;
 			if (!covers(link.ref_range, line, character)) continue;
-			if (!best || is_narrower(link.ref_range, best->ref_range)) best = &link;
+			if (!narrowest || is_narrower(link.ref_range, *narrowest)) narrowest = &link.ref_range;
 		}
-		if (!best) return std::nullopt;
-		return *best;
+		if (!narrowest) return {};
+
+		std::vector<ReferenceLink> found;
+		for (const auto& link : m_links) {
+			if (link.ref_file != file || !same_range(link.ref_range, *narrowest)) continue;
+			found.push_back(link);
+		}
+		return found;
 	}
 
 	/// Resolves the declaration represented at a position. The position may be either a

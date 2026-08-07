@@ -62,6 +62,32 @@ def _(workspace, server):
     expect_definition(server.definition(fixture, "ns_use"), fixture, "ns_decl")
 
 
+@test("definition: a name a macro parameter assembled navigates on both halves")
+def _(workspace, server):
+    # <#thing#.value> is one word: the parameter half is the call site's argument, the
+    # rest is macro-body text. The substituted name matches no file's text, so the
+    # reference index has to fall back on the word as it was written.
+    fixture = workspace.open("navigation_macro_params.cksp")
+    expect(server.diagnostics(fixture) == [], "precondition: the fixture compiles cleanly")
+
+    # The parameter half has two definitions and offers both: the macro parameter it
+    # names, and the declaration of what the call site passed for it.
+    targets = {
+        position_of(link, "targetSelectionRange")
+        for link in server.definition(fixture, "param_half")
+    }
+    expect(
+        targets == {fixture.at("macro_param"), fixture.at("inst_decl")},
+        f"expected the macro parameter and the argument's declaration, got {targets}",
+    )
+    expect_definition(server.definition(fixture, "member_half"), fixture, "value_decl")
+    expect_definition(server.definition(fixture, "method_half"), fixture, "bump_decl")
+    # The control case, which never went through a substitution.
+    expect_definition(server.definition(fixture, "plain_member"), fixture, "value_decl")
+    # The argument keeps its own link at the call site.
+    expect_definition(server.definition(fixture, "argument"), fixture, "inst_decl")
+
+
 @test("rename: leaves a usage that a macro parameter spells alone")
 def _(workspace, server):
     # The macro body reaches `inst` through <#thing#>. That usage is listed and navigable,

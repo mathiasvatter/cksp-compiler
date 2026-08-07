@@ -427,10 +427,10 @@ std::optional<ReferenceLink> LanguageServer::resolve_target_at(
 		m_entry_points.affected_entries(source), source, line, character);
 }
 
-std::optional<DefinitionLink> LanguageServer::resolve_definition_target(
+std::vector<DefinitionLink> LanguageServer::resolve_definition_target(
 	const JsonRpcMessage& message) {
 	const auto position = position_params(message);
-	if (!position) return std::nullopt;
+	if (!position) return {};
 	std::lock_guard lock(m_state_mutex);
 	return m_references.resolve_definition(
 		m_entry_points.affected_entries(position->source),
@@ -444,19 +444,24 @@ void LanguageServer::handle_definition(const JsonRpcMessage& message) {
 
 	const auto* id = message.id();
 	if (!id) return;
-	if (found) {
-		auto link = std::make_unique<JSONObject>();
-		link->add("originSelectionRange", found->ref_range.get_lsp_range());
-		link->add("targetUri", std::make_unique<JSONString>(
-			uri_from_source(SourceId(found->def_file))));
-		link->add("targetRange", found->def_range.get_lsp_range());
-		link->add("targetSelectionRange", found->def_selection_range.get_lsp_range());
-		JSONArray links;
-		links.add(std::move(link));
-		m_connection.send_response(*id, links);
-	} else {
+	if (found.empty()) {
 		m_connection.send_response(*id, JSONNull{});
+		return;
 	}
+	// More than one when the position leads to several declarations - a macro parameter
+	// leads both to the parameter and to what the call site passed for it. The client
+	// offers the choice.
+	JSONArray links;
+	for (const auto& found_link : found) {
+		auto link = std::make_unique<JSONObject>();
+		link->add("originSelectionRange", found_link.ref_range.get_lsp_range());
+		link->add("targetUri", std::make_unique<JSONString>(
+			uri_from_source(SourceId(found_link.def_file))));
+		link->add("targetRange", found_link.def_range.get_lsp_range());
+		link->add("targetSelectionRange", found_link.def_selection_range.get_lsp_range());
+		links.add(std::move(link));
+	}
+	m_connection.send_response(*id, links);
 }
 
 void LanguageServer::handle_document_link(const JsonRpcMessage& message) {
