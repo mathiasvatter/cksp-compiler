@@ -141,7 +141,15 @@ std::unique_ptr<JSONObject> DiagnosticPublisher::make_lsp_diagnostic(const Diagn
 	result->add("severity", std::make_unique<JSONInt>((int)diagnostic.severity));
 	result->add("source", std::make_unique<JSONString>("cksp"));
 	result->add("code", std::make_unique<JSONString>(error_type_to_string(diagnostic.type)));
-	result->add("message", std::make_unique<JSONString>(diagnostic.display_message()));
+	// The console sink prints <Expected>/<Got> as their own lines; the editor only ever gets
+	// `message`, so without this the parser's most useful half - what it wanted and what it
+	// found - never reaches the user. That is what makes a message like "Found unknown
+	// expression token." unreadable while typing.
+	auto message = diagnostic.display_message();
+	if (const auto detail = diagnostic.display_detail(); !detail.empty()) {
+		message += "\n" + detail;
+	}
+	result->add("message", std::make_unique<JSONString>(message));
 
 	// A token a macro or define substitution produced is reported wherever the substitution
 	// left it - the call site for a body word, the <define> declaration for a define usage.

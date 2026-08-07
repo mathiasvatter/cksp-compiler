@@ -135,6 +135,8 @@ struct Diagnostic {
     void set_expected(const std::string& value) { expected = value; }
     void set_token(const Token& token);
     [[nodiscard]] std::string display_message() const;
+    /// "Expected: …" / "Got: …", rendered readable. Empty when neither is known.
+    [[nodiscard]] std::string display_detail() const;
     /// The substitution a token came out of, if any. See DiagnosticExpansion.
     [[nodiscard]] static std::optional<DiagnosticExpansion> expansion_of(const struct Token& token);
 
