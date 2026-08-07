@@ -31,6 +31,7 @@ protected:
 	Token m_curr_token;
 
 
+	static std::string unterminated_construct_message();
 	const Token& peek(const std::vector<Token>& tok, int ahead = 0);
 	const Token& consume(const std::vector<Token>& tok);
 
