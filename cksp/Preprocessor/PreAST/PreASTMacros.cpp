@@ -53,15 +53,34 @@ PreNodeAST *PreASTMacros::do_substitution(PreNodeLiteral &node) {
 					m_reference_index->add_link(node.tok, it->second);
 				}
 			}
+			mark_as_written(*substitute, node.tok);
 			return node.replace_with(std::move(substitute));
 		} else if(node.cast<PreNodeKeyword>()) {
 			// in case there are more # substitutions in one word
 			if (StringUtils::count_char(node.tok.val, '#') >= 2) {
+				link_parameter_groups(node.tok);
 				node.tok = get_text_replacement_token(node.tok);
 			}
 		}
 	}
 	return &node;
+}
+
+/// Links the <#param#> groups inside a word to the parameters they name.
+///
+/// A word like <#browser#.foo> names no parameter as a whole, so the whole-word path above
+/// never sees it - but the group inside it is written by the user and clicked like any
+/// other name. Recorded here because this is the last moment the body spelling and its
+/// position are still together: the substitution below rewrites both.
+void PreASTMacros::link_parameter_groups(const Token& word) const {
+	if (!m_reference_index || m_param_token_stack.empty()) return;
+	for (const auto& [name, declaration] : m_param_token_stack.top()) {
+		if (name.size() < 2 || name.front() != '#' || name.back() != '#') continue;
+		for (size_t at = word.val.find(name); at != std::string::npos;
+			at = word.val.find(name, at + name.size())) {
+			m_reference_index->add_link(segment_token(word, at, name), declaration);
+		}
+	}
 }
 
 PreNodeAST *PreASTMacros::visit(PreNodeNumber &node) {

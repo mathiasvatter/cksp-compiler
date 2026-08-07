@@ -36,6 +36,7 @@ private:
 	std::stack<std::unordered_map<std::string, Token>> m_param_token_stack;
 
 	PreNodeAST *do_substitution(PreNodeLiteral &node);
+	void link_parameter_groups(const Token& word) const;
 	std::unique_ptr<PreNodeAST> get_substitute(const std::string& name);
 	static std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> get_substitution_map(PreNodeDefineHeader& definition, const PreNodeDefineHeader& call);
 

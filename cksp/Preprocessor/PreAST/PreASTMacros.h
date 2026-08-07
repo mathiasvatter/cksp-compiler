@@ -49,6 +49,7 @@ private:
 	PreNodeMacroDefinition* get_macro_string_definition(const PreNodeMacroHeader& macro_header);
 
 	PreNodeAST *do_substitution(PreNodeLiteral &node);
+	void link_parameter_groups(const Token& word) const;
     std::unique_ptr<PreNodeAST> get_substitute(const std::string& name);
     std::unordered_map<std::string, std::unique_ptr<PreNodeChunk>> get_substitution_map(PreNodeMacroHeader& definition, const PreNodeMacroHeader& call);
     // PreNodeMacroDefinition* get_macro_definition(const PreNodeMacroHeader& macro_header);
