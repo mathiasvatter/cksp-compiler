@@ -71,6 +71,7 @@ public:
 		m_exit_flag_name = m_program->def_provider->get_fresh_name("RETURN_FLAG");
 		auto return_flag_decl = get_return_flag_declaration(node.tok, m_exit_flag_name);
 		m_exit_flag_var = return_flag_decl->variable.get();
+		m_exit_flag_var->is_thread_safe = node.is_thread_safe;
 		auto return_flag_ref = m_exit_flag_var->to_reference();
 //		return_flag_ref->match_data_structure(m_exit_flag_var);
 
