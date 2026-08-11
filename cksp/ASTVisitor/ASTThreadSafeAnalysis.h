@@ -197,6 +197,13 @@ protected:
 
 	NodeAST *visit(NodeCallback &node) override {
 		if (node.statements->empty()) return &node;
+		// <on init> runs exactly once and is never re-entered, so nothing declared in it can be
+		// shared by two concurrent instances of the callback: it never needs a per-callback-stack
+		// copy. Without this, a single asynchronous call reachable from <on init> - which is
+		// rejected later on anyway - turns the whole callback into a thread-unsafe range and every
+		// global declared in it gets expanded by <max_callback_depth>, which buries the real
+		// diagnostic under follow-up errors from the expanded declarations.
+		if (&node == m_program->init_callback) return &node;
 		m_current_callback = &node;
 		const auto first_stmt = node.statements->front();
 		const auto last_stmt = node.statements->back();
