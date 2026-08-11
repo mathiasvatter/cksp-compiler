@@ -37,6 +37,23 @@ public:
 		return &node;
 	}
 
+	/// <on init> is run once by Kontakt before anything else, so a function that yields (wait,
+	/// wait_async) can not do so there. Thread safety propagates up the call stack, so a function
+	/// that only reaches an asynchronous command through its callees is unsafe by the time its own
+	/// call site is checked. The rule lives here so that the two places that can decide it - this
+	/// pass, which is the first point where the flags are known, and function inlining, which sees
+	/// calls that are only bound later - share one implementation instead of drifting apart.
+	static void check_init_callability(const NodeFunctionCall& node, const std::shared_ptr<NodeFunctionDefinition>& definition,
+	                                   const NodeCallback* current_callback, const NodeCallback* init_callback) {
+		if (!definition or node.is_builtin_kind()) return;
+		if (current_callback != init_callback) return;
+		if (definition->is_thread_safe) return;
+		auto error = make_diagnostic(ErrorType::SyntaxError, node);
+		error.message = "Only threadsafe functions can be called in the <on init> callback. Function <"
+			+node.function->name+"> contains asynchronous operations.";
+		error.exit();
+	}
+
 	NodeAST* mark_function(NodeFunctionDefinition& node) {
 		node.visited = false;
 		m_program->current_callback = nullptr;
@@ -84,6 +101,10 @@ private:
 				m_program->current_callback->is_thread_safe &= definition->is_thread_safe;
 			}
 		}
+
+		// the flags are complete for everything visited so far, so a struct method that was lowered
+		// into a plain call is caught here just like a global function
+		check_init_callability(node, definition, m_program->current_callback, m_program->init_callback);
 
 		return &node;
 	}
