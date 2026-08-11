@@ -174,11 +174,16 @@ bool NodeFunctionCall::bind_definition(NodeProgram* program, const bool fail, co
 //		}
         return true;
     }
-    if (find_builtin_definition(program)) {
+	// <obj.method()>: the receiver decides which definition the call refers to, and the method is
+	// registered under its qualified name. A builtin that happens to share the unqualified name and
+	// parameter count would bind here first and stamp its type onto the call, which then makes the
+	// qualified lookup in <TypeInference> miss. Chain members are resolved there.
+	const bool in_access_chain = is_in_access_chain();
+    if (!in_access_chain and find_builtin_definition(program)) {
         return true;
     } else if (find_definition(program)) {
         return true;
-    } else if (find_property_definition(program)) {
+    } else if (!in_access_chain and find_property_definition(program)) {
 		return true;
 //	} else if(find_method_definition(program)) {
 //		return true;
