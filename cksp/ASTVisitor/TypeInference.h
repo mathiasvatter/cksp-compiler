@@ -192,7 +192,10 @@ class TypeInference final : public ASTVisitor {
 				call->function->declaration = new_func_def->header;
 				const auto func_ptr = m_program->add_function_definition(std::move(new_func_def));
 				call->definition = func_ptr->get_shared();
-				func_ptr->header->name = func_name;
+				// registration runs under the generic name, so the lookup entry has to follow the
+				// specialization to its fresh name - otherwise it stays reachable under a name that
+				// no longer belongs to it
+				m_program->rename_function_definition(func_ptr->get_shared(), func_name);
 				if (arity_fits) {
 					monomorph_cache[def.get()].push_back({method_idx, std::move(arg_types), func_ptr->get_shared()});
 				}
