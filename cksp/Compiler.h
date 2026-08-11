@@ -207,6 +207,7 @@ private:
 				m_program->combine_callbacks();
 			}
 			m_program->check_unique_callbacks();
+			m_program->check_builtin_shadowing();
 			m_program->init_callback = m_program->move_on_init_callback();
 		}
 		// Standalone source files lack the declaration context of an entry point. Stop
@@ -396,6 +397,7 @@ private:
 				m_program->combine_callbacks();
 			}
 			m_program->check_unique_callbacks();
+			m_program->check_builtin_shadowing();
 			m_program->init_callback = m_program->move_on_init_callback();
 		}
 

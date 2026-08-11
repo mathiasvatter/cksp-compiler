@@ -348,6 +348,7 @@ public:
     /// builtin engine functions
     std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions{};
     std::shared_ptr<NodeFunctionDefinition> get_builtin_function(const NodeFunctionHeaderRef* function);
+	std::shared_ptr<NodeFunctionDefinition> get_builtin_function(const std::string& name, int num_params);
     void set_builtin_functions(std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions);
 	/// boolean functions like and, or, not
 	std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> boolean_functions{};

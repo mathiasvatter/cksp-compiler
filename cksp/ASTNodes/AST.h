@@ -1144,6 +1144,10 @@ struct NodeProgram final : NodeAST {
     std::vector<std::shared_ptr<NodeFunctionDefinition>> function_definitions;
 	std::vector<std::shared_ptr<NodeFunctionDefinition>> additional_function_definitions;
 	std::unordered_map<StringIntKey, std::vector<std::weak_ptr<NodeFunctionDefinition>>, StringIntKeyHash> function_lookup;
+	/// definitions that take a KSP command over via <override>, keyed by the name and parameter count
+	/// of that command. They carry a generated name from then on, so the command itself stays
+	/// reachable - both for the emitted KSP and for the body of the overriding function.
+	std::unordered_map<StringIntKey, std::weak_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_overrides;
 	std::vector<NodeStruct*> struct_definitions;
 	std::unordered_map<std::string, NodeStruct*> struct_lookup;
 	std::unique_ptr<NodeBlock> global_declarations;
@@ -1168,6 +1172,14 @@ struct NodeProgram final : NodeAST {
 	// adds a function definition or replaces one if the new def is marked override -> throws error if not and fun signature already exists
 	void add_function_or_override(const std::shared_ptr<NodeFunctionDefinition> &def);
 	void remove_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def);
+	/// renames a definition and moves its entry in <function_lookup> along with it. The lookup is
+	/// keyed by name and parameter count, so writing the new name onto the header alone leaves the
+	/// definition registered under a name it no longer has.
+	void rename_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def, const std::string& new_name);
+	/// A global function carrying the name and parameter count of a KSP command would never be called
+	/// - the command binds first. Rejects that unless the definition is marked <override>, in which
+	/// case the definition is renamed and registered in <builtin_overrides>.
+	void check_builtin_shadowing();
 	static NodeFunctionDefinition *replace_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def, const std::shared_ptr<NodeFunctionDefinition> &replacement);
 	void update_struct_lookup();
 	/// looks up function with same name and parameter number and compatible types

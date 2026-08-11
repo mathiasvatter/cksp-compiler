@@ -1536,6 +1536,53 @@ void NodeProgram::add_function_or_override(const std::shared_ptr<NodeFunctionDef
 	}
 }
 
+void NodeProgram::rename_function_definition(const std::shared_ptr<NodeFunctionDefinition>& def, const std::string& new_name) {
+	const int num_params = static_cast<int>(def->header->params.size());
+	const StringIntKey old_key{def->header->name, num_params};
+	auto& definitions = function_lookup[old_key];
+	std::erase_if(definitions, [&](const std::weak_ptr<NodeFunctionDefinition>& entry) {
+		return entry.lock() == def;
+	});
+	if (definitions.empty()) function_lookup.erase(old_key);
+	def->header->name = new_name;
+	function_lookup[{new_name, num_params}].push_back(def);
+}
+
+void NodeProgram::check_builtin_shadowing() {
+	if (!def_provider) return;
+	// compiler-made definitions in <additional_function_definitions> carry generated names and are
+	// added after this point, so the user-written ones are all there is to check
+	for (const auto& def : function_definitions) {
+		const std::string name = def->header->name;
+		const int num_params = static_cast<int>(def->header->params.size());
+		if (!def_provider->get_builtin_function(name, num_params)) continue;
+		const std::string parameters = std::to_string(num_params) + (num_params == 1 ? " parameter" : " parameters");
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", def->header->tok);
+		if (!def->override) {
+			error.set_message("<"+name+"> is a built-in command taking "+parameters+". The command binds "
+					 "first at every call site, so this definition would never be called.\n"
+					 "Rename the function, give it a different number of parameters, or mark it as "
+					 "<override> to replace the command.");
+			error.exit();
+		}
+		if (!BuiltinRestrictionValidator::is_overridable_builtin(name)) {
+			error.set_message("<"+name+"> is a built-in command that cannot be replaced. The compiler "
+					 "recognises it by name to check callback restrictions, thread safety, persistency "
+					 "and in place modification, and would apply those rules to a command that no longer "
+					 "runs.\nRename the function.");
+			error.exit();
+		}
+		// The command keeps its name: the emitted KSP would otherwise declare a function that shadows
+		// it, and the wrapped call inside the body would turn into an endless recursion. The
+		// definition moves into the reserved <CKSP> namespace instead, the same pair of name and kind
+		// the engine helper functions carry, so that the generated name can not collide with anything
+		// a script is allowed to declare and reads as compiler-made wherever it surfaces.
+		def->header->kind = NodeDataStructure::Compiler;
+		rename_function_definition(def, def_provider->get_fresh_name("CKSP"+OBJ_DELIMITER+name+"_override"));
+		builtin_overrides[{name, num_params}] = def;
+	}
+}
+
 void NodeProgram::remove_function_definition(const std::shared_ptr<NodeFunctionDefinition>& def) {
 	auto remove_from_vector = [&](std::vector<std::shared_ptr<NodeFunctionDefinition>>& vec) {
 		for (size_t i = 0; i < vec.size(); ) {

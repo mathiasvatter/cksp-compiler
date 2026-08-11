@@ -106,6 +106,21 @@ std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_definition(NodePr
 	return nullptr;
 }
 
+std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_overriding_definition(NodeProgram *program) {
+	const auto it = program->builtin_overrides.find({function->name, function->get_num_args()});
+	if (it == program->builtin_overrides.end()) return nullptr;
+	const auto user_func = it->second.lock();
+	if (!user_func) return nullptr;
+	// Inside the overriding function itself the call keeps its builtin meaning, so the function can
+	// wrap the command it takes over instead of calling itself.
+	for (const NodeAST* node = parent; node; node = node->parent) {
+		if (node == user_func.get()) return nullptr;
+	}
+	// the definition carries a generated name from here on, so the call has to follow it
+	function->name = user_func->header->name;
+	return user_func;
+}
+
 std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_builtin_definition(NodeProgram *program) {
     if(!program->def_provider) {
         Diagnostic(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
@@ -114,6 +129,9 @@ std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_builtin_definitio
 		return nullptr;
 	}
     if(auto builtin_func = program->def_provider->get_builtin_function(function.get())) {
+        if (find_overriding_definition(program)) {
+            return nullptr;
+        }
         function->ty = builtin_func->ty;
         function->has_forced_parenth = builtin_func->header->has_forced_parenth;
         definition = builtin_func;

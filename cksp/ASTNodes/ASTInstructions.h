@@ -85,6 +85,10 @@ struct NodeFunctionCall final : NodeInstruction {
 	std::shared_ptr<NodeFunctionDefinition> find_definition(NodeProgram *program, const std::string& name, int num_args, const Type *ty);
     /// attempts to get and match metadata from builtin function to this
     std::shared_ptr<NodeFunctionDefinition> find_builtin_definition(NodeProgram *program);
+	/// returns the user definition that takes this name over from a builtin via <override> and renames
+	/// the call to it. Null when there is none - or when the call sits inside that definition's body,
+	/// where the builtin is what the function wraps.
+	std::shared_ptr<NodeFunctionDefinition> find_overriding_definition(NodeProgram *program);
     /// attempts to get property function that and set definition pointer + error handling
     std::shared_ptr<NodeFunctionDefinition> find_property_definition(NodeProgram *program);
 	std::shared_ptr<NodeFunctionDefinition> find_constructor_definition(NodeProgram* program);
