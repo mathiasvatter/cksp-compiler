@@ -69,18 +69,9 @@ private:
 			if(auto init_list = node.r_value->cast<NodeInitializerList>()) {
 				// if param list has only one value:
 				if (init_list->size() == 1) {
-					auto lower_bound = std::make_unique<NodeInt>(0, node.tok);
-					auto upper_bound = node_array_ref->get_size();
-					node_array_ref->set_index(m_program->get_global_iterator()->to_reference());
-					auto loop_assignment = std::make_unique<NodeSingleAssignment>(
-						std::move(node.l_value),
-						std::move(init_list->elem(0)),
-						node.tok
-					);
-					auto block = std::make_unique<NodeBlock>(node.tok);
-					block->add_as_stmt(std::move(loop_assignment));
-					block->wrap_in_loop(m_program->get_global_iterator(), std::move(lower_bound), std::move(upper_bound), false);
-					return node.replace_with(std::move(block));
+					return node.replace_with(get_array_init_from_single_value(
+						node_array_ref, std::move(init_list->elem(0)), node_array_ref->get_size(),
+						m_program->get_global_iterator()));
 				}
 				// series of single index assignments
 				return node.replace_with(get_array_init_from_list(node_array_ref, init_list));
@@ -110,6 +101,27 @@ private:
 
 
 public:
+	/// <array[] := (1)>: the one value an initializer list holds stands for every element of the
+	/// array, which is a loop over all of them. The element count is passed in - the declaration
+	/// has it as a literal, while a reference can only express it as <num_elements>, which is not
+	/// available anymore once that has been lowered.
+	static std::unique_ptr<NodeBlock> get_array_init_from_single_value(NodeArrayRef* array_ref,
+																	  std::unique_ptr<NodeAST> value,
+																	  std::unique_ptr<NodeAST> num_elements,
+																	  const std::shared_ptr<NodeDataStructure>& iterator) {
+		auto element = clone_as<NodeArrayRef>(array_ref);
+		element->set_index(iterator->to_reference());
+		auto block = std::make_unique<NodeBlock>(array_ref->tok);
+		block->add_as_stmt(std::make_unique<NodeSingleAssignment>(
+			std::move(element), std::move(value), array_ref->tok));
+		block->wrap_in_loop(
+			iterator,
+			std::make_unique<NodeInt>(0, array_ref->tok),
+			std::move(num_elements),
+			false);
+		return block;
+	}
+
 	static std::unique_ptr<NodeBlock> get_array_init_from_list(NodeArrayRef* array_ref, NodeInitializerList* init_list) {
 		auto node_body = std::make_unique<NodeBlock>(array_ref->tok);
 		for(int i = 0; i<init_list->size(); i++) {
