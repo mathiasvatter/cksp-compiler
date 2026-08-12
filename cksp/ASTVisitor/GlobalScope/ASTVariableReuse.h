@@ -156,9 +156,14 @@ public:
 		if(node.kind == NodeSingleDeclaration::Kind::Promoted or node.kind == NodeSingleDeclaration::Kind::ReturnVar) {
 			return std::make_unique<NodeDeadCode>(node.tok);
 		}
-		// if (!node.variable->is_thread_safe) {
-		// 	return std::make_unique<NodeDeadCode>(node.tok);
-		// }
+		// so that:
+		// declare local x[MAX::CB::STACK]
+		// x[NI_CALLBACK_ID mod MAX::CB::STACK] := EVENT_ID
+		// does not get transformed so that all of x gets EVENT_ID in while loop! This happens per cb invocation.
+		// Thus here we do not need to make an extra assignment out of the 'declare local ...' thread-unsafe declaration.
+		if (!node.variable->is_thread_safe) {
+			return std::make_unique<NodeDeadCode>(node.tok);
+		}
 		auto node_assignment = node.to_assign_stmt();
 		node_assignment->collect_references();
 		return std::move(node_assignment);

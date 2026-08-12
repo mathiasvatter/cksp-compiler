@@ -1,0 +1,14 @@
+// A declaration that gets expanded must not be turned into an initialisation of the whole array:
+// that loop runs per callback invocation and would wipe the slots of every other instance still
+// waiting. Only the slot of the current callback may be touched.
+#pragma combine_callbacks(true)
+
+// EXPECT declare %slot[0-9]*\[1000\]
+// EXPECT_NOT num_elements
+
+on note
+    declare $slot
+    $slot := $EVENT_ID
+    wait(1000)
+    change_tune($slot, 100, 1)
+end on

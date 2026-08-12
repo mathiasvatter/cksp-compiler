@@ -1,96 +1,12 @@
 #pragma output_path("test.txt")
 #pragma combine_callbacks(true)
-#pragma max_callback_depth(420)
-
-
-struct Instrument
-    static const bubu: int := 4500
-    next: Group
-    zones[1000000]: Zone[]    
-
-    function find_zone(self, zone_id: int) override
-        return search_by(self.zones, .id, zone_id)
-    end function        
-end struct    
-  
-struct Zone
-    static const StartType
-        Beginning, Middle, End
-    end const
-    arr[2,2]: int[][] := [[1,2], [2, 3]]
-    idx: int
-    id: int
-    file: string
-    startMod: int
-
-    function add(self)
-        self.arr := [[3,4], [5,6]]
-        message(self.StartType, self.arr[0,0])
-    end function        
-end struct    
-
-declare Instrument := new Instrument(nil, [nil])
-on note
-    message(Instrument.zones[0].StartType.Beginning)
-    message(Instrument.bubu)
-    // message(find_zone(4))
-    message(Instrument.find_zone(5))
-    declare arr[Instrument.bubu]
-    message(arr[0])
-end on
-
-// function find_zone(zone_id: int)
-//     return search_by(Instrument.zones, .id, zone_id)
-// end function    
-
-struct Group
-    idx: int
-    zone: Zone
-    next: Group
-
-
-end struct  
-
-// function num_notes_pressed()
-//     declare num_notes: int
-//     for i, down in pairs(KEY_DOWN)
-//         num_notes += down
-//     end for        
-//     return num_notes
-// end function  
-
-
-// search(self.zones.id, 42)
-
-// function search()
-//     declare candidate := search(Zones::id, 42)
-//     declare res := -1
-//     while (res = -1 and candidate # -1)
-//         if (search(Instrument::zones, candidate) # -1)
-//             return candidate
-//         else
-
-//         end if            
-//     end while        
-// end function    
-
-// function Instrument::__find_zones_by_id(self: int, value: int): Zone
-//     declare candidate: int := search(Zone::id, value)
-
-//     while (candidate # -1)
-//         if (search(Instrument::zones[self, *], candidate) # -1)
-//             return candidate
-//         end if
-//         candidate := search(Zone::id, value, candidate + 1, Zone::MAX_STRUCTS)
-//     end while
-
-//     return nil
-// end function
-
-const bu
-    bubu, bububu
-end const
+// #pragma max_callback_depth(420)
 
 on note
-    // message(bu.bubu)
+    declare x := $EVENT_ID   
+    wait(1000)                 
+    message(x+1) 
+    wait(1000)  
+    declare y := EVENT_ID
+    message(y+2)               
 end on

@@ -32,17 +32,20 @@ class ASTLifeTimeAnalysis : public ASTVisitor {
 	};
 	std::unordered_map<NodeDataStructure*, Life> m_life_times;
 	std::unordered_set<NodeBlock*> m_visited_blocks;
-	bool is_in_while_loop = false;
-	std::stack<NodeStatement*> m_end_of_current_block{};
-	std::unordered_set<Life*> m_variables_in_while;
+	std::vector<NodeWhile*> while_loop_stack{};
+	// std::stack<NodeStatement*> m_end_of_current_block{};
+	// std::unordered_set<Life*> m_variables_in_while;
 
 	void add_lifetime_end(const NodeReference& ref, NodeStatement* stmt) {
 		// a variable for sure -> the end will then be the end of the scope it was declared in.
 		if (const auto data = ref.get_declaration()) {
 			const auto it = m_life_times.find(data.get());
 			if (it != m_life_times.end()) {
-				if (is_in_while_loop) {
-					it->second.end = m_end_of_current_block.top();
+				// only assign end of life statement if one or multiple nested while loops are on the stack
+				// -> then assign the last stmt of the body of the first while loop since we could be in a nested
+				// if statement and we still want to assign the while loop body and not the if statement body
+				if (!while_loop_stack.empty()) {
+					it->second.end = while_loop_stack.front()->body->back();
 				} else {
 					it->second.end = stmt;
 				}
@@ -62,8 +65,8 @@ public:
 	}
 
 	std::unordered_map<NodeDataStructure*, Life>& run(NodeBlock& block) {
-		m_variables_in_while.clear();
-		is_in_while_loop = false;
+		// m_variables_in_while.clear();
+		while_loop_stack = {};
 		m_life_times.clear();
 		m_visited_blocks.clear();
 		block.accept(*this);
@@ -73,8 +76,8 @@ public:
 	// this is not used in variable reuse because all relevant function parameters are already
 	// transformed into assignment statements by parameter transform pass
 	std::unordered_map<NodeDataStructure*, Life>& run(NodeFunctionDefinition& def) {
-		m_variables_in_while.clear();
-		is_in_while_loop = false;
+		// m_variables_in_while.clear();
+		while_loop_stack = {};
 		m_life_times.clear();
 		m_visited_blocks.clear();
 		m_current_statement = def.body->front();
@@ -114,17 +117,17 @@ protected:
 	// inside a while loop, variables cannot have their end of life, they are saved in a map
 	// and are assigned their lifetime end in the next statement
 	NodeAST* visit(NodeWhile &node) override {
-		is_in_while_loop = true;
+		while_loop_stack.push_back(&node);
 		ASTVisitor::visit(node);
-		is_in_while_loop = false;
+		while_loop_stack.pop_back();
 		return &node;
 	}
 
 	NodeAST *visit(NodeBlock &node) override {
 		m_visited_blocks.insert(&node);
-		m_end_of_current_block.push(node.back());
+		// m_end_of_current_block.push(node.back());
 		ASTVisitor::visit(node);
-		m_end_of_current_block.pop();
+		// m_end_of_current_block.pop();
 		return &node;
 	}
 

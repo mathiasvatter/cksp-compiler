@@ -1,0 +1,14 @@
+// x comes into existence after a wait and is done with before the next one, so nothing about it
+// has to survive a yield - a later wait in the same callback does not change that. Guards against
+// deciding thread safety from the total number of waits instead of the ones between declaration
+// and last use.
+#pragma combine_callbacks(true)
+
+// EXPECT_NOT declare %[_A-Za-z0-9]*\[2000\]
+
+on note
+    wait(1000)
+    declare x[2] := $EVENT_ID
+    message(x[0] + 1)
+    wait(1000)
+end on
