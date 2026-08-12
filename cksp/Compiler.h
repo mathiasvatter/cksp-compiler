@@ -47,6 +47,7 @@
 #include "ASTVisitor/ASTThreadSafeAnalysis.h"
 #include "ASTVisitor/UniqueParameterNamesProvider.h"
 #include "ASTVisitor/FunctionHandling/ASTFunctionStrategy.h"
+#include "ASTVisitor/FunctionHandling/InitializerListArguments.h"
 #include "ASTVisitor/FunctionHandling/ParameterAssignmentTransformation.h"
 #include "ASTVisitor/GlobalScope/ASTParameterPromotion.h"
 #include "ASTVisitor/GlobalScope/MarkThreadSafe.h"
@@ -257,6 +258,11 @@ private:
 		// ast->accept(instance_analysis);
 		// ast->collect_references();  //>> actually needed when pointers are used -> LUX
 
+		// before <ASTLowerTypes>, so an argument list for an array of objects can still be laid
+		// out with <nil>
+		InitializerListArguments initializer_list_arguments(m_program);
+		ast->accept(initializer_list_arguments);
+
 		ast->collect_call_sites(m_program); // collect call sites for UIControlParamHandling
 		ASTCollectLowerings lowering(m_program);
 		ast->accept(lowering);
@@ -460,6 +466,11 @@ private:
 		ast->accept(instance_analysis);
 		ast->collect_references();  //>> actually needed when pointers are used -> LUX
 		ast->debug_print();
+
+		// before <ASTLowerTypes>, so an argument list for an array of objects can still be laid
+		// out with <nil>
+		InitializerListArguments initializer_list_arguments(m_program);
+		ast->accept(initializer_list_arguments);
 
 		ast->collect_call_sites(m_program); // collect call sites for UIControlParamHandling
 		ASTCollectLowerings lowering(m_program);

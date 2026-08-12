@@ -11,12 +11,7 @@
     deleting one bag would free the notes of another one
 
   Freed objects are detected through slot reuse: a deleted pointer keeps its
-  index, so a newly allocated object of the same type has to land on it again.
-
-  The bags are created before the notes on purpose: an initializer list that
-  is shorter than the member only reaches the first element, so the rest of a
-  fresh block reads as index 0 and the constructor counts that slot down.
-  Allocating the notes afterwards keeps them out of that slot. }
+  index, so a newly allocated object of the same type has to land on it again. }
 
 struct Note
     declare pitch: int
@@ -27,28 +22,32 @@ struct Bag
 end struct
 
 on init
+    declare a_first: Note := new Note(1)
+    declare a_last: Note := new Note(2)
+    declare b_kept: Note := new Note(3)
+
     declare bag_a: Bag := new Bag([nil])
     declare bag_b: Bag := new Bag([nil])
 
-    declare a_last: Note := new Note(1)
-    declare b_kept: Note := new Note(2)
-
-    { the last element of the block: only a loop that covers the whole
-      member reaches it }
+    { first and last element of the block: only a loop that covers the whole
+      member reaches both }
+    bag_a.grid[0,0] := a_first
     bag_a.grid[1,2] := a_last
     bag_b.grid[0,0] := b_kept
 
     { the notes stay alive, their owners still hold a reference }
+    delete a_first
     delete a_last
     delete b_kept
 
     delete bag_a
 
+    declare probe_first: Note := new Note(0)
     declare probe_last: Note := new Note(0)
-    if probe_last = a_last
-        message("ndarray member: last note of the deleted owner freed: yes")
+    if (probe_first = a_first or probe_first = a_last) and (probe_last = a_first or probe_last = a_last)
+        message("ndarray member: every note of the deleted owner freed: yes")
     else
-        message("ndarray member: last note of the deleted owner freed: NO")
+        message("ndarray member: every note of the deleted owner freed: NO")
     end if
 
     declare probe_kept: Note := new Note(0)
