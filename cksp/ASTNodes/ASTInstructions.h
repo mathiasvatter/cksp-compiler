@@ -252,11 +252,21 @@ struct NodeArrayQuery final : NodeInstruction {
 struct NodeNumElements final : NodeInstruction {
 	std::unique_ptr<NodeReference> array;
 	std::unique_ptr<NodeAST> dimension;
+	/// How many dimensions the declaration had already gained when this node was built.
+	/// A dimension written in the source counts the declared dimensions, so every inflation
+	/// added afterwards (struct members, callback dimension) shifts it. Compiler generated
+	/// nodes are built against the inflated declaration and must not be shifted again, which
+	/// this offset distinguishes. Set from the declaration, which is unresolved while parsing
+	/// and inflated by then in generated code.
+	int inflations_at_creation = 0;
 	explicit NodeNumElements(Token tok) : NodeInstruction(NodeType::NumElements, std::move(tok)) {}
 	NodeNumElements(std::unique_ptr<NodeReference> array, std::unique_ptr<NodeAST> dimension, Token tok)
 		: NodeInstruction(NodeType::NumElements, std::move(tok)), array(std::move(array)), dimension(std::move(dimension)) {
 		set_child_parents();
+		inflations_at_creation = count_inflations();
 	}
+	/// Inflations of the referenced declaration, 0 while it is not resolved yet.
+	[[nodiscard]] int count_inflations() const;
 	NodeAST * accept(ASTVisitor &visitor) override;
 	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 	// Copy Constructor

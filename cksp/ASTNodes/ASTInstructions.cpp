@@ -463,8 +463,17 @@ NodeAST *NodeNumElements::accept(struct ASTVisitor &visitor) {
 }
 NodeNumElements::NodeNumElements(const NodeNumElements& other)
 	: NodeInstruction(other), array(clone_unique(other.array)),
-	  dimension(clone_unique(other.dimension)) {
+	  dimension(clone_unique(other.dimension)),
+	  inflations_at_creation(other.inflations_at_creation) {
 	NodeNumElements::set_child_parents();
+}
+
+int NodeNumElements::count_inflations() const {
+	if (!array) return 0;
+	const auto declaration = array->get_declaration();
+	if (!declaration) return 0;
+	const auto nd_array = declaration->cast<NodeNDArray>();
+	return nd_array ? nd_array->inflation_times : 0;
 }
 std::unique_ptr<NodeAST> NodeNumElements::clone() const {
 	return std::make_unique<NodeNumElements>(*this);
