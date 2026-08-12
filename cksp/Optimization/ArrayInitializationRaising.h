@@ -59,7 +59,14 @@ private:
 					first_non_nullptr = i;
 				}
 			}
+			const size_t num_elements = list.size();
 			list.resize(first_non_nullptr+1);
+			// KSP spreads a single value over the whole array, so the tail may only be dropped
+			// down to one element when that value is what the rest holds anyway.
+			if (list.size() == 1 and num_elements > 1
+				and !TypeRegistry::is_type_neutral_element(decl->variable->ty->get_element_type(), list[0])) {
+				list.push_back(type_neutral_el->clone());
+			}
 			auto init_list = std::make_unique<NodeInitializerList>(decl->tok);
 			init_list->elements = std::move(list);
 			init_list->set_child_parents();
