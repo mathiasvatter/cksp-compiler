@@ -1,0 +1,60 @@
+{ Ref counting for object members declared as multidimensional arrays.
+  Every check prints "yes" when the ref count functions behave correctly.
+
+  The generated <__decr__>/<__incr__> walk such a member with one loop per
+  dimension, over the block of the instance being freed. Two things can go
+  wrong there and both are checked here:
+
+  - a loop that stops early leaves the end of the block referenced, so the
+    note in <grid[1,2]> would survive its owner
+  - a loop that runs too far walks into the block of the next instance, so
+    deleting one bag would free the notes of another one
+
+  Freed objects are detected through slot reuse: a deleted pointer keeps its
+  index, so a newly allocated object of the same type has to land on it again.
+
+  The bags are created before the notes on purpose: an initializer list that
+  is shorter than the member only reaches the first element, so the rest of a
+  fresh block reads as index 0 and the constructor counts that slot down.
+  Allocating the notes afterwards keeps them out of that slot. }
+
+struct Note
+    declare pitch: int
+end struct
+
+struct Bag
+    declare grid[2,3]: Note[][]
+end struct
+
+on init
+    declare bag_a: Bag := new Bag([nil])
+    declare bag_b: Bag := new Bag([nil])
+
+    declare a_last: Note := new Note(1)
+    declare b_kept: Note := new Note(2)
+
+    { the last element of the block: only a loop that covers the whole
+      member reaches it }
+    bag_a.grid[1,2] := a_last
+    bag_b.grid[0,0] := b_kept
+
+    { the notes stay alive, their owners still hold a reference }
+    delete a_last
+    delete b_kept
+
+    delete bag_a
+
+    declare probe_last: Note := new Note(0)
+    if probe_last = a_last
+        message("ndarray member: last note of the deleted owner freed: yes")
+    else
+        message("ndarray member: last note of the deleted owner freed: NO")
+    end if
+
+    declare probe_kept: Note := new Note(0)
+    if probe_kept # b_kept
+        message("ndarray member: notes of the other owner untouched: yes")
+    else
+        message("ndarray member: notes of the other owner untouched: NO")
+    end if
+end on

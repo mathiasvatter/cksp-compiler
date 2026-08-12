@@ -595,8 +595,22 @@ private:
 
 	std::unique_ptr<NodeReference> to_member_chain_ref(std::shared_ptr<NodeDataStructure> mem, NodeReference* idx = nullptr) const {
 		std::unique_ptr<NodeReference> ref;
-		// if composite -> get raw array (if ndarray) and set index to iterator
-		if(const auto node_comp = cast_node<NodeComposite>(mem.get())) {
+		// A multidimensional member is addressed through itself, not through the raw array
+		// <get_raw()> builds: that one is a detached node, so the reference would be left
+		// without a declaration the moment this function returns. The surrounding loop counts
+		// flat over every element of the member, so every index but the last one stays at
+		// zero - the flattened index is then the iterator, exactly as for a plain array.
+		if(const auto node_ndarray = cast_node<NodeNDArray>(mem.get())) {
+			auto ndarray_ref = unique_ptr_cast<NodeNDArrayRef>(mem->to_reference());
+			auto indexes = std::make_unique<NodeParamList>(mem->tok);
+			for(int dimension = 1; dimension < node_ndarray->dimensions; ++dimension) {
+				indexes->add_param(std::make_unique<NodeInt>(0, mem->tok));
+			}
+			indexes->add_param(m_iterator_ref->clone());
+			ndarray_ref->set_indexes(std::move(indexes));
+			ref = std::move(ndarray_ref);
+		// if composite -> get raw array and set index to iterator
+		} else if(const auto node_comp = cast_node<NodeComposite>(mem.get())) {
 			auto raw_array = node_comp->get_raw()->to_reference();
 			raw_array->cast<NodeArrayRef>()->set_index(m_iterator_ref->clone());
 			ref = std::move(raw_array);
