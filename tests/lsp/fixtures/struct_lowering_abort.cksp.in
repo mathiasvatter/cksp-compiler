@@ -1,0 +1,17 @@
+// A file whose error is only raised while lowering, after the first structs have
+// already been lowered away. The salvage harvest runs on exactly that AST.
+struct <|note_decl|>Note
+    declare pitch: int
+end struct
+
+struct Bag
+    declare notes[4]: <|note_use|>Note[]
+end struct
+
+struct Cfg
+    declare static count: int
+end struct
+
+on init
+    declare x: int := Cfg().count
+end on

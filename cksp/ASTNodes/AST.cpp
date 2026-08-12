@@ -1677,6 +1677,20 @@ void NodeProgram::update_struct_lookup() {
 	}
 }
 
+NodeAST* NodeProgram::retire_lowered_struct(NodeStruct& node) {
+	auto members = std::move(node.members);
+	const auto statement = node.parent ? node.parent->cast<NodeStatement>() : nullptr;
+	// Structs are parsed as a statement of a declaration block, which is the only owner that
+	// can hand its <unique_ptr> over. Anything else falls back to the destroying replacement.
+	if (!statement || statement->statement.get() != &node) {
+		return node.replace_with(std::move(members));
+	}
+	members->parent = statement;
+	lowered_structs.push_back(std::move(statement->statement));
+	statement->statement = std::move(members);
+	return statement->statement.get();
+}
+
 std::shared_ptr<NodeFunctionDefinition> NodeProgram::look_up_function(const NodeFunctionHeaderRef &header) {
 	return look_up_compatible({header.name, header.get_num_args()}, header.ty);
 }

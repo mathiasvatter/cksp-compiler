@@ -58,6 +58,8 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 
 	node.struct_definitions.clear();
 	node.update_struct_lookup();
+	// No table hands out a struct pointer anymore, so the lowered nodes can go.
+	node.lowered_structs.clear();
 	// node.reset_function_visited_flag();
 	node.global_declarations->prepend_body(NodeStruct::declare_struct_constants());
 	return &node;
@@ -107,7 +109,11 @@ NodeAST * ASTCollectLowerings::visit(NodeStruct& node) {
 	node.inline_struct(m_program);
 	// program->global_declarations->append_body(std::move(members));
 	// // program->init_callback->statements->prepend_body(std::move(members));
-	return node.replace_with(std::move(node.members));
+	// The struct leaves the AST here but stays alive until every struct is lowered: the
+	// callbacks and functions below still resolve members and constructors through
+	// <struct_lookup>, which keeps handing out this pointer until <visit(NodeProgram)>
+	// clears it.
+	return m_program->retire_lowered_struct(node);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeFunctionDefinition& node) {

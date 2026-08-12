@@ -147,6 +147,16 @@ def _(workspace, server):
     )
 
 
+@test("definition: an error raised during struct lowering still resolves a member type")
+def _(workspace, server):
+    # The analysis aborts inside the lowering pass, with the leading structs already
+    # replaced by their member blocks. The salvage harvest then walks that AST, and the
+    # struct lookup it resolves member types through still hands out those structs.
+    fixture = workspace.open("struct_lowering_abort.cksp")
+    expect(server.diagnostics(fixture), "precondition: the static access aborts the analysis")
+    expect_definition(server.definition(fixture, "note_use"), fixture, "note_decl")
+
+
 @test("definition: function imported from another file")
 def _(workspace, server):
     shared = workspace.add("imports/shared.cksp")

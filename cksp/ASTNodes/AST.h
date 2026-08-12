@@ -1150,6 +1150,13 @@ struct NodeProgram final : NodeAST {
 	std::unordered_map<StringIntKey, std::weak_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_overrides;
 	std::vector<NodeStruct*> struct_definitions;
 	std::unordered_map<std::string, NodeStruct*> struct_lookup;
+	/// Struct nodes that lowering already replaced by their member block, kept alive until
+	/// the end of that pass. <struct_definitions> and <struct_lookup> hand out raw pointers
+	/// and are only cleared once every struct is lowered, so destroying a struct the moment
+	/// it leaves the AST leaves both tables pointing at freed memory for the rest of the
+	/// pass - which the callbacks lowered after it and the language server's post-abort
+	/// reference harvest both read.
+	std::vector<std::unique_ptr<NodeAST>> lowered_structs;
 	std::unique_ptr<NodeBlock> global_declarations;
 	std::shared_ptr<NodeVariable> max_cb_stack;
 	std::unique_ptr<NodeBinaryExpr> cb_idx;
@@ -1182,6 +1189,9 @@ struct NodeProgram final : NodeAST {
 	void check_builtin_shadowing();
 	static NodeFunctionDefinition *replace_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def, const std::shared_ptr<NodeFunctionDefinition> &replacement);
 	void update_struct_lookup();
+	/// Puts a lowered struct's member block in its place in the AST and keeps the struct node
+	/// itself alive in <lowered_structs> instead of destroying it. Returns the member block.
+	NodeAST* retire_lowered_struct(NodeStruct& node);
 	/// looks up function with same name and parameter number and compatible types
 	std::shared_ptr<NodeFunctionDefinition> look_up_function(const NodeFunctionHeaderRef& header);
 	/// looks up function with same name and parameter number and SAME types
