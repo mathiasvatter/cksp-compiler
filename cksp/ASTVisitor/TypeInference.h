@@ -19,11 +19,6 @@ class TypeInference final : public ASTVisitor {
 	/// source locations and contexts of already reported persistent-pointer warnings
 	std::unordered_set<std::string> m_persistent_pointer_warnings;
 
-	static bool has_pointer_element_type(const NodeAST& node) {
-		const auto element_type = node.ty ? node.ty->get_element_type() : nullptr;
-		return element_type and element_type->get_type_kind() == TypeKind::Object;
-	}
-
 	void warn_if_persistent_pointer(const NodeAST& node, const std::string& context) {
 		if (!has_pointer_element_type(node)) return;
 		/// check if already visited
@@ -373,7 +368,25 @@ public:
 	NodeAST * visit(NodeTernary& node) override;
 	NodeAST * visit(NodeNullCoalesce& node) override;
 
+	static bool has_pointer_element_type(const NodeAST& node) {
+		const auto element_type = node.ty ? node.ty->get_element_type() : nullptr;
+		return element_type and element_type->cast<ObjectType>();
+	}
 
+	static bool initialize_pointer_declaration_with_nil(NodeSingleDeclaration& node) {
+		// if declaration is pointer -> always initialize with nil!
+		if(has_pointer_element_type(*node.variable)) {
+			if(!node.value) {
+				node.set_value(std::make_unique<NodeNil>(node.tok));
+				// wrap nil in initializer list if variable is of composite type
+				if(node.variable->ty->cast<CompositeType>()) {
+					node.value->replace_with(std::make_unique<NodeInitializerList>(node.tok, std::make_unique<NodeNil>(node.tok)));
+				}
+				return true;
+			}
+		}
+		return false;
+	}
 
     /// iterates through all references and declarations and tries to match the types
     /// with cast set to true -> will cast types of data structures if no type could be infered

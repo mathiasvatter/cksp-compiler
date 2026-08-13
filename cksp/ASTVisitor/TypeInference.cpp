@@ -563,7 +563,7 @@ void TypeInference::join_multi_segment_member(NodeAccessChain& node, const int i
 	const bool has_opt_chaining = node.opt_chaining_indexes.size() >= node.chain.size();
 
 	int match_end = i;
-	for (int j = i + 1; j < static_cast<int>(node.chain.size()); j++) {
+	for (int j = i + 1; j < node.chain.size(); j++) {
 		if (!node.chain[j]->cast<NodeVariableRef>()) break;
 		if (has_opt_chaining and node.opt_chaining_indexes[j].has_value()) break;
 		if (strct.get_member(prev_obj + OBJ_DELIMITER + node.joined_name(i, j))) match_end = j;
@@ -844,19 +844,22 @@ NodeAST * TypeInference::visit(NodeSingleDeclaration& node) {
 		warn_if_persistent_pointer(*node.variable, "declaration:");
 	}
 
-	// if declaration is pointer -> always initialize with nil!
-	if(node.variable->ty->get_element_type()->cast<ObjectType>()) {
-		if(!node.value) {
-			node.set_value(std::make_unique<NodeNil>(node.tok));
-			node.value->accept(*this);
-			// wrap nil in initializer list if variable is of composite type
-			if(node.variable->ty->cast<CompositeType>()) {
-				return node.value
-				->replace_with(std::make_unique<NodeInitializerList>(node.tok, std::make_unique<NodeNil>(node.tok)))
-				->accept(*this);
-			}
-			return &node;
-		}
+	// // if declaration is pointer -> always initialize with nil!
+	// if(has_pointer_element_type(*node.variable)) {
+	// 	if(!node.value) {
+	// 		node.set_value(std::make_unique<NodeNil>(node.tok));
+	// 		node.value->accept(*this);
+	// 		// wrap nil in initializer list if variable is of composite type
+	// 		if(node.variable->ty->cast<CompositeType>()) {
+	// 			return node.value
+	// 			->replace_with(std::make_unique<NodeInitializerList>(node.tok, std::make_unique<NodeNil>(node.tok)))
+	// 			->accept(*this);
+	// 		}
+	// 		return &node;
+	// 	}
+	// }
+	if (initialize_pointer_declaration_with_nil(node) and node.value) {
+		node.value->accept(*this);
 	}
 
 	return &node;
