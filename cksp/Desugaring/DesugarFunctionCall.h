@@ -97,7 +97,7 @@ public:
 				}
 				return node.replace_with(std::move(search));
 			} else {
-				error.message = "First argument for function call <search> must be a reference.";
+				error.message = "First argument for function call <"+node.function->name+"> must be a reference.";
 				error.exit();
 			}
 		}
@@ -156,7 +156,7 @@ public:
 
 private:
 
-	Diagnostic throw_insufficient_args_error(Token tok) {
+	static Diagnostic throw_insufficient_args_error(const Token &tok) {
 		auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
 		error.message = "Too few arguments for function call <"+tok.val+">.";
 		return error;
