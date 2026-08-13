@@ -8,8 +8,8 @@
 ## Language
 
 ### Added
-- Added support for constants and constant initializer lists as **UI-control array sizes** ([#6](https://github.com/mathiasvatter/cksp-compiler/issues/6)).
-- Added support for `import ... as <alias>`, allowing imported modules to be accessed through namespaces ([#115](https://github.com/mathiasvatter/cksp-compiler/issues/115)).
+- Added support for constants and constant initializer lists as **UI-control array sizes** ([#6](<https://github.com/mathiasvatter/cksp-compiler/issues/6>)).
+- Added support for `import ... as <alias>`, allowing imported modules to be accessed through namespaces ([#115](<https://github.com/mathiasvatter/cksp-compiler/issues/115>)).
 - Added **source-map generation** via `--source-map`. The compiler now generates a `.ckspmap` file that maps generated KSP lines back to the original cksp source.
 - Added `default` as shorthand for the default branch of a `select` statement.
 - Added support for real-number literals without digits after the decimal point (e.g. `960.`).
@@ -21,6 +21,8 @@
 - Obfuscation now preserves builtin KSP engine constants instead of replacing them with integer values.
 
 ### Fixed
+- Fixed a compiler crash when generating the `__decr__` method of structs with non-linear recursion, e.g. a struct with two members of a recursive struct type or a tree with several child members.
+- Fixed the ref counting of non-linearly recursive structs, which neither released the object itself nor the objects reachable through its members. The stack based traversal now pushes every reachable object on the stack of its own struct and drains all stacks of the recursion cycle.
 - Fixed generated helper variables such as `_iter0` potentially colliding with user-defined variables.
 - Fixed UI-control declarations incorrectly retaining their right-hand-side values ([#117](https://github.com/mathiasvatter/cksp-compiler/issues/117)).
 - Fixed array and ndarray references that could initially be interpreted as scalar variables during type inference.
