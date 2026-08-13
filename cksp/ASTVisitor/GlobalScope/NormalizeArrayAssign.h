@@ -67,10 +67,10 @@ private:
             // array[] := (1) -> for loop
 			// array[] := (1,2,3,4) -> series of single index assignments
 			if(auto init_list = node.r_value->cast<NodeInitializerList>()) {
-				// if param list has only one value:
-				if (init_list->size() == 1) {
-					return node.replace_with(get_array_init_from_single_value(
-						node_array_ref, std::move(init_list->elem(0)), node_array_ref->get_size(),
+				const auto declaration = node_array_ref->get_declaration();
+				if (declaration and fills_left_out_elements(*declaration, *init_list)) {
+					return node.replace_with(get_array_init_from_declaration(
+						node_array_ref, init_list, node_array_ref->get_size(),
 						m_program->get_global_iterator()));
 				}
 				// series of single index assignments
@@ -128,7 +128,8 @@ public:
 	static std::unique_ptr<NodeBlock> get_array_init_from_single_value(NodeArrayRef* array_ref,
 																	  std::unique_ptr<NodeAST> value,
 																	  std::unique_ptr<NodeAST> num_elements,
-																	  const std::shared_ptr<NodeDataStructure>& iterator) {
+																	  const std::shared_ptr<NodeDataStructure>& iterator,
+																	  const int32_t from = 0) {
 		auto element = clone_as<NodeArrayRef>(array_ref);
 		element->set_index(iterator->to_reference());
 		auto block = std::make_unique<NodeBlock>(array_ref->tok);
@@ -136,9 +137,33 @@ public:
 			std::move(element), std::move(value), array_ref->tok));
 		block->wrap_in_loop(
 			iterator,
-			std::make_unique<NodeInt>(0, array_ref->tok),
+			std::make_unique<NodeInt>(from, array_ref->tok),
 			std::move(num_elements),
 			false);
+		return block;
+	}
+
+	/// Whether the elements a list leaves out have to be written. A single value always stands for
+	/// the whole array. Beyond that only the arrays the compiler builds itself are completed: a
+	/// list that KSP keeps in the declaration spreads its last value there, and matching that for
+	/// hand written arrays would change what they hold today.
+	static bool fills_left_out_elements(const NodeDataStructure& array, const NodeInitializerList& init_list) {
+		return init_list.size() == 1 or array.kind == NodeDataStructure::Kind::Throwaway;
+	}
+
+	/// What a declaration with an initializer list stands for: the elements the list spells out,
+	/// and its last value in everything it leaves out - that is what KSP does with a declaration
+	/// initializer, and every place that has to split such a declaration owes the same.
+	static std::unique_ptr<NodeBlock> get_array_init_from_declaration(NodeArrayRef* array_ref,
+																	  NodeInitializerList* init_list,
+																	  std::unique_ptr<NodeAST> num_elements,
+																	  const std::shared_ptr<NodeDataStructure>& iterator) {
+		const auto from = static_cast<int32_t>(init_list->size()) - 1;
+		auto spread = get_array_init_from_single_value(
+			array_ref, init_list->elements.back()->clone(), std::move(num_elements), iterator, from);
+		if (init_list->size() == 1) return spread;
+		auto block = get_array_init_from_list(array_ref, init_list);
+		block->append_body(std::move(spread));
 		return block;
 	}
 
