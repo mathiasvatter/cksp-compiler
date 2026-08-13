@@ -165,10 +165,66 @@ NodeAST * ASTCollectLowerings::visit(NodeSetControl& node) {
 }
 
 
+/// Moves an initializer list handed to a call into a local array declared in front of it. The
+/// array is a copy of the formal parameter: the callee copies as many elements as its parameter
+/// declares, and a list of its own shape would leave that copy reading past the end. This has to
+/// happen before <ASTLowerTypes>, where the object element type turns into an integer one and an
+/// empty slot is no longer tellable from object 0.
+void ASTCollectLowerings::hoist_initializer_list_arguments(NodeFunctionCall& node) {
+	const auto definition = node.get_definition();
+	if (!definition or node.is_builtin_kind()) return;
+	const auto statement = node.get_parent_statement();
+	if (!statement) return;
+
+	std::vector<std::unique_ptr<NodeSingleDeclaration>> declarations;
+	const int param_offset = node.get_param_offset(definition.get());
+	for (int argument = 0; argument < node.function->get_num_args(); argument++) {
+		if (!node.function->get_arg(argument)->cast<NodeInitializerList>()) continue;
+		const int param_index = argument + param_offset;
+		if (param_index < 0 or param_index >= definition->header->get_num_params()) continue;
+		auto declaration = declare_argument_list(
+			unique_ptr_cast<NodeInitializerList>(std::move(node.function->get_arg(argument))),
+			*definition->header->get_param(param_index));
+		node.function->set_arg(argument, declaration->variable->to_reference());
+		declarations.push_back(std::move(declaration));
+	}
+	if (declarations.empty()) return;
+
+	auto body = std::make_unique<NodeBlock>(statement->tok);
+	// A declaration keeps its variable visible after the statement, so this block must not open a
+	// scope around it - the same reason ReturnFunctionCallHoisting has for it.
+	body->scope = statement->statement->cast<NodeSingleDeclaration>() == nullptr;
+	const size_t num_declarations = declarations.size();
+	for (auto& declaration : declarations) {
+		body->add_as_stmt(std::move(declaration));
+	}
+	body->add_as_stmt(std::move(statement->statement));
+	statement->set_statement(std::move(body));
+
+	// The statement this pass is currently walking is behind them now, so the declarations get
+	// their turn here - they are lowered like any other one, which is where an array without a
+	// declared size takes it from the list.
+	const auto hoisted = statement->statement->cast<NodeBlock>();
+	for (size_t declaration = 0; declaration < num_declarations; ++declaration) {
+		hoisted->statements[declaration]->accept(*this);
+	}
+}
+
+std::unique_ptr<NodeSingleDeclaration> ASTCollectLowerings::declare_argument_list(
+		std::unique_ptr<NodeInitializerList> init_list, const NodeDataStructure& parameter) {
+	auto array = clone_as<NodeDataStructure>(&const_cast<NodeDataStructure&>(parameter));
+	array->name = m_def_provider->get_fresh_name("_arr");
+	array->is_local = true;
+	array->kind = NodeDataStructure::Kind::Throwaway;
+	const auto tok = init_list->tok;
+	return std::make_unique<NodeSingleDeclaration>(std::move(array), std::move(init_list), tok);
+}
+
 NodeAST * ASTCollectLowerings::visit(NodeFunctionCall& node) {
 	//TRACE();
 	node.function->accept(*this);
 	node.bind_definition(m_program, true);
+	hoist_initializer_list_arguments(node);
 	if (const auto& definition = node.get_definition()) {
 		if(!definition->visited) {
 			FunctionCallStackScope diagnostic_frame(*m_program, node);
