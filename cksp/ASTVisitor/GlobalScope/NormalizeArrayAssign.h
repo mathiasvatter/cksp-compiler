@@ -80,7 +80,7 @@ private:
 			// array[] := array2[] -> copy assignment
 			if(auto node_val_array_ref = node.r_value->cast<NodeArrayRef>()) {
 				auto lower_bound = std::make_unique<NodeInt>(0, node.tok);
-				auto upper_bound = node_val_array_ref->get_size();
+				auto upper_bound = copy_bound(*node_array_ref, *node_val_array_ref);
 				node_val_array_ref->set_index(m_program->get_global_iterator()->to_reference());
 				node_array_ref->set_index(m_program->get_global_iterator()->to_reference());
 				auto loop_assignment = std::make_unique<NodeSingleAssignment>(
@@ -101,6 +101,26 @@ private:
 
 
 public:
+	/// How far a copy between two arrays may run: never past the end of the one being written,
+	/// never past the end of the one being read. Whichever declares fewer elements sets the
+	/// bound; when only one of them says, that one does.
+	static std::unique_ptr<NodeAST> copy_bound(NodeArrayRef& destination, NodeArrayRef& source) {
+		const auto destination_size = declared_size(destination);
+		const auto source_size = declared_size(source);
+		if (destination_size and source_size) {
+			return *destination_size <= *source_size ? destination.get_size() : source.get_size();
+		}
+		return destination_size ? destination.get_size() : source.get_size();
+	}
+
+	/// Element count from the declaration, when it is a literal.
+	static std::optional<int32_t> declared_size(const NodeArrayRef& array_ref) {
+		const auto declaration = array_ref.get_declaration();
+		const auto array = declaration ? declaration->cast<NodeArray>() : nullptr;
+		const auto size = array and array->size ? array->size->cast<NodeInt>() : nullptr;
+		return size ? std::optional(size->value) : std::nullopt;
+	}
+
 	/// <array[] := (1)>: the one value an initializer list holds stands for every element of the
 	/// array, which is a loop over all of them. The element count is passed in - the declaration
 	/// has it as a literal, while a reference can only express it as <num_elements>, which is not
