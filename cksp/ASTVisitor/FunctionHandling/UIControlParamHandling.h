@@ -74,7 +74,7 @@ private:
 							.title = "Pass '" + decl->name + "' by reference",
 							.edits = {{
 								.kind = Diagnostic::DiagnosticFix::EditKind::InsertBefore,
-								.file = decl->tok.file,
+								.file = decl->tok.file(),
 								.range = source_range_from_token(decl->tok),
 								.new_text = "ref "
 							}},

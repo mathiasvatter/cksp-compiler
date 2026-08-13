@@ -692,7 +692,7 @@ void NodeMemberPath::update_token_data(const Token& token) {
 	const auto old_line = tok.line;
 	NodeAST::update_token_data(token);
 	for (auto& member : segments) {
-		member.file = token.file;
+		member.file_ref = token.file_ref;
 		if (old_line != static_cast<size_t>(-1) and member.line != static_cast<size_t>(-1)) {
 			const auto delta = static_cast<long long>(token.line) - static_cast<long long>(old_line);
 			const auto new_line = static_cast<long long>(member.line) + delta;
@@ -1965,7 +1965,7 @@ FunctionCallStackScope::FunctionCallStackScope(NodeProgram& program, const NodeF
 	m_program.function_call_stack.push_back(&call);
 	if (m_program.diagnostic_engine) {
 		// The engine borrows these values only until FunctionCallStackScope is destroyed.
-		m_program.diagnostic_engine->push_frame(call.function ? call.function->tok.val : call.tok.val, call.tok.file, call.range);
+		m_program.diagnostic_engine->push_frame(call.function ? call.function->tok.val : call.tok.val, call.tok.file(), call.range);
 	}
 }
 

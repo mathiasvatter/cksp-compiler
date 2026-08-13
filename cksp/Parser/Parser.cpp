@@ -2486,8 +2486,8 @@ Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* pare
             std::vector<std::unique_ptr<NodeAST>> cas = {};
             if(bare_default || peek().type == token::DEFAULT) {
                 auto default_token = consume(); // consume default token
-                Token low_end = Token(token::INT, "080000000H", default_token.line,default_token.pos, default_token.file);
-                Token high_end = Token(token::INT, "07FFFFFFH", default_token.line,default_token.pos, default_token.file);
+                Token low_end = Token(token::INT, "080000000H", default_token.line,default_token.pos, default_token.file_ref);
+                Token high_end = Token(token::INT, "07FFFFFFH", default_token.line,default_token.pos, default_token.file_ref);
                 auto node_int_low = std::move(parse_int(low_end, 16, node_select_statement.get()).unwrap());
                 cas.push_back(std::move(node_int_low));
                 auto node_int_high = std::move(parse_int(high_end, 16, node_select_statement.get()).unwrap());

@@ -89,8 +89,8 @@ public:
         closed_parenthesis.val = ")";
         // parsed lists kept their original parenthesis tokens; re-emit those so the main
         // parser sees real source positions (e.g. for function header ranges)
-        if (!node.open_parenth_tok.file.empty()) open_parenthesis = node.open_parenth_tok;
-        if (!node.closed_parenth_tok.file.empty()) closed_parenthesis = node.closed_parenth_tok;
+        if (!node.open_parenth_tok.file().empty()) open_parenthesis = node.open_parenth_tok;
+        if (!node.closed_parenth_tok.file().empty()) closed_parenthesis = node.closed_parenth_tok;
         auto comma = reference_token;
         comma.type = token::COMMA;
         comma.val = ",";

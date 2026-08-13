@@ -144,7 +144,7 @@ void ASTSemanticAnalysis::check_param_modification(NodeReference& ref) {
 		.title = "Pass '" + declaration->name + "' by reference",
 		.edits = {{
 			.kind = Diagnostic::DiagnosticFix::EditKind::InsertBefore,
-			.file = declaration->tok.file,
+			.file = declaration->tok.file(),
 			.range = source_range_from_token(declaration->tok),
 			.new_text = "ref "
 		}},

@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "Tokens.h"
+#include "../../misc/FileTable.h"
 #include "../../misc/SourceLocation.h"
 
 /*
@@ -14,7 +15,10 @@ struct Token {
     std::string val;
     size_t line;
     size_t pos;
-    std::string file;
+    /// The file this token was read from, shared through <FileTable> rather than owned. Read it
+    /// through <file()>; assign it with <set_file()> or by copying another token's <file_ref>.
+    /// Never null.
+    const std::string* file_ref;
     /// How this word stood in the source before a <#param#> substitution rewrote it, with
     /// the position it stood at. A name assembled out of a macro parameter (<#browser#.foo>
     /// becoming <browser.foo>) has no verbatim spelling of its own: the substituted half
@@ -26,15 +30,20 @@ struct Token {
     /// rather than owned so the copies every clone and substitution makes stay cheap.
     std::shared_ptr<const Token> origin;
 
-    Token() : type(token::INVALID), val(""), line(-1), pos(0), file("") {}
+    Token() : type(token::INVALID), val(""), line(-1), pos(0), file_ref(&FileTable::none()) {}
     Token(token type, std::string val, size_t line, size_t pos, const std::string &file)
-        : type(type), val(std::move(val)), line(line), pos(pos), file(file) {}
+        : type(type), val(std::move(val)), line(line), pos(pos), file_ref(FileTable::intern(file)) {}
+    Token(token type, std::string val, size_t line, size_t pos, const std::string* file)
+        : type(type), val(std::move(val)), line(line), pos(pos), file_ref(file ? file : &FileTable::none()) {}
     Token(const Token& other) = default;
     Token(Token&& other) noexcept = default;
     Token& operator=(const Token& other) = default;
     Token& operator=(Token&& other) noexcept = default;
     void set_val(const std::string& value) {val = value;}
     void set_type(const token token_type) { type = token_type; }
+    /// The file this token was read from, empty for compiler built tokens.
+    [[nodiscard]] const std::string& file() const { return *file_ref; }
+    void set_file(const std::string& value) { file_ref = FileTable::intern(value); }
     /// helper function to print Token objects via std::out
     friend std::ostream &operator<<(std::ostream &os, const Token &tok) {
         os << "Type: " << tok.type << " | Value: " << tok.val << " | Line: " << tok.line;
@@ -44,7 +53,7 @@ struct Token {
         return type == other.type && val == other.val;
     }
     std::string get_position() const {
-        std::string pos_text = file;
+        std::string pos_text = file();
         if (line != static_cast<size_t>(-1)) pos_text += ":" + std::to_string(line);
         if (pos > 0) pos_text += ":" + std::to_string(pos);
         return pos_text;

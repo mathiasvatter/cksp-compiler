@@ -189,7 +189,7 @@ public:
 
 	void print() {
 		for (auto& [cb, range] : m_callback_thread_unsafe_ranges) {
-			std::cout << range.start->tok.file << ":" << range.start->tok.line << " - " << range.end->tok.file << ":" << range.end->tok.line << std::endl;
+			std::cout << range.start->tok.file() << ":" << range.start->tok.line << " - " << range.end->tok.file() << ":" << range.end->tok.line << std::endl;
 		}
 	}
 

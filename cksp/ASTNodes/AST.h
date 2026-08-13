@@ -65,12 +65,12 @@ struct NodeAST {
     virtual std::string get_string() = 0;
 	virtual std::string get_token_string() const { return tok.val; }
     // virtual void update_token_data(const Token& token) {
-    //     tok.line = token.line; tok.file = token.file;
+    //     tok.line = token.line; tok.file_ref = token.file_ref;
     // }
 	virtual void update_token_data(const Token& token) {
 		const long long delta = (long long)token.line - (long long)tok.line;
 		tok.line = token.line;
-		tok.file = token.file;
+		tok.file_ref = token.file_ref;
 		if (range.is_valid()) {
 			// Keep the range in sync with the relocated token by shifting it the same number
 			// of lines; columns are preserved. Guard against underflow when moving upwards.

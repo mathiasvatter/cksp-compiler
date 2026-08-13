@@ -31,14 +31,14 @@ Diagnostic::Diagnostic(
       message(std::move(message)),
       expected(std::move(expected)),
       actual(token.val),
-      file(token.file),
+      file(token.file()),
       range(source_range_from_token(token)),
       expansion(expansion_of(token)) {}
 
 std::optional<DiagnosticExpansion> Diagnostic::expansion_of(const Token& token) {
-    if (!token.origin || token.origin->file.empty()) return std::nullopt;
+    if (!token.origin || token.origin->file().empty()) return std::nullopt;
     return DiagnosticExpansion{
-        token.origin->val, token.origin->file, source_range_from_token(*token.origin)};
+        token.origin->val, token.origin->file(), source_range_from_token(*token.origin)};
 }
 
 Diagnostic::Diagnostic(
@@ -72,7 +72,7 @@ void Diagnostic::exit() const {
 
 void Diagnostic::set_token(const Token& token) {
     actual = token.val;
-    file = token.file;
+    file = token.file();
     range = source_range_from_token(token);
     expansion = expansion_of(token);
 }

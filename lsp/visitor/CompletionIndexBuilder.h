@@ -56,8 +56,8 @@ private:
 	template<typename Node>
 	NodeAST* record_scope(Node& node, const Token& name) {
 		m_scope_path.push_back(name.val);
-		if (m_pass == Pass::Scopes && !node.tok.file.empty()) {
-			m_index.add_scope(node.tok.file, node.range, m_scope_path);
+		if (m_pass == Pass::Scopes && !node.tok.file().empty()) {
+			m_index.add_scope(node.tok.file(), node.range, m_scope_path);
 		}
 		ASTVisitor::visit(node);
 		m_scope_path.pop_back();
@@ -201,7 +201,7 @@ private:
 	void record_named_declaration(const NodeDataStructure& node) const {
 		if (m_pass != Pass::Members || node.name.empty()) return;
 		// Synthesized declarations have no source token to offer.
-		if (node.tok.val.empty() || node.tok.file.empty()) return;
+		if (node.tok.val.empty() || node.tok.file().empty()) return;
 		if (node.name == "self" || node.tok.val == "self") return;
 
 		std::string name = node.name;
@@ -290,7 +290,7 @@ public:
 		}
 		// Also nameable without a qualifier. Methods carry the OBJ_DELIMITER and are
 		// filtered out there; generated helpers have no source file.
-		if (m_pass == Pass::Members && !node.tok.file.empty()) {
+		if (m_pass == Pass::Members && !node.tok.file().empty()) {
 			m_index.add_declaration({
 				.name = node.name,
 				.parameters = parameters_of(node),
@@ -320,7 +320,7 @@ public:
 		const auto outer_file = m_function_scope_file;
 		const auto outer_declaration_scope = m_declaration_scope;
 		m_function_scope = node.range;
-		m_function_scope_file = node.tok.file;
+		m_function_scope_file = node.tok.file();
 		// Until a loop or a branch narrows it, the whole body is the scope.
 		m_declaration_scope = node.range;
 		++m_function_depth;
@@ -391,8 +391,8 @@ public:
 				// member, but its body is source the user writes <self.> in like any
 				// other. A generated one carries the struct token and no range, which
 				// add_self_scope drops.
-				if (!method->is_static && !method->tok.file.empty()) {
-					m_index.add_self_scope(method->tok.file, method->range, container);
+				if (!method->is_static && !method->tok.file().empty()) {
+					m_index.add_self_scope(method->tok.file(), method->range, container);
 				}
 				// Generated lifecycle methods are not part of the surface.
 				if (name == NodeStruct::CONSTRUCTOR || name == NodeStruct::DESTRUCTOR

@@ -87,11 +87,11 @@ private:
 		if (!range.is_valid() || range.start.line != range.end.line || range.start.column < 1) {
 			return std::nullopt;
 		}
-		auto cache = m_source_cache.find(token.file);
+		auto cache = m_source_cache.find(token.file());
 		if (cache == m_source_cache.end()) {
-			auto loaded = m_sources->load(SourceId(token.file));
+			auto loaded = m_sources->load(SourceId(token.file()));
 			if (loaded.is_error()) return token;
-			cache = m_source_cache.emplace(token.file, loaded.unwrap().text).first;
+			cache = m_source_cache.emplace(token.file(), loaded.unwrap().text).first;
 		}
 		const auto& text = *cache->second;
 
@@ -119,9 +119,9 @@ private:
 	/// else, which is why the split only shows up here.
 	void add_link(const Token& reference, NodeAST& target) const {
 		// Builtins/engine variables and synthesized nodes have no real source file.
-		if (reference.file.empty() || target.tok.file.empty()) return;
+		if (reference.file().empty() || target.tok.file().empty()) return;
 		const auto& written = as_written(reference);
-		if (written.file.empty()) return;
+		if (written.file().empty()) return;
 		auto verified_reference = source_verified_token(written);
 		if (!verified_reference) return;
 		const auto def_range = declaration_range(target);
@@ -155,8 +155,8 @@ private:
 		// the name range carries the exact identifier at the declaration, which rename
 		// edits replace; def_range may span the whole header for functions
 		m_index.add(
-			direct_reference.file, ref_range,
-			target.tok.file, def_range,
+			direct_reference.file(), ref_range,
+			target.tok.file(), def_range,
 			source_range_from_token(target.tok),
 			// A macro body spells this reference <#browser#> where the declaration is
 			// <browser>; the text is verified, so equality is the whole test.
@@ -172,8 +172,8 @@ private:
 				if (const auto call_site_range = source_range_from_token(*at_call_site);
 					call_site_range.is_valid()) {
 					m_index.add(
-						at_call_site->file, call_site_range,
-						target.tok.file, def_range,
+						at_call_site->file(), call_site_range,
+						target.tok.file(), def_range,
 						source_range_from_token(target.tok));
 				}
 			}

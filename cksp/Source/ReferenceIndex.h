@@ -90,24 +90,24 @@ public:
 	/// real source file (builtins, synthesized nodes) are skipped. Used by preprocessing and
 	/// by AST prefix provenance, where the declaration token is the symbol identity.
 	void add_link(const Token& reference, const Token& declaration) {
-		if (reference.file.empty() || declaration.file.empty()) return;
+		if (reference.file().empty() || declaration.file().empty()) return;
 		const auto ref_range = source_range_from_token(reference);
 		const auto def_range = source_range_from_token(declaration);
 		if (!ref_range.is_valid() || !def_range.is_valid()) return;
-		add(reference.file, ref_range, declaration.file, def_range);
+		add(reference.file(), ref_range, declaration.file(), def_range);
 	}
 
 	/// Records a path token -> file link for go-to-definition and document links.
 	/// String quotes are excluded from the clickable source range.
 	void add_file_link(const Token& path_token, std::string target_file, std::string tooltip = {}) {
-		if (path_token.file.empty()) return;
+		if (path_token.file().empty()) return;
 		auto path_range = source_range_from_token(path_token);
 		if (path_token.type == token::STRING && path_token.val.size() >= 2) {
 			++path_range.start.column;
 			--path_range.end.column;
 		}
 		add_definition_link(
-			path_token.file,
+			path_token.file(),
 			path_range,
 			std::move(target_file),
 			SourceRange{{0, 0}, {0, 0}},

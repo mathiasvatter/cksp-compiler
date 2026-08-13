@@ -36,7 +36,7 @@ protected:
 	}
 	static const Token* first_source_token(const PreNodeAST* node) {
 		if (!node) return nullptr;
-		if (!node->tok.file.empty() && node->tok.line != static_cast<size_t>(-1) && node->tok.pos > 0 && !node->tok.val.empty()) {
+		if (!node->tok.file().empty() && node->tok.line != static_cast<size_t>(-1) && node->tok.pos > 0 && !node->tok.val.empty()) {
 			return &node->tok;
 		}
 		if (const auto* statement = dynamic_cast<const PreNodeStatement*>(node)) {
@@ -84,9 +84,9 @@ protected:
 	/// claim the same spot in the body, and one click there would lead to a pile of unrelated
 	/// declarations.
 	static void mark_as_written(PreNodeAST& substitute, const Token& usage) {
-		if (usage.file.empty()) return;
+		if (usage.file().empty()) return;
 		auto* literal = single_literal_of(&substitute);
-		if (!literal || literal->tok.file.empty()) return;
+		if (!literal || literal->tok.file().empty()) return;
 		literal->tok.origin = usage.origin ? usage.origin : std::make_shared<const Token>(usage);
 	}
 
@@ -128,7 +128,7 @@ protected:
 	    if (prefix_source && result.val.starts_with(prefix_source->val)) {
 		    result.line = prefix_source->line;
 		    result.pos = prefix_source->pos;
-		    result.file = prefix_source->file;
+		    result.file_ref = prefix_source->file_ref;
 	    }
         return result;
     }
