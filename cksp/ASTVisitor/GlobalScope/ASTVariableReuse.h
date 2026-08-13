@@ -335,10 +335,14 @@ private:
 			} else if (m_program->current_callback == m_program->init_callback) {
 				// weird stuff happens if local variables are declared in init callback in nested
 				// while loops for example. Hence, replace with assign statement and move to global declarations
-				auto replacement = to_assign_statement(node);
+				// BUT local arrays with constant initializers should just be moved to global declarations WITH their
+				// init values otherwise: init bloat
+				bool const_value = node.value ? node.value->is_constant() : true;
+				bool is_composite_constant = node.variable->ty->cast<CompositeType>() and const_value;
+				auto replacement = is_composite_constant? std::make_unique<NodeDeadCode>(node.tok) : to_assign_statement(node);
 				auto node_decl = std::make_unique<NodeSingleDeclaration>(
 					std::move(node.variable),
-					nullptr,
+					is_composite_constant ? std::move(node.value) : nullptr,
 					node.tok
 				);
 				m_def_provider->set_declaration(node_decl->variable, false);
