@@ -104,7 +104,7 @@ private:
 						auto error = Diagnostic(ErrorType::InternalError, "Variable not in declaration.", "", var->tok);
 						error.exit();
 					}
-					auto assignment = ASTVariableReuse::to_assign_statement(*declaration);
+					auto assignment = ASTVariableReuse::to_assign_statement(*declaration, m_program);
 					auto node_array = var->cast<NodeArray>();
 					auto node_ndarray = var->cast<NodeNDArray>();
 					NodeAST* size = nullptr;

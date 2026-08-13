@@ -94,7 +94,7 @@ public:
 						nullptr, local_decl->tok
 					)
 				);
-				local_decl->replace_with(std::move(to_assign_statement(*local_decl)));
+				local_decl->replace_with(std::move(to_assign_statement(*local_decl, m_program)));
 			}
 		}
 		m_program->init_callback->statements->prepend_body(std::move(local_declare_statements));
@@ -152,7 +152,7 @@ public:
 
 	/// removes array declarations and deletes them under certain circumstances:
 	/// - if they were promoted or are return vars
-	static std::unique_ptr<NodeAST> to_assign_statement(NodeSingleDeclaration& node) {
+	static std::unique_ptr<NodeAST> to_assign_statement(NodeSingleDeclaration& node, const NodeProgram* program) {
 		if(node.kind == NodeSingleDeclaration::Kind::Promoted or node.kind == NodeSingleDeclaration::Kind::ReturnVar) {
 			return std::make_unique<NodeDeadCode>(node.tok);
 		}
@@ -161,7 +161,13 @@ public:
 		// x[NI_CALLBACK_ID mod MAX::CB::STACK] := EVENT_ID
 		// does not get transformed so that all of x gets EVENT_ID in while loop! This happens per cb invocation.
 		// Thus here we do not need to make an extra assignment out of the 'declare local ...' thread-unsafe declaration.
-		if (!node.variable->is_thread_safe) {
+		//
+		// Only once the declaration carries the callback dimension, which <cb_idx> says: ASTDimensionExpansion
+		// creates it and ASTParameterPromotion asks before that. The plain assignment it gets back there is
+		// what the expansion narrows to this invocation - its slot for a variable, its row for an array, which
+		// NormalizeNDArrayAssign then walks. Dropping it leaves the row of an array uninitialised and a
+		// RETURN_FLAG standing at 1 for the next copy of the inlined body it guards.
+		if (!node.variable->is_thread_safe and program->cb_idx) {
 			return std::make_unique<NodeDeadCode>(node.tok);
 		}
 		auto node_assignment = node.to_assign_stmt();
@@ -328,7 +334,7 @@ private:
 				free_passive_var->num_reuses = free_passive_var->num_reuses + 1 + node.variable->num_reuses;
 				m_used_passive_vars[get_current_block()].push_back(free_passive_var);
 				m_passive_vars_replace.back().insert({node.variable->name, free_passive_var});
-				auto replacement = to_assign_statement(node);
+				auto replacement = to_assign_statement(node, m_program);
 				// visit replacement (assign statement) to replace local var with passive_var
 				replacement->accept(*this);
 				return node.replace_with(std::move(replacement));
@@ -339,7 +345,7 @@ private:
 				// init values otherwise: init bloat
 				bool const_value = node.value ? node.value->is_constant() : true;
 				bool is_composite_constant = node.variable->ty->cast<CompositeType>() and const_value;
-				auto replacement = is_composite_constant? std::make_unique<NodeDeadCode>(node.tok) : to_assign_statement(node);
+				auto replacement = is_composite_constant? std::make_unique<NodeDeadCode>(node.tok) : to_assign_statement(node, m_program);
 				auto node_decl = std::make_unique<NodeSingleDeclaration>(
 					std::move(node.variable),
 					is_composite_constant ? std::move(node.value) : nullptr,
