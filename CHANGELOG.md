@@ -11,7 +11,7 @@
 - Added **`static` struct members**. A `static` member holds one value shared by all instances instead of one per instance, and is reached through the struct itself.
 - Added **`static` methods**. A method declared `static` belongs to the struct, takes no `self` and is called as `Struct.method(...)`.
 - Added **type-qualified member access** such as `Foo.MAX`, which reaches a struct's shared members without an instance.
-- Added **`static const` blocks inside structs**, the language's stand-in for enums. The entries are scoped to the struct and reachable as `Struct.Block.Entry`. Since they stay compile-time constants, they fold into their use sites and can be used as array dimensions.
+- Added **`static const` blocks inside structs**. The entries are scoped to the struct and reachable as `Struct.Block.Entry`. Since they stay compile-time constants, they fold into their use sites and can be used as array dimensions.
   ```cksp
   struct Voice
       static const State
@@ -28,10 +28,9 @@
 - Added the new **Kontakt 8.4, 8.8 and 8.12** engine constants and engine functions.
 
 ### Improved
-- Improved parser and preprocessor **diagnostics** considerably. Errors now carry the expected and the found token on the message line and into the editor, name the construct an unclosed block belongs to, say when a file ends while a construct is still open, and point at what was missing where an expression or a declared name belongs. A declaration that borrows the name of a `define` is now reported on the declaration rather than inside the substituted body ([#61](<https://github.com/mathiasvatter/cksp-compiler/issues/61>)).
-- A member initializer that a hand-written constructor overwrites in full is no longer emitted, which keeps the constructor free of dead assignments.
+- Improved parser and preprocessor **diagnostics**. A declaration that borrows the name of a `define` is now reported on the declaration rather than inside the substituted body ([#61](<https://github.com/mathiasvatter/cksp-compiler/issues/61>)).
 - A `const` array is now rejected as the target of an array load instead of being written to silently.
-- Improved compile times through a shared source-file table instead of per-token paths, argument-list hoisting done at the call rather than in a pass of its own, and constant-initialized local arrays moving to global scope with their value instead of leaving an initialization behind.
+- Improved compile times through a shared source-file table instead of per-token paths. A file path is no longer copied into every token and into every clone one takes part in, which leaves large projects around **18% faster** than `v0.1.0-alpha.3` and cuts peak memory by about **20%**.
 
 ### Fixed
 - Fixed an array copy running past the end of the shorter of the two arrays. `declare dst[3]` assigned from a `src[4]` made Kontakt report *"Array %dst[3] is out of range"*, and the other direction silently read `0` past the end — a valid object index for an array of objects. The copy is now bounded by whichever array declares fewer elements.
