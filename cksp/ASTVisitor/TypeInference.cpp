@@ -546,6 +546,78 @@ NodeAST * TypeInference::visit(NodeNullCoalesce &node) {
 	return &node;
 }
 
+
+/**
+ * <Note.storage(.pitch)>: names the array a struct member is stored in.
+ *
+ * Only the parts that need the surrounding chain happen here: <storage> is not a method of the
+ * struct, so this is the pass that would otherwise report it as missing, and it is the only one
+ * that has the receiver type and the struct's member table together. The selector is resolved
+ * against the receiver and the resulting heap type is handed to the chain; the recorded segment
+ * stays on the member path. LoweringStorageAccess builds the accessor from it later on, where
+ * generated declarations and functions belong.
+ */
+bool TypeInference::resolve_storage_access(NodeAccessChain& node, NodeFunctionCall& call) {
+	const auto object = node.chain[0]->is_reference();
+	if (!object or object->kind != NodeReference::Kind::TypeQualifier) return false;
+	if (call.function->name != NodeStruct::STORAGE) return false;
+
+	const std::string receiver = object->ty->to_string();
+	auto error = Diagnostic(ErrorType::SyntaxError, "", "", call.tok);
+	// <Note.storage(.pitch).foo>: the result is a plain array and has no members
+	if (node.chain.size() != 2) {
+		error.message = "<" + NodeStruct::STORAGE + "> hands out the storage of a member of <" + receiver
+			+ "> as an array. An array has no members, so nothing can be reached through it.";
+		error.exit();
+	}
+	if (call.function->get_num_args() != 1) {
+		error.message = "<" + NodeStruct::STORAGE + "> expects exactly one argument: the member whose "
+			"storage is wanted, written as a member path such as <" + receiver + ".storage(.id)>.";
+		error.actual = std::to_string(call.function->get_num_args());
+		error.exit();
+	}
+	const auto member_path = call.function->get_arg(0)->cast<NodeMemberPath>();
+	if (!member_path) {
+		error.message = "The argument of <" + NodeStruct::STORAGE + "> must be a member path such as <"
+			+ receiver + ".storage(.id)>.";
+		error.actual = call.function->get_arg(0)->get_token_string();
+		error.exit();
+	}
+	// <Note.storage(.child.id)> would name a heap of <Child>, which <Child.storage(.id)> already does
+	if (member_path->segments.size() != 1) {
+		error.message = "<" + NodeStruct::STORAGE + "> takes a single member of <" + receiver + ">. Every "
+			"struct owns the storage of its own members, so reach a nested one through its own struct.";
+		error.actual = member_path->get_token_string();
+		error.exit();
+	}
+
+	member_path->resolve_members(m_program, object->ty->get_element_type());
+	const auto& member = member_path->resolved_member(0);
+	// only a member that holds one value per instance is stored in a one-dimensional array
+	if (!member.has_scalar_heap) {
+		auto type_error = Diagnostic(ErrorType::TypeError, "", "", member_path->tok);
+		type_error.message = "Member <" + member_path->leaf_name() + "> of <" + receiver + "> has no storage "
+			"array. Only a member that holds a single value per instance is stored in one array for all "
+			"instances.";
+		type_error.actual = member.value_type->to_string();
+		type_error.exit();
+	}
+
+	// a bare statement hands the heap out and drops it right away. deduplicated by position:
+	// monomorphization revisits function bodies
+	if (node.parent->cast<NodeStatement>()
+		and m_discard_warnings.insert(call.tok.get_position()).second) {
+		auto warning = Diagnostic(ErrorType::CompileWarning, "", "", call.tok);
+		warning.message = "The storage array of member <" + member_path->leaf_name() + "> is discarded here. "
+			"Assign it <values[] := " + receiver + ".storage(." + member_path->leaf_name() + ")> if it is needed.";
+		warning.report(diagnostics());
+	}
+
+	call.ty = member.heap_type;
+	node.ty = member.heap_type;
+	return true;
+}
+
 /**
  * <Zone.StartType.Beginning>: a constant block entry keeps the block name inside its own name, so
  * the member spans two chain elements while every other member spans one. to_method_chain() split
@@ -615,13 +687,18 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 					definition = func_call->find_definition(m_program, correct_name, func_call->function->get_num_args(), func_call->function->ty);
 					if (definition and !definition->is_static) definition = nullptr;
 				}
+				// <Note.storage(.pitch)>: not a method of the struct but a compiler-provided
+				// accessor for a generated member heap. Typing it is all that can be done here,
+				// the chain is taken apart by LoweringStorageAccess.
+				if (!definition and i == 1 and resolve_storage_access(node, *func_call)) return &node;
+
 				if (!definition) {
-					error.message = "Method "+func_call->function->name+" does not exist in "+prev_obj+".";
+					error.message = "Method <"+func_call->function->name+"> does not exist in "+prev_obj+".";
 					error.exit();
 				}
 				// <Foo.bar()>: without an instance only a static method can be called
-				if(const auto object = node.chain[0]->is_reference();
-					i == 1 and object and object->kind == NodeReference::Kind::TypeQualifier and !definition->is_static) {
+				const auto object = node.chain[0]->is_reference();
+				if(i == 1 and object and object->kind == NodeReference::Kind::TypeQualifier and !definition->is_static) {
 					error.message = "Method <"+func_call->function->name+"> of struct <"+prev_obj+"> operates on an "
 						"instance and cannot be called on the struct itself. Declare it as <static function>, "
 						"or call it on a variable.";

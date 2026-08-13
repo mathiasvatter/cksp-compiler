@@ -152,9 +152,18 @@ public:
 		for(auto & m: node.methods) {
 			if (m->header->name == NodeStruct::CONSTRUCTOR) has_init_method = true;
 			if (m->header->name == "__repr__") has_repr_method = true;
-			if (m->header->name == "__del__") {
+			if (m->header->name == NodeStruct::DESTRUCTOR) {
 				auto error = Diagnostic(ErrorType::SyntaxError, "", "", m->tok);
 				error.message = "Destructor method is generated automatically. Please use another name.";
+				error.exit();
+			}
+			// <Note.storage(.pitch)> is resolved against the member the path names, so a method of
+			// that name would never be reachable
+			if (m->header->name == NodeStruct::STORAGE) {
+				auto error = Diagnostic(ErrorType::SyntaxError, "", "", m->tok);
+				error.message = "<"+NodeStruct::STORAGE+"> is provided by the compiler to hand out the array "
+					"a member of <"+node.name+"> is stored in, as in <"+node.name+".storage(.member)>. "
+					"Please use another name.";
 				error.exit();
 			}
 		}
@@ -264,7 +273,6 @@ public:
 			node.header->create_function_type(TypeRegistry::String);
 			node.ty = TypeRegistry::String;
 		}
-
 		// check if method is operator overload
 		if(auto token = get_operator_token(node.header->name, node.header->params.size())) {
 			m_structs.top()->overloaded_operators.insert({*token, node.get_shared()});

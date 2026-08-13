@@ -388,6 +388,10 @@ public:
 		return false;
 	}
 
+	/// <Note.storage(.pitch)>: resolves the selector against the receiver struct and types the
+	/// chain, see the definition. Returns false if the call is not <storage>.
+	bool resolve_storage_access(NodeAccessChain& node, NodeFunctionCall& call);
+
     /// iterates through all references and declarations and tries to match the types
     /// with cast set to true -> will cast types of data structures if no type could be infered
     static void cast_data_structure_types(const NodeProgram* program, bool cast= false);

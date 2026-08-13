@@ -10,6 +10,7 @@
 #include "../Lowering/LoweringBoolean.h"
 #include "../Lowering/LoweringBooleanExpression.h"
 #include "../Lowering/LoweringOptionalChaining.h"
+#include "../Lowering/LoweringStorageAccess.h"
 #include "FunctionHandling/UIControlParamHandling.h"
 
 NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
@@ -293,6 +294,13 @@ NodeAST * ASTCollectLowerings::visit(NodePointerRef& node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeAccessChain& node) {
+	// <Note.storage(.pitch)> does not run through an instance: it names a generated member heap and
+	// becomes a call to its accessor before the chain lowering takes the chain apart
+	if (LoweringStorageAccess::is_storage_access(node)) {
+		static LoweringStorageAccess storage_access(m_program);
+		storage_access.set_program(m_program);
+		return node.accept(storage_access)->accept(*this);
+	}
 	LoweringOptionalChaining opt_chaining(m_program);
 	const auto new_node = node.accept(opt_chaining);
 	//TRACE();

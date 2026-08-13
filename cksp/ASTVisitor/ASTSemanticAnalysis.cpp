@@ -42,9 +42,19 @@ NodeAST * ASTSemanticAnalysis::visit(NodeWildcard& node) {
 }
 
 NodeAST * ASTSemanticAnalysis::visit(NodeMemberPath& node) {
+	// the query supplies the object type of its array, see visit(NodeArrayQuery)
+	if (node.parent->cast<NodeArrayQuery>()) return &node;
+	// <Note.storage(.pitch)>: the type qualifier leading the chain supplies the object type. The
+	// path is resolved in TypeInference, which is where the chain elements get their context.
+	if (const auto header = node.is_direct_func_arg(); header and header->name == NodeStruct::STORAGE) {
+		if (const auto call = header->parent->cast<NodeFunctionCall>(); call and call->is_in_access_chain()) {
+			return &node;
+		}
+	}
 	auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
 	error.message = "Member path <" + node.get_token_string() + "> requires a context that provides an object type.";
-	error.add_message("Member paths can only be used as selectors in compiler-supported operations such as <search_by(array, .field, value)>.");
+	error.add_message("Member paths can only be used as selectors in compiler-supported operations such as "
+		"<search_by(array, .field, value)> or <Object.storage(.field)>.");
 	error.exit();
 	return &node;
 }
@@ -54,6 +64,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeArrayQuery& node) {
 	// Resolution of that path is intentionally deferred until array element types
 	// are available.
 	node.array->accept(*this);
+	node.member_path->accept(*this);
 	node.value->accept(*this);
 	return &node;
 }
