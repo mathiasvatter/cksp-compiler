@@ -477,7 +477,7 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_constructor() {
 			if(mem->is_shared_member()) continue;
 			std::unique_ptr<NodeSingleAssignment> assignment;
 			auto member_ref = mem->to_reference();
-			member_ref->name = "self." + member_ref->name;
+			member_ref->name = NodeStruct::SELF + "." + member_ref->name;
 			auto func_param = std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(mem.get()));
 			auto param_ref = func_param->variable->to_reference();
 			param_list.push_back(std::move(func_param));
@@ -618,7 +618,7 @@ std::unique_ptr<NodeWhile> NodeStruct::generate_ref_count_while(std::shared_ptr<
 // 	  // Iteriere über die Mitglieder in member_table
 // 	  for (const auto& mem : node_struct->member_table) {
 // 		  auto member = mem.second.lock();
-// 		  if(mem.first == "self") continue;
+// 		  if(mem.first == NodeStruct::SELF) continue;
 // 		  if(member->is_engine) continue;
 // 		  if(member->data_type == DataType::Const) continue;
 // 		  // Hole den Typ des Mitglieds
@@ -657,7 +657,7 @@ void NodeStruct::collect_recursive_structs(NodeProgram* program)
         // Durch die Member gehen
         for (const auto& mem : current->member_table) {
             // Ausschließen, was für Rekursionserkennung irrelevant ist
-            if (mem.first == "self") continue;
+            if (mem.first == NodeStruct::SELF) continue;
             auto member = mem.second.lock();
             if (!member || member->is_engine || member->data_type == DataType::Const)
                 continue;

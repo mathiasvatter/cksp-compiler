@@ -426,10 +426,11 @@ struct NodeStruct final : NodeDataStructure {
 	inline static std::string DECREMENTER = "__decr__";
 	inline static std::string INCREMENTOR = "__incr__";
 	inline static std::string REPRESENTOR = "__rep__";
+	inline static std::string SELF = "self";
 	/// <Note.storage(.pitch)>: the compiler-provided static method that hands out the array a
 	/// member is stored in, see TypeInference::lower_storage_method()
 	inline static std::string STORAGE = "storage";
-	std::shared_ptr<NodePointer> node_self = std::make_shared<NodePointer>(std::nullopt, "self", TypeRegistry::Unknown, this->tok);
+	std::shared_ptr<NodePointer> node_self = std::make_shared<NodePointer>(std::nullopt, SELF, TypeRegistry::Unknown, this->tok);
 	std::unique_ptr<NodeBlock> members;
 	std::unordered_map<std::string, std::weak_ptr<NodeDataStructure>> member_table;
 	std::set<std::string> member_set;

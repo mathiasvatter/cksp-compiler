@@ -53,17 +53,18 @@ class DesugarStruct final : public ASTDesugaring {
 	}
 	/// replace 'self.' only when struct member or declared var
 	std::string replace_self_struct_prefix(const std::string& name, const Token& tok) {
-		if (m_in_static_method && (name == "self" || name.find("self.") == 0)) {
+		const auto self_prefix = NodeStruct::SELF + ".";
+		if (m_in_static_method && (name == NodeStruct::SELF || name.find(self_prefix) == 0)) {
 			auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
-			error.message = "<self> cannot be used inside a <static function>. A static method belongs to "
-				"the struct itself and is called without an instance, so there is no <self> to refer to. "
+			error.message = "<" + NodeStruct::SELF + "> cannot be used inside a <static function>. A static method belongs to "
+				"the struct itself and is called without an instance, so there is no <" + NodeStruct::SELF + "> to refer to. "
 				"Pass the object as a parameter, or remove <static> to make it a regular method.";
 			error.actual = name;
 			error.exit();
 		}
-		if (!m_structs.empty() && name.find("self.") == 0) {
+		if (!m_structs.empty() && name.find(self_prefix) == 0) {
 			std::string new_name = name;
-			new_name.replace(0, 5, m_structs.top()->name + OBJ_DELIMITER); // Ersetze 'self.' durch das Präfix
+			new_name.replace(0, self_prefix.size(), m_structs.top()->name + OBJ_DELIMITER); // Ersetze 'self.' durch das Präfix
 			if (members.contains(new_name)) {
 				return new_name;
 			}
@@ -71,7 +72,7 @@ class DesugarStruct final : public ASTDesugaring {
 		return name;
 	}
 	std::unique_ptr<NodeAccessChain> try_access_chain_transform(const std::string& name, NodeAST* node) const {
-		if (!m_structs.empty() && name.find("self.") == 0) {
+		if (!m_structs.empty() && name.find(NodeStruct::SELF + ".") == 0) {
 			return node->to_method_chain();
 		}
 		return nullptr;
@@ -133,7 +134,7 @@ public:
 			if (!initializer or initializer->size() <= 1) continue;
 
 			auto member_ref = member->to_reference();
-			member_ref->name = "self." + member_ref->name;
+			member_ref->name = NodeStruct::SELF + "." + member_ref->name;
 			constructor->body->prepend_as_stmt(std::make_unique<NodeSingleAssignment>(
 				std::move(member_ref), std::move(declaration->value), member->tok));
 		}
@@ -198,9 +199,9 @@ public:
 	/// <Foo.foo()>. Everything that needs an instance is rejected here.
 	NodeAST* visit_static_method(NodeFunctionDefinition& node) {
 		auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
-		if (!node.header->params.empty() and node.header->get_param(0)->name == "self") {
-			error.message = "A <static function> must not declare <self> as its first parameter. It is called "
-				"on the struct itself, not on an instance. Remove <self>, or remove <static>.";
+		if (!node.header->params.empty() and node.header->get_param(0)->name == NodeStruct::SELF) {
+			error.message = "A <static function> must not declare <" + NodeStruct::SELF + "> as its first parameter. It is called "
+				"on the struct itself, not on an instance. Remove <" + NodeStruct::SELF + ">, or remove <static>.";
 			error.exit();
 		}
 		if (node.header->name == NodeStruct::CONSTRUCTOR or node.header->name == NodeStruct::REPRESENTOR
@@ -232,7 +233,7 @@ public:
 		}
 		if(!node.is_method()) {
 			auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.tok);
-			error.message = "Method definition must contain <self> as first parameter.";
+			error.message = "Method definition must contain <" + NodeStruct::SELF + "> as first parameter.";
 			error.exit();
 		}
 		// every self as first parameter has to be of type object
@@ -255,7 +256,7 @@ public:
 			node.num_return_params = 1;
 			node.header->create_function_type(TypeRegistry::add_object_type(m_structs.top()->name));
 			node.ty = TypeRegistry::add_object_type(m_structs.top()->name);
-			// delete "self" keyword
+			// delete <self> keyword
 			node.header->params.erase(node.header->params.begin());
 		}
 		if(node.header->name == NodeStruct::REPRESENTOR) {
@@ -310,9 +311,9 @@ public:
 			add_to_members(node.variable.get());
 			node.variable->accept(*this);
 		} else {
-			if(node.variable->name.find("self.") == 0) {
+			if(node.variable->name.find(NodeStruct::SELF + ".") == 0) {
 				auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.tok);
-				error.message = "<self> keyword is only allowed in member declarations.";
+				error.message = "<" + NodeStruct::SELF + "> keyword is only allowed in member declarations.";
 			}
 		}
 		if(node.value) node.value->accept(*this);

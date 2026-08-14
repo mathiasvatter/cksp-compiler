@@ -627,7 +627,7 @@ private:
 		}
 		for(auto &mem : m_struct.member_table) {
 			auto member = mem.second.lock();
-			if(mem.first == "self") continue;
+			if(mem.first == NodeStruct::SELF) continue;
 			if(member->is_engine) continue;
 			if(member->data_type ==DataType::Const) continue;
 			// a <static> object member holds one shared reference and is reference counted like a

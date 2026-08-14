@@ -1361,7 +1361,7 @@ void NodeFunctionDefinition::update_token_data(const Token &token) {
 
 NodeStruct* NodeFunctionDefinition::is_method() const {
 	if (!parent) return nullptr;
-	const bool has_params = !header->params.empty() and header->get_param(0)->name == "self";
+	const bool has_params = !header->params.empty() and header->get_param(0)->name == NodeStruct::SELF;
 	if(const auto strct = parent->cast<NodeStruct>(); has_params) {
 		return strct;
 	}

@@ -26,7 +26,7 @@ public:
 	}
 
 	NodeAST * visit(NodeSingleDeclaration& node) override {
-		// "self" gets deleted in the struct method -> ignore here
+		// <self> gets deleted in the struct method -> ignore here
 		if(node.variable == m_current_struct->node_self) {
 			return &node;
 		}
@@ -157,7 +157,7 @@ public:
 	}
 
 	NodeAST * visit(NodeSingleDeclaration& node) override {
-		// "self" gets deleted in the struct method -> ignore here
+		// <self> gets deleted in the struct method -> ignore here
 		if(node.variable == m_current_struct->node_self) {
 			m_self_decl = &node;
 			return &node;

@@ -137,7 +137,7 @@ private:
 		}
 
 		auto node_self = clone_as<NodeArray>(node.get_declaration().get());
-		node_self->name = "self";
+		node_self->name = NodeStruct::SELF;
 		node_self->size = nullptr;
 		auto self_ref = node_self->to_reference();
 		auto message = std::make_unique<NodeString>(
@@ -187,7 +187,7 @@ private:
 		}
 
 		auto node_self = shared_ptr_cast<NodeNDArray>(clone_shared(node.get_declaration()));
-		node_self->name = "self";
+		node_self->name = NodeStruct::SELF;
 		node_self->ty = node.ty;
 		node_self->sizes = nullptr;
 		auto self_ref = node_self->to_reference();

@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "../../misc/SourceLocation.h"
+#include "../ASTNodes/ASTDataStructures.h"
 #include "SourceProvider.h"
 
 /// Subset of the LSP CompletionItemKind enum, using its wire values.
@@ -240,7 +241,7 @@ public:
 		// <self> is not a declaration one can look up by name: the struct desugaring gives
 		// it the struct's own token. Resolve it from the method body the cursor sits in.
 		size_t consumed = 1;
-		auto type = chain[0] == "self"
+		auto type = chain[0] == NodeStruct::SELF
 			? enclosing_struct(file, line, character)
 			: resolve_declaration_type(chain, file, line, character, consumed);
 		if (type.empty()) return {};
@@ -429,7 +430,7 @@ private:
 	/// Struct members carry the OBJ_DELIMITER and are only reachable through an
 	/// instance; compiler-generated names are not something the user can write.
 	[[nodiscard]] static bool is_nameable(const std::string& name) {
-		if (name.empty() || name == "self" || name == "_") return false;
+		if (name.empty() || name == NodeStruct::SELF || name == "_") return false;
 		if (name.starts_with("__") || name.starts_with('$')) return false;
 		return name.find("::") == std::string::npos;
 	}

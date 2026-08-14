@@ -202,7 +202,7 @@ private:
 		if (m_pass != Pass::Members || node.name.empty()) return;
 		// Synthesized declarations have no source token to offer.
 		if (node.tok.val.empty() || node.tok.file().empty()) return;
-		if (node.name == "self" || node.tok.val == "self") return;
+		if (node.name == NodeStruct::SELF || node.tok.val == NodeStruct::SELF) return;
 
 		std::string name = node.name;
 		// A name may equal the token outright when it carries dots of its own
@@ -364,7 +364,7 @@ public:
 				if (!declaration) continue;
 				// Struct desugaring prepends a synthetic <self> member; it is machinery,
 				// not something the user can complete to.
-				if (declaration->name == "self" || basename_of(declaration->name) == "self") {
+				if (declaration->name == NodeStruct::SELF || basename_of(declaration->name) == NodeStruct::SELF) {
 					continue;
 				}
 				CompletionMember item{

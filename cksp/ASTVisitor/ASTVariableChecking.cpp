@@ -233,7 +233,8 @@ NodeAST* ASTVariableChecking::visit(NodeArrayRef& node) {
 			return node.replace_with(std::move(access_chain));
 		}
 		if(m_current_struct) {
-			auto msg = "When referencing a struct member, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
+			auto msg = "When referencing a struct member, remember to use the '" + NodeStruct::SELF
+				+ "' keyword to access it. Example: <" + NodeStruct::SELF + "." + node.tok.val + ">.";
 			DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
 		}
         if(pass == Pass::PostUIControlLowering) return &node;
@@ -264,7 +265,8 @@ NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 			return node.replace_with(std::move(access_chain));
 		}
 		if(m_current_struct) {
-			const auto msg = "When referencing a struct member, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
+			const auto msg = "When referencing a struct member, remember to use the '" + NodeStruct::SELF
+				+ "' keyword to access it. Example: <" + NodeStruct::SELF + "." + node.tok.val + ">.";
 			DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
 		}
 		DefinitionProvider::throw_declaration_error(node, "", m_def_provider).exit();
@@ -293,7 +295,8 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 	if(!node_declaration) {
 		// if (!fail) return &node;
 		if(m_current_struct) {
-			const auto msg = "When referencing a struct method, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
+			const auto msg = "When referencing a struct method, remember to use the '" + NodeStruct::SELF
+				+ "' keyword to access it. Example: <" + NodeStruct::SELF + "." + node.tok.val + ">.";
 			DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
 		}
 		if (!node.parent -> cast<NodeFunctionCall>()) {
@@ -339,7 +342,8 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 		} else {
 
 			if(m_current_struct) {
-				const auto msg = "When referencing a struct member, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
+				const auto msg = "When referencing a struct member, remember to use the '" + NodeStruct::SELF
+					+ "' keyword to access it. Example: <" + NodeStruct::SELF + "." + node.tok.val + ">.";
 				DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
 			}
 
@@ -441,5 +445,4 @@ NodeAST* ASTVariableChecking::visit(NodeStruct& node) {
 	m_current_struct = nullptr;
 	return &node;
 }
-
 

@@ -200,7 +200,7 @@ private:
 			// Struct desugaring injects a synthetic `self` declaration whose token is the
 			// struct name token. Indexing self -> that declaration would make the range-based
 			// symbol identity conflate every `self` use with the struct itself.
-			if (declaration->name == "self" && declaration->tok.val != "self") return;
+			if (declaration->name == NodeStruct::SELF && declaration->tok.val != NodeStruct::SELF) return;
 			add_link(reference, *declaration);
 		}
 	}
