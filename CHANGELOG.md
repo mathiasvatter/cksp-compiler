@@ -34,6 +34,8 @@
 - Improved parser and preprocessor **diagnostics** including better error reporting on incorrect define substitutions ([#61](<https://github.com/mathiasvatter/cksp-compiler/issues/61>)).
 - A `const` array is now rejected as the target of an array load instead of being written to silently.
 - Improved compile times through a shared source-file table instead of per-token paths: large projects compile around **18% faster** than `v0.1.0-alpha.3` and use about **20%** less memory.
+- Compiling the same sources twice now produces the **same output**, apart from the timestamp the compiler writes into it. Generated variable names and the order of the generated declarations used to shift from one compile to the next, which made a `diff` between two builds of a script unreadable.
+- Improved compile times at `-O3` (`--optimize aggressive`): scalar vars to array optimization is now **1.5–3× faster**, which takes around **200 ms** off a large project.
 
 ### Fixed
 - Fixed an array copy running past the end of the shorter of the two arrays. `declare dst[3] := src` (and `src` has size 4) made Kontakt report *"Array %dst[3] is out of range"*, and the other direction silently read `0` past the end. The copy is now bounded by whichever array declares fewer elements.

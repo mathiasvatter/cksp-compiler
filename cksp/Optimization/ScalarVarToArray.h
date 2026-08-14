@@ -55,7 +55,7 @@ public:
 		m_program->global_declarations->accept(*this);
 		m_program->init_callback->accept(*this);
 		// Both loops used to run through parallel_for_each and were 1.5-2.9x slower for it
-		// (action-ww 313ms -> 111ms, lux-brass 115ms -> 40ms): rewriting a reference is a few
+		// (action-ww 313ms -> 111ms, lux-strings 115ms -> 40ms): rewriting a reference is a few
 		// pointer stores, and every one of them queued behind the one mutex this pass used to
 		// hold, so the threads bought nothing and paid contention. Sequential also keeps
 		// <m_counter> and <m_variable_to_index> honest - the index a variable gets in __vars
