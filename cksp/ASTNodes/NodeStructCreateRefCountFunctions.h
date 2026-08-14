@@ -43,10 +43,6 @@ public:
 		m_num_refs_ref = m_num_refs->to_reference();
 		m_num_refs_ref->match_data_structure(m_num_refs);
 
-		// m_del_func = get_base_func(m_struct.name + OBJ_DELIMITER + "__del__");
-		// m_decr_func = get_base_func(m_struct.name + OBJ_DELIMITER + "__decr__", clone_as<NodeDataStructure>(m_num_refs.get()));
-		// m_incr_func = get_base_func(m_struct.name + OBJ_DELIMITER + "__incr__", clone_as<NodeDataStructure>(m_num_refs.get()));
-
 		// self
 		m_self_ref = m_struct.node_self->to_reference();
 		m_self_ref->match_data_structure(m_struct.node_self);
@@ -111,7 +107,7 @@ public:
 		auto num_refs = get_num_refs_param();
 		m_num_refs_ref = num_refs->to_reference();
 		m_incr_func = get_base_func(
-			m_struct.name+OBJ_DELIMITER+"__incr__",
+			m_struct.name+OBJ_DELIMITER+NodeStruct::INCREMENTOR,
 			std::move(self),
 			std::move(num_refs)
 		);
@@ -176,7 +172,7 @@ public:
 		);
 		nil_check->if_body->add_as_stmt(std::move(assignment));
 		m_del_func = get_base_func(
-			m_struct.name+OBJ_DELIMITER+"__del__",
+			m_struct.name+OBJ_DELIMITER+NodeStruct::DESTRUCTOR,
 			std::move(self)
 		);
 		m_del_func->body->add_as_stmt(std::move(iter_decl));
@@ -242,7 +238,7 @@ public:
 		auto num_refs = get_num_refs_param();
 		m_num_refs_ref = num_refs->to_reference();
 		m_decr_func = get_base_func(
-			m_struct.name+OBJ_DELIMITER+"__decr__",
+			m_struct.name+OBJ_DELIMITER+NodeStruct::DECREMENTER,
 			std::move(self),
 			std::move(num_refs)
 		);
@@ -338,7 +334,7 @@ public:
 				node_while->body->add_as_stmt(std::make_unique<NodeFunctionCall>(
 					false,
 					std::make_unique<NodeFunctionHeaderRef>(
-						mem->ty->get_element_type()->to_string() + OBJ_DELIMITER + "__decr__",
+						mem->ty->get_element_type()->to_string() + OBJ_DELIMITER + NodeStruct::DECREMENTER,
 						std::make_unique<NodeParamList>(mem->tok, to_member_chain_ref(mem), std::make_unique<NodeInt>(1, mem->tok)),
 						mem->tok
 					),
@@ -371,7 +367,7 @@ public:
 		node_while->body->add_as_stmt(std::make_unique<NodeFunctionCall>(
 			false,
 			std::make_unique<NodeFunctionHeaderRef>(
-				m_struct.name + OBJ_DELIMITER + "__del__",
+				m_struct.name + OBJ_DELIMITER + NodeStruct::DESTRUCTOR,
 				std::make_unique<NodeParamList>(tok, m_self_ref->clone()),
 				tok
 			),
@@ -387,7 +383,7 @@ public:
 		auto num_refs = get_num_refs_param();
 		m_num_refs_ref = num_refs->to_reference();
 		m_decr_func = get_base_func(
-			m_struct.name+OBJ_DELIMITER+"__decr__",
+			m_struct.name+OBJ_DELIMITER+NodeStruct::DECREMENTER,
 			std::move(self),
 			std::move(num_refs)
 		);
@@ -474,7 +470,7 @@ public:
 				outer_while->body->add_as_stmt(std::make_unique<NodeFunctionCall>(
 					false,
 					std::make_unique<NodeFunctionHeaderRef>(
-						mem->ty->get_element_type()->to_string() + OBJ_DELIMITER + "__decr__",
+						mem->ty->get_element_type()->to_string() + OBJ_DELIMITER + NodeStruct::DECREMENTER,
 						std::make_unique<NodeParamList>(mem->tok, to_member_chain_ref(mem), std::make_unique<NodeInt>(1, mem->tok)),
 						mem->tok
 					),
@@ -502,11 +498,11 @@ public:
 			}
 
 		}
-		// add actual delete function
+		// add actual destructor
 		outer_while->body->add_as_stmt(std::make_unique<NodeFunctionCall>(
 			false,
 			std::make_unique<NodeFunctionHeaderRef>(
-				m_struct.name + OBJ_DELIMITER + "__del__",
+				m_struct.name + OBJ_DELIMITER + NodeStruct::DESTRUCTOR,
 				std::make_unique<NodeParamList>(tok, m_self_ref->clone()),
 				tok
 			),
@@ -515,7 +511,7 @@ public:
 
 		outer_while->body->prepend_as_stmt(std::move(iter_decl));
 		m_decr_func = get_base_func(
-			m_struct.name+OBJ_DELIMITER+"__decr__",
+			m_struct.name+OBJ_DELIMITER+NodeStruct::DECREMENTER,
 			std::move(self),
 			std::move(num_refs)
 		);
@@ -560,7 +556,7 @@ private:
 	}
 
 	/// STRUCT::stack_top
-	static std::unique_ptr<NodeReference> get_stack_top_ref(NodeStruct* strct) {
+	static std::unique_ptr<NodeReference> get_stack_top_ref(const NodeStruct* strct) {
 		auto stack_top_ref = strct->stack_top_var->to_reference();
 		stack_top_ref->match_data_structure(strct->stack_top_var);
 		return stack_top_ref;

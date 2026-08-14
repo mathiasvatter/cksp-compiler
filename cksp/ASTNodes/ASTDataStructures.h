@@ -423,6 +423,9 @@ struct NodeConst final : NodeDataStructure {
 struct NodeStruct final : NodeDataStructure {
 	inline static std::string CONSTRUCTOR = "__init__";
 	inline static std::string DESTRUCTOR = "__del__";
+	inline static std::string DECREMENTER = "__decr__";
+	inline static std::string INCREMENTOR = "__incr__";
+	inline static std::string REPRESENTOR = "__rep__";
 	/// <Note.storage(.pitch)>: the compiler-provided static method that hands out the array a
 	/// member is stored in, see TypeInference::lower_storage_method()
 	inline static std::string STORAGE = "storage";
@@ -544,7 +547,7 @@ struct NodeStruct final : NodeDataStructure {
 
 	static std::unique_ptr<NodeBlock> declare_struct_constants();
 	/// generated init method only needs assignment if it has pointer -> nil
-	std::shared_ptr<NodeFunctionDefinition> generate_init_method();
+	std::shared_ptr<NodeFunctionDefinition> generate_constructor();
 
 	/**
 	 * generates a __repr__ method for a struct

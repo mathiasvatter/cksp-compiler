@@ -69,7 +69,7 @@ private:
 		auto call = std::make_unique<NodeFunctionCall>(
 			false,
 			std::make_unique<NodeFunctionHeaderRef>(
-				prefix + OBJ_DELIMITER+"__repr__",
+				prefix + OBJ_DELIMITER+NodeStruct::REPRESENTOR,
 				std::make_unique<NodeParamList>(node.tok, node.clone()),
 				node.tok
 			),
@@ -115,7 +115,7 @@ private:
 	}
 
 	static Type* is_repr_header(const NodeFunctionHeader& header) {
-		if(StringUtils::contains(header.name, OBJ_DELIMITER+"__repr__")) {
+		if(StringUtils::contains(header.name, OBJ_DELIMITER+NodeStruct::REPRESENTOR)) {
 			if(header.params.size() == 1) {
 				return header.get_param(0)->ty;
 			}
@@ -131,7 +131,7 @@ private:
 			error.message = "ArrayRef has no declaration";
 			error.exit();
 		}
-		std::string func_name = node.ty->to_string()+OBJ_DELIMITER+"__repr__";
+		std::string func_name = node.ty->to_string()+OBJ_DELIMITER+NodeStruct::REPRESENTOR;
 		if(m_program->function_lookup.find({func_name, 1}) != m_program->function_lookup.end()) {
 			return false;
 		}
@@ -181,7 +181,7 @@ private:
 			error.message = "NDArrayRef has no declaration";
 			error.exit();
 		}
-		std::string func_name = node.ty->to_string()+OBJ_DELIMITER+"__repr__";
+		std::string func_name = node.ty->to_string()+OBJ_DELIMITER+NodeStruct::REPRESENTOR;
 		if(m_program->function_lookup.contains({func_name, 1})) {
 			return false;
 		}

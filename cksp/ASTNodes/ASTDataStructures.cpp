@@ -462,7 +462,7 @@ std::unique_ptr<NodeBlock> NodeStruct::declare_struct_constants() {
 	return node_block;
 }
 
-std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_init_method() {
+std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_constructor() {
 	std::vector<std::unique_ptr<NodeFunctionParam>> param_list;
 	param_list.push_back(std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(node_self.get())));
 	auto node_block = std::make_unique<NodeBlock>(this->tok, true);
@@ -497,7 +497,7 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_init_method() {
 
 	auto function_def = std::make_shared<NodeFunctionDefinition>(
 		std::make_unique<NodeFunctionHeader>(
-			"__init__",
+			NodeStruct::CONSTRUCTOR,
 			std::move(param_list),
 			this->tok
 		),
@@ -529,7 +529,7 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_repr_method() {
 	node_body->scope = true;
 	auto function_def = std::make_shared<NodeFunctionDefinition>(
 		std::make_unique<NodeFunctionHeader>(
-			"__repr__",
+			NodeStruct::REPRESENTOR,
 			std::move(self_param),
 			this->tok
 		),

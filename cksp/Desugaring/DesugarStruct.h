@@ -151,7 +151,7 @@ public:
 		bool has_repr_method = false;
 		for(auto & m: node.methods) {
 			if (m->header->name == NodeStruct::CONSTRUCTOR) has_init_method = true;
-			if (m->header->name == "__repr__") has_repr_method = true;
+			if (m->header->name == NodeStruct::REPRESENTOR) has_repr_method = true;
 			if (m->header->name == NodeStruct::DESTRUCTOR) {
 				auto error = Diagnostic(ErrorType::SyntaxError, "", "", m->tok);
 				error.message = "Destructor method is generated automatically. Please use another name.";
@@ -168,7 +168,7 @@ public:
 			}
 		}
 		// automatically generate init method if none provided by user
-		if(!has_init_method) node.generate_init_method();
+		if(!has_init_method) node.generate_constructor();
 		if(!has_repr_method) node.generate_repr_method();
 		if(has_init_method) move_member_defaults_into_constructor(node);
 
@@ -203,8 +203,8 @@ public:
 				"on the struct itself, not on an instance. Remove <self>, or remove <static>.";
 			error.exit();
 		}
-		if (node.header->name == NodeStruct::CONSTRUCTOR or node.header->name == "__repr__"
-			or node.header->name == "__del__") {
+		if (node.header->name == NodeStruct::CONSTRUCTOR or node.header->name == NodeStruct::REPRESENTOR
+			or node.header->name == NodeStruct::DESTRUCTOR) {
 			error.message = "<"+node.header->name+"> operates on an instance and cannot be declared <static>.";
 			error.exit();
 		}
@@ -258,7 +258,7 @@ public:
 			// delete "self" keyword
 			node.header->params.erase(node.header->params.begin());
 		}
-		if(node.header->name == "__repr__") {
+		if(node.header->name == NodeStruct::REPRESENTOR) {
 			if(node.num_return_params > 1) {
 				auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.tok);
 				error.message = "Repr method cannot have more than one return value.";

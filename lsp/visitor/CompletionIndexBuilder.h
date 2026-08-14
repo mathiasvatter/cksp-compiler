@@ -396,7 +396,7 @@ public:
 				}
 				// Generated lifecycle methods are not part of the surface.
 				if (name == NodeStruct::CONSTRUCTOR || name == NodeStruct::DESTRUCTOR
-					|| name == "__repr__") {
+					|| name == NodeStruct::REPRESENTOR) {
 					continue;
 				}
 				CompletionMember item{
