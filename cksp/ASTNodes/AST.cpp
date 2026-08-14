@@ -151,6 +151,9 @@ void NodeAST::debug_print(const std::string &path) {
 #endif
 }
 
+// Out of line because NodeAccessChain is only forward declared in AST.h - see the note there.
+std::unique_ptr<NodeAccessChain> NodeAST::to_method_chain() { return nullptr; }
+
 bool NodeAST::is_constant(bool builtins_are_constant, bool arrayref_can_be_const) {
 	static ConstExprValidator const_validator;
 	return const_validator.is_constant(*this, builtins_are_constant, arrayref_can_be_const);

@@ -108,7 +108,13 @@ struct NodeAST {
 	/// and elemen_type is Basic Type
 	Type* set_element_type(Type *element_type);
 	void debug_print(const std::string &path = PRINTER_OUTPUT);
-	virtual std::unique_ptr<struct NodeAccessChain> to_method_chain() {return nullptr;}
+	/// Defined out of line, like every <to_*> below: returning a <std::unique_ptr> to a node type
+	/// only forward declared here means the destructor of the returned pointer is instantiated at
+	/// the definition, and that needs the complete type. Clang lets an inline `return nullptr` in
+	/// the header pass, GCC does not, so a header-only body breaks any translation unit that
+	/// includes AST.h without the node definitions - which is how the Windows build fell over
+	/// once <CompletionIndex.h> started reaching in here.
+	virtual std::unique_ptr<struct NodeAccessChain> to_method_chain();
 	bool is_constant(bool builtins_are_constant = false, bool arrayref_can_be_const = true);
 	int get_bison_tokens();
 	bool is_nil();
@@ -243,11 +249,11 @@ struct NodeReference : NodeAST {
 	[[nodiscard]] std::string get_token_string() const override {
 		return tok.val;
 	}
-	virtual std::unique_ptr<struct NodeArrayRef> to_array_ref(std::unique_ptr<NodeAST> index) {return nullptr;}
-	virtual std::unique_ptr<struct NodeVariableRef> to_variable_ref() {return nullptr;}
-	virtual std::unique_ptr<struct NodePointerRef> to_pointer_ref() {return nullptr;}
-	virtual std::unique_ptr<struct NodeNDArrayRef> to_ndarray_ref() {return nullptr;}
-	std::unique_ptr<NodeAccessChain> to_method_chain() override {return nullptr;}
+	virtual std::unique_ptr<struct NodeArrayRef> to_array_ref(std::unique_ptr<NodeAST> index);
+	virtual std::unique_ptr<struct NodeVariableRef> to_variable_ref();
+	virtual std::unique_ptr<struct NodePointerRef> to_pointer_ref();
+	virtual std::unique_ptr<struct NodeNDArrayRef> to_ndarray_ref();
+	std::unique_ptr<NodeAccessChain> to_method_chain() override;
 	[[nodiscard]] std::shared_ptr<NodeDataStructure> get_declaration() const;
 	/// Completes the data structure of reference by copying missing parameters of declaration
 	void match_data_structure(const std::shared_ptr<NodeDataStructure>& data_structure);
