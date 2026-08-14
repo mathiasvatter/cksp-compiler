@@ -129,6 +129,8 @@ public:
 		std::vector<std::unique_ptr<NodeAST>> sizes;
 		for(auto & data : object->member_table) {
 			auto member = data.second.lock();
+			// <static> members exist once, not once per instance -> they do not shrink the heap
+			if(member->is_shared_member()) continue;
 			if(member->get_node_type() == NodeType::Array) {
 				auto node_array = static_pointer_cast<NodeArray>(member);
 				sizes.push_back(node_array->size->clone());

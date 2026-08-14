@@ -41,24 +41,29 @@ bool ReferenceProvider::source_matches_snapshot(const SourceContents& snapshot, 
 	return *current.unwrap().text == *expected->second;
 }
 
-std::optional<DefinitionLink> ReferenceProvider::resolve_definition_from_state(
+std::vector<DefinitionLink> ReferenceProvider::resolve_definition_from_state(
 	const State& state,
 	const SourceId& source,
 	const size_t line,
 	const size_t character) {
 	if (state.current) {
-		if (auto link = state.current->resolve_definition(source.value, line, character)) return link;
+		if (auto links = state.current->resolve_definition(source.value, line, character);
+			!links.empty()) {
+			return links;
+		}
 	}
 
 	if (!state.last_successful || state.last_successful == state.current
 		|| !source_matches_snapshot(state.last_successful_sources, source.value)) {
-		return std::nullopt;
+		return {};
 	}
-	auto link = state.last_successful->resolve_definition(source.value, line, character);
-	if (!link || !source_matches_snapshot(state.last_successful_sources, link->def_file)) {
-		return std::nullopt;
-	}
-	return link;
+	auto links = state.last_successful->resolve_definition(source.value, line, character);
+	// A stale snapshot may point into a file that has moved on since; drop those targets
+	// rather than the whole answer.
+	std::erase_if(links, [&](const DefinitionLink& link) {
+		return !source_matches_snapshot(state.last_successful_sources, link.def_file);
+	});
+	return links;
 }
 
 std::optional<ReferenceLink> ReferenceProvider::resolve_from_state(
@@ -81,7 +86,7 @@ std::optional<ReferenceLink> ReferenceProvider::resolve_from_state(
 	return link;
 }
 
-std::optional<DefinitionLink> ReferenceProvider::resolve_definition(
+std::vector<DefinitionLink> ReferenceProvider::resolve_definition(
 	const std::vector<SourceId>& preferred_entries,
 	const SourceId& source,
 	const size_t line,
@@ -92,18 +97,18 @@ std::optional<DefinitionLink> ReferenceProvider::resolve_definition(
 	for (const auto& entry : preferred_entries) {
 		const auto state = m_states.find(FileSystemSourceProvider::normalize(entry.value).value);
 		if (state == m_states.end()) continue;
-		if (auto target = resolve_definition_from_state(
-			state->second, normalized_source, line, character)) {
-			return target;
+		if (auto targets = resolve_definition_from_state(
+			state->second, normalized_source, line, character); !targets.empty()) {
+			return targets;
 		}
 	}
 	for (const auto& [_, state] : m_states) {
-		if (auto target = resolve_definition_from_state(
-			state, normalized_source, line, character)) {
-			return target;
+		if (auto targets = resolve_definition_from_state(
+			state, normalized_source, line, character); !targets.empty()) {
+			return targets;
 		}
 	}
-	return std::nullopt;
+	return {};
 }
 
 std::vector<DefinitionLink> ReferenceProvider::document_links_from_state(
@@ -201,9 +206,12 @@ std::vector<ReferenceLocation> ReferenceProvider::references_to(
 	const bool include_declaration) {
 	std::vector<ReferenceLocation> locations;
 	std::unordered_set<std::string> seen;
-	const auto add = [&locations, &seen](const std::string& file, const SourceRange& range) {
+	const auto add = [&locations, &seen](
+		const std::string& file, const SourceRange& range, const bool spelled_as_declared = true) {
 		auto key = file + "@" + range.to_string();
-		if (seen.insert(std::move(key)).second) locations.push_back({file, range});
+		if (seen.insert(std::move(key)).second) {
+			locations.push_back({file, range, spelled_as_declared});
+		}
 	};
 
 	std::lock_guard lock(m_mutex);
@@ -218,7 +226,7 @@ std::vector<ReferenceLocation> ReferenceProvider::references_to(
 				&& reference.ref_range.end.line == reference.def_name_range.end.line
 				&& reference.ref_range.end.column == reference.def_name_range.end.column;
 			if (is_declaration && !include_declaration) continue;
-			add(reference.ref_file, reference.ref_range);
+			add(reference.ref_file, reference.ref_range, reference.spelled_as_declared);
 		}
 	}
 	// the declaration is listed (and rename-edited) at its name, not the whole header range

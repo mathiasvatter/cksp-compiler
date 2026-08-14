@@ -95,6 +95,12 @@ inline std::string generate_github_issue_url(const Diagnostic& diagnostic, const
     if (diagnostic.range.start.line != static_cast<size_t>(-1)) {
         description << "\nLine: " << diagnostic.range.start.line;
     }
+    if (diagnostic.expansion && !diagnostic.expansion->file.empty()) {
+        description << "\nExpanded from: <" << diagnostic.expansion->spelling << "> ("
+                    << diagnostic.expansion->file << ':'
+                    << diagnostic.expansion->range.start.line << ':'
+                    << diagnostic.expansion->range.start.column << ')';
+    }
     if (!diagnostic.call_stack.empty()) {
         description << "\n\nCKSP call stack:";
         for (auto frame = diagnostic.call_stack.rbegin(); frame != diagnostic.call_stack.rend(); ++frame) {

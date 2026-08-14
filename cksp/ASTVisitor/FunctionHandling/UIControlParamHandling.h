@@ -74,7 +74,7 @@ private:
 							.title = "Pass '" + decl->name + "' by reference",
 							.edits = {{
 								.kind = Diagnostic::DiagnosticFix::EditKind::InsertBefore,
-								.file = decl->tok.file,
+								.file = decl->tok.file(),
 								.range = source_range_from_token(decl->tok),
 								.new_text = "ref "
 							}},
@@ -151,7 +151,7 @@ private:
 		auto func_def = param.parent->parent->cast<NodeFunctionDefinition>();
 		if (!func_def) return;
 		for (auto& call : func_def->call_sites) {
-			auto& arg = call->function->get_arg(index - (call->is_in_access_chain() ? 1 : 0));
+			auto& arg = call->function->get_arg(index - call->get_param_offset(func_def));
 			if ( auto ref = arg->is_reference()) {
 				find_declaration(*ref, references);
 			}

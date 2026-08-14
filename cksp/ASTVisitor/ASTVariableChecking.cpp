@@ -138,7 +138,11 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionDefinition &node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeAccessChain& node) {
-	node.chain[0]->accept(*this);
+	// a type qualifier (<Foo.MAX>) names a struct, not a variable: nothing to resolve
+	if(const auto object = node.chain[0]->is_reference();
+		!object or object->kind != NodeReference::Kind::TypeQualifier) {
+		node.chain[0]->accept(*this);
+	}
 	node.flatten();
 	m_current_access.push(&node);
 	// collect args of func calls in access chain or indexes of arrays etc w/o errors
@@ -215,18 +219,22 @@ NodeAST* ASTVariableChecking::visit(NodeArrayRef& node) {
 		if (pass == Pass::PreUIControlLowering) return &node;
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			node_declaration = access_chain->get_declaration();
-			node.declaration = node_declaration;
-			if(node.is_list_sizes()) {
-				// if it is a list constant, do not add to references
-				node.declaration.reset();
-				return &node;
-			} else {
-				access_chain->accept(*this);
-				return node.replace_with(std::move(access_chain));
+			// a type-qualified chain (<Foo.TAB>) is not rooted in an instance, so there is no
+			// declaration to inherit and no list constant it could stand for
+			if(node_declaration) {
+				node.declaration = node_declaration;
+				if(node.is_list_sizes()) {
+					// if it is a list constant, do not add to references
+					node.declaration.reset();
+					return &node;
+				}
 			}
+			access_chain->accept(*this);
+			return node.replace_with(std::move(access_chain));
 		}
 		if(m_current_struct) {
-			auto msg = "When referencing a struct member, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
+			auto msg = "When referencing a struct member, remember to use the '" + NodeStruct::SELF
+				+ "' keyword to access it. Example: <" + NodeStruct::SELF + "." + node.tok.val + ">.";
 			DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
 		}
         if(pass == Pass::PostUIControlLowering) return &node;
@@ -257,7 +265,8 @@ NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 			return node.replace_with(std::move(access_chain));
 		}
 		if(m_current_struct) {
-			const auto msg = "When referencing a struct member, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
+			const auto msg = "When referencing a struct member, remember to use the '" + NodeStruct::SELF
+				+ "' keyword to access it. Example: <" + NodeStruct::SELF + "." + node.tok.val + ">.";
 			DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
 		}
 		DefinitionProvider::throw_declaration_error(node, "", m_def_provider).exit();
@@ -286,7 +295,8 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 	if(!node_declaration) {
 		// if (!fail) return &node;
 		if(m_current_struct) {
-			const auto msg = "When referencing a struct method, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
+			const auto msg = "When referencing a struct method, remember to use the '" + NodeStruct::SELF
+				+ "' keyword to access it. Example: <" + NodeStruct::SELF + "." + node.tok.val + ">.";
 			DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
 		}
 		if (!node.parent -> cast<NodeFunctionCall>()) {
@@ -311,7 +321,6 @@ NodeAST* ASTVariableChecking::visit(NodeVariable& node) {
 NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 	if(node.get_declaration()) return &node;
 	auto node_declaration = m_def_provider->get_declaration(node);
-
 	// check for array constants
 	if(auto nd_constant = node.transform_ndarray_constant()) {
 		return node.replace_with(std::move(nd_constant))->accept(*this);
@@ -322,15 +331,19 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 		if (pass == Pass::PreUIControlLowering) return &node;
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			// check if its maybe a nd_Array size constant like nda.SIZE_D1
-			node_declaration = access_chain->get_declaration();
-			node.declaration = node_declaration;
+			auto first_member_ref = access_chain->member(0)->is_reference();
+			if (first_member_ref and first_member_ref->kind != NodeReference::Kind::TypeQualifier) {
+				node_declaration = access_chain->get_declaration();
+				node.declaration = node_declaration;
+			}
 
 			access_chain->accept(*this);
 			return node.replace_with(std::move(access_chain));
 		} else {
 
 			if(m_current_struct) {
-				const auto msg = "When referencing a struct member, remember to use the 'self' keyword to access it. Example: <self."+node.tok.val+">.";
+				const auto msg = "When referencing a struct member, remember to use the '" + NodeStruct::SELF
+					+ "' keyword to access it. Example: <" + NodeStruct::SELF + "." + node.tok.val + ">.";
 				DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
 			}
 
@@ -432,5 +445,4 @@ NodeAST* ASTVariableChecking::visit(NodeStruct& node) {
 	m_current_struct = nullptr;
 	return &node;
 }
-
 

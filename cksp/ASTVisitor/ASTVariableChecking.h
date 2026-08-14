@@ -116,32 +116,64 @@ private:
 	/// node can be NodeFunctionCall or NodeReference
 	/// transformation when first object is clearly a reference this_list.next.next()
 	/// tries to get declaration of first object and if there is one, replaces it with method chain
+	/// The qualifier may span several dotted segments: anything declared inside a namespace
+	/// carries the namespace in its name, so <audio.inst.idx> hangs off the variable
+	/// <audio.inst> and <audio.Envelope.MAX> off the struct <audio.Envelope>. The shortest
+	/// qualifier that resolves wins, and at equal length a variable beats a struct - that
+	/// keeps the single-segment case behaving exactly as before.
 	std::unique_ptr<NodeAccessChain> try_access_chain_transform(const std::string& name, NodeAST* node) const {
-		// find object ptr name
-		const size_t pos = name.find('.');
-		if (pos == std::string::npos) {
-			return nullptr;
-		}
-		const auto ptr_name = name.substr(0, pos);
-		const auto node_declaration = m_def_provider->get_declared_data_structure(ptr_name);
-		if(!node_declaration) return nullptr;
+		const auto segments = StringUtils::split(name, '.');
+		if (segments.size() < 2) return nullptr;
 
-		// different scenarios for different node types
-		// eq.lbl_param0 -> a reference originally recognized as a variable cannot have a variable or function declaration (eq)
-		if(node->cast<NodeVariableRef>()) {
-			if(node_declaration->cast<NodeFunctionHeader>()) {
-				return nullptr;
+		std::string qualifier;
+		// The last segment is the member being accessed and can never be part of the qualifier.
+		for (size_t count = 1; count < segments.size(); ++count) {
+			if (count > 1) qualifier += '.';
+			qualifier += segments[count - 1];
+
+			if (const auto node_declaration = m_def_provider->get_declared_data_structure(qualifier)) {
+				// eq.lbl_param0 -> a reference originally recognized as a variable cannot have a
+				// variable or function declaration (eq)
+				if (node->cast<NodeVariableRef>() && node_declaration->cast<NodeFunctionHeader>()) {
+					return nullptr;
+				}
+				auto method_chain = node->to_method_chain();
+				if (!method_chain) return nullptr;
+				method_chain->merge_members(0, count - 1);
+				const auto object = static_cast<NodeReference*>(method_chain->chain[0].get());
+				object->declaration = node_declaration;
+				method_chain->declaration = node_declaration;
+				return method_chain;
+			}
+
+			// no instance of that name -> the qualifier may name a struct instead: <Foo.MAX>.
+			if (auto type_qualified = try_type_qualified_transform(qualifier, count, node)) {
+				return type_qualified;
 			}
 		}
-
-		auto method_chain = node->to_method_chain();
-		if(!method_chain) return nullptr;
-		const auto object = static_cast<NodeReference*>(method_chain->chain[0].get());
-		object->declaration = node_declaration;
-		method_chain->declaration = node_declaration;
-		return method_chain;
+		return nullptr;
 	}
 
+	/// <Foo.MAX>: the chain is qualified by a struct name rather than by an instance. The leading
+	/// element gets no declaration - it only carries the type so the member can be looked up.
+	/// `count` is how many leading segments the struct name spans.
+	std::unique_ptr<NodeAccessChain> try_type_qualified_transform(
+		const std::string& struct_name, const size_t count, NodeAST* node) const {
+		if(!NodeReference::get_object_ptr(m_program, struct_name)) return nullptr;
+		auto method_chain = node->to_method_chain();
+		if(!method_chain) return nullptr;
+		method_chain->merge_members(0, count - 1);
+		const auto object = method_chain->member(0)->is_reference();
+		if (!object) {
+			auto error = ASTVisitor::make_diagnostic(ErrorType::InternalError, *method_chain);
+			error.set_message("node was flagged as access chain with TypeQualifier but has no NodeReference at idx 0");
+			error.exit();
+		}
+		object->kind = NodeReference::Kind::TypeQualifier;
+		object->ty = TypeRegistry::get_object_type(struct_name);
+		return method_chain;
+	}
+	
 	/// checks if given callback id is of type ui_control
 	static bool check_callback_id_data_type(NodeAST* callback_id) {
 		std::string id_node_type = "<Array>";

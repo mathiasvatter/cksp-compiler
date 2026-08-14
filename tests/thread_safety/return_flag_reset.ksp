@@ -1,0 +1,31 @@
+// An inlined function body carries its own RETURN_FLAG, and every copy of that body shares the one
+// slot the expansion gave it. The copy behind the first one that returns finds the flag standing at
+// 1 and never enters the guard, so the flag has to be reset in front of every copy. Regression for
+// the reset being dropped along with the initialisation of the whole callback dimension.
+#pragma combine_callbacks(true)
+
+// EXPECT RETURN_FLAG[0-9]*\[\$NI_CALLBACK_ID mod 1000\] := 0
+// EXPECT_NOT num_elements
+
+declare hits[2]
+declare table[2] := (10, 20)
+
+// the array parameter forces the call to be inlined, the wait makes the flag thread-unsafe so that
+// it gets a slot per callback invocation - both are needed to reach the case
+function dispatch(t: int[], id: int): bool
+    if id = 1
+        hits[0] := hits[0] + t[0]
+        wait(1000)
+        return true
+    end if
+    hits[1] := hits[1] + t[1]
+    return false
+end function
+
+on note
+    declare a := dispatch(table, 1)
+    declare b := dispatch(table, 2)
+    if a and not b
+        change_tune($EVENT_ID, hits[0] + hits[1], 1)
+    end if
+end on

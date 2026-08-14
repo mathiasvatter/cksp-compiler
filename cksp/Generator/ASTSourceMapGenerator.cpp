@@ -13,13 +13,13 @@ ASTSourceMapGenerator::ASTSourceMapGenerator(std::string generated_header, std::
 	  m_output_files(std::move(output_files)) {}
 
 bool ASTSourceMapGenerator::has_source(const NodeAST& node) {
-	return !node.tok.file.empty() && node.range.is_valid();
+	return !node.tok.file().empty() && node.range.is_valid();
 }
 
 SourceRange ASTSourceMapGenerator::statement_range(const NodeAST& statement, const NodeAST& end) {
 	const auto start = source_range_from_token(statement.tok);
-	if (statement.tok.file.empty()
-		|| statement.tok.file != end.tok.file
+	if (statement.tok.file().empty()
+		|| statement.tok.file() != end.tok.file()
 		|| !start.is_valid()
 		|| !end.range.is_valid()
 		|| start.start.line != end.range.start.line
@@ -34,12 +34,12 @@ void ASTSourceMapGenerator::record(const NodeAST& node) {
 }
 
 void ASTSourceMapGenerator::record(const NodeAST& node, const SourceRange& range) {
-	if (node.tok.file.empty() || !range.is_valid() || m_mappings.contains(m_generated_line)) {
+	if (node.tok.file().empty() || !range.is_valid() || m_mappings.contains(m_generated_line)) {
 		return;
 	}
 	m_mappings.emplace(m_generated_line, Mapping{
 		.generated_line = m_generated_line,
-		.source = node.tok.file,
+		.source = node.tok.file(),
 		.source_range = range
 	});
 }

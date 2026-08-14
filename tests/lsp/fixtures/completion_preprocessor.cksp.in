@@ -1,0 +1,21 @@
+{ <define>s and <macro>s never reach the AST - the preprocessor substitutes them
+  away before parsing - so they are harvested from the PreAST instead. }
+
+define MAX_VOICES := 64
+define SCALED := 12 * 4
+define AREA(w, h) := w * h
+
+macro setup(#name#)
+    declare #name#_count := 0
+end macro
+
+macro no_args()
+    declare plain_thing := 1
+end macro
+
+on init
+    declare x := MAX_VOICES + SCALED + AREA(2, 3)
+    setup(vol)
+    no_args()
+    <|global|>
+end on

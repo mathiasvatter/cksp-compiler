@@ -42,7 +42,7 @@ struct PreNodeAST {
         parent = new_parent;
     }
     virtual void update_token_data(const Token &token) {
-    	tok.line = token.line; tok.file = token.file;
+    	tok.line = token.line; tok.file_ref = token.file_ref;
     }
 	void set_range(const Token& start, const Token& end) {
 		range = source_range_from_tokens(start, end);
@@ -154,7 +154,7 @@ struct PreNodeUnaryExpr final : PreNodeAST {
 		return get_token_string(op) + operand->get_string();
 	}
     void update_token_data(const Token &token) override {
-        tok.line = token.line; tok.file = token.file;
+        tok.line = token.line; tok.file_ref = token.file_ref;
         operand->update_token_data(token);
     }
 };
@@ -184,7 +184,7 @@ struct PreNodeBinaryExpr final : PreNodeAST {
 		return left->get_string() + get_token_string(op) + left->get_string();;
 	}
     void update_token_data(const Token &token) override {
-        tok.line = token.line; tok.file = token.file;
+        tok.line = token.line; tok.file_ref = token.file_ref;
         left->update_token_data(token);
         right->update_token_data(token);
     }
@@ -199,7 +199,7 @@ struct PreNodeOther final : PreNodeAST {
 		return tok.val;
 	}
     void update_token_data(const Token &token) override {
-        tok.line = token.line; tok.file = token.file;
+        tok.line = token.line; tok.file_ref = token.file_ref;
     }
 };
 
@@ -212,7 +212,7 @@ struct PreNodeDeadCode final : PreNodeAST {
         return tok.val;
     }
     void update_token_data(const Token &token) override {
-        tok.line = token.line; tok.file = token.file;
+        tok.line = token.line; tok.file_ref = token.file_ref;
     }
 };
 
@@ -365,11 +365,11 @@ struct PreNodeList final : PreNodeAST {
 		return str;
 	}
     void update_token_data(const Token &token) override {
-        if (!open_parenth_tok.file.empty()) {
-            open_parenth_tok.line = token.line; open_parenth_tok.file = token.file;
+        if (!open_parenth_tok.file().empty()) {
+            open_parenth_tok.line = token.line; open_parenth_tok.file_ref = token.file_ref;
         }
-        if (!closed_parenth_tok.file.empty()) {
-            closed_parenth_tok.line = token.line; closed_parenth_tok.file = token.file;
+        if (!closed_parenth_tok.file().empty()) {
+            closed_parenth_tok.line = token.line; closed_parenth_tok.file_ref = token.file_ref;
         }
         for(auto & p : params) {
             p->update_token_data(token);
@@ -422,8 +422,8 @@ struct PreNodeImport final : PreNodeAST {
 		return "import " + path + (alias ? " as " + alias->get_string() : "");
 	}
 	void update_token_data(const Token &token) override {
-		tok.line = token.line; tok.file = token.file;
-		path_token.line = token.line; path_token.file = token.file;
+		tok.line = token.line; tok.file_ref = token.file_ref;
+		path_token.line = token.line; path_token.file_ref = token.file_ref;
 		if (alias) alias->update_token_data(token);
 	}
 	void set_alias(std::unique_ptr<PreNodeKeyword> new_alias) {
@@ -451,8 +451,8 @@ struct PreNodeImportNCKP final : PreNodeAST {
 		return "import_nckp " + path;
 	}
 	void update_token_data(const Token &token) override {
-		tok.line = token.line; tok.file = token.file;
-		path_token.line = token.line; path_token.file = token.file;
+		tok.line = token.line; tok.file_ref = token.file_ref;
+		path_token.line = token.line; path_token.file_ref = token.file_ref;
 	}
 };
 
@@ -484,7 +484,7 @@ struct PreNodeUseCodeIf final : PreNodeAST {
 		return "use_code_if " + condition->get_string();
 	}
 	void update_token_data(const Token &token) override {
-		tok.line = token.line; tok.file = token.file;
+		tok.line = token.line; tok.file_ref = token.file_ref;
 		condition->update_token_data(token);
 		if (if_branch) if_branch->update_token_data(token);
 		if (else_branch) else_branch->update_token_data(token);
@@ -525,7 +525,7 @@ struct PreNodeSetCondition final : PreNodeAST {
 		return "set_condition " + condition->get_string();
 	}
 	void update_token_data(const Token &token) override {
-		tok.line = token.line; tok.file = token.file;
+		tok.line = token.line; tok.file_ref = token.file_ref;
 		condition->update_token_data(token);
 	}
 };
@@ -552,7 +552,7 @@ struct PreNodeResetCondition final : PreNodeAST {
 		return "reset_condition " + condition->get_string();
 	}
 	void update_token_data(const Token &token) override {
-		tok.line = token.line; tok.file = token.file;
+		tok.line = token.line; tok.file_ref = token.file_ref;
 		condition->update_token_data(token);
 	}
 };
@@ -915,7 +915,7 @@ struct PreNodeIterateMacro final : PreNodeAST {
     void update_token_data(const Token &token) override {
         macro_call->update_token_data(token);
         iterator_start->update_token_data(token);
-        to.line = token.line; to.file = token.file;
+        to.line = token.line; to.file_ref = token.file_ref;
         iterator_end->update_token_data(token);
         step->update_token_data(token);
     }
@@ -982,7 +982,7 @@ struct PreNodeIncrementer final : PreNodeAST {
         return counter->get_string() + iterator_start->get_string() + iterator_step->get_string();
     }
     void update_token_data(const Token &token) override {
-        tok.line = token.line; tok.file = token.file;
+        tok.line = token.line; tok.file_ref = token.file_ref;
         for(const auto & b : body) b->update_token_data(token);
         counter->update_token_data(token);
         iterator_start->update_token_data(token);

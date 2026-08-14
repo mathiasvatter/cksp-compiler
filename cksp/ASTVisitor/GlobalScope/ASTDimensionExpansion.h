@@ -116,6 +116,16 @@ public:
 		if (node.variable->is_thread_safe) {
 			if(node.value) node.value->accept(*this);
 		} else {
+			// Not every declaration has a per-callback-stack form. A <ui_control> exists once
+			// for the whole instrument, so NodeUIControl implements no expand_dimension and the
+			// base returns nothing. Asked before anything is rewritten: the program only gets
+			// here when it is invalid anyway - a call into <on init> that is not thread safe
+			// marks the whole callback - and the check that says so runs after this pass. So
+			// the declaration is left alone and the analysis carries on to the message that
+			// explains the actual mistake, instead of dereferencing nothing.
+			auto inflated = node.variable->expand_dimension(m_program->max_cb_stack->to_reference());
+			if (!inflated) return &node;
+
 			// if value -> change to assignment
 			std::unique_ptr<NodeBlock> block = nullptr;
 			std::unique_ptr<NodeSingleAssignment> assignment = nullptr;
@@ -126,7 +136,6 @@ public:
 				node.variable->references.emplace(assignment->l_value.get());
 			}
 
-			auto inflated = node.variable->expand_dimension(m_program->max_cb_stack->to_reference());
 			// inflated->is_thread_safe = false;
 			node.variable->replace_datastruct(std::move(inflated));
 

@@ -54,7 +54,6 @@ public:
 		node.accept(*this);
 		ReturnFunctionCallHoisting hoisting;
 		hoisting.visit(node);
-		node.reset_function_visited_flag();
 		node.debug_print();
 
 		ReturnFunctionIsolation isolation(m_program);
@@ -63,9 +62,6 @@ public:
 
 		ASTTemporaryPointerScope temp_scope(m_program);
 		temp_scope.visit(node);
-
-		node.update_function_lookup();
-		node.reset_function_visited_flag();
 	}
 
 private:
@@ -182,4 +178,3 @@ private:
 	// }
 
 };
-

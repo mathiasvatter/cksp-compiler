@@ -22,12 +22,13 @@
  */
 
 class DesugarConst final : public ASTDesugaring {
-    std::vector<NodePrefix::PrefixSegment> m_const_prefixes;
+	std::vector<NodeConst*> m_const_stack;
     std::unique_ptr<NodeAST> m_pre = nullptr;
     std::unique_ptr<NodeAST> m_iter = nullptr;
 
 	void add_const_prefix(NodeDataStructure& node) const {
-		for (const auto& prefix : m_const_prefixes) {
+		for (const auto& c : m_const_stack) {
+			auto prefix = NodePrefix::PrefixSegment{c->const_prefix, NodePrefix::PrefixKind::Const};
 			node.add_prefix(prefix);
 		}
 		node.name = node.prefix->get_string() + "." + node.tok.val;
@@ -38,7 +39,7 @@ public:
 
     NodeAST * visit(NodeVariable& node) override {
 //		if(node.ty == TypeRegistry::Unknown) node.ty = TypeRegistry::Integer;
-        if(!m_const_prefixes.empty()) {
+        if(!m_const_stack.empty()) {
             add_const_prefix(node);
         }
 		return &node;
@@ -63,12 +64,13 @@ public:
             m_iter = std::make_unique<NodeInt>(0, node.tok);
         }
         node.variable->data_type = DataType::Const;
+    	node.variable->kind = m_const_stack.back()->kind;
         node.set_child_parents();
 		return &node;
     };
 
     NodeAST * visit(NodeConst& node) override {
-        m_const_prefixes.push_back({node.const_prefix, NodePrefix::PrefixKind::Const});
+    	m_const_stack.push_back(&node);
         std::vector<std::unique_ptr<NodeAST>> const_indexes;
         m_iter = std::make_unique<NodeInt>(0, node.tok);
         m_pre = std::make_unique<NodeInt>(0, node.tok);
@@ -94,6 +96,8 @@ public:
 			node.tok
 		);
 		node_array->prefix = clone_unique(node.prefix);
+    	node_array->kind = node.kind;
+    	node_array->data_type = node.data_type;
         auto node_declare_statement = std::make_unique<NodeSingleDeclaration>(
 			std::move(node_array),
 			std::make_unique<NodeInitializerList>(std::move(const_indexes), node.tok),
@@ -109,7 +113,7 @@ public:
 //		);
 
 //        node.constants->add_stmt(std::make_unique<NodeStatement>(std::move(constant), node.tok));
-        m_const_prefixes.pop_back();
+    	m_const_stack.pop_back();
 		node.constants->do_constant_folding();
     	return node.constants.get();
     }

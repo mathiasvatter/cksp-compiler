@@ -43,10 +43,6 @@ public:
 		m_num_refs_ref = m_num_refs->to_reference();
 		m_num_refs_ref->match_data_structure(m_num_refs);
 
-		// m_del_func = get_base_func(m_struct.name + OBJ_DELIMITER + "__del__");
-		// m_decr_func = get_base_func(m_struct.name + OBJ_DELIMITER + "__decr__", clone_as<NodeDataStructure>(m_num_refs.get()));
-		// m_incr_func = get_base_func(m_struct.name + OBJ_DELIMITER + "__incr__", clone_as<NodeDataStructure>(m_num_refs.get()));
-
 		// self
 		m_self_ref = m_struct.node_self->to_reference();
 		m_self_ref->match_data_structure(m_struct.node_self);
@@ -111,7 +107,7 @@ public:
 		auto num_refs = get_num_refs_param();
 		m_num_refs_ref = num_refs->to_reference();
 		m_incr_func = get_base_func(
-			m_struct.name+OBJ_DELIMITER+"__incr__",
+			m_struct.name+OBJ_DELIMITER+NodeStruct::INCREMENTOR,
 			std::move(self),
 			std::move(num_refs)
 		);
@@ -157,6 +153,8 @@ public:
 			auto member = snd.lock();
 			if (member->is_engine) continue;
 			if (member == m_struct.node_self) continue;
+			// <static> members belong to the struct, not to the instance being freed
+			if (member->is_shared_member()) continue;
 			auto assignment = std::make_unique<NodeSingleAssignment>(
 				member->to_reference(),
 				TypeRegistry::get_neutral_element_from_type(member->ty),
@@ -174,7 +172,7 @@ public:
 		);
 		nil_check->if_body->add_as_stmt(std::move(assignment));
 		m_del_func = get_base_func(
-			m_struct.name+OBJ_DELIMITER+"__del__",
+			m_struct.name+OBJ_DELIMITER+NodeStruct::DESTRUCTOR,
 			std::move(self)
 		);
 		m_del_func->body->add_as_stmt(std::move(iter_decl));
@@ -194,6 +192,11 @@ public:
 		bool is_linear_recursive = m_struct.recursive_structs.size() == 1 and m_recursive_member_structs.size() == 1;
 		// the linear recursive member must not be of composite type
 		if(is_linear_recursive and m_recursive_member_structs[0]->ty->cast<CompositeType>()) {
+			is_linear_recursive = false;
+		}
+		// the chain is only homogeneous if the member is of the structs own type. otherwise walking
+		// it with the structs own allocation array and __del__ would touch the wrong object type
+		if(is_linear_recursive and m_recursive_member_structs[0]->ty->get_element_type() != m_struct.ty) {
 			is_linear_recursive = false;
 		}
 		return is_linear_recursive;
@@ -225,60 +228,52 @@ public:
 		}
 	}
 
+	/// the recursion runs through other structs (e.g. List -> Node -> List), so every struct of the
+	/// cycle keeps its own stack. self is pushed on the stack of its own struct and afterwards all
+	/// stacks are drained until every single one of them is empty
 	std::unique_ptr<NodeFunctionDefinition> create_non_lin_indirect_rec_decr() {
 		auto self = get_self_param();
 		m_self_ref = self->to_reference();
 		m_alloc_ref = get_alloc_ref(m_self_ref);
 		auto num_refs = get_num_refs_param();
 		m_num_refs_ref = num_refs->to_reference();
+		m_decr_func = get_base_func(
+			m_struct.name+OBJ_DELIMITER+NodeStruct::DECREMENTER,
+			std::move(self),
+			std::move(num_refs)
+		);
 		auto &func_body = m_decr_func->body;
-		// Node::stack[Node::stack_top] := self
+		// List::stack[List::stack_top] := self
 		func_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
 			clone_as<NodeReference>(m_stack_ref.get()),
 			m_self_ref->clone(),
 			tok
 		));
-		// inc(Node::stack_top)
+		// inc(List::stack_top)
 		func_body->add_as_stmt(DefinitionProvider::inc(clone_as<NodeReference>(m_stack_top_ref.get())));
 		auto node_while = std::make_unique<NodeWhile>(
 			std::make_unique<NodeBinaryExpr>(tok),
 			std::make_unique<NodeBlock>(tok, true),
 			tok
 		);
-		std::unique_ptr<NodeBinaryExpr> condition = nullptr;
-		for(auto & rec : m_struct.recursive_structs) {
-			// STRUCT::stack_top
-			auto stack_var_ref = rec->stack_top_var->to_reference();
-			stack_var_ref->match_data_structure(rec->stack_top_var);
-			if(!condition) {
-				condition = std::make_unique<NodeBinaryExpr>(
-					token::GREATER_THAN,
-					stack_var_ref->clone(),
-					std::make_unique<NodeInt>(0, tok),
-					tok
-				);
-			} else {
-				condition = std::make_unique<NodeBinaryExpr>(
-					token::BOOL_AND,
-					std::move(condition),
-					std::make_unique<NodeBinaryExpr>(
-						token::GREATER_THAN,
-						stack_var_ref->clone(),
-						std::make_unique<NodeInt>(0, tok),
-						tok
-					),
-					tok
-				);
-			}
+		// while List::stack_top > 0 or Node::stack_top > 0 ...
+		auto condition = get_stack_not_empty_check(&m_struct);
+		// the own stack holds self and is drained first, the structs of the cycle keep filling each
+		// others stacks, which is why the outer loop has to run until all of them are empty
+		node_while->body->add_as_stmt(get_stack_while_loop(m_self_ref->get_declaration(), m_num_refs_ref->get_declaration()));
+		for(const auto rec : get_sorted_recursive_structs()) {
+			// the own stack is already drained above
+			if(rec == &m_struct) continue;
+			condition = std::make_unique<NodeBinaryExpr>(
+				token::BOOL_OR,
+				std::move(condition),
+				get_stack_not_empty_check(rec),
+				tok
+			);
 			auto while_body = rec->generate_ref_count_while(m_self_ref->get_declaration(), m_num_refs_ref->get_declaration(), m_program);
 			node_while->body->add_as_stmt(std::move(while_body));
 		}
 		node_while->set_condition(std::move(condition));
-		m_decr_func = get_base_func(
-					m_struct.name+OBJ_DELIMITER+"__decr__",
-					std::move(self),
-					std::move(num_refs)
-				);
 		m_decr_func->body->add_as_stmt(std::move(node_while));
 		m_decr_func->parent = &m_struct;
 		m_decr_func->ty = TypeRegistry::Void;
@@ -293,6 +288,8 @@ public:
 		m_self_ref->name = self->name;
 		m_num_refs_ref->declaration = num_refs;
 		m_num_refs_ref->name = num_refs->name;
+		// the allocation index still holds the unbound self clone from the constructor -> rebuild it
+		m_alloc_ref = get_alloc_ref(m_self_ref);
 		// while Node::stack_top > 0
 		auto node_while = std::make_unique<NodeWhile>(
 			std::make_unique<NodeBinaryExpr>(
@@ -337,7 +334,7 @@ public:
 				node_while->body->add_as_stmt(std::make_unique<NodeFunctionCall>(
 					false,
 					std::make_unique<NodeFunctionHeaderRef>(
-						mem->ty->get_element_type()->to_string() + OBJ_DELIMITER + "__decr__",
+						mem->ty->get_element_type()->to_string() + OBJ_DELIMITER + NodeStruct::DECREMENTER,
 						std::make_unique<NodeParamList>(mem->tok, to_member_chain_ref(mem), std::make_unique<NodeInt>(1, mem->tok)),
 						mem->tok
 					),
@@ -347,20 +344,19 @@ public:
 				wrap_in_loop(node_while->body->statements.back(), mem, iter_decl->variable);
 			}
 			for(auto & mem : m_recursive_member_structs) {
+				// the member lives on the heap of its own struct, so it has to be pushed on that stack
+				const auto mem_struct = get_struct_of(mem);
+				if(!mem_struct) continue;
 				// if(self.next # nil)
 				auto nil_check = ASTVisitor::make_nil_check(to_member_chain_ref(mem));
-				// inc(Node::stack_top)
-				// stack_top has to have the prefix of its type this time!!
-				auto typed_stack_top = clone_as<NodeReference>(m_stack_top_ref.get());
-				typed_stack_top->remove_obj_prefix();
-				typed_stack_top->name = mem->ty->get_element_type()->to_string()+OBJ_DELIMITER+typed_stack_top->name;
-				nil_check->if_body->add_as_stmt(DefinitionProvider::inc(clone_as<NodeReference>(typed_stack_top.get())));
 				// Node::stack[Node::stack_top] := self.next
 				nil_check->if_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
-					std::move(typed_stack_top),
-					to_member_chain_ref(mem)->clone(),
+					get_stack_slot_ref(mem_struct),
+					to_member_chain_ref(mem),
 					mem->tok
 				));
+				// inc(Node::stack_top)
+				nil_check->if_body->add_as_stmt(DefinitionProvider::inc(get_stack_top_ref(mem_struct)));
 				node_while->body->add_as_stmt(std::move(nil_check));
 				wrap_in_loop(node_while->body->statements.back(), mem, iter_decl->variable);
 			}
@@ -371,7 +367,7 @@ public:
 		node_while->body->add_as_stmt(std::make_unique<NodeFunctionCall>(
 			false,
 			std::make_unique<NodeFunctionHeaderRef>(
-				m_struct.name + OBJ_DELIMITER + "__del__",
+				m_struct.name + OBJ_DELIMITER + NodeStruct::DESTRUCTOR,
 				std::make_unique<NodeParamList>(tok, m_self_ref->clone()),
 				tok
 			),
@@ -386,6 +382,11 @@ public:
 		m_alloc_ref = get_alloc_ref(m_self_ref);
 		auto num_refs = get_num_refs_param();
 		m_num_refs_ref = num_refs->to_reference();
+		m_decr_func = get_base_func(
+			m_struct.name+OBJ_DELIMITER+NodeStruct::DECREMENTER,
+			std::move(self),
+			std::move(num_refs)
+		);
 		auto &func_body = m_decr_func->body;
 		// Node::stack[Node::stack_top] := self
 		func_body->add_as_stmt(std::make_unique<NodeSingleAssignment>(
@@ -397,11 +398,6 @@ public:
 		func_body->add_as_stmt(DefinitionProvider::inc(clone_as<NodeReference>(m_stack_top_ref.get())));
 
 		auto node_while = get_stack_while_loop(m_self_ref->get_declaration(), m_num_refs_ref->get_declaration());
-		m_decr_func = get_base_func(
-			m_struct.name+OBJ_DELIMITER+"__decr__",
-			std::move(self),
-			std::move(num_refs)
-		);
 		m_decr_func->body->add_as_stmt(std::move(node_while));
 		m_decr_func->parent = &m_struct;
 		m_decr_func->ty = TypeRegistry::Void;
@@ -474,7 +470,7 @@ public:
 				outer_while->body->add_as_stmt(std::make_unique<NodeFunctionCall>(
 					false,
 					std::make_unique<NodeFunctionHeaderRef>(
-						mem->ty->get_element_type()->to_string() + OBJ_DELIMITER + "__decr__",
+						mem->ty->get_element_type()->to_string() + OBJ_DELIMITER + NodeStruct::DECREMENTER,
 						std::make_unique<NodeParamList>(mem->tok, to_member_chain_ref(mem), std::make_unique<NodeInt>(1, mem->tok)),
 						mem->tok
 					),
@@ -502,11 +498,11 @@ public:
 			}
 
 		}
-		// add actual delete function
+		// add actual destructor
 		outer_while->body->add_as_stmt(std::make_unique<NodeFunctionCall>(
 			false,
 			std::make_unique<NodeFunctionHeaderRef>(
-				m_struct.name + OBJ_DELIMITER + "__del__",
+				m_struct.name + OBJ_DELIMITER + NodeStruct::DESTRUCTOR,
 				std::make_unique<NodeParamList>(tok, m_self_ref->clone()),
 				tok
 			),
@@ -515,7 +511,7 @@ public:
 
 		outer_while->body->prepend_as_stmt(std::move(iter_decl));
 		m_decr_func = get_base_func(
-			m_struct.name+OBJ_DELIMITER+"__decr__",
+			m_struct.name+OBJ_DELIMITER+NodeStruct::DECREMENTER,
 			std::move(self),
 			std::move(num_refs)
 		);
@@ -553,10 +549,64 @@ private:
 		return func_def;
 	}
 
+	/// returns the struct definition of a member of object type
+	[[nodiscard]] NodeStruct* get_struct_of(const std::shared_ptr<NodeDataStructure>& mem) const {
+		const auto it = m_program->struct_lookup.find(mem->ty->get_element_type()->to_string());
+		return it == m_program->struct_lookup.end() ? nullptr : it->second;
+	}
+
+	/// STRUCT::stack_top
+	static std::unique_ptr<NodeReference> get_stack_top_ref(const NodeStruct* strct) {
+		auto stack_top_ref = strct->stack_top_var->to_reference();
+		stack_top_ref->match_data_structure(strct->stack_top_var);
+		return stack_top_ref;
+	}
+
+	/// STRUCT::stack[STRUCT::stack_top]
+	static std::unique_ptr<NodeArrayRef> get_stack_slot_ref(NodeStruct* strct) {
+		auto stack_ref = unique_ptr_cast<NodeArrayRef>(strct->stack_var->to_reference());
+		stack_ref->set_index(get_stack_top_ref(strct));
+		stack_ref->ty = TypeRegistry::Integer;
+		return stack_ref;
+	}
+
+	/// STRUCT::stack_top > 0
+	[[nodiscard]] std::unique_ptr<NodeBinaryExpr> get_stack_not_empty_check(NodeStruct* strct) const {
+		return std::make_unique<NodeBinaryExpr>(
+			token::GREATER_THAN,
+			get_stack_top_ref(strct),
+			std::make_unique<NodeInt>(0, tok),
+			tok
+		);
+	}
+
+	/// the structs of the recursion cycle in a deterministic order (the set iteration order is not stable)
+	[[nodiscard]] std::vector<NodeStruct*> get_sorted_recursive_structs() const {
+		std::vector<NodeStruct*> sorted(m_struct.recursive_structs.begin(), m_struct.recursive_structs.end());
+		std::sort(sorted.begin(), sorted.end(), [](const NodeStruct* a, const NodeStruct* b) {
+			return a->name < b->name;
+		});
+		return sorted;
+	}
+
 	std::unique_ptr<NodeReference> to_member_chain_ref(std::shared_ptr<NodeDataStructure> mem, NodeReference* idx = nullptr) const {
 		std::unique_ptr<NodeReference> ref;
-		// if composite -> get raw array (if ndarray) and set index to iterator
-		if(const auto node_comp = cast_node<NodeComposite>(mem.get())) {
+		// A multidimensional member is addressed through itself, not through the raw array
+		// <get_raw()> builds: that one is a detached node, so the reference would be left
+		// without a declaration the moment this function returns. The surrounding loop counts
+		// flat over every element of the member, so every index but the last one stays at
+		// zero - the flattened index is then the iterator, exactly as for a plain array.
+		if(const auto node_ndarray = cast_node<NodeNDArray>(mem.get())) {
+			auto ndarray_ref = unique_ptr_cast<NodeNDArrayRef>(mem->to_reference());
+			auto indexes = std::make_unique<NodeParamList>(mem->tok);
+			for(int dimension = 1; dimension < node_ndarray->dimensions; ++dimension) {
+				indexes->add_param(std::make_unique<NodeInt>(0, mem->tok));
+			}
+			indexes->add_param(m_iterator_ref->clone());
+			ndarray_ref->set_indexes(std::move(indexes));
+			ref = std::move(ndarray_ref);
+		// if composite -> get raw array and set index to iterator
+		} else if(const auto node_comp = cast_node<NodeComposite>(mem.get())) {
 			auto raw_array = node_comp->get_raw()->to_reference();
 			raw_array->cast<NodeArrayRef>()->set_index(m_iterator_ref->clone());
 			ref = std::move(raw_array);
@@ -577,9 +627,12 @@ private:
 		}
 		for(auto &mem : m_struct.member_table) {
 			auto member = mem.second.lock();
-			if(mem.first == "self") continue;
+			if(mem.first == NodeStruct::SELF) continue;
 			if(member->is_engine) continue;
 			if(member->data_type ==DataType::Const) continue;
+			// a <static> object member holds one shared reference and is reference counted like a
+			// global pointer, so it must not be decremented once per instance
+			if(member->is_shared_member()) continue;
 			if(member->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
 				const auto mem_type = member->ty->get_element_type();
 				if(recursive_structs.contains(mem_type->to_string())) {

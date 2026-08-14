@@ -1,0 +1,26 @@
+// A thread-unsafe local array holds one row per callback invocation, and its declaration still has
+// to initialise that row - otherwise it reads back what the invocation that used the row last left
+// behind. Only that row though: the loop walks the inner dimension, never the callback dimension.
+#pragma combine_callbacks(true)
+
+// EXPECT \(\(\$NI_CALLBACK_ID mod 1000\) \* 3\) \+ \$_iter[0-9]*\] := 0
+// EXPECT_NOT num_elements
+
+declare out[4]
+
+// the array parameter forces the call to be inlined, the wait makes buf thread-unsafe so that it
+// gets a row per callback invocation
+function fill(t: int[], id: int): bool
+    declare buf[3]
+    buf[0] := t[0]
+    wait(1000)
+    out[id] := buf[0] + buf[2]
+    return true
+end function
+
+on note
+    declare a := fill(out, 0)
+    if a
+        change_tune($EVENT_ID, out[0], 1)
+    end if
+end on

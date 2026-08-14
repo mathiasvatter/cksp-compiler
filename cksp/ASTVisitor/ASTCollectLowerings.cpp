@@ -5,10 +5,12 @@
 #include "ASTCollectLowerings.h"
 #include "../Lowering/LoweringStruct.h"
 #include "../Lowering/LoweringTernaryOperator.h"
+#include "../Lowering/LoweringArrayQuery.h"
 #include "../Lowering/PreLoweringStruct.h"
 #include "../Lowering/LoweringBoolean.h"
 #include "../Lowering/LoweringBooleanExpression.h"
 #include "../Lowering/LoweringOptionalChaining.h"
+#include "../Lowering/LoweringStorageAccess.h"
 #include "FunctionHandling/UIControlParamHandling.h"
 
 NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
@@ -57,6 +59,8 @@ NodeAST * ASTCollectLowerings::visit(NodeProgram& node) {
 
 	node.struct_definitions.clear();
 	node.update_struct_lookup();
+	// No table hands out a struct pointer anymore, so the lowered nodes can go.
+	node.lowered_structs.clear();
 	// node.reset_function_visited_flag();
 	node.global_declarations->prepend_body(NodeStruct::declare_struct_constants());
 	return &node;
@@ -106,7 +110,11 @@ NodeAST * ASTCollectLowerings::visit(NodeStruct& node) {
 	node.inline_struct(m_program);
 	// program->global_declarations->append_body(std::move(members));
 	// // program->init_callback->statements->prepend_body(std::move(members));
-	return node.replace_with(std::move(node.members));
+	// The struct leaves the AST here but stays alive until every struct is lowered: the
+	// callbacks and functions below still resolve members and constructors through
+	// <struct_lookup>, which keeps handing out this pointer until <visit(NodeProgram)>
+	// clears it.
+	return m_program->retire_lowered_struct(node);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeFunctionDefinition& node) {
@@ -139,7 +147,6 @@ NodeAST * ASTCollectLowerings::visit(NodeSingleAssignment& node) {
 	}
 	node.r_value->accept(*this);
 	node.l_value->accept(*this);
-	node.check_for_constant_assignment();
 	return &node;
 }
 
@@ -159,10 +166,66 @@ NodeAST * ASTCollectLowerings::visit(NodeSetControl& node) {
 }
 
 
+/// Moves an initializer list handed to a call into a local array declared in front of it. The
+/// array is a copy of the formal parameter: the callee copies as many elements as its parameter
+/// declares, and a list of its own shape would leave that copy reading past the end. This has to
+/// happen before <ASTLowerTypes>, where the object element type turns into an integer one and an
+/// empty slot is no longer tellable from object 0.
+void ASTCollectLowerings::hoist_initializer_list_arguments(NodeFunctionCall& node) {
+	const auto definition = node.get_definition();
+	if (!definition or node.is_builtin_kind()) return;
+	const auto statement = node.get_parent_statement();
+	if (!statement) return;
+
+	std::vector<std::unique_ptr<NodeSingleDeclaration>> declarations;
+	const int param_offset = node.get_param_offset(definition.get());
+	for (int argument = 0; argument < node.function->get_num_args(); argument++) {
+		if (!node.function->get_arg(argument)->cast<NodeInitializerList>()) continue;
+		const int param_index = argument + param_offset;
+		if (param_index < 0 or param_index >= definition->header->get_num_params()) continue;
+		auto declaration = declare_argument_list(
+			unique_ptr_cast<NodeInitializerList>(std::move(node.function->get_arg(argument))),
+			*definition->header->get_param(param_index));
+		node.function->set_arg(argument, declaration->variable->to_reference());
+		declarations.push_back(std::move(declaration));
+	}
+	if (declarations.empty()) return;
+
+	auto body = std::make_unique<NodeBlock>(statement->tok);
+	// A declaration keeps its variable visible after the statement, so this block must not open a
+	// scope around it - the same reason ReturnFunctionCallHoisting has for it.
+	body->scope = statement->statement->cast<NodeSingleDeclaration>() == nullptr;
+	const size_t num_declarations = declarations.size();
+	for (auto& declaration : declarations) {
+		body->add_as_stmt(std::move(declaration));
+	}
+	body->add_as_stmt(std::move(statement->statement));
+	statement->set_statement(std::move(body));
+
+	// The statement this pass is currently walking is behind them now, so the declarations get
+	// their turn here - they are lowered like any other one, which is where an array without a
+	// declared size takes it from the list.
+	const auto hoisted = statement->statement->cast<NodeBlock>();
+	for (size_t declaration = 0; declaration < num_declarations; ++declaration) {
+		hoisted->statements[declaration]->accept(*this);
+	}
+}
+
+std::unique_ptr<NodeSingleDeclaration> ASTCollectLowerings::declare_argument_list(
+		std::unique_ptr<NodeInitializerList> init_list, const NodeDataStructure& parameter) {
+	auto array = clone_as<NodeDataStructure>(&const_cast<NodeDataStructure&>(parameter));
+	array->name = m_def_provider->get_fresh_name("_arr");
+	array->is_local = true;
+	array->kind = NodeDataStructure::Kind::Throwaway;
+	const auto tok = init_list->tok;
+	return std::make_unique<NodeSingleDeclaration>(std::move(array), std::move(init_list), tok);
+}
+
 NodeAST * ASTCollectLowerings::visit(NodeFunctionCall& node) {
 	//TRACE();
 	node.function->accept(*this);
 	node.bind_definition(m_program, true);
+	hoist_initializer_list_arguments(node);
 	if (const auto& definition = node.get_definition()) {
 		if(!definition->visited) {
 			FunctionCallStackScope diagnostic_frame(*m_program, node);
@@ -231,6 +294,13 @@ NodeAST * ASTCollectLowerings::visit(NodePointerRef& node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeAccessChain& node) {
+	// <Note.storage(.pitch)> does not run through an instance: it names a generated member heap and
+	// becomes a call to its accessor before the chain lowering takes the chain apart
+	if (LoweringStorageAccess::is_storage_access(node)) {
+		static LoweringStorageAccess storage_access(m_program);
+		storage_access.set_program(m_program);
+		return node.accept(storage_access)->accept(*this);
+	}
 	LoweringOptionalChaining opt_chaining(m_program);
 	const auto new_node = node.accept(opt_chaining);
 	//TRACE();
@@ -268,6 +338,12 @@ NodeAST * ASTCollectLowerings::visit(NodeTernary &node) {
 	static LoweringTernaryOperator ternary(m_program);
 	ternary.set_program(m_program);
 	return node.accept(ternary);
+}
+
+NodeAST * ASTCollectLowerings::visit(NodeArrayQuery& node) {
+	static LoweringArrayQuery array_query(m_program);
+	array_query.set_program(m_program);
+	return node.accept(array_query)->accept(*this);
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeNullCoalesce &node) {
@@ -326,5 +402,3 @@ NodeAST * ASTCollectLowerings::visit(NodeUnaryExpr &node) {
 	bool_expr_lowering.set_program(m_program);
 	return bool_expr_lowering.lower_expression(node);
 }
-
-

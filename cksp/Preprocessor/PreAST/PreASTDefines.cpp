@@ -36,15 +36,30 @@ PreNodeAST *PreASTDefines::do_substitution(PreNodeLiteral &node) {
 					m_reference_index->add_link(node.tok, it->second);
 				}
 			}
+			mark_as_written(*substitute, node.tok);
 			return node.replace_with(std::move(substitute));
 		} else if(node.cast<PreNodeKeyword>()) {
 			// in case there are more # substitutions in one word
 			if (StringUtils::count_char(node.tok.val, '#') >= 2) {
+				link_parameter_groups(node.tok);
 				node.tok = get_text_replacement_token(node.tok);
 			}
 		}
 	}
 	return &node;
+}
+
+/// Links the <#arg#> groups inside a word to the arguments they name; see the macro
+/// counterpart in PreASTMacros::link_parameter_groups().
+void PreASTDefines::link_parameter_groups(const Token& word) const {
+	if (!m_reference_index || m_param_token_stack.empty()) return;
+	for (const auto& [name, declaration] : m_param_token_stack.top()) {
+		if (name.size() < 2 || name.front() != '#' || name.back() != '#') continue;
+		for (size_t at = word.val.find(name); at != std::string::npos;
+			at = word.val.find(name, at + name.size())) {
+			m_reference_index->add_link(segment_token(word, at, name), declaration);
+		}
+	}
 }
 
 PreNodeAST *PreASTDefines::visit(PreNodeFunctionCall &node) {
@@ -175,6 +190,11 @@ PreNodeAST *PreASTDefines::visit(PreNodeDefineCall &node) {
 	}
 	m_program->define_call_stack.pop();
 	m_defines_used.erase(token_name.val);
+	// The body carries the position of the <define> declaration, so a mistake at the usage
+	// is reported over there - <declare some_define: int> becomes <declare 1: int> and the
+	// error lands on the <1> in the define, naming a value the user never wrote. Record the
+	// usage as the spelling this stands for.
+	mark_as_written(*define_body, token_name);
 	return node.replace_with(std::move(define_body));
 }
 

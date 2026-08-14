@@ -195,7 +195,7 @@ private:
 	 * creates call to any ref count function __decr__
 	 */
 	static std::unique_ptr<NodeFunctionCall> get_decr_func_call(const std::string& object, std::unique_ptr<NodeAST> var, std::unique_ptr<NodeAST> num) {
-		std::string func_name = StringUtils::remove(object, OBJ_DELIMITER+"__init__")+OBJ_DELIMITER+"__decr__";
+		std::string func_name = StringUtils::remove(object, OBJ_DELIMITER+NodeStruct::CONSTRUCTOR)+OBJ_DELIMITER+NodeStruct::DECREMENTER;
 		auto call = std::make_unique<NodeFunctionCall>(
 			false,
 			std::make_unique<NodeFunctionHeaderRef>(

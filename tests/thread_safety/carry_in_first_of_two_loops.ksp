@@ -1,0 +1,31 @@
+// $c is carried across the wait of the first loop, and a second loop with its own wait follows.
+// Needs both the loop body lifetime and the per-yield counting to come out right.
+#pragma combine_callbacks(true)
+
+// EXPECT declare %c[0-9]*\[1000\]
+// EXPECT declare %d[0-9]*\[1000\]
+
+on note
+    declare $c := -1
+    declare $d := -1
+    declare $i
+
+    while ($i < 3)
+        if ($c # -1)
+            change_tune($c, 100, 1)
+        end if
+        $c := $EVENT_ID
+        wait(1000)
+        $i := $i + 1
+    end while
+
+    $i := 0
+    while ($i < 3)
+        if ($d # -1)
+            change_tune($d, 100, 1)
+        end if
+        $d := $EVENT_ID
+        wait(1000)
+        $i := $i + 1
+    end while
+end on

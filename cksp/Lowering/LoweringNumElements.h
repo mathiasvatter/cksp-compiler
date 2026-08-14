@@ -74,15 +74,21 @@ public:
 			// check if node is ndarray ref -> check for wildcard index notation and adjust dimension param accordingly
 			handle_wildcard_notation(*node_ndarray, *nd_array, node);
 
-			// if node.dimension is set -> check variable member inflation_times
-			if(nd_array->inflation_times > 0) {
+			// A dimension counts from the declaration this node was written against. Every
+			// inflation the declaration gained since then (a struct member gaining the
+			// instance dimension, a variable gaining the callback dimension) prepends a
+			// dimension, so the written one moves back by that many. Only what came after
+			// this node counts - a generated node already names the inflated dimension, and
+			// the shift is recorded so a repeated lowering pass does not apply it twice.
+			if(const int pending_inflations = nd_array->inflation_times - node.inflations_at_creation;
+				pending_inflations > 0) {
 				node.dimension = std::make_unique<NodeBinaryExpr>(
 					token::ADD,
 					std::move(node.dimension),
-					std::make_unique<NodeInt>(nd_array->inflation_times, node.tok),
+					std::make_unique<NodeInt>(pending_inflations, node.tok),
 					node.tok
 				);
-				nd_array->inflation_times = 0;
+				node.inflations_at_creation = nd_array->inflation_times;
 			}
 
 			// add clip function when ndarray is used -> clip function will be present from start (engine_helper_functions)

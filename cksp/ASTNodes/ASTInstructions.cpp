@@ -106,6 +106,21 @@ std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_definition(NodePr
 	return nullptr;
 }
 
+std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_overriding_definition(NodeProgram *program) {
+	const auto it = program->builtin_overrides.find({function->name, function->get_num_args()});
+	if (it == program->builtin_overrides.end()) return nullptr;
+	const auto user_func = it->second.lock();
+	if (!user_func) return nullptr;
+	// Inside the overriding function itself the call keeps its builtin meaning, so the function can
+	// wrap the command it takes over instead of calling itself.
+	for (const NodeAST* node = parent; node; node = node->parent) {
+		if (node == user_func.get()) return nullptr;
+	}
+	// the definition carries a generated name from here on, so the call has to follow it
+	function->name = user_func->header->name;
+	return user_func;
+}
+
 std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_builtin_definition(NodeProgram *program) {
     if(!program->def_provider) {
         Diagnostic(ErrorType::InternalError,"No definition provider found in program.", "", tok).exit();
@@ -114,6 +129,9 @@ std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_builtin_definitio
 		return nullptr;
 	}
     if(auto builtin_func = program->def_provider->get_builtin_function(function.get())) {
+        if (find_overriding_definition(program)) {
+            return nullptr;
+        }
         function->ty = builtin_func->ty;
         function->has_forced_parenth = builtin_func->header->has_forced_parenth;
         definition = builtin_func;
@@ -174,11 +192,16 @@ bool NodeFunctionCall::bind_definition(NodeProgram* program, const bool fail, co
 //		}
         return true;
     }
-    if (find_builtin_definition(program)) {
+	// <obj.method()>: the receiver decides which definition the call refers to, and the method is
+	// registered under its qualified name. A builtin that happens to share the unqualified name and
+	// parameter count would bind here first and stamp its type onto the call, which then makes the
+	// qualified lookup in <TypeInference> miss. Chain members are resolved there.
+	const bool in_access_chain = is_in_access_chain();
+    if (!in_access_chain and find_builtin_definition(program)) {
         return true;
     } else if (find_definition(program)) {
         return true;
-    } else if (find_property_definition(program)) {
+    } else if (!in_access_chain and find_property_definition(program)) {
 		return true;
 //	} else if(find_method_definition(program)) {
 //		return true;
@@ -294,6 +317,11 @@ void NodeFunctionCall::determine_function_strategy(NodeProgram *program, NodeCal
 	function_strategy.determine_function_strategy(*this, current_callback);
 }
 
+int NodeFunctionCall::get_param_offset(const NodeFunctionDefinition* definition) const {
+	if (!definition or definition->is_static) return 0;
+	return is_in_access_chain() ? 1 : 0;
+}
+
 bool NodeFunctionCall::is_in_access_chain() const {
 	if (!parent) return false;
 	if (auto chain = parent->cast<NodeAccessChain>()) {
@@ -373,14 +401,79 @@ ASTLowering* NodeSortSearch::get_post_lowering(NodeProgram *program) const {
 	return &lowering;
 }
 
+// ************* NodeArrayQuery ***************
+NodeAST* NodeArrayQuery::accept(ASTVisitor& visitor) {
+	return visitor.visit(*this);
+}
+
+NodeArrayQuery::NodeArrayQuery(const NodeArrayQuery& other)
+	: NodeInstruction(other), query_kind(other.query_kind), array(clone_unique(other.array)),
+	  member_path(clone_unique(other.member_path)), value(clone_unique(other.value)) {
+	set_child_parents();
+}
+
+std::unique_ptr<NodeAST> NodeArrayQuery::clone() const {
+	return std::make_unique<NodeArrayQuery>(*this);
+}
+
+NodeAST* NodeArrayQuery::replace_child(NodeAST* old_child, std::unique_ptr<NodeAST> new_child) {
+	if (array.get() == old_child) {
+		array = std::move(new_child);
+		array->parent = this;
+		return array.get();
+	}
+	if (member_path.get() == old_child) {
+		if (auto* path = dynamic_cast<NodeMemberPath*>(new_child.get())) {
+			new_child.release();
+			member_path.reset(path);
+			member_path->parent = this;
+			return member_path.get();
+		}
+		return nullptr;
+	}
+	if (value.get() == old_child) {
+		value = std::move(new_child);
+		value->parent = this;
+		return value.get();
+	}
+	return nullptr;
+}
+
+std::string NodeArrayQuery::query_name() const {
+	switch (query_kind) {
+	case QueryKind::SearchBy:
+		return "search_by";
+	}
+	return "";
+}
+
+std::string NodeArrayQuery::get_string() {
+	return query_name() + "(" + array->get_string() + ", " + member_path->get_string() + ", "
+		+ value->get_string() + ")";
+}
+
+std::string NodeArrayQuery::get_token_string() const {
+	return query_name() + "(" + array->get_token_string() + ", " + member_path->get_token_string() + ", "
+		+ value->get_token_string() + ")";
+}
+
 // ************* NodeNumElements ***************
 NodeAST *NodeNumElements::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeNumElements::NodeNumElements(const NodeNumElements& other)
 	: NodeInstruction(other), array(clone_unique(other.array)),
-	  dimension(clone_unique(other.dimension)) {
+	  dimension(clone_unique(other.dimension)),
+	  inflations_at_creation(other.inflations_at_creation) {
 	NodeNumElements::set_child_parents();
+}
+
+int NodeNumElements::count_inflations() const {
+	if (!array) return 0;
+	const auto declaration = array->get_declaration();
+	if (!declaration) return 0;
+	const auto nd_array = declaration->cast<NodeNDArray>();
+	return nd_array ? nd_array->inflation_times : 0;
 }
 std::unique_ptr<NodeAST> NodeNumElements::clone() const {
 	return std::make_unique<NodeNumElements>(*this);

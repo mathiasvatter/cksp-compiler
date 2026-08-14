@@ -36,7 +36,7 @@ protected:
 	}
 	static const Token* first_source_token(const PreNodeAST* node) {
 		if (!node) return nullptr;
-		if (!node->tok.file.empty() && node->tok.line != static_cast<size_t>(-1) && node->tok.pos > 0 && !node->tok.val.empty()) {
+		if (!node->tok.file().empty() && node->tok.line != static_cast<size_t>(-1) && node->tok.pos > 0 && !node->tok.val.empty()) {
 			return &node->tok;
 		}
 		if (const auto* statement = dynamic_cast<const PreNodeStatement*>(node)) {
@@ -54,6 +54,42 @@ protected:
 		}
 		return nullptr;
 	}
+	/// The one literal a substitution argument ultimately stands for, or nothing when it
+	/// stands for several.
+	///
+	/// Chunks and statements are pure wrappers that carry the token of what they wrap, so
+	/// their `tok` reads like the real word while only the leaf ever reaches the token
+	/// stream. Marking a wrapper looks right and does nothing.
+	static PreNodeAST* single_literal_of(PreNodeAST* node) {
+		while (node) {
+			if (const auto* chunk = dynamic_cast<const PreNodeChunk*>(node)) {
+				if (chunk->chunk.size() != 1) return nullptr;
+				node = chunk->chunk.front().get();
+				continue;
+			}
+			if (const auto* statement = dynamic_cast<const PreNodeStatement*>(node)) {
+				node = statement->statement.get();
+				continue;
+			}
+			return node;
+		}
+		return nullptr;
+	}
+
+	/// Marks the argument that replaces a whole-word parameter usage as standing where the
+	/// parameter stood, so whatever it resolves to stays reachable from the macro body. The
+	/// clone carries call-site positions; without this the body keeps no trace of the usage.
+	///
+	/// Only for an argument that is a single word. A compound one would make every name in it
+	/// claim the same spot in the body, and one click there would lead to a pile of unrelated
+	/// declarations.
+	static void mark_as_written(PreNodeAST& substitute, const Token& usage) {
+		if (usage.file().empty()) return;
+		auto* literal = single_literal_of(&substitute);
+		if (!literal || literal->tok.file().empty()) return;
+		literal->tok.origin = usage.origin ? usage.origin : std::make_shared<const Token>(usage);
+	}
+
     /// returns text replacement for current node.name, or original text if there is no replacement (in between #...#)
     Token get_text_replacement_token(const Token& name) {
         // Zähle einmalig die Anzahl der '#' im Token
@@ -81,10 +117,18 @@ protected:
                 }
             }
         }
+	    // The assembled name stands in no file: the substituted half comes from the call
+	    // site, the rest from the macro body. Keep the word the body actually spells, so
+	    // everything that maps a token back onto what the user sees can still do so.
+	    // A word rewritten twice (a macro expanded inside another) keeps the outermost
+	    // spelling, the only one that is still in a file.
+	    if (result.val != name.val) {
+		    result.origin = name.origin ? name.origin : std::make_shared<const Token>(name);
+	    }
 	    if (prefix_source && result.val.starts_with(prefix_source->val)) {
 		    result.line = prefix_source->line;
 		    result.pos = prefix_source->pos;
-		    result.file = prefix_source->file;
+		    result.file_ref = prefix_source->file_ref;
 	    }
         return result;
     }

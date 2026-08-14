@@ -93,6 +93,17 @@ Result<std::unique_ptr<PreNodeAST>> SimpleExprInterpreter::parse_binary_expr(con
 
 Result<std::unique_ptr<PreNodeAST>> SimpleExprInterpreter::_parse_primary_expr(const std::vector<std::unique_ptr<PreNodeAST>>& nodes, PreNodeAST *parent) {
 	auto current_node = peek(nodes);
+	// peek() returns null once the nodes are used up - a body that ends mid-expression, as
+	// a <define> whose body is a statement block rather than a value does. Reported like
+	// the exhaustion inside peek() itself; without this the dereference below is a
+	// dynamic_cast on a null this, which aborts the compiler with std::bad_typeid.
+	if (!current_node) {
+		return Result<std::unique_ptr<PreNodeAST>>(Diagnostic(
+			ErrorType::PreprocessorError,
+			"Reached the end of the expression. A <define> body has to be a value the"
+			" preprocessor can evaluate at compile time.",
+			m_line, "integer, define constant", "", m_file));
+	}
 	if (auto node_parenth = current_node->cast<PreNodeOther>()) {
 		if(node_parenth->tok.type == token::OPEN_PARENTH)
 			return _parse_parenth_expr(nodes, parent);

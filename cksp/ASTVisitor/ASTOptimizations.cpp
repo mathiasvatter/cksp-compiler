@@ -53,7 +53,7 @@ bool ASTOptimizations::optimize(NodeProgram &node, const OptimizationLevel optim
 	if (optimize == OptimizationLevel::Aggressive) {
 		static ScalarVarToArray scalar_var_to_array;
 		// node.accept(scalar_var_to_array);
-		scalar_var_to_array.do_parallel_traversal(node);
+		scalar_var_to_array.do_traversal(node);
 		node.debug_print();
 	}
 

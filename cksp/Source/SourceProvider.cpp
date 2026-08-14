@@ -129,7 +129,7 @@ Result<SourceDocument> FileSystemSourceProvider::load(const SourceId& source) {
 
 Result<SourceId> FileSystemSourceProvider::resolve_import(const SourceId& root, const SourceId& importer, const std::string_view import_path) {
     Token token;
-    token.file = importer.value;
+    token.set_file(importer.value);
     PathHandler resolver(
         std::move(token),
         importer.value,

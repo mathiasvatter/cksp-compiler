@@ -15,8 +15,31 @@ public:
 	explicit DesugarFunctionCall(NodeProgram *program) : ASTDesugaring(program) {};
 
 	inline NodeAST * visit(NodeFunctionCall& node) override {
-		// message overloaded is not recognized as builtin
+		if (node.function->get_num_args() == 3 and node.function->name == "search_by") {
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+			if (node.function->get_num_args() != 3) {
+				error.message = "Function <search_by> expects exactly three arguments: an object array, a member path, and a value.";
+				error.exit();
+			}
 
+			auto& selector_arg = node.function->get_arg(1);
+			if (!selector_arg->cast<NodeMemberPath>()) {
+				error.message = "Second argument for function <search_by> must be a member path such as <.id>.";
+				error.exit();
+			}
+
+			auto selector = unique_ptr_cast<NodeMemberPath>(std::move(selector_arg));
+			auto query = std::make_unique<NodeArrayQuery>(
+				NodeArrayQuery::QueryKind::SearchBy,
+				std::move(node.function->get_arg(0)),
+				std::move(selector),
+				std::move(node.function->get_arg(2)),
+				node.tok
+			);
+			return node.replace_with(std::move(query));
+		}
+
+		// message overloaded is not recognized as builtin
 		// constructor method renaming
 		if(node.kind == NodeFunctionCall::Kind::Undefined) {
 			if(node.function->get_num_args() > 1) {
@@ -74,7 +97,7 @@ public:
 				}
 				return node.replace_with(std::move(search));
 			} else {
-				error.message = "First argument for function call <search> must be a reference.";
+				error.message = "First argument for function call <"+node.function->name+"> must be a reference.";
 				error.exit();
 			}
 		}
@@ -133,7 +156,7 @@ public:
 
 private:
 
-	Diagnostic throw_insufficient_args_error(Token tok) {
+	static Diagnostic throw_insufficient_args_error(const Token &tok) {
 		auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
 		error.message = "Too few arguments for function call <"+tok.val+">.";
 		return error;

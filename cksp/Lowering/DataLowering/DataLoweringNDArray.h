@@ -63,6 +63,12 @@ public:
 		}
         auto node_lowered_array = node.to_array_ref(std::move(node_expression));
         node_lowered_array->name = "_" + node_lowered_array->name;
+		// to_array_ref() builds a bare reference, so the link to the declaration has to be carried
+		// over: the declaration was replaced by its raw array above and later passes look it up
+		// through the reference - function inlining fails outright without it
+		if (const auto declaration = node.get_declaration()) {
+			node_lowered_array->match_data_structure(declaration);
+		}
         node_lowered_array->ty = node.ty->get_element_type();
 		// if no sizes -> ndarray is func param and needs to have another type dimension
 		if(!node.indexes) {

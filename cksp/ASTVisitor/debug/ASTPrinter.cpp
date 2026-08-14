@@ -39,6 +39,11 @@ NodeAST * ASTPrinter::visit(NodeWildcard &node) {
 	return &node;
 }
 
+NodeAST * ASTPrinter::visit(NodeMemberPath& node) {
+	os << node.get_token_string();
+	return &node;
+}
+
 NodeAST * ASTPrinter::visit(NodeBreak& node) {
 	os << "break";
 	return &node;
@@ -69,6 +74,17 @@ NodeAST * ASTPrinter::visit(NodeSortSearch& node) {
 		node.to->accept(*this);
 	}
 	os << "]";
+	return &node;
+}
+
+NodeAST * ASTPrinter::visit(NodeArrayQuery& node) {
+	os << node.query_name() << "(";
+	node.array->accept(*this);
+	os << ", ";
+	node.member_path->accept(*this);
+	os << ", ";
+	node.value->accept(*this);
+	os << ")";
 	return &node;
 }
 
@@ -160,6 +176,8 @@ NodeAST * ASTPrinter::visit(NodeVariable &node) {
         os << "polyphonic ";
     else if(node.data_type == DataType::Const)
         os << "const ";
+	if (node.kind == NodeDataStructure::Kind::Static)
+		os << "static ";
     os << node.name;
     auto type = TypeRegistry::get_annotation_from_type(node.ty);
     if(!type.empty()) os << " : " << type;
@@ -196,6 +214,10 @@ NodeAST * ASTPrinter::visit(NodePointerRef &node) {
 NodeAST * ASTPrinter::visit(NodeArray &node) {
 	if(node.persistence.has_value())
 		os << node.persistence.value().val << " ";
+	if(node.data_type == DataType::Const)
+		os << "const ";
+	if (node.kind == NodeDataStructure::Kind::Static)
+		os << "static ";
 	os << node.name;
 	if(node.size) {
 		os << "[";
@@ -578,7 +600,11 @@ NodeAST * ASTPrinter::visit(NodeFunctionCall &node) {
 }
 
 NodeAST * ASTPrinter::visit(NodeFunctionDefinition &node) {
-    os << get_indent() << "function ";
+    os << get_indent();
+	if (node.is_static) {
+		os << "static ";
+	}
+	os << "function ";
     node.header ->accept(*this);
 	if(node.ty->get_type_kind() == TypeKind::Function) {
 		os << " : " << static_cast<FunctionType*>(node.ty)->get_return_type()->to_string();

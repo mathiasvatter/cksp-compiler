@@ -3,6 +3,8 @@
 //
 
 #pragma once
+#include <utility>
+
 #include "ASTLifeTimeAnalysis.h"
 #include "ASTVisitor.h"
 
@@ -17,6 +19,9 @@ class ASTThreadSafeVariableMarking : public ASTVisitor {
 	bool m_is_thread_safe_environment = true;
 	NodeStatement* m_start = nullptr;
 	NodeStatement* m_end = nullptr;
+	std::unordered_set<NodeStatement*> m_yields{};
+	int m_num_yields = 0;
+	std::unordered_map<NodeDataStructure*, int> m_yields_at_declaration;
 	ASTLifeTimeAnalysis m_lifetime_analysis;
 	std::unordered_map<NodeStatement*, std::vector<NodeDataStructure*>> m_end_of_life;
 
@@ -35,6 +40,9 @@ class ASTThreadSafeVariableMarking : public ASTVisitor {
 	bool add_end_of_life(NodeDataStructure* data) {
 		if (auto l = m_lifetime_analysis.get_lifetime(data)) {
 			m_end_of_life[l->end].push_back(data);
+			// check how many yields we already came across before declaration to then
+			// compare if there were no more yields when we actually are at the end of life of this var
+			m_yields_at_declaration[data] = m_num_yields;
 			return true;
 		}
 		return false;
@@ -45,20 +53,26 @@ public:
 		m_program = main;
 	}
 
-	NodeAST* run(NodeCallback& node, NodeStatement* start, NodeStatement* end) {
+	NodeAST* run(NodeCallback& node, NodeStatement* start, NodeStatement* end, std::unordered_set<NodeStatement*> yields) {
+		m_num_yields = 0;
+		m_yields_at_declaration.clear();
 		m_lifetime_analysis.run(*node.statements);
 		m_end_of_life.clear();
 		m_start = start;
 		m_end = end;
+		m_yields = std::move(yields);
 		m_is_thread_safe_environment = false;
 		return node.accept(*this);
 	}
 
-	NodeAST* run(NodeFunctionDefinition& node, NodeStatement* start, NodeStatement* end) {
+	NodeAST* run(NodeFunctionDefinition& node, NodeStatement* start, NodeStatement* end, std::unordered_set<NodeStatement*> yields) {
+		m_num_yields = 0;
+		m_yields_at_declaration.clear();
 		m_lifetime_analysis.run(node);
 		m_end_of_life.clear();
 		m_start = start;
 		m_end = end;
+		m_yields = std::move(yields);
 		m_is_thread_safe_environment = false;
 		return node.accept(*this);
 	}
@@ -74,13 +88,23 @@ protected:
 			if (stmt.get() == m_end) {
 				m_is_thread_safe_environment = true;
 			}
+			// count the number of yields (asynchronous stmts) so that variables whose lifetime
+			// is littered with a yield in between does not get marked thread safe
+			// wait statements are passed
+			// e.g ->
+			// declare $x := $EVENT_ID
+			// wait(1000)
+			// message(x+1)
+			// wait(1000)
+			// here we need a counter so that the first wait statement gets counted and x gets not
+			// marked as thread safe since its life time is still inside the thread safe range
+			if (m_yields.contains(stmt.get())) m_num_yields++;
 			// check if any vars lifetime ends here -> if we are still in thread-unsafe env -> var is thread-safe
-			if (!m_is_thread_safe_environment) {
-				auto it = m_end_of_life.find(stmt.get());
-				if (it != m_end_of_life.end()) {
-					for (auto & data : it->second) {
+			auto it = m_end_of_life.find(stmt.get());
+			if (it != m_end_of_life.end()) {
+				for (auto & data : it->second) {
+					if (m_yields_at_declaration[data] == m_num_yields)
 						data->is_thread_safe = true;
-					}
 				}
 			}
 		}
@@ -118,6 +142,7 @@ class ASTThreadSafeAnalysis : public ASTVisitor {
 		bool is_thread_safe = true;
 		NodeStatement* start = nullptr;
 		NodeStatement* end = nullptr;
+		std::unordered_set<NodeStatement*> yields{}; // statements where async calls happen
 		/// checks if none of the members are nullptr
 		[[nodiscard]] bool is_valid() const {
 			return start != nullptr and end != nullptr;
@@ -150,39 +175,21 @@ public:
 
 	/// can be called after run()
 	void mark_variables() {
-		// parallel_for_each(m_function_thread_unsafe_ranges.begin(), m_function_thread_unsafe_ranges.end(),
-		// 	[&](auto& pair) {
-		// 		auto& [func, range] = pair;
-		// 		if (range->is_valid() and !range->is_thread_safe) {
-		// 			const auto variable_marking = std::make_unique<ASTThreadSafeVariableMarking>(m_program);
-		// 			variable_marking->run(*func, range->start, range->end);
-		// 		}
-		// 	}
-		// );
 		for (auto& [func, range] : m_function_thread_unsafe_ranges) {
 			if (range.is_valid() and !range.is_thread_safe) {
-				m_variable_marking.run(*func, range.start, range.end);
+				m_variable_marking.run(*func, range.start, range.end, range.yields);
 			}
 		}
-		// parallel_for_each(m_callback_thread_unsafe_ranges.begin(), m_callback_thread_unsafe_ranges.end(),
-		// 	[&](auto& pair) {
-		// 		auto& [cb, range] = pair;
-		// 		if (range->is_valid() and !range->is_thread_safe) {
-		// 			const auto variable_marking = std::make_unique<ASTThreadSafeVariableMarking>(m_program);
-		// 			variable_marking->run(*cb, range->start, range->end);
-		// 		}
-		// 	}
-		// );
 		for (auto& [cb, range] : m_callback_thread_unsafe_ranges) {
 			if (range.is_valid() and !range.is_thread_safe) {
-				m_variable_marking.run(*cb, range.start, range.end);
+				m_variable_marking.run(*cb, range.start, range.end, range.yields);
 			}
 		}
 	}
 
 	void print() {
 		for (auto& [cb, range] : m_callback_thread_unsafe_ranges) {
-			std::cout << range.start->tok.file << ":" << range.start->tok.line << " - " << range.end->tok.file << ":" << range.end->tok.line << std::endl;
+			std::cout << range.start->tok.file() << ":" << range.start->tok.line << " - " << range.end->tok.file() << ":" << range.end->tok.line << std::endl;
 		}
 	}
 
@@ -197,6 +204,13 @@ protected:
 
 	NodeAST *visit(NodeCallback &node) override {
 		if (node.statements->empty()) return &node;
+		// <on init> runs exactly once and is never re-entered, so nothing declared in it can be
+		// shared by two concurrent instances of the callback: it never needs a per-callback-stack
+		// copy. Without this, a single asynchronous call reachable from <on init> - which is
+		// rejected later on anyway - turns the whole callback into a thread-unsafe range and every
+		// global declared in it gets expanded by <max_callback_depth>, which buries the real
+		// diagnostic under follow-up errors from the expanded declarations.
+		if (&node == m_program->init_callback) return &node;
 		m_current_callback = &node;
 		const auto first_stmt = node.statements->front();
 		const auto last_stmt = node.statements->back();
@@ -221,11 +235,13 @@ protected:
 					auto& range = m_function_thread_unsafe_ranges[curr_func.get()];
 					range.end = m_current_statement;
 					range.is_thread_safe = definition->is_thread_safe;
+					range.yields.insert(m_current_statement);
 				} else {
 					// we are in a callback
 					auto& range = m_callback_thread_unsafe_ranges[m_current_callback];
 					range.end = m_current_statement;
 					range.is_thread_safe = definition->is_thread_safe;
+					range.yields.insert(m_current_statement);
 				}
 			}
 		}

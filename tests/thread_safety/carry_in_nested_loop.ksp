@@ -1,0 +1,20 @@
+// The only uses of $retries sit in the inner loop, which contains no wait - but the outer loop
+// does, so the counter still has to survive a yield between two outer iterations.
+// Regression for the lifetime being extended to the innermost enclosing loop instead of the
+// outermost one.
+#pragma combine_callbacks(true)
+
+// EXPECT declare %retries[0-9]*\[1000\]
+
+on note
+    declare $retries
+    declare $i
+
+    while ($i < 3)
+        while ($retries < 5)
+            $retries := $retries + 1
+        end while
+        wait(1000)
+        $i := $i + 1
+    end while
+end on

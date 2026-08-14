@@ -27,8 +27,13 @@ class ASTVariableReuse final : public ASTVisitor {
 		if (m_current_block.empty()) return nullptr;
 		return m_current_block.top();
 	}
-	/// vector for all local declarations in callbacks
-	std::unordered_map<NodeCallback*, std::vector<NodeSingleDeclaration*>> m_all_callback_decl = {};
+	/// All local declarations found in callbacks, paired with the callback they were found in,
+	/// in the order the walk reached them. Deliberately a vector and not a map keyed by
+	/// NodeCallback*: <promote_to_global_vars> emits the global declares in exactly this order,
+	/// and iterating a pointer-keyed hash map would tie that order to heap addresses, so the
+	/// emitted KSP would differ between two runs of the same binary. The walk visits callbacks
+	/// one after another, so declarations still come out grouped per callback.
+	std::vector<std::pair<NodeCallback*, NodeSingleDeclaration*>> m_all_callback_decl = {};
 	/// vector for all local vars in functions -> do not get moved into on init
 	std::vector<std::shared_ptr<NodeDataStructure>> m_all_local_vars = {};
 	/// hash values are the types
@@ -82,20 +87,18 @@ public:
 	bool promote_to_global_vars() const {
 		// move all passive_vars declarations to global scope
 		auto local_declare_statements = std::make_unique<NodeBlock>(Token());
-		for(auto & callback : m_all_callback_decl) {
+		for(auto & [callback, local_decl] : m_all_callback_decl) {
+			// set local to false to avoid renaming in rename_local_vars
+			local_decl->variable->is_local = false;
 			// do not replace with assign statements if in init callback already
-			for(auto & local_decl : callback.second) {
-				// set local to false to avoid renaming in rename_local_vars
-				local_decl->variable->is_local = false;
-				if(callback.first == m_program->init_callback) continue;
-				local_declare_statements->add_as_stmt(
-					std::make_unique<NodeSingleDeclaration>(
-						local_decl->variable,
-						nullptr, local_decl->tok
-					)
-				);
-				local_decl->replace_with(std::move(to_assign_statement(*local_decl)));
-			}
+			if(callback == m_program->init_callback) continue;
+			local_declare_statements->add_as_stmt(
+				std::make_unique<NodeSingleDeclaration>(
+					local_decl->variable,
+					nullptr, local_decl->tok
+				)
+			);
+			local_decl->replace_with(std::move(to_assign_statement(*local_decl, m_program)));
 		}
 		m_program->init_callback->statements->prepend_body(std::move(local_declare_statements));
 		return true;
@@ -152,13 +155,24 @@ public:
 
 	/// removes array declarations and deletes them under certain circumstances:
 	/// - if they were promoted or are return vars
-	static std::unique_ptr<NodeAST> to_assign_statement(NodeSingleDeclaration& node) {
+	static std::unique_ptr<NodeAST> to_assign_statement(NodeSingleDeclaration& node, const NodeProgram* program) {
 		if(node.kind == NodeSingleDeclaration::Kind::Promoted or node.kind == NodeSingleDeclaration::Kind::ReturnVar) {
 			return std::make_unique<NodeDeadCode>(node.tok);
 		}
-		// if (!node.variable->is_thread_safe) {
-		// 	return std::make_unique<NodeDeadCode>(node.tok);
-		// }
+		// so that:
+		// declare local x[MAX::CB::STACK]
+		// x[NI_CALLBACK_ID mod MAX::CB::STACK] := EVENT_ID
+		// does not get transformed so that all of x gets EVENT_ID in while loop! This happens per cb invocation.
+		// Thus here we do not need to make an extra assignment out of the 'declare local ...' thread-unsafe declaration.
+		//
+		// Only once the declaration carries the callback dimension, which <cb_idx> says: ASTDimensionExpansion
+		// creates it and ASTParameterPromotion asks before that. The plain assignment it gets back there is
+		// what the expansion narrows to this invocation - its slot for a variable, its row for an array, which
+		// NormalizeNDArrayAssign then walks. Dropping it leaves the row of an array uninitialised and a
+		// RETURN_FLAG standing at 1 for the next copy of the inlined body it guards.
+		if (!node.variable->is_thread_safe and program->cb_idx) {
+			return std::make_unique<NodeDeadCode>(node.tok);
+		}
 		auto node_assignment = node.to_assign_stmt();
 		node_assignment->collect_references();
 		return std::move(node_assignment);
@@ -323,17 +337,21 @@ private:
 				free_passive_var->num_reuses = free_passive_var->num_reuses + 1 + node.variable->num_reuses;
 				m_used_passive_vars[get_current_block()].push_back(free_passive_var);
 				m_passive_vars_replace.back().insert({node.variable->name, free_passive_var});
-				auto replacement = to_assign_statement(node);
+				auto replacement = to_assign_statement(node, m_program);
 				// visit replacement (assign statement) to replace local var with passive_var
 				replacement->accept(*this);
 				return node.replace_with(std::move(replacement));
 			} else if (m_program->current_callback == m_program->init_callback) {
 				// weird stuff happens if local variables are declared in init callback in nested
 				// while loops for example. Hence, replace with assign statement and move to global declarations
-				auto replacement = to_assign_statement(node);
+				// BUT local arrays with constant initializers should just be moved to global declarations WITH their
+				// init values otherwise: init bloat
+				bool const_value = node.value ? node.value->is_constant() : true;
+				bool is_composite_constant = node.variable->ty->cast<CompositeType>() and const_value;
+				auto replacement = is_composite_constant? std::make_unique<NodeDeadCode>(node.tok) : to_assign_statement(node, m_program);
 				auto node_decl = std::make_unique<NodeSingleDeclaration>(
 					std::move(node.variable),
-					nullptr,
+					is_composite_constant ? std::move(node.value) : nullptr,
 					node.tok
 				);
 				m_def_provider->set_declaration(node_decl->variable, false);
@@ -352,7 +370,7 @@ private:
 
 			// add local vars w/o free_passive_var to lists for later renaming
 			if(m_program->current_callback)
-				m_all_callback_decl[m_program->current_callback].push_back(&node);
+				m_all_callback_decl.emplace_back(m_program->current_callback, &node);
 			m_all_local_vars.push_back(node.variable);
 		}
 

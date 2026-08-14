@@ -48,7 +48,6 @@ public:
 	NodeAST* visit(NodeDelete& node) override;
 	/// add namespaces
 	NodeAST * visit(NodeStruct& node) override;
-
 	NodeAST * visit(NodeFormatString& node) override;
 
 };

@@ -19,11 +19,6 @@ class TypeInference final : public ASTVisitor {
 	/// source locations and contexts of already reported persistent-pointer warnings
 	std::unordered_set<std::string> m_persistent_pointer_warnings;
 
-	static bool has_pointer_element_type(const NodeAST& node) {
-		const auto element_type = node.ty ? node.ty->get_element_type() : nullptr;
-		return element_type and element_type->get_type_kind() == TypeKind::Object;
-	}
-
 	void warn_if_persistent_pointer(const NodeAST& node, const std::string& context) {
 		if (!has_pointer_element_type(node)) return;
 		/// check if already visited
@@ -44,7 +39,7 @@ class TypeInference final : public ASTVisitor {
 			if (call->kind != NodeFunctionCall::Kind::UserDefined) continue;
 			auto const def = call->get_definition();
 			if (!def) continue;
-			int method_idx = call->is_in_access_chain() ? 1 : 0;
+			const int method_idx = call->get_param_offset(def.get());
 			for (int i = 0; i < call->function->get_num_args(); i++) {
 				auto& func_arg = call->function->get_arg(i);
 				auto& param = def->get_param(i+method_idx);
@@ -92,7 +87,7 @@ class TypeInference final : public ASTVisitor {
 
 
 			if (def->header->has_union_params()) {
-				int method_idx = call->is_in_access_chain() ? 1 : 0;
+				const int method_idx = call->get_param_offset(def.get());
 
 				const bool arity_fits = call->function->get_num_args() + method_idx <= def->get_num_params();
 				std::vector<Type*> arg_types;
@@ -192,7 +187,10 @@ class TypeInference final : public ASTVisitor {
 				call->function->declaration = new_func_def->header;
 				const auto func_ptr = m_program->add_function_definition(std::move(new_func_def));
 				call->definition = func_ptr->get_shared();
-				func_ptr->header->name = func_name;
+				// registration runs under the generic name, so the lookup entry has to follow the
+				// specialization to its fresh name - otherwise it stays reachable under a name that
+				// no longer belongs to it
+				m_program->rename_function_definition(func_ptr->get_shared(), func_name);
 				if (arity_fits) {
 					monomorph_cache[def.get()].push_back({method_idx, std::move(arg_types), func_ptr->get_shared()});
 				}
@@ -353,6 +351,9 @@ public:
 	NodeAST * visit(NodeReturn& node) override;
 
 	NodeAST * visit(NodeAccessChain& node) override;
+	/// collapses the chain elements that together name one member, see the definition
+	static void join_multi_segment_member(
+		struct NodeAccessChain& node, int i, struct NodeStruct& strct, const std::string& prev_obj);
 	NodeAST * visit(NodeSingleDelete& node) override;
 	NodeAST * visit(NodeSingleRetain& node) override;
 	NodeAST * visit(NodeConst& node) override;
@@ -362,11 +363,34 @@ public:
 	NodeAST * visit(NodeRange& node) override;
 	NodeAST * visit(NodeUseCount& node) override;
 	NodeAST * visit(NodeSortSearch& node) override;
+	NodeAST * visit(NodeArrayQuery& node) override;
 	NodeAST * visit(NodeForEach& node) override;
 	NodeAST * visit(NodeTernary& node) override;
 	NodeAST * visit(NodeNullCoalesce& node) override;
 
+	static bool has_pointer_element_type(const NodeAST& node) {
+		const auto element_type = node.ty ? node.ty->get_element_type() : nullptr;
+		return element_type and element_type->cast<ObjectType>();
+	}
 
+	static bool initialize_pointer_declaration_with_nil(NodeSingleDeclaration& node) {
+		// if declaration is pointer -> always initialize with nil!
+		if(has_pointer_element_type(*node.variable)) {
+			if(!node.value) {
+				node.set_value(std::make_unique<NodeNil>(node.tok));
+				// wrap nil in initializer list if variable is of composite type
+				if(node.variable->ty->cast<CompositeType>()) {
+					node.value->replace_with(std::make_unique<NodeInitializerList>(node.tok, std::make_unique<NodeNil>(node.tok)));
+				}
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/// <Note.storage(.pitch)>: resolves the selector against the receiver struct and types the
+	/// chain, see the definition. Returns false if the call is not <storage>.
+	bool resolve_storage_access(NodeAccessChain& node, NodeFunctionCall& call);
 
     /// iterates through all references and declarations and tries to match the types
     /// with cast set to true -> will cast types of data structures if no type could be infered

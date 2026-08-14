@@ -17,9 +17,10 @@ NodeAST* ASTDesugar::visit(NodeProgram& node) {
 	}
 	m_program->merge_function_definitions();
 
-	// first desugar namespaces to assign correct prefixes
-	static DesugarNamespace ns_desugar(m_program);
-	ns_desugar.set_program(m_program);
+	// first desugar namespaces to assign correct prefixes.
+	// Not static: the collected namespace paths and prefixed names belong to this AST,
+	// and the language server runs many analyses in one process.
+	DesugarNamespace ns_desugar(m_program);
 	// visit_all(node.namespaces, ns_desugar);
 	// move all namespaces into global declarations block
 	for (auto & ns : node.namespaces) {
@@ -154,7 +155,8 @@ NodeAST* ASTDesugar::visit(NodeStruct& node) {
 	for(auto & m: node.methods) {
 		m->accept(*this);
 	}
-	return node.desugar(m_program);
+	const auto desugared = node.desugar(m_program);
+	return desugared;
 }
 
 NodeAST * ASTDesugar::visit(NodeFormatString &node) {

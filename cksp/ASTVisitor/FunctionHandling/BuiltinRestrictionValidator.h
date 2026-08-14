@@ -57,6 +57,11 @@ public:
 		return m_restricted_functions.contains(func_name);
 	}
 
+	/// Builtins that fill their array argument at runtime. Their counterparts only read it.
+	static bool is_array_loading_function(const std::string& func_name) {
+		return func_name == "load_array" or func_name == "load_array_str";
+	}
+
 	/// builtin functions with side effects and alter the value (variable) put in
 	inline static const std::unordered_set<std::string> destructive_functions = {
 		"inc", "dec",
@@ -116,6 +121,17 @@ public:
 			return commands;
 		}();
 		return persistence_commands.contains(func_name);
+	}
+
+	/// A user function may take over a builtin name with <override>, but not one of these: the
+	/// compiler recognises them by name to decide callback restrictions, thread safety, persistence
+	/// and in place modification. A definition of its own under that name would make those passes
+	/// draw their conclusions about code that no longer runs.
+	static bool is_overridable_builtin(const std::string& func_name) {
+		return !m_restricted_functions.contains(func_name)
+			and !m_thread_unsafe_functions.contains(func_name)
+			and !destructive_functions.contains(func_name)
+			and !is_persistence_command(func_name);
 	}
 
 	static bool is_builtin_with_side_effects(const std::string& func_name) {

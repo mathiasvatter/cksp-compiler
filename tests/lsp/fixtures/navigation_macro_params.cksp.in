@@ -1,0 +1,27 @@
+{ A name a <#param#> substitution assembles stands in no file: the substituted half comes
+  from the call site, the rest from the macro body. Both halves still have to navigate. }
+
+struct Thing
+    <|value_decl|>value: int
+
+    function <|bump_decl|>bump(self)
+        self.value := self.value + 1
+    end function
+end struct
+
+declare <|inst_decl|>inst: Thing := new Thing(1)
+
+macro use_it(<|macro_param|>#thing#, plain)
+    { The control case: body text that names the instance outright. }
+    <|plain_inst|>inst.<|plain_member|>value := plain
+
+    { <#thing#.value> is one word mixing the parameter with body text. The parameter half
+      resolves to the argument's declaration, the rest to the struct member. }
+    <|param_half|>#thing#.<|member_half|>value := plain
+    #thing#.<|method_half|>bump()
+    message(#thing#.value)
+end macro
+
+on init
+    use_it(<|argument|>inst, 7)
+end on

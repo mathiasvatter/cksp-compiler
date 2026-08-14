@@ -44,6 +44,23 @@ struct DiagnosticFrame {
 };
 
 /**
+ * Where a word stood before a <#param#> substitution assembled it.
+ *
+ * A macro body word like <#browser#.foo> becomes <browser.foo>, a name that stands in no
+ * file: the substituted half comes from the call site, the rest from the macro body. The
+ * token is reported at the call site, which is where the argument came from but not where
+ * the offending code is written - without this the message points at <update(browser)> and
+ * says nothing about which body line broke.
+ */
+struct DiagnosticExpansion {
+    std::string spelling;  ///< the word as the source spells it, e.g. "#browser#.foo"
+    std::string file;
+    SourceRange range;
+
+    friend bool operator==(const DiagnosticExpansion&, const DiagnosticExpansion&) = default;
+};
+
+/**
  * A transport object for compiler messages.
  *
  * Diagnostics own all strings required by sinks, so a collecting sink may retain them
@@ -96,6 +113,8 @@ struct Diagnostic {
     std::string file;
     SourceRange range;
     std::vector<DiagnosticFrame> call_stack;
+    /// Set when the reported token was assembled by a macro or define substitution.
+    std::optional<DiagnosticExpansion> expansion;
     std::optional<DiagnosticFix> fix;
 
     Diagnostic() = default;
@@ -116,6 +135,10 @@ struct Diagnostic {
     void set_expected(const std::string& value) { expected = value; }
     void set_token(const Token& token);
     [[nodiscard]] std::string display_message() const;
+    /// "Expected: …" / "Got: …", rendered readable. Empty when neither is known.
+    [[nodiscard]] std::string display_detail() const;
+    /// The substitution a token came out of, if any. See DiagnosticExpansion.
+    [[nodiscard]] static std::optional<DiagnosticExpansion> expansion_of(const struct Token& token);
 
 };
 

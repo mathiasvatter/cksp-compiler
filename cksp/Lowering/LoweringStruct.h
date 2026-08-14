@@ -11,7 +11,7 @@ class LoweringStructMembers final : public ASTLowering {
 	NodeStruct* m_current_struct = nullptr;
 
 	static bool determine_inflation_need(const NodeDataStructure& data) {
-		return data.is_member() and !data.is_engine; // and data.data_type != DataType::Const;
+		return data.is_member() and !data.is_engine and !data.is_shared_member();
 	}
 public:
 	explicit LoweringStructMembers(NodeProgram *program) : ASTLowering(program) {}
@@ -26,7 +26,7 @@ public:
 	}
 
 	NodeAST * visit(NodeSingleDeclaration& node) override {
-		// "self" gets deleted in the struct method -> ignore here
+		// <self> gets deleted in the struct method -> ignore here
 		if(node.variable == m_current_struct->node_self) {
 			return &node;
 		}
@@ -157,7 +157,7 @@ public:
 	}
 
 	NodeAST * visit(NodeSingleDeclaration& node) override {
-		// "self" gets deleted in the struct method -> ignore here
+		// <self> gets deleted in the struct method -> ignore here
 		if(node.variable == m_current_struct->node_self) {
 			m_self_decl = &node;
 			return &node;
@@ -222,8 +222,11 @@ public:
 
 	NodeAST * visit(NodeFunctionDefinition& node) override {
 		m_current_func = &node;
-		if (!in_constructor()) {
+		// a <static function> has no instance and therefore no self parameter to index members with
+		if (!in_constructor() and !node.is_static) {
 			m_current_self = node.header->get_param(0).get();
+		} else if (node.is_static) {
+			m_current_self = nullptr;
 		}
 		node.header->accept(*this);
 		node.body->accept(*this);
@@ -249,7 +252,7 @@ private:
 		auto strct = ref.is_member_ref();
 		// check with name to only inflate members with prefix
 		if (strct and strct->name == m_current_struct->name) {
-			return !ref.is_engine; // and ref.get_declaration()->data_type != DataType::Const;
+			return !ref.is_engine and !ref.get_declaration()->is_shared_member();
 		}
 		return false;
 	}

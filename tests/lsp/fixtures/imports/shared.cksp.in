@@ -1,0 +1,9 @@
+const Levels
+    LOW := 0
+    MID := 1
+    <|const_decl|>HIGH := 2
+end const
+
+function <|boost_decl|>boost(amount: int): int
+    return amount * 2
+end function

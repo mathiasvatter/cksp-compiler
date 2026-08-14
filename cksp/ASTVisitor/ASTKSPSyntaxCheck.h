@@ -97,7 +97,34 @@ public:
 		return new_node->accept(persistency);
 	}
 
+	/// A <const> array is folded to its initializer at every read, so the values a load fills
+	/// in at runtime are never observed: <message(arr[0])> right after <load_array_str(arr, …)>
+	/// compiles to the initial value. The two intents contradict each other, and silently
+	/// wrong output is worse than a refused compile.
+	void check_const_load_target(const NodeFunctionCall& node) const {
+		if (node.function->get_num_args() == 0) return;
+		if (!BuiltinRestrictionValidator::is_array_loading_function(node.function->name)) return;
+		const auto& target = node.function->get_arg(0);
+		if (!target or !target->ty or target->ty->get_type_kind() != TypeKind::Composite) return;
+		const auto arr_ref = target->is_reference();
+		if (!arr_ref) return;
+		const auto decl = arr_ref->get_declaration();
+		if (!decl or decl->data_type != DataType::Const) return;
+
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", arr_ref->tok);
+		error.set_message("<" + arr_ref->name + "> is declared <const>, so every read of it is"
+			" replaced by its initial value while compiling - the values <"
+			+ node.function->name + "> loads at runtime would never be seen."
+			" Declare the array without <const>.");
+		error.expected = "a non-const array";
+		error.actual = arr_ref->name;
+		error.exit();
+	}
+
 	NodeAST* visit(NodeFunctionCall& node) override {
+		// Checked before the lsp guard below: it needs nothing that lowering provides, and a
+		// trap that silently compiles to the wrong values is worth seeing while editing.
+		check_const_load_target(node);
 		if (m_program->compiler_config->lsp) {
 			return ASTVisitor::visit(node);
 		}

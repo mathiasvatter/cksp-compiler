@@ -295,7 +295,7 @@ bool NodeAST::is_string_env() const {
 }
 
 NodeReference * NodeAST::is_reference() {
-	static ReferenceValidator ref_validator;
+	static thread_local ReferenceValidator ref_validator;
 	return ref_validator.cast_reference(*this);
 }
 
@@ -389,7 +389,9 @@ bool NodeDataStructure::determine_locality(const NodeProgram* program, const Nod
 	const bool global_declarations = current_block and current_block == program->global_declarations.get();
 	const bool init_callback = (program->current_callback == program->init_callback and program->function_definition_stack.empty() and !is_local) or is_global;
 	bool local = (current_block and current_block->scope) and !init_callback and !global_declarations;
-	local = local or (is_function_param() or is_member() or is_local);
+	// a <static> member has no per-instance storage and no instance lifetime, so it is not local
+	// to the struct: registering it globally makes it known to the variable check right away
+	local = local or (is_function_param() or (is_member() and !is_shared_member()) or is_local);
 	// could also be an old school return variable which would have to be local
 	is_local = local or parent->cast<NodeFunctionDefinition>();
 	return is_local;
@@ -440,6 +442,9 @@ void NodeDataStructure::match_metadata(const std::shared_ptr<NodeDataStructure>&
 	is_local = data_structure->is_local;
 	is_global = data_structure->is_global;
 	data_type = data_structure->data_type;
+	// without this a <static> member silently degrades to a per-instance one when the declaration
+	// is re-typed (variable -> pointer/ndarray/list) after parsing
+	kind = data_structure->kind;
 	is_thread_safe = data_structure->is_thread_safe;
 	type_references = data_structure->type_references;
 }
@@ -588,6 +593,112 @@ bool NodeWildcard::check_semantic() const {
 	const bool check_parents = (parent->cast<NodeParamList>() and parent->parent->cast<NodeNDArrayRef>())
 		or parent->cast<NodeArrayRef>();
 	return check_parents;
+}
+
+// ************* NodeMemberPath ***************
+NodeAST *NodeMemberPath::accept(ASTVisitor& visitor) {
+	return visitor.visit(*this);
+}
+
+std::unique_ptr<NodeAST> NodeMemberPath::clone() const {
+	return std::make_unique<NodeMemberPath>(*this);
+}
+
+std::shared_ptr<NodeDataStructure> NodeMemberPath::resolve_members(NodeProgram* program, Type* receiver_type) {
+	if (!program) {
+		auto error = Diagnostic(ErrorType::InternalError, "", "", tok);
+		error.message = "Cannot resolve member path without a program context.";
+		error.exit();
+	}
+	if (segments.empty()) {
+		auto error = Diagnostic(ErrorType::InternalError, "", "", tok);
+		error.message = "Cannot resolve an empty member path.";
+		error.exit();
+	}
+	if (!receiver_type || receiver_type->get_type_kind() != TypeKind::Object) {
+		auto error = Diagnostic(ErrorType::TypeError, "", "", tok);
+		error.message = "Member path <" + get_token_string() + "> requires an object receiver type.";
+		if (receiver_type) error.actual = receiver_type->to_string();
+		error.exit();
+	}
+
+	resolved_segments.clear();
+	resolved_segments.reserve(segments.size());
+	Type* current_type = receiver_type;
+	std::shared_ptr<NodeDataStructure> member;
+
+	for (size_t i = 0; i < segments.size(); ++i) {
+		const Token& current_segment = segment(i);
+		const std::string object_name = current_type->to_string();
+		const auto struct_it = program->struct_lookup.find(object_name);
+		if (struct_it == program->struct_lookup.end() || !struct_it->second) {
+			auto error = Diagnostic(ErrorType::TypeError, "", "", current_segment);
+			error.message = "Struct <" + object_name + "> does not exist.";
+			error.exit();
+		}
+
+		auto* strct = struct_it->second;
+		member = strct->get_member(object_name + OBJ_DELIMITER + current_segment.val);
+		if (!member) {
+			// A previous inference visit may have replaced the member's concrete
+			// data-structure node, leaving an expired weak entry in the table.
+			strct->rebuild_member_table();
+			member = strct->get_member(object_name + OBJ_DELIMITER + current_segment.val);
+		}
+		if (!member) {
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", current_segment);
+			error.message = "Member <" + current_segment.val + "> does not exist in <" + object_name + ">.";
+			error.exit();
+		}
+
+		const bool has_scalar_heap = !member->is_shared_member()
+			&& (member->get_node_type() == NodeType::Variable
+				|| member->get_node_type() == NodeType::Pointer);
+		resolved_segments.push_back({
+			member->name,
+			member->ty,
+			TypeRegistry::add_composite_type(
+				CompoundKind::Array,
+				member->ty->get_element_type()
+			),
+			has_scalar_heap
+		});
+		current_type = member->ty->get_element_type();
+		if (i + 1 < segments.size()
+			&& (!current_type || current_type->get_type_kind() != TypeKind::Object)) {
+			auto error = Diagnostic(ErrorType::TypeError, "", "", current_segment);
+			error.message = "Member <" + current_segment.val + "> of <" + object_name
+				+ "> cannot be followed by another member because it is not an object.";
+			error.actual = member->ty->to_string();
+			error.exit();
+		}
+	}
+
+	ty = member->ty;
+	return member;
+}
+
+std::string NodeMemberPath::get_string() {
+	return get_token_string();
+}
+
+std::string NodeMemberPath::get_token_string() const {
+	std::string path;
+	for (const auto& member : segments) path += "." + member.val;
+	return path;
+}
+
+void NodeMemberPath::update_token_data(const Token& token) {
+	const auto old_line = tok.line;
+	NodeAST::update_token_data(token);
+	for (auto& member : segments) {
+		member.file_ref = token.file_ref;
+		if (old_line != static_cast<size_t>(-1) and member.line != static_cast<size_t>(-1)) {
+			const auto delta = static_cast<long long>(token.line) - static_cast<long long>(old_line);
+			const auto new_line = static_cast<long long>(member.line) + delta;
+			member.line = new_line < 0 ? 0 : static_cast<size_t>(new_line);
+		}
+	}
 }
 
 // ************* NodeInt ***************
@@ -1250,7 +1361,7 @@ void NodeFunctionDefinition::update_token_data(const Token &token) {
 
 NodeStruct* NodeFunctionDefinition::is_method() const {
 	if (!parent) return nullptr;
-	const bool has_params = !header->params.empty() and header->get_param(0)->name == "self";
+	const bool has_params = !header->params.empty() and header->get_param(0)->name == NodeStruct::SELF;
 	if(const auto strct = parent->cast<NodeStruct>(); has_params) {
 		return strct;
 	}
@@ -1425,6 +1536,53 @@ void NodeProgram::add_function_or_override(const std::shared_ptr<NodeFunctionDef
 	}
 }
 
+void NodeProgram::rename_function_definition(const std::shared_ptr<NodeFunctionDefinition>& def, const std::string& new_name) {
+	const int num_params = static_cast<int>(def->header->params.size());
+	const StringIntKey old_key{def->header->name, num_params};
+	auto& definitions = function_lookup[old_key];
+	std::erase_if(definitions, [&](const std::weak_ptr<NodeFunctionDefinition>& entry) {
+		return entry.lock() == def;
+	});
+	if (definitions.empty()) function_lookup.erase(old_key);
+	def->header->name = new_name;
+	function_lookup[{new_name, num_params}].push_back(def);
+}
+
+void NodeProgram::check_builtin_shadowing() {
+	if (!def_provider) return;
+	// compiler-made definitions in <additional_function_definitions> carry generated names and are
+	// added after this point, so the user-written ones are all there is to check
+	for (const auto& def : function_definitions) {
+		const std::string name = def->header->name;
+		const int num_params = static_cast<int>(def->header->params.size());
+		if (!def_provider->get_builtin_function(name, num_params)) continue;
+		const std::string parameters = std::to_string(num_params) + (num_params == 1 ? " parameter" : " parameters");
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", def->header->tok);
+		if (!def->override) {
+			error.set_message("<"+name+"> is a built-in command taking "+parameters+". The command binds "
+					 "first at every call site, so this definition would never be called.\n"
+					 "Rename the function, give it a different number of parameters, or mark it as "
+					 "<override> to replace the command.");
+			error.exit();
+		}
+		if (!BuiltinRestrictionValidator::is_overridable_builtin(name)) {
+			error.set_message("<"+name+"> is a built-in command that cannot be replaced. The compiler "
+					 "recognises it by name to check callback restrictions, thread safety, persistency "
+					 "and in place modification, and would apply those rules to a command that no longer "
+					 "runs.\nRename the function.");
+			error.exit();
+		}
+		// The command keeps its name: the emitted KSP would otherwise declare a function that shadows
+		// it, and the wrapped call inside the body would turn into an endless recursion. The
+		// definition moves into the reserved <CKSP> namespace instead, the same pair of name and kind
+		// the engine helper functions carry, so that the generated name can not collide with anything
+		// a script is allowed to declare and reads as compiler-made wherever it surfaces.
+		def->header->kind = NodeDataStructure::Compiler;
+		rename_function_definition(def, def_provider->get_fresh_name("CKSP"+OBJ_DELIMITER+name+"_override"));
+		builtin_overrides[{name, num_params}] = def;
+	}
+}
+
 void NodeProgram::remove_function_definition(const std::shared_ptr<NodeFunctionDefinition>& def) {
 	auto remove_from_vector = [&](std::vector<std::shared_ptr<NodeFunctionDefinition>>& vec) {
 		for (size_t i = 0; i < vec.size(); ) {
@@ -1517,6 +1675,20 @@ void NodeProgram::update_struct_lookup() {
 	for(const auto & def : struct_definitions) {
 		struct_lookup.insert({def->name, def});
 	}
+}
+
+NodeAST* NodeProgram::retire_lowered_struct(NodeStruct& node) {
+	auto members = std::move(node.members);
+	const auto statement = node.parent ? node.parent->cast<NodeStatement>() : nullptr;
+	// Structs are parsed as a statement of a declaration block, which is the only owner that
+	// can hand its <unique_ptr> over. Anything else falls back to the destroying replacement.
+	if (!statement || statement->statement.get() != &node) {
+		return node.replace_with(std::move(members));
+	}
+	members->parent = statement;
+	lowered_structs.push_back(std::move(statement->statement));
+	statement->statement = std::move(members);
+	return statement->statement.get();
 }
 
 std::shared_ptr<NodeFunctionDefinition> NodeProgram::look_up_function(const NodeFunctionHeaderRef &header) {
@@ -1716,23 +1888,16 @@ void NodeProgram::inline_structs_and_constants() {
 }
 
 void NodeProgram::reset_function_visited_flag() {
-//	for(const auto & def : function_definitions) def->visited = false;
-	// parallel_for_each(function_definitions.begin(), function_definitions.end(),
-	// 			  [](auto const& def) {
-	// 					def->visited = false;
-	// 			  });
-	// parallel_for_each(additional_function_definitions.begin(), additional_function_definitions.end(),
-	// 		  [](auto const& def) {
-	// 				def->visited = false;
-	// 		  });
-	parallel_for_each(function_lookup.begin(), function_lookup.end(),
-			  [](auto const& defs) {
-			  		for (auto & def : defs.second) {
-			  			if (auto func = def.lock()) {
-			  				func->visited = false;
-						}
-			  		}
-			  });
+	// Resetting one boolean per function is too little work to amortize spawning
+	// worker threads. This method is called repeatedly by reachable-AST passes,
+	// so thread setup otherwise dominates the actual reset work.
+	for (auto& entry : function_lookup) {
+		for (auto& definition : entry.second) {
+			if (auto function = definition.lock()) {
+				function->visited = false;
+			}
+		}
+	}
 }
 
 void NodeProgram::reset_function_used_flag() const {
@@ -1800,7 +1965,7 @@ FunctionCallStackScope::FunctionCallStackScope(NodeProgram& program, const NodeF
 	m_program.function_call_stack.push_back(&call);
 	if (m_program.diagnostic_engine) {
 		// The engine borrows these values only until FunctionCallStackScope is destroyed.
-		m_program.diagnostic_engine->push_frame(call.function ? call.function->tok.val : call.tok.val, call.tok.file, call.range);
+		m_program.diagnostic_engine->push_frame(call.function ? call.function->tok.val : call.tok.val, call.tok.file(), call.range);
 	}
 }
 

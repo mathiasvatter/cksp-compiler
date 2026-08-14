@@ -1,0 +1,20 @@
+{ A reference inside a namespace may omit leading qualifiers (see
+  DesugarNamespace::add_namespace_prefix), so `mixer.` written inside `audio`
+  has to resolve to `audio.mixer`. }
+
+namespace audio
+    declare rate: int := 44100
+
+    namespace mixer
+        declare volume: int := 100
+        declare mute: int := 0
+    end namespace
+
+    function apply()
+        mixer.<|inner|>volume := 90
+    end function
+end namespace
+
+on init
+    audio.apply()
+end on

@@ -26,7 +26,7 @@ Diagnostic::DiagnosticFix::Edit
 DeprecatedReturnSyntaxAnalyzer::remove_header_result_edit() const {
 	return {
 		.kind = Diagnostic::DiagnosticFix::EditKind::Replace,
-		.file = m_result_variable->tok.file,
+		.file = m_result_variable->tok.file(),
 		.range = SourceRange(
 			m_function->header->range.end,
 			m_result_variable->range.end
@@ -42,7 +42,7 @@ DeprecatedReturnSyntaxAnalyzer::make_simple_fix() const {
 		|| !m_function->header
 		|| !m_result_variable
 		|| m_terminal_assignments.empty()
-		|| m_function->header->tok.file != m_result_variable->tok.file
+		|| m_function->header->tok.file() != m_result_variable->tok.file()
 		|| m_function->header->range.end.line != m_result_variable->range.end.line) {
 		return std::nullopt;
 	}
@@ -53,7 +53,7 @@ DeprecatedReturnSyntaxAnalyzer::make_simple_fix() const {
 	for (const auto* assignment : m_terminal_assignments) {
 		edits.push_back({
 			.kind = Diagnostic::DiagnosticFix::EditKind::Replace,
-			.file = assignment->tok.file,
+			.file = assignment->tok.file(),
 			.range = SourceRange(
 				assignment->l_value->range.start,
 				assignment->r_value->range.start
@@ -76,7 +76,7 @@ DeprecatedReturnSyntaxAnalyzer::make_fallback_fix() const {
 		|| !m_function->header
 		|| !m_function->body
 		|| !m_result_variable
-		|| m_function->header->tok.file != m_result_variable->tok.file
+		|| m_function->header->tok.file() != m_result_variable->tok.file()
 		|| m_function->header->range.end.line != m_result_variable->range.end.line
 		|| m_function->range.end.column <= END_FUNCTION_LENGTH) {
 		return std::nullopt;
@@ -103,14 +103,14 @@ DeprecatedReturnSyntaxAnalyzer::make_fallback_fix() const {
 	const char indent_character = indent_width == 1 ? '\t' : ' ';
 	edits.push_back({
 		.kind = Diagnostic::DiagnosticFix::EditKind::InsertBefore,
-		.file = m_result_variable->tok.file,
+		.file = m_result_variable->tok.file(),
 		.range = first_statement.range,
 		.new_text = "declare " + result_name + "\n"
 			+ std::string(body_indent, indent_character)
 	});
 	edits.push_back({
 		.kind = Diagnostic::DiagnosticFix::EditKind::InsertBefore,
-		.file = m_result_variable->tok.file,
+		.file = m_result_variable->tok.file(),
 		.range = SourceRange(end_function_start, end_function_start),
 		.new_text =
 			std::string(
@@ -185,7 +185,7 @@ NodeAST* DeprecatedReturnSyntaxAnalyzer::visit(NodeSingleAssignment& node) {
 		&& node.l_value->name == m_result_variable->name
 		&& !references_result(*node.r_value)
 		&& node.l_value->range.start.line == node.r_value->range.start.line
-		&& node.l_value->tok.file == node.r_value->tok.file;
+		&& node.l_value->tok.file() == node.r_value->tok.file();
 	if (assigns_result) {
 		m_terminal_assignments.push_back(&node);
 	} else {

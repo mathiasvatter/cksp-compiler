@@ -15,6 +15,7 @@
 
 #include "DiagnosticPublisher.h"
 #include "EntryPointResolver.h"
+#include "CompletionProvider.h"
 #include "ReferenceProvider.h"
 #include "RenameProvider.h"
 #include "../cksp/Source/SourceProvider.h"
@@ -29,6 +30,7 @@ class LanguageServer {
 	FileSystemSourceProvider m_file_sources;
 	OverlaySourceProvider m_sources;
 	ReferenceProvider m_references;
+	CompletionProvider m_completion;
 	RenameProvider m_rename;
 	std::vector<SourceId> m_configured_entry_sources;
 	std::optional<SourceId> m_workspace_root;
@@ -55,7 +57,7 @@ class LanguageServer {
 	void mark_source_available(const SourceId& source);
 	void handle_deleted_source(const SourceId& source);
 	[[nodiscard]] bool is_analysis_current(uint64_t generation) const;
-	[[nodiscard]] std::optional<DefinitionLink> resolve_definition_target(
+	[[nodiscard]] std::vector<DefinitionLink> resolve_definition_target(
 		const JsonRpcMessage& message);
 	[[nodiscard]] std::optional<ReferenceLink> resolve_navigation_target(
 		const JsonRpcMessage& message);
@@ -94,6 +96,7 @@ public:
 	void handle_prepare_rename(const JsonRpcMessage& message);
 	void handle_rename(const JsonRpcMessage& message);
 	void handle_document_highlight(const JsonRpcMessage& message);
+	void handle_completion(const JsonRpcMessage& message);
 
 	void handle_did_open(const JsonRpcMessage& message);
 	void handle_did_change(const JsonRpcMessage& message);

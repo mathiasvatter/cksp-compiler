@@ -1,0 +1,22 @@
+// The other direction: a callback runs atomically until it yields, so a value that is written and
+// read again without a wait in between can never be seen by a second instance and stays a single
+// global. Guards against expanding everything in a callback that waits somewhere.
+#pragma combine_callbacks(true)
+
+// EXPECT_NOT declare %dead[0-9]*\[1000\]
+// EXPECT declare %live[0-9]*\[1000\]
+
+on note
+    declare $dead
+    declare $live
+
+    if ($EVENT_VELOCITY > 64)
+        $dead := 100
+    else
+        $dead := 200
+    end if
+    $live := $EVENT_ID
+    change_tune($EVENT_ID, $dead, 1)
+    wait(1000)
+    change_tune($live, 0, 1)
+end on

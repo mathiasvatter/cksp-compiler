@@ -1,0 +1,22 @@
+// A value written inside an <if> in a loop body and read again in a later iteration. The last
+// textual use sits before the wait, but the back edge carries the value across it, so the
+// variable needs a per-callback-stack copy.
+// Regression for lifetime ends being clamped to the innermost block instead of the loop body.
+#pragma combine_callbacks(true)
+
+// EXPECT declare %carry[0-9]*\[1000\]
+
+on note
+    declare $j
+    declare $carry := -1
+
+    for $j := 0 to 9
+        if ($j = 5)
+            $carry := play_note(60, 100, 0, -1)
+        end if
+        if ($carry # -1)
+            change_tune($carry, 100, 1)
+        end if
+        wait(1000)
+    end for
+end on

@@ -67,20 +67,11 @@ private:
             // array[] := (1) -> for loop
 			// array[] := (1,2,3,4) -> series of single index assignments
 			if(auto init_list = node.r_value->cast<NodeInitializerList>()) {
-				// if param list has only one value:
-				if (init_list->size() == 1) {
-					auto lower_bound = std::make_unique<NodeInt>(0, node.tok);
-					auto upper_bound = node_array_ref->get_size();
-					node_array_ref->set_index(m_program->get_global_iterator()->to_reference());
-					auto loop_assignment = std::make_unique<NodeSingleAssignment>(
-						std::move(node.l_value),
-						std::move(init_list->elem(0)),
-						node.tok
-					);
-					auto block = std::make_unique<NodeBlock>(node.tok);
-					block->add_as_stmt(std::move(loop_assignment));
-					block->wrap_in_loop(m_program->get_global_iterator(), std::move(lower_bound), std::move(upper_bound), false);
-					return node.replace_with(std::move(block));
+				const auto declaration = node_array_ref->get_declaration();
+				if (declaration and fills_left_out_elements(*declaration, *init_list)) {
+					return node.replace_with(get_array_init_from_declaration(
+						node_array_ref, init_list, node_array_ref->get_size(),
+						m_program->get_global_iterator()));
 				}
 				// series of single index assignments
 				return node.replace_with(get_array_init_from_list(node_array_ref, init_list));
@@ -89,7 +80,7 @@ private:
 			// array[] := array2[] -> copy assignment
 			if(auto node_val_array_ref = node.r_value->cast<NodeArrayRef>()) {
 				auto lower_bound = std::make_unique<NodeInt>(0, node.tok);
-				auto upper_bound = node_val_array_ref->get_size();
+				auto upper_bound = copy_bound(*node_array_ref, *node_val_array_ref);
 				node_val_array_ref->set_index(m_program->get_global_iterator()->to_reference());
 				node_array_ref->set_index(m_program->get_global_iterator()->to_reference());
 				auto loop_assignment = std::make_unique<NodeSingleAssignment>(
@@ -110,6 +101,72 @@ private:
 
 
 public:
+	/// How far a copy between two arrays may run: never past the end of the one being written,
+	/// never past the end of the one being read. Whichever declares fewer elements sets the
+	/// bound; when only one of them says, that one does.
+	static std::unique_ptr<NodeAST> copy_bound(NodeArrayRef& destination, NodeArrayRef& source) {
+		const auto destination_size = declared_size(destination);
+		const auto source_size = declared_size(source);
+		if (destination_size and source_size) {
+			return *destination_size <= *source_size ? destination.get_size() : source.get_size();
+		}
+		return destination_size ? destination.get_size() : source.get_size();
+	}
+
+	/// Element count from the declaration, when it is a literal.
+	static std::optional<int32_t> declared_size(const NodeArrayRef& array_ref) {
+		const auto declaration = array_ref.get_declaration();
+		const auto array = declaration ? declaration->cast<NodeArray>() : nullptr;
+		const auto size = array and array->size ? array->size->cast<NodeInt>() : nullptr;
+		return size ? std::optional(size->value) : std::nullopt;
+	}
+
+	/// <array[] := (1)>: the one value an initializer list holds stands for every element of the
+	/// array, which is a loop over all of them. The element count is passed in - the declaration
+	/// has it as a literal, while a reference can only express it as <num_elements>, which is not
+	/// available anymore once that has been lowered.
+	static std::unique_ptr<NodeBlock> get_array_init_from_single_value(NodeArrayRef* array_ref,
+																	  std::unique_ptr<NodeAST> value,
+																	  std::unique_ptr<NodeAST> num_elements,
+																	  const std::shared_ptr<NodeDataStructure>& iterator,
+																	  const int32_t from = 0) {
+		auto element = clone_as<NodeArrayRef>(array_ref);
+		element->set_index(iterator->to_reference());
+		auto block = std::make_unique<NodeBlock>(array_ref->tok);
+		block->add_as_stmt(std::make_unique<NodeSingleAssignment>(
+			std::move(element), std::move(value), array_ref->tok));
+		block->wrap_in_loop(
+			iterator,
+			std::make_unique<NodeInt>(from, array_ref->tok),
+			std::move(num_elements),
+			false);
+		return block;
+	}
+
+	/// Whether the elements a list leaves out have to be written. A single value always stands for
+	/// the whole array. Beyond that only the arrays the compiler builds itself are completed: a
+	/// list that KSP keeps in the declaration spreads its last value there, and matching that for
+	/// hand written arrays would change what they hold today.
+	static bool fills_left_out_elements(const NodeDataStructure& array, const NodeInitializerList& init_list) {
+		return init_list.size() == 1 or array.kind == NodeDataStructure::Kind::Throwaway;
+	}
+
+	/// What a declaration with an initializer list stands for: the elements the list spells out,
+	/// and its last value in everything it leaves out - that is what KSP does with a declaration
+	/// initializer, and every place that has to split such a declaration owes the same.
+	static std::unique_ptr<NodeBlock> get_array_init_from_declaration(NodeArrayRef* array_ref,
+																	  NodeInitializerList* init_list,
+																	  std::unique_ptr<NodeAST> num_elements,
+																	  const std::shared_ptr<NodeDataStructure>& iterator) {
+		const auto from = static_cast<int32_t>(init_list->size()) - 1;
+		auto spread = get_array_init_from_single_value(
+			array_ref, init_list->elements.back()->clone(), std::move(num_elements), iterator, from);
+		if (init_list->size() == 1) return spread;
+		auto block = get_array_init_from_list(array_ref, init_list);
+		block->append_body(std::move(spread));
+		return block;
+	}
+
 	static std::unique_ptr<NodeBlock> get_array_init_from_list(NodeArrayRef* array_ref, NodeInitializerList* init_list) {
 		auto node_body = std::make_unique<NodeBlock>(array_ref->tok);
 		for(int i = 0; i<init_list->size(); i++) {

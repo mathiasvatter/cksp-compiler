@@ -1,0 +1,13 @@
+// $x crosses the first wait but dies before the last one. Regression for the thread unsafe range
+// carrying only the last asynchronous statement, which made every variable that died anywhere
+// inside the range count as shareable.
+#pragma combine_callbacks(true)
+
+// EXPECT declare %x[0-9]*\[1000\]
+
+on note
+    declare $x := $EVENT_ID
+    wait(1000)
+    change_tune($x, 100, 1)
+    wait(1000)
+end on

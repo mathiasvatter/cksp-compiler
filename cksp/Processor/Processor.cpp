@@ -13,11 +13,19 @@ Processor::Processor(std::vector<Token> tokens) : m_tokens(std::move(tokens)) {
 	}
 }
 
+/// The tokens ran out mid-construct. Which construct that is, this layer cannot know - it
+/// only hands out tokens - but "the file ends here" is the one thing worth saying, and it
+/// is what an editor shows on every half-written block.
+std::string Processor::unterminated_construct_message() {
+	return "The file ends while a construct is still open. Every <on>, <function>, <macro>,"
+		" <if>, <for>, <while>, <select> and <struct> needs its closing <end ...>.";
+}
+
 const Token &Processor::peek(const std::vector<Token> &tok, const int ahead) {
 	const auto idx = static_cast<long long>(m_pos) + ahead;
 	if (idx < 0 || idx >= static_cast<long long>(tok.size())) {
-		auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
-		Diagnostic(ErrorType::PreprocessorError, err_msg, "end token", m_curr_token).exit();
+		Diagnostic(ErrorType::PreprocessorError, unterminated_construct_message(),
+			"a closing <end ...>", m_curr_token).exit();
 	}
 	m_curr_token = tok[m_pos];
 	m_curr_token_type = m_curr_token.type;
@@ -31,8 +39,8 @@ const Token &Processor::peek(const int ahead) {
 
 const Token &Processor::consume(const std::vector<Token> &tok) {
 	if (m_pos >= tok.size()) {
-		const auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
-		Diagnostic(ErrorType::PreprocessorError, err_msg, "end token", m_curr_token).exit();
+		Diagnostic(ErrorType::PreprocessorError, unterminated_construct_message(),
+			"a closing <end ...>", m_curr_token).exit();
 	}
 	if (m_pos + 1 < tok.size()) {
 		m_curr_token = tok[m_pos + 1];
@@ -49,8 +57,8 @@ const Token &Processor::consume() {
 token Processor::peek_type(const int ahead) const {
 	const auto idx = static_cast<long long>(m_pos) + ahead;
 	if (idx < 0 || idx >= static_cast<long long>(m_tokens.size())) {
-		auto err_msg = "Reached the end of the tokens. Wrong Syntax discovered.";
-		Diagnostic(ErrorType::PreprocessorError, err_msg, "end token", m_curr_token).exit();
+		Diagnostic(ErrorType::PreprocessorError, unterminated_construct_message(),
+			"a closing <end ...>", m_curr_token).exit();
 	}
 	return m_tokens[static_cast<size_t>(idx)].type;
 }

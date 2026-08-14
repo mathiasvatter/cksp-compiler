@@ -58,6 +58,17 @@ private:
 			definition->visited = true;
 
 			if (definition->is_expression_function()) {
+				// A discarded composite or object result cannot be caught by a throwaway: an array
+				// assignment would copy every element of it, and the promoted return parameter that
+				// would receive it does not exist either. Inlining leaves the returned expression -
+				// a heap reference for <Note.storage(.pitch)>, an array reference for a function
+				// returning one - as a bare statement, which is no valid ksp. Nothing observes it,
+				// so as long as evaluating it has no effect the statement goes.
+				if (node.parent->cast<NodeStatement>() and !node.is_builtin_kind()
+					and node.ty and node.ty->get_type_kind() != TypeKind::Basic
+					and !node.has_side_effects({})) {
+					return node.remove_node();
+				}
 				// a discarded expression-function result has no promoted return parameter to
 				// receive it. assign it to a fresh unused variable so the statement stays valid
 				// ksp; the variable is pruned by optimization when the expression is pure

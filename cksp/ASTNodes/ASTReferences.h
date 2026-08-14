@@ -91,7 +91,7 @@ struct NodeArrayRef final : NodeCompositeRef {
 		return name;
 	}
 	std::string get_token_string() const override {
-		return name + (index ? "[" + index->get_token_string() + "]" : "");
+		return tok.val + (index ? "[" + index->get_token_string() + "]" : "");
 	}
 //    ASTLowering* get_lowering(NodeProgram *program) const override;
 	std::unique_ptr<NodeNDArrayRef> to_ndarray_ref() override;
@@ -167,7 +167,7 @@ struct NodeNDArrayRef final : NodeCompositeRef {
 		return name;
 	}
 	std::string get_token_string() const override {
-		return name + (indexes ? "["+indexes->get_token_string()+"]" : "");
+		return tok.val + (indexes ? "["+indexes->get_token_string()+"]" : "");
 	}
 //    ASTLowering* get_lowering(NodeProgram *program) const override;
 	ASTLowering *get_data_lowering(NodeProgram *program) const override;
@@ -257,7 +257,7 @@ struct NodeFunctionHeaderRef final : NodeReference {
 		return name + "(" + (args ? args->get_string() : "") + ")";
 	}
 	std::string get_token_string() const override {
-		return name + "(" + (args ? args->get_token_string() : "") + ")";
+		return tok.val + "(" + (args ? args->get_token_string() : "") + ")";
 	}
 	void set_child_parents() override;
 	[[nodiscard]] int get_num_args() const;
@@ -304,7 +304,7 @@ struct NodeListRef final : NodeReference {
 		return name;
 	}
 	std::string get_token_string() const override {
-		return name + "[" + (indexes ? indexes->get_token_string() : "") + "]";
+		return tok.val + "[" + (indexes ? indexes->get_token_string() : "") + "]";
 	}
 	void set_child_parents() override {
 		if(indexes) indexes->parent = this;
@@ -386,6 +386,46 @@ struct NodeAccessChain final : NodeReference {
 		for(const auto& c: chain) {
 			types.push_back(c->ty);
 		}
+	}
+
+	/// The dotted name spanning the chain elements <from>..<to>, as written in the source.
+	[[nodiscard]] std::string joined_name(const size_t from, const size_t to) const {
+		if (from > to or to >= chain.size()) return "";
+		std::vector<std::string> segments;
+		segments.reserve(to - from + 1);
+		for (size_t i = from; i <= to; ++i) segments.push_back(chain[i]->get_token_string());
+		return StringUtils::join(segments, '.');
+	}
+
+	/// Collapses the elements <from>..<to> into the one at <from>, which takes their joined name.
+	///
+	/// to_method_chain() splits at every dot, but a dotted name is not always one element per
+	/// segment: a namespaced qualifier spans several, and so does a member whose own name carries
+	/// a dot. Whoever recognises such a case calls this to put the elements back together.
+	///
+	/// Kept here because the chain owns the invariant that <types> and <opt_chaining_indexes> are
+	/// indexed in lockstep with <chain> - erasing in only one of them desynchronises the rest.
+	void merge_members(const size_t from, const size_t to) {
+		if (from >= to or to >= chain.size()) return;
+		const auto leading = chain[from]->is_reference();
+		if (!leading) return;
+		const auto merged = joined_name(from, to);
+		leading->name = merged;
+		// the element keeps its start and grows to span everything it absorbed
+		leading->tok = segment_token(leading->tok, 0, merged);
+		leading->set_range(leading->range, chain[to]->range);
+
+		const auto first = static_cast<long>(from) + 1;
+		const auto last = static_cast<long>(to) + 1;
+		chain.erase(chain.begin() + first, chain.begin() + last);
+		if (types.size() >= static_cast<size_t>(last)) {
+			types.erase(types.begin() + first, types.begin() + last);
+		}
+		if (opt_chaining_indexes.size() >= static_cast<size_t>(last)) {
+			opt_chaining_indexes.erase(
+				opt_chaining_indexes.begin() + first, opt_chaining_indexes.begin() + last);
+		}
+		set_child_parents();
 	}
 	std::string get_string() override {
 		std::string str = "";

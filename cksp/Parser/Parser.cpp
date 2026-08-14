@@ -10,10 +10,47 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse() {
 	return parse_program();
 }
 
+/// The <declare> found something that cannot name a declaration.
+///
+/// When that word was put there by a substitution the parser sees the value, not the name:
+/// <define some_define := 1> followed by <declare some_define: int> arrives as
+/// <declare 1: int>, and reporting the <1> names something that stands nowhere in the
+/// declaration. The origin still knows what the source spells, so the message can say what
+/// actually happened - and the sink shows the declaration line underneath.
+Diagnostic Parser::make_declare_modifier_diagnostic(const Token& found) {
+	Diagnostic error(ErrorType::ParseError,
+		"Incorrect syntax in declare statement. Found unknown <modifier>.",
+		"<ui_control>, <variable>, <array>", found);
+	// The line just ends: the declaration is being typed and has no name yet. Saying that
+	// beats sending the reader looking for a modifier they never wrote.
+	if (found.type == token::LINEBRK || found.type == token::END_TOKEN) {
+		error.set_message("The <declare> statement has no name yet.");
+		return error;
+	}
+	if (!found.origin) return error;
+
+	// Report the declaration, not the substituted value: the <define> is written correctly,
+	// it is the declaration borrowing its name that cannot work. set_token() moves file,
+	// range and <Got> to the word the source holds - and clears the expansion note, which
+	// would now only repeat the position.
+	error.set_token(*found.origin);
+	error.set_message(
+		"Incorrect syntax in declare statement. <" + found.origin->val + "> stands for <"
+		+ found.val + "> here, and a substituted value cannot name a declaration."
+		" Give the declaration a name that no <define> or macro parameter uses.");
+	return error;
+}
+
 /// checks in block for expected end token and throws meaningful error msg if unexepcted
 std::optional<Diagnostic> Parser::check_invalid_end_statement(const std::string& construct, token expected_end, const Token& start, const Token& next) {
-	// gotten end statement is valid but not the expected closing stmt for this block
-	if (END_STATEMENTS.contains(start.val) && start.type != expected_end) {
+	// gotten end statement is valid but not the expected closing stmt for this block.
+	// <end on> closes a callback and is no member of END_STATEMENTS, but running into it
+	// while an <if> or <for> is still open means that block was never closed - the shape
+	// every unfinished edit passes through, and the one that used to fall all the way
+	// through to the shrug of "Found invalid Statement Syntax".
+	const bool is_block_terminator =
+		END_STATEMENTS.contains(start.val) || start.type == token::END_CALLBACK;
+	if (is_block_terminator && start.type != expected_end) {
 		return make_invalid_end_statement_diagnostic(construct, get_token_string(expected_end), start, next);
 	}
 	if (!is_malformed_end_statement_start(start, next)) {
@@ -37,7 +74,9 @@ Diagnostic Parser::make_invalid_end_statement_diagnostic(const std::string& cons
 		error.range = source_range_from_tokens(start, next);
 	}
 	error.actual = actual;
-	error.set_message("Invalid terminator for <" + construct + "> block. Expected <" + expected + ">.");
+	// The expected terminator rides along in `expected` and is rendered from there; naming
+	// it in the message too says the same thing twice on one line.
+	error.set_message("Invalid terminator for <" + construct + "> block.");
 	return error;
 }
 
@@ -84,6 +123,34 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_wildcard(NodeAST* parent) {
 	node_wildcard->set_range(wildcard);
 	node_wildcard->parent = parent;
 	return Result<std::unique_ptr<NodeAST>>(std::move(node_wildcard));
+}
+
+Result<std::unique_ptr<NodeAST>> Parser::parse_member_path(NodeAST* parent) {
+	const auto start = consume(); // consume the leading '.'
+	std::vector<Token> segments;
+	Token end = start;
+
+	while (true) {
+		if (peek().type != token::KEYWORD or peek().val.empty()) {
+			return Result<std::unique_ptr<NodeAST>>(Diagnostic(
+				ErrorType::ParseError,
+				"Expected a member name after <.> in member path.",
+				"identifier",
+				peek()
+			));
+		}
+
+		end = consume();
+		segments.push_back(end);
+
+		if (peek().type != token::DOT) break;
+		consume(); // consume the separator before the next path segment
+	}
+
+	auto member_path = std::make_unique<NodeMemberPath>(std::move(segments), start);
+	member_path->set_range(start, end);
+	member_path->parent = parent;
+	return Result<std::unique_ptr<NodeAST>>(std::move(member_path));
 }
 
 
@@ -616,9 +683,12 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr(NodeAST* parent) {
 		return parse_nil(parent);
 	} else if(peek().type == token::MULT) {
 		return parse_wildcard(parent);
+	} else if(peek().type == token::DOT) {
+		return parse_member_path(parent);
 	} else {
 		return Result<std::unique_ptr<NodeAST>>(
-			Diagnostic(ErrorType::ParseError,"Found unknown expression token.", "keyword, integer, parenthesis", peek()));
+			Diagnostic(ErrorType::ParseError,"Expected an expression here.",
+				"a name, a number, a string or a parenthesised expression", peek()));
 	}
 }
 
@@ -754,8 +824,7 @@ Result<std::unique_ptr<NodeSingleDeclaration>> Parser::parse_single_declare_stat
 	auto node_declare_statement = std::make_unique<NodeSingleDeclaration>(start_token);
 	if(peek().type == token::DECLARE) consume(); //consume declare
 	if(!modifier_keywords.contains(peek().type) and peek().type != token::KEYWORD) {
-		return Result<std::unique_ptr<NodeSingleDeclaration>>(Diagnostic(ErrorType::ParseError,
-																	 "Incorrect syntax in declare statement. Found unknown <modifier>.", "<ui_control>, <variable>, <array>", peek()));
+		return Result<std::unique_ptr<NodeSingleDeclaration>>(make_declare_modifier_diagnostic(peek()));
 	}
 	// ui_control
 	if (peek().type == token::UI_CONTROL xor peek(1).type == token::UI_CONTROL) {
@@ -1409,11 +1478,18 @@ Result<std::unique_ptr<NodeParamList>> Parser::parse_param_list(NodeAST* parent,
 			return Result<std::unique_ptr<NodeParamList>>(err);
 		}
 
+		// Remembered before parsing: only an argument that opens with '(' is the nested group
+		// the hint below describes, and by the time the parse fails the position has moved on.
+		const Token argument_start = peek();
 		if (auto exprResult = parse_expression(parent); !exprResult.is_error()) {
 			param_list->add_param(std::move(exprResult.unwrap()));
 		} else {
 			auto error = exprResult.get_error();
-            error.add_message(" Found possible nested <ParameterList> Syntax. To denote <Array> initializers inside <ParameterLists>, use '[' and ']'.");
+			// Added unconditionally the hint lands on every half-typed argument too, telling
+			// the reader about array initializers they never wrote.
+			if (argument_start.type == token::OPEN_PARENTH) {
+				error.add_message(" Found possible nested <ParameterList> Syntax. To denote <Array> initializers inside <ParameterLists>, use '[' and ']'.");
+			}
 			return Result<std::unique_ptr<NodeParamList>>(error);
 		}
 		if (allow_linebreaks) _skip_linebreaks();
@@ -1735,8 +1811,7 @@ Result<std::unique_ptr<NodeDeclaration>> Parser::parse_declare_statement(NodeAST
     if(peek().type == token::DECLARE) start_token = consume(); //consume declare
     std::vector<std::unique_ptr<NodeDataStructure>> to_be_declared;
 	if(!modifier_keywords.contains(peek().type) and peek().type != token::KEYWORD) {
-		return Result<std::unique_ptr<NodeDeclaration>>(Diagnostic(ErrorType::ParseError,
-																	 "Incorrect syntax in declare statement. Found unknown <modifier>.", "<ui_control>, <variable>, <array>", peek()));
+		return Result<std::unique_ptr<NodeDeclaration>>(make_declare_modifier_diagnostic(peek()));
 	}
     do {
         if(peek().type == token::COMMA) consume();
@@ -2010,6 +2085,7 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_declare_array(NodeAST* 
 	node_array->set_range(start_token, end_token);
     node_array->is_local = is_local;
     node_array->is_global = is_global;
+	node_array->kind = kind;
 	node_array->ty = type.unwrap();
 	node_array->type_references = std::move(type_references);
 	node_array->set_range(start_token, peek(-1));
@@ -2410,8 +2486,8 @@ Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* pare
             std::vector<std::unique_ptr<NodeAST>> cas = {};
             if(bare_default || peek().type == token::DEFAULT) {
                 auto default_token = consume(); // consume default token
-                Token low_end = Token(token::INT, "080000000H", default_token.line,default_token.pos, default_token.file);
-                Token high_end = Token(token::INT, "07FFFFFFH", default_token.line,default_token.pos, default_token.file);
+                Token low_end = Token(token::INT, "080000000H", default_token.line,default_token.pos, default_token.file_ref);
+                Token high_end = Token(token::INT, "07FFFFFFH", default_token.line,default_token.pos, default_token.file_ref);
                 auto node_int_low = std::move(parse_int(low_end, 16, node_select_statement.get()).unwrap());
                 cas.push_back(std::move(node_int_low));
                 auto node_int_high = std::move(parse_int(high_end, 16, node_select_statement.get()).unwrap());
@@ -2530,7 +2606,38 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 		if (auto end_error = check_invalid_end_statement("struct", end_construct, peek(), peek(1))) {
 			return Result<std::unique_ptr<NodeStruct>>(*end_error);
 		}
-		if(peek().type == token::DECLARE || peek().type == token::KEYWORD || modifier_keywords.contains(peek().type)) {
+		// <const Name> + linebreak starts a constant block, <const Name:> a member declaration
+		if(peek().type == token::CONST and peek(1).type == token::KEYWORD and peek(2).type == token::LINEBRK) {
+			return Result<std::unique_ptr<NodeStruct>>(Diagnostic(ErrorType::SyntaxError,
+						 "Found unknown <struct> syntax. A <Constant Block> holds compile time values and is "
+						 "therefore shared by the whole <struct>. Declare it as <static const>.",
+						 "<static const> before the block name", peek()));
+		}
+		// <static const Name> ... <end const> - a constant block scoped to the struct
+		if(peek().type == token::STATIC and peek(1).type == token::CONST
+			and peek(2).type == token::KEYWORD and peek(3).type == token::LINEBRK) {
+			consume(); // consume static
+			auto const_block = parse_const_statement(node_struct.get());
+			if(const_block.is_error()) {
+				return Result<std::unique_ptr<NodeStruct>>(const_block.get_error());
+			}
+			auto c = std::move(const_block.unwrap());
+			c->kind = NodeDataStructure::Kind::Static;
+			node_struct->members->add_as_stmt(std::move(c));
+			_skip_linebreaks();
+			continue;
+		}
+		// <static function foo()> - a method on the struct itself, not on an instance
+		if(peek().type == token::STATIC and peek(1).type == token::FUNCTION) {
+			consume(); // consume static
+			auto func = parse_function_definition(node_struct.get());
+			if(func.is_error()) {
+				return Result<std::unique_ptr<NodeStruct>>(func.get_error());
+			}
+			auto method = std::move(func.unwrap());
+			method->is_static = true;
+			node_struct->add_method_or_override(method);
+		} else if(peek().type == token::DECLARE || peek().type == token::KEYWORD || modifier_keywords.contains(peek().type)) {
 			if (peek().type == token::UI_CONTROL) {
 				return Result<std::unique_ptr<NodeStruct>>(Diagnostic(ErrorType::SyntaxError,
 							 "Found unknown <struct> syntax. Can not declare <ui control> variables as <struct> members.", "valid <struct> member or method", peek()));
@@ -2543,7 +2650,7 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 			if(declare_stmt.is_error()) {
 				return Result<std::unique_ptr<NodeStruct>>(declare_stmt.get_error());
 			}
-			node_member_block->add_stmt(std::make_unique<NodeStatement>(std::move(declare_stmt.unwrap()), start_token));
+			node_member_block->add_as_stmt(std::move(declare_stmt.unwrap()));
 		} else if (peek().type == token::FUNCTION) {
 			auto func = parse_function_definition(node_struct.get());
 			if(func.is_error()) {
@@ -2642,18 +2749,18 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 }
 
 
-Result<std::unique_ptr<NodeAST>> Parser::parse_const_statement(NodeAST* parent) {
+Result<std::unique_ptr<NodeConst>> Parser::parse_const_statement(NodeAST* parent) {
 	auto start_token = consume(); //consume family, struct, const
-	token end_construct = token::END_CONST;
+	auto end_construct = token::END_CONST;
 	if(peek().type != token::KEYWORD) {
-		return Result<std::unique_ptr<NodeAST>>(Diagnostic(ErrorType::SyntaxError,
+		return Result<std::unique_ptr<NodeConst>>(Diagnostic(ErrorType::SyntaxError,
 															 "Found unknown const syntax.", "valid prefix", peek()));
 	}
 	auto prefix = consume(); //consume prefix
 	auto node_const_statement = std::make_unique<NodeConst>(prefix);
 
 	if(peek().type != token::LINEBRK) {
-		return Result<std::unique_ptr<NodeAST>>(Diagnostic(ErrorType::SyntaxError,
+		return Result<std::unique_ptr<NodeConst>>(Diagnostic(ErrorType::SyntaxError,
 															 "Expected linebreak.", "linebreak", peek()));
 	}
 	consume(); // consume linebreak
@@ -2663,22 +2770,22 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_const_statement(NodeAST* parent) 
 		_skip_linebreaks();
 		if(peek().type == end_construct) break;
 		if (auto end_error = check_invalid_end_statement("const", end_construct, peek(), peek(1))) {
-			return Result<std::unique_ptr<NodeAST>>(*end_error);
+			return Result<std::unique_ptr<NodeConst>>(*end_error);
 		}
 		if(peek().type == token::DECLARE) {
-			return Result<std::unique_ptr<NodeAST>>(Diagnostic(ErrorType::SyntaxError,
+			return Result<std::unique_ptr<NodeConst>>(Diagnostic(ErrorType::SyntaxError,
 																 "Found unknown const syntax.", "const variable", peek()));
 		}
 		auto const_stmt = parse_declare_statement(node_const_statement.get());
 		if(const_stmt.is_error()) {
-			return Result<std::unique_ptr<NodeAST>>(const_stmt.get_error());
+			return Result<std::unique_ptr<NodeConst>>(const_stmt.get_error());
 		}
 		auto node_stmt = std::make_unique<NodeStatement>(std::move(const_stmt.unwrap()), get_tok());
 		node_stmt->parent = node_body.get();
 		node_body->statements.push_back(std::move(node_stmt));
 		auto l = consume_linebreak("<statement>");
 		if(l.is_error())
-			return Result<std::unique_ptr<NodeAST>>(l.get_error());
+			return Result<std::unique_ptr<NodeConst>>(l.get_error());
 	}
 	auto end_token = consume(); // consume end_const
 	node_const_statement->set_range(start_token, end_token);
@@ -2686,7 +2793,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_const_statement(NodeAST* parent) 
 	node_const_statement->constants = std::move(node_body);
 	node_const_statement->set_child_parents();
 	// set the parent for each statement in stmts
-	return Result<std::unique_ptr<NodeAST>>(std::move(node_const_statement));
+	return Result<std::unique_ptr<NodeConst>>(std::move(node_const_statement));
 }
 
 Result<SuccessTag> Parser::consume_linebreak(const std::string& construct) {

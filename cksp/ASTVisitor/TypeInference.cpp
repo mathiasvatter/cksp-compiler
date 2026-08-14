@@ -444,6 +444,68 @@ NodeAST * TypeInference::visit(NodeSortSearch& node) {
 	return &node;
 }
 
+NodeAST * TypeInference::visit(NodeArrayQuery& node) {
+	node.array->accept(*this);
+	// Type inference runs again after object types have been lowered to their integer
+	// representation. The selector was already resolved during the source-level pass;
+	// keep that result and only follow the array's now-lowered element type.
+	if (node.member_path->is_resolved() && node.ty != TypeRegistry::Unknown) {
+		node.value->accept(*this);
+		if (const auto lowered_array_type = node.array->ty->cast<CompositeType>()) {
+			node.ty = lowered_array_type->get_element_type();
+		}
+		return &node;
+	}
+
+	const auto array_type = node.array->ty->cast<CompositeType>();
+	if (!array_type || array_type->get_compound_type() != CompoundKind::Array) {
+		auto error = Diagnostic(ErrorType::TypeError, "", "", node.array->tok);
+		error.message = "<" + node.query_name() + "> expects an array as its first argument.";
+		error.actual = node.array->ty->to_string();
+		error.exit();
+	}
+	if (array_type->get_dimensions() != 1) {
+		auto error = Diagnostic(ErrorType::TypeError, "", "", node.array->tok);
+		error.message = "<" + node.query_name() + "> expects a one-dimensional object array.";
+		error.actual = node.array->ty->to_string();
+		error.exit();
+	}
+
+	Type* element_type = array_type->get_element_type();
+	if (!element_type || element_type->get_type_kind() != TypeKind::Object) {
+		auto error = Diagnostic(ErrorType::TypeError, "", "", node.array->tok);
+		error.message = "<" + node.query_name() + "> can only query arrays whose elements are objects.";
+		error.actual = node.array->ty->to_string();
+		error.exit();
+	}
+
+	const auto member = node.member_path->resolve_members(m_program, element_type);
+	node.value->accept(*this);
+	// Assignment compatibility is intentionally asymmetric for strings in the
+	// general type system (a number can be rendered as a string). A query compares
+	// values instead, so both directions must agree. This still permits the existing
+	// symmetric int/bool compatibility while rejecting string/int projections.
+	if (!member->ty->is_compatible(node.value->ty) || !node.value->ty->is_compatible(member->ty)) {
+		auto error = Diagnostic(ErrorType::TypeError, "", "", node.value->tok);
+		error.message = "The search value of <" + node.query_name() + "> must match member <"
+			+ node.member_path->get_token_string() + "> of <" + element_type->to_string() + ">.";
+		error.expected = member->ty->to_string();
+		error.actual = node.value->ty->to_string();
+		error.exit();
+	}
+	match_type(
+		*node.value,
+		*member,
+		"The search value of <" + node.query_name() + "> must match member <"
+			+ node.member_path->get_token_string() + "> of <" + element_type->to_string() + ">."
+	);
+
+	// SearchBy returns an object from the queried array, or nil after lowering.
+	// Nil is compatible with every concrete ObjectType in the existing type system.
+	node.ty = element_type;
+	return &node;
+}
+
 NodeAST * TypeInference::visit(NodeForEach& node) {
 	if(node.key) {
 		node.key->accept(*this);
@@ -484,13 +546,115 @@ NodeAST * TypeInference::visit(NodeNullCoalesce &node) {
 	return &node;
 }
 
+
+/**
+ * <Note.storage(.pitch)>: names the array a struct member is stored in.
+ *
+ * Only the parts that need the surrounding chain happen here: <storage> is not a method of the
+ * struct, so this is the pass that would otherwise report it as missing, and it is the only one
+ * that has the receiver type and the struct's member table together. The selector is resolved
+ * against the receiver and the resulting heap type is handed to the chain; the recorded segment
+ * stays on the member path. LoweringStorageAccess builds the accessor from it later on, where
+ * generated declarations and functions belong.
+ */
+bool TypeInference::resolve_storage_access(NodeAccessChain& node, NodeFunctionCall& call) {
+	const auto object = node.chain[0]->is_reference();
+	if (!object or object->kind != NodeReference::Kind::TypeQualifier) return false;
+	if (call.function->name != NodeStruct::STORAGE) return false;
+
+	const std::string receiver = object->ty->to_string();
+	auto error = Diagnostic(ErrorType::SyntaxError, "", "", call.tok);
+	// <Note.storage(.pitch).foo>: the result is a plain array and has no members
+	if (node.chain.size() != 2) {
+		error.message = "<" + NodeStruct::STORAGE + "> hands out the storage of a member of <" + receiver
+			+ "> as an array. An array has no members, so nothing can be reached through it.";
+		error.exit();
+	}
+	if (call.function->get_num_args() != 1) {
+		error.message = "<" + NodeStruct::STORAGE + "> expects exactly one argument: the member whose "
+			"storage is wanted, written as a member path such as <" + receiver + ".storage(.id)>.";
+		error.actual = std::to_string(call.function->get_num_args());
+		error.exit();
+	}
+	const auto member_path = call.function->get_arg(0)->cast<NodeMemberPath>();
+	if (!member_path) {
+		error.message = "The argument of <" + NodeStruct::STORAGE + "> must be a member path such as <"
+			+ receiver + ".storage(.id)>.";
+		error.actual = call.function->get_arg(0)->get_token_string();
+		error.exit();
+	}
+	// <Note.storage(.child.id)> would name a heap of <Child>, which <Child.storage(.id)> already does
+	if (member_path->segments.size() != 1) {
+		error.message = "<" + NodeStruct::STORAGE + "> takes a single member of <" + receiver + ">. Every "
+			"struct owns the storage of its own members, so reach a nested one through its own struct.";
+		error.actual = member_path->get_token_string();
+		error.exit();
+	}
+
+	member_path->resolve_members(m_program, object->ty->get_element_type());
+	const auto& member = member_path->resolved_member(0);
+	// only a member that holds one value per instance is stored in a one-dimensional array
+	if (!member.has_scalar_heap) {
+		auto type_error = Diagnostic(ErrorType::TypeError, "", "", member_path->tok);
+		type_error.message = "Member <" + member_path->leaf_name() + "> of <" + receiver + "> has no storage "
+			"array. Only a member that holds a single value per instance is stored in one array for all "
+			"instances.";
+		type_error.actual = member.value_type->to_string();
+		type_error.exit();
+	}
+
+	// a bare statement hands the heap out and drops it right away. deduplicated by position:
+	// monomorphization revisits function bodies
+	if (node.parent->cast<NodeStatement>()
+		and m_discard_warnings.insert(call.tok.get_position()).second) {
+		auto warning = Diagnostic(ErrorType::CompileWarning, "", "", call.tok);
+		warning.message = "The storage array of member <" + member_path->leaf_name() + "> is discarded here. "
+			"Assign it <values[] := " + receiver + ".storage(." + member_path->leaf_name() + ")> if it is needed.";
+		warning.report(diagnostics());
+	}
+
+	call.ty = member.heap_type;
+	node.ty = member.heap_type;
+	return true;
+}
+
+/**
+ * <Zone.StartType.Beginning>: a constant block entry keeps the block name inside its own name, so
+ * the member spans two chain elements while every other member spans one. to_method_chain() split
+ * at every dot and cannot know the difference, so the elements are put back together here, where
+ * the owning struct is known.
+ *
+ * The longest match wins. The block is also declared under the shorter name - as the backing array
+ * that makes <Zone.StartType[i]> work - and would otherwise shadow all of its entries.
+ *
+ * Only plain references are joined: an index, a call or an optional chaining marker can never be
+ * part of a member name.
+ */
+void TypeInference::join_multi_segment_member(NodeAccessChain& node, const int i, NodeStruct& strct, const std::string& prev_obj) {
+	if (!node.chain[i]->cast<NodeVariableRef>()) return;
+	const bool has_opt_chaining = node.opt_chaining_indexes.size() >= node.chain.size();
+
+	int match_end = i;
+	for (int j = i + 1; j < node.chain.size(); j++) {
+		if (!node.chain[j]->cast<NodeVariableRef>()) break;
+		if (has_opt_chaining and node.opt_chaining_indexes[j].has_value()) break;
+		if (strct.get_member(prev_obj + OBJ_DELIMITER + node.joined_name(i, j))) match_end = j;
+	}
+	node.merge_members(i, match_end);
+}
+
 NodeAST * TypeInference::visit(NodeAccessChain& node) {
 
 	for(int i = 0; i<node.chain.size(); i++) {
 		auto& ptr = node.chain[i];
 		auto error = Diagnostic(ErrorType::SyntaxError, "", "", ptr->tok);
 		if(i == 0) {
-			ptr->accept(*this);
+			// <Foo.MAX>: the qualifier names a struct, so there is no instance to resolve. Its type
+			// was set when the chain was built and is all the member lookup below needs.
+			if(const auto object = ptr->is_reference();
+				!object or object->kind != NodeReference::Kind::TypeQualifier) {
+				ptr->accept(*this);
+			}
 		} else {
 			auto prev = i-1;
 			auto prev_ptr = node.chain[prev].get();
@@ -518,8 +682,26 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				// since the name is not yet right (struct name infront)
 				auto correct_name = prev_obj + OBJ_DELIMITER + func_call->function->name;
 				auto definition = func_call->find_definition(m_program, correct_name, func_call->function->get_num_args()+1, func_call->function->ty);
+				// a <static function> takes no receiver, so it is one argument shorter
 				if (!definition) {
-					error.message = "Method "+func_call->function->name+" does not exist in "+prev_obj+".";
+					definition = func_call->find_definition(m_program, correct_name, func_call->function->get_num_args(), func_call->function->ty);
+					if (definition and !definition->is_static) definition = nullptr;
+				}
+				// <Note.storage(.pitch)>: not a method of the struct but a compiler-provided
+				// accessor for a generated member heap. Typing it is all that can be done here,
+				// the chain is taken apart by LoweringStorageAccess.
+				if (!definition and i == 1 and resolve_storage_access(node, *func_call)) return &node;
+
+				if (!definition) {
+					error.message = "Method <"+func_call->function->name+"> does not exist in "+prev_obj+".";
+					error.exit();
+				}
+				// <Foo.bar()>: without an instance only a static method can be called
+				const auto object = node.chain[0]->is_reference();
+				if(i == 1 and object and object->kind == NodeReference::Kind::TypeQualifier and !definition->is_static) {
+					error.message = "Method <"+func_call->function->name+"> of struct <"+prev_obj+"> operates on an "
+						"instance and cannot be called on the struct itself. Declare it as <static function>, "
+						"or call it on a variable.";
 					error.exit();
 				}
 
@@ -541,7 +723,10 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				// func_call->function->match_data_structure(definition->header);
 				ptr->accept(*this);
 			} else {
-				auto reference = ptr->is_reference();
+				// a member name can span more than one chain element, so this may collapse the
+				// following ones into <ptr> before the lookup below sees it
+				join_multi_segment_member(node, i, *strct, prev_obj);
+				auto reference = node.chain[i]->is_reference();
 
 				auto node_declaration = strct->get_member(prev_obj+OBJ_DELIMITER+reference->name);
 				// could be nullptr because refs in accessChain are not yet reference-collected
@@ -553,6 +738,16 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				}
 				if(!node_declaration) {
 					error.message = "Member "+reference->name+" does not exist in "+prev_obj+".";
+					error.exit();
+				}
+				// <Foo.MAX>: without an instance only a shared member can be reached. Only the element
+				// right after the qualifier is affected - beyond it the chain runs through real objects.
+				if(const auto object = node.chain[0]->is_reference();
+					i == 1 and object and object->kind == NodeReference::Kind::TypeQualifier
+					and !node_declaration->is_shared_member()) {
+					error.message = "Member <"+reference->name+"> of struct <"+prev_obj+"> can only be accessed "
+						"through an instance, because every instance holds its own value. Declare it as "
+						"<static> to give it one shared value, or access it through a variable.";
 					error.exit();
 				}
 				reference->match_data_structure(node_declaration);
@@ -726,19 +921,22 @@ NodeAST * TypeInference::visit(NodeSingleDeclaration& node) {
 		warn_if_persistent_pointer(*node.variable, "declaration:");
 	}
 
-	// if declaration is pointer -> always initialize with nil!
-	if(node.variable->ty->get_element_type()->cast<ObjectType>()) {
-		if(!node.value) {
-			node.set_value(std::make_unique<NodeNil>(node.tok));
-			node.value->accept(*this);
-			// wrap nil in initializer list if variable is of composite type
-			if(node.variable->ty->cast<CompositeType>()) {
-				return node.value
-				->replace_with(std::make_unique<NodeInitializerList>(node.tok, std::make_unique<NodeNil>(node.tok)))
-				->accept(*this);
-			}
-			return &node;
-		}
+	// // if declaration is pointer -> always initialize with nil!
+	// if(has_pointer_element_type(*node.variable)) {
+	// 	if(!node.value) {
+	// 		node.set_value(std::make_unique<NodeNil>(node.tok));
+	// 		node.value->accept(*this);
+	// 		// wrap nil in initializer list if variable is of composite type
+	// 		if(node.variable->ty->cast<CompositeType>()) {
+	// 			return node.value
+	// 			->replace_with(std::make_unique<NodeInitializerList>(node.tok, std::make_unique<NodeNil>(node.tok)))
+	// 			->accept(*this);
+	// 		}
+	// 		return &node;
+	// 	}
+	// }
+	if (initialize_pointer_declaration_with_nil(node) and node.value) {
+		node.value->accept(*this);
 	}
 
 	return &node;
@@ -835,7 +1033,7 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 		// declare ui_text_edit txt_keyswitch_name
 		// set_text_edit_properties(txt_keyswitch_name, "-/-", "alpha")
 		// add method_idx because at this point method definitions have 1 more parameter than the call (self)
-		int method_idx = node.is_in_access_chain() ? 1 : 0;
+		const int method_idx = node.get_param_offset(definition.get());
 		for (int i = 0; i < node.function->get_num_args(); i++) {
 			auto &func_arg = node.function->get_arg(i);
 			if (auto reference = func_arg->is_reference()) {
@@ -893,7 +1091,7 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 			m_func_calls.push_back(&node);
 		}
 
-		int method_idx = node.is_in_access_chain() ? 1 : 0;
+		const int method_idx = node.get_param_offset(definition.get());
 		// explicitly visit builtin functions regardless of visited flag since its not reset for those anyways
 		if (!definition->visited || node.is_builtin_kind()) {
 			if (node.kind != NodeFunctionCall::Property and node.function->get_num_args()+method_idx != definition->get_num_params()) {

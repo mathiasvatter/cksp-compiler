@@ -1,0 +1,9 @@
+{ github.com/mathiasvatter/cksp-compiler/issues/61: a <declare> that borrows the name of a
+  <define> arrives at the parser as <declare 1: int>. The <define> is written correctly, so
+  the report belongs on the declaration - and it has to name what the source says, not the
+  value it was substituted for. }
+
+on init
+    define some_define := 1
+    declare <|borrowed_name|>some_define : int := 43
+end on

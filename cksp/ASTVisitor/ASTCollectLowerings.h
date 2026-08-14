@@ -68,6 +68,7 @@ public:
 	NodeAST * visit(NodeWhile& node) override;
 	NodeAST * visit(NodeIf& node) override;
 	NodeAST * visit(NodeTernary& node) override;
+	NodeAST * visit(NodeArrayQuery& node) override;
 	NodeAST * visit(NodeNullCoalesce& node) override;
 	/// throw error since they are not in loop
 	NodeAST * visit(NodeBreak& node) override;
@@ -95,7 +96,13 @@ public:
 	NodeAST * visit(NodeBinaryExpr& node) override;
 	NodeAST * visit(NodeUnaryExpr& node) override;
 private:
+	/// Declares an initializer list handed to a call as a local array in front of the statement the
+	/// call sits in, and hands the call a reference to it.
+	void hoist_initializer_list_arguments(NodeFunctionCall& node);
+	/// The array such a list is declared as: a copy of the parameter, so it has the shape the
+	/// callee copies from.
+	std::unique_ptr<NodeSingleDeclaration> declare_argument_list(std::unique_ptr<NodeInitializerList> init_list,
+																 const NodeDataStructure& parameter);
     DefinitionProvider* m_def_provider;
 };
-
 

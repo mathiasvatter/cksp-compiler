@@ -41,6 +41,34 @@ NodeAST * ASTSemanticAnalysis::visit(NodeWildcard& node) {
 	return &node;
 }
 
+NodeAST * ASTSemanticAnalysis::visit(NodeMemberPath& node) {
+	// the query supplies the object type of its array, see visit(NodeArrayQuery)
+	if (node.parent->cast<NodeArrayQuery>()) return &node;
+	// <Note.storage(.pitch)>: the type qualifier leading the chain supplies the object type. The
+	// path is resolved in TypeInference, which is where the chain elements get their context.
+	if (const auto header = node.is_direct_func_arg(); header and header->name == NodeStruct::STORAGE) {
+		if (const auto call = header->parent->cast<NodeFunctionCall>(); call and call->is_in_access_chain()) {
+			return &node;
+		}
+	}
+	auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+	error.message = "Member path <" + node.get_token_string() + "> requires a context that provides an object type.";
+	error.add_message("Member paths can only be used as selectors in compiler-supported operations such as "
+		"<search_by(array, .field, value)> or <Object.storage(.field)>.");
+	error.exit();
+	return &node;
+}
+
+NodeAST * ASTSemanticAnalysis::visit(NodeArrayQuery& node) {
+	// The query supplies the object-type context required by its member path.
+	// Resolution of that path is intentionally deferred until array element types
+	// are available.
+	node.array->accept(*this);
+	node.member_path->accept(*this);
+	node.value->accept(*this);
+	return &node;
+}
+
 NodeAST * ASTSemanticAnalysis::visit(NodeNumElements& node) {
 	node.array->accept(*this);
 	if(node.dimension) node.dimension->accept(*this);
@@ -100,9 +128,8 @@ NodeAST * ASTSemanticAnalysis::visit(NodePairs &node) {
 NodeAST* ASTSemanticAnalysis::visit(NodeSingleAssignment& node) {
 	node.l_value->accept(*this);
 	node.r_value->accept(*this);
-	if (const auto ref = cast_node<NodeReference>(node.l_value.get())) {
-		check_param_modification(*ref);
-	}
+	check_param_modification(*node.l_value);
+	node.check_for_constant_assignment();
 	return &node;
 }
 
@@ -128,7 +155,7 @@ void ASTSemanticAnalysis::check_param_modification(NodeReference& ref) {
 		.title = "Pass '" + declaration->name + "' by reference",
 		.edits = {{
 			.kind = Diagnostic::DiagnosticFix::EditKind::InsertBefore,
-			.file = declaration->tok.file,
+			.file = declaration->tok.file(),
 			.range = source_range_from_token(declaration->tok),
 			.new_text = "ref "
 		}},
@@ -298,6 +325,11 @@ NodeAST * ASTSemanticAnalysis::visit(NodeNDArray& node) {
 
 NodeAST * ASTSemanticAnalysis::visit(NodeNDArrayRef& node) {
     if(node.indexes) node.indexes->accept(*this);
+
+	// A member reached through an access chain (<f.grid[1,1]>) is only bound to its declaration in
+	// TypeInference, which runs after this pass: the owning struct is not known before its type is.
+	// determine_sizes() would report a missing declaration as an internal error instead.
+	if (!node.get_declaration() and node.in_access_chain()) return &node;
 
 	if (!node.determine_sizes()) {
 		NodeReference *new_node = &node;

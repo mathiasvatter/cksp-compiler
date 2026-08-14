@@ -38,11 +38,11 @@ public:
 
 		// deal here with expression functions
 		if(node.strategy == NodeFunctionCall::Strategy::ExpressionFunc) {
-			auto node_func_body = clone_as<NodeBlock>(definition->body.get());
+			auto node_return = clone_as<NodeReturn>(get_expression_return(definition->body.get()));
 			m_substitution_stack.push(get_substitution_map(*definition->header, *node.function));
-			node_func_body->accept(*this);
+			node_return->accept(*this);
 			m_substitution_stack.pop();
-			return node.replace_with(get_expression_return(node_func_body.get()));
+			return node.replace_with(std::move(node_return->return_variables[0]));
 		} else if (node.strategy == NodeFunctionCall::Strategy::Call) {
 			return &node;
 		}
@@ -70,10 +70,10 @@ public:
 	}
 
 private:
-	static std::unique_ptr<NodeAST> get_expression_return(const NodeBlock* body) {
+	static NodeReturn* get_expression_return(const NodeBlock* body) {
 		const auto stmt = body->statements[0]->statement.get();
 		if(const auto ret = stmt->cast<NodeReturn>()) {
-			return std::move(ret->return_variables[0]);
+			return ret;
 		}
 		auto error = Diagnostic(ErrorType::InternalError, "", "", body->tok);
 		error.message = "Function is not a return-only function";
@@ -129,12 +129,12 @@ private:
 		return do_substitution(&node);
 	}
 
-	static std::unordered_map<std::string, std::unique_ptr<NodeAST>> get_substitution_map(const NodeFunctionHeader& definition, const NodeFunctionHeaderRef& call) {
+	static std::unordered_map<std::string, std::unique_ptr<NodeAST>> get_substitution_map(
+		const NodeFunctionHeader& definition, const NodeFunctionHeaderRef& call) {
 		std::unordered_map<std::string, std::unique_ptr<NodeAST>> substitution_map;
 		substitution_map.reserve(definition.params.size());
 		for (size_t i = 0; i < definition.params.size(); ++i) {
 			const auto& var = definition.get_param(i);
-			// Add raw pointer of data structure to map
 			substitution_map[var->name] = std::move(call.get_arg(i));
 		}
 		return substitution_map;
@@ -224,7 +224,8 @@ private:
 
 	NodeAST* do_substitution(NodeReference* ref) {
 		if(m_substitution_stack.empty()) return ref;
-		if(ref->get_declaration() and !ref->get_declaration()->is_function_param()) return ref;
+		const auto declaration = ref->get_declaration();
+		if(declaration and !declaration->is_function_param()) return ref;
 
 		if(auto substitute = get_substitute(ref->name)) {
 			// check if substitute will replace l_value of assignment and is Literal
@@ -270,7 +271,7 @@ private:
 	std::stack<std::unordered_map<std::string, std::unique_ptr<NodeAST>>> m_substitution_stack;
 	std::unique_ptr<NodeAST> get_substitute(const std::string& name) {
 		if(m_substitution_stack.empty()) return nullptr;
-		const auto & map = m_substitution_stack.top();
+		const auto& map = m_substitution_stack.top();
 		if(const auto it = map.find(name); it != map.end()) {
 			return it->second->clone();
 		}

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 project(CKSP_Compiler VERSION 0.1.0)
-set(PRE_RELEASE_VERSION "-alpha.3")
+set(PRE_RELEASE_VERSION "-alpha.4")
 
 set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
 configure_file(
@@ -292,6 +292,9 @@ add_executable(cksp
         lsp/CodeActionProvider.h
         lsp/ReferenceProvider.cpp
         lsp/ReferenceProvider.h
+        lsp/CompletionProvider.cpp
+        lsp/CompletionProvider.h
+        lsp/QualifierScanner.h
         lsp/RenameProvider.cpp
         lsp/RenameProvider.h
         lsp/RequestParams.cpp

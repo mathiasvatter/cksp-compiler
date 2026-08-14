@@ -77,6 +77,7 @@ public:
 
     static std::optional<Token> get_persistent_keyword(const Token& tok);
 	int peek_past_modifiers();
+	static Diagnostic make_declare_modifier_diagnostic(const Token& found);
 	static std::optional<Diagnostic> check_invalid_end_statement(const std::string& construct, token expected_end, const Token& start, const Token& next);
 
 	static int get_binop_precedence(const token tok) {
@@ -92,7 +93,8 @@ public:
     static std::string sanitize_hex(const std::string& input);
 
 	Result<std::unique_ptr<NodeAST>> parse_wildcard(NodeAST* parent);
-    static Result<std::unique_ptr<NodeInt>> parse_int(const Token& tok, int base, NodeAST* parent);
+	Result<std::unique_ptr<NodeAST>> parse_member_path(NodeAST* parent);
+	static Result<std::unique_ptr<NodeInt>> parse_int(const Token& tok, int base, NodeAST* parent);
     Result<std::unique_ptr<NodeAST>> parse_number(NodeAST* parent);
 	Result<std::unique_ptr<NodeAST>> parse_nil(NodeAST* parent);
     Result<std::unique_ptr<NodeString>> parse_string(NodeAST* parent);
@@ -141,7 +143,7 @@ public:
     Result<std::unique_ptr<NodeVariable>> parse_declare_variable(NodeAST* parent);
     Result<std::unique_ptr<NodeDataStructure>> parse_declare_array(NodeAST* parent);
     Result<std::unique_ptr<NodeUIControl>> parse_declare_ui_control(NodeAST* parent);
-    Result<std::unique_ptr<NodeAST>> parse_const_statement(NodeAST* parent);
+    Result<std::unique_ptr<NodeConst>> parse_const_statement(NodeAST* parent);
     Result<std::unique_ptr<NodeAST>> parse_list_block(NodeAST* parent);
 	Result<std::unique_ptr<NodeAST>> parse_family_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeStruct>> parse_struct(NodeAST* parent);

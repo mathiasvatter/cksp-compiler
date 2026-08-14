@@ -116,6 +116,9 @@ public:
 	NodeAST* visit(NodeSortSearch& node) override {
 		return &node;
 	}
+	NodeAST* visit(NodeArrayQuery& node) override {
+		return &node;
+	}
 	NodeAST* visit(NodeNumElements& node) override {
 		return &node;
 	}
@@ -208,6 +211,5 @@ public:
 		return &node;
     }
 };
-
 
 

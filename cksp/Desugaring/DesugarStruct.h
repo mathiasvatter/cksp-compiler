@@ -33,6 +33,7 @@
  */
 class DesugarStruct final : public ASTDesugaring {
 	std::stack<NodeStruct*> m_structs;
+	bool m_in_static_method = false;
 	/// holds all declared members and local declarations to replace self
 	std::unordered_map<std::string, NodeDataStructure*> members;
 	void add_to_members(NodeDataStructure* node) {
@@ -51,10 +52,19 @@ class DesugarStruct final : public ASTDesugaring {
 		return name;
 	}
 	/// replace 'self.' only when struct member or declared var
-	std::string replace_self_struct_prefix(const std::string& name) {
-		if (!m_structs.empty() && name.find("self.") == 0) {
+	std::string replace_self_struct_prefix(const std::string& name, const Token& tok) {
+		const auto self_prefix = NodeStruct::SELF + ".";
+		if (m_in_static_method && (name == NodeStruct::SELF || name.find(self_prefix) == 0)) {
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
+			error.message = "<" + NodeStruct::SELF + "> cannot be used inside a <static function>. A static method belongs to "
+				"the struct itself and is called without an instance, so there is no <" + NodeStruct::SELF + "> to refer to. "
+				"Pass the object as a parameter, or remove <static> to make it a regular method.";
+			error.actual = name;
+			error.exit();
+		}
+		if (!m_structs.empty() && name.find(self_prefix) == 0) {
 			std::string new_name = name;
-			new_name.replace(0, 5, m_structs.top()->name + OBJ_DELIMITER); // Ersetze 'self.' durch das Präfix
+			new_name.replace(0, self_prefix.size(), m_structs.top()->name + OBJ_DELIMITER); // Ersetze 'self.' durch das Präfix
 			if (members.contains(new_name)) {
 				return new_name;
 			}
@@ -62,7 +72,7 @@ class DesugarStruct final : public ASTDesugaring {
 		return name;
 	}
 	std::unique_ptr<NodeAccessChain> try_access_chain_transform(const std::string& name, NodeAST* node) const {
-		if (!m_structs.empty() && name.find("self.") == 0) {
+		if (!m_structs.empty() && name.find(NodeStruct::SELF + ".") == 0) {
 			return node->to_method_chain();
 		}
 		return nullptr;
@@ -82,7 +92,7 @@ class DesugarStruct final : public ASTDesugaring {
 			return result;
 		}();
 
-		auto it = operator_overload_methods.find(StringIntKey{name, num_args});
+		const auto it = operator_overload_methods.find(StringIntKey{name, num_args});
 		if (it != operator_overload_methods.end()) {
 			return it->second;
 		}
@@ -90,6 +100,45 @@ class DesugarStruct final : public ASTDesugaring {
 	}
 public:
 	explicit DesugarStruct(NodeProgram *program) : ASTDesugaring(program) {};
+
+	/// A member initialiser is emitted on the member's whole storage, which holds every instance
+	/// back to back. KSP repeats the last value of an initializer list over the remaining indices,
+	/// so a single value still reaches every instance - but a list of several does not: the second
+	/// instance gets the last value repeated instead of the pattern.
+	///
+	/// <row[3]: int[] := (7, 8, 9)> with two instances becomes <%row[6] := (7, 8, 9)>, so the
+	/// second instance reads (9, 9, 9). Such a value is moved into the constructor, which runs per
+	/// instance. A scalar or a one element list is left alone: KSP already fills it correctly and
+	/// an assignment per instance would only cost tokens.
+	///
+	/// Only for a hand written constructor. The generated one takes every member as a parameter
+	/// and assigns it, so the initialiser is already overwritten for every instance.
+	///
+	/// <const> and <static> members are skipped: they have no per-instance storage. <NDArrays> are
+	/// skipped as well - assigning one from an initializer list currently fails during function
+	/// inlining, so moving the value there would turn a wrong value into a compile error.
+	static void move_member_defaults_into_constructor(const NodeStruct& node) {
+		std::shared_ptr<NodeFunctionDefinition> constructor = nullptr;
+		for (const auto& method : node.methods) {
+			if (method->header->name == NodeStruct::CONSTRUCTOR) constructor = method;
+		}
+		if (!constructor) return;
+		// walked backwards because each one is prepended: this keeps the declaration order
+		for (auto it = node.members->statements.rbegin(); it != node.members->statements.rend(); ++it) {
+			const auto declaration = (*it)->statement->cast<NodeSingleDeclaration>();
+			if (!declaration or !declaration->value) continue;
+			const auto& member = declaration->variable;
+			if (member->data_type == DataType::Const or member->is_shared_member()) continue;
+			// only a list of several values spreads wrongly over the instances
+			const auto initializer = declaration->value->cast<NodeInitializerList>();
+			if (!initializer or initializer->size() <= 1) continue;
+
+			auto member_ref = member->to_reference();
+			member_ref->name = NodeStruct::SELF + "." + member_ref->name;
+			constructor->body->prepend_as_stmt(std::make_unique<NodeSingleAssignment>(
+				std::move(member_ref), std::move(declaration->value), member->tok));
+		}
+	}
 
 	NodeAST* visit(NodeStruct& node) override {
 		node.name = add_struct_prefix(node.name);
@@ -103,18 +152,29 @@ public:
 		bool has_repr_method = false;
 		for(auto & m: node.methods) {
 			if (m->header->name == NodeStruct::CONSTRUCTOR) has_init_method = true;
-			if (m->header->name == "__repr__") has_repr_method = true;
-			if (m->header->name == "__del__") {
+			if (m->header->name == NodeStruct::REPRESENTOR) has_repr_method = true;
+			if (m->header->name == NodeStruct::DESTRUCTOR) {
 				auto error = Diagnostic(ErrorType::SyntaxError, "", "", m->tok);
 				error.message = "Destructor method is generated automatically. Please use another name.";
 				error.exit();
 			}
+			// <Note.storage(.pitch)> is resolved against the member the path names, so a method of
+			// that name would never be reachable
+			if (m->header->name == NodeStruct::STORAGE) {
+				auto error = Diagnostic(ErrorType::SyntaxError, "", "", m->tok);
+				error.message = "<"+NodeStruct::STORAGE+"> is provided by the compiler to hand out the array "
+					"a member of <"+node.name+"> is stored in, as in <"+node.name+".storage(.member)>. "
+					"Please use another name.";
+				error.exit();
+			}
 		}
 		// automatically generate init method if none provided by user
-		if(!has_init_method) node.generate_init_method();
+		if(!has_init_method) node.generate_constructor();
 		if(!has_repr_method) node.generate_repr_method();
+		if(has_init_method) move_member_defaults_into_constructor(node);
 
 		node.members->accept(*this);
+		node.members->flatten(); // needed for const blocks nested NodeBlock stmts
 		// add self keyword for declarations
 		// node.members->prepend_as_stmt(std::make_unique<NodeSingleDeclaration>(node.node_self, nullptr, node.tok));
 		for(auto & m: node.methods) {
@@ -135,16 +195,45 @@ public:
 		return &node;
 	}
 
-	NodeAST* visit(NodeFunctionDefinition& node) override {
-		if(!node.is_method()) {
-			auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.tok);
-			error.message = "Method definition must contain <self> as first parameter.";
+	/// <static function foo()>: belongs to the struct, gets no <self> parameter and is called as
+	/// <Foo.foo()>. Everything that needs an instance is rejected here.
+	NodeAST* visit_static_method(NodeFunctionDefinition& node) {
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+		if (!node.header->params.empty() and node.header->get_param(0)->name == NodeStruct::SELF) {
+			error.message = "A <static function> must not declare <" + NodeStruct::SELF + "> as its first parameter. It is called "
+				"on the struct itself, not on an instance. Remove <" + NodeStruct::SELF + ">, or remove <static>.";
 			error.exit();
 		}
+		if (node.header->name == NodeStruct::CONSTRUCTOR or node.header->name == NodeStruct::REPRESENTOR
+			or node.header->name == NodeStruct::DESTRUCTOR) {
+			error.message = "<"+node.header->name+"> operates on an instance and cannot be declared <static>.";
+			error.exit();
+		}
+		if (get_operator_token(node.header->name, node.header->params.size())) {
+			error.message = "Operator overloads are resolved through their operands and cannot be declared <static>.";
+			error.exit();
+		}
+		m_in_static_method = true;
+		node.header->accept(*this);
+		node.header->name = add_struct_prefix(node.header->name);
+		node.body->accept(*this);
+		m_in_static_method = false;
+		return &node;
+	}
+
+	NodeAST* visit(NodeFunctionDefinition& node) override {
 		// check if header name has dot in it -> this is not allowed
 		if (node.header->name.find('.') != std::string::npos) {
 			auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.tok);
 			error.message = "Method name cannot contain '.' character. This is reserved for struct member access.";
+			error.exit();
+		}
+		if(node.is_static) {
+			return visit_static_method(node);
+		}
+		if(!node.is_method()) {
+			auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.tok);
+			error.message = "Method definition must contain <" + NodeStruct::SELF + "> as first parameter.";
 			error.exit();
 		}
 		// every self as first parameter has to be of type object
@@ -167,10 +256,10 @@ public:
 			node.num_return_params = 1;
 			node.header->create_function_type(TypeRegistry::add_object_type(m_structs.top()->name));
 			node.ty = TypeRegistry::add_object_type(m_structs.top()->name);
-			// delete "self" keyword
+			// delete <self> keyword
 			node.header->params.erase(node.header->params.begin());
 		}
-		if(node.header->name == "__repr__") {
+		if(node.header->name == NodeStruct::REPRESENTOR) {
 			if(node.num_return_params > 1) {
 				auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.tok);
 				error.message = "Repr method cannot have more than one return value.";
@@ -185,7 +274,6 @@ public:
 			node.header->create_function_type(TypeRegistry::String);
 			node.ty = TypeRegistry::String;
 		}
-
 		// check if method is operator overload
 		if(auto token = get_operator_token(node.header->name, node.header->params.size())) {
 			m_structs.top()->overloaded_operators.insert({*token, node.get_shared()});
@@ -198,16 +286,34 @@ public:
 		return &node;
 	}
 
+	/// const blocks are already desugared at this time
+	/// -> declaration statements inside a const blocks
+	/// const declaration members already should have the static kind from parsing and desugaring
+	NodeAST* visit(NodeConst& node) override {
+		ASTVisitor::visit(node);
+		return node.replace_with(std::move(node.constants));
+	}
+
+	static NodeConst* is_const_block_member(const NodeSingleDeclaration& node) {
+		if (node.parent) {
+			if (const auto stmt = node.parent->cast<NodeStatement>()) {
+				if (stmt->parent and stmt->parent->cast<NodeBlock>()) {
+					return stmt->parent->parent->cast<NodeConst>();
+				}
+			}
+		}
+		return nullptr;
+	}
 
 	NodeAST* visit(NodeSingleDeclaration& node) override {
-		if(node.variable->is_member()) {
+		if(node.variable->is_member() or is_const_block_member(node)) {
 			node.variable->name = add_struct_prefix(node.variable->name);
 			add_to_members(node.variable.get());
 			node.variable->accept(*this);
 		} else {
-			if(node.variable->name.find("self.") == 0) {
+			if(node.variable->name.find(NodeStruct::SELF + ".") == 0) {
 				auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.tok);
-				error.message = "<self> keyword is only allowed in member declarations.";
+				error.message = "<" + NodeStruct::SELF + "> keyword is only allowed in member declarations.";
 			}
 		}
 		if(node.value) node.value->accept(*this);
@@ -230,21 +336,21 @@ public:
 	}
 
 	NodeAST* visit(NodeVariableRef& node) override {
-		node.name = replace_self_struct_prefix(node.name);
+		node.name = replace_self_struct_prefix(node.name, node.tok);
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			return node.replace_with(std::move(access_chain));
 		}
 		return &node;
 	}
 	NodeAST * visit(NodePointerRef& node) override {
-		node.name = replace_self_struct_prefix(node.name);
+		node.name = replace_self_struct_prefix(node.name, node.tok);
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			return node.replace_with(std::move(access_chain));
 		}
 		return &node;
 	}
 	NodeAST * visit(NodeArrayRef& node) override {
-		node.name = replace_self_struct_prefix(node.name);
+		node.name = replace_self_struct_prefix(node.name, node.tok);
 		if(node.index) node.index->accept(*this);
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			return node.replace_with(std::move(access_chain));
@@ -252,7 +358,7 @@ public:
 		return &node;
 	}
 	NodeAST * visit(NodeNDArrayRef& node) override {
-		node.name = replace_self_struct_prefix(node.name);
+		node.name = replace_self_struct_prefix(node.name, node.tok);
 		if(node.indexes) node.indexes->accept(*this);
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			return node.replace_with(std::move(access_chain));
@@ -260,7 +366,7 @@ public:
 		return &node;
 	}
 	NodeAST * visit(NodeListRef& node) override {
-		node.name = replace_self_struct_prefix(node.name);
+		node.name = replace_self_struct_prefix(node.name, node.tok);
 		node.indexes->accept(*this);
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			return node.replace_with(std::move(access_chain));
@@ -268,7 +374,7 @@ public:
 		return &node;
 	}
 	NodeAST * visit(NodeFunctionCall& node) override {
-		node.function->name = replace_self_struct_prefix(node.function->name);
+		node.function->name = replace_self_struct_prefix(node.function->name, node.tok);
 		node.function->accept(*this);
 		if(auto access_chain = try_access_chain_transform(node.function->name, &node)) {
 			return node.replace_with(std::move(access_chain));

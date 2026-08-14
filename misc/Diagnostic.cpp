@@ -2,6 +2,7 @@
 
 #include "DiagnosticEngine.h"
 #include "../cksp/Tokenizer/Token.h"
+#include "../utils/StringUtils.h"
 
 std::string error_type_to_string(const ErrorType type) {
     switch (type) {
@@ -30,8 +31,15 @@ Diagnostic::Diagnostic(
       message(std::move(message)),
       expected(std::move(expected)),
       actual(token.val),
-      file(token.file),
-      range(source_range_from_token(token)) {}
+      file(token.file()),
+      range(source_range_from_token(token)),
+      expansion(expansion_of(token)) {}
+
+std::optional<DiagnosticExpansion> Diagnostic::expansion_of(const Token& token) {
+    if (!token.origin || token.origin->file().empty()) return std::nullopt;
+    return DiagnosticExpansion{
+        token.origin->val, token.origin->file(), source_range_from_token(*token.origin)};
+}
 
 Diagnostic::Diagnostic(
     const ErrorType type,
@@ -64,8 +72,31 @@ void Diagnostic::exit() const {
 
 void Diagnostic::set_token(const Token& token) {
     actual = token.val;
-    file = token.file;
+    file = token.file();
     range = source_range_from_token(token);
+    expansion = expansion_of(token);
+}
+
+std::string Diagnostic::display_detail() const {
+    // A linebreak is what the parser meets on nearly every unfinished line, and printing it
+    // raw leaves the reader with an empty pair of quotes.
+    const auto readable = [](const std::string& field) {
+        if (field == "\n") return std::string("linebreak");
+        if (field.empty()) return std::string("end of file");
+        return StringUtils::normalize_field(field);
+    };
+
+    // One line, appended to the message: a problems list gives each entry a single row, and
+    // a linebreak there costs a row per diagnostic while showing nothing more. Separated by
+    // a semicolon rather than a comma - an expected list carries commas of its own - and
+    // left unbracketed, because the fields already spell constructs as <declare>.
+    std::string detail;
+    if (!expected.empty()) detail += "expected: " + readable(expected);
+    if (!actual.empty() || !expected.empty()) {
+        if (!detail.empty()) detail += "; ";
+        detail += "got: " + readable(actual);
+    }
+    return detail.empty() ? detail : "(" + detail + ")";
 }
 
 std::string Diagnostic::display_message() const {

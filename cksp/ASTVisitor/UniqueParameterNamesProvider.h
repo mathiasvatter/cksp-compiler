@@ -16,7 +16,6 @@
  */
 class UniqueParameterNamesProvider final : public ASTVisitor {
 	DefinitionProvider* m_def_provider;
-	std::mutex m_name_mutex;
 
 	// rename reference if declaration is function param
 	static void rename_func_param_ref(NodeReference& node) {
@@ -38,34 +37,34 @@ public:
 		m_def_provider = main->def_provider;
 	}
 
-	// do renaming by visiting all program functions
-	NodeAST* do_parallel_renaming(NodeProgram& node) {
-		// Each iteration mutates the shared visitor (*this) while renaming; running this
-		// concurrently is a data race, so run sequentially in LSP mode for deterministic
-		// diagnostics.
-		parallel_for_each_unless(node.compiler_config && node.compiler_config->lsp,
-			node.function_lookup.begin(), node.function_lookup.end(),
-			[&](const auto & func_pair) {
-				for (auto& func_def : func_pair.second) {
-					if (auto func = func_def.lock()) {
-						if (func->header->has_no_params() and !func->return_variable) return;
-						func->accept(*this);
-					}
+	/// Renames the formal parameters of every function in the program.
+	///
+	/// Runs sequentially, in sorted key order, and both halves of that matter. The order in which
+	/// functions are visited decides which gensym suffix each parameter gets, so it has to be the
+	/// same on every compile: <NodeProgram::function_lookup> is a hash map, and walking it as it
+	/// lies ties the generated names to its bucket layout, which shifts as soon as the set of
+	/// functions or the bucket count changes. Visiting the keys sorted costs one sort of a few
+	/// hundred keys and makes the names reproducible between builds. Sequential is what keeps it
+	/// correct on top of that: each visit mutates the shared visitor (*this) and draws from the
+	/// one <Gensym>, so the parallel version was both a data race and a source of run-to-run
+	/// differences in the compiled output.
+	NodeAST* do_renaming(NodeProgram& node) {
+		std::vector<const StringIntKey*> keys;
+		keys.reserve(node.function_lookup.size());
+		for (const auto& entry : node.function_lookup) keys.push_back(&entry.first);
+		std::sort(keys.begin(), keys.end(), [](const StringIntKey* a, const StringIntKey* b) {
+			if (a->str != b->str) return a->str < b->str;
+			return a->num < b->num;
+		});
+		for (const auto* key : keys) {
+			for (auto& func_def : node.function_lookup.at(*key)) {
+				if (auto func = func_def.lock()) {
+					// skip this definition, not the rest of the overloads sharing its key
+					if (func->header->has_no_params() and !func->return_variable) continue;
+					func->accept(*this);
 				}
 			}
-		);
-		// for (auto& func_def : node.function_lookup) {
-		// 	for (auto& fun : func_def.second) {
-		// 		if (auto func = fun.lock()) {
-		// 			if (func->header->has_no_params() and !func->return_variable) continue;
-		// 			func->accept(*this);
-		// 		}
-		// 	}
-		// }
-		// for(const auto & func_def : node.function_definitions) {
-		// 	if (func_def->header->has_no_params() and !func_def->return_variable) continue;
-		// 	func_def->accept(*this);
-		// }
+		}
 		return &node;
 	}
 
@@ -80,12 +79,7 @@ private:
 		if (node.return_variable) {
 			auto& ret_var = node.return_variable.value();
 			ret_var->accept(*this);
-			std::string fresh_name;
-			{
-				std::lock_guard<std::mutex> lock(m_name_mutex);
-				fresh_name = m_def_provider->get_fresh_name(ret_var->name);
-			}
-			ret_var->name = std::move(fresh_name);
+			ret_var->name = m_def_provider->get_fresh_name(ret_var->name);
 		}
 		node.body->accept(*this);
 		return &node;
@@ -94,13 +88,8 @@ private:
 	// rename all function parameters
 	NodeAST* visit(NodeFunctionParam& node) override {
 		node.variable->accept(*this);
-		if (node.variable->is_function_param()) { // and node.variable->name != "self") {
-			std::string fresh_name;
-			{
-				std::lock_guard<std::mutex> lock(m_name_mutex);
-				fresh_name = m_def_provider->get_fresh_name(node.variable->name);
-			}
-			node.variable->name = std::move(fresh_name);
+		if (node.variable->is_function_param()) { // and node.variable->name != NodeStruct::SELF) {
+			node.variable->name = m_def_provider->get_fresh_name(node.variable->name);
 		}
 		if (node.value) node.value->accept(*this);
 		return &node;

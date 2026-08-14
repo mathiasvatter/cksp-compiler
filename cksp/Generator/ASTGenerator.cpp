@@ -308,6 +308,13 @@ NodeAST * ASTGenerator::visit(NodeNumElements &node) {
 	return &node;
 }
 
+NodeAST * ASTGenerator::visit(NodeArrayQuery& node) {
+	auto error = Diagnostic(ErrorType::InternalError, "", "", node.tok);
+	error.message = "<ArrayQuery> Nodes should have been lowered already.";
+	error.exit();
+	return &node;
+}
+
 std::string ASTGenerator::get_compiled_date_time() {
     auto now = std::chrono::system_clock::now();
     auto in_time_t = std::chrono::system_clock::to_time_t(now);

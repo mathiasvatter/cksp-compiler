@@ -5,6 +5,7 @@
 #include "LanguageServer.h"
 
 #include "CodeActionProvider.h"
+#include "QualifierScanner.h"
 #include "RequestParams.h"
 #include "TrackingSourceProvider.h"
 #include "../cksp/Compiler.h"
@@ -67,8 +68,15 @@ void LanguageServer::handle_request(const JsonRpcMessage& message) {
 		handle_rename(message);
 	} else if (method->value == "textDocument/documentHighlight") {
 		handle_document_highlight(message);
+	} else if (method->value == "textDocument/completion") {
+		handle_completion(message);
 	} else if (method->value == "textDocument/codeAction") {
 		handle_code_action(message);
+	} else if (const auto* id = message.id()) {
+		// Every request must be answered. Without this a client that does not
+		// time out on its own waits forever for a method we do not implement.
+		m_connection.send_error_response(
+			*id, -32601, "Unsupported request: " + method->value);
 	}
 }
 
@@ -209,11 +217,13 @@ void LanguageServer::analyze_entry(const SourceId& entry_source) {
 				m_entry_points.remove_entry(subsumed_entry);
 				m_diagnostic_publisher.discard_entry(subsumed_entry);
 				m_references.erase(subsumed_entry);
+				m_completion.erase(subsumed_entry);
 			}
 		}
 	}
 
 	m_references.publish(entry, compiler.reference_index(), result.success, std::move(successful_sources));
+	m_completion.publish(entry, compiler.completion_index(), result.success);
 	m_diagnostic_publisher.publish(entry_source, diagnostics.diagnostics());
 }
 
@@ -234,6 +244,7 @@ void LanguageServer::handle_deleted_source(const SourceId& deleted_source) {
 			m_entry_points.remove_entry(source);
 			m_diagnostic_publisher.discard_entry(source);
 			m_references.erase(source);
+			m_completion.erase(source);
 		}
 		// Diagnostics located in the removed file must disappear immediately, including
 		// diagnostics owned by an importing entry point.
@@ -275,6 +286,7 @@ void LanguageServer::analyze_entries_for_sources(const std::vector<SourceId>& ch
 					m_entry_points.remove_entry(normalized_source);
 					m_diagnostic_publisher.discard_entry(normalized_source);
 					m_references.erase(normalized_source);
+					m_completion.erase(normalized_source);
 				}
 			}
 		}
@@ -311,6 +323,7 @@ void LanguageServer::analyze_entries_for_sources(const std::vector<SourceId>& ch
 					m_entry_points.remove_entry(entries[i]);
 					m_diagnostic_publisher.discard_entry(entries[i]);
 					m_references.erase(entries[i]);
+					m_completion.erase(entries[i]);
 					continue;
 				}
 			}
@@ -350,6 +363,17 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 	JSONObject document_link_options;
 	document_link_options.add("resolveProvider", std::make_unique<JSONBool>(false));
 
+	auto completion_options = std::make_unique<JSONObject>();
+	auto trigger_characters = std::make_unique<JSONArray>();
+	trigger_characters->add(std::make_unique<JSONString>("."));
+	completion_options->add("triggerCharacters", std::move(trigger_characters));
+	completion_options->add("resolveProvider", std::make_unique<JSONBool>(false));
+	// Items carry labelDetails (parameter list plus construct word), which a client
+	// only renders when the server announces support for it.
+	auto completion_item_options = std::make_unique<JSONObject>();
+	completion_item_options->add("labelDetailsSupport", std::make_unique<JSONBool>(true));
+	completion_options->add("completionItem", std::move(completion_item_options));
+
 	auto code_action_options = std::make_unique<JSONObject>();
 	auto code_action_kinds = std::make_unique<JSONArray>();
 	code_action_kinds->add(std::make_unique<JSONString>("quickfix"));
@@ -366,6 +390,7 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 	capabilities.add("referencesProvider", std::make_unique<JSONBool>(true));
 	capabilities.add("renameProvider", std::make_unique<JSONObject>(rename_options));
 	capabilities.add("documentHighlightProvider", std::make_unique<JSONBool>(true));
+	capabilities.add("completionProvider", std::move(completion_options));
 	capabilities.add("codeActionProvider", std::move(code_action_options));
 
 	JSONObject server_info;
@@ -402,10 +427,10 @@ std::optional<ReferenceLink> LanguageServer::resolve_target_at(
 		m_entry_points.affected_entries(source), source, line, character);
 }
 
-std::optional<DefinitionLink> LanguageServer::resolve_definition_target(
+std::vector<DefinitionLink> LanguageServer::resolve_definition_target(
 	const JsonRpcMessage& message) {
 	const auto position = position_params(message);
-	if (!position) return std::nullopt;
+	if (!position) return {};
 	std::lock_guard lock(m_state_mutex);
 	return m_references.resolve_definition(
 		m_entry_points.affected_entries(position->source),
@@ -419,19 +444,24 @@ void LanguageServer::handle_definition(const JsonRpcMessage& message) {
 
 	const auto* id = message.id();
 	if (!id) return;
-	if (found) {
-		auto link = std::make_unique<JSONObject>();
-		link->add("originSelectionRange", found->ref_range.get_lsp_range());
-		link->add("targetUri", std::make_unique<JSONString>(
-			uri_from_source(SourceId(found->def_file))));
-		link->add("targetRange", found->def_range.get_lsp_range());
-		link->add("targetSelectionRange", found->def_selection_range.get_lsp_range());
-		JSONArray links;
-		links.add(std::move(link));
-		m_connection.send_response(*id, links);
-	} else {
+	if (found.empty()) {
 		m_connection.send_response(*id, JSONNull{});
+		return;
 	}
+	// More than one when the position leads to several declarations - a macro parameter
+	// leads both to the parameter and to what the call site passed for it. The client
+	// offers the choice.
+	JSONArray links;
+	for (const auto& found_link : found) {
+		auto link = std::make_unique<JSONObject>();
+		link->add("originSelectionRange", found_link.ref_range.get_lsp_range());
+		link->add("targetUri", std::make_unique<JSONString>(
+			uri_from_source(SourceId(found_link.def_file))));
+		link->add("targetRange", found_link.def_range.get_lsp_range());
+		link->add("targetSelectionRange", found_link.def_selection_range.get_lsp_range());
+		links.add(std::move(link));
+	}
+	m_connection.send_response(*id, links);
 }
 
 void LanguageServer::handle_document_link(const JsonRpcMessage& message) {
@@ -588,6 +618,40 @@ void LanguageServer::handle_document_highlight(const JsonRpcMessage& message) {
 	m_connection.send_response(*id, highlights);
 }
 
+void LanguageServer::handle_completion(const JsonRpcMessage& message) {
+	const auto* id = message.id();
+	if (!id) return;
+
+	const auto position = position_params(message);
+	if (!position) {
+		m_connection.send_response(*id, JSONArray{});
+		return;
+	}
+
+	// The qualifier is read from the live buffer, not from the snapshot: the
+	// line being typed is usually not in any analyzed AST yet.
+	auto document = m_sources.load(position->source);
+	if (document.is_error()) {
+		m_connection.send_response(*id, JSONArray{});
+		return;
+	}
+	const auto query = lsp::completion_query_in(
+		*document.unwrap().text, position->line, position->character);
+	if (query.context == lsp::CompletionContext::None) {
+		m_connection.send_response(*id, JSONArray{});
+		return;
+	}
+
+	std::vector<SourceId> entries;
+	{
+		std::lock_guard lock(m_state_mutex);
+		entries = m_entry_points.affected_entries(position->source);
+	}
+
+	m_connection.send_response(*id, m_completion.items(
+		entries, query.chain, position->source, position->line, position->character));
+}
+
 void LanguageServer::handle_did_open(const JsonRpcMessage& message) {
 	const auto* params = message.params() ? message.params()->as<JSONObject>() : nullptr;
 	const auto* text_document = object_at(params, "textDocument");
@@ -654,6 +718,7 @@ void LanguageServer::handle_did_close(const JsonRpcMessage& message) {
 			m_entry_points.remove_entry(source);
 			m_diagnostic_publisher.clear_entry(source);
 			m_references.erase(source);
+			m_completion.erase(source);
 		}
 	}
 

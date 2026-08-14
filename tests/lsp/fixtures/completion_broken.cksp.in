@@ -1,0 +1,12 @@
+{ The realistic state while typing: a trailing dot makes the file
+  syntactically invalid, so the current analysis fails and completion has to
+  answer from the last successful snapshot. }
+
+namespace audio
+    declare rate: int := 44100
+    declare channels: int := 2
+end namespace
+
+on init
+    audio.<|typing|>
+end on

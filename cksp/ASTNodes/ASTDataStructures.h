@@ -98,7 +98,7 @@ struct NodeArray final : NodeComposite {
 		return name + "[" + (size ? size->get_string() : "") + "]";
 	}
 	std::string get_token_string() const override {
-		return name + "[" + (size ? size->get_token_string() : "") + "]";
+		return tok.val + "[" + (size ? size->get_token_string() : "") + "]";
 	}
 	void update_parents(NodeAST* new_parent) override {
 		parent = new_parent;
@@ -159,7 +159,7 @@ struct NodeNDArray final : NodeComposite {
 		return name + "[" + (sizes ? sizes->get_string() : "") + "]";
 	}
 	std::string get_token_string() const override {
-		return name + "[" + (sizes ? sizes->get_token_string() : "") + "]";
+		return tok.val + "[" + (sizes ? sizes->get_token_string() : "") + "]";
 	}
 	void update_token_data(const Token& token) override {
 		if(sizes) sizes->update_token_data(token);
@@ -228,7 +228,7 @@ struct NodeFunctionHeader final : NodeDataStructure {
 		return output + ")";
 	}
 	std::string get_token_string() const override {
-		std::string output = name + "(";
+		std::string output = tok.val + "(";
 		for (const auto& param : params) output += param->get_token_string() + ", ";
 		if (!params.empty()) output.erase(output.size() - 2);
 		return output + ")";
@@ -361,7 +361,7 @@ struct NodeList final : NodeDataStructure {
 	}
 	std::string get_string() override { return ""; }
 	std::string get_token_string() const override {
-		std::string str = name;
+		std::string str = tok.val;
 		for (const auto& b : body) {
 			if (!str.empty()) str += " ";
 			str += b->get_token_string();
@@ -423,7 +423,14 @@ struct NodeConst final : NodeDataStructure {
 struct NodeStruct final : NodeDataStructure {
 	inline static std::string CONSTRUCTOR = "__init__";
 	inline static std::string DESTRUCTOR = "__del__";
-	std::shared_ptr<NodePointer> node_self = std::make_shared<NodePointer>(std::nullopt, "self", TypeRegistry::Unknown, this->tok);
+	inline static std::string DECREMENTER = "__decr__";
+	inline static std::string INCREMENTOR = "__incr__";
+	inline static std::string REPRESENTOR = "__rep__";
+	inline static std::string SELF = "self";
+	/// <Note.storage(.pitch)>: the compiler-provided static method that hands out the array a
+	/// member is stored in, see TypeInference::lower_storage_method()
+	inline static std::string STORAGE = "storage";
+	std::shared_ptr<NodePointer> node_self = std::make_shared<NodePointer>(std::nullopt, SELF, TypeRegistry::Unknown, this->tok);
 	std::unique_ptr<NodeBlock> members;
 	std::unordered_map<std::string, std::weak_ptr<NodeDataStructure>> member_table;
 	std::set<std::string> member_set;
@@ -466,7 +473,7 @@ struct NodeStruct final : NodeDataStructure {
 	}
 	std::string get_string() override { return ""; }
 	std::string get_token_string() const override {
-		std::string str = name;
+		std::string str = tok.val;
 		if (members) str += " " + members->get_token_string();
 		for (const auto& method : methods) str += " " + method->get_token_string();
 		return str;
@@ -541,7 +548,7 @@ struct NodeStruct final : NodeDataStructure {
 
 	static std::unique_ptr<NodeBlock> declare_struct_constants();
 	/// generated init method only needs assignment if it has pointer -> nil
-	std::shared_ptr<NodeFunctionDefinition> generate_init_method();
+	std::shared_ptr<NodeFunctionDefinition> generate_constructor();
 
 	/**
 	 * generates a __repr__ method for a struct

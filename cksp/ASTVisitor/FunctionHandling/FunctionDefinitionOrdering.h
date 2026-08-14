@@ -30,7 +30,13 @@ public:
 			if(callback.get() != node.init_callback) callback->accept(*this);
 		}
 
-		node.function_definitions = m_ordered_function_definitions;
+		node.function_definitions = std::move(m_ordered_function_definitions);
+		// Hand the definitions over rather than keeping a second set of owners. The caller holds
+		// this visitor in a function-local static, so anything left here outlives main() and is
+		// destroyed during __cxa_finalize, after the program it belongs to is gone: the calls in
+		// a body being torn down then reach through <NodeFunctionCall::~NodeFunctionCall> into
+		// definitions that are already rubble and throw out of a destructor.
+		m_ordered_function_definitions.clear();
 		node.reset_function_visited_flag();
 	}
 

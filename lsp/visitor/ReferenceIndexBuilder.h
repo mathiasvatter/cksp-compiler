@@ -87,11 +87,11 @@ private:
 		if (!range.is_valid() || range.start.line != range.end.line || range.start.column < 1) {
 			return std::nullopt;
 		}
-		auto cache = m_source_cache.find(token.file);
+		auto cache = m_source_cache.find(token.file());
 		if (cache == m_source_cache.end()) {
-			auto loaded = m_sources->load(SourceId(token.file));
+			auto loaded = m_sources->load(SourceId(token.file()));
 			if (loaded.is_error()) return token;
-			cache = m_source_cache.emplace(token.file, loaded.unwrap().text).first;
+			cache = m_source_cache.emplace(token.file(), loaded.unwrap().text).first;
 		}
 		const auto& text = *cache->second;
 
@@ -110,21 +110,36 @@ private:
 		return std::nullopt;
 	}
 
+	/// Links a reference to its declaration.
+	///
+	/// The name is matched against the declaration, but every range comes from the token as
+	/// the source spells it: a name a <#param#> substitution assembled (<#browser#.foo>
+	/// becoming <browser.foo>) matches no file's text, while the word it was built from is
+	/// exactly what the editor puts the cursor in. The two are the same token everywhere
+	/// else, which is why the split only shows up here.
 	void add_link(const Token& reference, NodeAST& target) const {
 		// Builtins/engine variables and synthesized nodes have no real source file.
-		if (reference.file.empty() || target.tok.file.empty()) return;
-		auto verified_reference = source_verified_token(reference);
+		if (reference.file().empty() || target.tok.file().empty()) return;
+		const auto& written = as_written(reference);
+		if (written.file().empty()) return;
+		auto verified_reference = source_verified_token(written);
 		if (!verified_reference) return;
 		const auto def_range = declaration_range(target);
 		if (!def_range.is_valid()) return;
 
 		Token direct_reference = *verified_reference;
-		if (verified_reference->val != target.tok.val) {
-			const auto dot = verified_reference->val.rfind('.');
-			if (dot == std::string::npos || verified_reference->val.substr(dot + 1) != target.tok.val) {
+		// The declaration is either the whole name or its last dotted segment. Which one is
+		// decided on the resolved name; the characters to underline come from the written
+		// one, whose last segment may read differently (<#browser#> for <browser>).
+		if (reference.val != target.tok.val) {
+			const auto dot = reference.val.rfind('.');
+			if (dot == std::string::npos || reference.val.substr(dot + 1) != target.tok.val) {
 				return;
 			}
-			direct_reference = segment_token(*verified_reference, dot + 1, target.tok.val);
+			const auto written_dot = written.val.rfind('.');
+			if (written_dot == std::string::npos) return;
+			direct_reference = segment_token(
+				*verified_reference, written_dot + 1, written.val.substr(written_dot + 1));
 			auto verified_direct_reference = source_verified_token(direct_reference);
 			if (!verified_direct_reference) return;
 			direct_reference = *verified_direct_reference;
@@ -140,9 +155,29 @@ private:
 		// the name range carries the exact identifier at the declaration, which rename
 		// edits replace; def_range may span the whole header for functions
 		m_index.add(
-			direct_reference.file, ref_range,
-			target.tok.file, def_range,
-			source_range_from_token(target.tok));
+			direct_reference.file(), ref_range,
+			target.tok.file(), def_range,
+			source_range_from_token(target.tok),
+			// A macro body spells this reference <#browser#> where the declaration is
+			// <browser>; the text is verified, so equality is the whole test.
+			direct_reference.val == target.tok.val);
+
+		// A substituted name also stands at the call site, where the argument was written -
+		// the substitution moved the token there. Only the segment the argument supplied
+		// reads back as itself there, and only when the argument is a plain name; the
+		// source check rejects everything else, which is what keeps this from underlining
+		// the comma after it.
+		if (reference.origin && reference.val == target.tok.val) {
+			if (const auto at_call_site = source_verified_token(reference)) {
+				if (const auto call_site_range = source_range_from_token(*at_call_site);
+					call_site_range.is_valid()) {
+					m_index.add(
+						at_call_site->file(), call_site_range,
+						target.tok.file(), def_range,
+						source_range_from_token(target.tok));
+				}
+			}
+		}
 	}
 
 	void add_link(const NodeAST& reference, NodeAST& target) const {
@@ -165,7 +200,7 @@ private:
 			// Struct desugaring injects a synthetic `self` declaration whose token is the
 			// struct name token. Indexing self -> that declaration would make the range-based
 			// symbol identity conflate every `self` use with the struct itself.
-			if (declaration->name == "self" && declaration->tok.val != "self") return;
+			if (declaration->name == NodeStruct::SELF && declaration->tok.val != NodeStruct::SELF) return;
 			add_link(reference, *declaration);
 		}
 	}

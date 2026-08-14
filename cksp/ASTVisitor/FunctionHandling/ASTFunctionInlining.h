@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../ASTVisitor.h"
+#include "../GlobalScope/MarkThreadSafe.h"
 
 class ASTFunctionInlining final : public ASTVisitor {
 
@@ -67,15 +68,10 @@ public:
 			return &node;
 		}
 
-		// only threadsafe functions can be called in <on init> callback
-		if(m_current_callback == m_program->init_callback) {
-			if(!definition->is_thread_safe) {
-				auto error = make_diagnostic(ErrorType::SyntaxError, node);
-				error.message = "Only threadsafe functions can be called in the <on init> callback. Function <"
-								  +node.function->name+"> contains asychronous operations.";
-				error.exit();
-			}
-		}
+		// only threadsafe functions can be called in <on init> callback. MarkThreadSafe applies the
+		// same rule as early as the flags allow; this catches what is only bound by the time we get
+		// here
+		MarkThreadSafe::check_init_callability(node, definition, m_current_callback, m_program->init_callback);
 
 		m_program->function_definition_stack.push(definition);
 		FunctionCallStackScope diagnostic_frame(*m_program, node);

@@ -479,6 +479,15 @@ std::shared_ptr<NodeFunctionDefinition> DefinitionProvider::get_builtin_function
 	return nullptr;
 }
 
+std::shared_ptr<NodeFunctionDefinition> DefinitionProvider::get_builtin_function(const std::string &name,
+	const int num_params) {
+	const auto it = builtin_functions.find({name, num_params});
+	if(it != builtin_functions.end()) {
+		return it->second;
+	}
+	return nullptr;
+}
+
 void DefinitionProvider::set_builtin_functions(std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_functions) {
 	DefinitionProvider::builtin_functions = std::move(builtin_functions);
 }

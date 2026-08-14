@@ -29,6 +29,15 @@ RenameProvider::RenameResult RenameProvider::rename(
 
 	auto locations = m_references.references_to(target, true);
 
+	// A macro body reaches a declaration through a parameter, so the text there is
+	// <#browser#> where the name is <browser>. That usage is real - it is listed and
+	// navigable - but the name it spells belongs to the macro, not to the symbol being
+	// renamed, and rewriting it would break the macro. Drop it before the check below,
+	// which would otherwise refuse the whole rename over it.
+	std::erase_if(locations, [](const ReferenceLocation& location) {
+		return !location.spelled_as_declared;
+	});
+
 	// Every edit must still match the analyzed text: the identifier read from the live
 	// buffers has to be identical at the declaration and at every reference. A mismatch
 	// means the analysis is stale (or a location is a rewritten alias such as a raw-array

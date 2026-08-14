@@ -189,6 +189,13 @@ private:
 		for(int i = 0; i<init_list->size(); i++) {
 			auto node_array_ref = ndarray_ref->to_array_ref(nullptr);
 			node_array_ref->name = "_"+node_array_ref->name;
+			// to_array_ref() builds a bare reference. Without the declaration and the element type
+			// carried over, the raw reference has no data structure behind it: function inlining
+			// reports it as missing, and the generator has no type to derive its sigil from.
+			if (const auto declaration = ndarray_ref->get_declaration()) {
+				node_array_ref->match_data_structure(declaration);
+			}
+			node_array_ref->ty = ndarray_ref->ty->get_element_type();
 			auto node_index = std::make_unique<NodeBinaryExpr>(token::ADD, node_index_expr->clone(), std::make_unique<NodeInt>(i, ndarray_ref->tok), ndarray_ref->tok);
 			node_index->parent = node_array_ref.get();
 			node_array_ref->index = std::move(node_index);

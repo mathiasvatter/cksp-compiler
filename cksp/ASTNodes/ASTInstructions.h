@@ -85,6 +85,10 @@ struct NodeFunctionCall final : NodeInstruction {
 	std::shared_ptr<NodeFunctionDefinition> find_definition(NodeProgram *program, const std::string& name, int num_args, const Type *ty);
     /// attempts to get and match metadata from builtin function to this
     std::shared_ptr<NodeFunctionDefinition> find_builtin_definition(NodeProgram *program);
+	/// returns the user definition that takes this name over from a builtin via <override> and renames
+	/// the call to it. Null when there is none - or when the call sits inside that definition's body,
+	/// where the builtin is what the function wraps.
+	std::shared_ptr<NodeFunctionDefinition> find_overriding_definition(NodeProgram *program);
     /// attempts to get property function that and set definition pointer + error handling
     std::shared_ptr<NodeFunctionDefinition> find_property_definition(NodeProgram *program);
 	std::shared_ptr<NodeFunctionDefinition> find_constructor_definition(NodeProgram* program);
@@ -111,6 +115,11 @@ struct NodeFunctionCall final : NodeInstruction {
 	/// returns true if the function call is inside an access chain. NOT if it is the first member of
 	/// the chain
 	bool is_in_access_chain() const;
+	/// Distance between the call's arguments and the definition's parameters: a method carries <self>
+	/// as its first parameter, which the call site does not spell out (obj.foo(x) -> Foo::foo(self, x)).
+	/// A <static function> has no <self>, so its parameters line up with the arguments directly.
+	/// Use as: definition->get_param(arg_index + call->get_param_offset(definition))
+	int get_param_offset(const NodeFunctionDefinition* definition) const;
 	/// Checks if the function call or any of its arguments has side effects
 	/// this gets checked by giving a set of free variables that are being modified inside
 	/// or checking for builtin functions with side effects (message etc)
@@ -183,14 +192,81 @@ struct NodeSortSearch final : NodeInstruction {
 	}
 };
 
+/**
+ * A query over an array of objects.
+ *
+ * The member path is a compile-time selector rather than a value-producing
+ * expression. Later passes resolve it against the element type of `array` and
+ * materialize the operation-specific helper.
+ */
+struct NodeArrayQuery final : NodeInstruction {
+	enum class QueryKind {
+		SearchBy,
+	};
+
+	QueryKind query_kind;
+	std::unique_ptr<NodeAST> array;
+	std::unique_ptr<NodeMemberPath> member_path;
+	std::unique_ptr<NodeAST> value;
+
+	NodeArrayQuery(
+		QueryKind query_kind,
+		std::unique_ptr<NodeAST> array,
+		std::unique_ptr<NodeMemberPath> member_path,
+		std::unique_ptr<NodeAST> value,
+		Token tok
+	) : NodeInstruction(NodeType::ArrayQuery, std::move(tok)),
+		query_kind(query_kind), array(std::move(array)), member_path(std::move(member_path)),
+		value(std::move(value)) {
+		set_child_parents();
+	}
+	NodeArrayQuery(const NodeArrayQuery& other);
+
+	NodeAST* accept(ASTVisitor& visitor) override;
+	NodeAST* replace_child(NodeAST* old_child, std::unique_ptr<NodeAST> new_child) override;
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+
+	void update_parents(NodeAST* new_parent) override {
+		parent = new_parent;
+		array->update_parents(this);
+		member_path->update_parents(this);
+		value->update_parents(this);
+	}
+	void set_child_parents() override {
+		array->parent = this;
+		member_path->parent = this;
+		value->parent = this;
+	}
+	std::string get_string() override;
+	std::string get_token_string() const override;
+	void update_token_data(const Token& token) override {
+		NodeAST::update_token_data(token);
+		array->update_token_data(token);
+		member_path->update_token_data(token);
+		value->update_token_data(token);
+	}
+
+	[[nodiscard]] std::string query_name() const;
+};
+
 struct NodeNumElements final : NodeInstruction {
 	std::unique_ptr<NodeReference> array;
 	std::unique_ptr<NodeAST> dimension;
+	/// How many dimensions the declaration had already gained when this node was built.
+	/// A dimension written in the source counts the declared dimensions, so every inflation
+	/// added afterwards (struct members, callback dimension) shifts it. Compiler generated
+	/// nodes are built against the inflated declaration and must not be shifted again, which
+	/// this offset distinguishes. Set from the declaration, which is unresolved while parsing
+	/// and inflated by then in generated code.
+	int inflations_at_creation = 0;
 	explicit NodeNumElements(Token tok) : NodeInstruction(NodeType::NumElements, std::move(tok)) {}
 	NodeNumElements(std::unique_ptr<NodeReference> array, std::unique_ptr<NodeAST> dimension, Token tok)
 		: NodeInstruction(NodeType::NumElements, std::move(tok)), array(std::move(array)), dimension(std::move(dimension)) {
 		set_child_parents();
+		inflations_at_creation = count_inflations();
 	}
+	/// Inflations of the referenced declaration, 0 while it is not resolved yet.
+	[[nodiscard]] int count_inflations() const;
 	NodeAST * accept(ASTVisitor &visitor) override;
 	NodeAST * replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) override;
 	// Copy Constructor
@@ -652,12 +728,16 @@ struct NodeSingleDeclaration final : NodeInstruction {
 	}
 	/// checks if declaration of a constant is properly initialized
 	void check_constant_initialization() const {
-		if (variable->is_member()) return;
-		if (variable->data_type == DataType::Const and !value) {
-			auto error = Diagnostic(ErrorType::VariableError, "", "", tok);
+		if (variable->is_engine or value) return;
+		if (variable->data_type != DataType::Const) return;
+		auto error = Diagnostic(ErrorType::VariableError, "", "", tok);
+		if (variable->is_shared_member()) {
+			error.message = "<static const> members must be initialized upon declaration. Their value is "
+				"shared by all instances of the struct, so a constructor cannot provide it.";
+		} else {
 			error.message = "Constant variables must be initialized upon declaration.";
-			error.exit();
 		}
+		error.exit();
 	}
 	/// optimization pass: checks if r_value is type neutral assignment and removes it since Kontakt always initializes
 	/// its variables upon declaration. Important: will not do this if variable is const

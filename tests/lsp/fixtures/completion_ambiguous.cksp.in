@@ -1,0 +1,33 @@
+{ Two nested blocks share the name `mixer`. Suffix matching alone cannot tell
+  them apart and would merge both member sets; only the enclosing block at the
+  cursor resolves `mixer.` to the right one. Both sides use the shortened form,
+  so each has to resolve against its own enclosing namespace. }
+
+namespace audio
+    namespace mixer
+        declare volume: int := 100
+        declare mute: int := 0
+    end namespace
+
+    function apply_audio()
+        mixer.<|in_audio|>volume := 90
+    end function
+end namespace
+
+namespace midi
+    namespace mixer
+        declare channel: int := 1
+        declare port: int := 0
+    end namespace
+
+    function apply_midi()
+        mixer.<|in_midi|>channel := 2
+    end function
+end namespace
+
+on init
+    audio.apply_audio()
+    midi.apply_midi()
+    { outside both blocks there is no enclosing scope to resolve against }
+    message(audio.mixer.<|outside|>volume)
+end on

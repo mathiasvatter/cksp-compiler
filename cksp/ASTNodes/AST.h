@@ -65,12 +65,12 @@ struct NodeAST {
     virtual std::string get_string() = 0;
 	virtual std::string get_token_string() const { return tok.val; }
     // virtual void update_token_data(const Token& token) {
-    //     tok.line = token.line; tok.file = token.file;
+    //     tok.line = token.line; tok.file_ref = token.file_ref;
     // }
 	virtual void update_token_data(const Token& token) {
 		const long long delta = (long long)token.line - (long long)tok.line;
 		tok.line = token.line;
-		tok.file = token.file;
+		tok.file_ref = token.file_ref;
 		if (range.is_valid()) {
 			// Keep the range in sync with the relocated token by shifting it the same number
 			// of lines; columns are preserved. Guard against underflow when moving upwards.
@@ -224,7 +224,9 @@ struct NodeReference : NodeAST {
     std::weak_ptr<class NodeDataStructure> declaration;
     bool is_engine = false;
     bool is_local = false;
-	enum Kind{Builtin, Compiler, User, Throwaway};
+	/// TypeQualifier: the leading element of a type-qualified access chain (<Foo.MAX>). It names a
+	/// struct instead of an instance, so it has no declaration and is dropped during lowering.
+	enum Kind{Builtin, Compiler, User, Throwaway, TypeQualifier};
 	Kind kind = User;
 	DataType data_type = DataType::Mutable;
     explicit NodeReference(Token tok) : NodeAST(std::move(tok), NodeType::DeadCode) {}
@@ -338,6 +340,9 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 	NodeDataStructure(std::string name, Type* ty, Token tok, const NodeType node_type, const DataType data_type) : NodeAST(std::move(tok), node_type), data_type(data_type), name(std::move(name)) {
         this->ty = ty;
     }
+	/// <static const> members hold one shared value for all instances: they are not expanded into
+	/// per-instance storage and are therefore required to be initialized at their declaration.
+	[[nodiscard]] bool is_shared_member() const { return kind == Static; }
 	// Kopierkonstruktor
 	NodeDataStructure(const NodeDataStructure& other);
 	// Clone Methode
@@ -456,6 +461,62 @@ struct NodeWildcard final : NodeAST {
 		return tok.val;
 	}
 	[[nodiscard]] bool check_semantic() const;
+};
+
+/**
+ * A context-dependent path to one or more members, written without a receiver.
+ *
+ * Examples: <.id>, <.group.id>. Unlike NodeAccessChain this node does not denote
+ * a value by itself. A consuming construct such as an array query supplies the
+ * receiver type and resolves the individual path segments later.
+ */
+struct NodeMemberPath final : NodeAST {
+	/**
+	 * Stable semantic information recorded for one path segment during type
+	 * inference. Struct lowering later replaces the source member declaration,
+	 * but the generated heap name and type remain valid.
+	 */
+	struct ResolvedMemberSegment {
+		std::string heap_name;
+		Type* value_type = nullptr;
+		Type* heap_type = nullptr;
+		bool has_scalar_heap = false;
+	};
+
+	std::vector<Token> segments;
+	/// One stable descriptor per segment. Query lowering uses these descriptors to
+	/// create unresolved heap references; post-lowering variable checking binds the
+	/// references to the concrete arrays created by struct lowering.
+	std::vector<ResolvedMemberSegment> resolved_segments;
+
+	NodeMemberPath(std::vector<Token> segments, Token tok)
+		: NodeAST(std::move(tok), NodeType::MemberPath), segments(std::move(segments)) {}
+	NodeMemberPath(const NodeMemberPath& other) = default;
+	NodeAST* accept(ASTVisitor& visitor) override;
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+
+	[[nodiscard]] bool empty() const { return segments.empty(); }
+	[[nodiscard]] bool is_resolved() const {
+		return resolved_segments.size() == segments.size()
+			&& std::ranges::all_of(resolved_segments, [](const auto& member) {
+				return !member.heap_name.empty() && member.value_type && member.heap_type;
+			});
+	}
+	[[nodiscard]] const Token& segment(const size_t index) const { return segments.at(index); }
+	[[nodiscard]] const std::string& leaf_name() const { return segments.back().val; }
+	[[nodiscard]] const ResolvedMemberSegment& resolved_member(const size_t index) const {
+		return resolved_segments.at(index);
+	}
+	[[nodiscard]] const ResolvedMemberSegment* resolved_leaf() const {
+		return resolved_segments.empty() ? nullptr : &resolved_segments.back();
+	}
+	/// Resolves every segment against the supplied receiver type, binds the concrete
+	/// declarations and sets this node's type to the leaf member type.
+	std::shared_ptr<NodeDataStructure> resolve_members(NodeProgram* program, Type* receiver_type);
+
+	std::string get_string() override;
+	std::string get_token_string() const override;
+	void update_token_data(const Token& token) override;
 };
 
 struct NodeInt final : NodeAST {
@@ -1018,6 +1079,8 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
     std::shared_ptr<NodeFunctionHeader> header;
     std::optional<std::shared_ptr<NodeDataStructure>> return_variable;
     bool override = false;
+	/// <static function> member: belongs to the struct, not to an instance, and takes no <self>
+	bool is_static = false;
     std::unique_ptr<NodeBlock> body;
     explicit NodeFunctionDefinition(Token tok);
     NodeFunctionDefinition(std::unique_ptr<NodeFunctionHeader> header,
@@ -1081,8 +1144,19 @@ struct NodeProgram final : NodeAST {
     std::vector<std::shared_ptr<NodeFunctionDefinition>> function_definitions;
 	std::vector<std::shared_ptr<NodeFunctionDefinition>> additional_function_definitions;
 	std::unordered_map<StringIntKey, std::vector<std::weak_ptr<NodeFunctionDefinition>>, StringIntKeyHash> function_lookup;
+	/// definitions that take a KSP command over via <override>, keyed by the name and parameter count
+	/// of that command. They carry a generated name from then on, so the command itself stays
+	/// reachable - both for the emitted KSP and for the body of the overriding function.
+	std::unordered_map<StringIntKey, std::weak_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_overrides;
 	std::vector<NodeStruct*> struct_definitions;
 	std::unordered_map<std::string, NodeStruct*> struct_lookup;
+	/// Struct nodes that lowering already replaced by their member block, kept alive until
+	/// the end of that pass. <struct_definitions> and <struct_lookup> hand out raw pointers
+	/// and are only cleared once every struct is lowered, so destroying a struct the moment
+	/// it leaves the AST leaves both tables pointing at freed memory for the rest of the
+	/// pass - which the callbacks lowered after it and the language server's post-abort
+	/// reference harvest both read.
+	std::vector<std::unique_ptr<NodeAST>> lowered_structs;
 	std::unique_ptr<NodeBlock> global_declarations;
 	std::shared_ptr<NodeVariable> max_cb_stack;
 	std::unique_ptr<NodeBinaryExpr> cb_idx;
@@ -1105,8 +1179,19 @@ struct NodeProgram final : NodeAST {
 	// adds a function definition or replaces one if the new def is marked override -> throws error if not and fun signature already exists
 	void add_function_or_override(const std::shared_ptr<NodeFunctionDefinition> &def);
 	void remove_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def);
+	/// renames a definition and moves its entry in <function_lookup> along with it. The lookup is
+	/// keyed by name and parameter count, so writing the new name onto the header alone leaves the
+	/// definition registered under a name it no longer has.
+	void rename_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def, const std::string& new_name);
+	/// A global function carrying the name and parameter count of a KSP command would never be called
+	/// - the command binds first. Rejects that unless the definition is marked <override>, in which
+	/// case the definition is renamed and registered in <builtin_overrides>.
+	void check_builtin_shadowing();
 	static NodeFunctionDefinition *replace_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def, const std::shared_ptr<NodeFunctionDefinition> &replacement);
 	void update_struct_lookup();
+	/// Puts a lowered struct's member block in its place in the AST and keeps the struct node
+	/// itself alive in <lowered_structs> instead of destroying it. Returns the member block.
+	NodeAST* retire_lowered_struct(NodeStruct& node);
 	/// looks up function with same name and parameter number and compatible types
 	std::shared_ptr<NodeFunctionDefinition> look_up_function(const NodeFunctionHeaderRef& header);
 	/// looks up function with same name and parameter number and SAME types
