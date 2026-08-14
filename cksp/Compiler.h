@@ -241,7 +241,7 @@ private:
 		infer_types.do_complete_traversal(*ast);
 
 		UniqueParameterNamesProvider unique_names_provider(m_program);
-		unique_names_provider.do_parallel_renaming(*m_program);
+		unique_names_provider.do_renaming(*m_program);
 
 		// Harvest source-level references while struct definitions and their lookup are
 		// still alive. ASTCollectLowerings removes them; the later pass layers links
@@ -447,7 +447,7 @@ private:
 
 
 		UniqueParameterNamesProvider unique_names_provider(m_program);
-		unique_names_provider.do_parallel_renaming(*m_program);
+		unique_names_provider.do_renaming(*m_program);
 		ast->debug_print();
 
 		m_timer.stop("Type Checking");

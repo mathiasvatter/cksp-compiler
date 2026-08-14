@@ -27,8 +27,13 @@ class ASTVariableReuse final : public ASTVisitor {
 		if (m_current_block.empty()) return nullptr;
 		return m_current_block.top();
 	}
-	/// vector for all local declarations in callbacks
-	std::unordered_map<NodeCallback*, std::vector<NodeSingleDeclaration*>> m_all_callback_decl = {};
+	/// All local declarations found in callbacks, paired with the callback they were found in,
+	/// in the order the walk reached them. Deliberately a vector and not a map keyed by
+	/// NodeCallback*: <promote_to_global_vars> emits the global declares in exactly this order,
+	/// and iterating a pointer-keyed hash map would tie that order to heap addresses, so the
+	/// emitted KSP would differ between two runs of the same binary. The walk visits callbacks
+	/// one after another, so declarations still come out grouped per callback.
+	std::vector<std::pair<NodeCallback*, NodeSingleDeclaration*>> m_all_callback_decl = {};
 	/// vector for all local vars in functions -> do not get moved into on init
 	std::vector<std::shared_ptr<NodeDataStructure>> m_all_local_vars = {};
 	/// hash values are the types
@@ -82,20 +87,18 @@ public:
 	bool promote_to_global_vars() const {
 		// move all passive_vars declarations to global scope
 		auto local_declare_statements = std::make_unique<NodeBlock>(Token());
-		for(auto & callback : m_all_callback_decl) {
+		for(auto & [callback, local_decl] : m_all_callback_decl) {
+			// set local to false to avoid renaming in rename_local_vars
+			local_decl->variable->is_local = false;
 			// do not replace with assign statements if in init callback already
-			for(auto & local_decl : callback.second) {
-				// set local to false to avoid renaming in rename_local_vars
-				local_decl->variable->is_local = false;
-				if(callback.first == m_program->init_callback) continue;
-				local_declare_statements->add_as_stmt(
-					std::make_unique<NodeSingleDeclaration>(
-						local_decl->variable,
-						nullptr, local_decl->tok
-					)
-				);
-				local_decl->replace_with(std::move(to_assign_statement(*local_decl, m_program)));
-			}
+			if(callback == m_program->init_callback) continue;
+			local_declare_statements->add_as_stmt(
+				std::make_unique<NodeSingleDeclaration>(
+					local_decl->variable,
+					nullptr, local_decl->tok
+				)
+			);
+			local_decl->replace_with(std::move(to_assign_statement(*local_decl, m_program)));
 		}
 		m_program->init_callback->statements->prepend_body(std::move(local_declare_statements));
 		return true;
@@ -367,7 +370,7 @@ private:
 
 			// add local vars w/o free_passive_var to lists for later renaming
 			if(m_program->current_callback)
-				m_all_callback_decl[m_program->current_callback].push_back(&node);
+				m_all_callback_decl.emplace_back(m_program->current_callback, &node);
 			m_all_local_vars.push_back(node.variable);
 		}
 
