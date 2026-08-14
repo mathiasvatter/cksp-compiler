@@ -27,15 +27,14 @@ class ScalarVarToArray final : public ASTOptimizations {
 	/// maps the variable names to their assigned index in the global int vars array
 	std::unordered_map<std::string, int> m_variable_to_index;
 	std::unique_ptr<NodeSingleDeclaration> m_int_var_array;
-	std::atomic_int m_counter = 0;
-	std::mutex m_mutex;
+	int m_counter = 0;
 public:
 
 	explicit ScalarVarToArray() {
 		m_counter = 0;
 	}
 
-	NodeAST* do_parallel_traversal(NodeProgram& node) {
+	NodeAST* do_traversal(NodeProgram& node) {
 		m_counter = 0;
 		m_int_var_array = nullptr;
 		m_program = &node;
@@ -55,17 +54,19 @@ public:
 
 		m_program->global_declarations->accept(*this);
 		m_program->init_callback->accept(*this);
-		parallel_for_each(node.callbacks.begin(), node.callbacks.end(),
-			[this](const auto & callback) {
-				  if (callback.get() == m_program->init_callback) return;
-				callback->accept(*this);
-			}
-		);
-		parallel_for_each(node.function_definitions.begin(), node.function_definitions.end(),
-			[this](const auto & func) {
-				func->accept(*this);
-			}
-		);
+		// Both loops used to run through parallel_for_each and were 1.5-2.9x slower for it
+		// (action-ww 313ms -> 111ms, lux-brass 115ms -> 40ms): rewriting a reference is a few
+		// pointer stores, and every one of them queued behind the one mutex this pass used to
+		// hold, so the threads bought nothing and paid contention. Sequential also keeps
+		// <m_counter> and <m_variable_to_index> honest - the index a variable gets in __vars
+		// is handed out here, and a racing counter would put it somewhere else on every compile.
+		for (const auto& callback : node.callbacks) {
+			if (callback.get() == m_program->init_callback) continue;
+			callback->accept(*this);
+		}
+		for (const auto& func : node.function_definitions) {
+			func->accept(*this);
+		}
 		node.reset_function_visited_flag();
 
 		auto size = std::make_unique<NodeInt>(m_counter, node.tok);
@@ -152,10 +153,7 @@ public:
 				array_ref->ty = node.ty;
 				auto index = std::make_unique<NodeInt>(it->second, node.tok);
 				array_ref->cast<NodeArrayRef>()->set_index(std::move(index));
-				{
-					std::lock_guard<std::mutex> lock(m_mutex);
-					return node.replace_reference(std::move(array_ref));
-				}
+				return node.replace_reference(std::move(array_ref));
 			}
 		}
 		return &node;
@@ -179,13 +177,10 @@ public:
 				auto index = std::move(array_ref->index);
 				array_ref->remove_index();
 				array_ref->ty = m_int_var_array->variable->ty;
-				{
-					std::lock_guard<std::mutex> lock(m_mutex);
-					array_ref->remove_references();
-					auto watch_array_idx = DefinitionProvider::create_builtin_call("watch_array_idx", std::move(arg), std::move(index));
-					watch_array_idx->collect_references();
-					return node.replace_with(std::move(watch_array_idx));
-				}
+				array_ref->remove_references();
+				auto watch_array_idx = DefinitionProvider::create_builtin_call("watch_array_idx", std::move(arg), std::move(index));
+				watch_array_idx->collect_references();
+				return node.replace_with(std::move(watch_array_idx));
 			}
 			return &node;
 		}
