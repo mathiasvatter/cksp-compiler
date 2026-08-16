@@ -11,8 +11,8 @@
 # of its runs while producing byte-identical output whenever it succeeded.
 #
 # The project corpus in run_tests.sh is deliberately not covered here: it currently trips a
-# separate heap-buffer-overflow in NodeSelect::replace_child that this suite would report on every
-# file. Add the corpus once that one is fixed.
+# separate heap-buffer-overflow in NodeSelect::replace_child (issue #125) that this suite would
+# report on every file. Add the corpus once that one is fixed.
 #
 # Usage: tests/sanitizers/run.sh [path/to/asan-cksp]
 #
