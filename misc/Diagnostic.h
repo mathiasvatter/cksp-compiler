@@ -74,7 +74,8 @@ struct Diagnostic {
             AddRefToFuncParam,
             ConvertDeprecatedFunctionReturn,
             ConvertTaskfuncToFunction,
-            ConvertTCMCall
+            ConvertTCMCall,
+            CorrectNameCase
         };
         enum class EditKind {
             InsertBefore,
@@ -103,6 +104,7 @@ struct Diagnostic {
             case DiagnosticFix::FixKind::ConvertDeprecatedFunctionReturn: return "ConvertDeprecatedFunctionReturn";
             case DiagnosticFix::FixKind::ConvertTaskfuncToFunction: return "ConvertTaskfuncToFunction";
             case DiagnosticFix::FixKind::ConvertTCMCall: return "ConvertTCMCall";
+            case DiagnosticFix::FixKind::CorrectNameCase: return "CorrectNameCase";
             default: break;
         }
         return "unknown";

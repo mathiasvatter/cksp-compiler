@@ -938,5 +938,62 @@ def _(workspace, server):
     expect(not server.code_actions(fixture), "an unknown tcm call has nothing to rewrite to")
 
 
+@test("migration: a name that differs only in case is offered as an edit",
+      entry_points=["case_variable.cksp"])
+def _(workspace, server):
+    # SublimeKSP resolves names case-insensitively, so this is the single most common
+    # error a ported script produces.
+    source = ("on init\n    declare myCounter\nend on\n"
+              "\non note\n    MyCounter := 1\nend on\n")
+    fixture = workspace.write("case_variable.cksp", source)
+    server.did_open(fixture)
+    action = action_titled(server.code_actions(fixture), "MyCounter")
+    expect(action["title"] == "Change 'MyCounter' to 'myCounter'",
+           f"unexpected title: {action['title']!r}")
+    ported = apply_action(source, action, fixture)
+    server.did_change(fixture, ported)
+    expect(not server.diagnostics(fixture),
+           f"corrected source still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: a miscased function name and a dotted one are both offered",
+      entry_points=["case_function.cksp", "case_dotted.cksp"])
+def _(workspace, server):
+    for name, source, title in [
+        ("case_function.cksp",
+         "function doThing(a)\n    message(a)\nend function\n"
+         "\non note\n    DoThing(1)\nend on\n",
+         "Change 'DoThing' to 'doThing'"),
+        # The reference token spans the whole dotted name, so the edit replaces all of it.
+        ("case_dotted.cksp",
+         "namespace audio\n    declare sampleRate := 44100\nend namespace\n"
+         "\non init\n    message(audio.SampleRate)\nend on\n",
+         "Change 'audio.SampleRate' to 'audio.sampleRate'"),
+    ]:
+        fixture = workspace.write(name, source)
+        server.did_open(fixture)
+        action = action_titled(server.code_actions(fixture), "Change")
+        expect(action["title"] == title, f"{name}: unexpected title {action['title']!r}")
+        server.did_change(fixture, apply_action(source, action, fixture))
+        expect(not server.diagnostics(fixture),
+               f"{name} still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: a real typo stays a suggestion and offers no edit",
+      entry_points=["case_typo.cksp"])
+def _(workspace, server):
+    # Same letters in a different order is a guess about intent, not the same identifier;
+    # only a pure case difference is safe to apply on the user's behalf.
+    fixture = workspace.write("case_typo.cksp",
+                              "on init\n    declare counter\nend on\n"
+                              "\non note\n    countr := 1\nend on\n")
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(any("counter" in message for message in messages_of(diagnostics)),
+           f"the message should still suggest the name; got {messages_of(diagnostics)}")
+    expect(not server.code_actions(fixture),
+           "a typo that is not a case difference must not be offered as an edit")
+
+
 if __name__ == "__main__":
     raise SystemExit(run_suite())

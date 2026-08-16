@@ -225,6 +225,41 @@ public:
 	/// only returns data structure declaration in current scope or global_scope
 	[[nodiscard]] std::shared_ptr<NodeDataStructure> get_scoped_data_structure(const std::string& data, bool global_scope) const;
 
+	/// A fix for a suggestion that differs from the written name in nothing but case.
+	///
+	/// SublimeKSP resolves names case-insensitively, so a ported script spells its
+	/// declarations however it likes and every one of them lands on an undeclared-name error
+	/// here. Unlike the other suggestions this one is not a guess about what was meant - it
+	/// is the same identifier - so it is worth offering as an edit. Anything further apart
+	/// stays a suggestion in the message.
+	static std::optional<Diagnostic::DiagnosticFix> make_name_case_fix(
+		const std::string& written,
+		const std::vector<std::string>& suggestions,
+		const Token& token) {
+		// A word a <#param#> substitution assembled stands in no file: its range points at
+		// the call site while its value comes from the macro body, so an edit built from the
+		// two would rewrite text that never spelled this name.
+		if (token.origin or token.val != written) return std::nullopt;
+
+		const auto lower_written = StringUtils::to_lower(written);
+		for (const auto& suggestion : suggestions) {
+			if (suggestion == written) continue;
+			if (StringUtils::to_lower(suggestion) != lower_written) continue;
+			return Diagnostic::DiagnosticFix{
+				.kind = Diagnostic::DiagnosticFix::FixKind::CorrectNameCase,
+				.title = "Change '" + written + "' to '" + suggestion + "'",
+				.edits = {{
+					.kind = Diagnostic::DiagnosticFix::EditKind::Replace,
+					.file = token.file(),
+					.range = source_range_from_token(token),
+					.new_text = suggestion
+				}},
+				.is_preferred = true
+			};
+		}
+		return std::nullopt;
+	}
+
 	/// variable error handling
 	static Diagnostic throw_declaration_error(NodeReference &node, const std::string& add_msg="", const DefinitionProvider* ctx = nullptr, const std::string& alternate_name = "") {
 		auto diagnostic = Diagnostic(ErrorType::VariableError, "", "", node.tok);
@@ -253,6 +288,7 @@ public:
 			if (!suggestions.empty()) {
 				diagnostic.message += " Did you mean: "
 					+ StringUtils::join(suggestions, ", ") + "?";
+				diagnostic.fix = make_name_case_fix(name, suggestions, node.tok);
 			}
 		}
 
