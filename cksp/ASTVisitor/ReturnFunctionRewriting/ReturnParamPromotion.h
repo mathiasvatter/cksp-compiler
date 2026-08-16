@@ -148,6 +148,7 @@ private:
 				);
 			}
 			new_param->data_type = DataType::Return;
+			const bool returns_composite = new_param->ty and new_param->ty->cast<CompositeType>();
 			auto new_param_ref = new_param->to_reference();
 			new_param_ref->ty = node_return->ty;
 			new_param_ref->data_type = DataType::Return;
@@ -162,6 +163,15 @@ private:
 				}
 			}
 			m_current_function->header->params[0]->kind = NodeInstruction::ReturnVar;
+			// An array return parameter is passed by reference like every other array parameter, so
+			// the caller's variable is substituted for it when the function is inlined and the
+			// returned array is written into it directly. Without this the parameter is promoted
+			// to a global array that every call copies out of - one copy and one array too many,
+			// and a shared one at that, which a returning function that waits cannot use safely.
+			// ASTFunctionStrategy already chose inlining for it, see returns_composite() there.
+			if (returns_composite) {
+				m_current_function->header->params[i]->is_pass_by_ref = true;
+			}
 
 			auto node_assignment = std::make_unique<NodeSingleAssignment>(std::move(new_param_ref), std::move(node.return_variables[i]), node.tok);
 			block_replace->add_as_stmt(std::move(node_assignment));

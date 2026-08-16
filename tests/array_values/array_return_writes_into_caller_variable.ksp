@@ -1,0 +1,30 @@
+{ An array return parameter is passed by reference, like every other array parameter.
+
+  The caller's variable is substituted for it, so the returned array is written into that
+  variable directly. Without it the parameter is promoted to a global array that every call
+  first fills and then copies out of again - one array and one copy per call too many. }
+
+{ the local array is copied into the caller variable once, and that is the only copy }
+// EXPECT %p[0-9]*\[\$[A-Za-z_0-9]+\] := %loc[0-9]*\[\$[A-Za-z_0-9]+\]
+// EXPECT %q[0-9]*\[\$[A-Za-z_0-9]+\] := %loc[0-9]*\[\$[A-Za-z_0-9]+\]
+{ no promoted global return array in between }
+// EXPECT_NOT declare %ret
+// EXPECT_NOT := %ret
+{ passing by reference means inlining, so there is no callable ksp function left }
+// EXPECT_NOT ^function
+// EXPECT_NOT call build
+
+function build(n: int): int[]
+    declare loc[4]
+    declare i
+    for i := 0 to 3
+        loc[i] := i + n
+    end for
+    return loc
+end function
+
+on init
+    declare p[4] := build(1)
+    declare q[4] := build(10)
+    message(p[3] & " " & q[3])
+end on
