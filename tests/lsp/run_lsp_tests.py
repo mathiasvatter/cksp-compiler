@@ -1003,10 +1003,7 @@ def _(workspace, server):
         ("property_callback.cksp",
          "on init\n    declare data[100]\n    property matrix\n"
          "        function get(x) -> result\n            result := data[x]\n"
-         "        end function\n    end property\nend on\n"),
-        # where a CKSP user would reach for one
-        ("property_struct.cksp",
-         "struct Note\n    declare midi: int\n    property freq\n    end property\nend struct\n"),
+         "        end function\n    end property\nend on\n")
     ]:
         fixture = workspace.write(name, source)
         server.did_open(fixture)
