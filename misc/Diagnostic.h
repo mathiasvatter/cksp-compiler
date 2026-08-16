@@ -72,7 +72,9 @@ struct Diagnostic {
     struct DiagnosticFix {
         enum class FixKind {
             AddRefToFuncParam,
-            ConvertDeprecatedFunctionReturn
+            ConvertDeprecatedFunctionReturn,
+            ConvertTaskfuncToFunction,
+            ConvertTCMCall
         };
         enum class EditKind {
             InsertBefore,
@@ -99,6 +101,8 @@ struct Diagnostic {
         switch (kind) {
             case DiagnosticFix::FixKind::AddRefToFuncParam: return "AddRefToFuncParam";
             case DiagnosticFix::FixKind::ConvertDeprecatedFunctionReturn: return "ConvertDeprecatedFunctionReturn";
+            case DiagnosticFix::FixKind::ConvertTaskfuncToFunction: return "ConvertTaskfuncToFunction";
+            case DiagnosticFix::FixKind::ConvertTCMCall: return "ConvertTCMCall";
             default: break;
         }
         return "unknown";

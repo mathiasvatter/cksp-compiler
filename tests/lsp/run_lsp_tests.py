@@ -22,6 +22,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from lsp_harness import (  # noqa: E402
     Position,
+    action_titled,
+    apply_action,
     expect,
     expect_definition,
     expect_labels,
@@ -30,6 +32,7 @@ from lsp_harness import (  # noqa: E402
     item_named,
     labels_of,
     messages_of,
+    port_with_quick_fixes,
     position_of,
     run_suite,
     same_path,
@@ -846,6 +849,93 @@ def _(workspace, server):
         cursor = Position(7, len(typed) + 4)
         items = server.completion_at(current, cursor)
         expect_labels(items, ["rate", "channels"])
+
+
+# ==========================================================================
+# SublimeKSP migration — taskfunc and TCM are rejected, but with a way out
+# ==========================================================================
+
+@test("migration: a taskfunc is named as SublimeKSP's, not as an unknown construct",
+      entry_points=["migration_taskfunc.cksp"])
+def _(workspace, server):
+    fixture = workspace.open("migration_taskfunc.cksp")
+    diagnostics = server.diagnostics(fixture)
+    expect(diagnostics, "expected a diagnostic for the taskfunc block")
+    message = diagnostics[0]["message"]
+    expect("taskfunc" in message and "SublimeKSP" in message,
+           f"the diagnostic should name the construct and its dialect; got {message!r}")
+    expect_position(position_of(diagnostics[0]), fixture, "taskfunc",
+                    what="taskfunc diagnostic")
+
+
+@test("migration: the taskfunc quick fix rewrites keywords, parameters and tcm.wait",
+      entry_points=["migration_taskfunc.cksp"])
+def _(workspace, server):
+    fixture = workspace.open("migration_taskfunc.cksp")
+    action = action_titled(server.code_actions(fixture), "get_random_value")
+    ported = apply_action(fixture.text, action, fixture)
+    first = ported.split("end function")[0]
+    for expected in ["function get_random_value(min, max) -> result", "wait(500000)"]:
+        expect(expected in first, f"expected {expected!r} in the ported block:\n{first}")
+    expect("taskfunc" not in first, f"taskfunc keyword survived:\n{first}")
+
+
+@test("migration: applying every quick fix ports the script to compiling cksp",
+      entry_points=["migration_taskfunc.cksp"])
+def _(workspace, server):
+    fixture = workspace.open("migration_taskfunc.cksp")
+    ported, applied = port_with_quick_fixes(fixture, server, fixture.text)
+    expect(len(applied) == 4, f"expected four fixes (two taskfuncs, the arrow return and "
+                              f"tcm.init); applied {applied}")
+    expect(not server.diagnostics(fixture),
+           f"ported script still reports {messages_of(server.diagnostics(fixture))}")
+    for expected in ["function swap_get_max(ref a, ref b, ref max)",
+                     "#pragma max_callback_depth(100)",
+                     "return r"]:
+        expect(expected in ported, f"expected {expected!r} in:\n{ported}")
+    expect("taskfunc" not in ported and "tcm." not in ported,
+           f"SublimeKSP constructs survived:\n{ported}")
+
+
+@test("migration: tcm.init with a literal becomes the pragma that replaces it",
+      entry_points=["tcm_init.cksp"])
+def _(workspace, server):
+    fixture = workspace.write("tcm_init.cksp",
+                              "on init\n    tcm.init(64)\nend on\n")
+    server.did_open(fixture)
+    action = action_titled(server.code_actions(fixture), "max_callback_depth")
+    expect("#pragma max_callback_depth(64)" in apply_action(fixture.text, action, fixture),
+           "the fix should write the pragma with the call's own depth")
+
+
+@test("migration: a computed tcm.init depth is explained instead of half-fixed",
+      entry_points=["tcm_computed.cksp"])
+def _(workspace, server):
+    # A pragma argument is read before anything is folded, so a fix here would
+    # produce a file that does not compile. The message has to carry the port.
+    fixture = workspace.write(
+        "tcm_computed.cksp",
+        "on init\n    declare depth := 64\n    tcm.init(depth * 2)\nend on\n")
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(diagnostics, "expected a diagnostic for tcm.init")
+    expect("max_callback_depth" in diagnostics[0]["message"],
+           f"the message should name the option; got {diagnostics[0]['message']!r}")
+    expect(not server.code_actions(fixture),
+           "no fix may be offered for a depth that cannot become a pragma argument")
+
+
+@test("migration: an unknown tcm call is explained without a fix",
+      entry_points=["tcm_unknown.cksp"])
+def _(workspace, server):
+    fixture = workspace.write("tcm_unknown.cksp",
+                              "on note\n    tcm.reset()\nend on\n")
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(diagnostics, "expected a diagnostic for the unknown tcm call")
+    expect("Task Control Module" in diagnostics[0]["message"],
+           f"the message should name TCM; got {diagnostics[0]['message']!r}")
+    expect(not server.code_actions(fixture), "an unknown tcm call has nothing to rewrite to")
 
 
 if __name__ == "__main__":

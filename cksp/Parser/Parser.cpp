@@ -757,6 +757,12 @@ Result<std::unique_ptr<NodeFunctionParam>> Parser::parse_function_param(NodeAST*
 	if (start_token.type == token::REF) {
 		consume(); // consume ref
 		node_func_param->is_pass_by_ref = true;
+	} else if (m_taskfunc_migration
+		and start_token.type == token::KEYWORD
+		and (start_token.val == "var" or start_token.val == "out")) {
+		// SublimeKSP's taskfunc parameter modifiers, both of which CKSP spells <ref>.
+		m_taskfunc_migration->add_param_modifier_edit(consume());
+		node_func_param->is_pass_by_ref = true;
 	}
 
 	auto error = Diagnostic(ErrorType::ParseError,"Incorrect syntax in function parameter.", "", peek());
@@ -1371,7 +1377,7 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
             if (callback.is_error())
                 return Result<std::unique_ptr<NodeProgram>>(callback.get_error());
 			m_callbacks.push_back(std::move(callback.unwrap()));
-        } else if (peek().type == token::FUNCTION) {
+        } else if (peek().type == token::FUNCTION or peek().type == token::TASKFUNC) {
 			auto function = parse_function_definition(node_program.get());
 			if (function.is_error())
 				return Result<std::unique_ptr<NodeProgram>>(function.get_error());
@@ -1727,7 +1733,15 @@ Result<std::unique_ptr<NodeFunctionCall>> Parser::parse_function_call(NodeAST* p
 
 Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definition(NodeAST* parent) {
     auto error = Diagnostic(ErrorType::ParseError,"", "", peek());
+	const size_t definition_start = m_pos;
     auto start_token = consume(); //consume "function"
+	// A SublimeKSP <taskfunc> is parsed exactly like a function so the migration diagnostic
+	// below can describe - and offer to rewrite - the whole block. See TaskfuncMigration.
+	const bool is_taskfunc = start_token.type == token::TASKFUNC;
+	const token end_token_type = is_taskfunc ? token::END_TASKFUNC : token::END_FUNCTION;
+	const char* construct = is_taskfunc ? "taskfunc" : "function";
+	m_taskfunc_migration.reset();
+	if (is_taskfunc) m_taskfunc_migration.emplace(start_token);
     auto node_function_definition = std::make_shared<NodeFunctionDefinition>(get_tok());
 	m_current_function_def = node_function_definition;
     std::unique_ptr<NodeFunctionHeader> func_header;
@@ -1779,10 +1793,10 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     }
     consume(); // consume linebreak
 
-	while (peek().type != token::END_FUNCTION) {
+	while (peek().type != end_token_type) {
 		_skip_linebreaks();
-		if(peek().type == token::END_FUNCTION) break;
-		if (auto end_error = check_invalid_end_statement("function", token::END_FUNCTION, peek(), peek(1))) {
+		if(peek().type == end_token_type) break;
+		if (auto end_error = check_invalid_end_statement(construct, end_token_type, peek(), peek(1))) {
 			return Result<std::shared_ptr<NodeFunctionDefinition>>(
 				*end_error);
 		}
@@ -1794,6 +1808,18 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
 			func_body->add_stmt(std::move(stmt.unwrap()));
 	}
     auto end_token = consume();
+	if (m_taskfunc_migration) {
+		m_taskfunc_migration->add_keyword_edits(end_token);
+		// The body is rescanned rather than hooked into the expression path: <tcm.wait> is
+		// one token, and every call to it inside the block sits in this token range.
+		for (size_t index = definition_start; index < m_pos; ++index) {
+			if (m_tokens[index].type == token::KEYWORD and m_tokens[index].val == "tcm.wait") {
+				m_taskfunc_migration->add_tcm_wait_edit(m_tokens[index]);
+			}
+		}
+		m_current_function_def = nullptr;
+		m_taskfunc_migration->make_diagnostic(func_header->name).exit();
+	}
 	node_function_definition->set_range(start_token, end_token);
     node_function_definition->header = std::move(func_header);
     node_function_definition->return_variable = std::move(func_return_var);

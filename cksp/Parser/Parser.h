@@ -11,6 +11,7 @@
 #include "../../misc/Result.h"
 #include "../Processor/Processor.h"
 #include "../ASTNodes/ASTReferences.h"
+#include "../Migration/TaskfuncMigration.h"
 
 // Hilfsfunktion, die das Result-Objekt zurückgibt, wenn kein Fehler vorliegt.
 template<typename T> Result<T> handle_error(Result<T> result) {
@@ -159,6 +160,10 @@ public:
     Result<std::unique_ptr<NodeGetControl>> parse_get_control_statement(std::unique_ptr<NodeAST> ui_id, NodeAST* parent);
     Result<std::shared_ptr<NodeFunctionDefinition>> parse_function_definition(NodeAST* parent);
 	std::shared_ptr<NodeFunctionDefinition> m_current_function_def;
+	/// Engaged while a SublimeKSP <taskfunc> block is being parsed, so its parameters accept
+	/// the <var>/<out> modifiers and the edits reach the migration diagnostic. Owned rather
+	/// than pointed at because the block's error paths return without unwinding through here.
+	std::optional<TaskfuncMigration> m_taskfunc_migration;
     /// function params are no references -> replace with references
     Result<std::unique_ptr<NodeParamList>> parse_function_args(NodeAST* parent);
 	Result<std::unique_ptr<NodeFunctionHeader>> parse_function_header(NodeAST* parent);

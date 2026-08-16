@@ -6,6 +6,8 @@
 
 #include <utility>
 
+#include "../Migration/TCMMigration.h"
+
 DefinitionProvider::DefinitionProvider(
 		std::unordered_map<std::string, std::shared_ptr<NodeVariable>> m_builtin_variables,
 		std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_builtin_functions,
@@ -328,6 +330,10 @@ Diagnostic DefinitionProvider::make_missing_function_definition_error(
 	const auto* function = node.function.get();
 	const std::string function_name = function ? function->name : node.tok.val;
 	const int num_args = function ? function->get_num_args() : 0;
+
+	// SublimeKSP's TCM has no declaration to find because CKSP needs none; say that instead
+	// of listing near-miss overloads for a name that was never going to resolve.
+	if (auto tcm = tcm_migration::make_diagnostic(node, function_name)) return *tcm;
 
 	auto declarations = find_data_structures(function_name, true);
 	if (function) {

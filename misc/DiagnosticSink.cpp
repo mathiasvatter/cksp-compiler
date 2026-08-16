@@ -119,12 +119,19 @@ void ConsoleDiagnosticSink::report(Diagnostic diagnostic) {
             m_output << '\n';
         }
     }
+    // Name the fix the editor would apply, so the command line at least says one exists.
+    if (diagnostic.fix && !diagnostic.fix->title.empty()) {
+        m_output << ColorCode::Bold << "Suggested fix: " << ColorCode::Reset
+                 << diagnostic.fix->title << " (available as a quick fix in the editor)\n";
+    }
     m_output << '\n';
 
     if (m_print_failure_footer && diagnostic.severity == DiagnosticSeverity::Error) {
         m_output << ColorCode::Red << "\nSeems like the compilation exited with a failure."
                  << ColorCode::Reset << std::endl;
-        if (!diagnostic.file.empty()) {
+        // A diagnostic that carries its own fix knows exactly what is wrong and how to undo
+        // it, so it is never the unknown compiler problem the issue tracker is asking for.
+        if (!diagnostic.file.empty() && !diagnostic.fix) {
             m_output << "To help make cksp better, please report any compiler related issues here: "
                      << generate_github_issue_url(diagnostic, "mathiasvatter", "cksp-compiler")
                      << std::endl;
