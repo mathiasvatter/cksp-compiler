@@ -119,7 +119,9 @@
     XX(LINE_CONTINUE, "line_continue") \
     XX(ON, "on") \
     XX(ITERATE_MACRO, "iterate_macro") \
+    XX(ITERATE_POST_MACRO, "iterate_post_macro") \
     XX(LITERATE_MACRO, "literate_macro") \
+    XX(LITERATE_POST_MACRO, "literate_post_macro") \
     XX(SET_CONDITION, "SET_CONDITION") \
     XX(RESET_CONDITION, "RESET_CONDITION") \
     XX(USE_CODE_IF, "USE_CODE_IF") \
@@ -198,7 +200,7 @@ inline std::unordered_set<std::string> UI_CONTROLS = {"ui_label", "ui_button", "
 inline std::unordered_map<std::string, token> DECLARATION_SYNTAX = {{"declare", token::DECLARE}, {"define", token::DEFINE}, {"const", token::CONST}, {"polyphonic", token::POLYPHONIC},
                                                   {"read", token::READ},{"pers", token::PERS}, {"instpers", token::INSTPERS}, {"local", token::LOCAL}, {"global", token::GLOBAL}};
 inline std::unordered_map<std::string, token> PREPROCESSOR_SYNTAX = {{"#pragma", token::PRAGMA}, {"import", token::IMPORT}, {"as", token::AS}, {"on", token::ON},
-												   {"iterate_macro", token::ITERATE_MACRO}, {"literate_macro", token::LITERATE_MACRO},
+												   {"iterate_macro", token::ITERATE_MACRO}, {"literate_macro", token::LITERATE_MACRO}, {"iterate_post_macro", token::ITERATE_POST_MACRO}, {"literate_post_macro", token::LITERATE_POST_MACRO},
 													{"START_INC", token::START_INC}, {"END_INC", token::END_INC}, {"SET_CONDITION", token::SET_CONDITION}, {"RESET_CONDITION", token::RESET_CONDITION},
                                                    {"USE_CODE_IF", token::USE_CODE_IF}, {"USE_CODE_IF_NOT", token::USE_CODE_IF_NOT}, {"END_USE_CODE", token::END_USE_CODE}};
 inline std::unordered_map<std::string, token> STATEMENT_SYNTAX = {{"to", token::TO}, {"downto", token::DOWNTO}, {"step", token::STEP}, {"else", token::ELSE},

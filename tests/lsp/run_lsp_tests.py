@@ -1079,5 +1079,31 @@ def _(workspace, server):
            f"none of these are pragmas; got {messages_of(server.diagnostics(fixture))}")
 
 
+@test("migration: the post macro variants name the adopted one they are not",
+      entry_points=["post_iterate.cksp", "post_literate.cksp"])
+def _(workspace, server):
+    # CKSP adopted iterate_macro/literate_macro, which run during macro expansion. The post
+    # variants run after it, which is what lets their bounds come out of the expansion.
+    for name, source, spelling, adopted in [
+        ("post_iterate.cksp",
+         "macro make_buttons(start, end)\n"
+         "    iterate_post_macro(declare ui_button btn_#n#) := #start# to #end#\n"
+         "end macro\n",
+         "iterate_post_macro", "iterate_macro"),
+        ("post_literate.cksp",
+         "macro make(obj)\n    literate_post_macro(declare #l#) on #obj#.CONTROLS\nend macro\n",
+         "literate_post_macro", "literate_macro"),
+    ]:
+        fixture = workspace.write(name, source)
+        server.did_open(fixture)
+        messages = messages_of(server.diagnostics(fixture))
+        expect(any(spelling in message and adopted in message for message in messages),
+               f"{name}: expected {spelling} and {adopted} to be named, got {messages}")
+        # No fix: renaming is only correct when the bounds are known during expansion, and
+        # CKSP rejects a macro parameter there outright.
+        expect(not server.code_actions(fixture),
+               f"{name}: a rename is not a safe fix for the case the post variant exists for")
+
+
 if __name__ == "__main__":
     raise SystemExit(run_suite())
