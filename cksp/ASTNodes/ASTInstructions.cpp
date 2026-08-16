@@ -1571,13 +1571,14 @@ NodeAST *NodeSelect::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> n
         expression = std::move(newChild);
         return expression.get();
     }
+    // a case holds one value or, for a range like <case 3 to 5>, two. Walking what is there
+    // rather than both slots keeps the single-value case from reading past the end of its vector.
     for ( auto & cas : cases) {
-        if(cas.first[0].get() == oldChild) {
-            cas.first[0] = std::move(newChild);
-            return cas.first[0].get();
-        } else if(cas.first[1].get() == oldChild) {
-        	cas.first[1] = std::move(newChild);
-        	return cas.first[1].get();
+        for (auto & value : cas.first) {
+            if(value.get() == oldChild) {
+                value = std::move(newChild);
+                return value.get();
+            }
         }
     }
     return nullptr;
