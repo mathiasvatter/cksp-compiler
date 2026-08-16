@@ -11,6 +11,15 @@
 #include "../Lowering/LoweringNil.h"
 #include "../Lowering/LoweringGetControl.h"
 
+// ************* NodeReference ***************
+// The conversions a reference kind does not offer. Out of line because the returned node types
+// are only forward declared in AST.h - see the note on <NodeAST::to_method_chain>.
+std::unique_ptr<NodeArrayRef> NodeReference::to_array_ref(std::unique_ptr<NodeAST>) { return nullptr; }
+std::unique_ptr<NodeVariableRef> NodeReference::to_variable_ref() { return nullptr; }
+std::unique_ptr<NodePointerRef> NodeReference::to_pointer_ref() { return nullptr; }
+std::unique_ptr<NodeNDArrayRef> NodeReference::to_ndarray_ref() { return nullptr; }
+std::unique_ptr<NodeAccessChain> NodeReference::to_method_chain() { return nullptr; }
+
 // ************* NodeVariableRef ***************
 NodeAST *NodeVariableRef::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
