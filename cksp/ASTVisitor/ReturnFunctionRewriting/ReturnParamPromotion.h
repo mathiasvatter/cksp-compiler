@@ -92,11 +92,20 @@ private:
 						node_ndarray->ty = TypeRegistry::add_composite_type(CompoundKind::Array, node_ref->ty->get_element_type(), dimensions);
 					}
 					if(node_ref->ty->get_dimensions() == 1) {
+						// The return parameter receives the whole array, so it has to be as large as
+						// the one that is returned. Callers clone it for the variable that catches the
+						// result, and a clone without a size is no valid declaration.
+						std::unique_ptr<NodeAST> size = nullptr;
+						if(const auto declaration = node_ref->get_declaration()) {
+							if(const auto declared_array = declaration->cast<NodeArray>(); declared_array and declared_array->size) {
+								size = declared_array->size->clone();
+							}
+						}
 						new_param = std::make_unique<NodeArray>(
 							std::nullopt,
 							return_name,
 							node_ref->ty,
-							nullptr,
+							std::move(size),
 							node_return->tok
 						);
 					} else {

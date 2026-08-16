@@ -1,0 +1,28 @@
+{ An argument that already is a reference keeps taking the path through NodeSortSearch.
+
+  That path is the reason the commands cannot simply accept any expression: it reads the sizes
+  off the declaration to turn a wildcard into <from>/<to> bounds, and an object member array
+  into the slice belonging to one instance. Neither is reachable through an expression. }
+
+{ search(nd[0, *], 3) -> the row of a 3x4 ndarray }
+// EXPECT search\(%_?nd[0-9]*, 3, 0, 3\)
+{ search(nd, 3) -> no wildcard, no bounds }
+// EXPECT message\(search\(%_?nd[0-9]*, 3\)\)$
+{ the dimension argument of num_elements folds to the declared size }
+// EXPECT message\(4\)
+{ b.vals -> the slice of the instance <b> inside the member heap }
+// EXPECT search\(%_?Box____vals, 3, \$[A-Za-z_0-9]+ \* 4, \(\$[A-Za-z_0-9]+ \* 4\) \+ 3\)
+
+declare nd[3, 4]
+
+struct Box
+    declare vals[4]: int[]
+end struct
+
+on init
+    message(search(nd[0, *], 3))
+    message(search(nd, 3))
+    message(num_elements(nd, 2))
+    declare b: Box := new Box([1, 2, 3, 4])
+    message(search(b.vals, 3))
+end on

@@ -1066,6 +1066,21 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 	}
 
 
+	// <num_elements> is declared as <any[]>, and every type is compatible with that, so the argument
+	// check above lets anything through. The reference form is a NodeNumElements and never gets here;
+	// what does is the expression form DesugarFunctionCall leaves as a builtin call, which only turns
+	// into an array reference through inlining and has to be rejected here if it never can.
+	if(node.is_builtin_kind() and node.function->name == "num_elements"
+		and node.function->get_num_args() == 1) {
+		if(const auto& array = node.function->get_arg(0);
+			array->ty and array->ty != TypeRegistry::Unknown and !array->ty->cast<CompositeType>()) {
+			auto error = Diagnostic(ErrorType::TypeError, "", "", array->tok);
+			error.message = "<num_elements> can only be used with <Composite> types like <Arrays> or <NDArrays>.";
+			error.actual = array->ty->to_string();
+			error.exit();
+		}
+	}
+
 	if(node.is_destructive_builtin_func()) {
 		if(node.function->get_arg(0)->is_constant()) {
 			auto error = Diagnostic(ErrorType::TypeError, "", "", node.tok);

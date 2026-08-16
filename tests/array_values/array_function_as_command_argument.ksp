@@ -1,0 +1,38 @@
+{ A function returning an array is a function call where the array commands want a reference.
+
+  <get_arr> is an expression function, so inlining leaves the returned array itself at the call
+  site and the command ends up naming it directly. <build> is not one - it has a body - so its
+  result is hoisted into a variable first, which is what the command then names. }
+
+// EXPECT message\(search\(%global_arr, 4\)\)
+// EXPECT message\(search\(%global_arr, 4, 1, 3\)\)
+// EXPECT message\(num_elements\(%global_arr\)\)
+// EXPECT sort\(%global_arr, 0\)
+{ the expression function hands out the array itself, so nothing is copied out of it }
+// EXPECT_NOT := %global_arr\[
+// EXPECT_NOT ^[[:space:]]*%global_arr\[\$
+{ the hoisted result of the non expression function is what search is handed }
+// EXPECT search\(%_ret[0-9]+, 8\)
+
+declare global_arr[5] := [1, 4, 4]
+
+function get_arr(): int[]
+    return global_arr
+end function
+
+function build(): int[]
+    declare loc[5]
+    declare i
+    for i := 0 to 4
+        loc[i] := i * 2
+    end for
+    return loc
+end function
+
+on init
+    message(search(get_arr(), 4))
+    message(search(get_arr(), 4, 1, 3))
+    message(num_elements(get_arr()))
+    sort(get_arr(), 0)
+    message(search(build(), 8))
+end on

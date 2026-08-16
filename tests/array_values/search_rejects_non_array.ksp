@@ -1,0 +1,12 @@
+{ Dropping the reference requirement must not make the commands accept anything.
+
+  <search> and <sort> are declared as <int[]> / <number[]>, so an argument that is no array at
+  all is caught by the builtin signature instead - later than before, but with the type it was
+  given rather than with the shape the parse tree happened to have. }
+
+// EXPECT_ERROR Function <search> expects int\[\] as argument type
+
+on init
+    declare a := 3
+    message(search(a + 1, 3))
+end on

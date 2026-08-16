@@ -60,13 +60,18 @@ public:
 				error.message = "Too few arguments for function call <num_elements>.";
 				error.exit();
 			}
-			std::unique_ptr<NodeReference> array = nullptr;
-			if(is_instance_of<NodeReference>(node.function->get_arg(0).get())) {
-				array = unique_ptr_cast<NodeReference>(std::move(node.function->get_arg(0)));
-			} else {
-				error.message = "First argument for function call <num_elements> must be a reference.";
+			// An argument that is not a reference yet is left as the builtin call it already is,
+			// see the <search> case below. The dimension argument is the exception: NDArray
+			// semantics need the declaration behind the reference, which an expression has not.
+			const auto ref = node.function->get_arg(0)->is_reference();
+			if(!ref) {
+				if(node.function->get_num_args() == 1) return &node;
+				error.message = "First argument for function call <num_elements> must be a reference "
+					"when a dimension is given.";
+				error.actual = node.function->get_arg(0)->get_token_string();
 				error.exit();
 			}
+			auto array = unique_ptr_cast<NodeReference>(std::move(node.function->get_arg(0)));
 			std::unique_ptr<NodeAST> dimension = nullptr;
 			if (node.function->get_num_args() == 2) {
 				dimension = std::move(node.function->get_arg(1));
@@ -78,8 +83,13 @@ public:
 		if((node.function->get_num_args() == 2 || node.function->get_num_args() == 4) &&
 			(node.function->name == "search" || node.function->name == "sort")) {
 			node.kind = NodeFunctionCall::Kind::Builtin;
-			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
-			if(is_instance_of<NodeReference>(node.function->get_arg(0).get())) {
+			// Desugaring runs on the parse tree, so an argument that only becomes a reference
+			// later - <Note.storage(.pitch)> or any call of a function returning an array - is
+			// not one yet. NodeSortSearch only exists for what needs the declaration behind the
+			// reference (wildcard bounds), so those calls stay the builtin call they already
+			// are: expression function inlining leaves the array itself at the call site, and
+			// the builtin signature reports a mismatch for an argument that is no array at all.
+			if(node.function->get_arg(0)->is_reference()) {
 				auto search = std::make_unique<NodeSortSearch>(
 					node.function->name,
 					unique_ptr_cast<NodeReference>(std::move(node.function->get_arg(0))),
@@ -97,8 +107,7 @@ public:
 				}
 				return node.replace_with(std::move(search));
 			} else {
-				error.message = "First argument for function call <"+node.function->name+"> must be a reference.";
-				error.exit();
+				return &node;
 			}
 		}
 
