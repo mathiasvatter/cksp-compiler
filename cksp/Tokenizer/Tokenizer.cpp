@@ -9,6 +9,7 @@
 
 #include "../../utils/StringUtils.h"
 #include "../../misc/DiagnosticEngine.h"
+#include "../Migration/PragmaMigration.h"
 
 
 /*
@@ -43,6 +44,7 @@ void Tokenizer::token_loop() {
 			consume();
 		}
 		else if (peek() == '/' && (peek(1) == '*' || peek(1) == '/') || peek() == '{') {
+			warn_about_sublime_pragma();
 			get_comment();
 		} else if (peek() == '\n') {
 			get_linebreak();
@@ -157,6 +159,41 @@ bool Tokenizer::is_pragma() const {
 		error.report(m_diagnostics);
 	}
 	return workaround_pragma;
+}
+
+void Tokenizer::warn_about_sublime_pragma() {
+	if (m_pos >= m_input_length or m_input[m_pos] != '{') return;
+
+	// A pragma is written on one line. Bounding the search there keeps an ordinary block
+	// comment that merely mentions one from being reported as the real thing.
+	const size_t line_end = m_input.find('\n', m_pos);
+	const size_t close = m_input.find('}', m_pos);
+	if (close == std::string::npos) return;
+	if (line_end != std::string::npos and close > line_end) return;
+
+	auto body = StringUtils::trim(
+		std::string_view(m_input).substr(m_pos + 1, close - m_pos - 1));
+	static constexpr std::string_view PRAGMA = "#pragma";
+	if (!StringUtils::starts_with(body, PRAGMA)) return;
+	body = body.substr(PRAGMA.size());
+	// <{#pragmatic}> is a comment, not a pragma: the word has to end where <#pragma> does
+	if (body.empty() or !is_space(body.front())) return;
+	body = StringUtils::trim_start(body);
+	if (body.empty()) return;
+
+	const auto option_end = body.find_first_of(" \t");
+	const auto option = std::string(body.substr(0, option_end));
+	const auto argument = option_end == std::string_view::npos
+		? std::string()
+		: std::string(StringUtils::trim(body.substr(option_end)));
+
+	const Token pragma_token(
+		token::PRAGMA,
+		m_input.substr(m_pos, close - m_pos + 1),
+		m_line,
+		m_line_pos,
+		m_current_file);
+	pragma_migration::make_diagnostic(pragma_token, option, argument).report(m_diagnostics);
 }
 
 bool Tokenizer::is_line_continuation() const {

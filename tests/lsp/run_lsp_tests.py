@@ -1025,5 +1025,59 @@ def _(workspace, server):
            f"a variable named property must compile; got {messages_of(server.diagnostics(fixture))}")
 
 
+@test("migration: a SublimeKSP pragma warns without stopping the compile",
+      entry_points=["pragma_output.cksp"])
+def _(workspace, server):
+    # {...} is a comment to CKSP and a pragma to SublimeKSP. Left as a warning so a file
+    # carrying one keeps compiling under both; only the quick fix commits it to CKSP.
+    windows_path = "D:\\Program Files\\Native Instruments\\Kontakt 4\\test.txt"
+    source = ("{#pragma save_compiled_source " + windows_path + "}\n"
+              "\non init\n    declare x := 1\nend on\n")
+    fixture = workspace.write("pragma_output.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(len(diagnostics) == 1, f"expected exactly one diagnostic, got {messages_of(diagnostics)}")
+    expect(diagnostics[0]["severity"] == 2,
+           f"must be a warning (2), got severity {diagnostics[0]['severity']}")
+    expect("save_compiled_source" in diagnostics[0]["message"],
+           f"the message should name the pragma; got {diagnostics[0]['message']!r}")
+
+    action = action_titled(server.code_actions(fixture), "output_path")
+    ported = apply_action(source, action, fixture)
+    # The braces go with the content, and the backslashes survive: CKSP only escapes a
+    # backslash before the quote character itself.
+    expect('#pragma output_path("' + windows_path + '")' in ported,
+           f"unexpected rewrite:\n{ported}")
+    expect("{#pragma" not in ported, f"the SublimeKSP line survived:\n{ported}")
+
+
+@test("migration: a pragma CKSP has no equivalent for warns without a fix",
+      entry_points=["pragma_unknown.cksp"])
+def _(workspace, server):
+    fixture = workspace.write(
+        "pragma_unknown.cksp",
+        "{#pragma compile_with_extra_syntax_checks}\non init\n    declare x := 1\nend on\n")
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(len(diagnostics) == 1, f"expected one diagnostic, got {messages_of(diagnostics)}")
+    expect(diagnostics[0]["severity"] == 2, "must be a warning")
+    expect(not server.code_actions(fixture),
+           "there is nothing to rewrite a pragma to that CKSP does not have")
+
+
+@test("migration: an ordinary comment is not mistaken for a pragma",
+      entry_points=["pragma_decoys.cksp"])
+def _(workspace, server):
+    fixture = workspace.write(
+        "pragma_decoys.cksp",
+        "{ a comment that merely mentions #pragma }\n"          # not at the start
+        "{#pragmatic is not one either}\n"                      # the word has to end there
+        "{\n  #pragma save_compiled_source foo.txt\n}\n"        # a pragma is written on one line
+        "on init\n    declare x := 1\nend on\n")
+    server.did_open(fixture)
+    expect(not server.diagnostics(fixture),
+           f"none of these are pragmas; got {messages_of(server.diagnostics(fixture))}")
+
+
 if __name__ == "__main__":
     raise SystemExit(run_suite())

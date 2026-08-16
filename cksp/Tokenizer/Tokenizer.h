@@ -73,6 +73,11 @@ protected:
     bool is_keyword_or_num() const;
 
     bool is_pragma() const;
+	/// Warns when the comment about to be read is a SublimeKSP <{#pragma ...}>.
+	///
+	/// Only looks - the comment is consumed as one afterwards, exactly as before, so the line
+	/// keeps working under SublimeKSP. See cksp/Migration/PragmaMigration.h.
+	void warn_about_sublime_pragma();
 //	void get_pragma();
 	bool is_line_continuation() const;
     void get_line_continuation();

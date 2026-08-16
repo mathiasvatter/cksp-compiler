@@ -75,7 +75,8 @@ struct Diagnostic {
             ConvertDeprecatedFunctionReturn,
             ConvertTaskfuncToFunction,
             ConvertTCMCall,
-            CorrectNameCase
+            CorrectNameCase,
+            ConvertSublimePragma
         };
         enum class EditKind {
             InsertBefore,
@@ -105,6 +106,7 @@ struct Diagnostic {
             case DiagnosticFix::FixKind::ConvertTaskfuncToFunction: return "ConvertTaskfuncToFunction";
             case DiagnosticFix::FixKind::ConvertTCMCall: return "ConvertTCMCall";
             case DiagnosticFix::FixKind::CorrectNameCase: return "CorrectNameCase";
+            case DiagnosticFix::FixKind::ConvertSublimePragma: return "ConvertSublimePragma";
             default: break;
         }
         return "unknown";
