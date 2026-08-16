@@ -10,24 +10,28 @@
 # tests/resources/ndarray_member_ref_counting.cksp, which used to fail this way in roughly a third
 # of its runs while producing byte-identical output whenever it succeeded.
 #
-# The project corpus in run_tests.sh is deliberately not covered here: several of its files trip
-# the undefined shift in ConstantFolding (issue #126). Add the corpus once that one is fixed.
+# Only tests/ is covered by default, so the suite runs anywhere. The project corpus of
+# run_tests.sh is clean as well and can be handed in as extra arguments:
 #
-# Usage: tests/sanitizers/run.sh [path/to/sanitizer-cksp]
+#   tests/sanitizers/run.sh "" ~/Scripting/the-score/the-score.ksp ~/Scripting/fluegel/fluegel.ksp
 #
-# Without an argument a sanitizer build is configured and built in cmake-build-asan/.
+# Usage: tests/sanitizers/run.sh [path/to/sanitizer-cksp] [extra source files...]
+#
+# Without a binary an Address/UndefinedBehaviour build is configured in cmake-build-asan/.
 
 set -u
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASE_DIR="$(cd "$DIR/../.." && pwd)"
 EXEC="${1:-}"
+shift || true
+EXTRA_FILES=("$@")
 
 GREEN='\033[0;32m'; RED='\033[0;31m'; DIM='\033[2m'; RESET='\033[0m'
 
 if [[ -z "$EXEC" ]]; then
   EXEC="$BASE_DIR/cmake-build-asan/cksp"
-  echo "⚙️  building an AddressSanitizer cksp in cmake-build-asan ..."
+  echo "⚙️  building an Address/UndefinedBehaviour cksp in cmake-build-asan ..."
   cmake -S "$BASE_DIR" -B "$BASE_DIR/cmake-build-asan" \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo \
     -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g" \
@@ -66,7 +70,8 @@ while IFS= read -r src; do
     echo -e "${GREEN}✅ $name${RESET}"
     ((passed++))
   fi
-done < <(find "$BASE_DIR/tests" -name '*.ksp' -o -name '*.cksp' | sort)
+done < <({ find "$BASE_DIR/tests" -name '*.ksp' -o -name '*.cksp' | sort
+           (( ${#EXTRA_FILES[@]} )) && printf '%s\n' "${EXTRA_FILES[@]}"; })
 
 echo "-------------------------------------"
 echo -e "🧪 Sanitizers: ${GREEN}✅ $passed${RESET}   ${RED}❌ $failed${RESET}"
