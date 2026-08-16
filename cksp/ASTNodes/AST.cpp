@@ -367,6 +367,12 @@ NodeSingleAssignment* NodeReference::is_l_value() const {
 }
 
 // ************* NodeDataStructure ***************
+/// <references> is deliberately not copied. It holds raw pointers to the references of the
+/// declaration being copied, and every one of them keeps pointing at that declaration - a
+/// reference unregisters itself in ~NodeReference() through its own <declaration>, so it would
+/// never take itself out of the copy's set. The copy would collect entries that dangle as soon as
+/// the original references die, and replace_datastruct() writes through every entry it finds.
+/// A copy is a new declaration that nothing refers to yet; whoever points references at it says so.
 NodeDataStructure::NodeDataStructure(const NodeDataStructure& other)
 	: NodeAST(other), prefix(clone_unique(other.prefix)),
 	  is_used(other.is_used), is_engine(other.is_engine), persistence(other.persistence),
@@ -374,7 +380,7 @@ NodeDataStructure::NodeDataStructure(const NodeDataStructure& other)
 	  has_obj_assigned(other.has_obj_assigned), is_thread_safe(other.is_thread_safe),
 	  is_restricted(other.is_restricted), num_reuses(other.num_reuses),
 	  renamed(other.renamed), data_type(other.data_type),
-	  name(other.name), references(other.references) {
+	  name(other.name) {
 	NodeDataStructure::set_child_parents();
 }
 
@@ -475,6 +481,10 @@ NodeDataStructure *NodeDataStructure::replace_datastruct(std::unique_ptr<NodeDat
 	// 				ref->declaration = new_data;
 	// 			  });
 	new_data->add_references(old_data->references);
+	// the references answer to <new_data> from here on and unregister themselves there. Keeping
+	// them listed on the replaced declaration as well would leave entries behind that nothing
+	// takes out again, and this loop is what walks such a list.
+	old_data->clear_references();
 	if(const auto strct = new_data->is_member()) {
 		strct->replace_member_in_table(old_data, new_data);
 	}
