@@ -5,9 +5,18 @@ https://mathiasvatter.github.io/cksp-compiler/
 KNOWN ISSUES (in comparison to the sublime ksp fork):
  - lists can only be declared in blocks and not with <declare list ls[]> and then appended with list_add()
  - <import as> namespaces
- - task functions
  - concat()
+
+NOT SUPPORTED, BUT DIAGNOSED (the compiler names these and says what replaces them):
+ - taskfunc, tcm.init(), tcm.wait()   -> plain functions; a quick fix rewrites the block
+ - property blocks                    -> a pair of struct methods, or a define
  - iterate_post_macro(), literate_post_macro()
+ - {#pragma ...}                      -> the cksp #pragma spelling; a quick fix rewrites it
+
+LANGUAGE SERVER:
+Run <cksp --lsp> to serve diagnostics, navigation, completion and quick fixes over stdio.
+Editors other than VS Code can integrate against it; the protocol contract is documented at:
+https://mathiasvatter.github.io/cksp-compiler/language-server/
 
 PREPROCESSOR ORDER:
  - Tokenizer:
