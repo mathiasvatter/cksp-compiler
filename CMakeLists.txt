@@ -66,6 +66,7 @@ add_library(cksp_core STATIC
         cksp/Parser/Parser.cpp
         cksp/Migration/TaskfuncMigration.h
         cksp/Migration/TCMMigration.h
+        cksp/Migration/PropertyMigration.h
         misc/Diagnostic.h
         misc/Diagnostic.cpp
         misc/DiagnosticReport.h

@@ -11,6 +11,7 @@
 #include "../../misc/Result.h"
 #include "../Processor/Processor.h"
 #include "../ASTNodes/ASTReferences.h"
+#include "../Migration/PropertyMigration.h"
 #include "../Migration/TaskfuncMigration.h"
 
 // Hilfsfunktion, die das Result-Objekt zurückgibt, wenn kein Fehler vorliegt.
@@ -67,6 +68,14 @@ class Parser: public Processor {
 
 	bool is_variable_declaration();
 	bool is_array_declaration();
+	/// <property name> alone on its line: the head of a SublimeKSP property block.
+	///
+	/// Recognised by shape rather than by a reserved keyword. <property> is an ordinary word -
+	/// two shipped builtins take a parameter of that name, and parameter names reach the user
+	/// through completion signatures - so reserving it would break them and every script that
+	/// declares a variable called <property>. Two bare keywords followed by a linebreak is not
+	/// a CKSP statement in any position, which makes the shape unambiguous on its own.
+	bool is_sublime_property();
 	static bool is_malformed_end_statement_start(const Token& tok, const Token& next);
 	static Diagnostic make_invalid_end_statement_diagnostic(const std::string& construct, const std::string& expected, const Token& start, const Token& next);
 	static Type* normalize_ksp_identifier_token(Token& token);

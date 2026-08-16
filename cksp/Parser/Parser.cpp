@@ -59,6 +59,11 @@ std::optional<Diagnostic> Parser::check_invalid_end_statement(const std::string&
 	return make_invalid_end_statement_diagnostic(construct, get_token_string(expected_end), start, next);
 }
 
+bool Parser::is_sublime_property() {
+	return peek().type == token::KEYWORD and peek().val == "property"
+		and peek(1).type == token::KEYWORD and peek(2).type == token::LINEBRK;
+}
+
 /// check if end statement starts with "end" but sth else comes after (not "on", "while", etc)
 bool Parser::is_malformed_end_statement_start(const Token& tok, const Token& next) {
 	return tok.type == token::KEYWORD
@@ -1097,6 +1102,11 @@ Result<std::unique_ptr<NodeStatement> > Parser::parse_statement(NodeAST *parent)
 	auto node_statement = std::make_unique<NodeStatement>(start_token);
 	_skip_linebreaks();
 	std::unique_ptr<NodeAST> stmt;
+	// where SublimeKSP puts one: a <property> block inside <on init>
+	if (is_sublime_property()) {
+		return Result<std::unique_ptr<NodeStatement> >(
+			property_migration::make_diagnostic(peek()));
+	}
 	// assign statement
 	if (peek().type == token::KEYWORD || peek().type == token::DECLARE
 		|| peek().type == token::CALL || peek().type == token::SET_CONDITION || peek().type == token::RESET_CONDITION) {
@@ -1422,6 +1432,9 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 				return Result<std::unique_ptr<NodeProgram>>(list_block.get_error());
 			}
 			node_program->global_declarations->add_as_stmt(std::move(list_block.unwrap()));
+        } else if (is_sublime_property()) {
+			return Result<std::unique_ptr<NodeProgram>>(
+				property_migration::make_diagnostic(peek()));
         } else {
             return Result<std::unique_ptr<NodeProgram>>(Diagnostic(ErrorType::ParseError,
              "Found unknown construct.", "<callback>, <function_definition>", peek()));
@@ -2631,6 +2644,13 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 		if(peek().type == end_construct) break;
 		if (auto end_error = check_invalid_end_statement("struct", end_construct, peek(), peek(1))) {
 			return Result<std::unique_ptr<NodeStruct>>(*end_error);
+		}
+		// where a CKSP user would reach for one, a computed value belonging to the struct it
+		// is computed from. Checked before the member branch, which would read it as a
+		// declaration of a variable named <property>.
+		if (is_sublime_property()) {
+			return Result<std::unique_ptr<NodeStruct>>(
+				property_migration::make_diagnostic(peek()));
 		}
 		// <const Name> + linebreak starts a constant block, <const Name:> a member declaration
 		if(peek().type == token::CONST and peek(1).type == token::KEYWORD and peek(2).type == token::LINEBRK) {

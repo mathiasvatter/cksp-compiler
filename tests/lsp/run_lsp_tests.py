@@ -995,5 +995,38 @@ def _(workspace, server):
            "a typo that is not a case difference must not be offered as an edit")
 
 
+@test("migration: a property block is named as SublimeKSP's in every position it can appear",
+      entry_points=["property_callback.cksp", "property_struct.cksp"])
+def _(workspace, server):
+    for name, source in [
+        # where SublimeKSP puts one
+        ("property_callback.cksp",
+         "on init\n    declare data[100]\n    property matrix\n"
+         "        function get(x) -> result\n            result := data[x]\n"
+         "        end function\n    end property\nend on\n"),
+        # where a CKSP user would reach for one
+        ("property_struct.cksp",
+         "struct Note\n    declare midi: int\n    property freq\n    end property\nend struct\n"),
+    ]:
+        fixture = workspace.write(name, source)
+        server.did_open(fixture)
+        messages = messages_of(server.diagnostics(fixture))
+        expect(any("SublimeKSP <property>" in message for message in messages),
+               f"{name}: expected the property message, got {messages}")
+
+
+@test("migration: 'property' stays usable as an ordinary name",
+      entry_points=["property_identifier.cksp"])
+def _(workspace, server):
+    # The construct is recognised by shape, not by a reserved keyword: two shipped builtins
+    # take a parameter called <property>, and so may any script.
+    fixture = workspace.write("property_identifier.cksp",
+                              "on init\n    declare property := 5\n"
+                              "    property := property + 1\n    message(property)\nend on\n")
+    server.did_open(fixture)
+    expect(not server.diagnostics(fixture),
+           f"a variable named property must compile; got {messages_of(server.diagnostics(fixture))}")
+
+
 if __name__ == "__main__":
     raise SystemExit(run_suite())
