@@ -5,6 +5,7 @@
 #pragma once
 
 #include "../ASTVisitor/ASTOptimizations.h"
+#include "../ASTVisitor/FunctionHandling/BuiltinRestrictionValidator.h"
 
 /**
  * Reduces code size by replacing scalar variable declarations with a large array
@@ -164,7 +165,7 @@ public:
 
 		// transform watch_var into watch_array_idx
 		if (node.is_builtin_kind()) {
-			if (node.function->get_num_args() == 1 and node.function->name == "watch_var") {
+			if (node.function->get_num_args() == 1 and BuiltinRestrictionValidator::is_ksp_log_func(node.function->name)) {
 				auto &arg = node.function->get_arg(0);
 				auto array_ref = arg->cast<NodeArrayRef>();
 				if (!array_ref) {
