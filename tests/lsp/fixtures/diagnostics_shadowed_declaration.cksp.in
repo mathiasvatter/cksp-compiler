@@ -1,0 +1,11 @@
+{ The control case for diagnostics_self_reference: a declaration that reads a variable of its
+  own name which is already declared elsewhere shadows it and initializes the new variable from
+  the outer one. That is meaningful and must stay silent. }
+on init
+	declare counter := 5
+end on
+
+on note
+	declare counter := counter + 1
+	message(counter)
+end on

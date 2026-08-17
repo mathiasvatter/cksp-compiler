@@ -319,6 +319,46 @@ def _(workspace, server):
     )
 
 
+@test("diagnostics: a variable read in its own declaration is named as such")
+def _(workspace, server):
+    # The compiler used to accept this and the server used to call it undeclared: the
+    # declaration is split by ASTReturnFunctionRewriting, which runs before the compiler's
+    # final variable check but after the server's. Both now report the read itself.
+    fixture = workspace.open("diagnostics_self_reference.cksp")
+    diagnostics = server.diagnostics(fixture)
+    # The deprecated return syntax and the written parameter warn on their own; the read is
+    # the only error among them.
+    reported = [
+        diagnostic for diagnostic in diagnostics
+        if "own declaration" in diagnostic["message"]
+    ]
+    expect(
+        reported,
+        f"expected a diagnostic for the read in the own declaration; "
+        f"got {messages_of(diagnostics)}",
+    )
+
+    diagnostic = reported[0]
+    expect_position(
+        position_of(diagnostic), fixture, "declared_name", what="diagnostic position",
+    )
+    expect(
+        "last_idx" in diagnostic["message"],
+        f"the message must name the variable; got {diagnostic['message']!r}",
+    )
+
+
+@test("diagnostics: a declaration that shadows a variable of its own name stays silent")
+def _(workspace, server):
+    # <declare counter := counter + 1> next to an outer <counter> declares a second variable
+    # seeded from the first one. Only a name nothing else declares is a read of itself.
+    fixture = workspace.open("diagnostics_shadowed_declaration.cksp")
+    expect(
+        server.diagnostics(fixture) == [],
+        f"expected no diagnostics, got {messages_of(server.diagnostics(fixture))}",
+    )
+
+
 @test("diagnostics: a clean file publishes an empty list")
 def _(workspace, server):
     fixture = workspace.open("navigation.cksp")

@@ -113,6 +113,18 @@ private:
 
 
 
+	/// An initializer that reads the very variable it declares:
+	/// <declare last_idx := non_rpt_random(last_idx, 0, 5)>. Nothing of that name is declared at
+	/// that point, so the read can only see the declaration's own zero-initialization. Whether
+	/// the read stays unresolved long enough to be noticed depends on the pipeline, which is why
+	/// this is diagnosed here rather than left to the missing-declaration error:
+	/// ASTReturnFunctionRewriting splits <declare x := f(...)> into a declaration and an
+	/// assignment, after which the reference resolves and the compiler falls silent, while the
+	/// language server runs its final variable check before any rewriting and reports the name as
+	/// undeclared. Called from the PostUIControlLowering pass, the last one both pipelines reach
+	/// before any rewriting.
+	void check_read_in_own_declaration(NodeSingleDeclaration& node) const;
+
 	/// node can be NodeFunctionCall or NodeReference
 	/// transformation when first object is clearly a reference this_list.next.next()
 	/// tries to get declaration of first object and if there is one, replaces it with method chain

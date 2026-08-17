@@ -5,6 +5,7 @@
 #include "ASTVariableChecking.h"
 
 #include "../CompilerConfig.h"
+#include "../Optimization/VarExistsValidator.h"
 #include "ReferenceManagement/ASTCollectDeclarations.h"
 
 ASTVariableChecking::ASTVariableChecking(NodeProgram* main, const Pass pass)
@@ -180,6 +181,31 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 	return &node;
 }
 
+void ASTVariableChecking::check_read_in_own_declaration(NodeSingleDeclaration& node) const {
+	if (!node.value) return;
+	const auto& variable = node.variable;
+	// UI controls and lists get their values from passes of their own - leave those to the
+	// checks that own them.
+	if (variable->cast<NodeUIControl>() or variable->cast<NodeList>()) return;
+	// A name something else already declares is shadowed, not read before it exists:
+	// <declare counter := counter + 1> next to an outer <counter> declares a second variable
+	// and seeds it from the outer one.
+	if (m_def_provider->get_declared_data_structure(variable->name)) return;
+	// Only the initializer counts. collect_free_vars() would also walk the definition of
+	// whatever the initializer calls, where a same-named variable of the callee - the <result>
+	// of a deprecated return function, say - has nothing to do with this declaration.
+	static VarExistsValidator var_exists_validator;
+	if (!var_exists_validator.check(*node.value, variable->name)) return;
+
+	auto error = Diagnostic(ErrorType::VariableError, "", "", variable->tok);
+	error.message = "<" + variable->name + "> is read inside its own declaration. Nothing of that "
+		"name is declared yet, so the read can only see the zero the declaration writes right "
+		"before it - in a callback it does so on every run, which makes the value it is meant to "
+		"carry over unreachable. Declare it in <on init> and assign to it here instead.";
+	error.expected = "Declaration before use";
+	error.exit();
+}
+
 NodeAST* ASTVariableChecking::visit(NodeSingleDeclaration& node) {
 	node.variable->determine_locality(m_program, get_current_block());
 
@@ -189,6 +215,8 @@ NodeAST* ASTVariableChecking::visit(NodeSingleDeclaration& node) {
 						  "to be declared in the <on init> callback.";
 		error.exit();
 	}
+	// the pass both the compiler and the language server reach before any rewriting
+	if (pass == Pass::PostUIControlLowering) check_read_in_own_declaration(node);
     if(node.value) node.value->accept(*this);
     node.variable->accept(*this);
 	m_def_provider->add_to_declarations(&node);

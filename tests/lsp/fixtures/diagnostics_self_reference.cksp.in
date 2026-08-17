@@ -1,0 +1,13 @@
+{ <last_idx> is read in the initializer of its own declaration. The helper writes to its
+  parameter, so it is not an expression function and ASTReturnFunctionRewriting splits the
+  declaration - which is what used to make the compiler accept this while the server, which
+  checks before any rewriting, reported the name as undeclared. }
+function bump(value) -> result
+	result := value + 1
+	value := result
+end function
+
+on note
+	declare <|declared_name|>last_idx := bump(last_idx)
+	message(last_idx)
+end on
