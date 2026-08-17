@@ -38,6 +38,7 @@ namespace pragma_migration {
 	inline Diagnostic make_diagnostic(
 		const Token& pragma_token, const std::string& option, const std::string& argument) {
 		auto warning = Diagnostic(ErrorType::CompileWarning, "", "", pragma_token);
+		warning.migration_kind = Diagnostic::MigrationKind::SublimePragma;
 
 		if (option == "save_compiled_source" and !argument.empty()) {
 			warning.message =

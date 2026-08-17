@@ -69,6 +69,14 @@ struct DiagnosticExpansion {
  */
 struct Diagnostic {
 
+    enum class MigrationKind {
+        SublimePragma,
+        Taskfunc,
+        TCM,
+        PostMacro,
+        Property
+    };
+
     struct DiagnosticFix {
         enum class FixKind {
             AddRefToFuncParam,
@@ -111,6 +119,17 @@ struct Diagnostic {
         }
         return "unknown";
     }
+    static std::string migration_kind_to_string(const MigrationKind kind) {
+        switch (kind) {
+            case MigrationKind::SublimePragma: return "SublimePragma";
+            case MigrationKind::Taskfunc: return "Taskfunc";
+            case MigrationKind::TCM: return "TCM";
+            case MigrationKind::PostMacro: return "PostMacro";
+            case MigrationKind::Property: return "Property";
+            default: break;
+        }
+        return "unknown";
+    }
 
     ErrorType type = ErrorType::CompileError;
     DiagnosticSeverity severity = DiagnosticSeverity::Error;
@@ -123,6 +142,9 @@ struct Diagnostic {
     std::vector<DiagnosticFrame> call_stack;
     /// Set when the reported token was assembled by a macro or define substitution.
     std::optional<DiagnosticExpansion> expansion;
+    /// Marks diagnostics emitted specifically while recognising source from another dialect.
+    /// Unlike DiagnosticFix this remains present when the construct cannot be rewritten safely.
+    std::optional<MigrationKind> migration_kind;
     std::optional<DiagnosticFix> fix;
 
     Diagnostic() = default;

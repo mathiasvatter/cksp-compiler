@@ -864,6 +864,10 @@ def _(workspace, server):
     message = diagnostics[0]["message"]
     expect("taskfunc" in message and "SublimeKSP" in message,
            f"the diagnostic should name the construct and its dialect; got {message!r}")
+    expect((diagnostics[0].get("data") or {}).get("migrationKind") == "Taskfunc",
+           f"taskfunc diagnostic is not marked for migration: {diagnostics[0]}")
+    expect((diagnostics[0].get("data") or {}).get("fixKind") == "ConvertTaskfuncToFunction",
+           f"taskfunc diagnostic has the wrong fix kind: {diagnostics[0]}")
     expect_position(position_of(diagnostics[0]), fixture, "taskfunc",
                     what="taskfunc diagnostic")
 
@@ -903,6 +907,11 @@ def _(workspace, server):
     fixture = workspace.write("tcm_init.cksp",
                               "on init\n    tcm.init(64)\nend on\n")
     server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect((diagnostics[0].get("data") or {}).get("migrationKind") == "TCM",
+           f"tcm.init diagnostic is not marked for migration: {diagnostics[0]}")
+    expect((diagnostics[0].get("data") or {}).get("fixKind") == "ConvertTCMCall",
+           f"tcm.init diagnostic has the wrong fix kind: {diagnostics[0]}")
     action = action_titled(server.code_actions(fixture), "max_callback_depth")
     expect("#pragma max_callback_depth(64)" in apply_action(fixture.text, action, fixture),
            "the fix should write the pragma with the call's own depth")
@@ -921,6 +930,10 @@ def _(workspace, server):
     expect(diagnostics, "expected a diagnostic for tcm.init")
     expect("max_callback_depth" in diagnostics[0]["message"],
            f"the message should name the option; got {diagnostics[0]['message']!r}")
+    expect((diagnostics[0].get("data") or {}).get("migrationKind") == "TCM",
+           f"computed tcm.init must remain identifiable as a migration blocker: {diagnostics[0]}")
+    expect("fixKind" not in (diagnostics[0].get("data") or {}),
+           f"computed tcm.init must not advertise a fix: {diagnostics[0]}")
     expect(not server.code_actions(fixture),
            "no fix may be offered for a depth that cannot become a pragma argument")
 
@@ -935,6 +948,8 @@ def _(workspace, server):
     expect(diagnostics, "expected a diagnostic for the unknown tcm call")
     expect("Task Control Module" in diagnostics[0]["message"],
            f"the message should name TCM; got {diagnostics[0]['message']!r}")
+    expect((diagnostics[0].get("data") or {}).get("migrationKind") == "TCM",
+           f"unknown TCM call must remain identifiable as a migration blocker: {diagnostics[0]}")
     expect(not server.code_actions(fixture), "an unknown tcm call has nothing to rewrite to")
 
 
@@ -1010,6 +1025,10 @@ def _(workspace, server):
         messages = messages_of(server.diagnostics(fixture))
         expect(any("SublimeKSP <property>" in message for message in messages),
                f"{name}: expected the property message, got {messages}")
+        diagnostic = next(d for d in server.diagnostics(fixture)
+                          if "SublimeKSP <property>" in d["message"])
+        expect((diagnostic.get("data") or {}).get("migrationKind") == "Property",
+               f"{name}: property is not identifiable as a migration blocker: {diagnostic}")
 
 
 @test("migration: 'property' stays usable as an ordinary name",
@@ -1041,6 +1060,10 @@ def _(workspace, server):
            f"must be a warning (2), got severity {diagnostics[0]['severity']}")
     expect("save_compiled_source" in diagnostics[0]["message"],
            f"the message should name the pragma; got {diagnostics[0]['message']!r}")
+    expect((diagnostics[0].get("data") or {}).get("migrationKind") == "SublimePragma",
+           f"pragma diagnostic is not marked for migration: {diagnostics[0]}")
+    expect((diagnostics[0].get("data") or {}).get("fixKind") == "ConvertSublimePragma",
+           f"pragma diagnostic has the wrong fix kind: {diagnostics[0]}")
 
     action = action_titled(server.code_actions(fixture), "output_path")
     ported = apply_action(source, action, fixture)
@@ -1061,6 +1084,10 @@ def _(workspace, server):
     diagnostics = server.diagnostics(fixture)
     expect(len(diagnostics) == 1, f"expected one diagnostic, got {messages_of(diagnostics)}")
     expect(diagnostics[0]["severity"] == 2, "must be a warning")
+    expect((diagnostics[0].get("data") or {}).get("migrationKind") == "SublimePragma",
+           f"unknown pragma must remain identifiable as a migration blocker: {diagnostics[0]}")
+    expect("fixKind" not in (diagnostics[0].get("data") or {}),
+           f"unknown pragma must not advertise a fix: {diagnostics[0]}")
     expect(not server.code_actions(fixture),
            "there is nothing to rewrite a pragma to that CKSP does not have")
 
@@ -1099,6 +1126,9 @@ def _(workspace, server):
         messages = messages_of(server.diagnostics(fixture))
         expect(any(spelling in message and adopted in message for message in messages),
                f"{name}: expected {spelling} and {adopted} to be named, got {messages}")
+        diagnostic = next(d for d in server.diagnostics(fixture) if spelling in d["message"])
+        expect((diagnostic.get("data") or {}).get("migrationKind") == "PostMacro",
+               f"{name}: post macro is not identifiable as a migration blocker: {diagnostic}")
         # No fix: renaming is only correct when the bounds are known during expansion, and
         # CKSP rejects a macro parameter there outright.
         expect(not server.code_actions(fixture),

@@ -53,6 +53,7 @@ public:
 
 	[[nodiscard]] Diagnostic make_diagnostic(const std::string& function_name) const {
 		auto error = Diagnostic(ErrorType::ParseError, "", "", m_taskfunc_token);
+		error.migration_kind = Diagnostic::MigrationKind::Taskfunc;
 		error.message =
 			"Found a SublimeKSP <taskfunc>. CKSP has no taskfunc because it needs none: every"
 			" function already gets its own per-callback storage, so it is safe to re-enter"

@@ -30,6 +30,7 @@ namespace macro_migration {
 		const std::string source = is_literate ? "list of literals" : "bounds";
 
 		auto error = Diagnostic(ErrorType::PreprocessorError, "", adopted, macro_token);
+		error.migration_kind = Diagnostic::MigrationKind::PostMacro;
 		error.message =
 			"Found SublimeKSP's <" + macro_token.val + ">. CKSP has <" + adopted + "> only,"
 			" which is evaluated while macros are expanded; the post variant runs after that,"

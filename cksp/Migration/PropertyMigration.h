@@ -24,6 +24,7 @@ namespace property_migration {
 
 	inline Diagnostic make_diagnostic(const Token& property_token) {
 		auto error = Diagnostic(ErrorType::SyntaxError, "", "", property_token);
+		error.migration_kind = Diagnostic::MigrationKind::Property;
 		error.message =
 			"Found a SublimeKSP <property>. CKSP has no property construct. A value computed"
 			" from an object belongs to that object: give the struct a pair of methods and"

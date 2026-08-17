@@ -94,6 +94,7 @@ bool DiagnosticPublisher::same_published_diagnostic(
 		&& left.severity == right.severity
 		&& left.display_message() == right.display_message()
 		&& left.range == right.range
+		&& left.migration_kind == right.migration_kind
 		&& left.fix == right.fix;
 }
 
@@ -173,8 +174,18 @@ std::unique_ptr<JSONObject> DiagnosticPublisher::make_lsp_diagnostic(const Diagn
 		result->add("relatedInformation", std::move(related));
 	}
 
-	if (diagnostic.fix) {
-		result->add("data", make_lsp_fix_data(*diagnostic.fix));
+	if (diagnostic.fix || diagnostic.migration_kind) {
+		auto data = diagnostic.fix
+			? make_lsp_fix_data(*diagnostic.fix)
+			: std::make_unique<JSONObject>();
+		if (diagnostic.migration_kind) {
+			data->add(
+				"migrationKind",
+				std::make_unique<JSONString>(
+					Diagnostic::migration_kind_to_string(*diagnostic.migration_kind))
+			);
+		}
+		result->add("data", std::move(data));
 	}
 	return result;
 }

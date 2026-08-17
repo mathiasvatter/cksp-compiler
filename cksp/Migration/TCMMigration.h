@@ -40,6 +40,7 @@ namespace tcm_migration {
 		auto diagnostic = Diagnostic(
 			ErrorType::SyntaxError, "", "",
 			node.function ? node.function->tok : node.tok);
+		diagnostic.migration_kind = Diagnostic::MigrationKind::TCM;
 
 		if (function_name == "tcm.init") {
 			diagnostic.message =
