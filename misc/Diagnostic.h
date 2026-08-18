@@ -152,6 +152,9 @@ struct Diagnostic {
     /// Unlike DiagnosticFix this remains present when the construct cannot be rewritten safely.
     std::optional<MigrationKind> migration_kind;
     std::optional<DiagnosticFix> fix;
+    /// Set on an error the compilation carried on past, which tells it apart from the one
+    /// that ended the run - the only one a console sink should follow with a failure notice.
+    bool recovered = false;
 
     Diagnostic() = default;
     Diagnostic(ErrorType type, std::string message, std::string expected, const struct Token& token);
@@ -160,6 +163,13 @@ struct Diagnostic {
 
     /// Emits a non-fatal diagnostic through the supplied compilation context.
     void report(DiagnosticEngine& diagnostics) const;
+    /// Emits an error the compilation recovered from and goes on past.
+    ///
+    /// Between <report>, which downgrades to a warning and lets the compile succeed, and
+    /// <exit>, which stops at the first message. An error emitted this way is counted by the
+    /// engine, and the compiler refuses to generate code while that count is not zero - the
+    /// run reaches its end so every further error is found, and still fails.
+    void report_as_error(DiagnosticEngine& diagnostics) const;
     /// Aborts the current compilation by throwing CompilationAborted.
     [[noreturn]] void exit() const;
 

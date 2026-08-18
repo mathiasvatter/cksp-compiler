@@ -13,6 +13,17 @@ ASTVariableChecking::ASTVariableChecking(NodeProgram* main, const Pass pass)
 	m_program = main;
 }
 
+std::string ASTVariableChecking::self_hint(const Token& token, const std::string& kind) {
+	return "When referencing a struct " + kind + ", remember to use the '" + NodeStruct::SELF
+		+ "' keyword to access it. Example: <" + NodeStruct::SELF + "." + token.val + ">.";
+}
+
+NodeAST* ASTVariableChecking::fail_or_recover(NodeReference& node, const std::string& add_msg) {
+	node.match_data_structure(DefinitionProvider::report_declaration_error(
+		node, diagnostics(), add_msg, m_def_provider));
+	return &node;
+}
+
 NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
 	m_program = &node;
 	// add all function definition header variables to global scope.
@@ -261,12 +272,10 @@ NodeAST* ASTVariableChecking::visit(NodeArrayRef& node) {
 			return node.replace_with(std::move(access_chain));
 		}
 		if(m_current_struct) {
-			auto msg = "When referencing a struct member, remember to use the '" + NodeStruct::SELF
-				+ "' keyword to access it. Example: <" + NodeStruct::SELF + "." + node.tok.val + ">.";
-			DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
+			return fail_or_recover(node, self_hint(node.tok, "member"));
 		}
         if(pass == Pass::PostUIControlLowering) return &node;
-	    DefinitionProvider::throw_declaration_error(node, "", m_def_provider).exit();
+	    return fail_or_recover(node);
     }
 
     node.match_data_structure(node_declaration);
@@ -293,12 +302,9 @@ NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 			return node.replace_with(std::move(access_chain));
 		}
 		if(m_current_struct) {
-			const auto msg = "When referencing a struct member, remember to use the '" + NodeStruct::SELF
-				+ "' keyword to access it. Example: <" + NodeStruct::SELF + "." + node.tok.val + ">.";
-			DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
+			return fail_or_recover(node, self_hint(node.tok, "member"));
 		}
-		DefinitionProvider::throw_declaration_error(node, "", m_def_provider).exit();
-		return &node;
+		return fail_or_recover(node);
 	}
 	node.match_data_structure(node_declaration);
 	return &node;
@@ -323,15 +329,13 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 	if(!node_declaration) {
 		// if (!fail) return &node;
 		if(m_current_struct) {
-			const auto msg = "When referencing a struct method, remember to use the '" + NodeStruct::SELF
-				+ "' keyword to access it. Example: <" + NodeStruct::SELF + "." + node.tok.val + ">.";
-			DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
+			return fail_or_recover(node, self_hint(node.tok, "method"));
 		}
 		if (!node.parent -> cast<NodeFunctionCall>()) {
 			// when declaration is missing, throw this error only if this node is used as a function variable
 			// if it is used in a call and the function is not found, the official missing function error will be
 			// handled after type checking
-			DefinitionProvider::throw_declaration_error(node, "", m_def_provider).exit();
+			return fail_or_recover(node);
 		}
 		return &node;
 	}
@@ -370,22 +374,20 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 		} else {
 
 			if(m_current_struct) {
-				const auto msg = "When referencing a struct member, remember to use the '" + NodeStruct::SELF
-					+ "' keyword to access it. Example: <" + NodeStruct::SELF + "." + node.tok.val + ">.";
-				DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
+				return fail_or_recover(node, self_hint(node.tok, "member"));
 			}
 
 			// if is assigned to a const variable, it should be known in frontend
 			if (auto single_decl = node.parent->cast<NodeSingleDeclaration>()) {
 				if (single_decl->variable->data_type == DataType::Const) {
 					auto msg = "<Variable> was assigned to a constant variable and therefore has to be constant itself.";
-					DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
+					return fail_or_recover(node, msg);
 				}
 			}
 			// could still fail on ui control array values or raw list subarrays
 			if(pass == Pass::PostUIControlLowering)
 				return &node;
-			DefinitionProvider::throw_declaration_error(node, "", m_def_provider).exit();
+			return fail_or_recover(node);
 		}
     }
 
@@ -410,7 +412,7 @@ NodeAST* ASTVariableChecking::visit(NodePointerRef& node) {
 			return node.replace_with(std::move(access_chain));
 		}
 		// if fail is set to false, return early. the rest is determined after lowering
-		DefinitionProvider::throw_declaration_error(node, "", m_def_provider).exit();
+		return fail_or_recover(node);
 	}
 
 	node.match_data_structure(node_declaration);

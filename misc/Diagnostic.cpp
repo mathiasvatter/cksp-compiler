@@ -64,6 +64,13 @@ void Diagnostic::report(DiagnosticEngine& diagnostics) const {
     diagnostics.report(std::move(diagnostic));
 }
 
+void Diagnostic::report_as_error(DiagnosticEngine& diagnostics) const {
+    auto diagnostic = *this;
+    diagnostic.severity = DiagnosticSeverity::Error;
+    diagnostic.recovered = true;
+    diagnostics.report(std::move(diagnostic));
+}
+
 void Diagnostic::exit() const {
     auto diagnostic = *this;
     diagnostic.severity = DiagnosticSeverity::Error;

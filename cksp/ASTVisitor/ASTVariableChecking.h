@@ -60,6 +60,15 @@ public:
 		return &node;
 	}
 
+	/// Resolves `node` to the declaration it names in a different case, or ends the
+	/// compilation with the declaration error. `add_msg` carries whatever the call site knows
+	/// beyond "not declared". See DefinitionProvider::report_declaration_error.
+	NodeAST* fail_or_recover(NodeReference& node, const std::string& add_msg = "");
+
+	/// The hint for a name that did not resolve inside a struct body, where forgetting
+	/// <self> is what it nearly always is. `kind` is the word for what was referenced.
+	static std::string self_hint(const Token& token, const std::string& kind);
+
 	NodeAST * visit(NodeProgram& node) override;
 	/// check if on init callback currently
 	NodeAST * visit(NodeCallback& node) override;

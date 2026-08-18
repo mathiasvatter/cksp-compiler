@@ -5,6 +5,7 @@
 void DiagnosticEngine::report(Diagnostic diagnostic) {
     if (diagnostic.call_stack.empty()) diagnostic.call_stack = materialize_call_stack();
     ++m_diagnostic_count;
+    if (diagnostic.severity == DiagnosticSeverity::Error) ++m_error_count;
     m_sink.report(std::move(diagnostic));
 }
 

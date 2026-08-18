@@ -334,16 +334,50 @@ std::vector<std::string> DefinitionProvider::misspelled_raw_array_suggestions(
 
 	// <sanitized> strips either spelling, so which one the source used has to be read
 	// back off the reference to put it on again.
-	const bool underscore_form = reference.name.starts_with('_');
-
 	std::vector<std::string> suggestions;
 	for (const auto& declaration : misspelled_declarations(sanitized, max_results)) {
 		if (!declaration->cast<NodeNDArray>()) continue;
-		suggestions.push_back(underscore_form
-			? "_" + declaration->name
-			: declaration->name + ".raw()");
+		suggestions.push_back(reference.raw_spelling_of(declaration->name));
 	}
 	return suggestions;
+}
+
+std::shared_ptr<NodeDataStructure> DefinitionProvider::get_case_insensitive_data_structure(
+	const std::string& data) const {
+	const auto lower_data = StringUtils::to_lower(data);
+	// Innermost scope first, like the exact lookup: a declaration that shadows another one
+	// answers for it here too, so an outer scope's spelling cannot make an inner one
+	// ambiguous. Within one scope two spellings of the same name are two declarations
+	// SublimeKSP never had to tell apart and CKSP cannot choose between.
+	for (const auto& scope : std::ranges::reverse_view(m_declared_data_structures)) {
+		std::shared_ptr<NodeDataStructure> match = nullptr;
+		for (const auto& [declared_name, declaration] : scope) {
+			if (!declaration || StringUtils::to_lower(declared_name) != lower_data) continue;
+			if (match && match != declaration) return nullptr;
+			match = declaration;
+		}
+		if (match) return match;
+	}
+	return nullptr;
+}
+
+std::shared_ptr<NodeDataStructure> DefinitionProvider::recover_case_mismatch(
+	NodeReference& reference) const {
+	if (auto declaration = get_case_insensitive_data_structure(reference.name)) {
+		reference.name = declaration->name;
+		return declaration;
+	}
+	// A raw reference resolves under its sanitized name, so a miscased one has to be matched
+	// there and spelled raw again - <_env2.arr> means the declaration <ENV2.arr>.
+	if (reference.has_raw_spelling()) {
+		auto declaration = get_case_insensitive_data_structure(
+			NodeReference::sanitized(reference.name));
+		if (declaration && declaration->cast<NodeNDArray>()) {
+			reference.name = reference.raw_spelling_of(declaration->name);
+			return declaration;
+		}
+	}
+	return nullptr;
 }
 
 Diagnostic DefinitionProvider::make_missing_function_definition_error(

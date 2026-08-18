@@ -227,6 +227,37 @@ public:
 	/// only returns data structure declaration in current scope or global_scope
 	[[nodiscard]] std::shared_ptr<NodeDataStructure> get_scoped_data_structure(const std::string& data, bool global_scope) const;
 
+	/// Reports the error for a reference that resolved to nothing and aborts - unless the name
+	/// differs from a declaration in nothing but case, which is a spelling CKSP can resolve on
+	/// its own. Returns the declaration such a recovery resolved to.
+	///
+	/// A ported SublimeKSP script lands here by the hundred: names there resolve case
+	/// insensitively, so every one of them spelled differently from its declaration is an
+	/// error, and stopping at the first turns porting a script into one compile per name. The
+	/// reference is resolved to the declaration it means and the error reported without
+	/// stopping, so a single run names all of them.
+	///
+	/// The compilation still fails: Compiler refuses to generate code while the engine counts
+	/// errors. Recovering here is what finds the rest of them, not what accepts the spelling.
+	/// `diagnostics` is passed in rather than looked up from `node`: a reference reached by a
+	/// pass is not always attached to the program - a definition visited out of the program's
+	/// function list, a node a lowering already replaced - and the lookup walks parent
+	/// pointers to find it. The visitor always knows the engine.
+	static std::shared_ptr<NodeDataStructure> report_declaration_error(
+		NodeReference& node,
+		DiagnosticEngine& diagnostics,
+		const std::string& add_msg = "",
+		const DefinitionProvider* ctx = nullptr) {
+		const auto diagnostic = throw_declaration_error(node, add_msg, ctx);
+		if (ctx) {
+			if (auto declaration = ctx->recover_case_mismatch(node)) {
+				diagnostic.report_as_error(diagnostics);
+				return declaration;
+			}
+		}
+		diagnostic.exit();
+	}
+
 	/// variable error handling
 	static Diagnostic throw_declaration_error(NodeReference &node, const std::string& add_msg="", const DefinitionProvider* ctx = nullptr, const std::string& alternate_name = "") {
 		auto diagnostic = Diagnostic(ErrorType::VariableError, "", "", node.tok);
@@ -338,6 +369,21 @@ public:
 	[[nodiscard]] std::vector<std::string> misspelled_suggestions(
 		const std::string& name,
 		size_t max_results = 4) const;
+
+	/// The one declaration whose name matches `data` in every character but case, or nothing
+	/// when none does - or when several do, which is a name CKSP cannot choose for.
+	///
+	/// Scans, because the scopes are keyed by the exact spelling. Only ever reached on the
+	/// error path, where a Levenshtein ranking over the same declarations is already being
+	/// paid to build the suggestion list.
+	[[nodiscard]] std::shared_ptr<NodeDataStructure> get_case_insensitive_data_structure(
+		const std::string& data) const;
+
+	/// Resolves a reference that names a declaration in a different case, adopting the
+	/// declared spelling so every later pass sees the name the program actually declares.
+	/// Nothing when the name is not a case mismatch, or not an unambiguous one.
+	[[nodiscard]] std::shared_ptr<NodeDataStructure> recover_case_mismatch(
+		NodeReference& reference) const;
 
 	/// Suggestions for a raw <NDArray> reference, spelled the way such a reference has to be
 	/// written rather than the way its declaration is.

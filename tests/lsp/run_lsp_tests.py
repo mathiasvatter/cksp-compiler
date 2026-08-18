@@ -1164,6 +1164,80 @@ def _(workspace, server):
            "a typo that is not a case difference must not be offered as an edit")
 
 
+@test("migration: every miscased name in a file is reported by one analysis",
+      entry_points=["case_many.cksp"])
+def _(workspace, server):
+    # Each of these used to end the analysis, so porting a script cost one run per name.
+    source = ("on init\n"
+              "    declare myCounter\n"
+              "    declare otherName\n"
+              "    declare thirdThing\n"
+              "end on\n"
+              "\non note\n"
+              "    MyCounter := 1\n"
+              "    OTHERNAME := 2\n"
+              "    thirdthing := 3\n"
+              "end on\n")
+    fixture = workspace.write("case_many.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    case_diagnostics = [
+        diagnostic for diagnostic in diagnostics
+        if (diagnostic.get("data") or {}).get("migrationKind") == "IdentifierCase"
+    ]
+    expect(len(case_diagnostics) == 3,
+           f"expected all three case errors from one analysis, got {messages_of(diagnostics)}")
+    expect(all((diagnostic.get("data") or {}).get("fixKind") == "CorrectNameCase"
+               for diagnostic in case_diagnostics),
+           f"every one of them should carry its edit: {case_diagnostics}")
+
+    ported, applied = port_with_quick_fixes(fixture, server, source)
+    expect(len(applied) == 3, f"expected three fixes in one pass, applied {applied}")
+    expect(not server.diagnostics(fixture),
+           f"ported source still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: an ambiguous name still stops the analysis",
+      entry_points=["case_many_ambiguous.cksp"])
+def _(workspace, server):
+    # Recovery resolves a name to the one declaration it can mean. Two spellings of the same
+    # name are two declarations, so there is nothing to resolve to and the analysis ends -
+    # which is why the second error below never gets reported.
+    source = ("on init\n"
+              "    declare Foo\n"
+              "    declare foo\n"
+              "    declare counter\n"
+              "end on\n"
+              "\non note\n"
+              "    FOO := 1\n"
+              "    COUNTER := 2\n"
+              "end on\n")
+    fixture = workspace.write("case_many_ambiguous.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(len(diagnostics) == 1,
+           f"an unresolvable name has to stop the run: {messages_of(diagnostics)}")
+    expect("ambiguous" in diagnostics[0]["message"].lower(),
+           f"expected the ambiguity blocker, got {diagnostics[0]['message']!r}")
+    expect(not server.code_actions(fixture),
+           "an ambiguous spelling must not choose a declaration")
+
+
+@test("migration: a real typo still stops the analysis",
+      entry_points=["case_many_typo.cksp"])
+def _(workspace, server):
+    source = ("on init\n    declare counter\n    declare other\nend on\n"
+              "\non note\n    countr := 1\n    othr := 2\nend on\n")
+    fixture = workspace.write("case_many_typo.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(len(diagnostics) == 1,
+           f"a name that is not a case mismatch has to stop the run: "
+           f"{messages_of(diagnostics)}")
+    expect("countr" in diagnostics[0]["message"],
+           f"expected the first typo, got {diagnostics[0]['message']!r}")
+
+
 @test("migration: a raw ndarray reference is corrected without losing its underscore",
       entry_points=["case_raw_ndarray.cksp"])
 def _(workspace, server):

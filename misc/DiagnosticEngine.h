@@ -31,6 +31,15 @@ public:
         return m_diagnostic_count;
     }
 
+    /// How many of them were errors the compilation carried on past.
+    ///
+    /// A compile that recovered from an error still has to fail, and the recovery happens
+    /// deep inside a pass that cannot tell whether code will be generated afterwards. Counting
+    /// them here lets the pipeline refuse at its next boundary instead.
+    [[nodiscard]] size_t error_count() const noexcept {
+        return m_error_count;
+    }
+
 private:
     /// References AST data guarded by FunctionCallStackScope.
     struct ActiveFrame {
@@ -44,6 +53,7 @@ private:
 
     DiagnosticSink& m_sink;
     size_t m_diagnostic_count = 0;
+    size_t m_error_count = 0;
     std::vector<ActiveFrame> m_call_stack;
     /// Frames preserved inner-to-outer by RAII destructors during exception unwinding.
     std::vector<DiagnosticFrame> m_unwound_call_stack;

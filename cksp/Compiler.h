@@ -466,6 +466,29 @@ private:
 		ast->accept(lowering);
 	}
 
+	/// Ends the compilation when a pass resolved an error instead of stopping at it.
+	///
+	/// Name resolution recovers from a spelling that differs from a declaration in nothing
+	/// but case, so that one run finds every such name rather than the first - see
+	/// DefinitionProvider::report_declaration_error. It carried on to keep looking, not
+	/// because the source was accepted, and this is where that ends.
+	///
+	/// Called after the <PostLowering> variable check, which is the first pass that reports
+	/// an unresolved name at all: the two earlier ones return from a plain reference they
+	/// cannot resolve, because a ui control array value or a raw list subarray only gets its
+	/// declaration from the lowering in between. Checking any earlier finds nothing to stop
+	/// for; everything after this point would be built on a program CKSP rejects.
+	///
+	/// The analysis path enforces the same rule without throwing - see <analyze>.
+	void stop_if_errors_were_recovered(const DiagnosticEngine& diagnostic_engine) const {
+		const auto errors = diagnostic_engine.error_count();
+		if (errors == 0) return;
+		Diagnostic aborted(ErrorType::CompileError, "", "", ast->tok);
+		aborted.message = "Compilation stopped: " + std::to_string(errors)
+			+ (errors == 1 ? " error was" : " errors were") + " reported above.";
+		aborted.exit();
+	}
+
 	void compile_impl(DiagnosticEngine& diagnostic_engine) {
 
 		frontend_impl(diagnostic_engine);
@@ -503,6 +526,7 @@ private:
 		{
 			ASTVariableChecking variable_checking(m_program, ASTVariableChecking::Pass::PostLowering);
 			variable_checking.do_reachable_traversal(*ast);
+			stop_if_errors_were_recovered(diagnostic_engine);
 			// Re-register references introduced by rewriting. Removed references
 			// unregister themselves in NodeReference::~NodeReference(), so a full
 			// remove_references() traversal before this is redundant.
@@ -665,13 +689,20 @@ public:
 		return m_constant_db;
 	}
 
+
 	/// Analyze an explicitly supplied source, used by in-memory and language-server clients.
 	CompilationResult analyze(const SourceId& entry_source, DiagnosticSink& diagnostics) {
 		m_cli_config->input_filename = entry_source.value;
 		DiagnosticEngine diagnostic_engine(diagnostics);
 		try {
 			analyse_impl(diagnostic_engine);
-			return {.success = true, .diagnostic_count = diagnostic_engine.diagnostic_count()};
+			// The same rule <stop_if_errors_were_recovered> enforces for a compile, applied
+			// the way it has to be here: nothing in an analysis generates code, so there is
+			// nothing to stop before - only a result to report honestly. Throwing instead
+			// would put a "compilation stopped" squiggle on the first line of the file, and
+			// cost the complete indexes this run did produce.
+			return {.success = diagnostic_engine.error_count() == 0,
+					.diagnostic_count = diagnostic_engine.diagnostic_count()};
 		} catch (const CompilationAborted& aborted) {
 			diagnostic_engine.report(aborted.diagnostic());
 			// Salvage whatever was resolved before the abort so go-to-definition keeps

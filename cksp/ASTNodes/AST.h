@@ -287,6 +287,11 @@ struct NodeReference : NodeAST {
 	[[nodiscard]] bool has_raw_spelling() const {
 		return (name[0] == '_' && name[1] != '_') or name.ends_with(".raw()");
 	}
+	/// `name` spelled the way this reference addresses a raw array, which is the inverse of
+	/// <sanitized> for the form this reference happens to use.
+	[[nodiscard]] std::string raw_spelling_of(const std::string& name) const {
+		return this->name.starts_with('_') ? "_" + name : name + ".raw()";
+	}
 	/// The name a reference spelled `name` is declared under: that spelling stripped of
 	/// whatever marks it as raw.
 	[[nodiscard]] static std::string sanitized(std::string_view name) {

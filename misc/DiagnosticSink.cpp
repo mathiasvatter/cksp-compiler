@@ -126,7 +126,8 @@ void ConsoleDiagnosticSink::report(Diagnostic diagnostic) {
     }
     m_output << '\n';
 
-    if (m_print_failure_footer && diagnostic.severity == DiagnosticSeverity::Error) {
+    if (m_print_failure_footer && diagnostic.severity == DiagnosticSeverity::Error
+        && !diagnostic.recovered) {
         m_output << ColorCode::Red << "\nSeems like the compilation exited with a failure."
                  << ColorCode::Reset << std::endl;
         // A diagnostic that carries its own fix knows exactly what is wrong and how to undo
