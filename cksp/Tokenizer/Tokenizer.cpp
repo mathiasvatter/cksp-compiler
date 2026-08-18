@@ -10,6 +10,7 @@
 #include "../../utils/StringUtils.h"
 #include "../../misc/DiagnosticEngine.h"
 #include "../Migration/PragmaMigration.h"
+#include "InvalidCharacter.h"
 
 
 /*
@@ -139,13 +140,70 @@ char Tokenizer::peek(const int ahead) const {
 
 void Tokenizer::get_invalid() {
 	flush_buffer();
+	const size_t character_start = m_pos;
 	consume();
 	auto got = !m_buffer.empty() ? m_buffer : std::string(1, m_current_char);
 	add_token(token::INVALID, m_buffer);
 	auto error = Diagnostic(ErrorType::TokenError, "", "valid token", m_tokens.back());
-	error.add_message("Found invalid token: " + got);
+
+	const auto [codepoint, length, valid] = invalid_character::decode(m_input, character_start);
+	if (valid && codepoint < 0x80) {
+		error.add_message("Found invalid token: " + got);
+		error.exit();
+	}
+	if (!valid) {
+		// Not a character at all from here: the bytes decode to nothing, which is what a file
+		// written in another encoding looks like to a compiler that reads UTF-8.
+		char byte[8];
+		std::snprintf(byte, sizeof(byte), "0x%02X", static_cast<unsigned>(codepoint));
+		error.actual = std::string("byte ") + byte;
+		error.add_message(
+			"Found the " + error.actual + ", which begins no UTF-8 character. The file is"
+			" probably saved in another encoding; re-save it as UTF-8.");
+		error.exit();
+	}
+
+	error.actual = invalid_character::describe(codepoint);
+	error.add_message("Found invalid character: " + error.actual + ".");
+	if (invalid_character::is_invisible(codepoint)) {
+		error.add_message(
+			"It leaves no mark on screen, which is why the line looks correct. A character"
+			" like this usually arrives by pasting a line out of a website, a PDF or a chat"
+			" window.");
+	}
+	if (const auto replacement = invalid_character::replacement_for(codepoint)) {
+		add_invalid_character_fix(error, character_start, *replacement);
+	}
 	error.exit();
 	skip_whitespace();
+}
+
+/// Offers to take the character out, when the column the edit needs can be trusted.
+///
+/// The compiler counts a column per byte while an editor counts one per UTF-16 unit, so the
+/// two only agree while the line before the character is plain ASCII. That covers the case
+/// this exists for - one pasted character in an otherwise ordinary line - and a line that
+/// already holds other non-ASCII keeps the message without an edit, rather than an edit that
+/// might land next to the character instead of on it.
+void Tokenizer::add_invalid_character_fix(
+	Diagnostic& error, const size_t character_start, const std::string& replacement) const {
+	for (size_t index = m_input.rfind('\n', character_start) + 1; index < character_start; ++index) {
+		if (static_cast<unsigned char>(m_input[index]) >= 0x80) return;
+	}
+	const auto& range = error.range;
+	error.fix = Diagnostic::DiagnosticFix{
+		.kind = Diagnostic::DiagnosticFix::FixKind::ReplaceInvalidCharacter,
+		.title = replacement.empty()
+			? "Remove " + error.actual
+			: "Replace " + error.actual + " with a space",
+		.edits = {{
+			.kind = Diagnostic::DiagnosticFix::EditKind::Replace,
+			.file = error.file,
+			.range = SourceRange(range.start, {range.start.line, range.start.column + 1}),
+			.new_text = replacement
+		}},
+		.is_preferred = true
+	};
 }
 
 bool Tokenizer::is_pragma() const {

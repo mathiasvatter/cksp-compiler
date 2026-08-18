@@ -1164,6 +1164,176 @@ def _(workspace, server):
            "a typo that is not a case difference must not be offered as an edit")
 
 
+@test("diagnostics: an invisible character is named instead of printed",
+      entry_points=["invisible_character.cksp"])
+def _(workspace, server):
+    # A zero width space, as pasted out of a website. Printing it back would show the reader
+    # an empty box on a line that already looks correct. This also exercises the JSON
+    # parser's \\uXXXX handling: the harness escapes every non-ASCII character it sends.
+    source = "on init\n  declare x\n\u200b\nend on\n"
+    fixture = workspace.write("invisible_character.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(diagnostics, "expected a token error")
+    message = diagnostics[0]["message"]
+    expect("U+200B" in message and "zero width space" in message,
+           f"the character has to be named, got {message!r}")
+    expect("invisible" in message or "no mark on screen" in message,
+           f"why the line looks correct should be said: {message!r}")
+
+    action = action_titled(server.code_actions(fixture), "Remove")
+    ported = apply_action(source, action, fixture)
+    expect("\u200b" not in ported, f"the character was not removed:\n{ported!r}")
+    server.did_change(fixture, ported)
+    expect(not server.diagnostics(fixture),
+           f"cleaned source still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("diagnostics: a no-break space is offered as the space it stands for",
+      entry_points=["nbsp_character.cksp"])
+def _(workspace, server):
+    source = "on init\n\u00a0 declare x\nend on\n"
+    fixture = workspace.write("nbsp_character.cksp", source)
+    server.did_open(fixture)
+    expect(any("U+00A0" in message for message in messages_of(server.diagnostics(fixture))),
+           f"got {messages_of(server.diagnostics(fixture))}")
+    action = action_titled(server.code_actions(fixture), "Replace")
+    ported = apply_action(source, action, fixture)
+    expect("\u00a0" not in ported and ported.startswith("on init\n  declare x"),
+           f"the space was not put in its place:\n{ported!r}")
+    server.did_change(fixture, ported)
+    expect(not server.diagnostics(fixture),
+           f"cleaned source still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("diagnostics: no edit is offered where the column cannot be trusted",
+      entry_points=["invisible_character_utf8.cksp"])
+def _(workspace, server):
+    # The compiler counts a column per byte, an editor per UTF-16 unit. They part ways after
+    # the first non-ASCII character on the line, and an edit placed by column would then land
+    # beside the character it means to remove.
+    fixture = workspace.write(
+        "invisible_character_utf8.cksp",
+        "on init\n  declare @label := \"\u00e4\"\u200b\nend on\n")
+    server.did_open(fixture)
+    expect(any("U+200B" in message for message in messages_of(server.diagnostics(fixture))),
+           f"the character should still be named: {messages_of(server.diagnostics(fixture))}")
+    expect(not server.code_actions(fixture),
+           "an edit that cannot be placed exactly must not be offered")
+
+
+@test("diagnostics: a name CKSP reserves is named as what it is reserved for",
+      entry_points=["reserved_name.cksp"])
+def _(workspace, server):
+    # SublimeKSP reserves fewer words, so a ported script names things <xor> or <mod>. Told
+    # only "expected: keyword, got: xor", the reader has to work out what is wrong with it.
+    for name, source, expected in [
+        ("reserved_name.cksp",
+         "function xor(a, b) -> result\n  result := a\nend function\n",
+         "<xor> is reserved as a boolean operator"),
+        ("reserved_name_declare.cksp",
+         "on init\n  declare mod\nend on\n",
+         "<mod> is reserved as an arithmetic operator"),
+        ("reserved_name_struct.cksp",
+         "struct not\n  id: int\nend struct\n",
+         "<not> is reserved as a boolean operator"),
+    ]:
+        fixture = workspace.write(name, source)
+        server.did_open(fixture)
+        messages = messages_of(server.diagnostics(fixture))
+        expect(any(expected in message for message in messages),
+               f"{name}: expected {expected!r}, got {messages}")
+
+
+@test("diagnostics: the reserved-name message points at the name, not the keyword",
+      entry_points=["reserved_name_range.cksp"])
+def _(workspace, server):
+    fixture = workspace.write(
+        "reserved_name_range.cksp",
+        "function xor(a, b) -> result\n  result := a\nend function\n")
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(diagnostics, "expected a parse error")
+    start = diagnostics[0]["range"]["start"]
+    expect(start["line"] == 0 and start["character"] == 9,
+           f"the range should cover <xor> at column 10, got {diagnostics[0]['range']}")
+
+
+@test("migration: a result named after the return keyword is renamed, then converted",
+      entry_points=["return_named_result.cksp"])
+def _(workspace, server):
+    # SublimeKSP has no return statement, so the word is free there and its deprecated result
+    # syntax uses it. CKSP reserves it, and no pass could tell the variable from a statement -
+    # so the rename comes first, and the ordinary conversion follows it.
+    source = ("function acc(x) -> return\n"
+              "  declare i\n"
+              "  return := 0\n"
+              "  for i := 0 to x\n"
+              "    return := return + i\n"
+              "  end for\n"
+              "end function\n"
+              "\non note\n  message(acc($EVENT_NOTE))\nend on\n")
+    fixture = workspace.write("return_named_result.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(len(diagnostics) == 1, f"expected one diagnostic, got {messages_of(diagnostics)}")
+    data = diagnostics[0].get("data") or {}
+    expect(data.get("migrationKind") == "ReservedResultName",
+           f"a reserved result name is not marked for migration: {diagnostics[0]}")
+    expect(data.get("fixKind") == "RenameReservedResult",
+           f"wrong fix kind: {diagnostics[0]}")
+
+    action = action_titled(server.code_actions(fixture), "Rename result")
+    expect(action["title"] == "Rename result 'return' to 'return1'",
+           f"unexpected title: {action['title']!r}")
+    ported = apply_action(source, action, fixture)
+    expect("function acc(x) -> return1" in ported,
+           f"the header was not renamed:\n{ported}")
+    expect("return1 := return1 + i" in ported,
+           f"a read of the result was left behind:\n{ported}")
+
+    # Renaming leaves an ordinary deprecated result, which converts as any other one does.
+    fixture = server.did_change(fixture, ported)
+    ported, applied = port_with_quick_fixes(fixture, server, ported)
+    expect(applied, "the renamed result should still offer its conversion")
+    expect(not server.diagnostics(fixture),
+           f"ported source still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: the rename skips a number the function already spells",
+      entry_points=["return_named_result_taken.cksp"])
+def _(workspace, server):
+    source = ("function acc(x) -> return\n"
+              "  declare return1\n"
+              "  return1 := x\n"
+              "  return := return1 + 1\n"
+              "end function\n"
+              "\non note\n  message(acc(5))\nend on\n")
+    fixture = workspace.write("return_named_result_taken.cksp", source)
+    server.did_open(fixture)
+    action = action_titled(server.code_actions(fixture), "Rename result")
+    expect(action["title"] == "Rename result 'return' to 'return2'",
+           f"an occupied name must not be reused: {action['title']!r}")
+    ported = apply_action(source, action, fixture)
+    expect("-> return2" in ported and "return2 := return1 + 1" in ported,
+           f"the free name was not used throughout:\n{ported}")
+    expect("declare return1" in ported,
+           f"the existing variable must keep its name:\n{ported}")
+
+
+@test("migration: a return statement in an ordinary function stays one",
+      entry_points=["return_statement_plain.cksp"])
+def _(workspace, server):
+    fixture = workspace.write(
+        "return_statement_plain.cksp",
+        "function twice(x)\n  return x * 2\nend function\n"
+        "\non note\n  message(twice(5))\nend on\n")
+    server.did_open(fixture)
+    expect(not server.diagnostics(fixture),
+           f"a real return statement must be untouched: "
+           f"{messages_of(server.diagnostics(fixture))}")
+
+
 @test("migration: every miscased name in a file is reported by one analysis",
       entry_points=["case_many.cksp"])
 def _(workspace, server):

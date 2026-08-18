@@ -17,6 +17,15 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse() {
 /// <declare 1: int>, and reporting the <1> names something that stands nowhere in the
 /// declaration. The origin still knows what the source spells, so the message can say what
 /// actually happened - and the sink shows the declaration line underneath.
+Diagnostic Parser::make_name_expected_diagnostic(
+	const ErrorType type, std::string message, std::string expected, const Token& found) {
+	if (const auto role = reserved_word_role(found); !role.empty()) {
+		message += " <" + found.val + "> is reserved as " + role
+			+ " and cannot be used as a name.";
+	}
+	return Diagnostic(type, std::move(message), std::move(expected), found);
+}
+
 Diagnostic Parser::make_declare_modifier_diagnostic(const Token& found) {
 	Diagnostic error(ErrorType::ParseError,
 		"Incorrect syntax in declare statement. Found unknown <modifier>.",
@@ -25,6 +34,15 @@ Diagnostic Parser::make_declare_modifier_diagnostic(const Token& found) {
 	// beats sending the reader looking for a modifier they never wrote.
 	if (found.type == token::LINEBRK || found.type == token::END_TOKEN) {
 		error.set_message("The <declare> statement has no name yet.");
+		return error;
+	}
+	// A word the declaration cannot borrow because CKSP already spends it. Reads as an
+	// unknown modifier from here, which is not what went wrong.
+	if (const auto role = reserved_word_role(found); !role.empty()) {
+		error.set_message(
+			"Incorrect syntax in declare statement. <" + found.val + "> is reserved as " + role
+			+ " and cannot be used as a name.");
+		error.expected = "<name>";
 		return error;
 	}
 	if (!found.origin) return error;
@@ -772,8 +790,8 @@ Result<std::unique_ptr<NodeFunctionParam>> Parser::parse_function_param(NodeAST*
 
 	auto error = Diagnostic(ErrorType::ParseError,"Incorrect syntax in function parameter.", "", peek());
 	if(peek().type != token::KEYWORD) {
-		error.expected = "<variable>, <array>";
-		return Result<std::unique_ptr<NodeFunctionParam>>(error);
+		return Result<std::unique_ptr<NodeFunctionParam>>(make_name_expected_diagnostic(
+			ErrorType::ParseError, error.message, "<variable>, <array>", peek()));
 	}
 
 	if (is_array_declaration()) {
@@ -1101,6 +1119,13 @@ Result<std::unique_ptr<NodeStatement> > Parser::parse_statement(NodeAST *parent)
 	auto start_token = peek();
 	auto node_statement = std::make_unique<NodeStatement>(start_token);
 	_skip_linebreaks();
+	// The result of <function neg(x) -> return> is a variable named after a keyword, which
+	// the header takes as a name already. An assignment to it has to be taken the same way,
+	// or the keyword starts a return statement and meets a <:=> it cannot use. Every other
+	// spelling of <return> in such a body stays the statement it is.
+	if (m_result_named_return && peek().type == token::RETURN && peek(1).type == token::ASSIGN) {
+		m_tokens[m_pos].type = token::KEYWORD;
+	}
 	std::unique_ptr<NodeAST> stmt;
 	// assign statement
 	if (peek().type == token::KEYWORD || peek().type == token::DECLARE
@@ -1317,8 +1342,9 @@ Result<std::unique_ptr<NodeNamespace>> Parser::parse_namespace(NodeAST *parent) 
 	token end_construct = token::END_NAMESPACE;
 	auto error = Diagnostic(ErrorType::SyntaxError, "Found invalid <namespace> syntax.", "", peek());
 	if(peek().type != token::KEYWORD) {
-		error.set_message( "Expected <namespace> name after <namespace> keyword.");
-		return Result<std::unique_ptr<NodeNamespace>>(error);
+		return Result<std::unique_ptr<NodeNamespace>>(make_name_expected_diagnostic(
+			ErrorType::ParseError, "Expected <namespace> name after <namespace> keyword.",
+			"<name>", peek()));
 	}
 	auto name = consume(); //consume name
 	auto l = consume_linebreak("<namespace>");
@@ -1762,9 +1788,9 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     auto func_body = std::make_unique<NodeBlock>(get_tok(), true);
     bool func_override = false;
     if (peek().type != token::KEYWORD) {
-        error.set_message( "Missing function name.");
-        error.expected = "keyword";
-        return Result<std::shared_ptr<NodeFunctionDefinition>>(error);
+        return Result<std::shared_ptr<NodeFunctionDefinition>>(make_name_expected_diagnostic(
+            ErrorType::ParseError, std::string("Missing ") + construct + " name.",
+            "<name>", peek()));
     }
     auto header = parse_function_header(node_function_definition.get());
     if (header.is_error()) {
@@ -1772,10 +1798,12 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     }
     func_header = std::move(header.unwrap());
     func_return_var = {};
+    m_result_named_return = false;
     if (peek().type == token::ARROW) {
         consume();
         if(peek().type == token::RETURN) {
             m_tokens[m_pos].type = token::KEYWORD;
+            m_result_named_return = true;
         }
         if (peek().type == token::KEYWORD) {
             auto return_vars = parse_declare_statement(node_function_definition.get());
@@ -1833,6 +1861,15 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
 		m_current_function_def = nullptr;
 		m_taskfunc_migration->make_diagnostic(func_header->name).exit();
 	}
+	if (m_result_named_return) {
+		// Parsed to here only so the rename can name every place the result stands. The word
+		// stays reserved - see ReservedResultMigration.
+		m_current_function_def = nullptr;
+		m_result_named_return = false;
+		reserved_result_migration::make_diagnostic(
+			func_header->name,
+			std::span(m_tokens).subspan(definition_start, m_pos - definition_start)).exit();
+	}
 	node_function_definition->set_range(start_token, end_token);
     node_function_definition->header = std::move(func_header);
     node_function_definition->return_variable = std::move(func_return_var);
@@ -1841,6 +1878,7 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     node_function_definition->set_child_parents();
     node_function_definition->parent = parent;
 	m_current_function_def = nullptr;
+	m_result_named_return = false;
     return Result<std::shared_ptr<NodeFunctionDefinition>>(std::move(node_function_definition));
 }
 
@@ -2029,8 +2067,9 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_declare_variable(NodeAST* pa
 	}
 
     if(peek().type != token::KEYWORD) {
-        return Result<std::unique_ptr<NodeVariable>>(Diagnostic(ErrorType::SyntaxError,
-                                                                  "Found unknown variable declaration syntax.", "variable keyword", peek()));
+        return Result<std::unique_ptr<NodeVariable>>(make_name_expected_diagnostic(
+            ErrorType::SyntaxError, "Found unknown variable declaration syntax.",
+            "variable keyword", peek()));
     }
     auto parsed_var = parse_variable(parent, persistence, var_type);
     if(parsed_var.is_error()) {
@@ -2107,8 +2146,8 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_declare_array(NodeAST* 
 		consume(); // Verarbeite den Modifikator-Token
 	}
     if(peek().type != token::KEYWORD) {
-	error.expected = "array name (<keyword>)";
-        return Result<std::unique_ptr<NodeDataStructure>>(error);
+        return Result<std::unique_ptr<NodeDataStructure>>(make_name_expected_diagnostic(
+            ErrorType::ParseError, error.message, "array name (<keyword>)", peek()));
     }
     auto parsed_arr = parse_array(parent, persistence, var_type);
     if(parsed_arr.is_error()) {
@@ -2145,8 +2184,9 @@ Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST*
     }
     std::string ui_control_type = consume().val;
     if(peek().type != token::KEYWORD) {
-        return Result<std::unique_ptr<NodeUIControl>>(Diagnostic(ErrorType::SyntaxError,
-                                                                   "Found unknown ui_control declaration syntax.", "array or variable keyword", peek()));
+        return Result<std::unique_ptr<NodeUIControl>>(make_name_expected_diagnostic(
+            ErrorType::SyntaxError, "Found unknown ui_control declaration syntax.",
+            "array or variable keyword", peek()));
     }
     std::unique_ptr<NodeDataStructure> control_var;
     // check if it has second Brackets -> ui_control array
@@ -2586,8 +2626,8 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_family_statement(NodeAST* parent)
 	auto start_token = consume(); //consume family
 	token end_construct = token::END_FAMILY;
 	if(peek().type != token::KEYWORD) {
-		return Result<std::unique_ptr<NodeAST>>(Diagnostic(ErrorType::SyntaxError,
-															 "Found unknown family syntax.", "valid prefix", peek()));
+		return Result<std::unique_ptr<NodeAST>>(make_name_expected_diagnostic(
+			ErrorType::SyntaxError, "Found unknown family syntax.", "valid prefix", peek()));
 	}
 	auto prefix = consume(); //consume prefix
 	auto node_family_statement = std::make_unique<NodeFamily>(prefix);
@@ -2622,8 +2662,8 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 	auto start_token = consume(); //consume struct
 	auto end_construct = token::END_STRUCT;
 	if(peek().type != token::KEYWORD) {
-		return Result<std::unique_ptr<NodeStruct>>(Diagnostic(ErrorType::SyntaxError,
-															 "Found unknown <struct> syntax.", "valid <struct> name", peek()));
+		return Result<std::unique_ptr<NodeStruct>>(make_name_expected_diagnostic(
+			ErrorType::SyntaxError, "Found unknown <struct> syntax.", "valid <struct> name", peek()));
 	}
 	auto name = consume(); //consume name
 	auto l = consume_linebreak("<struct>");
@@ -2715,8 +2755,8 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 	Token construct = consume(); //consume list
 	if(peek().type != token::KEYWORD) {
-		return Result<std::unique_ptr<NodeAST>>(Diagnostic(ErrorType::SyntaxError,
-															 "Found unknown <list> syntax.", "valid <keyword>", peek()));
+		return Result<std::unique_ptr<NodeAST>>(make_name_expected_diagnostic(
+			ErrorType::SyntaxError, "Found unknown <list> syntax.", "valid <keyword>", peek()));
 	}
 	Token name_tok = consume(); // consume keyword
 	auto ty = normalize_ksp_identifier_token(name_tok);
@@ -2792,8 +2832,8 @@ Result<std::unique_ptr<NodeConst>> Parser::parse_const_statement(NodeAST* parent
 	auto start_token = consume(); //consume family, struct, const
 	auto end_construct = token::END_CONST;
 	if(peek().type != token::KEYWORD) {
-		return Result<std::unique_ptr<NodeConst>>(Diagnostic(ErrorType::SyntaxError,
-															 "Found unknown const syntax.", "valid prefix", peek()));
+		return Result<std::unique_ptr<NodeConst>>(make_name_expected_diagnostic(
+			ErrorType::SyntaxError, "Found unknown const syntax.", "valid prefix", peek()));
 	}
 	auto prefix = consume(); //consume prefix
 	auto node_const_statement = std::make_unique<NodeConst>(prefix);

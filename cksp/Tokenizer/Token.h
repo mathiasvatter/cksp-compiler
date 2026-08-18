@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cctype>
 #include <memory>
 #include <vector>
 
@@ -146,6 +147,21 @@ inline void append_substitution_sources(
     target.push_back(substitution_source(source, generated_start, generated_length));
 }
 
+
+/// What CKSP reserves `token` for, when a name was expected and one of the language's own
+/// words stood there instead.
+///
+/// Empty for an identifier, which is a name already, and for anything not spelled like one -
+/// a bracket or a number explains itself. SublimeKSP reserves fewer words than CKSP, so a
+/// ported script runs into this with names like <xor> or <mod> that were free there.
+[[nodiscard]] inline std::string reserved_word_role(const Token& token) {
+    if (token.type == token::KEYWORD || token.val.empty()) return "";
+    if (std::isalpha(static_cast<unsigned char>(token.val.front())) == 0) return "";
+    if (BOOL_OPERATORS.contains(token.val)) return "a boolean operator";
+    if (MATH_OPERATORS.contains(token.val)) return "an arithmetic operator";
+    if (BOOLEAN_SYNTAX.contains(token.val)) return "a boolean literal";
+    return "a keyword";
+}
 
 /// Extracts positional information without copying the token's file path.
 [[nodiscard]] inline SourceRange source_range_from_token(const Token& token) {

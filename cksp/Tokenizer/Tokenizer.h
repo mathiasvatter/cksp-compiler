@@ -97,6 +97,10 @@ protected:
     void get_linebreak();
     void get_comment();
 	void get_invalid();
+	/// Attaches the edit that takes an unusable character out of the source, when the column
+	/// it needs can be trusted. See the definition.
+	void add_invalid_character_fix(
+		Diagnostic& error, size_t character_start, const std::string& replacement) const;
     void get_comparison_operators();
 	void get_compound_assignment_operators();
 	void get_string();

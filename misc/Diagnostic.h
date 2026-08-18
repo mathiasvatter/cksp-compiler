@@ -76,7 +76,8 @@ struct Diagnostic {
         PostMacro,
         Property,
         IdentifierCase,
-        GlobalDeclarationInitializer
+        GlobalDeclarationInitializer,
+        ReservedResultName
     };
 
     struct DiagnosticFix {
@@ -87,7 +88,9 @@ struct Diagnostic {
             ConvertTCMCall,
             CorrectNameCase,
             ConvertSublimePragma,
-            SplitGlobalDeclarationAssignment
+            SplitGlobalDeclarationAssignment,
+            RenameReservedResult,
+            ReplaceInvalidCharacter
         };
         enum class EditKind {
             InsertBefore,
@@ -119,6 +122,8 @@ struct Diagnostic {
             case DiagnosticFix::FixKind::CorrectNameCase: return "CorrectNameCase";
             case DiagnosticFix::FixKind::ConvertSublimePragma: return "ConvertSublimePragma";
             case DiagnosticFix::FixKind::SplitGlobalDeclarationAssignment: return "SplitGlobalDeclarationAssignment";
+            case DiagnosticFix::FixKind::RenameReservedResult: return "RenameReservedResult";
+            case DiagnosticFix::FixKind::ReplaceInvalidCharacter: return "ReplaceInvalidCharacter";
             default: break;
         }
         return "unknown";
@@ -132,6 +137,7 @@ struct Diagnostic {
             case MigrationKind::Property: return "Property";
             case MigrationKind::IdentifierCase: return "IdentifierCase";
             case MigrationKind::GlobalDeclarationInitializer: return "GlobalDeclarationInitializer";
+            case MigrationKind::ReservedResultName: return "ReservedResultName";
             default: break;
         }
         return "unknown";
