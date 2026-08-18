@@ -556,7 +556,7 @@ NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(NodeR
 			reference->tok);
 	} else if(reference->cast<NodeVariableRef>() and declaration->cast<NodeNDArray>()) {
 		// check if raw array is wanted -> then it is ArrayRef
-		if(reference->is_raw_array()) {
+		if(reference->has_raw_spelling()) {
 			node_replacement = std::make_unique<NodeArrayRef>(
 				reference->name,
 				nullptr,
@@ -590,7 +590,7 @@ NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(NodeR
 			reference->tok);
 		node_replacement->ty = reference->ty;
 	} else if(auto node_arr_ref = reference->cast<NodeArrayRef>(); node_array_ref and declaration->cast<NodeNDArray>()) {
-		if (!node_arr_ref->is_raw_array()) {
+		if (!node_arr_ref->has_raw_spelling()) {
 			auto error = Diagnostic(ErrorType::SyntaxError, "", "", reference->tok);
 			error.message =
 				"<ArrayRef> was declared as <NDArray> but is no raw array. To reference a raw <NDArray> use '_' as prefix.";

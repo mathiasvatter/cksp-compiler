@@ -119,11 +119,11 @@ public:
 				// the raw array stuff is only important if decl is not yet lowered an still NodeNDArray
 				// the handling of raw arrays is shit and should be completely rewritten.
 				if (declaration->cast<NodeNDArray>()) {
-					bool is_raw_array = false;
+					bool is_raw = false;
 					if (const auto arr_ref = local_ref->cast<NodeArrayRef>()) {
-						is_raw_array = arr_ref->is_raw_array();
+						is_raw = arr_ref->has_raw_spelling();
 					}
-					local_ref->name = is_raw_array ? "_"+declaration->name : declaration->name;
+					local_ref->name = is_raw ? "_"+declaration->name : declaration->name;
 				} else {
 					local_ref->name = declaration->name;
 				}

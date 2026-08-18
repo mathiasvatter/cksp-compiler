@@ -120,7 +120,7 @@ NodeAST * TypeInference::visit(NodeVariableRef& node) {
 			composite_type and node.ty->get_type_kind() != TypeKind::Composite
 			and !decl->cast<NodeList>() and !decl->cast<NodeStruct>()) {
 			std::unique_ptr<NodeReference> composite_ref = nullptr;
-			if(composite_type->get_dimensions() > 1 and !node.is_raw_array()) {
+			if(composite_type->get_dimensions() > 1 and !node.has_raw_spelling()) {
 				composite_ref = std::make_unique<NodeNDArrayRef>(node.name, nullptr, node.tok);
 			} else {
 				composite_ref = std::make_unique<NodeArrayRef>(node.name, nullptr, node.tok);
@@ -232,14 +232,14 @@ NodeAST * TypeInference::visit(NodeArrayRef& node) {
 			error.exit();
 		}
 		// in case declaration has more dimensions and this node was written as e.g. arr[i]
-		if (decl_type and decl_type->get_dimensions() > 1 and node.index and !node.is_raw_array()) {
+		if (decl_type and decl_type->get_dimensions() > 1 and node.index and !node.has_raw_spelling()) {
 			auto error = Diagnostic(ErrorType::TypeError, "", "", node.tok);
 			error.set_message("Reference <"+node.name+"> is notated with only one dimension but was declared with multiple dimensions.");
 			error.exit();
 		}
 		// swap out to ndarray
 		// in case declaration has more dimensions and this node is written as e.g. num_elements(arr, 3)
-		if (decl_type and decl_type->get_dimensions() > 1 and !node.index and !node.is_raw_array()) {
+		if (decl_type and decl_type->get_dimensions() > 1 and !node.index and !node.has_raw_spelling()) {
 			auto ndarray = node.to_ndarray_ref();
 			ndarray->match_data_structure(decl);
 			ndarray->ty = decl->ty;

@@ -1164,6 +1164,35 @@ def _(workspace, server):
            "a typo that is not a case difference must not be offered as an edit")
 
 
+@test("migration: a raw ndarray reference is corrected without losing its underscore",
+      entry_points=["case_raw_ndarray.cksp"])
+def _(workspace, server):
+    # <_env2.arr> addresses <ENV2.arr> as the flat array it is stored as. The underscore
+    # belongs to the reference, so measured against the declaration it is a difference the
+    # correction must not try to remove.
+    source = ("declare ENV2.arr[2,3]: int[][]\n"
+              "\non note\n    search(_env2.arr, 5)\nend on\n")
+    fixture = workspace.write("case_raw_ndarray.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(len(diagnostics) == 1, f"expected one diagnostic, got {messages_of(diagnostics)}")
+    expect("_ENV2.arr" in diagnostics[0]["message"],
+           f"the raw spelling should be the one suggested: {diagnostics[0]['message']!r}")
+    data = diagnostics[0].get("data") or {}
+    expect(data.get("migrationKind") == "IdentifierCase",
+           f"a miscased raw reference is not marked for migration: {diagnostics[0]}")
+
+    action = action_titled(server.code_actions(fixture), "Change")
+    expect(action["title"] == "Change '_env2.arr' to '_ENV2.arr'",
+           f"unexpected title: {action['title']!r}")
+    ported = apply_action(source, action, fixture)
+    expect("search(_ENV2.arr, 5)" in ported,
+           f"the raw reference was not corrected in place:\n{ported}")
+    server.did_change(fixture, ported)
+    expect(not server.diagnostics(fixture),
+           f"corrected raw reference still reports {messages_of(server.diagnostics(fixture))}")
+
+
 @test("migration: a pasted macro parameter can be corrected at its call site",
       entry_points=["case_macro_parameter.cksp"])
 def _(workspace, server):

@@ -116,7 +116,7 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::get_declaration(NodeRefer
 	auto node_declaration = get_declared_data_structure(var.name);
 	if(!node_declaration) {
 		// sanitize name if array
-		const std::string sanitized = var.sanitize_name();
+		const std::string sanitized = NodeReference::sanitized(var.name);
 		node_declaration = get_declared_data_structure(sanitized);
 	}
 	if (node_declaration) {
@@ -305,22 +305,43 @@ std::vector<std::shared_ptr<NodeDataStructure>> DefinitionProvider::misspelled_d
 	return suggestions;
 }
 
-std::vector<std::string> DefinitionProvider::misspelled_suggestions(
+std::vector<std::shared_ptr<NodeDataStructure>> DefinitionProvider::misspelled_declarations(
 	const std::string& name,
 	const size_t max_results) const {
 	const bool scopes_are_empty = m_declared_data_structures.size() == 1
 		&& m_declared_data_structures.front().empty();
-	const auto declarations = misspelled_data_structures(
-		name,
-		std::nullopt,
-		max_results,
-		scopes_are_empty
-	);
+	return misspelled_data_structures(name, std::nullopt, max_results, scopes_are_empty);
+}
+
+std::vector<std::string> DefinitionProvider::misspelled_suggestions(
+	const std::string& name,
+	const size_t max_results) const {
+	const auto declarations = misspelled_declarations(name, max_results);
 
 	std::vector<std::string> suggestions;
 	suggestions.reserve(declarations.size());
 	for (const auto& declaration : declarations) {
 		suggestions.push_back(declaration->name);
+	}
+	return suggestions;
+}
+
+std::vector<std::string> DefinitionProvider::misspelled_raw_array_suggestions(
+	const NodeReference& reference,
+	const size_t max_results) const {
+	const auto sanitized = NodeReference::sanitized(reference.name);
+	if (sanitized.empty() || sanitized == reference.name) return {};
+
+	// <sanitized> strips either spelling, so which one the source used has to be read
+	// back off the reference to put it on again.
+	const bool underscore_form = reference.name.starts_with('_');
+
+	std::vector<std::string> suggestions;
+	for (const auto& declaration : misspelled_declarations(sanitized, max_results)) {
+		if (!declaration->cast<NodeNDArray>()) continue;
+		suggestions.push_back(underscore_form
+			? "_" + declaration->name
+			: declaration->name + ".raw()");
 	}
 	return suggestions;
 }

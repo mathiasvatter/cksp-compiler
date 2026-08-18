@@ -274,21 +274,29 @@ struct NodeReference : NodeAST {
 	// [[nodiscard]] bool needs_get_ui_id() const;
 	/// determines if reference is reference to struct member
 	[[nodiscard]] struct NodeStruct* is_member_ref() const;
-	/// checks if reference is raw version of multidimensional array
-	[[nodiscard]] bool is_raw_array() const {
+	/// Whether the reference is spelled the way a raw multidimensional array is addressed:
+	/// <_arr> or <arr.raw()>, both of which name the declaration <arr>.
+	///
+	/// A test on the spelling, not a claim about the declaration - nothing here knows whether
+	/// <_x> stands for a raw <NDArray> or for a variable someone named <_x>. That is by
+	/// design: <ASTSemanticAnalysis> asks this of a <NodeVariableRef> to decide whether it
+	/// becomes a <NodeArrayRef> in the first place, so narrowing it to references that are
+	/// one already would make the answer always no. A caller that needs the declaration to be
+	/// a multidimensional array checks that itself, the way <UniqueParameterNamesProvider>
+	/// pairs this with a cast.
+	[[nodiscard]] bool has_raw_spelling() const {
 		return (name[0] == '_' && name[1] != '_') or name.ends_with(".raw()");
 	}
-	/// when is variable = raw array? if variable has _ in front and is array and was declared without _
-	/// returns sanitized name of reference
-	[[nodiscard]] std::string sanitize_name() const {
+	/// The name a reference spelled `name` is declared under: that spelling stripped of
+	/// whatever marks it as raw.
+	[[nodiscard]] static std::string sanitized(std::string_view name) {
 		if (name.empty()) return "";
-		std::string_view sanitized_name = name;
-		if (sanitized_name[0] == '_' && (sanitized_name.size() == 1 || sanitized_name[1] != '_')) {
-			sanitized_name.remove_prefix(1); // Effizienter als erase
-		} else if (sanitized_name.size() >= 6 && sanitized_name.substr(sanitized_name.size() - 6) == ".raw()") {
-			sanitized_name.remove_suffix(6); // Effizienter als replace
+		if (name[0] == '_' && (name.size() == 1 || name[1] != '_')) {
+			name.remove_prefix(1); // Effizienter als erase
+		} else if (name.ends_with(".raw()")) {
+			name.remove_suffix(6); // Effizienter als replace
 		}
-		return std::string(sanitized_name); // Erzeugt das Resultat nur einmal
+		return std::string(name); // Erzeugt das Resultat nur einmal
 	}
 
 	[[nodiscard]] std::vector<std::string> get_ptr_chain() const {

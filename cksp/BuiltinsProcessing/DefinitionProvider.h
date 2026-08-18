@@ -252,6 +252,19 @@ public:
 		if (ctx) {
 			auto name = alternate_name.empty() ? node.tok.val : alternate_name;
 			auto suggestions = ctx->misspelled_suggestions(name);
+			// A raw <NDArray> reference resolves to a declaration that does not carry its
+			// underscore, so suggesting that declaration as it stands would read as an
+			// instruction to drop the prefix. The raw spelling takes its place, which is both
+			// what the source has to write and what leaves a miscased name nothing but its case
+			// to differ in.
+			if (node.has_raw_spelling()) {
+				auto raw_suggestions = ctx->misspelled_raw_array_suggestions(node);
+				for (const auto& raw : raw_suggestions) {
+					std::erase(suggestions, NodeReference::sanitized(raw));
+				}
+				suggestions.insert(
+					suggestions.begin(), raw_suggestions.begin(), raw_suggestions.end());
+			}
 			if (!suggestions.empty()) {
 				diagnostic.message += " Did you mean: "
 					+ StringUtils::join(suggestions, ", ") + "?";
@@ -311,6 +324,11 @@ public:
 
 	/// Returns the actual declarations rather than losing type and node information
 	/// by reducing suggestions to strings too early.
+	/// The declarations behind <misspelled_suggestions>, scoped the way that one scopes them.
+	[[nodiscard]] std::vector<std::shared_ptr<NodeDataStructure>> misspelled_declarations(
+		const std::string& name,
+		size_t max_results) const;
+
 	[[nodiscard]] std::vector<std::shared_ptr<NodeDataStructure>> misspelled_data_structures(
 		const std::string& name,
 		std::optional<int> num_args = std::nullopt,
@@ -319,6 +337,19 @@ public:
 
 	[[nodiscard]] std::vector<std::string> misspelled_suggestions(
 		const std::string& name,
+		size_t max_results = 4) const;
+
+	/// Suggestions for a raw <NDArray> reference, spelled the way such a reference has to be
+	/// written rather than the way its declaration is.
+	///
+	/// <_env2.arr> and <env2.arr.raw()> both name the declaration <ENV2.arr>: the raw spelling
+	/// is what addresses a multidimensional array as the flat one it is stored as, and the
+	/// underscore or the suffix belongs to the reference alone. Looking a misspelling up under
+	/// the written word would measure that character as a difference from every declaration;
+	/// looking it up sanitized and putting the spelling back on measures the name itself.
+	/// Only declarations a raw reference can name are offered.
+	[[nodiscard]] std::vector<std::string> misspelled_raw_array_suggestions(
+		const NodeReference& reference,
 		size_t max_results = 4) const;
 
 	[[nodiscard]] Diagnostic make_missing_function_definition_error(
