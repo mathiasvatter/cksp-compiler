@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <optional>
+
 #include "PreASTNodes/PreAST.h"
 #include "../../../misc/DiagnosticEngine.h"
 
@@ -36,11 +38,11 @@ protected:
 	}
 	static const Token* first_source_token(const PreNodeAST* node) {
 		if (!node) return nullptr;
-		if (!node->tok.file().empty() && node->tok.line != static_cast<size_t>(-1) && node->tok.pos > 0 && !node->tok.val.empty()) {
-			return &node->tok;
-		}
+		// Wrapper tokens keep the spelling they had before their child was substituted.
+		// Prefer the leaf that will actually reach the token stream; this is what retains
+		// the outer call site's provenance when one macro parameter is forwarded to another.
 		if (const auto* statement = dynamic_cast<const PreNodeStatement*>(node)) {
-			return first_source_token(statement->statement.get());
+			if (const auto* token = first_source_token(statement->statement.get())) return token;
 		}
 		if (const auto* chunk = dynamic_cast<const PreNodeChunk*>(node)) {
 			for (const auto& child : chunk->chunk) {
@@ -52,6 +54,8 @@ protected:
 				if (const auto* token = first_source_token(param.get())) return token;
 			}
 		}
+		if (!node->tok.file().empty() && node->tok.line != static_cast<size_t>(-1)
+			&& node->tok.pos > 0 && !node->tok.val.empty()) return &node->tok;
 		return nullptr;
 	}
 	/// The one literal a substitution argument ultimately stands for, or nothing when it
@@ -87,7 +91,16 @@ protected:
 		if (usage.file().empty()) return;
 		auto* literal = single_literal_of(&substitute);
 		if (!literal || literal->tok.file().empty()) return;
-		literal->tok.origin = usage.origin ? usage.origin : std::make_shared<const Token>(usage);
+		// The clone still points at the argument in the macro call. Preserve that exact
+		// spelling before origin is changed to the parameter usage in the macro body.
+		std::vector<TokenSubstitutionSource> sources;
+		if (!literal->tok.val.empty()) {
+			append_substitution_sources(
+				sources, literal->tok, 0, literal->tok.val.length());
+		}
+		literal->tok.origin = token_origin(
+			usage.origin ? static_cast<const Token&>(*usage.origin) : usage,
+			std::move(sources));
 	}
 
     /// returns text replacement for current node.name, or original text if there is no replacement (in between #...#)
@@ -101,6 +114,10 @@ protected:
         }
         Token result = name;
         const Token* prefix_source = nullptr;
+	    // Most tokens a macro body contains are substituted in none of its parameters. Copying
+	    // the provenance of a token that comes out unchanged would cost one allocation per such
+	    // token, so the copy waits until a replacement actually needs to be recorded.
+	    std::optional<std::vector<TokenSubstitutionSource>> substitution_sources;
         // Iteriere durch die Substitutionen
         const auto& substitutions = m_substitution_stack.top();
         for (const auto&[fst, snd] : substitutions) {
@@ -108,11 +125,25 @@ protected:
             if (fst.front() == '#' && fst.back() == '#') {
                 size_t start = 0;
                 const std::string& replace_with = snd->get_chunk(0)->get_string();
+	            // One substitution always stands for the same argument, however often the
+	            // word pastes it.
+	            const Token* source = first_source_token(snd.get());
 
                 // Verwende result.find und result.replace direkt, ohne den String mehrfach zu verändern
                 while ((start = result.val.find(fst, start)) != std::string::npos) {
-	                if (start == 0) prefix_source = first_source_token(snd.get());
+	                if (start == 0) prefix_source = source;
+	                if (!substitution_sources) {
+		                substitution_sources = name.origin
+			                ? name.origin->substitution_sources
+			                : std::vector<TokenSubstitutionSource>{};
+	                }
+	                shift_substitution_sources(
+		                *substitution_sources, start, fst.length(), replace_with.length());
                     result.val.replace(start, fst.length(), replace_with);
+	                if (source && !source->file().empty() && !replace_with.empty()) {
+		                append_substitution_sources(
+			                *substitution_sources, *source, start, replace_with.length());
+	                }
                     start += replace_with.length();
                 }
             }
@@ -123,7 +154,11 @@ protected:
 	    // A word rewritten twice (a macro expanded inside another) keeps the outermost
 	    // spelling, the only one that is still in a file.
 	    if (result.val != name.val) {
-		    result.origin = name.origin ? name.origin : std::make_shared<const Token>(name);
+		    result.origin = token_origin(
+			    name.origin ? static_cast<const Token&>(*name.origin) : name,
+			    substitution_sources
+				    ? std::move(*substitution_sources)
+				    : std::vector<TokenSubstitutionSource>{});
 	    }
 	    if (prefix_source && result.val.starts_with(prefix_source->val)) {
 		    result.line = prefix_source->line;

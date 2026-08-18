@@ -85,12 +85,18 @@ NodeAST* ASTDesugar::visit(NodeSingleDeclaration& node) {
     node.variable->accept(*this);
     if(node.value) node.value->accept(*this);
 
-	// if var is global -> make assignment and move declaration to global declarations
+    // if var is global -> make assignment and move declaration to global declarations
     if(node.variable->is_global and (!is_global_declaration or !m_program->function_definition_stack.empty())) {
     	node.variable->is_global = true;
-        m_global_variable_declarations->add_as_stmt(
-			std::make_unique<NodeSingleDeclaration>(node.variable, std::move(node.value), node.tok)
-		);
+		auto hoisted = std::make_unique<NodeSingleDeclaration>(
+			node.variable, std::move(node.value), node.tok);
+		// Only a declaration moved out of a function can lose access to function-local
+		// values. A declaration moved out of on init is already evaluated globally, so an
+		// unknown name there must not be disguised by offering this migration.
+		if (!m_program->function_definition_stack.empty()) {
+			hoisted->kind = NodeInstruction::Kind::HoistedGlobal;
+		}
+		m_global_variable_declarations->add_as_stmt(std::move(hoisted));
     	// m_global_variable_declarations->get_last_statement()->desugar(m_program);
 		return node.remove_node();
     }

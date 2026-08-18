@@ -993,6 +993,106 @@ def _(workspace, server):
     expect(not server.code_actions(fixture), "an unknown tcm call has nothing to rewrite to")
 
 
+@test("migration: a global NodeVariable initializer using a local is split",
+      entry_points=["global_local_initializer.cksp"])
+def _(workspace, server):
+    source = (
+        "function store(control)\n"
+        "\tdeclare global stored := control + 1\n"
+        "end function\n"
+        "\n"
+        "on init\n"
+        "\tstore(1)\n"
+        "end on\n"
+    )
+    fixture = workspace.write("global_local_initializer.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(len(diagnostics) == 1, f"expected one diagnostic, got {messages_of(diagnostics)}")
+    data = diagnostics[0].get("data") or {}
+    expect(data.get("migrationKind") == "GlobalDeclarationInitializer",
+           f"global-local initializer is not marked for migration: {diagnostics[0]}")
+    expect(data.get("fixKind") == "SplitGlobalDeclarationAssignment",
+           f"global-local initializer has the wrong fix kind: {diagnostics[0]}")
+
+    action = action_titled(server.code_actions(fixture), "Split global declaration")
+    ported = apply_action(source, action, fixture)
+    expect("\tdeclare global stored\n\tstored := control + 1" in ported,
+           f"the declaration and assignment were not split with their indentation:\n{ported}")
+    server.did_change(fixture, ported)
+    expect(not server.diagnostics(fixture),
+           f"split source still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: a split declaration keeps the tabs of the line it came from",
+      entry_points=["global_local_initializer_tabs.cksp"])
+def _(workspace, server):
+    # Two levels deep with tabs: the column alone reads as two characters of indentation,
+    # which is what a width-based guess turns into two spaces.
+    source = (
+        "function store(control)\n"
+        "\tif control > 0\n"
+        "\t\tdeclare global stored := control + 1\n"
+        "\tend if\n"
+        "end function\n"
+        "\n"
+        "on init\n"
+        "\tstore(1)\n"
+        "end on\n"
+    )
+    fixture = workspace.write("global_local_initializer_tabs.cksp", source)
+    server.did_open(fixture)
+    action = action_titled(server.code_actions(fixture), "Split global declaration")
+    ported = apply_action(source, action, fixture)
+    expect("\t\tdeclare global stored\n\t\tstored := control + 1" in ported,
+           f"the assignment was not indented with the line's own tabs:\n{ported!r}")
+    server.did_change(fixture, ported)
+    expect(not server.diagnostics(fixture),
+           f"split source still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: a genuinely global unknown initializer is not split",
+      entry_points=["global_unknown_initializer.cksp"])
+def _(workspace, server):
+    fixture = workspace.write(
+        "global_unknown_initializer.cksp",
+        "on init\n    declare global stored := missing\nend on\n")
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(diagnostics, "expected an undeclared-variable diagnostic")
+    expect(all((diagnostic.get("data") or {}).get("migrationKind")
+               != "GlobalDeclarationInitializer" for diagnostic in diagnostics),
+           f"an initializer already in global scope must not be split: {diagnostics}")
+    expect(not server.code_actions(fixture),
+           "an unknown name in a genuinely global initializer has no safe split fix")
+
+
+@test("migration: repeated analyses expose every fatal global initializer",
+      entry_points=["global_local_initializers.cksp"])
+def _(workspace, server):
+    source = (
+        "function store(control)\n"
+        "    declare global first := control\n"
+        "    declare global second := control + 1\n"
+        "end function\n"
+        "\n"
+        "on init\n"
+        "    store(1)\n"
+        "end on\n"
+    )
+    fixture = workspace.write("global_local_initializers.cksp", source)
+    server.did_open(fixture)
+    ported, applied = port_with_quick_fixes(fixture, server, source)
+    expect(len(applied) == 2,
+           f"expected both fatal initializer fixes across analyses, applied {applied}")
+    expect("declare global first\n    first := control" in ported,
+           f"first declaration was not split:\n{ported}")
+    expect("declare global second\n    second := control + 1" in ported,
+           f"second declaration was not split:\n{ported}")
+    expect(not server.diagnostics(fixture),
+           f"ported source still reports {messages_of(server.diagnostics(fixture))}")
+
+
 @test("migration: a name that differs only in case is offered as an edit",
       entry_points=["case_variable.cksp"])
 def _(workspace, server):
@@ -1002,6 +1102,13 @@ def _(workspace, server):
               "\non note\n    MyCounter := 1\nend on\n")
     fixture = workspace.write("case_variable.cksp", source)
     server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(len(diagnostics) == 1, f"expected one diagnostic, got {messages_of(diagnostics)}")
+    data = diagnostics[0].get("data") or {}
+    expect(data.get("migrationKind") == "IdentifierCase",
+           f"case-only mismatch is not marked for migration: {diagnostics[0]}")
+    expect(data.get("fixKind") == "CorrectNameCase",
+           f"case-only mismatch has the wrong fix kind: {diagnostics[0]}")
     action = action_titled(server.code_actions(fixture), "MyCounter")
     expect(action["title"] == "Change 'MyCounter' to 'myCounter'",
            f"unexpected title: {action['title']!r}")
@@ -1027,6 +1134,10 @@ def _(workspace, server):
     ]:
         fixture = workspace.write(name, source)
         server.did_open(fixture)
+        diagnostics = server.diagnostics(fixture)
+        expect(any((diagnostic.get("data") or {}).get("migrationKind") == "IdentifierCase"
+                   for diagnostic in diagnostics),
+               f"{name}: case-only mismatch is not marked for migration: {diagnostics}")
         action = action_titled(server.code_actions(fixture), "Change")
         expect(action["title"] == title, f"{name}: unexpected title {action['title']!r}")
         server.did_change(fixture, apply_action(source, action, fixture))
@@ -1046,8 +1157,124 @@ def _(workspace, server):
     diagnostics = server.diagnostics(fixture)
     expect(any("counter" in message for message in messages_of(diagnostics)),
            f"the message should still suggest the name; got {messages_of(diagnostics)}")
+    expect(all("migrationKind" not in (diagnostic.get("data") or {})
+               for diagnostic in diagnostics),
+           f"an ordinary typo must not become a migration diagnostic: {diagnostics}")
     expect(not server.code_actions(fixture),
            "a typo that is not a case difference must not be offered as an edit")
+
+
+@test("migration: a pasted macro parameter can be corrected at its call site",
+      entry_points=["case_macro_parameter.cksp"])
+def _(workspace, server):
+    source = ("macro show_page(#family#)\n"
+              "    message(UIpage_#family#)\n"
+              "end macro\n\n"
+              "on init\n"
+              "    declare UIpage_ARP1 := 1\n"
+              "    show_page(arp1)\n"
+              "end on\n")
+    fixture = workspace.write("case_macro_parameter.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    case_diagnostic = next(
+        (diagnostic for diagnostic in diagnostics
+         if (diagnostic.get("data") or {}).get("fixKind") == "CorrectNameCase"),
+        None
+    )
+    expect(case_diagnostic is not None,
+           f"expected a case fix for the pasted macro parameter, got {diagnostics}")
+    action = action_titled(server.code_actions(fixture), "macro argument")
+    expect(action["title"] == "Change macro argument 'arp1' to 'ARP1'",
+           f"unexpected title: {action['title']!r}")
+    ported = apply_action(source, action, fixture)
+    expect("show_page(ARP1)" in ported,
+           f"the macro call argument was not corrected:\n{ported}")
+    server.did_change(fixture, ported)
+    expect(not server.diagnostics(fixture),
+           f"corrected macro call still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: a macro argument forwarded through another macro stays editable",
+      entry_points=["case_nested_macro_parameter.cksp"])
+def _(workspace, server):
+    source = ("namespace ARP1\n"
+              "    declare morph_label_shift[2, 2]\n"
+              "end namespace\n\n"
+              "macro update_inner(#family#)\n"
+              "    #family#.morph_label_shift[0, 0] := 1\n"
+              "end macro\n\n"
+              "macro update_outer(#family#)\n"
+              "    update_inner(#family#)\n"
+              "end macro\n\n"
+              "on init\n"
+              "    update_outer(arp1)\n"
+              "end on\n")
+    fixture = workspace.write("case_nested_macro_parameter.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    case_diagnostic = next(
+        (diagnostic for diagnostic in diagnostics
+         if (diagnostic.get("data") or {}).get("fixKind") == "CorrectNameCase"),
+        None
+    )
+    expect(case_diagnostic is not None,
+           f"expected a fix at the outer call site, got {diagnostics}")
+    action = action_titled(server.code_actions(fixture), "macro argument")
+    ported = apply_action(source, action, fixture)
+    expect("update_outer(ARP1)" in ported,
+           f"the root macro argument was not corrected:\n{ported}")
+    server.did_change(fixture, ported)
+    expect(not server.diagnostics(fixture),
+           f"corrected nested macro call still reports "
+           f"{messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: one argument pasted twice is not corrected against itself",
+      entry_points=["case_macro_parameter_twice.cksp"])
+def _(workspace, server):
+    # <fam#_#fam> would have to become <ARP1_arp1>: the same call argument, corrected two
+    # different ways. Rewriting it either way leaves the other half unresolved.
+    source = ("macro show_pair(#family#)\n"
+              "    message(#family#_#family#)\n"
+              "end macro\n\n"
+              "on init\n"
+              "    declare ARP1_arp1 := 1\n"
+              "    show_pair(arp1)\n"
+              "end on\n")
+    fixture = workspace.write("case_macro_parameter_twice.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(diagnostics, "expected an undeclared-variable diagnostic")
+    expect(all((diagnostic.get("data") or {}).get("fixKind") != "CorrectNameCase"
+               for diagnostic in diagnostics),
+           f"a self-contradicting correction must not be offered: {diagnostics}")
+    expect(not server.code_actions(fixture),
+           "one argument cannot be corrected two ways at once")
+
+
+@test("migration: ambiguous case-insensitive names block instead of choosing one",
+      entry_points=["case_ambiguous.cksp"])
+def _(workspace, server):
+    fixture = workspace.write(
+        "case_ambiguous.cksp",
+        "on init\n    declare Foo\n    declare foo\nend on\n"
+        "\non note\n    FOO := 1\nend on\n")
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    case_diagnostic = next(
+        (diagnostic for diagnostic in diagnostics
+         if (diagnostic.get("data") or {}).get("migrationKind") == "IdentifierCase"),
+        None
+    )
+    expect(case_diagnostic is not None,
+           f"expected an IdentifierCase blocker, got {diagnostics}")
+    expect("ambiguous" in case_diagnostic["message"].lower(),
+           f"ambiguity should be explained: {case_diagnostic}")
+    expect("fixKind" not in (case_diagnostic.get("data") or {}),
+           f"an ambiguous spelling must not advertise a fix: {case_diagnostic}")
+    expect(not server.code_actions(fixture),
+           "an ambiguous case-insensitive spelling must not choose a declaration")
 
 
 @test("migration: a property block is named as SublimeKSP's in every position it can appear",

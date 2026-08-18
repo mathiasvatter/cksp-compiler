@@ -74,7 +74,9 @@ struct Diagnostic {
         Taskfunc,
         TCM,
         PostMacro,
-        Property
+        Property,
+        IdentifierCase,
+        GlobalDeclarationInitializer
     };
 
     struct DiagnosticFix {
@@ -84,7 +86,8 @@ struct Diagnostic {
             ConvertTaskfuncToFunction,
             ConvertTCMCall,
             CorrectNameCase,
-            ConvertSublimePragma
+            ConvertSublimePragma,
+            SplitGlobalDeclarationAssignment
         };
         enum class EditKind {
             InsertBefore,
@@ -115,6 +118,7 @@ struct Diagnostic {
             case DiagnosticFix::FixKind::ConvertTCMCall: return "ConvertTCMCall";
             case DiagnosticFix::FixKind::CorrectNameCase: return "CorrectNameCase";
             case DiagnosticFix::FixKind::ConvertSublimePragma: return "ConvertSublimePragma";
+            case DiagnosticFix::FixKind::SplitGlobalDeclarationAssignment: return "SplitGlobalDeclarationAssignment";
             default: break;
         }
         return "unknown";
@@ -126,6 +130,8 @@ struct Diagnostic {
             case MigrationKind::TCM: return "TCM";
             case MigrationKind::PostMacro: return "PostMacro";
             case MigrationKind::Property: return "Property";
+            case MigrationKind::IdentifierCase: return "IdentifierCase";
+            case MigrationKind::GlobalDeclarationInitializer: return "GlobalDeclarationInitializer";
             default: break;
         }
         return "unknown";

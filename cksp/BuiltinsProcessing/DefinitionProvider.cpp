@@ -414,8 +414,8 @@ Diagnostic DefinitionProvider::make_missing_function_definition_error(
 				names.push_back(suggestion->name);
 			}
 			diagnostic.message += " Did you mean: " + StringUtils::join(names, ", ") + "?";
-			diagnostic.fix = make_name_case_fix(
-				function_name, names, function ? function->tok : node.tok);
+			identifier_case_migration::apply(
+				diagnostic, function_name, names, function ? function->tok : node.tok);
 		}
 	}
 

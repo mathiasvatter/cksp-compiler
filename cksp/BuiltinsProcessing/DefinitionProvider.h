@@ -8,6 +8,8 @@
 #include <utility>
 
 #include "../ASTVisitor/ASTVisitor.h"
+#include "../Migration/GlobalDeclarationMigration.h"
+#include "../Migration/IdentifierCaseMigration.h"
 #include "../../utils/Gensym.h"
 #include "../../misc/HashFunctions.h"
 
@@ -225,41 +227,6 @@ public:
 	/// only returns data structure declaration in current scope or global_scope
 	[[nodiscard]] std::shared_ptr<NodeDataStructure> get_scoped_data_structure(const std::string& data, bool global_scope) const;
 
-	/// A fix for a suggestion that differs from the written name in nothing but case.
-	///
-	/// SublimeKSP resolves names case-insensitively, so a ported script spells its
-	/// declarations however it likes and every one of them lands on an undeclared-name error
-	/// here. Unlike the other suggestions this one is not a guess about what was meant - it
-	/// is the same identifier - so it is worth offering as an edit. Anything further apart
-	/// stays a suggestion in the message.
-	static std::optional<Diagnostic::DiagnosticFix> make_name_case_fix(
-		const std::string& written,
-		const std::vector<std::string>& suggestions,
-		const Token& token) {
-		// A word a <#param#> substitution assembled stands in no file: its range points at
-		// the call site while its value comes from the macro body, so an edit built from the
-		// two would rewrite text that never spelled this name.
-		if (token.origin or token.val != written) return std::nullopt;
-
-		const auto lower_written = StringUtils::to_lower(written);
-		for (const auto& suggestion : suggestions) {
-			if (suggestion == written) continue;
-			if (StringUtils::to_lower(suggestion) != lower_written) continue;
-			return Diagnostic::DiagnosticFix{
-				.kind = Diagnostic::DiagnosticFix::FixKind::CorrectNameCase,
-				.title = "Change '" + written + "' to '" + suggestion + "'",
-				.edits = {{
-					.kind = Diagnostic::DiagnosticFix::EditKind::Replace,
-					.file = token.file(),
-					.range = source_range_from_token(token),
-					.new_text = suggestion
-				}},
-				.is_preferred = true
-			};
-		}
-		return std::nullopt;
-	}
-
 	/// variable error handling
 	static Diagnostic throw_declaration_error(NodeReference &node, const std::string& add_msg="", const DefinitionProvider* ctx = nullptr, const std::string& alternate_name = "") {
 		auto diagnostic = Diagnostic(ErrorType::VariableError, "", "", node.tok);
@@ -275,9 +242,9 @@ public:
 
 		// check if reference is assignment in declaration of global variable
 		// like : declare global ctrl := control <- where control is a lokal variable
-		if (auto single_decl = node.parent->cast<NodeSingleDeclaration>()) {
+		if (auto single_decl = get_parent_of_type<NodeSingleDeclaration>(node)) {
 			if (single_decl->variable->is_global) {
-				diagnostic.message += "This <Reference> is assigned in a global declaration. Local variables should "
+				diagnostic.message += " This <Reference> is assigned in a global declaration. Local variables should "
 							   "not be assigned in global declarations. \nTry splitting this into a declaration and an assignment.";
 			}
 		}
@@ -288,7 +255,19 @@ public:
 			if (!suggestions.empty()) {
 				diagnostic.message += " Did you mean: "
 					+ StringUtils::join(suggestions, ", ") + "?";
-				diagnostic.fix = make_name_case_fix(name, suggestions, node.tok);
+				identifier_case_migration::apply(diagnostic, name, suggestions, node.tok);
+			}
+		}
+
+		// A pure case mismatch is the less invasive correction and wins when both patterns
+		// happen to apply. Otherwise the source-level split restores SublimeKSP's evaluation
+		// order: the declaration is hoisted, while the assignment remains in the function.
+		// Gated on the fix rather than on the kind: a case mismatch that could not be turned
+		// into one has nothing to lose against, and the split is then the only offer left.
+		if (!diagnostic.fix) {
+			if (auto fix = global_declaration_migration::make_fix(node)) {
+				diagnostic.migration_kind = Diagnostic::MigrationKind::GlobalDeclarationInitializer;
+				diagnostic.fix = std::move(*fix);
 			}
 		}
 

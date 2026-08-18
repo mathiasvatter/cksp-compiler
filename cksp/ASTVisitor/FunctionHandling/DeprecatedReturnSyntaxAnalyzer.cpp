@@ -97,30 +97,24 @@ DeprecatedReturnSyntaxAnalyzer::make_fallback_fix() const {
 	const size_t body_indent = first_statement.range.start.column > 0
 		? first_statement.range.start.column - 1
 		: function_indent + 4;
-	const size_t indent_width = body_indent > function_indent
+	const size_t indent_step = body_indent > function_indent
 		? body_indent - function_indent
 		: 4;
-	const char indent_character = indent_width == 1 ? '\t' : ' ';
+	const auto body_indentation = indentation(body_indent, indent_step);
+	const auto function_indentation = indentation(function_indent, indent_step);
+	const auto step_indentation = indentation(
+		body_indent > function_indent ? body_indent - function_indent : 0, indent_step);
 	edits.push_back({
 		.kind = Diagnostic::DiagnosticFix::EditKind::InsertBefore,
 		.file = m_result_variable->tok.file(),
 		.range = first_statement.range,
-		.new_text = "declare " + result_name + "\n"
-			+ std::string(body_indent, indent_character)
+		.new_text = "declare " + result_name + "\n" + body_indentation
 	});
 	edits.push_back({
 		.kind = Diagnostic::DiagnosticFix::EditKind::InsertBefore,
 		.file = m_result_variable->tok.file(),
 		.range = SourceRange(end_function_start, end_function_start),
-		.new_text =
-			std::string(
-				body_indent > function_indent
-					? body_indent - function_indent
-					: 0,
-				indent_character
-			)
-			+ "return " + result_name + "\n"
-			+ std::string(function_indent, indent_character)
+		.new_text = step_indentation + "return " + result_name + "\n" + function_indentation
 	});
 
 

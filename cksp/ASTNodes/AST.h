@@ -178,6 +178,19 @@ T* get_parent_of_type(const NodeAST& node) {
 	return nullptr;
 }
 
+/// Whether `node` sits anywhere below `subtree`, `subtree` itself included.
+///
+/// Tells apart which part of a node a reference was found in, which <get_parent_of_type>
+/// cannot: a name in a declaration's initializer and one in its type annotation have the
+/// same declaration as their parent.
+inline bool is_in_subtree(const NodeAST& node, const NodeAST* subtree) {
+	if (!subtree) return false;
+	for (const NodeAST* current = &node; current; current = current->parent) {
+		if (current == subtree) return true;
+	}
+	return false;
+}
+
 struct NodeDeadCode final : NodeAST {
     explicit NodeDeadCode(Token tok) : NodeAST(std::move(tok), NodeType::DeadCode) {};
     NodeAST *accept(ASTVisitor &visitor) override;
@@ -433,7 +446,7 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 };
 
 struct NodeInstruction : NodeAST {
-	enum Kind{Promoted, ReturnVar, None, ParameterStack};
+	enum Kind{Promoted, ReturnVar, None, ParameterStack, HoistedGlobal};
 	Kind kind = None;
     explicit NodeInstruction(const NodeType node_type, Token tok) : NodeAST(std::move(tok), node_type) {};
     ~NodeInstruction() override = default;
