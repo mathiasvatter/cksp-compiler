@@ -4,7 +4,9 @@
 
 #pragma once
 
+#include <cctype>
 #include <limits>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -227,6 +229,59 @@ private:
 		return consumed;
 	}
 
+	/// The codepoint of a <\uXXXX> escape at `position` (the backslash), and where it ends.
+	///
+	/// A codepoint outside the basic plane is written as two escapes, a high and a low
+	/// surrogate, which only mean anything together - so both are read here or neither is.
+	static std::optional<std::pair<char32_t, size_t>> decode_unicode_escape(
+		const std::string& s, const size_t position) {
+		const auto hex_at = [&s](const size_t start) -> std::optional<char32_t> {
+			if (start + 4 > s.length()) return std::nullopt;
+			char32_t value = 0;
+			for (size_t index = start; index < start + 4; ++index) {
+				const auto digit = static_cast<unsigned char>(s[index]);
+				if (!std::isxdigit(digit)) return std::nullopt;
+				value = value * 16 + (std::isdigit(digit)
+					? digit - '0'
+					: (std::tolower(digit) - 'a' + 10));
+			}
+			return value;
+		};
+
+		const auto first = hex_at(position + 2);
+		if (!first) return std::nullopt;
+		size_t end = position + 6;
+		char32_t codepoint = *first;
+		if (codepoint >= 0xD800 && codepoint <= 0xDBFF
+			&& end + 1 < s.length() && s[end] == '\\' && s[end + 1] == 'u') {
+			if (const auto low = hex_at(end + 2); low && *low >= 0xDC00 && *low <= 0xDFFF) {
+				codepoint = 0x10000 + ((codepoint - 0xD800) << 10) + (*low - 0xDC00);
+				end += 6;
+			}
+		}
+		return std::pair{codepoint, end};
+	}
+
+	/// Writes `codepoint` to `out` as UTF-8, which is the encoding the rest of the compiler
+	/// reads its input in.
+	static void append_utf8(std::string& out, const char32_t codepoint) {
+		if (codepoint < 0x80) {
+			out += static_cast<char>(codepoint);
+		} else if (codepoint < 0x800) {
+			out += static_cast<char>(0xC0 | (codepoint >> 6));
+			out += static_cast<char>(0x80 | (codepoint & 0x3F));
+		} else if (codepoint < 0x10000) {
+			out += static_cast<char>(0xE0 | (codepoint >> 12));
+			out += static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F));
+			out += static_cast<char>(0x80 | (codepoint & 0x3F));
+		} else {
+			out += static_cast<char>(0xF0 | (codepoint >> 18));
+			out += static_cast<char>(0x80 | ((codepoint >> 12) & 0x3F));
+			out += static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F));
+			out += static_cast<char>(0x80 | (codepoint & 0x3F));
+		}
+	}
+
 	static std::string unescape_string(const std::string& s) {
     	std::string result;
     	result.reserve(s.length()); // Kleine Optimierung
@@ -244,7 +299,20 @@ private:
     				case 'n':  result += '\n'; break;
     				case 'r':  result += '\r'; break;
     				case 't':  result += '\t'; break;
-    					// TODO: Unicode-Sequenzen (\uXXXX) könnten hier noch hinzugefügt werden
+    				case 'u': {
+    					// A client is free to send any character escaped, and some send every
+    					// non-ASCII one that way. Dropping the escape put a literal backslash
+    					// into the document text, so the compiler tokenized something the user
+    					// never wrote - and no test could carry a non-ASCII character at all.
+    					const auto decoded = decode_unicode_escape(s, i);
+    					if (!decoded) {
+    						result += '\\';
+    						break;
+    					}
+    					append_utf8(result, decoded->first);
+    					i = decoded->second - 1; // the loop's ++i steps past the last digit
+    					continue;
+    				}
     				default:
     					// Falls eine ungültige Sequenz wie z.B. "\q" auftritt.
     					// Man könnte hier einen Fehler werfen oder die Sequenz ignorieren.
