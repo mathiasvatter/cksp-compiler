@@ -77,7 +77,8 @@ struct Diagnostic {
         Property,
         IdentifierCase,
         GlobalDeclarationInitializer,
-        ReservedResultName
+        ReservedResultName,
+        InvalidCharacter
     };
 
     struct DiagnosticFix {
@@ -138,6 +139,7 @@ struct Diagnostic {
             case MigrationKind::IdentifierCase: return "IdentifierCase";
             case MigrationKind::GlobalDeclarationInitializer: return "GlobalDeclarationInitializer";
             case MigrationKind::ReservedResultName: return "ReservedResultName";
+            case MigrationKind::InvalidCharacter: return "InvalidCharacter";
             default: break;
         }
         return "unknown";
@@ -154,7 +156,11 @@ struct Diagnostic {
     std::vector<DiagnosticFrame> call_stack;
     /// Set when the reported token was assembled by a macro or define substitution.
     std::optional<DiagnosticExpansion> expansion;
-    /// Marks diagnostics emitted specifically while recognising source from another dialect.
+    /// Marks a diagnostic about porting a file rather than about the program in it: source
+    /// written in another dialect, or a character that came along with it. What they have in
+    /// common is that a whole workspace of them can be dealt with in one sweep, which is what
+    /// the migration assistant does with them.
+    ///
     /// Unlike DiagnosticFix this remains present when the construct cannot be rewritten safely.
     std::optional<MigrationKind> migration_kind;
     std::optional<DiagnosticFix> fix;

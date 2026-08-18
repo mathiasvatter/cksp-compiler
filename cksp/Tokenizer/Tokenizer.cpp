@@ -153,7 +153,10 @@ void Tokenizer::get_invalid() {
 	}
 	if (!valid) {
 		// Not a character at all from here: the bytes decode to nothing, which is what a file
-		// written in another encoding looks like to a compiler that reads UTF-8.
+		// written in another encoding looks like to a compiler that reads UTF-8. Marked for
+		// migration too, so a workspace sweep names it - but never fixed, because re-encoding
+		// a file is not an edit.
+		error.migration_kind = Diagnostic::MigrationKind::InvalidCharacter;
 		char byte[8];
 		std::snprintf(byte, sizeof(byte), "0x%02X", static_cast<unsigned>(codepoint));
 		error.actual = std::string("byte ") + byte;
@@ -164,6 +167,8 @@ void Tokenizer::get_invalid() {
 	}
 
 	error.actual = invalid_character::describe(codepoint);
+	// Ported files carry these by the dozen, and one sweep can take them all out.
+	error.migration_kind = Diagnostic::MigrationKind::InvalidCharacter;
 	error.add_message("Found invalid character: " + error.actual + ".");
 	if (invalid_character::is_invisible(codepoint)) {
 		error.add_message(
