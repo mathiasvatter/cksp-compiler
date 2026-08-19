@@ -2666,16 +2666,29 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 			ErrorType::SyntaxError, "Found unknown <struct> syntax.", "valid <struct> name", peek()));
 	}
 	auto name = consume(); //consume name
-	auto l = consume_linebreak("<struct>");
-	if(l.is_error())
-		return Result<std::unique_ptr<NodeStruct>>(l.get_error());
-
 	auto node_struct = std::make_unique<NodeStruct>(
 		name.val,
 		std::make_unique<NodeBlock>(start_token),
 		std::vector<std::shared_ptr<NodeFunctionDefinition>>(),
 		name
 	);
+	if (peek().type != token::LINEBRK) {
+		if (peek().type != token::LESS_THAN) {
+			return Result<std::unique_ptr<NodeStruct>>(Diagnostic(
+				ErrorType::SyntaxError,
+				"Expected a line break or a type parameter list after struct name <" + name.val + ">.",
+				"linebreak or <T, U, ...>", peek()));
+		}
+		auto type_params = parse_struct_type_parameters(name);
+		if (type_params.is_error())
+			return Result<std::unique_ptr<NodeStruct>>(type_params.get_error());
+		node_struct->type_parameters = std::move(type_params.unwrap());
+	}
+
+	auto l = consume_linebreak("<struct>");
+	if(l.is_error())
+		return Result<std::unique_ptr<NodeStruct>>(l.get_error());
+
 
 	auto& node_member_block = node_struct->members;
 
@@ -2750,6 +2763,91 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 	// node_struct->rebuild_method_table();
 	node_struct->rebuild_lookup_sets();
 	return Result<std::unique_ptr<NodeStruct>>(std::move(node_struct));
+}
+
+Result<std::vector<Token>> Parser::parse_struct_type_parameters(const Token& struct_name) {
+	consume(); // consume <; parse_struct has already established the opening token
+	std::vector<Token> type_parameters;
+	std::unordered_map<std::string, Token> first_declarations;
+
+	_skip_linebreaks();
+	if (peek().type == token::GREATER_THAN) {
+		return Result<std::vector<Token>>(Diagnostic(
+			ErrorType::SyntaxError,
+			"Generic struct <" + struct_name.val + "> must declare at least one type parameter.",
+			"type parameter name such as <T>", peek()));
+	}
+
+	while (true) {
+		_skip_linebreaks();
+		if (peek().type == token::END_TOKEN || peek().type == token::END_STRUCT) {
+			return Result<std::vector<Token>>(Diagnostic(
+				ErrorType::SyntaxError,
+				"The type parameter list for generic struct <" + struct_name.val + "> is not closed.",
+				">", peek()));
+		}
+		if (peek().type != token::KEYWORD) {
+			if (peek().type == token::COMMA) {
+				return Result<std::vector<Token>>(Diagnostic(
+					ErrorType::SyntaxError,
+					"Expected a type parameter before <,> in generic struct <" + struct_name.val + ">.",
+					"type parameter name such as <T>", peek()));
+			}
+			auto error = make_name_expected_diagnostic(
+				ErrorType::SyntaxError,
+				"Expected a type parameter name in generic struct <" + struct_name.val + ">.",
+				"type parameter name such as <T>", peek());
+			return Result<std::vector<Token>>(std::move(error));
+		}
+
+		Token parameter = consume();
+		if (const auto first = first_declarations.find(parameter.val); first != first_declarations.end()) {
+			auto error = Diagnostic(
+				ErrorType::SyntaxError,
+				"Type parameter <" + parameter.val + "> is declared more than once in generic struct <"
+					+ struct_name.val + ">.",
+				"unique type parameter name", parameter);
+			error.add_message("The first declaration is at line " + std::to_string(first->second.line)
+				+ ", column " + std::to_string(first->second.pos) + ".");
+			return Result<std::vector<Token>>(std::move(error));
+		}
+		first_declarations.emplace(parameter.val, parameter);
+		type_parameters.push_back(std::move(parameter));
+
+		_skip_linebreaks();
+		if (peek().type == token::GREATER_THAN) {
+			consume(); // consume >
+			return Result<std::vector<Token>>(std::move(type_parameters));
+		}
+		if (peek().type == token::COMMA) {
+			consume(); // consume ,
+			_skip_linebreaks();
+			// A trailing comma keeps multiline parameter lists easy to edit.
+			if (peek().type == token::GREATER_THAN) {
+				consume(); // consume >
+				return Result<std::vector<Token>>(std::move(type_parameters));
+			}
+			continue;
+		}
+		if (peek().type == token::END_TOKEN || peek().type == token::END_STRUCT) {
+			return Result<std::vector<Token>>(Diagnostic(
+				ErrorType::SyntaxError,
+				"The type parameter list for generic struct <" + struct_name.val + "> is not closed.",
+				">", peek()));
+		}
+		if (peek().type == token::KEYWORD) {
+			return Result<std::vector<Token>>(Diagnostic(
+				ErrorType::SyntaxError,
+				"Missing comma between type parameters <" + type_parameters.back().val + "> and <"
+					+ peek().val + "> in generic struct <" + struct_name.val + ">.",
+				", or >", peek()));
+		}
+		return Result<std::vector<Token>>(Diagnostic(
+			ErrorType::SyntaxError,
+			"Expected a comma or the closing angle bracket after type parameter <"
+				+ type_parameters.back().val + "> in generic struct <" + struct_name.val + ">.",
+			", or >", peek()));
+	}
 }
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {

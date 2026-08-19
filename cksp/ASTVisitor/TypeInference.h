@@ -422,17 +422,11 @@ public:
 
 	/// check for function that has same param types as return type
 	static bool is_same_input_same_output_type(const NodeFunctionHeader& header) {
-	if (!header.ty) return false;
-	if (header.params.empty()) return false;
-	const auto func_type = header.ty->cast<FunctionType>();
-	if (!func_type) return false;
-	if (func_type->m_params.empty()) return false;
-	// check if all param types are the same;
-	if (std::ranges::adjacent_find(func_type->m_params, std::not_equal_to<>()) != func_type->m_params.end()) return false;
-	if (!func_type->m_params[0]->is_union_type()) return false;
-	// check if return type is the same as param type
-	if (func_type->m_return_type != func_type->m_params[0]) return false;
-	return true;
+		if (!header.ty) return false;
+		if (header.params.empty()) return false;
+		const auto func_type = header.ty->cast<FunctionType>();
+		if (!func_type) return false;
+    	return func_type->same_input_same_output();
     }
 
     /// check types of initializations and try to infer overall element type

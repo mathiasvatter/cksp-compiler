@@ -7,6 +7,8 @@
 #include <utility>
 #include <memory>
 #include <typeindex>
+
+#include "../../utils/StringUtils.h"
 #include "../Tokenizer/Tokens.h"
 
 inline static std::string type_kind_names[] = {"Basic", "Composite", "Object", "Function"};
@@ -25,6 +27,8 @@ enum class CompoundKind {Array, List};
  * The Type class is an abstract base class for different types of types.
  */
 class Type {
+protected:
+	Kind m_kind = Kind::Unknown;
 public:
     explicit Type(Kind kind=Kind::Unknown) : m_kind(kind) {}
     virtual ~Type() = default;
@@ -63,8 +67,6 @@ public:
 		}
 		return nullptr;
 	}
-protected:
-    Kind m_kind = Kind::Unknown;
 };
 
 class BasicType: public Type {
@@ -160,6 +162,9 @@ public:
 };
 
 class CompositeType : public Type {
+	CompoundKind m_compound_kind;
+	Type* m_element_type;
+	int m_dimensions;
 public:
     CompositeType(CompoundKind compound_kind, Type* element_type, int dimensions=1)
         : Type(element_type->get_kind()), m_compound_kind(compound_kind),
@@ -178,7 +183,7 @@ public:
 			output += "[]";
 		}
 		return output;
-    };
+    }
     [[nodiscard]] TypeKind get_type_kind() const override {
         return TypeKind::Composite;
     }
@@ -202,13 +207,11 @@ public:
 	void set_element_type(Type* element_type) {
 		m_element_type = element_type;
 	}
-private:
-	CompoundKind m_compound_kind;
-	Type* m_element_type;
-    int m_dimensions;
 };
 
 class ObjectType : public Type {
+	std::string m_name;
+	std::vector<Type*> m_arguments; // {int, string} for generic structs
 public:
     explicit ObjectType(std::string name): Type(Kind::Object), m_name(std::move(name)) {}
     ObjectType(const ObjectType& other) = default;
@@ -216,8 +219,11 @@ public:
         return std::make_unique<ObjectType>(*this);
     }
     [[nodiscard]] std::string to_string() const override {
-        return m_name;
-    };
+    	if (!is_parameterized()) return m_name;
+    	std::string result = m_name + "<";
+    	result += StringUtils::join_apply(m_arguments, [](auto arg) {return arg->to_string();}, ", ");
+    	return result + ">";
+    }
     [[nodiscard]] TypeKind get_type_kind() const override {
         return TypeKind::Object;
     }
@@ -229,11 +235,15 @@ public:
 	bool is_same_type(const Type* other) const override {
 		return get_type_kind() == other->get_type_kind() and m_name == other->to_string();
 	}
-private:
-    std::string m_name;
+	[[nodiscard]] bool is_parameterized() const { return m_arguments.empty(); }
+	[[nodiscard]] const std::string& get_name() const { return m_name; }
+	[[nodiscard]] const std::vector<Type*>& get_type_arguments() const { return m_arguments; }
+
 };
 
 class FunctionType : public Type {
+	std::vector<Type*> m_params;
+	Type* m_return_type;
 public:
 	explicit FunctionType(std::vector<Type*> params, Type* return_type)
 		: Type(return_type->get_kind()), m_params(std::move(params)), m_return_type(return_type) {}
@@ -258,6 +268,7 @@ public:
 	}
 	[[nodiscard]] Type* get_element_type() const override {return (Type *) this;}
 	[[nodiscard]] const std::vector<Type*>& get_params() const { return m_params; }
+	[[nodiscard]] const Type* get_param(const size_t i) const { return m_params[i]; }
 	[[nodiscard]] Type* get_return_type() const { return m_return_type; }
 
 	[[nodiscard]] bool is_compatible(const Type* other) const override {
@@ -315,6 +326,15 @@ public:
 		return true;
 	}
 
-	std::vector<Type*> m_params;
-	Type* m_return_type;
+	[[nodiscard]] bool same_input_same_output() const {
+		auto& func_param_types = get_params();
+		if (func_param_types.empty()) return false;
+		// check if all param types are the same;
+		if (std::ranges::adjacent_find(func_param_types, std::not_equal_to<>()) != func_param_types.end()) return false;
+		if (!get_param(0)->is_union_type()) return false;
+		// check if return type is the same as param type
+		if (get_return_type() != get_param(0)) return false;
+		return true;
+	}
+
 };
