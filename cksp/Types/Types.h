@@ -214,6 +214,8 @@ class ObjectType : public Type {
 	std::vector<Type*> m_arguments; // {int, string} for generic structs
 public:
     explicit ObjectType(std::string name): Type(Kind::Object), m_name(std::move(name)) {}
+	ObjectType(std::string name, std::vector<Type*> arguments)
+		: Type(Kind::Object), m_name(std::move(name)), m_arguments(std::move(arguments)) {}
     ObjectType(const ObjectType& other) = default;
     [[nodiscard]] std::unique_ptr<Type> clone() const override {
         return std::make_unique<ObjectType>(*this);
@@ -229,13 +231,14 @@ public:
     }
 	[[nodiscard]] Type* get_element_type() const override {return (Type *) this;}
 	[[nodiscard]] bool is_compatible(const Type* other) const override {
-		bool is_object_type = get_type_kind() == other->get_type_kind() && (m_name == other->to_string() or other->to_string() == "nil" or m_name == "nil");
+		bool is_object_type = get_type_kind() == other->get_type_kind()
+			&& (to_string() == other->to_string() or other->to_string() == "nil" or m_name == "nil");
 		return is_object_type or other->get_kind() == Kind::Unknown or other->get_kind() == Kind::Any;
 	}
 	bool is_same_type(const Type* other) const override {
-		return get_type_kind() == other->get_type_kind() and m_name == other->to_string();
+		return get_type_kind() == other->get_type_kind() and to_string() == other->to_string();
 	}
-	[[nodiscard]] bool is_parameterized() const { return m_arguments.empty(); }
+	[[nodiscard]] bool is_parameterized() const { return !m_arguments.empty(); }
 	[[nodiscard]] const std::string& get_name() const { return m_name; }
 	[[nodiscard]] const std::vector<Type*>& get_type_arguments() const { return m_arguments; }
 
@@ -253,14 +256,8 @@ public:
 	}
 	[[nodiscard]] std::string to_string() const override {
 		std::string result = "(";
-		for (size_t i = 0; i < m_params.size(); ++i) {
-			result += m_params[i]->to_string();
-			if (i < m_params.size() - 1) {
-				result += ", ";
-			}
-		}
-		result += "): " + m_return_type->to_string();
-		return result;
+    	result += StringUtils::join_apply(m_params, [](auto arg) {return arg->to_string();}, ", ");
+		return result + "): " + m_return_type->to_string();
 	}
 
 	[[nodiscard]] TypeKind get_type_kind() const override {

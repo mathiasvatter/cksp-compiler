@@ -6,6 +6,16 @@
 #include "../ASTNodes/ASTDataStructures.h"
 #include "../ASTNodes/ASTReferences.h"
 
+namespace {
+std::string parameterized_object_key(const std::string& name, const std::vector<Type*>& arguments) {
+	std::string key = name;
+	for (const auto* argument : arguments) {
+		key += "$" + argument->to_string();
+	}
+	return key;
+}
+}
+
 // Implementation of the initialization method
 void TypeRegistry::initialize() {
     object_types.clear();
@@ -180,12 +190,31 @@ ObjectType *TypeRegistry::add_object_type(const std::string &name) {
     return object_types[name].get();
 }
 
+ObjectType *TypeRegistry::add_object_type(
+		const std::string &name, const std::vector<Type*>& arguments) {
+	if (auto obj_ty = get_object_type(name, arguments)) {
+		return obj_ty;
+	}
+	auto key = parameterized_object_key(name, arguments);
+	object_types[key] = std::make_unique<ObjectType>(name, arguments);
+	return object_types[key].get();
+}
+
 ObjectType *TypeRegistry::get_object_type(const std::string &name) {
     auto it = object_types.find(name);
     if (it != object_types.end()) {
         return it->second.get();
     }
     return nullptr;
+}
+
+ObjectType *TypeRegistry::get_object_type(
+		const std::string &name, const std::vector<Type*>& arguments) {
+	auto it = object_types.find(parameterized_object_key(name, arguments));
+	if (it != object_types.end()) {
+		return it->second.get();
+	}
+	return nullptr;
 }
 
 CompositeType *TypeRegistry::get_composite_type(CompoundKind comp_type, Type *element_type, int dimensions) {

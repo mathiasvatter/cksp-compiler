@@ -325,19 +325,19 @@ void Tokenizer::get_format_string() {
         if (peek() == '\\' and peek(1) == fstring_starting_char.top()) {
             consume();
         }
-	if (peek() == '\\' and peek(1) == '<') {
-		consume();
-	}
-	if (peek() == '<') {
-		if (!m_buffer.empty()) {
-			add_token(token::STRING, m_buffer);
+		if (peek() == '\\' and peek(1) == '<') {
+			consume();
 		}
-		flush_buffer();
+		if (peek() == '<') {
+			if (!m_buffer.empty()) {
+				add_token(token::STRING, m_buffer);
+			}
+			flush_buffer();
+			consume();
+			add_token(token::FSTRING_EXPR_START, m_buffer);
+			return;
+		}
 		consume();
-		add_token(token::FSTRING_EXPR_START, m_buffer);
-		return;
-	}
-	consume();
     }
 	add_token(token::STRING, m_buffer);
 	consume(); // consume the fstring_starting_char

@@ -49,7 +49,8 @@ protected:
 	Result<Type*> parse_type_annotation(Type* ty = nullptr, TypeReferences* references = nullptr);
 	Result<Type*> parse_type(TypeReferences* references = nullptr);
 	Result<Type*> _parse_function_type(TypeReferences* references = nullptr);
-	Result<Type*> _parse_single_types(TypeReferences* references = nullptr);
+	Result<Type*> _parse_single_types(TypeReferences* references = nullptr, bool allow_parameterized = true);
+	Result<std::vector<Type*>> _parse_type_arguments(const Token& type_token, TypeReferences* references = nullptr);
 
 	void _skip_linebreaks();
 

@@ -33,8 +33,10 @@ public:
 	static bool is_type_neutral_element(const Type* ty, const std::unique_ptr<NodeAST>& value);
     /// adds a new object type to the registry, if object type already exists, the existing type is returned
     static ObjectType* add_object_type(const std::string& name);
+	static ObjectType* add_object_type(const std::string& name, const std::vector<Type*>& arguments);
     /// returns the object type from the name, if no object type with the name exists, nullptr is returned
     static ObjectType* get_object_type(const std::string& name);
+	static ObjectType* get_object_type(const std::string& name, const std::vector<Type*>& arguments);
     /// returns pointer to the composite type in registry by looking at the element type and dimensions
     /// returns nullptr if no composite type with the given element type and dimensions exists
     static CompositeType* get_composite_type(CompoundKind comp_type, Type* element_type, int dimensions=1);
