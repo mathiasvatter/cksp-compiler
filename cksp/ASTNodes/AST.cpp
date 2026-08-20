@@ -1330,7 +1330,7 @@ NodeFunctionDefinition::NodeFunctionDefinition(const NodeFunctionDefinition& oth
 		visited(other.visited), has_exit_command(other.has_exit_command),
           num_return_params(other.num_return_params), num_return_stmts(other.num_return_stmts),
           return_stmts(other.return_stmts), call_sites(other.call_sites),
-		  header(clone_shared(other.header)), override(other.override),
+		  header(clone_shared(other.header)), override(other.override), is_static(other.is_static),
 		  body(clone_unique(other.body)) {
     if (other.return_variable) {
         return_variable = std::make_optional(clone_shared(other.return_variable.value()));

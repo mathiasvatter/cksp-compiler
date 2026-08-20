@@ -17,6 +17,8 @@ inline static std::string kind_names[] = {"int", "bool", "string", "real", "unkn
 enum class Kind {Integer, Boolean, String, Real, Unknown, Object, Any, Void, Number, Comparison, PGS};
 inline static std::string compound_kind_names[] = {"Array", "List"};
 enum class CompoundKind {Array, List};
+/// substitution list for placeholder type -> real type in generic structs
+using TypeSubstitutions = std::unordered_map<const class TypeParameterType*, class Type*>;
 
 /**
  * @class Type
@@ -38,6 +40,9 @@ public:
 	/// Stable structural identity used by TypeRegistry for interning.
 	[[nodiscard]] virtual std::string registry_key() const = 0;
     [[nodiscard]] virtual TypeKind get_type_kind() const = 0;
+	virtual Type* substitute_type_parameters(const TypeSubstitutions& substitutions) const = 0;
+	/// returns if type has placeholder values of TypeParameterType
+	virtual bool contains_type_parameters() const = 0;
 	[[nodiscard]] virtual std::string get_type_kind_name() const {return type_kind_names[(int)get_type_kind()];}
 	[[nodiscard]] virtual Type* get_element_type() const {return nullptr;}
     [[nodiscard]] virtual int get_dimensions() const {return 0;}
@@ -95,6 +100,12 @@ public:
 		bool string_number = m_kind == Kind::String && (other->get_kind() == Kind::Number || other->get_kind() == Kind::Integer || other->get_kind() == Kind::Real);
 		if(string_number) return true;
 		return is_compatible(other);
+	}
+	[[nodiscard]] Type* substitute_type_parameters(const TypeSubstitutions& substitutions) const override {
+		return const_cast<BasicType*>(this);
+	}
+	[[nodiscard]] bool contains_type_parameters() const override {
+		return false;
 	}
 	// bool is_string_int_assignment(const Type* other) const override {
  //    	return m_kind == Kind::String && (other->get_kind() == Kind::Number || other->get_kind() == Kind::Integer || other->get_kind() == Kind::Real);
@@ -217,6 +228,11 @@ public:
 	void set_element_type(Type* element_type) {
 		m_element_type = element_type;
 	}
+	[[nodiscard]] Type* substitute_type_parameters(const TypeSubstitutions &substitutions) const override;
+
+	[[nodiscard]] bool contains_type_parameters() const override {
+	    return m_element_type->contains_type_parameters();
+    }
 };
 
 class ObjectType : public Type {
@@ -258,7 +274,14 @@ public:
 	[[nodiscard]] bool is_parameterized() const { return !m_arguments.empty(); }
 	[[nodiscard]] const std::string& get_name() const { return m_name; }
 	[[nodiscard]] const std::vector<Type*>& get_type_arguments() const { return m_arguments; }
+	[[nodiscard]] Type* substitute_type_parameters(const TypeSubstitutions &substitutions) const override;
 
+	[[nodiscard]] bool contains_type_parameters() const override {
+	    for (const auto* argument : m_arguments) {
+		    if (argument->contains_type_parameters()) return true;
+	    }
+    	return false;
+    }
 };
 
 class TypeParameterType final : public Type {
@@ -290,6 +313,11 @@ public:
 	[[nodiscard]] const std::string& owner() const { return m_owner; }
 	[[nodiscard]] const std::string& name() const { return m_name; }
 	[[nodiscard]] int index() const { return m_index; }
+	Type* substitute_type_parameters(const TypeSubstitutions &substitutions) const override;
+
+	[[nodiscard]] bool contains_type_parameters() const override {
+		return true;
+	}
 };
 
 class FunctionType : public Type {
@@ -322,7 +350,15 @@ public:
 	[[nodiscard]] const std::vector<Type*>& get_params() const { return m_params; }
 	[[nodiscard]] const Type* get_param(const size_t i) const { return m_params[i]; }
 	[[nodiscard]] Type* get_return_type() const { return m_return_type; }
+	[[nodiscard]] Type* substitute_type_parameters(const TypeSubstitutions &substitutions) const override;
 
+	[[nodiscard]] bool contains_type_parameters() const override {
+		for (const auto* param : m_params) {
+			if (param->contains_type_parameters()) return true;
+		}
+		if (m_return_type->contains_type_parameters()) return true;
+		return false;
+	}
 	[[nodiscard]] bool is_compatible(const Type* other) const override {
 		// First, check whether the other type is also a function type
 		if (other->get_type_kind() != TypeKind::Function and other->get_kind() != Kind::Unknown) {
@@ -331,27 +367,22 @@ public:
 		if (other->get_type_kind() == TypeKind::Basic and other->get_kind() == Kind::Unknown) {
 			return true;
 		}
-
 		// Cast to function type
 		const auto other_function = other->cast<FunctionType>();
-
 		// Check parameter count
 		if (m_params.size() != other_function->get_params().size()) {
 			return false;
 		}
-
 		// Every parameter must be compatible
 		for (size_t i = 0; i < m_params.size(); ++i) {
 			if (!m_params[i]->is_compatible(other_function->get_params()[i])) {
 				return false;
 			}
 		}
-
 		// The return type must also be compatible
 		if (!m_return_type->is_compatible(other_function->get_return_type())) {
 			return false;
 		}
-
 		// If all checks were successful, the function types are compatible
 		return true;
 	}

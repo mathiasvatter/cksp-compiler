@@ -309,6 +309,7 @@ add_executable(cksp
         lsp/DiagnosticPublisher.h
         lsp/EntryPointResolver.cpp
         lsp/EntryPointResolver.h
+        cksp/Desugaring/DesugarGenericStruct.h
 )
 target_link_libraries(cksp PRIVATE cksp_core)
 

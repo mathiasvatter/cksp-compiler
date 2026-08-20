@@ -46,6 +46,11 @@ public:
 	static FunctionType* get_function_type(std::vector<Type*> params, Type* return_type);
 	static FunctionType* add_function_type(const std::vector<Type*>& params, Type* return_type);
 
+	/// takes all object types that need struct clones and struct monomorphization and leaves empty list.
+	static std::vector<ObjectType*> take_pending_parameterized_object_types() {
+		return std::exchange(pending_parameterized_object_types, {});
+	}
+
     // Declaration of standard types
     static inline std::unique_ptr<BasicType> IntegerType;
     static inline BasicType* Integer;
@@ -82,6 +87,7 @@ public:
 
 private:
     static inline std::unordered_map<std::string, std::unique_ptr<ObjectType>> object_types;
+	static inline std::vector<ObjectType*> pending_parameterized_object_types;
     static inline std::unordered_map<std::string, std::unique_ptr<CompositeType>> composite_types;
 	static inline std::unordered_map<std::string, std::unique_ptr<FunctionType>> function_types;
 

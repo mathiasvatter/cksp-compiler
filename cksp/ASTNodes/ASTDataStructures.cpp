@@ -390,11 +390,19 @@ NodeAST *NodeStruct::accept(ASTVisitor &visitor) {
 }
 NodeStruct::NodeStruct(const NodeStruct& other)
 	: NodeDataStructure(other), type_parameters(other.type_parameters), type_parameter_table(other.type_parameter_table),
-	  members(clone_unique(other.members)), member_table(other.member_table), constructor(other.constructor),
-	  methods(other.methods), method_table(other.method_table),
+	  members(clone_unique(other.members)),
 	  member_node_types(other.member_node_types), max_individual_structs_var(other.max_individual_structs_var),
 	  max_individual_structs_count(clone_unique(other.max_individual_structs_count))
 {
+	methods.reserve(other.methods.size());
+	for (const auto& method : other.methods) {
+		auto cloned_method = clone_shared(method);
+		if (method == other.constructor) constructor = cloned_method;
+		methods.push_back(std::move(cloned_method));
+	}
+	method_set = other.method_set;
+	member_set = other.member_set;
+	rebuild_method_table();
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeStruct::clone() const {

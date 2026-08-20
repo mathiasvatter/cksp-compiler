@@ -9,6 +9,7 @@
 // Implementation of the initialization method
 void TypeRegistry::initialize() {
     object_types.clear();
+	pending_parameterized_object_types.clear();
     composite_types.clear();
     function_types.clear();
     annotation_to_type.clear();
@@ -182,15 +183,18 @@ ObjectType *TypeRegistry::add_object_type(const std::string &name) {
 	return object_types[key].get();
 }
 
-ObjectType *TypeRegistry::add_object_type(
-		const std::string &name, const std::vector<Type*>& arguments) {
+ObjectType *TypeRegistry::add_object_type(const std::string &name, const std::vector<Type*>& arguments) {
 	if (auto obj_ty = get_object_type(name, arguments)) {
 		return obj_ty;
 	}
 	auto object_type = std::make_unique<ObjectType>(name, arguments);
 	auto key = object_type->registry_key();
 	object_types[key] = std::move(object_type);
-	return object_types[key].get();
+	auto result = object_types[key].get();
+	if (result->is_parameterized() && !result->contains_type_parameters()) {
+		pending_parameterized_object_types.push_back(result);
+	}
+	return result;
 }
 
 ObjectType *TypeRegistry::get_object_type(const std::string &name) {
