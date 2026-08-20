@@ -477,7 +477,8 @@ NodeAST *NodeFunctionHeaderRef::accept(ASTVisitor &visitor) {
 
 // ************* NodeFunctionHeaderRef ***************
 NodeFunctionHeaderRef::NodeFunctionHeaderRef(const NodeFunctionHeaderRef& other)
-	: NodeReference(other), args(clone_unique(other.args)), has_forced_parenth(other.has_forced_parenth) {
+	: NodeReference(other), has_forced_parenth(other.has_forced_parenth),
+	  parameterized_type(other.parameterized_type), args(clone_unique(other.args)) {
 	set_child_parents();
 }
 
@@ -759,4 +760,3 @@ ASTLowering* NodeSetControl::get_lowering(NodeProgram *program) const {
 	lowering.set_program(program);
 	return &lowering;
 }
-

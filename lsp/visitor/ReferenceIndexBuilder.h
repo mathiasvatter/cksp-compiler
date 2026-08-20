@@ -188,7 +188,10 @@ private:
 		if (m_pass != Pass::References || !m_program) return;
 		for (const auto& reference : node.type_references) {
 			if (!reference.type || reference.type->get_type_kind() != TypeKind::Object) continue;
-			auto* definition = NodeReference::get_object_ptr(m_program, reference.type->to_string());
+			auto* definition = NodeReference::get_object_ptr(
+				m_program,
+				reference.type->ksp_encoded_string()
+			);
 			if (!definition) continue;
 			add_link(reference.token, *definition);
 		}

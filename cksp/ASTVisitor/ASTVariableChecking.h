@@ -180,7 +180,8 @@ private:
 	/// `count` is how many leading segments the struct name spans.
 	std::unique_ptr<NodeAccessChain> try_type_qualified_transform(
 		const std::string& struct_name, const size_t count, NodeAST* node) const {
-		if(!NodeReference::get_object_ptr(m_program, struct_name)) return nullptr;
+		auto* struct_definition = NodeReference::get_object_ptr(m_program, struct_name);
+		if(!struct_definition) return nullptr;
 		auto method_chain = node->to_method_chain();
 		if(!method_chain) return nullptr;
 		method_chain->merge_members(0, count - 1);
@@ -191,7 +192,7 @@ private:
 			error.exit();
 		}
 		object->kind = NodeReference::Kind::TypeQualifier;
-		object->ty = TypeRegistry::get_object_type(struct_name);
+		object->ty = struct_definition->ty;
 		return method_chain;
 	}
 	

@@ -69,6 +69,8 @@ class Parser: public Processor {
 
 	bool is_variable_declaration();
 	bool is_array_declaration();
+	/// True for the token shape <Name<T, U>()>. Comparisons such as <a < b> stay expressions.
+	[[nodiscard]] bool looks_like_parameterized_call() const;
 	/// <property name> alone on its line: the head of a SublimeKSP property block.
 	///
 	/// Recognised by shape rather than by a reserved keyword. <property> is an ordinary word -

@@ -172,16 +172,18 @@ std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_property_definiti
 
 
 std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_constructor_definition(NodeProgram *program) {
-	const auto it = program->struct_lookup.find(function->name);
-	if(it != program->struct_lookup.end()) {
-		const auto constructor = it->second->constructor;
+	const auto struct_name = function->parameterized_type
+		? function->parameterized_type->ksp_encoded_string()
+		: function->name;
+	if (auto* struct_definition = program->find_struct(struct_name)) {
+		const auto constructor = struct_definition->constructor;
 		if(!constructor) return nullptr;
 		function->ty = constructor->header->ty;
 		definition = constructor;
 		function->name = constructor->header->name;
 //		constructor->call_sites.emplace(this);
 		kind = Kind::Constructor;
-		return it->second->constructor;
+		return constructor;
 	}
 	return nullptr;
 }
@@ -192,8 +194,22 @@ bool NodeFunctionCall::bind_definition(NodeProgram* program, const bool fail, co
 //		if(kind == Kind::UserDefined) {
 //			definition->call_sites.emplace(this);
 //		}
-        return true;
-    }
+		return true;
+	}
+	// Explicit type arguments currently belong to struct constructors, not generic
+	// functions. Resolve them first so <List<int>()> cannot bind accidentally to
+	// an unrelated function named <List>.
+	if (function->parameterized_type) {
+		if (find_constructor_definition(program)) return true;
+		if (fail) {
+			auto error = Diagnostic(ErrorType::TypeError, "", "", function->tok);
+			error.message = "Generic struct constructor <"
+				+ function->parameterized_type->to_string() + "> does not exist.";
+			error.expected = "a matching generic struct declaration";
+			error.exit();
+		}
+		return false;
+	}
 	// <obj.method()>: the receiver decides which definition the call refers to, and the method is
 	// registered under its qualified name. A builtin that happens to share the unqualified name and
 	// parameter count would bind here first and stamp its type onto the call, which then makes the

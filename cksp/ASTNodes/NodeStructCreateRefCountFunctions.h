@@ -551,8 +551,7 @@ private:
 
 	/// returns the struct definition of a member of object type
 	[[nodiscard]] NodeStruct* get_struct_of(const std::shared_ptr<NodeDataStructure>& mem) const {
-		const auto it = m_program->struct_lookup.find(mem->ty->get_element_type()->ksp_encoded_string());
-		return it == m_program->struct_lookup.end() ? nullptr : it->second;
+		return m_program->find_struct(mem->ty->get_element_type()->ksp_encoded_string());
 	}
 
 	/// STRUCT::stack_top

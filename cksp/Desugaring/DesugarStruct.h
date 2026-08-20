@@ -240,15 +240,15 @@ public:
 			error.exit();
 		}
 		// every self as first parameter has to be of type object
-		node.header->get_param(0)->ty = m_structs.top()->ty; //TypeRegistry::get_object_type(m_structs.top()->name);
+		node.header->get_param(0)->ty = m_structs.top()->ty;
 
 		// add constructor type
 		if(node.header->name == NodeStruct::CONSTRUCTOR) {
 			auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.tok);
-			if(node.ty != TypeRegistry::Unknown and node.ty != m_structs.top()->ty) { //TypeRegistry::get_object_type(m_structs.top()->name)) {
+			if(node.ty != TypeRegistry::Unknown and node.ty != m_structs.top()->ty) {
 				error.message = "Constructor method has to be of object type.";
 				error.actual = node.ty->to_string();
-				error.expected = m_structs.top()->name;
+				error.expected = m_structs.top()->ty->to_string();
 				error.exit();
 			}
 			m_structs.top()->constructor = node.get_shared();
@@ -257,8 +257,8 @@ public:
 				error.exit();
 			}
 			node.num_return_params = 1;
-			node.header->create_function_type(m_structs.top()->ty); //TypeRegistry::add_object_type(m_structs.top()->name));
-			node.ty = m_structs.top()->ty; //TypeRegistry::add_object_type(m_structs.top()->name);
+			node.header->create_function_type(m_structs.top()->ty);
+			node.ty = m_structs.top()->ty;
 			// delete <self> keyword
 			node.header->params.erase(node.header->params.begin());
 		}

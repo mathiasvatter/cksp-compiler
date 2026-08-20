@@ -62,7 +62,7 @@ public:
 
 		// The accessor takes no arguments, so the member has to be part of its name. Two members of
 		// the same type would otherwise share one accessor and hand out the same heap.
-		const std::string function_name = node.chain[0]->ty->to_string() + OBJ_DELIMITER
+		const std::string function_name = node.chain[0]->ty->ksp_encoded_string() + OBJ_DELIMITER
 			+ NodeStruct::STORAGE + OBJ_DELIMITER + member_path->leaf_name();
 		Type* function_type = TypeRegistry::add_function_type({}, member.heap_type);
 

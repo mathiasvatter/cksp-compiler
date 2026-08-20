@@ -476,7 +476,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_reference_chain(NodeAST *parent) 
 		std::unique_ptr<NodeAST> stmt = nullptr;
 		if (peek().type == token::KEYWORD) {
 			// is function
-			if (peek(1).type == token::OPEN_PARENTH) {
+			if (peek(1).type == token::OPEN_PARENTH || looks_like_parameterized_call()) {
 				auto var_function = parse_function_call(parent);
 				if (var_function.is_error()) {
 					return Result<std::unique_ptr<NodeAST>>(var_function.get_error());
@@ -539,6 +539,40 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_reference_chain(NodeAST *parent) 
 	}
 	chain->parent = parent;
 	return Result<std::unique_ptr<NodeAST>>(std::move(chain));
+}
+
+bool Parser::looks_like_parameterized_call() const {
+	if (peek_type() != token::KEYWORD || peek_type(1) != token::LESS_THAN) return false;
+
+	int ahead = 2;
+	const auto skip_linebreaks = [&]() {
+		while (peek_type(ahead) == token::LINEBRK) ++ahead;
+	};
+	skip_linebreaks();
+
+	while (true) {
+		if (peek_type(ahead) != token::KEYWORD) return false;
+		++ahead;
+
+		// Match the same non-recursive type arguments currently accepted by
+		// Processor::_parse_type_arguments, including array suffixes.
+		while (peek_type(ahead) == token::OPEN_BRACKET
+			&& peek_type(ahead + 1) == token::CLOSED_BRACKET) {
+			ahead += 2;
+		}
+		skip_linebreaks();
+
+		if (peek_type(ahead) == token::GREATER_THAN) {
+			return peek_type(ahead + 1) == token::OPEN_PARENTH;
+		}
+		if (peek_type(ahead) != token::COMMA) return false;
+
+		++ahead;
+		skip_linebreaks();
+		if (peek_type(ahead) == token::GREATER_THAN) {
+			return peek_type(ahead + 1) == token::OPEN_PARENTH;
+		}
+	}
 }
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_expression(NodeAST* parent) {
@@ -1697,6 +1731,27 @@ Result<std::unique_ptr<NodeFunctionHeaderRef>> Parser::parse_function_header_ref
 	Token start_token = consume();
 	func_name = start_token.val;
 	auto node_function_header_ref = std::make_unique<NodeFunctionHeaderRef>(func_name, start_token);
+	if (peek().type == token::LESS_THAN) {
+		auto type_arguments = _parse_type_arguments(start_token, &node_function_header_ref->type_references);
+		if (type_arguments.is_error()) {
+			return Result<std::unique_ptr<NodeFunctionHeaderRef>>(type_arguments.get_error());
+		}
+		node_function_header_ref->parameterized_type = TypeRegistry::add_object_type(
+			func_name,
+			type_arguments.unwrap()
+		);
+		node_function_header_ref->type_references.insert(
+			node_function_header_ref->type_references.begin(),
+			{node_function_header_ref->parameterized_type, start_token}
+		);
+		if (peek().type != token::OPEN_PARENTH) {
+			return Result<std::unique_ptr<NodeFunctionHeaderRef>>(Diagnostic(
+				ErrorType::ParseError,
+				"Expected constructor arguments after parameterized type <"
+					+ node_function_header_ref->parameterized_type->to_string() + ">.",
+				"(", peek()));
+		}
+	}
 	auto func_args = parse_function_args(node_function_header_ref.get());
 	if(func_args.is_error()) {
 		return Result<std::unique_ptr<NodeFunctionHeaderRef>>(func_args.get_error());

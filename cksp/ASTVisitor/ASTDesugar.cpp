@@ -188,7 +188,7 @@ bool ASTDesugar::do_struct_monomorphization(NodeProgram& node) const {
 
 		for (auto & t : pending) {
 			const auto& name = t->get_name();
-			auto it = node.struct_lookup.find(name);
+			auto it = node.struct_lookup.find({name, static_cast<int>(t->get_type_arguments().size())});
 			if (it != node.struct_lookup.end()) {
 				const auto* node_struct = it->second;
 				auto clone = unique_ptr_cast<NodeStruct>(node_struct->clone());
@@ -238,4 +238,3 @@ bool ASTDesugar::do_struct_monomorphization(NodeProgram& node) const {
 	node.update_struct_lookup();
 	return true;
 }
-

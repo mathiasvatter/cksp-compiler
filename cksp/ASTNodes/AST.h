@@ -325,7 +325,9 @@ struct NodeReference : NodeAST {
 		return nullptr;
 	}
 	void remove_obj_prefix() {
-		const size_t pos = name.find(OBJ_DELIMITER);
+		// A monomorphized owner may itself contain delimiters (<List::int::next>).
+		// The member name is therefore the part after the final delimiter.
+		const size_t pos = name.rfind(OBJ_DELIMITER);
 		if (pos != std::string::npos)
 			name = name.substr(pos + OBJ_DELIMITER.size());
 	}
@@ -1182,7 +1184,10 @@ struct NodeProgram final : NodeAST {
 	/// reachable - both for the emitted KSP and for the body of the overriding function.
 	std::unordered_map<StringIntKey, std::weak_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_overrides;
 	std::vector<NodeStruct*> struct_definitions;
-	std::unordered_map<std::string, NodeStruct*> struct_lookup;
+	/// Struct declarations keyed by source/symbol name and generic arity.
+	/// <List> is {"List", 0}, the template <List<T>> is {"List", 1}, and a
+	/// monomorphized <List<int>> is {"List::int", 0}.
+	std::unordered_map<StringIntKey, NodeStruct*, StringIntKeyHash> struct_lookup;
 	/// Struct nodes that lowering already replaced by their member block, kept alive until
 	/// the end of that pass. <struct_definitions> and <struct_lookup> hand out raw pointers
 	/// and are only cleared once every struct is lowered, so destroying a struct the moment
@@ -1222,6 +1227,7 @@ struct NodeProgram final : NodeAST {
 	void check_builtin_shadowing();
 	static NodeFunctionDefinition *replace_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def, const std::shared_ptr<NodeFunctionDefinition> &replacement);
 	void update_struct_lookup();
+	[[nodiscard]] NodeStruct* find_struct(const std::string& name, int type_parameter_count = 0) const;
 	/// Puts a lowered struct's member block in its place in the AST and keeps the struct node
 	/// itself alive in <lowered_structs> instead of destroying it. Returns the member block.
 	NodeAST* retire_lowered_struct(NodeStruct& node);

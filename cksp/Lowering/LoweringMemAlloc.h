@@ -50,7 +50,7 @@ public:
 	 * creates call to any ref count function like __decr__, __incr__
 	 */
 	static std::unique_ptr<NodeFunctionCall> get_ref_count_function_call(const std::string& name, std::unique_ptr<NodeReference> arr, std::unique_ptr<NodeAST> num) {
-		std::string func_name = arr->ty->get_element_type()->to_string()+OBJ_DELIMITER;
+		std::string func_name = arr->ty->get_element_type()->ksp_encoded_string()+OBJ_DELIMITER;
 		func_name += name;
 		return std::make_unique<NodeFunctionCall>(
 			false,

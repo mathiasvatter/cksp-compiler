@@ -342,10 +342,7 @@ NodeStruct* NodeReference::is_member_ref() const {
 }
 
 NodeStruct *NodeReference::get_object_ptr(NodeProgram* program, const std::string& obj) {
-	if(const auto it = program->struct_lookup.find(obj); it != program->struct_lookup.end()) {
-		return it->second;
-	}
-	return nullptr;
+	return program ? program->find_struct(obj) : nullptr;
 }
 
 NodeReference* NodeReference::lower_type() {
@@ -642,21 +639,20 @@ std::shared_ptr<NodeDataStructure> NodeMemberPath::resolve_members(NodeProgram* 
 
 	for (size_t i = 0; i < segments.size(); ++i) {
 		const Token& current_segment = segment(i);
-		const std::string object_name = current_type->ksp_encoded_string(); //current_type->to_string();
-		const auto struct_it = program->struct_lookup.find(object_name);
-		if (struct_it == program->struct_lookup.end() || !struct_it->second) {
+		const std::string object_name = current_type->ksp_encoded_string();
+		auto* strct = program->find_struct(object_name);
+		if (!strct) {
 			auto error = Diagnostic(ErrorType::TypeError, "", "", current_segment);
-			error.message = "Struct <" + object_name + "> does not exist.";
+			error.message = "Struct <" + current_type->to_string() + "> does not exist.";
 			error.exit();
 		}
 
-		auto* strct = struct_it->second;
-		member = strct->get_member(object_name + OBJ_DELIMITER + current_segment.val);
+		member = strct->get_member(strct->name + OBJ_DELIMITER + current_segment.val);
 		if (!member) {
 			// A previous inference visit may have replaced the member's concrete
 			// data-structure node, leaving an expired weak entry in the table.
 			strct->rebuild_member_table();
-			member = strct->get_member(object_name + OBJ_DELIMITER + current_segment.val);
+			member = strct->get_member(strct->name + OBJ_DELIMITER + current_segment.val);
 		}
 		if (!member) {
 			auto error = Diagnostic(ErrorType::SyntaxError, "", "", current_segment);
@@ -1686,8 +1682,13 @@ void NodeProgram::merge_function_definitions() {
 void NodeProgram::update_struct_lookup() {
 	struct_lookup.clear();
 	for(const auto & def : struct_definitions) {
-		struct_lookup.insert({def->name, def});
+		struct_lookup.insert({{def->name, static_cast<int>(def->type_parameters.size())}, def});
 	}
+}
+
+NodeStruct* NodeProgram::find_struct(const std::string& name, const int type_parameter_count) const {
+	const auto it = struct_lookup.find({name, type_parameter_count});
+	return it == struct_lookup.end() ? nullptr : it->second;
 }
 
 NodeAST* NodeProgram::retire_lowered_struct(NodeStruct& node) {

@@ -186,13 +186,13 @@ Result<Type*> Processor::_parse_single_types(TypeReferences* references, const b
 		error.expected = "valid type annotation";
 		return Result<Type *>(error);
 	}
-	// Retain every written type name independently from the interned semantic Type.
-	// For composite annotations such as Foo[][] this intentionally records Foo,
-	// while the returned semantic type is wrapped below.
-	if (references) references->push_back({type, type_token});
 	if (!type_arguments.empty()) {
 		type = TypeRegistry::add_object_type(type_token.val, type_arguments);
 	}
+	// Retain every written type name independently from the composite wrapper. For
+	// <Foo<int>[]> this records the semantic <Foo<int>>, which identifies the
+	// generic declaration by name and arity.
+	if (references) references->push_back({type, type_token});
 	// if composite type
 	if (dimensions > 0) {
 		type = TypeRegistry::add_composite_type(CompoundKind::Array, type, dimensions);

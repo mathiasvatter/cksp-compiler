@@ -1269,7 +1269,7 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	bool is_object = false;
 	// if type is object -> check for operator overloading
 	if(node.left->ty->cast<ObjectType>()) {
-		auto strct = NodeReference::get_object_ptr(m_program, node.left->ty->to_string());
+		auto strct = NodeReference::get_object_ptr(m_program, node.left->ty->ksp_encoded_string());
 		if(auto def = strct->get_overloaded_method(node.op.type)) {
 			match_type(*node.right, *def->header->get_param(1), "Second argument of overloaded operator does not match expected type.");
 			auto call = std::make_unique<NodeFunctionCall>(
@@ -1369,7 +1369,7 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 	bool is_object = false;
 	// if type if object -> check for operator overloading
 	if(node.operand->ty->get_type_kind() == TypeKind::Object) {
-		auto strct = NodeReference::get_object_ptr(m_program, node.operand->ty->to_string());
+		auto strct = NodeReference::get_object_ptr(m_program, node.operand->ty->ksp_encoded_string());
 		if(auto def = strct->get_overloaded_method(node.op.type)) {
 			auto call = std::make_unique<NodeFunctionCall>(
 				false,

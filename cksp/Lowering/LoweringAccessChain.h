@@ -88,7 +88,7 @@ public:
 			error.exit();
 		}
 		if(&node == start_pointer) return &node;
-		node.name = prev_type->to_string() + OBJ_DELIMITER + node.name;
+		node.name = prev_type->ksp_encoded_string() + OBJ_DELIMITER + node.name;
 		// <static> members are shared -> stay a plain pointer, no instance index
 		if(get_shared_member_ref(&node)) return &node;
 		auto node_array = node.expand_dimension(nullptr);
@@ -101,7 +101,7 @@ public:
 		if(&node == start_pointer) return &node;
 		// no index -> array -> List.array[sth, *]
 //		if(!node.index) node.set_index(std::make_unique<NodeWildcard>("*", node.tok));
-		node.name = prev_type->to_string()+OBJ_DELIMITER+node.name;
+		node.name = prev_type->ksp_encoded_string()+OBJ_DELIMITER+node.name;
 		// <static const> members are shared -> stay a plain array ref, no extra dimension
 		if(get_shared_member_ref(&node)) return &node;
 		auto node_ndarray_ref = node.expand_dimension(nullptr);
@@ -111,7 +111,7 @@ public:
 
 	NodeAST * visit(NodeNDArrayRef& node) override {
 		if(&node == start_pointer) return &node;
-		node.name = prev_type->to_string()+OBJ_DELIMITER+node.name;
+		node.name = prev_type->ksp_encoded_string()+OBJ_DELIMITER+node.name;
 		if(get_shared_member_ref(&node)) {
 			// no extra dimension, but the reference still needs its own dimensions to lower its
 			// index later - for a per-instance member expand_dimension() determines them on the way
@@ -125,7 +125,7 @@ public:
 
 	NodeAST * visit(NodeVariableRef& node) override {
 		if(&node == start_pointer) return &node;
-		node.name = prev_type->to_string()+OBJ_DELIMITER+node.name;
+		node.name = prev_type->ksp_encoded_string()+OBJ_DELIMITER+node.name;
 		// <static const> members are shared -> stay a plain reference, no index
 		if(get_shared_member_ref(&node)) return &node;
 		auto node_array_ref = node.expand_dimension(nullptr);
@@ -135,7 +135,7 @@ public:
 
 	NodeAST * visit(NodeFunctionCall& node) override {
 		if(&node == start_pointer) return &node;
-		node.function->name = prev_type->to_string()+OBJ_DELIMITER+node.function->name;
+		node.function->name = prev_type->ksp_encoded_string()+OBJ_DELIMITER+node.function->name;
 		node.bind_definition(m_program);
 		return &node;
 	}

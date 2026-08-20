@@ -676,11 +676,8 @@ void NodeStruct::collect_recursive_structs(NodeProgram* program)
                 continue;
 
             // Zugehöriges Struct holen
-            std::string structName = mem_type->to_string();
-            auto it = program->struct_lookup.find(structName);
-            if (it == program->struct_lookup.end())
-                continue;
-            NodeStruct* child = it->second;
+			NodeStruct* child = program->find_struct(mem_type->ksp_encoded_string());
+			if (!child) continue;
 
             // 1. Child noch nicht besucht: DFS aufrufen
             if (!visited[child]) {

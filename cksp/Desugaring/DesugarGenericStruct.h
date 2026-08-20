@@ -136,6 +136,11 @@ private:
 	}
 	NodeAST* visit(NodeFunctionHeaderRef& node) override {
 		substitute(node);
+		if (node.parameterized_type) {
+			node.parameterized_type = static_cast<ObjectType*>(
+				node.parameterized_type->substitute_type_parameters(substitutions)
+			);
+		}
 		return ASTVisitor::visit(node);
 	}
 
