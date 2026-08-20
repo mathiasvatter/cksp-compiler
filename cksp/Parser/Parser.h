@@ -167,6 +167,19 @@ public:
 	Result<std::unique_ptr<NodeAST>> parse_family_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeStruct>> parse_struct(NodeAST* parent);
 	Result<std::vector<Token>> parse_struct_type_parameters(const Token& struct_name);
+	/// RAII struct scope while parsing for the parameterized types of generic structs
+	class StructTypeScope final {
+		std::vector<NodeStruct*>& m_stack;
+	public:
+		StructTypeScope(std::vector<NodeStruct*>& stack, NodeStruct* strct) : m_stack(stack) {
+			m_stack.push_back(strct);
+		}
+		~StructTypeScope() {
+			m_stack.pop_back();
+		}
+		StructTypeScope(const StructTypeScope&) = delete;
+		StructTypeScope& operator=(const StructTypeScope&) = delete;
+	};
 
 	/// combines all possible statement types
     Result<std::unique_ptr<NodeStatement>> parse_statement(NodeAST* parent);

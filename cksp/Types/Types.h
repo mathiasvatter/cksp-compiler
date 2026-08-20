@@ -11,8 +11,8 @@
 #include "../../utils/StringUtils.h"
 #include "../Tokenizer/Tokens.h"
 
-inline static std::string type_kind_names[] = {"Basic", "Composite", "Object", "Function"};
-enum class TypeKind {Basic, Composite, Object, Function};
+inline static std::string type_kind_names[] = {"Basic", "Composite", "Object", "Function", "Parameter"};
+enum class TypeKind {Basic, Composite, Object, Function, Parameter};
 inline static std::string kind_names[] = {"int", "bool", "string", "real", "unknown", "object", "any", "void", "number", "comparison", "pgs"};
 enum class Kind {Integer, Boolean, String, Real, Unknown, Object, Any, Void, Number, Comparison, PGS};
 inline static std::string compound_kind_names[] = {"Array", "List"};
@@ -35,6 +35,8 @@ public:
     Type(const Type& other) = default;
     [[nodiscard]] virtual std::unique_ptr<Type> clone() const = 0;
     [[nodiscard]] virtual std::string to_string() const = 0;
+	/// Stable structural identity used by TypeRegistry for interning.
+	[[nodiscard]] virtual std::string registry_key() const = 0;
     [[nodiscard]] virtual TypeKind get_type_kind() const = 0;
 	[[nodiscard]] virtual std::string get_type_kind_name() const {return type_kind_names[(int)get_type_kind()];}
 	[[nodiscard]] virtual Type* get_element_type() const {return nullptr;}
@@ -79,6 +81,9 @@ public:
     [[nodiscard]] std::string to_string() const override {
         return kind_names[(int)m_kind];
     };
+	[[nodiscard]] std::string registry_key() const override {
+		return "basic$" + std::to_string(static_cast<int>(m_kind));
+	}
     [[nodiscard]] TypeKind get_type_kind() const override {
         return TypeKind::Basic;
     }
@@ -184,6 +189,11 @@ public:
 		}
 		return output;
     }
+	[[nodiscard]] std::string registry_key() const override {
+		return "composite$" + std::to_string(static_cast<int>(m_compound_kind))
+			+ "$" + m_element_type->registry_key()
+			+ "$" + std::to_string(m_dimensions);
+	}
     [[nodiscard]] TypeKind get_type_kind() const override {
         return TypeKind::Composite;
     }
@@ -226,6 +236,13 @@ public:
     	result += StringUtils::join_apply(m_arguments, [](auto arg) {return arg->to_string();}, ", ");
     	return result + ">";
     }
+	[[nodiscard]] std::string registry_key() const override {
+		std::string key = "object$" + m_name;
+		for (const auto* argument : m_arguments) {
+			key += "$" + argument->registry_key();
+		}
+		return key;
+	}
     [[nodiscard]] TypeKind get_type_kind() const override {
         return TypeKind::Object;
     }
@@ -244,6 +261,37 @@ public:
 
 };
 
+class TypeParameterType final : public Type {
+	std::string m_owner; // struct name
+	std::string m_name;
+	int m_index; // index in the parameterized declaration: <T, U> (T = idx 0, U = idx 1)
+public:
+	TypeParameterType(std::string owner, std::string name, const int index)
+		: Type(Kind::Unknown), m_owner(std::move(owner)), m_name(std::move(name)), m_index(index) {}
+	[[nodiscard]] std::unique_ptr<Type> clone() const override {
+		return std::make_unique<TypeParameterType>(*this);
+	}
+	[[nodiscard]] std::string to_string() const override { return m_name; }
+	[[nodiscard]] std::string registry_key() const override {
+		return "parameter$" + m_owner + "$" + std::to_string(m_index);
+	}
+	[[nodiscard]] TypeKind get_type_kind() const override { return TypeKind::Parameter; }
+	[[nodiscard]] Type* get_element_type() const override {
+		return const_cast<TypeParameterType*>(this);
+	}
+	[[nodiscard]] bool is_compatible(const Type* other) const override {
+		if (other->get_type_kind() == TypeKind::Parameter) return is_same_type(other);
+		return other->get_kind() == Kind::Unknown || other->get_kind() == Kind::Any;
+	}
+	[[nodiscard]] bool is_same_type(const Type* other) const override {
+		const auto* parameter = other->cast<TypeParameterType>();
+		return parameter && m_owner == parameter->m_owner && m_index == parameter->m_index;
+	}
+	[[nodiscard]] const std::string& owner() const { return m_owner; }
+	[[nodiscard]] const std::string& name() const { return m_name; }
+	[[nodiscard]] int index() const { return m_index; }
+};
+
 class FunctionType : public Type {
 	std::vector<Type*> m_params;
 	Type* m_return_type;
@@ -258,6 +306,13 @@ public:
 		std::string result = "(";
     	result += StringUtils::join_apply(m_params, [](auto arg) {return arg->to_string();}, ", ");
 		return result + "): " + m_return_type->to_string();
+	}
+	[[nodiscard]] std::string registry_key() const override {
+		std::string key = "function";
+		for (const auto* param : m_params) {
+			key += "$" + param->registry_key();
+		}
+		return key + "$returns$" + m_return_type->registry_key();
 	}
 
 	[[nodiscard]] TypeKind get_type_kind() const override {

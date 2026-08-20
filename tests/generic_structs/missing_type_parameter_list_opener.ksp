@@ -1,0 +1,7 @@
+// EXPECT_ERROR Expected a line break or a type parameter list after struct name <List>
+
+struct List T
+end struct
+
+on init
+end on

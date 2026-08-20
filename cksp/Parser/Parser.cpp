@@ -2672,6 +2672,7 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 		std::vector<std::shared_ptr<NodeFunctionDefinition>>(),
 		name
 	);
+	StructTypeScope type_scope(m_struct_stack, node_struct.get());
 	if (peek().type != token::LINEBRK) {
 		if (peek().type != token::LESS_THAN) {
 			return Result<std::unique_ptr<NodeStruct>>(Diagnostic(
@@ -2801,6 +2802,13 @@ Result<std::vector<Token>> Parser::parse_struct_type_parameters(const Token& str
 		}
 
 		Token parameter = consume();
+		if (TypeRegistry::get_type_from_annotation(parameter.val) != TypeRegistry::Unknown) {
+			return Result<std::vector<Token>>(Diagnostic(
+				ErrorType::SyntaxError,
+				"Built-in type <" + parameter.val + "> cannot be used as a type parameter name in generic struct <"
+					+ struct_name.val + ">.",
+				"a distinct type parameter name such as <T>", parameter));
+		}
 		if (const auto first = first_declarations.find(parameter.val); first != first_declarations.end()) {
 			auto error = Diagnostic(
 				ErrorType::SyntaxError,
@@ -2812,6 +2820,10 @@ Result<std::vector<Token>> Parser::parse_struct_type_parameters(const Token& str
 			return Result<std::vector<Token>>(std::move(error));
 		}
 		first_declarations.emplace(parameter.val, parameter);
+		m_struct_stack.back()->type_parameter_table.emplace(
+			parameter.val,
+			std::make_shared<TypeParameterType>(
+				struct_name.val, parameter.val, static_cast<int>(type_parameters.size())));
 		type_parameters.push_back(std::move(parameter));
 
 		_skip_linebreaks();

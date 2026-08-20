@@ -1,0 +1,8 @@
+// EXPECT_ERROR The type argument list for parameterized type <List> is not closed
+
+struct List<T>
+end struct
+
+on init
+    declare value: List<int
+end on

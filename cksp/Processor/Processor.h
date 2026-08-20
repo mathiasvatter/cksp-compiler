@@ -9,6 +9,8 @@
 #include "../Types/Types.h"
 #include "../Types/TypeReference.h"
 
+struct NodeStruct;
+
 /// Base Class for all parsing related classes like:
 /// - Parser
 /// - Preprocessor
@@ -29,6 +31,9 @@ protected:
 	token m_curr_token_type = token::INVALID;
 	std::string m_curr_token_value;
 	Token m_curr_token;
+	// Type parameters are lexical declarations. Parser pushes a struct while its header,
+	// members and methods are parsed; every recursive type parser sees the same scope.
+	std::vector<NodeStruct*> m_struct_stack{};
 
 
 	static std::string unterminated_construct_message();
@@ -51,6 +56,7 @@ protected:
 	Result<Type*> _parse_function_type(TypeReferences* references = nullptr);
 	Result<Type*> _parse_single_types(TypeReferences* references = nullptr, bool allow_parameterized = true);
 	Result<std::vector<Type*>> _parse_type_arguments(const Token& type_token, TypeReferences* references = nullptr);
+	[[nodiscard]] NodeStruct* current_struct() const;
 
 	void _skip_linebreaks();
 

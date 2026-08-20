@@ -1,0 +1,5 @@
+// EXPECT_ERROR Built-in type <int> cannot have type arguments
+
+on init
+    declare value: int<string>
+end on

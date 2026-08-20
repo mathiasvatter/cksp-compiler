@@ -389,7 +389,7 @@ NodeAST *NodeStruct::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeStruct::NodeStruct(const NodeStruct& other)
-	: NodeDataStructure(other), type_parameters(other.type_parameters),
+	: NodeDataStructure(other), type_parameters(other.type_parameters), type_parameter_table(other.type_parameter_table),
 	  members(clone_unique(other.members)), member_table(other.member_table), constructor(other.constructor),
 	  methods(other.methods), method_table(other.method_table),
 	  member_node_types(other.member_node_types), max_individual_structs_var(other.max_individual_structs_var),

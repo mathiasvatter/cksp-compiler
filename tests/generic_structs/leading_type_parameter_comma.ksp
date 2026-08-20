@@ -1,0 +1,7 @@
+// EXPECT_ERROR Expected a type parameter before <,> in generic struct <Pair>
+
+struct Pair<, T>
+end struct
+
+on init
+end on

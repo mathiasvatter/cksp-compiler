@@ -1,0 +1,7 @@
+// EXPECT_ERROR Generic struct <List> must declare at least one type parameter
+
+struct List<>
+end struct
+
+on init
+end on

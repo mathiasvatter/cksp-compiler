@@ -3,6 +3,7 @@
 //
 
 #include "Processor.h"
+#include "../ASTNodes/ASTDataStructures.h"
 #include "../Types/TypeRegistry.h"
 
 Processor::Processor(std::vector<Token> tokens) : m_tokens(std::move(tokens)) {
@@ -158,6 +159,7 @@ Result<Type*> Processor::_parse_single_types(TypeReferences* references, const b
 		consume(); // consume the closed bracket
 		dimensions++;
 	}
+
 	type = TypeRegistry::get_type_from_annotation(type_token.val);
 	if (!type_arguments.empty() && type != TypeRegistry::Unknown) {
 		error.set_token(type_token);
@@ -167,8 +169,17 @@ Result<Type*> Processor::_parse_single_types(TypeReferences* references, const b
 	}
 	// check if type object if type still unknown
 	if (type == TypeRegistry::Unknown) {
-		// Keep the unparameterized object around for references to the struct declaration.
-		type = TypeRegistry::add_object_type(type_token.val);
+		if (const auto* strct = current_struct()) {
+			auto it = strct->type_parameter_table.find(type_token.val);
+			if (it != strct->type_parameter_table.end()) {
+				type = it->second.get();
+			}
+		}
+		// A name that is not a parameter is still an ordinary struct type, even while
+		// another struct is being parsed.
+		if (type == TypeRegistry::Unknown) {
+			type = TypeRegistry::add_object_type(type_token.val);
+		}
 	}
 	if (!type) {
 		error.message = "Unknown Type annotation.";
@@ -295,4 +306,8 @@ void Processor::_skip_linebreaks() {
 	while(peek().type == token::LINEBRK){
 		consume();
 	}
+}
+
+NodeStruct* Processor::current_struct() const {
+	return m_struct_stack.empty() ? nullptr : m_struct_stack.back();
 }

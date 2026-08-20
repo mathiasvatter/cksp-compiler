@@ -432,6 +432,9 @@ struct NodeStruct final : NodeDataStructure {
 	inline static std::string STORAGE = "storage";
 	/// Type parameters in declaration order, e.g. <Key, Value> on <struct Pair<Key, Value>>.
 	std::vector<Token> type_parameters;
+	// Shared ownership keeps member Type* pointers valid when a struct AST is cloned.
+	std::unordered_map<std::string, std::shared_ptr<TypeParameterType>> type_parameter_table;
+	bool is_parameterized() const { return !type_parameters.empty();}
 	std::shared_ptr<NodePointer> node_self = std::make_shared<NodePointer>(std::nullopt, SELF, TypeRegistry::Unknown, this->tok);
 	std::unique_ptr<NodeBlock> members;
 	std::unordered_map<std::string, std::weak_ptr<NodeDataStructure>> member_table;

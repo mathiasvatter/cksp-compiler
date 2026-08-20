@@ -1,0 +1,8 @@
+// EXPECT_ERROR Missing comma between type arguments <int> and <string> in parameterized type <Pair>
+
+struct Pair<T, U>
+end struct
+
+on init
+    declare value: Pair<int string>
+end on

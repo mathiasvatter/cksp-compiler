@@ -1,0 +1,7 @@
+// EXPECT_ERROR The type parameter list for generic struct <List> is not closed
+
+struct List<T
+end struct
+
+on init
+end on
