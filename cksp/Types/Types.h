@@ -39,6 +39,7 @@ public:
     [[nodiscard]] virtual std::string to_string() const = 0;
 	/// Stable structural identity used by TypeRegistry for interning.
 	[[nodiscard]] virtual std::string registry_key() const = 0;
+	virtual std::string ksp_encoded_string() const = 0;
     [[nodiscard]] virtual TypeKind get_type_kind() const = 0;
 	virtual Type* substitute_type_parameters(const TypeSubstitutions& substitutions) const = 0;
 	/// returns if type has placeholder values of TypeParameterType
@@ -85,9 +86,12 @@ public:
     }
     [[nodiscard]] std::string to_string() const override {
         return kind_names[(int)m_kind];
-    };
+    }
 	[[nodiscard]] std::string registry_key() const override {
 		return "basic$" + std::to_string(static_cast<int>(m_kind));
+	}
+	std::string ksp_encoded_string() const override {
+		return kind_names[(int)m_kind];
 	}
     [[nodiscard]] TypeKind get_type_kind() const override {
         return TypeKind::Basic;
@@ -195,9 +199,7 @@ public:
     [[nodiscard]] std::string to_string() const override {
 		std::string output = m_element_type->to_string();
     	if (m_dimensions == 0) output += "[]";
-		for(int i = 0; i < m_dimensions; i++) {
-			output += "[]";
-		}
+		for(int i = 0; i < m_dimensions; i++) output += "[]";
 		return output;
     }
 	[[nodiscard]] std::string registry_key() const override {
@@ -205,6 +207,12 @@ public:
 			+ "$" + m_element_type->registry_key()
 			+ "$" + std::to_string(m_dimensions);
 	}
+	std::string ksp_encoded_string() const override {
+		std::string output = m_element_type->ksp_encoded_string();
+		if (m_dimensions == 0) output += OBJ_DELIMITER;
+		for(int i = 0; i < m_dimensions; i++) output += OBJ_DELIMITER;
+		return output;
+    }
     [[nodiscard]] TypeKind get_type_kind() const override {
         return TypeKind::Composite;
     }
@@ -259,6 +267,15 @@ public:
 		}
 		return key;
 	}
+	std::string ksp_encoded_string() const override {
+		if (!is_parameterized()) return m_name;
+		std::string result = m_name + OBJ_DELIMITER;
+		return result + StringUtils::join_apply(
+			m_arguments,
+			[](const auto* argument) { return argument->ksp_encoded_string(); },
+			OBJ_DELIMITER
+		);
+	}
     [[nodiscard]] TypeKind get_type_kind() const override {
         return TypeKind::Object;
     }
@@ -298,6 +315,7 @@ public:
 	[[nodiscard]] std::string registry_key() const override {
 		return "parameter$" + m_owner + "$" + std::to_string(m_index);
 	}
+	std::string ksp_encoded_string() const override { return m_owner + OBJ_DELIMITER + m_name; }
 	[[nodiscard]] TypeKind get_type_kind() const override { return TypeKind::Parameter; }
 	[[nodiscard]] Type* get_element_type() const override {
 		return const_cast<TypeParameterType*>(this);
@@ -342,7 +360,9 @@ public:
 		}
 		return key + "$returns$" + m_return_type->registry_key();
 	}
-
+	std::string ksp_encoded_string() const override {
+		return to_string();
+	}
 	[[nodiscard]] TypeKind get_type_kind() const override {
 		return TypeKind::Function;
 	}

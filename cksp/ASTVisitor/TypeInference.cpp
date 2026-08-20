@@ -666,7 +666,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				error.add_message("Method chaining can only be used on <Object> types, got '" + prev_ptr->get_token_string() + ": " + prev_type->to_string() + "' instead.");
 				error.exit();
 			}
-			auto prev_obj = prev_type->to_string();
+			auto prev_obj = prev_type->ksp_encoded_string(); //prev_type->to_string();
 			auto strct = NodeReference::get_object_ptr(m_program, prev_obj);
 			if(!strct) {
 				if(prev_type == TypeRegistry::Nil) {

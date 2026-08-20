@@ -642,7 +642,7 @@ std::shared_ptr<NodeDataStructure> NodeMemberPath::resolve_members(NodeProgram* 
 
 	for (size_t i = 0; i < segments.size(); ++i) {
 		const Token& current_segment = segment(i);
-		const std::string object_name = current_type->to_string();
+		const std::string object_name = current_type->ksp_encoded_string(); //current_type->to_string();
 		const auto struct_it = program->struct_lookup.find(object_name);
 		if (struct_it == program->struct_lookup.end() || !struct_it->second) {
 			auto error = Diagnostic(ErrorType::TypeError, "", "", current_segment);

@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "ASTDesugaring.h";
+#include "ASTDesugaring.h"
 
 /**
  * Desugars structs of the form:
@@ -21,28 +21,40 @@
  *
  */
 class DesugarGenericStruct final : public ASTDesugaring {
-	std::stack<NodeStruct*> m_structs{};
 	ObjectType* object_type{};
 	TypeSubstitutions substitutions{};
 public:
 	explicit DesugarGenericStruct(NodeProgram *program) : ASTDesugaring(program) {}
 
 	NodeAST* run(NodeStruct& node, ObjectType* type) {
-		m_structs = {};
 		object_type = type;
 		substitutions.clear();
-		if (node.type_parameters.size() != type->get_type_arguments().size()) {
-			auto error =Diagnostic(ErrorType::InternalError, "Sizes of type parameters do not fit", "", node.tok);
+
+		const auto& arguments = type->get_type_arguments();
+		if (node.type_parameters.size() != arguments.size()) {
+			auto error = Diagnostic(
+				ErrorType::TypeError,
+				"Generic struct <" + node.name + "> expects "
+					+ std::to_string(node.type_parameters.size()) + " type argument(s), but <"
+					+ type->to_string() + "> provides " + std::to_string(arguments.size()) + ".",
+				std::to_string(node.type_parameters.size()) + " type argument(s)",
+				node.tok
+			);
 			error.exit();
 		}
 
 		for (const auto& [_, parameter] : node.type_parameter_table) {
 			const auto index = static_cast<size_t>(parameter->index());
-
 			if (index >= arguments.size()) {
-				// tatsächlicher InternalError
+				auto error = Diagnostic(
+					ErrorType::InternalError,
+					"Type parameter <" + parameter->to_string() + "> of struct <" + node.name
+						+ "> has the invalid index " + std::to_string(index) + ".",
+					"type parameter index below " + std::to_string(arguments.size()),
+					node.tok
+				);
+				error.exit();
 			}
-
 			substitutions.emplace(
 				parameter.get(),
 				arguments[index]
@@ -57,17 +69,20 @@ private:
 		if (node.ty) {
 			node.ty = node.ty->substitute_type_parameters(substitutions);
 		}
-
 		for (auto& reference : node.type_references) {
 			if (reference.type) {
-				reference.type =
-					reference.type->substitute_type_parameters(substitutions);
+				reference.type = reference.type->substitute_type_parameters(substitutions);
 			}
 		}
 	}
 
 	NodeAST* visit(NodeStruct& node) override {
-		return ASTVisitor::visit(node);
+		ASTVisitor::visit(node);
+		node.name = object_type->ksp_encoded_string();
+		node.ty = object_type;
+		node.type_parameters.clear();
+		node.type_parameter_table.clear();
+		return &node;
 	}
 
 	NodeAST* visit(NodeVariable& node) override {

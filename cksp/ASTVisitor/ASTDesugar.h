@@ -50,5 +50,8 @@ public:
 	NodeAST * visit(NodeStruct& node) override;
 	NodeAST * visit(NodeFormatString& node) override;
 
+	/// build generic struct definitions and remove og struct definitions with placeholders
+	bool do_struct_monomorphization(NodeProgram& node) const;
+
 };
 

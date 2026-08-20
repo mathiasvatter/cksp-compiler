@@ -416,6 +416,7 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 	// 	if(pos == std::string::npos) return false;
 	// 	return true;
 	// }
+
 	std::shared_ptr<NodeDataStructure> get_shared() {
 		return shared_from_this();
 	}

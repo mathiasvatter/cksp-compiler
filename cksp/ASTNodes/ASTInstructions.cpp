@@ -33,6 +33,8 @@
 #include "../ASTVisitor/FunctionHandling/FunctionShortCircuit.h"
 #include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 
+#include <algorithm>
+
 // ************* NodeStatement ***************
 NodeAST *NodeStatement::accept(ASTVisitor &visitor) {
     return visitor.visit(*this);
@@ -940,6 +942,22 @@ NodeStatement* NodeBlock::add_stmt(std::unique_ptr<NodeStatement> stmt) {
     stmt->parent = this;
     statements.push_back(std::move(stmt));
 	return statements.back().get();
+}
+
+NodeStatement* NodeBlock::insert_stmt_after(
+	const NodeStatement& previous,
+	std::unique_ptr<NodeStatement> stmt
+) {
+	const auto previous_it = std::find_if(
+		statements.begin(),
+		statements.end(),
+		[&previous](const auto& current) { return current.get() == &previous; }
+	);
+	if (previous_it == statements.end()) return nullptr;
+
+	stmt->parent = this;
+	const auto inserted = statements.insert(std::next(previous_it), std::move(stmt));
+	return inserted->get();
 }
 
 //void NodeBlock::flatten() {

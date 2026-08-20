@@ -514,7 +514,7 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_constructor() {
 		std::move(node_block),
 		this->tok
 	);
-	function_def->ty = TypeRegistry::add_object_type(this->name);
+	function_def->ty = this->ty;
 	function_def->parent = this;
 	return add_method(function_def);
 }
@@ -524,7 +524,7 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_repr_method() {
 	auto self_ref = self_param->variable->to_reference();
 	auto message = std::make_unique<NodeBinaryExpr>(
 		token::STRING_OP,
-		std::make_unique<NodeString>("\"<"+this->name+"> Object: \"", tok),
+		std::make_unique<NodeString>("\"<"+this->ty->to_string()+"> Object: \"", tok),
 		std::move(self_ref),
 		tok
 		);
