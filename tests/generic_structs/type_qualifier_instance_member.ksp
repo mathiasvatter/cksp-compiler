@@ -1,0 +1,10 @@
+// EXPECT_ERROR Member <value> of struct <Box<int>> can only be accessed through an instance
+
+struct Box<T>
+    value: T
+end struct
+
+on init
+    declare b := new Box<int>(1)
+    message(Box<int>.value)
+end on

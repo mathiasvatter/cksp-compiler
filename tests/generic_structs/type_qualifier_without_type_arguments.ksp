@@ -1,0 +1,12 @@
+// The template itself is not a type: without type arguments there is nothing to qualify with.
+// EXPECT_ERROR <Variable> has not been declared: Box.count
+
+struct Box<T, U>
+    static count: int := 0
+    first: T
+    second: U
+end struct
+
+on init
+    message(Box.count)
+end on

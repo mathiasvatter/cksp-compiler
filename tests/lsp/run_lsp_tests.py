@@ -160,6 +160,15 @@ def _(workspace, server):
     expect_definition(server.definition(fixture, "note_use"), fixture, "note_decl")
 
 
+@test("definition: a generic type qualifier jumps to the struct template")
+def _(workspace, server):
+    # `Box` in `Box<int>.MAX` is not a variable and has no declaration of its own. It is
+    # indexed through the type it names, which resolves to the monomorphized struct and
+    # from there back to the template the clone was made from.
+    fixture = workspace.open("navigation_generic_struct.cksp")
+    expect_definition(server.definition(fixture, "qualifier_use"), fixture, "box_decl")
+
+
 @test("definition: function imported from another file")
 def _(workspace, server):
     shared = workspace.add("imports/shared.cksp")

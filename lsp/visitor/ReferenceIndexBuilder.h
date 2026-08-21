@@ -248,6 +248,8 @@ public:
 
 	NodeAST* visit(NodeVariableRef& node) override {
 		if (m_pass == Pass::References) record_variable(node);
+		// <List<int>.MAX>: the qualifier has no declaration to link to, only the type it names.
+		record_type_references(node);
 		return ASTVisitor::visit(node);
 	}
 	NodeAST* visit(NodeArrayRef& node) override {

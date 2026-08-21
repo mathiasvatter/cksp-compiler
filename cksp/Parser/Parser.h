@@ -69,8 +69,17 @@ class Parser: public Processor {
 
 	bool is_variable_declaration();
 	bool is_array_declaration();
+	static constexpr int NO_TYPE_ARGUMENTS = -1;
+	/// Index of the token following a type argument list written directly after the name at
+	/// <peek()>, or <NO_TYPE_ARGUMENTS> when what follows the name is not one. The shape alone
+	/// decides, so a comparison such as <a < b> - which never reaches a closing <>> - is not
+	/// mistaken for a type argument list.
+	[[nodiscard]] int type_argument_list_end() const;
 	/// True for the token shape <Name<T, U>()>. Comparisons such as <a < b> stay expressions.
 	[[nodiscard]] bool looks_like_parameterized_call() const;
+	/// True for the token shape <Name<T, U>.member>: an access chain qualified by a parameterized
+	/// type rather than by an instance.
+	[[nodiscard]] bool looks_like_type_qualified_access() const;
 	/// <property name> alone on its line: the head of a SublimeKSP property block.
 	///
 	/// Recognised by shape rather than by a reserved keyword. <property> is an ordinary word -
@@ -123,6 +132,11 @@ public:
 	Result<std::unique_ptr<NodeFormatString>> parse_fstring(NodeAST* parent);
     Result<std::unique_ptr<NodeVariable>> parse_variable(NodeAST* parent, const std::optional<Token>& is_persistent=std::optional<Token>(), DataType var_type=DataType::Mutable);
 	Result<std::unique_ptr<NodeVariableRef>> parse_variable_ref(NodeAST* parent);
+	/// <List<int>.MAX>: the leading element of an access chain qualified by a parameterized type.
+	/// The reference carries the <ObjectType> instead of a name for the resolver to look up, and
+	/// registering that type also queues the instantiation - the struct therefore exists even when
+	/// nothing else in the script constructs one.
+	Result<std::unique_ptr<NodeVariableRef>> parse_type_qualifier(NodeAST* parent);
 	Result<std::unique_ptr<NodePointer>> parse_pointer(NodeAST* parent, const std::optional<Token>& is_persistent=std::optional<Token>());
 	Result<std::unique_ptr<NodePointerRef>> parse_pointer_ref(NodeAST* parent);
     Result<std::unique_ptr<NodeDataStructure>> parse_array(NodeAST *parent, std::optional<Token> is_persistent = std::optional<Token>(), DataType var_type = DataType::Mutable);

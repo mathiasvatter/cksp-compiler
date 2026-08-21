@@ -1,0 +1,19 @@
+// A type argument list is recognised by its shape alone, so comparisons must stay comparisons.
+// EXPECT_NOT ____
+// EXPECT if\(\(\$[a-z0-9]+ < \$[a-z0-9]+\) and \(\$[a-z0-9]+ > \$[a-z0-9]+\)\)
+
+struct Box<T>
+    value: T
+end struct
+
+on init
+    declare a := 1
+    declare b := 2
+    declare c := 3
+    if a < b
+        message("lt")
+    end if
+    if a < b and c > a
+        message("both")
+    end if
+end on

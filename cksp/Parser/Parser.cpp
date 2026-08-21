@@ -482,6 +482,12 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_reference_chain(NodeAST *parent) 
 					return Result<std::unique_ptr<NodeAST>>(var_function.get_error());
 				}
 				stmt = std::move(var_function.unwrap());
+			} else if (looks_like_type_qualified_access()) {
+				auto type_qualifier = parse_type_qualifier(parent);
+				if (type_qualifier.is_error()) {
+					return Result<std::unique_ptr<NodeAST>>(type_qualifier.get_error());
+				}
+				stmt = std::move(type_qualifier.unwrap());
 			} else if (peek(1).type == token::OPEN_BRACKET) {
 				auto var_array = parse_array_ref(parent);
 				if (var_array.is_error()) {
@@ -541,8 +547,8 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_reference_chain(NodeAST *parent) 
 	return Result<std::unique_ptr<NodeAST>>(std::move(chain));
 }
 
-bool Parser::looks_like_parameterized_call() const {
-	if (peek_type() != token::KEYWORD || peek_type(1) != token::LESS_THAN) return false;
+int Parser::type_argument_list_end() const {
+	if (peek_type() != token::KEYWORD || peek_type(1) != token::LESS_THAN) return NO_TYPE_ARGUMENTS;
 
 	int ahead = 2;
 	const auto skip_linebreaks = [&]() {
@@ -551,7 +557,7 @@ bool Parser::looks_like_parameterized_call() const {
 	skip_linebreaks();
 
 	while (true) {
-		if (peek_type(ahead) != token::KEYWORD) return false;
+		if (peek_type(ahead) != token::KEYWORD) return NO_TYPE_ARGUMENTS;
 		++ahead;
 
 		// Match the same non-recursive type arguments currently accepted by
@@ -562,17 +568,41 @@ bool Parser::looks_like_parameterized_call() const {
 		}
 		skip_linebreaks();
 
-		if (peek_type(ahead) == token::GREATER_THAN) {
-			return peek_type(ahead + 1) == token::OPEN_PARENTH;
-		}
-		if (peek_type(ahead) != token::COMMA) return false;
+		if (peek_type(ahead) == token::GREATER_THAN) return ahead + 1;
+		if (peek_type(ahead) != token::COMMA) return NO_TYPE_ARGUMENTS;
 
 		++ahead;
 		skip_linebreaks();
-		if (peek_type(ahead) == token::GREATER_THAN) {
-			return peek_type(ahead + 1) == token::OPEN_PARENTH;
-		}
+		if (peek_type(ahead) == token::GREATER_THAN) return ahead + 1;
 	}
+}
+
+bool Parser::looks_like_parameterized_call() const {
+	const int end = type_argument_list_end();
+	return end != NO_TYPE_ARGUMENTS && peek_type(end) == token::OPEN_PARENTH;
+}
+
+bool Parser::looks_like_type_qualified_access() const {
+	const int end = type_argument_list_end();
+	return end != NO_TYPE_ARGUMENTS && peek_type(end) == token::DOT;
+}
+
+Result<std::unique_ptr<NodeVariableRef>> Parser::parse_type_qualifier(NodeAST* parent) {
+	const Token name_token = consume(); // consume the struct name
+	auto node_variable_ref = std::make_unique<NodeVariableRef>(name_token.val, name_token);
+	auto type_arguments = _parse_type_arguments(name_token, &node_variable_ref->type_references);
+	if (type_arguments.is_error()) {
+		return Result<std::unique_ptr<NodeVariableRef>>(type_arguments.get_error());
+	}
+	auto* object_type = TypeRegistry::add_object_type(name_token.val, type_arguments.unwrap());
+	// Retain the written type itself, not only its arguments, the way an annotation does.
+	node_variable_ref->type_references.insert(
+		node_variable_ref->type_references.begin(), {object_type, name_token});
+	node_variable_ref->kind = NodeReference::Kind::TypeQualifier;
+	node_variable_ref->ty = object_type;
+	node_variable_ref->set_range(name_token, peek(-1));
+	node_variable_ref->parent = parent;
+	return Result<std::unique_ptr<NodeVariableRef>>(std::move(node_variable_ref));
 }
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_expression(NodeAST* parent) {

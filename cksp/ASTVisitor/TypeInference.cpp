@@ -667,6 +667,9 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				error.exit();
 			}
 			auto prev_obj = prev_type->ksp_encoded_string(); //prev_type->to_string();
+			// The name a monomorphized struct is declared under (<List::int>) is not the one it was
+			// written as (<List<int>>). Lookups need the former, diagnostics the latter.
+			const auto prev_name = prev_type->to_string();
 			auto strct = m_program->find_struct(prev_obj);
 			if(!strct) {
 				if(prev_type == TypeRegistry::Nil) {
@@ -674,7 +677,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				} else if(prev_ptr->cast<NodeFunctionCall>()) {
 					error.message = prev_ptr->get_token_string()+" does not return <Object> type.";
 				} else {
-					error.message = "Struct "+prev_obj+" does not exist.";
+					error.message = "Struct <"+prev_name+"> does not exist.";
 				}
 				error.exit();
 			}
@@ -693,13 +696,13 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				if (!definition and i == 1 and resolve_storage_access(node, *func_call)) return &node;
 
 				if (!definition) {
-					error.message = "Method <"+func_call->function->name+"> does not exist in "+prev_obj+".";
+					error.message = "Method <"+func_call->function->name+"> does not exist in <"+prev_name+">.";
 					error.exit();
 				}
 				// <Foo.bar()>: without an instance only a static method can be called
 				const auto object = node.chain[0]->is_reference();
 				if(i == 1 and object and object->kind == NodeReference::Kind::TypeQualifier and !definition->is_static) {
-					error.message = "Method <"+func_call->function->name+"> of struct <"+prev_obj+"> operates on an "
+					error.message = "Method <"+func_call->function->name+"> of struct <"+prev_name+"> operates on an "
 						"instance and cannot be called on the struct itself. Declare it as <static function>, "
 						"or call it on a variable.";
 					error.exit();
@@ -737,7 +740,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 					node_declaration = strct->get_member(prev_obj+OBJ_DELIMITER+reference->name);
 				}
 				if(!node_declaration) {
-					error.message = "Member "+reference->name+" does not exist in "+prev_obj+".";
+					error.message = "Member <"+reference->name+"> does not exist in <"+prev_name+">.";
 					error.exit();
 				}
 				// <Foo.MAX>: without an instance only a shared member can be reached. Only the element
@@ -745,7 +748,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				if(const auto object = node.chain[0]->is_reference();
 					i == 1 and object and object->kind == NodeReference::Kind::TypeQualifier
 					and !node_declaration->is_shared_member()) {
-					error.message = "Member <"+reference->name+"> of struct <"+prev_obj+"> can only be accessed "
+					error.message = "Member <"+reference->name+"> of struct <"+prev_name+"> can only be accessed "
 						"through an instance, because every instance holds its own value. Declare it as "
 						"<static> to give it one shared value, or access it through a variable.";
 					error.exit();

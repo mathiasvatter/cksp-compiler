@@ -1,0 +1,12 @@
+// A type qualifier is the only mention of <Box<int>> here: it has to instantiate the template
+// on its own, or the constant behind it could not be resolved.
+// EXPECT message\(42\)
+
+struct Box<T>
+    static const MAX := 42
+    value: T
+end struct
+
+on init
+    message(Box<int>.MAX)
+end on

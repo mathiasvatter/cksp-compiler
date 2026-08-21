@@ -23,6 +23,7 @@
 class DesugarGenericStruct final : public ASTDesugaring {
 	ObjectType* object_type{};
 	TypeSubstitutions substitutions{};
+	std::string template_name;
 public:
 	explicit DesugarGenericStruct(NodeProgram *program) : ASTDesugaring(program) {}
 
@@ -76,7 +77,16 @@ private:
 		}
 	}
 
+	/// inside List<int> there could be List. type qualifier that are allowed to be used ->
+	/// rename to List::int.
+	void rename_type_qualifier(NodeReference& node) const {
+		if (node.name.starts_with(template_name + ".")) {
+			node.name.replace(0, template_name.size(), object_type->ksp_encoded_string());
+		}
+	}
+
 	NodeAST* visit(NodeStruct& node) override {
+		template_name = node.name; // save node.name to rename type qualifier used inside the struct definition
 		ASTVisitor::visit(node);
 		node.name = object_type->ksp_encoded_string();
 		node.ty = object_type;
@@ -112,22 +122,27 @@ private:
 
 	NodeAST* visit(NodeVariableRef& node) override {
 		substitute(node);
+		rename_type_qualifier(node);
 		return ASTVisitor::visit(node);
 	}
 	NodeAST * visit(NodePointerRef& node) override {
 		substitute(node);
+		rename_type_qualifier(node);
 		return ASTVisitor::visit(node);
 	}
 	NodeAST * visit(NodeArrayRef& node) override {
 		substitute(node);
+		rename_type_qualifier(node);
 		return ASTVisitor::visit(node);
 	}
 	NodeAST * visit(NodeNDArrayRef& node) override {
 		substitute(node);
+		rename_type_qualifier(node);
 		return ASTVisitor::visit(node);
 	}
 	NodeAST * visit(NodeListRef& node) override {
 		substitute(node);
+		rename_type_qualifier(node);
 		return ASTVisitor::visit(node);
 	}
 	NodeAST * visit(NodeFunctionCall& node) override {
@@ -141,6 +156,7 @@ private:
 				node.parameterized_type->substitute_type_parameters(substitutions)
 			);
 		}
+		rename_type_qualifier(node);
 		return ASTVisitor::visit(node);
 	}
 
