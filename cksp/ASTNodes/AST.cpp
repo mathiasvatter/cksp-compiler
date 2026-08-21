@@ -341,10 +341,6 @@ NodeStruct* NodeReference::is_member_ref() const {
 	return nullptr;
 }
 
-NodeStruct *NodeReference::get_object_ptr(NodeProgram* program, const std::string& obj) {
-	return program ? program->find_struct(obj) : nullptr;
-}
-
 NodeReference* NodeReference::lower_type() {
 	if (ty -> get_element_type() == TypeRegistry::Boolean) {
 		set_element_type(TypeRegistry::Integer);

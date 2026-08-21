@@ -314,7 +314,6 @@ struct NodeReference : NodeAST {
 		return ptr_chain;
 	}
 
-	static NodeStruct* get_object_ptr(NodeProgram* program, const std::string& obj);
 	/// lower type from object to int if applicable
 	NodeReference* lower_type();
 	/// checks if reference is l_value in an assignment

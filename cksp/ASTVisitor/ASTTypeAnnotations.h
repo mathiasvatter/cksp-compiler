@@ -233,7 +233,7 @@ private:
 	void check_for_correct_object_type_annotation(const NodeDataStructure& node) const {
 		const auto element_type = node.ty->get_element_type();
 		if (element_type->cast<ObjectType>()) {
-			if (!NodeReference::get_object_ptr(m_program, element_type->ksp_encoded_string())) {
+			if (!m_program->find_struct(element_type->ksp_encoded_string())) {
 				auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
 				error.message = "Found undefined Type. Type Annotation of "+node.name+" does not match any existing <Object> type.";
 				error.expected = "valid <Object> Type";

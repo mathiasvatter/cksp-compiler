@@ -180,7 +180,7 @@ private:
 	/// `count` is how many leading segments the struct name spans.
 	std::unique_ptr<NodeAccessChain> try_type_qualified_transform(
 		const std::string& struct_name, const size_t count, NodeAST* node) const {
-		auto* struct_definition = NodeReference::get_object_ptr(m_program, struct_name);
+		const auto* struct_definition = m_program->find_struct(struct_name);
 		if(!struct_definition) return nullptr;
 		auto method_chain = node->to_method_chain();
 		if(!method_chain) return nullptr;
