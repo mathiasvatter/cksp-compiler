@@ -122,7 +122,7 @@ public:
 			error.exit();
 		}
 		auto pre_ast = std::move(pre_ast_result.unwrap());
-		std::unordered_set<std::string> imported_files{};
+		std::unordered_map<std::string, std::string> imported_files{};
 		std::unordered_map<std::string, std::string> basename_map{};
 		ReferenceIndex* reference_index = m_cli_config->lsp ? &m_reference_index : nullptr;
 		pre_ast->do_import_processing(

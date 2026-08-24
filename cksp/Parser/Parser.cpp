@@ -1448,7 +1448,9 @@ Result<std::unique_ptr<NodeNamespace>> Parser::parse_namespace(NodeAST *parent) 
 			auto stmt = node_declarations->add_as_stmt(std::move(struct_def.unwrap()));
 			m_program->struct_definitions.push_back(stmt->statement->cast<NodeStruct>());
 		} else {
-			error.add_message("<namespaces> can only contain <declare> statements or <function> definitions that get added to the global scope.");
+			error.add_message("<namespaces> can only contain <declare> statements, <function> definitions, "
+				"<struct> definitions and nested <namespaces>, all of which get added to the global "
+				"scope under the namespace prefix.");
 			error.set_token(peek());
 			return Result<std::unique_ptr<NodeNamespace>>(error);
 		}

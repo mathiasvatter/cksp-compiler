@@ -1,0 +1,8 @@
+// EXPECT_ERROR is already imported without an alias and cannot be imported again as <lib>
+
+import "fixtures/module.cksp"
+import "fixtures/module.cksp" as lib
+
+on init
+    message(offset)
+end on

@@ -73,7 +73,7 @@ struct PreNodeAST {
 		const SourceId& root,
 		const SourceId& current,
 		SourceParser& parser,
-		std::unordered_set<std::string>& imported_files,
+		std::unordered_map<std::string, std::string>& imported_files,
 		std::unordered_map<std::string, std::string>& basename_map,
 		ReferenceIndex* reference_index = nullptr);
 };

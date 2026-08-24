@@ -1,0 +1,8 @@
+// EXPECT_ERROR is already imported as <a> and cannot be imported again as <b>
+
+import "fixtures/module.cksp" as a
+import "fixtures/module.cksp" as b
+
+on init
+    message(a.offset)
+end on
