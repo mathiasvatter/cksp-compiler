@@ -64,13 +64,17 @@ private:
 			if (const auto ref = func_call->function->get_arg(0)->is_reference()) {
 				if (const auto decl = ref->get_declaration()) {
 					if (const auto param = decl->is_function_param(); param and !param->is_pass_by_ref) {
+						// The name the user reads is the one standing at the token this fix edits.
+						// <name> is the compiler's own, made unique per scope, and would show up
+						// as <ctrl0> for a parameter written <ctrl>.
+						const auto& written_name = decl->tok.val;
 						auto warning = Diagnostic(ErrorType::CompileWarning, "", "", node.tok);
 						warning.message = "Found <get_ui_id> call in function body with a parameter as argument. Due to pass-by-value"
 								 " semantics this will not work as expected since <get_ui_id> can only be used directly with <ui controls>.\n "
 								"Try passing <ui control> variables by reference instead (using <ref> keyword before the parameter) or using <get_ui_id> when passing the parameter to the function.";
 						warning.fix = Diagnostic::DiagnosticFix{
 							.kind = Diagnostic::DiagnosticFix::FixKind::AddRefToFuncParam,
-							.title = "Pass '" + decl->name + "' by reference",
+							.title = "Pass '" + written_name + "' by reference",
 							.edits = {{
 								.kind = Diagnostic::DiagnosticFix::EditKind::InsertBefore,
 								.file = decl->tok.file(),

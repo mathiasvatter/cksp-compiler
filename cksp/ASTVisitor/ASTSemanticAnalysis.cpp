@@ -145,14 +145,18 @@ void ASTSemanticAnalysis::check_param_modification(NodeReference& ref) {
 	if (!param or param->is_pass_by_ref) return;
 	if (!m_warned_params.insert(param).second) return;
 
+	// The name the user reads is the one standing at the token this fix edits. <name> is the
+	// compiler's own, made unique per scope, and would show up as <count0> for <count>.
+	const auto& written_name = declaration->tok.val;
+
 	auto warning = Diagnostic(ErrorType::CompileWarning, "", "", ref.tok);
-	warning.message = "Function parameter <"+declaration->name+"> is passed by value but modified here. Function "
+	warning.message = "Function parameter <"+written_name+"> is passed by value but modified here. Function "
 		"parameters have function-local scope: this modification is not visible at the call site. "
-		"Declare the parameter as <ref "+declaration->name+"> to pass it by reference if the change should take "
+		"Declare the parameter as <ref "+written_name+"> to pass it by reference if the change should take "
 		"effect outside the function.";
 	warning.fix = Diagnostic::DiagnosticFix{
 		.kind = Diagnostic::DiagnosticFix::FixKind::AddRefToFuncParam,
-		.title = "Pass '" + declaration->name + "' by reference",
+		.title = "Pass '" + written_name + "' by reference",
 		.edits = {{
 			.kind = Diagnostic::DiagnosticFix::EditKind::InsertBefore,
 			.file = declaration->tok.file(),
