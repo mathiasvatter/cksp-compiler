@@ -190,23 +190,29 @@ std::unique_ptr<JSONObject> DiagnosticPublisher::make_lsp_diagnostic(const Diagn
 	return result;
 }
 
-void DiagnosticPublisher::publish_merged_source(const SourceId& source) const {
+std::vector<Diagnostic> DiagnosticPublisher::diagnostics_for(const SourceId& source) const {
+	const auto normalized_source = FileSystemSourceProvider::normalize(source.value);
+
 	// A file that is owned by a configured entry receives diagnostics only from
 	// configured entries. Standalone entries that merely include it as a shared
 	// dependency (e.g. an opened sibling script) must not contribute, otherwise their
 	// out-of-context analysis leaks false diagnostics onto the shared file.
-	const bool owned_by_configured = m_entries && m_entries->is_owned_by_configured_entry(source);
+	const bool owned_by_configured =
+		m_entries && m_entries->is_owned_by_configured_entry(normalized_source);
 
 	std::vector<Diagnostic> diagnostics;
 	for (const auto& [entry, diagnostics_by_source] : m_diagnostics_by_entry_and_source) {
 		if (owned_by_configured && !(m_entries && m_entries->is_configured_entry(SourceId(entry)))) {
 			continue;
 		}
-		const auto it = diagnostics_by_source.find(source.value);
+		const auto it = diagnostics_by_source.find(normalized_source.value);
 		if (it == diagnostics_by_source.end()) {
 			continue;
 		}
 		for (const auto& diagnostic : it->second) {
+			if (diagnostic_source(diagnostic, normalized_source) != normalized_source) {
+				continue;
+			}
 			bool already_published = false;
 			for (const auto& existing : diagnostics) {
 				if (same_published_diagnostic(existing, diagnostic)) {
@@ -219,7 +225,11 @@ void DiagnosticPublisher::publish_merged_source(const SourceId& source) const {
 			}
 		}
 	}
-	publish_source(source, diagnostics);
+	return diagnostics;
+}
+
+void DiagnosticPublisher::publish_merged_source(const SourceId& source) const {
+	publish_source(source, diagnostics_for(source));
 }
 
 void DiagnosticPublisher::publish_source(const SourceId& source, const std::vector<Diagnostic>& diagnostics) const {

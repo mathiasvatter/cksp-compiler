@@ -377,6 +377,8 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 	auto code_action_options = std::make_unique<JSONObject>();
 	auto code_action_kinds = std::make_unique<JSONArray>();
 	code_action_kinds->add(std::make_unique<JSONString>("quickfix"));
+	// Lets a client offer "Fix All" and run the fixes of a file on save.
+	code_action_kinds->add(std::make_unique<JSONString>("source.fixAll"));
 	code_action_options->add("codeActionKinds", std::move(code_action_kinds));
 	code_action_options->add(
 		"resolveProvider",
@@ -502,7 +504,8 @@ void LanguageServer::handle_code_action(const JsonRpcMessage& message) const {
 	const auto* id = message.id();
 	if (id) {
 		const auto* params = message.params() ? message.params()->as<JSONObject>() : nullptr;
-		m_connection.send_response(*id, CodeActionProvider::provide(params));
+		m_connection.send_response(
+			*id, CodeActionProvider::provide(params, m_diagnostic_publisher));
 	}
 }
 
