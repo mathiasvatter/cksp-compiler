@@ -619,6 +619,16 @@ std::unique_ptr<NodeAST> NodeAccessChain::clone() const {
 	return std::make_unique<NodeAccessChain>(*this);
 }
 
+bool NodeAccessChain::is_storage_access() {
+	if (chain.size() != 2) return false;
+	const auto object = chain[0]->is_reference();
+	if (!object or object->kind != NodeReference::Kind::TypeQualifier) return false;
+	const auto call = chain[1]->cast<NodeFunctionCall>();
+	if (!call or call->function->name != NodeStruct::STORAGE) return false;
+	return call->function->get_num_args() == 1
+		and call->function->get_arg(0)->cast<NodeMemberPath>() != nullptr;
+}
+
 std::unique_ptr<NodeAST> NodeAccessChain::split(const size_t idx) {
 	std::vector<std::unique_ptr<NodeAST>> left;
 	left.reserve(idx);

@@ -40,14 +40,9 @@ public:
 
 	/// A type-qualified chain whose only method is the compiler-provided <storage>. Type inference
 	/// has already rejected every malformed spelling, so this only has to recognize the shape.
+	/// The chain owns the recognition: desugaring needs the same answer long before this runs.
 	static bool is_storage_access(NodeAccessChain& node) {
-		if (node.chain.size() != 2) return false;
-		const auto object = node.chain[0]->is_reference();
-		if (!object or object->kind != NodeReference::Kind::TypeQualifier) return false;
-		const auto call = node.chain[1]->cast<NodeFunctionCall>();
-		if (!call or call->function->name != NodeStruct::STORAGE) return false;
-		return call->function->get_num_args() == 1
-			and call->function->get_arg(0)->cast<NodeMemberPath>() != nullptr;
+		return node.is_storage_access();
 	}
 
 	NodeAST* visit(NodeAccessChain& node) override {

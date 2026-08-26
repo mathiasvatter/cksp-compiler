@@ -390,8 +390,9 @@ std::unique_ptr<NodeAST> NodeSortSearch::clone() const {
 }
 NodeAST *NodeSortSearch::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (array.get() == oldChild) {
-		if(auto new_ref = cast_node<NodeReference>(newChild.release())) {
-			array = std::unique_ptr<NodeReference>(new_ref);
+		// cast before releasing: a node the slot cannot hold would otherwise be dropped on the floor
+		if(cast_node<NodeReference>(newChild.get())) {
+			array = unique_ptr_cast<NodeReference>(std::move(newChild));
 			return array.get();
 		}
 	} else if (value.get() == oldChild) {
@@ -498,8 +499,9 @@ std::unique_ptr<NodeAST> NodeNumElements::clone() const {
 }
 NodeAST *NodeNumElements::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (array.get() == oldChild) {
-		if(auto new_ref = cast_node<NodeReference>(newChild.release())) {
-			array = std::unique_ptr<NodeReference>(new_ref);
+		// cast before releasing: a node the slot cannot hold would otherwise be dropped on the floor
+		if(cast_node<NodeReference>(newChild.get())) {
+			array = unique_ptr_cast<NodeReference>(std::move(newChild));
 			return array.get();
 		}
 	} else if (dimension.get() == oldChild) {
@@ -534,8 +536,9 @@ std::unique_ptr<NodeAST> NodeUseCount::clone() const {
 }
 NodeAST *NodeUseCount::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (ref.get() == oldChild) {
-		if(auto new_ref = cast_node<NodeReference>(newChild.release())) {
-			ref = std::unique_ptr<NodeReference>(new_ref);
+		// cast before releasing: a node the slot cannot hold would otherwise be dropped on the floor
+		if(cast_node<NodeReference>(newChild.get())) {
+			ref = unique_ptr_cast<NodeReference>(std::move(newChild));
 			return ref.get();
 		}
 	}

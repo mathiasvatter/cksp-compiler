@@ -392,6 +392,12 @@ struct NodeAccessChain final : NodeReference {
 		}
 	}
 
+	/// A type-qualified chain whose only method is the compiler-provided <storage>:
+	/// <Note.storage(.pitch)> names a generated member heap rather than anything reached through
+	/// an instance. Recognising the shape is all this does - every malformed spelling is rejected
+	/// by type inference.
+	[[nodiscard]] bool is_storage_access();
+
 	/// The dotted name spanning the chain elements <from>..<to>, as written in the source.
 	[[nodiscard]] std::string joined_name(const size_t from, const size_t to) const {
 		if (from > to or to >= chain.size()) return "";

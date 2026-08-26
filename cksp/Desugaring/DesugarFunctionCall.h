@@ -63,7 +63,9 @@ public:
 			// An argument that is not a reference yet is left as the builtin call it already is,
 			// see the <search> case below. The dimension argument is the exception: NDArray
 			// semantics need the declaration behind the reference, which an expression has not.
-			const auto ref = node.function->get_arg(0)->is_reference();
+			const auto ref = hands_out_storage(node.function->get_arg(0))
+				? nullptr
+				: node.function->get_arg(0)->is_reference();
 			if(!ref) {
 				if(node.function->get_num_args() == 1) return &node;
 				error.message = "First argument for function call <num_elements> must be a reference "
@@ -89,7 +91,7 @@ public:
 			// reference (wildcard bounds), so those calls stay the builtin call they already
 			// are: expression function inlining leaves the array itself at the call site, and
 			// the builtin signature reports a mismatch for an argument that is no array at all.
-			if(node.function->get_arg(0)->is_reference()) {
+			if(node.function->get_arg(0)->is_reference() and !hands_out_storage(node.function->get_arg(0))) {
 				auto search = std::make_unique<NodeSortSearch>(
 					node.function->name,
 					unique_ptr_cast<NodeReference>(std::move(node.function->get_arg(0))),
@@ -164,6 +166,17 @@ public:
 	}
 
 private:
+
+	/// <Note.storage(.pitch)> is a reference in spelling only. Written with type arguments
+	/// (<List<int>.storage(.value)>) the parser hands it over as an access chain, which the
+	/// commands below would take for an array reference - but lowering turns it into a call to
+	/// the generated accessor, and no <NodeReference> slot can hold a call. Such an argument
+	/// belongs to the same group as the ones that only become a reference later: leave the
+	/// builtin call untouched and let the chain lower itself where it sits.
+	static bool hands_out_storage(const std::unique_ptr<NodeAST>& arg) {
+		const auto chain = arg->cast<NodeAccessChain>();
+		return chain and chain->is_storage_access();
+	}
 
 	static Diagnostic throw_insufficient_args_error(const Token &tok) {
 		auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);
