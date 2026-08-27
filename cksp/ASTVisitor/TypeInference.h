@@ -18,6 +18,9 @@ class TypeInference final : public ASTVisitor {
 	std::unordered_set<std::string> m_discard_warnings;
 	/// source locations and contexts of already reported persistent-pointer warnings
 	std::unordered_set<std::string> m_persistent_pointer_warnings;
+	/// Source annotations describe pre-lowering types. Later inference passes operate on KSP
+	/// representations (objects and nil are integers) and must not compare those again.
+	bool m_enforce_source_return_annotations = false;
 
 	void warn_if_persistent_pointer(const NodeAST& node, const std::string& context) {
 		if (!has_pointer_element_type(node)) return;
@@ -250,6 +253,7 @@ public:
 	}
 
 	NodeAST* do_complete_traversal(NodeProgram& node) {
+		m_enforce_source_return_annotations = true;
 		m_func_calls.clear();
 		m_discard_warnings.clear();
 		m_persistent_pointer_warnings.clear();
@@ -284,10 +288,12 @@ public:
 			s->collect_recursive_structs(m_program);
 		}
 		apply_types_to_data_structures();
+		m_enforce_source_return_annotations = false;
 		return &node;
 	}
 
 	NodeAST* do_reachable_traversal(NodeProgram& node) {
+		m_enforce_source_return_annotations = false;
 		m_func_calls.clear();
 		m_discard_warnings.clear();
 		m_persistent_pointer_warnings.clear();

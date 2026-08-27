@@ -1236,7 +1236,15 @@ NodeAST * TypeInference::visit(NodeFunctionDefinition& node) {
 		error.message = "Function type expected.";
 		error.exit();
 	}
-	node.set_element_type(specialize_type(node.ty, header_type->get_return_type()));
+	if(m_enforce_source_return_annotations) {
+		match_against(
+			node,
+			header_type->get_return_type(),
+			"Function return type does not match its annotation."
+		);
+	} else {
+		node.set_element_type(specialize_type(node.ty, header_type->get_return_type()));
+	}
 	node.header->ty = TypeRegistry::add_function_type(header_type->get_params(), node.ty);
 
 	// try to update def type with return var type
@@ -1253,8 +1261,22 @@ NodeAST * TypeInference::visit(NodeReturn& node) {
 		ret->accept(*this);
 	}
 	if(!node.return_variables.empty() ) {
-		if(node.get_definition())
-			match_type(*node.get_definition(), *node.return_variables[0]);
+		if(const auto definition = node.get_definition()) {
+			if(m_enforce_source_return_annotations) {
+				const auto function_type = definition->header->ty->cast<FunctionType>();
+				if(!function_type) {
+					auto error = Diagnostic(ErrorType::TypeError, "", "", definition->header->tok);
+					error.message = "Function type expected.";
+					error.exit();
+				}
+				match_against(
+					*node.return_variables[0],
+					function_type->get_return_type(),
+					"Return value does not match the function's annotated return type."
+				);
+			}
+			match_type(*definition, *node.return_variables[0]);
+		}
 	}
 	// a second time to get the new types to the declaration pointer!
 	for(auto &ret : node.return_variables) {
