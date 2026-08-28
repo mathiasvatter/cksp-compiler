@@ -7,6 +7,8 @@
 #   // EXPECT       <extended regex>   -> must match somewhere in the generated KSP
 #   // EXPECT_NOT   <extended regex>   -> must not match anywhere in the generated KSP
 #   // EXPECT_ERROR <extended regex>   -> compilation must fail and report this
+#   // EXPECT_WARNING <extended regex> -> compilation must succeed and report this warning
+#   // EXPECT_WARNING_NOT <regex>      -> compilation must not report this warning
 #
 # A file carrying EXPECT_ERROR is expected not to compile; every other file is. Generated
 # identifiers get a gensym suffix, so the patterns match on the shape of a line rather than on a
@@ -51,6 +53,8 @@ for src in "$DIR"/*.ksp; do
   # flattened to one plain line before the error patterns are matched against it
   expects_error=false
   [[ -n "$(assertions_of 'EXPECT_ERROR')" ]] && expects_error=true
+  expects_warning=false
+  [[ -n "$(assertions_of 'EXPECT_WARNING|EXPECT_WARNING_NOT')" ]] && expects_warning=true
 
   file_failed=0
   compiled=true
@@ -61,14 +65,16 @@ for src in "$DIR"/*.ksp; do
       echo -e "${RED}❌ $name${RESET} - expected the compilation to fail, but it succeeded"
       file_failed=1
     fi
-    # the report ends in a github issue url that repeats the message percent encoded, which would
-    # match patterns the diagnostic itself never printed
-    sed -e 's/\x1b\[[0-9;]*m//g' "$log" | sed -e 's#https://github.com/[^ ]*##' | tr '\n' ' ' > "$log.flat"
   elif [[ "$compiled" == false ]]; then
     echo -e "${RED}❌ $name${RESET} - compile failed"
     sed 's/^/     /' "$log" | tail -5
     ((failed++))
     continue
+  fi
+  if [[ "$expects_error" == true || "$expects_warning" == true ]]; then
+    # the report ends in a github issue url that repeats the message percent encoded, which would
+    # match patterns the diagnostic itself never printed
+    sed -e 's/\x1b\[[0-9;]*m//g' "$log" | sed -e 's#https://github.com/[^ ]*##' | tr '\n' ' ' > "$log.flat"
   fi
 
   assertions=0
@@ -98,12 +104,24 @@ for src in "$DIR"/*.ksp; do
           file_failed=1
         fi
         ;;
+      EXPECT_WARNING)
+        if ! grep -qE -- "$pattern" "$log.flat"; then
+          echo -e "${RED}❌ $name${RESET} - expected the compiler to warn: $pattern"
+          file_failed=1
+        fi
+        ;;
+      EXPECT_WARNING_NOT)
+        if grep -qE -- "$pattern" "$log.flat"; then
+          echo -e "${RED}❌ $name${RESET} - unexpected warning match for: $pattern"
+          file_failed=1
+        fi
+        ;;
     esac
-  done < <(assertions_of 'EXPECT_NOT|EXPECT_ERROR|EXPECT')
+  done < <(assertions_of 'EXPECT_WARNING_NOT|EXPECT_WARNING|EXPECT_NOT|EXPECT_ERROR|EXPECT')
 
   # a test file without a single assertion passes vacuously, which is worse than no test at all
   if [[ $assertions -eq 0 ]]; then
-    echo -e "${RED}❌ $name${RESET} - no EXPECT / EXPECT_NOT / EXPECT_ERROR comments found"
+    echo -e "${RED}❌ $name${RESET} - no EXPECT assertions found"
     file_failed=1
   fi
 

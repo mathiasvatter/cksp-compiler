@@ -4,6 +4,7 @@
 
 #include "ASTSemanticAnalysis.h"
 #include "../CompilerConfig.h"
+#include "../Optimization/VariableCollector.h"
 
 ASTSemanticAnalysis::ASTSemanticAnalysis(NodeProgram *main)
 : m_def_provider(main->def_provider) {
@@ -207,6 +208,21 @@ NodeAST * ASTSemanticAnalysis::visit(NodeSingleDeclaration &node) {
 			}
 		}
 		node.value->accept(*this);
+		if ((node.variable->cast<NodeArray>() or node.variable->cast<NodeNDArray>())
+			and node.value->cast<NodeInitializerList>()) {
+			VariableCollector collector;
+			collector.collect(*node.value, false);
+			std::unordered_set<const NodeDataStructure*> warned_references;
+			for (const auto reference : collector.get_non_const_references()) {
+				const auto declaration = reference->get_declaration();
+				if (!declaration or !warned_references.insert(declaration.get()).second) continue;
+				auto warning = Diagnostic(ErrorType::CompileWarning, "", "", reference->tok);
+				warning.message = "Array <" + node.variable->get_token_string()
+					+ "> is initialized using non-constant variable <" + reference->get_token_string()
+					+ ">. The value is copied once; later changes to the variable do not update the array.";
+				warning.report(diagnostics());
+			}
+		}
 	}
 	return &node;
 }

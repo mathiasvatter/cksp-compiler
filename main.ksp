@@ -21,7 +21,11 @@ on note
     // test_single($EVENT_ID)
     // test_dual($EVENT_ID)
     message(List<int>.pipi)
+    message(arr[0], variable)
 end on
+
+declare variable := 2
+declare arr[3] := (0,1,variable)
 
 // taskfunc swap_get_max(var a, var b, out max)
 //   declare tmp

@@ -1,0 +1,27 @@
+{ Array initializers copy mutable values rather than retaining a live reference. }
+
+// EXPECT_WARNING Array <arr> is initialized using non-constant variable <variable>
+// EXPECT_WARNING Array <copied_arr> is initialized using non-constant variable <source_arr>
+// EXPECT_WARNING_NOT non-constant variable <fixed>
+// EXPECT_WARNING_NOT non-constant variable <fixed_source_arr>
+// EXPECT_WARNING_NOT non-constant variable <function_body_variable>
+
+declare variable := 2
+declare arr[3] := [0, 1, variable]
+
+declare const fixed := 4
+declare const_arr[2] := [0, fixed]
+
+declare source_arr[1] := [5]
+declare copied_arr[1] := [source_arr[0]]
+
+declare const fixed_source_arr[1] := [6]
+declare copied_const_arr[1] := [fixed_source_arr[0]]
+
+declare function_body_variable := 6
+
+function get_value(): int
+    return function_body_variable
+end function
+
+declare function_arr[1] := [get_value()]
