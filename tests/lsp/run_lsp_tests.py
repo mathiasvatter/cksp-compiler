@@ -388,6 +388,62 @@ def _(workspace, server):
     )
 
 
+@test("quick fix: assigns discarded function and method returns to a throwaway")
+def _(workspace, server):
+    cases = [
+        (
+            "discarded_function_return.cksp",
+            "function value(): int\n"
+            "    return 1\n"
+            "end function\n\n"
+            "on init\n"
+            "    value()\n"
+            "end on\n",
+            "_ := value()",
+        ),
+        (
+            "discarded_method_return.cksp",
+            "struct Box\n"
+            "    value: int\n\n"
+            "    function current_value(self): int\n"
+            "        return self.value\n"
+            "    end function\n"
+            "end struct\n\n"
+            "on init\n"
+            "    declare box := new Box(1)\n"
+            "    box.current_value()\n"
+            "end on\n",
+            "_ := box.current_value()",
+        ),
+    ]
+
+    for name, source, expected in cases:
+        fixture = workspace.write(name, source)
+        server.did_open(fixture)
+        diagnostics = [
+            diagnostic for diagnostic in server.diagnostics(fixture)
+            if "discarded here" in diagnostic["message"]
+        ]
+        expect(len(diagnostics) == 1,
+               f"{name}: expected one discarded-return warning, got {messages_of(diagnostics)}")
+        data = diagnostics[0].get("data") or {}
+        expect(data.get("fixKind") == "AssignDiscardedReturnToThrowaway",
+               f"{name}: wrong fix kind: {diagnostics[0]}")
+
+        action = action_titled(server.code_actions(fixture, diagnostics), "throwaway")
+        expect(action.get("isPreferred") is True,
+               f"{name}: the only direct fix should be preferred: {action}")
+        ported = apply_action(source, action, fixture)
+        expect(expected in ported, f"{name}: quick fix produced:\n{ported}")
+
+        fixture = server.did_change(fixture, ported)
+        remaining = [
+            message for message in messages_of(server.diagnostics(fixture))
+            if "discarded here" in message
+        ]
+        expect(not remaining, f"{name}: warning survived its quick fix: {remaining}")
+
+
 @test("lifecycle: an unsaved edit is analysed from the buffer, not from disk")
 def _(workspace, server):
     fixture = workspace.open("navigation.cksp")

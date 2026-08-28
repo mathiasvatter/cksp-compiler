@@ -9,6 +9,7 @@
 
 #include "../../utils/StringUtils.h"
 #include "../../misc/DiagnosticEngine.h"
+#include "../../misc/DiagnosticFixBuilder.h"
 #include "../Migration/PragmaMigration.h"
 #include "InvalidCharacter.h"
 
@@ -196,19 +197,10 @@ void Tokenizer::add_invalid_character_fix(
 		if (static_cast<unsigned char>(m_input[index]) >= 0x80) return;
 	}
 	const auto& range = error.range;
-	error.fix = Diagnostic::DiagnosticFix{
-		.kind = Diagnostic::DiagnosticFix::FixKind::ReplaceInvalidCharacter,
-		.title = replacement.empty()
-			? "Remove " + error.actual
-			: "Replace " + error.actual + " with a space",
-		.edits = {{
-			.kind = Diagnostic::DiagnosticFix::EditKind::Replace,
-			.file = error.file,
-			.range = SourceRange(range.start, {range.start.line, range.start.column + 1}),
-			.new_text = replacement
-		}},
-		.is_preferred = true
-	};
+	const auto title = replacement.empty() ? "Remove " + error.actual : "Replace " + error.actual + " with a space";
+	error.fix = DiagnosticFixBuilder(Diagnostic::DiagnosticFix::FixKind::ReplaceInvalidCharacter, title)
+		.replace(error.file, SourceRange(range.start, {range.start.line, range.start.column + 1}), replacement)
+		.build();
 }
 
 bool Tokenizer::is_pragma() const {

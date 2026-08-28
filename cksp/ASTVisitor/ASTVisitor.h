@@ -40,6 +40,7 @@ public:
 		m_program = program;
 	}
 	static Diagnostic make_diagnostic(ErrorType err_type, const NodeAST& node);
+	static Diagnostic::DiagnosticFix make_discarded_return_fix(const NodeAST& call);
     static std::unique_ptr<NodeBlock> make_while_loop(NodeReference* var, int32_t from, int32_t to, std::unique_ptr<NodeBlock> body, NodeAST* parent);
 	static std::unique_ptr<NodeIf> make_nil_check(std::unique_ptr<NodeReference> ref);
 	static std::shared_ptr<NodeVariable> get_iterator_var(const Token& tok, const std::string& name="_iter") {

@@ -8,7 +8,7 @@
 #include <string>
 
 #include "../ASTNodes/ASTInstructions.h"
-#include "../../misc/Diagnostic.h"
+#include "../../misc/DiagnosticFixBuilder.h"
 
 /**
  * Diagnostics for calls into SublimeKSP's Task Control Module.
@@ -50,19 +50,11 @@ namespace tcm_migration {
 			// The pragma is accepted anywhere, including inside the <on init> the call
 			// already sits in, so the whole rewrite is one in-place replacement.
 			if (const auto depth = literal_argument(node)) {
-				diagnostic.fix = Diagnostic::DiagnosticFix{
-					.kind = Diagnostic::DiagnosticFix::FixKind::ConvertTCMCall,
-					.title = "Replace with '#pragma max_callback_depth("
-						+ std::to_string(*depth) + ")'",
-					.edits = {{
-						.kind = Diagnostic::DiagnosticFix::EditKind::Replace,
-						.file = node.tok.file(),
-						.range = node.range,
-						.new_text = "#pragma max_callback_depth("
-							+ std::to_string(*depth) + ")"
-					}},
-					.is_preferred = true
-				};
+				const auto title = "Replace with '#pragma max_callback_depth(" + std::to_string(*depth) + ")'";
+				const auto replacement = "#pragma max_callback_depth(" + std::to_string(*depth) + ")";
+				diagnostic.fix = DiagnosticFixBuilder(Diagnostic::DiagnosticFix::FixKind::ConvertTCMCall, title)
+					.replace(node.tok.file(), node.range, replacement)
+					.build();
 			} else {
 				// A computed depth cannot become a pragma argument: pragmas are read before
 				// anything is folded. Naming the option beats offering a fix that would not
@@ -80,18 +72,10 @@ namespace tcm_migration {
 				"Found a call to SublimeKSP's <tcm.wait>. Keeping a function's storage alive"
 				" across a wait is what CKSP does anyway, so the plain <wait> builtin is the"
 				" whole translation.";
-			diagnostic.fix = Diagnostic::DiagnosticFix{
-				.kind = Diagnostic::DiagnosticFix::FixKind::ConvertTCMCall,
-				.title = "Replace 'tcm.wait' with 'wait'",
-				.edits = {{
-					.kind = Diagnostic::DiagnosticFix::EditKind::Replace,
-					.file = node.tok.file(),
-					.range = source_range_from_token(
-						node.function ? node.function->tok : node.tok),
-					.new_text = "wait"
-				}},
-				.is_preferred = true
-			};
+			const auto& function_token = node.function ? node.function->tok : node.tok;
+			diagnostic.fix = DiagnosticFixBuilder(Diagnostic::DiagnosticFix::FixKind::ConvertTCMCall, "Replace 'tcm.wait' with 'wait'")
+				.replace(function_token, "wait")
+				.build();
 			return diagnostic;
 		}
 

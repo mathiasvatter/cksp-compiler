@@ -720,6 +720,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 						+ (definition->num_return_params > 1 ? "are" : "is")
 						+ " discarded here. Assign the result <result := obj."+func_call->function->name+"(...)> if it is needed.\n"
 						"To get rid of this warning use a throwaway variable <_ := ...> to assign to.";
+					warning.fix = make_discarded_return_fix(node);
 					warning.report(diagnostics());
 				}
 

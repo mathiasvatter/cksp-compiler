@@ -8,7 +8,7 @@
 #include <string>
 
 #include "../ASTNodes/ASTInstructions.h"
-#include "../../misc/Diagnostic.h"
+#include "../../misc/DiagnosticFixBuilder.h"
 
 /**
  * The fix for a global declaration that a function initializes from one of its locals.
@@ -102,17 +102,9 @@ inline std::optional<Diagnostic::DiagnosticFix> make_fix(const NodeReference& re
 	const auto indentation = indentation_at(declaration->tok.pos, indent_step_of(*declaration));
 	const std::string variable_name = variable.tok.val;
 
-	return Diagnostic::DiagnosticFix{
-		.kind = Diagnostic::DiagnosticFix::FixKind::SplitGlobalDeclarationAssignment,
-		.title = "Split global declaration of '" + variable_name + "' from its assignment",
-		.edits = {{
-			.kind = Diagnostic::DiagnosticFix::EditKind::Replace,
-			.file = declaration->tok.file(),
-			.range = SourceRange(separator_start, separator_end),
-			.new_text = "\n" + indentation + variable_name + " := "
-		}},
-		.is_preferred = true
-	};
+	return DiagnosticFixBuilder(Diagnostic::DiagnosticFix::FixKind::SplitGlobalDeclarationAssignment, "Split global declaration of '" + variable_name + "' from its assignment")
+		.replace(declaration->tok.file(), SourceRange(separator_start, separator_end), "\n" + indentation + variable_name + " := ")
+		.build();
 }
 
 } // namespace global_declaration_migration

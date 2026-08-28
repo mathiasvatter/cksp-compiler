@@ -3,10 +3,17 @@
 //
 
 #include "ASTVisitor.h"
+#include "../../misc/DiagnosticFixBuilder.h"
 
 
 Diagnostic ASTVisitor::make_diagnostic(ErrorType err_type, const NodeAST &node) {
 	return Diagnostic(err_type, "", "", node.tok);
+}
+
+Diagnostic::DiagnosticFix ASTVisitor::make_discarded_return_fix(const NodeAST& call) {
+	return DiagnosticFixBuilder(Diagnostic::DiagnosticFix::FixKind::AssignDiscardedReturnToThrowaway, "Assign return value to throwaway variable")
+		.insert_before(call.tok.file(), call.range, "_ := ")
+		.build();
 }
 
 std::unique_ptr<NodeBlock> ASTVisitor::make_while_loop(NodeReference* var, int32_t from, int32_t to, std::unique_ptr<NodeBlock> body, NodeAST* parent) {
@@ -53,4 +60,3 @@ std::unique_ptr<NodeFunctionCall> ASTVisitor::get_cksp_kontakt_warning(const std
 	call->ty = TypeRegistry::Void;
 	return call;
 }
-

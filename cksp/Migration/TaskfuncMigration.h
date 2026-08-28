@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "../Tokenizer/Token.h"
-#include "../../misc/Diagnostic.h"
+#include "../../misc/DiagnosticFixBuilder.h"
 
 /**
  * Collects the edits that turn a SublimeKSP <taskfunc> block into a plain CKSP function
@@ -59,23 +59,15 @@ public:
 			" function already gets its own per-callback storage, so it is safe to re-enter"
 			" across a <wait>. Write it as a plain <function ... end function> instead;"
 			" <var> and <out> parameters become <ref>, and <tcm.wait> becomes <wait>.";
-		error.fix = Diagnostic::DiagnosticFix{
-			.kind = Diagnostic::DiagnosticFix::FixKind::ConvertTaskfuncToFunction,
-			.title = "Convert taskfunc '" + function_name + "' to a function",
-			.edits = m_edits,
-			.is_preferred = true
-		};
+		DiagnosticFixBuilder fix(Diagnostic::DiagnosticFix::FixKind::ConvertTaskfuncToFunction, "Convert taskfunc '" + function_name + "' to a function");
+		fix.add_edits(m_edits);
+		error.fix = fix.build();
 		return error;
 	}
 
 private:
 	void add_replacement(const Token& token, std::string new_text) {
-		m_edits.push_back({
-			.kind = Diagnostic::DiagnosticFix::EditKind::Replace,
-			.file = token.file(),
-			.range = source_range_from_token(token),
-			.new_text = std::move(new_text)
-		});
+		m_edits.push_back(DiagnosticFixBuilder::replace_edit(token, std::move(new_text)));
 	}
 
 	Token m_taskfunc_token;

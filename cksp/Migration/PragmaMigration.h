@@ -7,7 +7,7 @@
 #include <string>
 
 #include "../Tokenizer/Token.h"
-#include "../../misc/Diagnostic.h"
+#include "../../misc/DiagnosticFixBuilder.h"
 
 /**
  * Diagnostics for a SublimeKSP compiler pragma, which is written inside a <{...}> block.
@@ -23,17 +23,6 @@
  */
 namespace pragma_migration {
 
-	/// The whole <{#pragma ...}> span, so a fix replaces the braces along with their content.
-	inline Diagnostic::DiagnosticFix::Edit replacement_edit(
-		const Token& pragma_token, std::string new_text) {
-		return {
-			.kind = Diagnostic::DiagnosticFix::EditKind::Replace,
-			.file = pragma_token.file(),
-			.range = source_range_from_token(pragma_token),
-			.new_text = std::move(new_text)
-		};
-	}
-
 	/// `option` is the pragma's name, `argument` everything between it and the closing brace.
 	inline Diagnostic make_diagnostic(
 		const Token& pragma_token, const std::string& option, const std::string& argument) {
@@ -45,15 +34,12 @@ namespace pragma_migration {
 				"Found the SublimeKSP pragma <save_compiled_source>. CKSP reads this line as the"
 				" comment it is written inside, so it has no effect and the compiled output goes"
 				" to the default path. CKSP spells it <#pragma output_path(\"...\")>.";
-			warning.fix = Diagnostic::DiagnosticFix{
-				.kind = Diagnostic::DiagnosticFix::FixKind::ConvertSublimePragma,
-				.title = "Replace with '#pragma output_path(...)'",
-				// The path is quoted rather than escaped: CKSP only treats a backslash as an
-				// escape before the quote character itself, so a Windows path survives as written.
-				.edits = {replacement_edit(
-					pragma_token, "#pragma output_path(\"" + argument + "\")")},
-				.is_preferred = true
-			};
+			// The whole <{#pragma ...}> span is replaced, including its braces. The path is
+			// quoted rather than escaped: CKSP only treats a backslash as an escape before the
+			// quote character itself, so a Windows path survives as written.
+			warning.fix = DiagnosticFixBuilder(Diagnostic::DiagnosticFix::FixKind::ConvertSublimePragma, "Replace with '#pragma output_path(...)'")
+				.replace(pragma_token, "#pragma output_path(\"" + argument + "\")")
+				.build();
 			return warning;
 		}
 

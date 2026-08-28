@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "../Tokenizer/Token.h"
-#include "../../misc/Diagnostic.h"
+#include "../../misc/DiagnosticFixBuilder.h"
 
 /**
  * The fix for a function whose result is named after the <return> keyword.
@@ -62,17 +62,14 @@ inline Diagnostic make_diagnostic(
 	const std::string& function_name, const std::span<const Token> definition_tokens) {
 	const auto renamed = free_result_name(definition_tokens);
 
-	std::vector<Diagnostic::DiagnosticFix::Edit> edits;
+	DiagnosticFixBuilder fix(Diagnostic::DiagnosticFix::FixKind::RenameReservedResult, "Rename result '" + reserved_name() + "' to '" + renamed + "'");
+	bool has_edits = false;
 	const Token* result_token = nullptr;
 	for (const auto& token : definition_tokens) {
 		if (!is_result_token(token) || token.file().empty()) continue;
 		if (!result_token) result_token = &token;
-		edits.push_back({
-			.kind = Diagnostic::DiagnosticFix::EditKind::Replace,
-			.file = token.file(),
-			.range = source_range_from_token(token),
-			.new_text = renamed
-		});
+		fix.replace(token, renamed);
+		has_edits = true;
 	}
 
 	auto error = Diagnostic(
@@ -84,13 +81,8 @@ inline Diagnostic make_diagnostic(
 		" reserves for the <Return> Statement. SublimeKSP has no such statement, so the word is"
 		" a name there. Renaming it leaves an ordinary deprecated result, which CKSP can then"
 		" convert into a <Return> Statement of its own.";
-	if (!edits.empty()) {
-		error.fix = Diagnostic::DiagnosticFix{
-			.kind = Diagnostic::DiagnosticFix::FixKind::RenameReservedResult,
-			.title = "Rename result '" + reserved_name() + "' to '" + renamed + "'",
-			.edits = std::move(edits),
-			.is_preferred = true
-		};
+	if (has_edits) {
+		error.fix = fix.build();
 	}
 	return error;
 }

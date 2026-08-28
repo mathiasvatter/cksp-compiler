@@ -5,6 +5,7 @@
 #include "ASTSemanticAnalysis.h"
 #include "../CompilerConfig.h"
 #include "../Optimization/VariableCollector.h"
+#include "../../misc/DiagnosticFixBuilder.h"
 
 ASTSemanticAnalysis::ASTSemanticAnalysis(NodeProgram *main)
 : m_def_provider(main->def_provider) {
@@ -155,17 +156,9 @@ void ASTSemanticAnalysis::check_param_modification(NodeReference& ref) {
 		"parameters have function-local scope: this modification is not visible at the call site. "
 		"Declare the parameter as <ref "+written_name+"> to pass it by reference if the change should take "
 		"effect outside the function.";
-	warning.fix = Diagnostic::DiagnosticFix{
-		.kind = Diagnostic::DiagnosticFix::FixKind::AddRefToFuncParam,
-		.title = "Pass '" + written_name + "' by reference",
-		.edits = {{
-			.kind = Diagnostic::DiagnosticFix::EditKind::InsertBefore,
-			.file = declaration->tok.file(),
-			.range = source_range_from_token(declaration->tok),
-			.new_text = "ref "
-		}},
-		.is_preferred = true
-	};
+	warning.fix = DiagnosticFixBuilder(Diagnostic::DiagnosticFix::FixKind::AddRefToFuncParam, "Pass '" + written_name + "' by reference")
+		.insert_before(declaration->tok, "ref ")
+		.build();
 	warning.report(diagnostics());
 }
 
@@ -217,8 +210,8 @@ NodeAST * ASTSemanticAnalysis::visit(NodeSingleDeclaration &node) {
 				const auto declaration = reference->get_declaration();
 				if (!declaration or !warned_references.insert(declaration.get()).second) continue;
 				auto warning = Diagnostic(ErrorType::CompileWarning, "", "", reference->tok);
-				warning.message = "Array <" + node.variable->get_token_string()
-					+ "> is initialized using non-constant variable <" + reference->get_token_string()
+				warning.message = "Array <" + node.variable->name
+					+ "> is initialized using non-constant variable <" + reference->name
 					+ ">. The value is copied once; later changes to the variable do not update the array.";
 				warning.report(diagnostics());
 			}
@@ -279,6 +272,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 			+ (definition->num_return_params > 1 ? "are" : "is")
 			+ " discarded here. Assign the result <result := "+node.function->name+"(...)> if it is needed.\n"
 			"To get rid of this warning use a throwaway variable <_ := ...> to assign to.";
+		warning.fix = make_discarded_return_fix(node);
 		warning.report(diagnostics());
 	}
 

@@ -71,6 +71,8 @@ add_library(cksp_core STATIC
         cksp/Migration/MacroMigration.h
         misc/Diagnostic.h
         misc/Diagnostic.cpp
+        misc/DiagnosticFixBuilder.h
+        misc/DiagnosticFixBuilder.cpp
         misc/DiagnosticReport.h
         misc/DiagnosticEngine.h
         misc/DiagnosticEngine.cpp

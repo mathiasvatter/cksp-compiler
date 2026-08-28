@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "../Tokenizer/Token.h"
-#include "../../misc/Diagnostic.h"
+#include "../../misc/DiagnosticFixBuilder.h"
 #include "../../utils/StringUtils.h"
 
 /**
@@ -108,16 +108,12 @@ inline std::optional<MacroArgumentEdit> make_macro_argument_edit(
 		rebuilt.replace(candidate.generated_start, candidate.generated_length, corrected);
 	}
 	if (rebuilt != replacement) return std::nullopt;
+	const SourceRange argument_range(
+		{argument->line, argument->pos},
+		{argument->line, argument->pos + argument->spelling.length()});
 
 	return MacroArgumentEdit{
-		.edit = {
-			.kind = Diagnostic::DiagnosticFix::EditKind::Replace,
-			.file = argument->file(),
-			.range = SourceRange(
-				{argument->line, argument->pos},
-				{argument->line, argument->pos + argument->spelling.length()}),
-			.new_text = corrected
-		},
+		.edit = DiagnosticFixBuilder::replace_edit(argument->file(), argument_range, corrected),
 		.written = argument->spelling,
 		.replacement = std::move(corrected)
 	};
@@ -154,13 +150,10 @@ inline void apply(
 	const auto& replacement = matches.front();
 	if (token.origin) {
 		if (auto argument_edit = make_macro_argument_edit(token, written, replacement)) {
-			diagnostic.fix = Diagnostic::DiagnosticFix{
-				.kind = Diagnostic::DiagnosticFix::FixKind::CorrectNameCase,
-				.title = "Change macro argument '" + argument_edit->written
-					+ "' to '" + argument_edit->replacement + "'",
-				.edits = {std::move(argument_edit->edit)},
-				.is_preferred = true
-			};
+			const auto title = "Change macro argument '" + argument_edit->written + "' to '" + argument_edit->replacement + "'";
+			diagnostic.fix = DiagnosticFixBuilder(Diagnostic::DiagnosticFix::FixKind::CorrectNameCase, title)
+				.add_edit(std::move(argument_edit->edit))
+				.build();
 			return;
 		}
 		diagnostic.message += " Its spelling comes from macro expansion and cannot be rewritten safely.";
@@ -168,17 +161,9 @@ inline void apply(
 	}
 	if (token.val != written) return;
 
-	diagnostic.fix = Diagnostic::DiagnosticFix{
-		.kind = Diagnostic::DiagnosticFix::FixKind::CorrectNameCase,
-		.title = "Change '" + written + "' to '" + replacement + "'",
-		.edits = {{
-			.kind = Diagnostic::DiagnosticFix::EditKind::Replace,
-			.file = token.file(),
-			.range = source_range_from_token(token),
-			.new_text = replacement
-		}},
-		.is_preferred = true
-	};
+	diagnostic.fix = DiagnosticFixBuilder(Diagnostic::DiagnosticFix::FixKind::CorrectNameCase, "Change '" + written + "' to '" + replacement + "'")
+		.replace(token, replacement)
+		.build();
 }
 
 } // namespace identifier_case_migration

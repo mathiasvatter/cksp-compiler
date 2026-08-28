@@ -84,6 +84,7 @@ struct Diagnostic {
     struct DiagnosticFix {
         enum class FixKind {
             AddRefToFuncParam,
+            AssignDiscardedReturnToThrowaway,
             ConvertDeprecatedFunctionReturn,
             ConvertTaskfuncToFunction,
             ConvertTCMCall,
@@ -117,6 +118,7 @@ struct Diagnostic {
     static std::string fix_kind_to_string(const DiagnosticFix::FixKind kind) {
         switch (kind) {
             case DiagnosticFix::FixKind::AddRefToFuncParam: return "AddRefToFuncParam";
+            case DiagnosticFix::FixKind::AssignDiscardedReturnToThrowaway: return "AssignDiscardedReturnToThrowaway";
             case DiagnosticFix::FixKind::ConvertDeprecatedFunctionReturn: return "ConvertDeprecatedFunctionReturn";
             case DiagnosticFix::FixKind::ConvertTaskfuncToFunction: return "ConvertTaskfuncToFunction";
             case DiagnosticFix::FixKind::ConvertTCMCall: return "ConvertTCMCall";
