@@ -1094,6 +1094,26 @@ ASTLowering *NodeInitializerList::get_lowering(NodeProgram *program) const {
 	return &lowering;
 }
 
+// ************* NodeCast ***************
+NodeAST * NodeCast::accept(ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+
+NodeAST * NodeCast::replace_child(NodeAST *oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (value.get() == oldChild) {
+		value = std::move(newChild);
+		return value.get();
+	}
+	return nullptr;
+}
+
+NodeCast::NodeCast(const NodeCast& other): NodeAST(other), value(clone_unique(other.value)), target_type(other.target_type) {
+	NodeCast::set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeCast::clone() const {
+	return std::make_unique<NodeCast>(*this);
+}
+
 // ************* NodeUnaryExpr ***************
 NodeAST *NodeUnaryExpr::accept(ASTVisitor &visitor) {
     return visitor.visit(*this);

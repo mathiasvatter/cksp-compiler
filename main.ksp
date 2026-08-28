@@ -13,6 +13,8 @@ struct List<T>
     next: List<T>
 end struct
 
+declare sdf := (3+3) as List
+
 declare ENV2.arr[2,3]: int[][]
 declare ls := new List<int>(0, nil)
 declare l2 := new List("bubu", nil)

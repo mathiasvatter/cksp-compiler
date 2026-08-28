@@ -67,6 +67,7 @@ enum class NodeType {
 	FunctionParam,
 	Return,
 	SingleReturn,
+	Cast,
 	GetControl,
 	SetControl,
 	ParamList,

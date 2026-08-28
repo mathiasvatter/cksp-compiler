@@ -943,6 +943,40 @@ struct NodeInitializerList final : NodeAST {
 
 };
 
+/// ast representation of a cast -> '(3+4) as List<T>' or '0 as bool'
+struct NodeCast final : NodeAST {
+	std::unique_ptr<NodeAST> value; // is expression
+	Type* target_type = nullptr;
+	explicit NodeCast(Token tok) : NodeAST(std::move(tok), NodeType::Cast) {}
+	NodeCast(std::unique_ptr<NodeAST> value, Type* target_type, Token tok)
+	: NodeAST(std::move(tok)), value(std::move(value)), target_type(target_type) {
+		NodeCast::set_child_parents();
+	}
+	NodeAST* accept(ASTVisitor &visitor) override;
+	NodeAST* replace_child(NodeAST *oldChild, std::unique_ptr<NodeAST> newChild) override;
+	NodeCast(const NodeCast& other);
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST *new_parent) override {
+		parent = new_parent;
+		value->update_parents(this);
+	}
+	void set_child_parents() override {
+		value->parent = this;
+	}
+	std::string get_string() override {
+		return value->get_string() + "as" + target_type->to_string();
+	}
+	std::string get_token_string() const override {
+		return value->get_token_string() + "as" + target_type->to_string();
+	}
+	void update_token_data(const Token &token) override {
+		value->update_token_data(token);
+	}
+	void set_target_type(Type* new_target_type) {
+		target_type = new_target_type;
+	}
+};
+
 struct NodeUnaryExpr final : NodeAST {
     Token op;
     std::unique_ptr<NodeAST> operand;

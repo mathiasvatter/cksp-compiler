@@ -135,7 +135,10 @@ public:
 		for(const auto & method : node.chain) method->accept(*this);
 		return &node;
 	}
-
+	virtual NodeAST* visit(NodeCast& node) {
+	    node.value->accept(*this);
+    	return &node;
+    }
     virtual NodeAST* visit(NodeUIControl& node){
 		node.control_var->accept(*this);
 		node.params->accept(*this);
