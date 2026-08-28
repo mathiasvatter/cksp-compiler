@@ -404,6 +404,11 @@ NodeAST * ASTPrinter::visit(NodeSingleAssignment &node) {
 	return &node;
 }
 
+NodeAST * ASTPrinter::visit(NodeCast &node) {
+	os << node.get_string();
+	return &node;
+}
+
 NodeAST * ASTPrinter::visit(NodeConst &node) {
     os << "const " << node.const_prefix.val << std::endl;
     node.constants->accept(*this);

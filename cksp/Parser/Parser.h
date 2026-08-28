@@ -152,6 +152,7 @@ public:
         /// Helper function for parsing binary string expression recursively
         Result<std::unique_ptr<NodeAST>> _parse_string_expr_rhs(std::unique_ptr<NodeAST> lhs, NodeAST* parent);
     /// parse unary or binary expression
+    Result<std::unique_ptr<NodeAST>> parse_cast(std::unique_ptr<NodeAST> value, NodeAST* parent);
     Result<std::unique_ptr<NodeAST>> parse_binary_expr(NodeAST* parent);
     Result<std::unique_ptr<NodeAST>> parse_unary_expr(NodeAST* parent);
 	    /// Helper function for parsing binary expressions recursion

@@ -607,9 +607,8 @@ Result<std::unique_ptr<NodeVariableRef>> Parser::parse_type_qualifier(NodeAST* p
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_expression(NodeAST* parent) {
 	auto lhs = parse_string_expr(parent);
-	if(lhs.is_error()) {
-		return Result<std::unique_ptr<NodeAST>>(lhs.get_error());
-	}
+	if(lhs.is_error()) return Result<std::unique_ptr<NodeAST>>(lhs.get_error());
+
 	auto concat_done = _parse_string_expr_rhs(std::move(lhs.unwrap()), parent);
 	if (concat_done.is_error()) return Result<std::unique_ptr<NodeAST>>(concat_done.get_error());
 
@@ -685,10 +684,34 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_string_expr_rhs(std::unique_ptr<
 	}
 }
 
+Result<std::unique_ptr<NodeAST>> Parser::parse_cast(std::unique_ptr<NodeAST> value, NodeAST *parent) {
+	Token as = consume();
+	if (as.type != token::AS) {
+		auto error = Diagnostic(ErrorType::ParseError, "", "<as>", as);
+		error.set_message("Found unknown syntax for type cast.");
+		return Result<std::unique_ptr<NodeAST>>(error);
+	}
+	auto cast = std::make_unique<NodeCast>(std::move(value), nullptr, as);
+	TypeReferences return_type_references;
+	auto type = parse_type(&return_type_references);
+	if(type.is_error()) {
+		auto error = type.get_error();
+		error.set_message("Could not parse type cast.");
+		return Result<std::unique_ptr<NodeAST>>(error);
+	}
+	cast->set_target_type(type.unwrap());
+	cast->parent = parent;
+	return Result<std::unique_ptr<NodeAST>>(std::move(cast));
+}
+
 Result<std::unique_ptr<NodeAST>> Parser::parse_binary_expr(NodeAST* parent) {
 	auto lhs = _parse_primary_expr(parent);
 	if(!lhs.is_error()) {
-		return _parse_binary_expr_rhs(0, std::move(lhs.unwrap()), parent);
+		if (peek().type == token::AS) {
+			return parse_cast(std::move(lhs.unwrap()), parent);
+		} else {
+			return _parse_binary_expr_rhs(0, std::move(lhs.unwrap()), parent);
+		}
 	}
 	return Result<std::unique_ptr<NodeAST>>(lhs.get_error());
 }
@@ -715,8 +738,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_binary_expr_rhs(const int preced
 		if(prec < precedence)
 			return Result<std::unique_ptr<NodeAST>>(std::move(lhs));
 		// its not -1 so it is a binop
-		auto bin_op = peek();
-		consume();
+		auto bin_op = consume();
 		auto rhs = _parse_primary_expr(parent);
 		if (rhs.is_error()) {
 			return Result<std::unique_ptr<NodeAST>>(rhs.get_error());
@@ -812,7 +834,7 @@ Parser::_parse_ternary_rhs(std::unique_ptr<NodeAST> condition, NodeAST* parent) 
 	std::move(condition),
 	std::move(thenExpr),
 	std::move(elseExpr),
-	qmark
+			qmark
         );
         node->parent = parent;
         node->set_range(node->condition->range, node->else_branch->range);
