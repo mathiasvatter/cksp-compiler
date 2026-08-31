@@ -1,0 +1,11 @@
+// EXPECT @ret[0-9]+ := "<Item> Object: " & \$value[0-9]+
+// EXPECT message\(@_ret[0-9]+\)
+
+struct Item
+    value: int
+end struct
+
+on init
+    declare item: Item := new Item(7)
+    message(item as string)
+end on

@@ -1,0 +1,6 @@
+// EXPECT_ERROR Cannot cast from or to a <Composite> type
+
+on init
+    declare values[2]: int[] := (1, 2)
+    declare scalar := values as int
+end on

@@ -1,0 +1,12 @@
+// EXPECT ~chained[0-9]+ := real\(\$EVENT_NOTE\)
+// EXPECT message\(1\. \+ real\(\$EVENT_NOTE\)\)
+// EXPECT \$grouped[0-9]+ := int\(real\(\$EVENT_NOTE\) \+ 2\.5\)
+
+on note
+    declare chained: real := $EVENT_NOTE as int as real
+    declare rhs: real := 1.0 + $EVENT_NOTE as real
+    declare grouped: int := (real($EVENT_NOTE) + 2.5) as int
+    message(chained)
+    message(rhs)
+    message(grouped)
+end on

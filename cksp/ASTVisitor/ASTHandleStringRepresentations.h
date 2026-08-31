@@ -60,6 +60,10 @@ public:
 		node.function->accept(*this);
 		return wrap_in_repr_call(node);
 	}
+	NodeAST * visit(NodeCast& node) override {
+		node.value->accept(*this);
+		return wrap_in_repr_call(node);
+	}
 
 private:
 	DefinitionProvider* m_def_provider;
@@ -90,7 +94,7 @@ private:
 		return &call;
 	}
 
-	NodeAST * wrap_in_repr_call(NodeReference& ref) const {
+	NodeAST * wrap_in_repr_call(NodeAST& ref) const {
 		if(ref.ty->get_type_kind() != TypeKind::Object and ref.ty->get_type_kind() != TypeKind::Composite)
 			return nullptr;
 

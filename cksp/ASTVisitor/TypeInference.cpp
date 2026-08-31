@@ -840,14 +840,34 @@ NodeAST * TypeInference::visit(NodeInitializerList& node) {
 
 NodeAST * TypeInference::visit(NodeCast &node) {
 	node.value->accept(*this);
-	// cannot cast whole composite types (?)
-	if (node.target_type->cast<CompositeType>()) {
+	const auto source_type = node.value->ty->get_element_type();
+	const auto target_type = node.target_type->get_element_type();
+	if (node.value->ty->cast<CompositeType>() or node.target_type->cast<CompositeType>()) {
 		auto error = Diagnostic(ErrorType::TypeError, "", "<int/real/bool/string/object>", node.tok);
-		error.set_message("Cannot cast <Composite> types. Only <Basic> types allowed.");
+		error.set_message("Cannot cast from or to a <Composite> type. Only scalar values can be cast.");
 		error.exit();
 	}
-	// already checked if target type is valid in ASTTypeAnnotations
-	match_against(node, node.target_type);
+	const bool supported_basic_target = target_type == TypeRegistry::Integer
+		or target_type == TypeRegistry::Real
+		or target_type == TypeRegistry::Boolean
+		or target_type == TypeRegistry::String;
+	if (!supported_basic_target and !target_type->cast<ObjectType>()) {
+		auto error = Diagnostic(ErrorType::TypeError, "", "<int/real/bool/string/object>", node.tok);
+		error.set_message("Unsupported cast target <" + node.target_type->to_string() + ">.");
+		error.exit();
+	}
+	if (target_type->cast<ObjectType>()) {
+		const bool integer_id = source_type == TypeRegistry::Integer;
+		const bool nil = source_type == TypeRegistry::Nil;
+		const bool same_object = source_type->is_same_type(target_type);
+		if (!integer_id and !nil and !same_object) {
+			auto error = Diagnostic(ErrorType::TypeError, "", "<int>", node.value->tok);
+			error.set_message("Only an <Integer> object ID can be cast to <" + target_type->to_string() + ">.");
+			error.actual = "<" + node.value->ty->to_string() + ">";
+			error.exit();
+		}
+	}
+	node.ty = node.target_type;
 	return &node;
 }
 

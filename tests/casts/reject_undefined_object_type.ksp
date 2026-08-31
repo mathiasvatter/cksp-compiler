@@ -1,0 +1,5 @@
+// EXPECT_ERROR Found undefined Type.*Cannot cast to <Missing>
+
+on init
+    declare missing := 0 as Missing
+end on

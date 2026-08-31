@@ -1102,6 +1102,7 @@ NodeAST * NodeCast::accept(ASTVisitor &visitor) {
 NodeAST * NodeCast::replace_child(NodeAST *oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (value.get() == oldChild) {
 		value = std::move(newChild);
+		value->parent = this;
 		return value.get();
 	}
 	return nullptr;

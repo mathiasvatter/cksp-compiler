@@ -1,0 +1,20 @@
+// EXPECT \$mem[0-9]* := search\(%List____int____value,
+// EXPECT message\(%List____int____value\[
+
+struct List<T>
+    value: T
+
+    function find(self, val: T): List<T>
+        declare mem := search(List<T>.storage(.value), val)
+        if mem # -1
+            return mem as List<T>
+        end if
+        return nil
+    end function
+end struct
+
+on init
+    declare head: List<int> := new List<int>(7)
+    declare found: List<int> := head.find(7)
+    message(found.value)
+end on

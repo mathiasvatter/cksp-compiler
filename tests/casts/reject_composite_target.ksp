@@ -1,0 +1,5 @@
+// EXPECT_ERROR Cannot cast from or to a <Composite> type
+
+on init
+    declare values := 1 as int[]
+end on

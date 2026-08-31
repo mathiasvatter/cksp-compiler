@@ -648,11 +648,11 @@ Parser::_parse_null_coalesce_rhs(std::unique_ptr<NodeAST> lhs, NodeAST* parent) 
 Result<std::unique_ptr<NodeAST>> Parser::parse_string_expr(NodeAST* parent) {
 	if (peek().type == token::STRING) {
 		if (auto expr = parse_string(parent); !expr.is_error()) {
-			return Result<std::unique_ptr<NodeAST>>(std::move(expr.unwrap()));
+			return parse_cast(std::move(expr.unwrap()), parent);
 		} else return Result<std::unique_ptr<NodeAST>>(expr.get_error());
 	} else if (peek().type == token::FSTRING_START) {
 		if (auto expr = parse_fstring(parent); !expr.is_error()) {
-			return Result<std::unique_ptr<NodeAST>>(std::move(expr.unwrap()));
+			return parse_cast(std::move(expr.unwrap()), parent);
 		} else return Result<std::unique_ptr<NodeAST>>(expr.get_error());
 	} else {
 		if (auto expr = parse_binary_expr(parent); !expr.is_error()) {
@@ -685,33 +685,30 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_string_expr_rhs(std::unique_ptr<
 }
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_cast(std::unique_ptr<NodeAST> value, NodeAST *parent) {
-	Token as = consume();
-	if (as.type != token::AS) {
-		auto error = Diagnostic(ErrorType::ParseError, "", "<as>", as);
-		error.set_message("Found unknown syntax for type cast.");
-		return Result<std::unique_ptr<NodeAST>>(error);
+	while (peek().type == token::AS) {
+		Token as = consume();
+		TypeReferences target_type_references;
+		auto type = parse_type(&target_type_references);
+		if(type.is_error()) {
+			auto error = type.get_error();
+			error.add_message("Could not parse the target type after <as>.");
+			return Result<std::unique_ptr<NodeAST>>(error);
+		}
+		auto cast = std::make_unique<NodeCast>(std::move(value), type.unwrap(), as);
+		cast->type_references = std::move(target_type_references);
+		cast->set_range(cast->value->range, source_range_from_token(peek(-1)));
+		cast->parent = parent;
+		value = std::move(cast);
 	}
-	auto cast = std::make_unique<NodeCast>(std::move(value), nullptr, as);
-	TypeReferences return_type_references;
-	auto type = parse_type(&return_type_references);
-	if(type.is_error()) {
-		auto error = type.get_error();
-		error.set_message("Could not parse type cast.");
-		return Result<std::unique_ptr<NodeAST>>(error);
-	}
-	cast->set_target_type(type.unwrap());
-	cast->parent = parent;
-	return Result<std::unique_ptr<NodeAST>>(std::move(cast));
+	return Result<std::unique_ptr<NodeAST>>(std::move(value));
 }
 
 Result<std::unique_ptr<NodeAST>> Parser::parse_binary_expr(NodeAST* parent) {
 	auto lhs = _parse_primary_expr(parent);
 	if(!lhs.is_error()) {
-		if (peek().type == token::AS) {
-			return parse_cast(std::move(lhs.unwrap()), parent);
-		} else {
-			return _parse_binary_expr_rhs(0, std::move(lhs.unwrap()), parent);
-		}
+		lhs = parse_cast(std::move(lhs.unwrap()), parent);
+		if (lhs.is_error()) return lhs;
+		return _parse_binary_expr_rhs(0, std::move(lhs.unwrap()), parent);
 	}
 	return Result<std::unique_ptr<NodeAST>>(lhs.get_error());
 }
@@ -743,6 +740,8 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_binary_expr_rhs(const int preced
 		if (rhs.is_error()) {
 			return Result<std::unique_ptr<NodeAST>>(rhs.get_error());
 		}
+		rhs = parse_cast(std::move(rhs.unwrap()), parent);
+		if (rhs.is_error()) return rhs;
 		if (const int next_precedence = Parser::get_binop_precedence(peek().type); prec < next_precedence) {
 			rhs = _parse_binary_expr_rhs(prec + 1, std::move(rhs.unwrap()), parent);
 			if (rhs.is_error()) {

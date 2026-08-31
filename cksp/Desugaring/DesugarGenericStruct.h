@@ -159,5 +159,12 @@ private:
 		rename_type_qualifier(node);
 		return ASTVisitor::visit(node);
 	}
+	NodeAST* visit(NodeCast& node) override {
+		substitute(node);
+		if (node.target_type) {
+			node.target_type = node.target_type->substitute_type_parameters(substitutions);
+		}
+		return ASTVisitor::visit(node);
+	}
 
 };

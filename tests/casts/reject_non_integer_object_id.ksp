@@ -1,0 +1,9 @@
+// EXPECT_ERROR Only an <Integer> object ID can be cast to <Item>
+
+struct Item
+    value: int
+end struct
+
+on init
+    declare item: Item := "not an id" as Item
+end on

@@ -949,7 +949,7 @@ struct NodeCast final : NodeAST {
 	Type* target_type = nullptr;
 	explicit NodeCast(Token tok) : NodeAST(std::move(tok), NodeType::Cast) {}
 	NodeCast(std::unique_ptr<NodeAST> value, Type* target_type, Token tok)
-	: NodeAST(std::move(tok)), value(std::move(value)), target_type(target_type) {
+	: NodeAST(std::move(tok), NodeType::Cast), value(std::move(value)), target_type(target_type) {
 		NodeCast::set_child_parents();
 	}
 	NodeAST* accept(ASTVisitor &visitor) override;

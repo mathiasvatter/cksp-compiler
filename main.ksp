@@ -21,6 +21,7 @@ declare l2 := new List("bubu", nil)
 declare d : List
 on note
     search(_ENV2.arr, 5)
+    message((3+3) as List)
     // test_single($EVENT_ID)
     // test_dual($EVENT_ID)
     message(List<int>.pipi)
