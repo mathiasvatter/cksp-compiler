@@ -238,6 +238,10 @@ NodeAST * ASTCollectLowerings::visit(NodeFunctionCall& node) {
 	return node.lower(m_program);
 }
 
+NodeAST * ASTCollectLowerings::visit(NodeCast &node) {
+	return ASTVisitor::visit(node)->lower(m_program);
+}
+
 NodeAST * ASTCollectLowerings::visit(NodeArray& node) {
 	//TRACE();
     if(node.size) node.size->accept(*this);

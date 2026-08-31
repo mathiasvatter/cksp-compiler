@@ -18,6 +18,7 @@ declare sdf := (3+3) as List
 declare ENV2.arr[2,3]: int[][]
 declare ls := new List<int>(0, nil)
 declare l2 := new List("bubu", nil)
+declare d : List
 on note
     search(_ENV2.arr, 5)
     // test_single($EVENT_ID)

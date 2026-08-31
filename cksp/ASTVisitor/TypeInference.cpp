@@ -838,6 +838,19 @@ NodeAST * TypeInference::visit(NodeInitializerList& node) {
 	return &node;
 }
 
+NodeAST * TypeInference::visit(NodeCast &node) {
+	node.value->accept(*this);
+	// cannot cast whole composite types (?)
+	if (node.target_type->cast<CompositeType>()) {
+		auto error = Diagnostic(ErrorType::TypeError, "", "<int/real/bool/string/object>", node.tok);
+		error.set_message("Cannot cast <Composite> types. Only <Basic> types allowed.");
+		error.exit();
+	}
+	// already checked if target type is valid in ASTTypeAnnotations
+	match_against(node, node.target_type);
+	return &node;
+}
+
 NodeAST * TypeInference::visit(NodeSingleDelete& node) {
 	node.ptr->accept(*this);
 	if(node.ptr->ty->get_element_type()->get_type_kind() != TypeKind::Object) {

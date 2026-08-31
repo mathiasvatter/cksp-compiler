@@ -964,10 +964,10 @@ struct NodeCast final : NodeAST {
 		value->parent = this;
 	}
 	std::string get_string() override {
-		return value->get_string() + "as" + target_type->to_string();
+		return value->get_string() + " as " + target_type->to_string();
 	}
 	std::string get_token_string() const override {
-		return value->get_token_string() + "as" + target_type->to_string();
+		return value->get_token_string() + " as " + target_type->to_string();
 	}
 	void update_token_data(const Token &token) override {
 		value->update_token_data(token);
@@ -975,6 +975,7 @@ struct NodeCast final : NodeAST {
 	void set_target_type(Type* new_target_type) {
 		target_type = new_target_type;
 	}
+	[[nodiscard]] ASTLowering *get_lowering(NodeProgram *program) const override;
 };
 
 struct NodeUnaryExpr final : NodeAST {

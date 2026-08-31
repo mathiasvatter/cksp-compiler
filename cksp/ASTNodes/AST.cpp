@@ -39,7 +39,7 @@
 #include "../ASTVisitor/ReferenceManagement/ASTCollectCallSites.h"
 #include "../ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h"
 #include "../ASTVisitor/FunctionHandling/FunctionShortCircuit.h"
-
+#include "../Lowering/LoweringCast.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, const NodeType node_type) : range(source_range_from_token(tok)),
@@ -1112,6 +1112,12 @@ NodeCast::NodeCast(const NodeCast& other): NodeAST(other), value(clone_unique(ot
 }
 std::unique_ptr<NodeAST> NodeCast::clone() const {
 	return std::make_unique<NodeCast>(*this);
+}
+
+ASTLowering * NodeCast::get_lowering(NodeProgram *program) const {
+	static LoweringCast lowering(program);
+	lowering.set_program(program);
+	return &lowering;
 }
 
 // ************* NodeUnaryExpr ***************

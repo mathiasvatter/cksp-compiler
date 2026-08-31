@@ -312,6 +312,7 @@ add_executable(cksp
         lsp/EntryPointResolver.cpp
         lsp/EntryPointResolver.h
         cksp/Desugaring/DesugarGenericStruct.h
+        cksp/Lowering/LoweringCast.h
 )
 target_link_libraries(cksp PRIVATE cksp_core)
 

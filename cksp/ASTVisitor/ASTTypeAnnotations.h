@@ -87,6 +87,21 @@ public:
 		error.exit();
 	}
 
+	NodeAST* visit(NodeCast& node) override {
+		node.value->accept(*this);
+		const auto element_type = node.target_type->get_element_type();
+		if (element_type->cast<ObjectType>()) {
+			if (!m_program->find_struct(element_type->ksp_encoded_string())) {
+				auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+				error.set_message("Found undefined Type. Cannot cast to <"+node.target_type->to_string()+"> since it does not match any existing <Object> type.");
+				error.expected = "valid <Object> Type";
+				error.actual = "<"+node.ty->to_string()+">";
+				error.exit();
+			}
+		}
+		return &node;
+	}
+
 	NodeAST* visit(NodeArray& node) override {
 		desanitize_data_name(node);
 		if(node.size) node.size->accept(*this);
@@ -201,7 +216,7 @@ private:
 		if(node.ty == TypeRegistry::Unknown) return node.ty;
 		if(!node.ty->is_compatible(expected)) {
 			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
-			error.message = "Type Annotation of "+node.name+" does not match expected type kind.";
+			error.message = "Type Annotation of "+node.get_token_string()+" does not match expected type kind.";
 			error.expected =  "<"+expected->get_type_kind_name()+"> Type";
 			error.actual = "<"+node.ty->get_type_kind_name()+"> Type";
 			error.exit();
@@ -213,7 +228,7 @@ private:
 		if(node.ty == TypeRegistry::Unknown) return node.ty;
 		if(!node.ty->is_compatible(expected)) {
 			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
-			error.message = "Type Annotation of "+node.name+" does not match expected type kind.";
+			error.message = "Type Annotation of "+node.get_token_string()+" does not match expected type kind.";
 			error.expected =  "<"+expected->get_type_kind_name()+"> "+ expected->to_string()+" Type";
 			error.actual = "<"+node.ty->get_type_kind_name()+"> "+ node.ty->to_string()+" Type";
 			error.exit();
@@ -235,7 +250,7 @@ private:
 		if (element_type->cast<ObjectType>()) {
 			if (!m_program->find_struct(element_type->ksp_encoded_string())) {
 				auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
-				error.message = "Found undefined Type. Type Annotation of "+node.name+" does not match any existing <Object> type.";
+				error.set_message("Found undefined Type. Type Annotation of "+node.get_token_string()+" does not match any existing <Object> type.");
 				error.expected = "valid <Object> Type";
 				error.actual = "<"+node.ty->to_string()+">";
 				error.exit();

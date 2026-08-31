@@ -332,6 +332,7 @@ public:
 	NodeAST * visit(NodeParamList& node) override;
     /// check if every member has same type
     NodeAST * visit(NodeInitializerList& node) override;
+	NodeAST * visit(NodeCast& node) override;
 
 	NodeAST * visit(NodeVariableRef& node) override;
 	NodeAST * visit(NodeVariable& node) override;
@@ -507,7 +508,7 @@ public:
             throw_type_error(node1, node2, message).exit();
 		}
 
-	match_composite_type(node1, node2);
+		match_composite_type(node1, node2);
 		// specialize types:
         node1.set_element_type(specialize_type(node1.ty, node2.ty));
 
@@ -668,8 +669,8 @@ public:
 		if (node_2 == TypeRegistry::String) {
 			return node_1;
 		} else {
-				return TypeRegistry::Any;
-			}
+			return TypeRegistry::Any;
+		}
 	}
 
 	return node_1;
@@ -677,19 +678,29 @@ public:
 
 	/// only there to match/generalize formal parameter to actual parameter
 	static Type* match_parameters(NodeAST& node1, Type* type, const std::string& message="") {
-	// if(!node1.ty->is_compatible(type)) {
-	// 	throw_type_error(node1, type, message).exit();
-	// }
-	// if type is composite and node1 is unknown, set type of node1 to type
-	if(type->cast<CompositeType>() and node1.ty == TypeRegistry::Unknown) {
-		// stash elem_typ temporarily
-		const auto elem_type = node1.ty->get_element_type();
-		node1.ty = type;
-		node1.set_element_type(elem_type);
-	}
-	// specialize types:
-	node1.set_element_type(generalize_type(node1.ty, type));
-	return node1.ty;
+		// if(!node1.ty->is_compatible(type)) {
+		// 	throw_type_error(node1, type, message).exit();
+		// }
+		// if type is composite and node1 is unknown, set type of node1 to type
+		if(type->cast<CompositeType>() and node1.ty == TypeRegistry::Unknown) {
+			// stash elem_typ temporarily
+			const auto elem_type = node1.ty->get_element_type();
+			node1.ty = type;
+			node1.set_element_type(elem_type);
+		}
+		// specialize types:
+		node1.set_element_type(generalize_type(node1.ty, type));
+		return node1.ty;
     }
+
+	// static Diagnostic make_missing_object_type_error(NodeProgram& program, NodeAST& node) {
+	//     auto type = node.ty->get_element_type();
+ //    	auto type_internal_string = type->ksp_encoded_string();
+ //    	auto type_diagnostic_string = type->to_string();
+ //    	auto strct = program.find_struct(type_internal_string);
+ //    	auto error = Diagnostic(ErrorType::TypeError, "", "", node.tok);
+ //    	error.set_message("Found incorrect <Object> type <"+ type_diagnostic_string + ">.");
+ //
+ //    }
 
 };
