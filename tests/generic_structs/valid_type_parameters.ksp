@@ -1,0 +1,8 @@
+// EXPECT message\(1\)
+
+struct Pair<T, U,>
+end struct
+
+on init
+    message(1)
+end on

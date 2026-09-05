@@ -491,6 +491,22 @@ class LanguageServerClient:
             "textDocument/documentLink", {"textDocument": {"uri": fixture.uri}}
         ) or []
 
+    def code_actions(self, fixture: Fixture, diagnostics: list | None = None) -> list:
+        """Quick fixes offered for `diagnostics`, defaulting to everything the
+        last analysis published for the fixture. The server derives actions from
+        the diagnostics the client sends back, so the request carries them."""
+        if diagnostics is None:
+            diagnostics = self.diagnostics(fixture)
+        if not diagnostics:
+            return []
+        span = {"start": diagnostics[0]["range"]["start"],
+                "end": diagnostics[-1]["range"]["end"]}
+        return self.request("textDocument/codeAction", {
+            "textDocument": {"uri": fixture.uri},
+            "range": span,
+            "context": {"diagnostics": diagnostics, "only": ["quickfix"]},
+        }) or []
+
     def completion(self, fixture: Fixture, marker: str = "", *,
                    trigger_character: str | None = ".") -> list:
         params = self._position_params(fixture, fixture.at(marker))
@@ -589,6 +605,56 @@ def expect_no_labels(items: list, forbidden: list[str]) -> None:
 
 def messages_of(diagnostics: list) -> list[str]:
     return [d.get("message", "") for d in diagnostics]
+
+
+def titles_of(actions: list) -> list[str]:
+    return [action.get("title", "") for action in actions]
+
+
+def action_titled(actions: list, needle: str) -> dict:
+    for action in actions:
+        if needle in action.get("title", ""):
+            return action
+    raise AssertionError(f"no quick fix whose title contains {needle!r}; "
+                         f"got {titles_of(actions)}")
+
+
+def apply_action(text: str, action: dict, fixture: Fixture) -> str:
+    """Applies a quick fix's edits to `text` the way an editor would. Edits are
+    applied last-to-first so the earlier ones keep the offsets they were
+    computed against."""
+    edits = action["edit"]["changes"][fixture.uri]
+    lines = text.split("\n")
+    for edit in sorted(edits,
+                       key=lambda e: (e["range"]["start"]["line"],
+                                      e["range"]["start"]["character"]),
+                       reverse=True):
+        start, end = edit["range"]["start"], edit["range"]["end"]
+        expect(start["line"] == end["line"],
+               f"quick fix edits are single-line by construction; got {edit}")
+        line = lines[start["line"]]
+        lines[start["line"]] = (line[:start["character"]] + edit["newText"]
+                                + line[end["character"]:])
+    return "\n".join(lines)
+
+
+def port_with_quick_fixes(fixture: Fixture, server: "LanguageServerClient", text: str,
+                          *, limit: int = 12) -> tuple[str, list[str]]:
+    """Applies quick fixes until none is left, the way a user clicking the
+    lightbulb would. Returns the ported text and the titles applied in order."""
+    applied: list[str] = []
+    for round_index in range(limit):
+        diagnostics = [d for d in server.diagnostics(fixture)
+                       if (d.get("data") or {}).get("edits")]
+        if not diagnostics:
+            return text, applied
+        actions = server.code_actions(fixture, diagnostics[:1])
+        expect(actions, f"diagnostic carries a fix but no action was offered: {diagnostics[0]}")
+        applied.append(actions[0]["title"])
+        text = apply_action(text, actions[0], fixture)
+        server.did_change(fixture, text, version=round_index + 2)
+    raise AssertionError(f"quick fixes did not converge within {limit} rounds; "
+                         f"applied {applied}")
 
 
 # --------------------------------------------------------------------------

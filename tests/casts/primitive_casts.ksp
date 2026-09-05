@@ -1,0 +1,15 @@
+// EXPECT \$as_int[0-9]+ := int\(real\(\$EVENT_NOTE\)\)
+// EXPECT ~as_real[0-9]+ := real\(\$EVENT_NOTE\)
+// EXPECT \$as_bool[0-9]+ := - sh_right\(\$EVENT_NOTE \.xor\. - \$EVENT_NOTE, 31\)
+// EXPECT @as_string[0-9]+ := \$EVENT_NOTE
+
+on note
+    declare as_int: int := real($EVENT_NOTE) as int
+    declare as_real: real := $EVENT_NOTE as real
+    declare as_bool: bool := $EVENT_NOTE as bool
+    declare as_string: string := $EVENT_NOTE as string
+    message(as_int)
+    message(as_real)
+    message(as_bool)
+    message(as_string)
+end on

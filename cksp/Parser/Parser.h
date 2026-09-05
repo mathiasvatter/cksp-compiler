@@ -11,6 +11,9 @@
 #include "../../misc/Result.h"
 #include "../Processor/Processor.h"
 #include "../ASTNodes/ASTReferences.h"
+#include "../Migration/PropertyMigration.h"
+#include "../Migration/ReservedResultMigration.h"
+#include "../Migration/TaskfuncMigration.h"
 
 // Hilfsfunktion, die das Result-Objekt zurückgibt, wenn kein Fehler vorliegt.
 template<typename T> Result<T> handle_error(Result<T> result) {
@@ -66,6 +69,25 @@ class Parser: public Processor {
 
 	bool is_variable_declaration();
 	bool is_array_declaration();
+	static constexpr int NO_TYPE_ARGUMENTS = -1;
+	/// Index of the token following a type argument list written directly after the name at
+	/// <peek()>, or <NO_TYPE_ARGUMENTS> when what follows the name is not one. The shape alone
+	/// decides, so a comparison such as <a < b> - which never reaches a closing <>> - is not
+	/// mistaken for a type argument list.
+	[[nodiscard]] int type_argument_list_end() const;
+	/// True for the token shape <Name<T, U>()>. Comparisons such as <a < b> stay expressions.
+	[[nodiscard]] bool looks_like_parameterized_call() const;
+	/// True for the token shape <Name<T, U>.member>: an access chain qualified by a parameterized
+	/// type rather than by an instance.
+	[[nodiscard]] bool looks_like_type_qualified_access() const;
+	/// <property name> alone on its line: the head of a SublimeKSP property block.
+	///
+	/// Recognised by shape rather than by a reserved keyword. <property> is an ordinary word -
+	/// two shipped builtins take a parameter of that name, and parameter names reach the user
+	/// through completion signatures - so reserving it would break them and every script that
+	/// declares a variable called <property>. Two bare keywords followed by a linebreak is not
+	/// a CKSP statement in any position, which makes the shape unambiguous on its own.
+	bool is_sublime_property();
 	static bool is_malformed_end_statement_start(const Token& tok, const Token& next);
 	static Diagnostic make_invalid_end_statement_diagnostic(const std::string& construct, const std::string& expected, const Token& start, const Token& next);
 	static Type* normalize_ksp_identifier_token(Token& token);
@@ -78,6 +100,14 @@ public:
     static std::optional<Token> get_persistent_keyword(const Token& tok);
 	int peek_past_modifiers();
 	static Diagnostic make_declare_modifier_diagnostic(const Token& found);
+	/// The diagnostic for a place that needs a name and found one of CKSP's own words.
+	///
+	/// "expected: keyword, got: xor" leaves the reader to work out that <xor> is spelled like
+	/// a name but is the boolean operator. Naming what the word is reserved for is the whole
+	/// answer, and it is the answer a ported SublimeKSP script needs most: that dialect
+	/// reserves fewer words, so <function xor(a, b)> is ordinary there.
+	static Diagnostic make_name_expected_diagnostic(
+		ErrorType type, std::string message, std::string expected, const Token& found);
 	static std::optional<Diagnostic> check_invalid_end_statement(const std::string& construct, token expected_end, const Token& start, const Token& next);
 
 	static int get_binop_precedence(const token tok) {
@@ -102,6 +132,11 @@ public:
 	Result<std::unique_ptr<NodeFormatString>> parse_fstring(NodeAST* parent);
     Result<std::unique_ptr<NodeVariable>> parse_variable(NodeAST* parent, const std::optional<Token>& is_persistent=std::optional<Token>(), DataType var_type=DataType::Mutable);
 	Result<std::unique_ptr<NodeVariableRef>> parse_variable_ref(NodeAST* parent);
+	/// <List<int>.MAX>: the leading element of an access chain qualified by a parameterized type.
+	/// The reference carries the <ObjectType> instead of a name for the resolver to look up, and
+	/// registering that type also queues the instantiation - the struct therefore exists even when
+	/// nothing else in the script constructs one.
+	Result<std::unique_ptr<NodeVariableRef>> parse_type_qualifier(NodeAST* parent);
 	Result<std::unique_ptr<NodePointer>> parse_pointer(NodeAST* parent, const std::optional<Token>& is_persistent=std::optional<Token>());
 	Result<std::unique_ptr<NodePointerRef>> parse_pointer_ref(NodeAST* parent);
     Result<std::unique_ptr<NodeDataStructure>> parse_array(NodeAST *parent, std::optional<Token> is_persistent = std::optional<Token>(), DataType var_type = DataType::Mutable);
@@ -117,6 +152,7 @@ public:
         /// Helper function for parsing binary string expression recursively
         Result<std::unique_ptr<NodeAST>> _parse_string_expr_rhs(std::unique_ptr<NodeAST> lhs, NodeAST* parent);
     /// parse unary or binary expression
+    Result<std::unique_ptr<NodeAST>> parse_cast(std::unique_ptr<NodeAST> value, NodeAST* parent);
     Result<std::unique_ptr<NodeAST>> parse_binary_expr(NodeAST* parent);
     Result<std::unique_ptr<NodeAST>> parse_unary_expr(NodeAST* parent);
 	    /// Helper function for parsing binary expressions recursion
@@ -147,6 +183,20 @@ public:
     Result<std::unique_ptr<NodeAST>> parse_list_block(NodeAST* parent);
 	Result<std::unique_ptr<NodeAST>> parse_family_statement(NodeAST* parent);
 	Result<std::unique_ptr<NodeStruct>> parse_struct(NodeAST* parent);
+	Result<std::vector<Token>> parse_struct_type_parameters(const Token& struct_name);
+	/// RAII struct scope while parsing for the parameterized types of generic structs
+	class StructTypeScope final {
+		std::vector<NodeStruct*>& m_stack;
+	public:
+		StructTypeScope(std::vector<NodeStruct*>& stack, NodeStruct* strct) : m_stack(stack) {
+			m_stack.push_back(strct);
+		}
+		~StructTypeScope() {
+			m_stack.pop_back();
+		}
+		StructTypeScope(const StructTypeScope&) = delete;
+		StructTypeScope& operator=(const StructTypeScope&) = delete;
+	};
 
 	/// combines all possible statement types
     Result<std::unique_ptr<NodeStatement>> parse_statement(NodeAST* parent);
@@ -159,6 +209,15 @@ public:
     Result<std::unique_ptr<NodeGetControl>> parse_get_control_statement(std::unique_ptr<NodeAST> ui_id, NodeAST* parent);
     Result<std::shared_ptr<NodeFunctionDefinition>> parse_function_definition(NodeAST* parent);
 	std::shared_ptr<NodeFunctionDefinition> m_current_function_def;
+	/// Engaged while the body of a function whose result is named <return> is being parsed.
+	/// SublimeKSP has no <return> statement, so <function neg(x) -> return> spells the result
+	/// with a word CKSP reserves - see parse_function_definition, which already takes it as a
+	/// name in the header, and parse_statement, which has to take it as one in the body too.
+	bool m_result_named_return = false;
+	/// Engaged while a SublimeKSP <taskfunc> block is being parsed, so its parameters accept
+	/// the <var>/<out> modifiers and the edits reach the migration diagnostic. Owned rather
+	/// than pointed at because the block's error paths return without unwinding through here.
+	std::optional<TaskfuncMigration> m_taskfunc_migration;
     /// function params are no references -> replace with references
     Result<std::unique_ptr<NodeParamList>> parse_function_args(NodeAST* parent);
 	Result<std::unique_ptr<NodeFunctionHeader>> parse_function_header(NodeAST* parent);

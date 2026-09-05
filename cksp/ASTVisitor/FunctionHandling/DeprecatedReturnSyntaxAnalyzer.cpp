@@ -1,4 +1,5 @@
 #include "DeprecatedReturnSyntaxAnalyzer.h"
+#include "../../../misc/DiagnosticFixBuilder.h"
 
 #include <string>
 #include <utility>
@@ -24,15 +25,8 @@ bool DeprecatedReturnSyntaxAnalyzer::references_result(NodeAST& node) const {
 
 Diagnostic::DiagnosticFix::Edit
 DeprecatedReturnSyntaxAnalyzer::remove_header_result_edit() const {
-	return {
-		.kind = Diagnostic::DiagnosticFix::EditKind::Replace,
-		.file = m_result_variable->tok.file(),
-		.range = SourceRange(
-			m_function->header->range.end,
-			m_result_variable->range.end
-		),
-		.new_text = ""
-	};
+	const SourceRange result_range(m_function->header->range.end, m_result_variable->range.end);
+	return DiagnosticFixBuilder::replace_edit(m_result_variable->tok.file(), result_range, "");
 }
 
 std::optional<Diagnostic::DiagnosticFix>
@@ -51,23 +45,13 @@ DeprecatedReturnSyntaxAnalyzer::make_simple_fix() const {
 	edits.reserve(m_terminal_assignments.size() + 1);
 	edits.push_back(remove_header_result_edit());
 	for (const auto* assignment : m_terminal_assignments) {
-		edits.push_back({
-			.kind = Diagnostic::DiagnosticFix::EditKind::Replace,
-			.file = assignment->tok.file(),
-			.range = SourceRange(
-				assignment->l_value->range.start,
-				assignment->r_value->range.start
-			),
-			.new_text = "return "
-		});
+		const SourceRange assignment_range(assignment->l_value->range.start, assignment->r_value->range.start);
+		edits.push_back(DiagnosticFixBuilder::replace_edit(assignment->tok.file(), assignment_range, "return "));
 	}
 
-	return Diagnostic::DiagnosticFix{
-		.kind = Diagnostic::DiagnosticFix::FixKind::ConvertDeprecatedFunctionReturn,
-		.title = "Convert '" + m_function->header->name + "' to return statements",
-		.edits = std::move(edits),
-		.is_preferred = true
-	};
+	return DiagnosticFixBuilder(Diagnostic::DiagnosticFix::FixKind::ConvertDeprecatedFunctionReturn, "Convert '" + m_function->header->name + "' to return statements")
+		.add_edits(std::move(edits))
+		.build();
 }
 
 std::optional<Diagnostic::DiagnosticFix>
@@ -97,39 +81,22 @@ DeprecatedReturnSyntaxAnalyzer::make_fallback_fix() const {
 	const size_t body_indent = first_statement.range.start.column > 0
 		? first_statement.range.start.column - 1
 		: function_indent + 4;
-	const size_t indent_width = body_indent > function_indent
+	const size_t indent_step = body_indent > function_indent
 		? body_indent - function_indent
 		: 4;
-	const char indent_character = indent_width == 1 ? '\t' : ' ';
-	edits.push_back({
-		.kind = Diagnostic::DiagnosticFix::EditKind::InsertBefore,
-		.file = m_result_variable->tok.file(),
-		.range = first_statement.range,
-		.new_text = "declare " + result_name + "\n"
-			+ std::string(body_indent, indent_character)
-	});
-	edits.push_back({
-		.kind = Diagnostic::DiagnosticFix::EditKind::InsertBefore,
-		.file = m_result_variable->tok.file(),
-		.range = SourceRange(end_function_start, end_function_start),
-		.new_text =
-			std::string(
-				body_indent > function_indent
-					? body_indent - function_indent
-					: 0,
-				indent_character
-			)
-			+ "return " + result_name + "\n"
-			+ std::string(function_indent, indent_character)
-	});
+	const auto body_indentation = indentation(body_indent, indent_step);
+	const auto function_indentation = indentation(function_indent, indent_step);
+	const auto step_indentation = indentation(
+		body_indent > function_indent ? body_indent - function_indent : 0, indent_step);
+	const auto declaration_text = "declare " + result_name + "\n" + body_indentation;
+	const auto return_text = step_indentation + "return " + result_name + "\n" + function_indentation;
+	edits.push_back(DiagnosticFixBuilder::insert_before_edit(m_result_variable->tok.file(), first_statement.range, declaration_text));
+	edits.push_back(DiagnosticFixBuilder::insert_before_edit(m_result_variable->tok.file(), SourceRange(end_function_start, end_function_start), return_text));
 
 
-	return Diagnostic::DiagnosticFix{
-		.kind = Diagnostic::DiagnosticFix::FixKind::ConvertDeprecatedFunctionReturn,
-		.title = "Convert '" + m_function->header->name + "' using a local result",
-		.edits = std::move(edits),
-		.is_preferred = true
-	};
+	return DiagnosticFixBuilder(Diagnostic::DiagnosticFix::FixKind::ConvertDeprecatedFunctionReturn, "Convert '" + m_function->header->name + "' using a local result")
+		.add_edits(std::move(edits))
+		.build();
 }
 
 void DeprecatedReturnSyntaxAnalyzer::analyze(NodeFunctionDefinition& function) {

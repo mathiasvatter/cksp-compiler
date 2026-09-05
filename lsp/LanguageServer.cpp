@@ -377,14 +377,24 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 	auto code_action_options = std::make_unique<JSONObject>();
 	auto code_action_kinds = std::make_unique<JSONArray>();
 	code_action_kinds->add(std::make_unique<JSONString>("quickfix"));
+	// Lets a client offer "Fix All" and run the fixes of a file on save.
+	code_action_kinds->add(std::make_unique<JSONString>("source.fixAll"));
 	code_action_options->add("codeActionKinds", std::move(code_action_kinds));
 	code_action_options->add(
 		"resolveProvider",
 		std::make_unique<JSONBool>(false)
 	);
 
+	// A client cannot tell "this compiler reports no SublimeKSP migrations" from "this
+	// workspace has none" by looking at diagnostics: both are silence. Announcing it here is
+	// the compiler saying which of the two it is, so a migration tool can refuse before it
+	// analyses anything rather than reporting a clean workspace it never checked.
+	auto experimental = std::make_unique<JSONObject>();
+	experimental->add("ckspMigrationProvider", std::make_unique<JSONBool>(true));
+
 	JSONObject capabilities;
 	capabilities.add("textDocumentSync", std::make_unique<JSONObject>(sync));
+	capabilities.add("experimental", std::move(experimental));
 	capabilities.add("definitionProvider", std::make_unique<JSONBool>(true));
 	capabilities.add("documentLinkProvider", std::make_unique<JSONObject>(document_link_options));
 	capabilities.add("referencesProvider", std::make_unique<JSONBool>(true));
@@ -502,7 +512,8 @@ void LanguageServer::handle_code_action(const JsonRpcMessage& message) const {
 	const auto* id = message.id();
 	if (id) {
 		const auto* params = message.params() ? message.params()->as<JSONObject>() : nullptr;
-		m_connection.send_response(*id, CodeActionProvider::provide(params));
+		m_connection.send_response(
+			*id, CodeActionProvider::provide(params, m_diagnostic_publisher));
 	}
 }
 

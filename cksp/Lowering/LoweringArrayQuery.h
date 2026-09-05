@@ -69,7 +69,7 @@ public:
 
 		// The hidden heap parameters are part of the function type. Consequently,
 		// helpers of different path depth or element type overload naturally.
-		const std::string function_name = object_type->to_string() + OBJ_DELIMITER + node.query_name();
+		const std::string function_name = object_type->ksp_encoded_string() + OBJ_DELIMITER + node.query_name();
 		std::vector<Type*> param_types{node.array->ty};
 		param_types.insert(param_types.end(), heap_types.begin(), heap_types.end());
 		param_types.push_back(node.value->ty);

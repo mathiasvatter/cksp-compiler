@@ -1,0 +1,32 @@
+on init
+    tcm.init(100)
+    declare seed
+end on
+
+<|taskfunc|>taskfunc get_random_value(min, max) -> result
+    declare r
+    r := random(min, max)
+    tcm.wait(500000)
+    result := r
+end taskfunc
+
+taskfunc swap_get_max(var a, var b, out max)
+    declare tmp
+    tmp := a
+    a := b
+    b := tmp
+    tcm.wait(1000)
+    if (a > b)
+        max := a
+    else
+        max := b
+    end if
+end taskfunc
+
+on note
+    declare m
+    declare p := 1
+    declare q := 2
+    swap_get_max(p, q, m)
+    seed := get_random_value(10, 40)
+end on

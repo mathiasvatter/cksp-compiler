@@ -1,0 +1,8 @@
+// EXPECT_ERROR Parameterized type <List> cannot be used as a type argument yet
+
+struct List<T>
+end struct
+
+on init
+    declare value: List<List<int>>
+end on

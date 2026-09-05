@@ -52,6 +52,7 @@ public:
 	NodeAST * visit(NodeUnaryExpr& node) override;
 	NodeAST * visit(NodeAssignment& node) override;
     NodeAST * visit(NodeSingleAssignment& node) override;
+	NodeAST * visit(NodeCast& node) override;
 	NodeAST * visit(NodeConst& node) override;
 	NodeAST * visit(NodeStruct& node) override;
 	NodeAST * visit(NodeFamily& node) override;

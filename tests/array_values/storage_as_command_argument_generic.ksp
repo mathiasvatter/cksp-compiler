@@ -1,0 +1,28 @@
+{ The same as <storage_as_command_argument>, written with type arguments.
+
+  <Box<int>.storage(.v)> is spelled out as a type-qualified access chain, which the parser
+  hands over as a reference - unlike the plain <Box.storage(.v)>, which is a call until
+  variable checking turns it into one. The commands must not take that difference for an
+  array reference: lowering replaces the chain with a call to the generated accessor, and
+  their array slot holds a reference only. }
+
+// EXPECT message\(search\(%Box____int____v, 2\)\)
+// EXPECT message\(num_elements\(%Box____int____v\)\)
+// EXPECT sort\(%Box____int____v, 0\)
+{ the heap itself reaches the command, so nothing is copied element by element }
+// EXPECT_NOT ^[[:space:]]*while
+
+on init
+    declare a: Box<int> := new Box<int>(1)
+    declare b: Box<int> := new Box<int>(2)
+    message(search(Box<int>.storage(.v), 2))
+    message(num_elements(Box<int>.storage(.v)))
+    sort(Box<int>.storage(.v), 0)
+end on
+
+struct Box<T>
+    declare v: T
+    function __init__(self, val: T)
+        self.v := val
+    end function
+end struct

@@ -238,6 +238,10 @@ NodeAST * ASTCollectLowerings::visit(NodeFunctionCall& node) {
 	return node.lower(m_program);
 }
 
+NodeAST * ASTCollectLowerings::visit(NodeCast &node) {
+	return ASTVisitor::visit(node)->lower(m_program)->accept(*this);
+}
+
 NodeAST * ASTCollectLowerings::visit(NodeArray& node) {
 	//TRACE();
     if(node.size) node.size->accept(*this);
@@ -299,7 +303,17 @@ NodeAST * ASTCollectLowerings::visit(NodeAccessChain& node) {
 	if (LoweringStorageAccess::is_storage_access(node)) {
 		static LoweringStorageAccess storage_access(m_program);
 		storage_access.set_program(m_program);
-		return node.accept(storage_access)->accept(*this);
+		const auto accessor = node.accept(storage_access);
+		// The accessor is a call, so a parent whose slot only takes a reference refuses to hold
+		// it and hands back nothing. Every command with such a slot keeps a storage access out
+		// of it (see DesugarFunctionCall), which leaves no way to get here - say so rather than
+		// walk into a node that does not exist.
+		if (!accessor) {
+			auto error = Diagnostic(ErrorType::InternalError, "", "", node.tok);
+			error.message = "Storage access could not be replaced by its accessor.";
+			error.exit();
+		}
+		return accessor->accept(*this);
 	}
 	LoweringOptionalChaining opt_chaining(m_program);
 	const auto new_node = node.accept(opt_chaining);

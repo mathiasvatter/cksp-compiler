@@ -1,0 +1,50 @@
+{ <sh_left>/<sh_right> with two literals are folded here, so the constant that ends up in the
+  script has to be the one Kontakt would have computed itself.
+
+  Kontakt evaluates both as the native 32 bit shift of its host, which takes only the low five
+  bits of the count. The expectations below are what Kontakt 7 printed for the same expressions
+  with the operands held in variables, where neither compiler can fold them away:
+
+    sh_right(-1, 31) = -1            sh_left(1, 32) = 1
+    sh_right(-1, 32) = -1            sh_left(1, 33) = 2
+    sh_right(-1, 33) = -1            sh_left(1, 31) = -2147483648
+    sh_right(1, 32)  = 1             sh_left(-1, 1) = -2
+    sh_right(8, 2)   = 2
+    sh_right(1, -1)  = 0             sh_left(1, -1) = -2147483648
+
+  A count of 32 or more and a negative count are the interesting ones: they are undefined
+  behaviour on the int32_t the folder uses, so getting them right is not something the host
+  compiler can be trusted with. <sh_right(-1, 32)> is not academic - it is how the bit list
+  helpers in sonu-libraries spell a full 32 bit mask. }
+
+{ a right shift keeps the sign, and a count at or past the width wraps to its low five bits }
+// EXPECT message\("sr31 " & -1\)
+// EXPECT message\("sr32 " & -1\)
+// EXPECT message\("sr33 " & -1\)
+// EXPECT message\("sr1x32 " & 1\)
+// EXPECT message\("sr8x2 " & 2\)
+{ a left shift runs on the bit pattern, so reaching the sign bit gives the negative value }
+// EXPECT message\("sl32 " & 1\)
+// EXPECT message\("sl33 " & 2\)
+// EXPECT message\("sl31 " & -2147483648\)
+// EXPECT message\("slneg " & -2\)
+{ a negative count masks to 31 }
+// EXPECT message\("srm1 " & 0\)
+// EXPECT message\("slm1 " & -2147483648\)
+{ nothing is left for the engine to evaluate }
+// EXPECT_NOT sh_right\(
+// EXPECT_NOT sh_left\(
+
+on init
+    message("sr31 " & sh_right(-1, 31))
+    message("sr32 " & sh_right(-1, 32))
+    message("sr33 " & sh_right(-1, 33))
+    message("sr1x32 " & sh_right(1, 32))
+    message("sr8x2 " & sh_right(8, 2))
+    message("sl32 " & sh_left(1, 32))
+    message("sl33 " & sh_left(1, 33))
+    message("sl31 " & sh_left(1, 31))
+    message("slneg " & sh_left(-1, 1))
+    message("srm1 " & sh_right(1, -1))
+    message("slm1 " & sh_left(1, -1))
+end on

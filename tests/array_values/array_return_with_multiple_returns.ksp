@@ -1,0 +1,32 @@
+{ Passing the array return parameter by reference means the function is inlined, and a function
+  with more than one return statement can only be inlined through the return flag rewrite.
+
+  The strategy that decides this runs before ReturnParamPromotion creates the parameter, so it
+  has to predict it from the return type. If it does not, LoweringFunctionDefReturnStmts picks
+  the <exit> form for a function that is inlined after all, and the branches collapse into bare
+  <exit> statements that end the whole callback. }
+
+{ the branch survives and both returns write into the caller variable }
+// EXPECT if\(\$flag[0-9]* > 0\)
+// EXPECT %x[0-9]*\[\$[A-Za-z_0-9]+\] := %a\[\$[A-Za-z_0-9]+\]
+// EXPECT %x[0-9]*\[\$[A-Za-z_0-9]+\] := %b\[\$[A-Za-z_0-9]+\]
+{ the return flag rewrite, not the exit form }
+// EXPECT \$RETURN_FLAG[0-9]* := 1
+// EXPECT_NOT ^[[:space:]]*exit
+// EXPECT_NOT declare %ret
+
+declare a[4] := [1, 2, 3, 4]
+declare b[4] := [9, 9, 9, 9]
+
+function pick(flag: int): int[]
+    if flag > 0
+        return a
+    end if
+    return b
+end function
+
+on init
+    declare x[4] := pick(1)
+    declare y[4] := pick(0)
+    message(x[0] & " " & y[0])
+end on

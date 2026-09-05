@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 project(CKSP_Compiler VERSION 0.1.0)
-set(PRE_RELEASE_VERSION "-alpha.4")
+set(PRE_RELEASE_VERSION "-alpha.5")
 
 set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
 configure_file(
@@ -64,8 +64,15 @@ add_library(cksp_core STATIC
         cksp/Source/SourceParser.cpp
         cksp/Parser/Parser.h
         cksp/Parser/Parser.cpp
+        cksp/Migration/TaskfuncMigration.h
+        cksp/Migration/TCMMigration.h
+        cksp/Migration/PropertyMigration.h
+        cksp/Migration/PragmaMigration.h
+        cksp/Migration/MacroMigration.h
         misc/Diagnostic.h
         misc/Diagnostic.cpp
+        misc/DiagnosticFixBuilder.h
+        misc/DiagnosticFixBuilder.cpp
         misc/DiagnosticReport.h
         misc/DiagnosticEngine.h
         misc/DiagnosticEngine.cpp
@@ -304,6 +311,8 @@ add_executable(cksp
         lsp/DiagnosticPublisher.h
         lsp/EntryPointResolver.cpp
         lsp/EntryPointResolver.h
+        cksp/Desugaring/DesugarGenericStruct.h
+        cksp/Lowering/LoweringCast.h
 )
 target_link_libraries(cksp PRIVATE cksp_core)
 

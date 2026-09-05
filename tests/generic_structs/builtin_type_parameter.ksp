@@ -1,0 +1,7 @@
+// EXPECT_ERROR Built-in type <int> cannot be used as a type parameter name in generic struct <Bad>
+
+struct Bad<int>
+end struct
+
+on init
+end on

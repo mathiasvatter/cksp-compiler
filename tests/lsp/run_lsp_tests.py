@@ -22,6 +22,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from lsp_harness import (  # noqa: E402
     Position,
+    action_titled,
+    apply_action,
     expect,
     expect_definition,
     expect_labels,
@@ -30,6 +32,7 @@ from lsp_harness import (  # noqa: E402
     item_named,
     labels_of,
     messages_of,
+    port_with_quick_fixes,
     position_of,
     run_suite,
     same_path,
@@ -155,6 +158,15 @@ def _(workspace, server):
     fixture = workspace.open("struct_lowering_abort.cksp")
     expect(server.diagnostics(fixture), "precondition: the static access aborts the analysis")
     expect_definition(server.definition(fixture, "note_use"), fixture, "note_decl")
+
+
+@test("definition: a generic type qualifier jumps to the struct template")
+def _(workspace, server):
+    # `Box` in `Box<int>.MAX` is not a variable and has no declaration of its own. It is
+    # indexed through the type it names, which resolves to the monomorphized struct and
+    # from there back to the template the clone was made from.
+    fixture = workspace.open("navigation_generic_struct.cksp")
+    expect_definition(server.definition(fixture, "qualifier_use"), fixture, "box_decl")
 
 
 @test("definition: function imported from another file")
@@ -316,6 +328,46 @@ def _(workspace, server):
     )
 
 
+@test("diagnostics: a variable read in its own declaration is named as such")
+def _(workspace, server):
+    # The compiler used to accept this and the server used to call it undeclared: the
+    # declaration is split by ASTReturnFunctionRewriting, which runs before the compiler's
+    # final variable check but after the server's. Both now report the read itself.
+    fixture = workspace.open("diagnostics_self_reference.cksp")
+    diagnostics = server.diagnostics(fixture)
+    # The deprecated return syntax and the written parameter warn on their own; the read is
+    # the only error among them.
+    reported = [
+        diagnostic for diagnostic in diagnostics
+        if "own declaration" in diagnostic["message"]
+    ]
+    expect(
+        reported,
+        f"expected a diagnostic for the read in the own declaration; "
+        f"got {messages_of(diagnostics)}",
+    )
+
+    diagnostic = reported[0]
+    expect_position(
+        position_of(diagnostic), fixture, "declared_name", what="diagnostic position",
+    )
+    expect(
+        "last_idx" in diagnostic["message"],
+        f"the message must name the variable; got {diagnostic['message']!r}",
+    )
+
+
+@test("diagnostics: a declaration that shadows a variable of its own name stays silent")
+def _(workspace, server):
+    # <declare counter := counter + 1> next to an outer <counter> declares a second variable
+    # seeded from the first one. Only a name nothing else declares is a read of itself.
+    fixture = workspace.open("diagnostics_shadowed_declaration.cksp")
+    expect(
+        server.diagnostics(fixture) == [],
+        f"expected no diagnostics, got {messages_of(server.diagnostics(fixture))}",
+    )
+
+
 @test("diagnostics: a clean file publishes an empty list")
 def _(workspace, server):
     fixture = workspace.open("navigation.cksp")
@@ -334,6 +386,62 @@ def _(workspace, server):
         server.diagnostics(fixed) == [],
         f"diagnostics should be cleared, got {messages_of(server.diagnostics(fixed))}",
     )
+
+
+@test("quick fix: assigns discarded function and method returns to a throwaway")
+def _(workspace, server):
+    cases = [
+        (
+            "discarded_function_return.cksp",
+            "function value(): int\n"
+            "    return 1\n"
+            "end function\n\n"
+            "on init\n"
+            "    value()\n"
+            "end on\n",
+            "_ := value()",
+        ),
+        (
+            "discarded_method_return.cksp",
+            "struct Box\n"
+            "    value: int\n\n"
+            "    function current_value(self): int\n"
+            "        return self.value\n"
+            "    end function\n"
+            "end struct\n\n"
+            "on init\n"
+            "    declare box := new Box(1)\n"
+            "    box.current_value()\n"
+            "end on\n",
+            "_ := box.current_value()",
+        ),
+    ]
+
+    for name, source, expected in cases:
+        fixture = workspace.write(name, source)
+        server.did_open(fixture)
+        diagnostics = [
+            diagnostic for diagnostic in server.diagnostics(fixture)
+            if "discarded here" in diagnostic["message"]
+        ]
+        expect(len(diagnostics) == 1,
+               f"{name}: expected one discarded-return warning, got {messages_of(diagnostics)}")
+        data = diagnostics[0].get("data") or {}
+        expect(data.get("fixKind") == "AssignDiscardedReturnToThrowaway",
+               f"{name}: wrong fix kind: {diagnostics[0]}")
+
+        action = action_titled(server.code_actions(fixture, diagnostics), "throwaway")
+        expect(action.get("isPreferred") is True,
+               f"{name}: the only direct fix should be preferred: {action}")
+        ported = apply_action(source, action, fixture)
+        expect(expected in ported, f"{name}: quick fix produced:\n{ported}")
+
+        fixture = server.did_change(fixture, ported)
+        remaining = [
+            message for message in messages_of(server.diagnostics(fixture))
+            if "discarded here" in message
+        ]
+        expect(not remaining, f"{name}: warning survived its quick fix: {remaining}")
 
 
 @test("lifecycle: an unsaved edit is analysed from the buffer, not from disk")
@@ -846,6 +954,790 @@ def _(workspace, server):
         cursor = Position(7, len(typed) + 4)
         items = server.completion_at(current, cursor)
         expect_labels(items, ["rate", "channels"])
+
+
+# ==========================================================================
+# SublimeKSP migration — taskfunc and TCM are rejected, but with a way out
+# ==========================================================================
+
+@test("migration: a taskfunc is named as SublimeKSP's, not as an unknown construct",
+      entry_points=["migration_taskfunc.cksp"])
+def _(workspace, server):
+    fixture = workspace.open("migration_taskfunc.cksp")
+    diagnostics = server.diagnostics(fixture)
+    expect(diagnostics, "expected a diagnostic for the taskfunc block")
+    message = diagnostics[0]["message"]
+    expect("taskfunc" in message and "SublimeKSP" in message,
+           f"the diagnostic should name the construct and its dialect; got {message!r}")
+    expect((diagnostics[0].get("data") or {}).get("migrationKind") == "Taskfunc",
+           f"taskfunc diagnostic is not marked for migration: {diagnostics[0]}")
+    expect((diagnostics[0].get("data") or {}).get("fixKind") == "ConvertTaskfuncToFunction",
+           f"taskfunc diagnostic has the wrong fix kind: {diagnostics[0]}")
+    expect_position(position_of(diagnostics[0]), fixture, "taskfunc",
+                    what="taskfunc diagnostic")
+
+
+@test("migration: the taskfunc quick fix rewrites keywords, parameters and tcm.wait",
+      entry_points=["migration_taskfunc.cksp"])
+def _(workspace, server):
+    fixture = workspace.open("migration_taskfunc.cksp")
+    action = action_titled(server.code_actions(fixture), "get_random_value")
+    ported = apply_action(fixture.text, action, fixture)
+    first = ported.split("end function")[0]
+    for expected in ["function get_random_value(min, max) -> result", "wait(500000)"]:
+        expect(expected in first, f"expected {expected!r} in the ported block:\n{first}")
+    expect("taskfunc" not in first, f"taskfunc keyword survived:\n{first}")
+
+
+@test("migration: applying every quick fix ports the script to compiling cksp",
+      entry_points=["migration_taskfunc.cksp"])
+def _(workspace, server):
+    fixture = workspace.open("migration_taskfunc.cksp")
+    ported, applied = port_with_quick_fixes(fixture, server, fixture.text)
+    expect(len(applied) == 4, f"expected four fixes (two taskfuncs, the arrow return and "
+                              f"tcm.init); applied {applied}")
+    expect(not server.diagnostics(fixture),
+           f"ported script still reports {messages_of(server.diagnostics(fixture))}")
+    for expected in ["function swap_get_max(ref a, ref b, ref max)",
+                     "#pragma max_callback_depth(100)",
+                     "return r"]:
+        expect(expected in ported, f"expected {expected!r} in:\n{ported}")
+    expect("taskfunc" not in ported and "tcm." not in ported,
+           f"SublimeKSP constructs survived:\n{ported}")
+
+
+@test("migration: tcm.init with a literal becomes the pragma that replaces it",
+      entry_points=["tcm_init.cksp"])
+def _(workspace, server):
+    fixture = workspace.write("tcm_init.cksp",
+                              "on init\n    tcm.init(64)\nend on\n")
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect((diagnostics[0].get("data") or {}).get("migrationKind") == "TCM",
+           f"tcm.init diagnostic is not marked for migration: {diagnostics[0]}")
+    expect((diagnostics[0].get("data") or {}).get("fixKind") == "ConvertTCMCall",
+           f"tcm.init diagnostic has the wrong fix kind: {diagnostics[0]}")
+    action = action_titled(server.code_actions(fixture), "max_callback_depth")
+    expect("#pragma max_callback_depth(64)" in apply_action(fixture.text, action, fixture),
+           "the fix should write the pragma with the call's own depth")
+
+
+@test("migration: a computed tcm.init depth is explained instead of half-fixed",
+      entry_points=["tcm_computed.cksp"])
+def _(workspace, server):
+    # A pragma argument is read before anything is folded, so a fix here would
+    # produce a file that does not compile. The message has to carry the port.
+    fixture = workspace.write(
+        "tcm_computed.cksp",
+        "on init\n    declare depth := 64\n    tcm.init(depth * 2)\nend on\n")
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(diagnostics, "expected a diagnostic for tcm.init")
+    expect("max_callback_depth" in diagnostics[0]["message"],
+           f"the message should name the option; got {diagnostics[0]['message']!r}")
+    expect((diagnostics[0].get("data") or {}).get("migrationKind") == "TCM",
+           f"computed tcm.init must remain identifiable as a migration blocker: {diagnostics[0]}")
+    expect("fixKind" not in (diagnostics[0].get("data") or {}),
+           f"computed tcm.init must not advertise a fix: {diagnostics[0]}")
+    expect(not server.code_actions(fixture),
+           "no fix may be offered for a depth that cannot become a pragma argument")
+
+
+@test("migration: an unknown tcm call is explained without a fix",
+      entry_points=["tcm_unknown.cksp"])
+def _(workspace, server):
+    fixture = workspace.write("tcm_unknown.cksp",
+                              "on note\n    tcm.reset()\nend on\n")
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(diagnostics, "expected a diagnostic for the unknown tcm call")
+    expect("Task Control Module" in diagnostics[0]["message"],
+           f"the message should name TCM; got {diagnostics[0]['message']!r}")
+    expect((diagnostics[0].get("data") or {}).get("migrationKind") == "TCM",
+           f"unknown TCM call must remain identifiable as a migration blocker: {diagnostics[0]}")
+    expect(not server.code_actions(fixture), "an unknown tcm call has nothing to rewrite to")
+
+
+@test("migration: a global NodeVariable initializer using a local is split",
+      entry_points=["global_local_initializer.cksp"])
+def _(workspace, server):
+    source = (
+        "function store(control)\n"
+        "\tdeclare global stored := control + 1\n"
+        "end function\n"
+        "\n"
+        "on init\n"
+        "\tstore(1)\n"
+        "end on\n"
+    )
+    fixture = workspace.write("global_local_initializer.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(len(diagnostics) == 1, f"expected one diagnostic, got {messages_of(diagnostics)}")
+    data = diagnostics[0].get("data") or {}
+    expect(data.get("migrationKind") == "GlobalDeclarationInitializer",
+           f"global-local initializer is not marked for migration: {diagnostics[0]}")
+    expect(data.get("fixKind") == "SplitGlobalDeclarationAssignment",
+           f"global-local initializer has the wrong fix kind: {diagnostics[0]}")
+
+    action = action_titled(server.code_actions(fixture), "Split global declaration")
+    ported = apply_action(source, action, fixture)
+    expect("\tdeclare global stored\n\tstored := control + 1" in ported,
+           f"the declaration and assignment were not split with their indentation:\n{ported}")
+    server.did_change(fixture, ported)
+    expect(not server.diagnostics(fixture),
+           f"split source still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: a split declaration keeps the tabs of the line it came from",
+      entry_points=["global_local_initializer_tabs.cksp"])
+def _(workspace, server):
+    # Two levels deep with tabs: the column alone reads as two characters of indentation,
+    # which is what a width-based guess turns into two spaces.
+    source = (
+        "function store(control)\n"
+        "\tif control > 0\n"
+        "\t\tdeclare global stored := control + 1\n"
+        "\tend if\n"
+        "end function\n"
+        "\n"
+        "on init\n"
+        "\tstore(1)\n"
+        "end on\n"
+    )
+    fixture = workspace.write("global_local_initializer_tabs.cksp", source)
+    server.did_open(fixture)
+    action = action_titled(server.code_actions(fixture), "Split global declaration")
+    ported = apply_action(source, action, fixture)
+    expect("\t\tdeclare global stored\n\t\tstored := control + 1" in ported,
+           f"the assignment was not indented with the line's own tabs:\n{ported!r}")
+    server.did_change(fixture, ported)
+    expect(not server.diagnostics(fixture),
+           f"split source still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: a genuinely global unknown initializer is not split",
+      entry_points=["global_unknown_initializer.cksp"])
+def _(workspace, server):
+    fixture = workspace.write(
+        "global_unknown_initializer.cksp",
+        "on init\n    declare global stored := missing\nend on\n")
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(diagnostics, "expected an undeclared-variable diagnostic")
+    expect(all((diagnostic.get("data") or {}).get("migrationKind")
+               != "GlobalDeclarationInitializer" for diagnostic in diagnostics),
+           f"an initializer already in global scope must not be split: {diagnostics}")
+    expect(not server.code_actions(fixture),
+           "an unknown name in a genuinely global initializer has no safe split fix")
+
+
+@test("migration: repeated analyses expose every fatal global initializer",
+      entry_points=["global_local_initializers.cksp"])
+def _(workspace, server):
+    source = (
+        "function store(control)\n"
+        "    declare global first := control\n"
+        "    declare global second := control + 1\n"
+        "end function\n"
+        "\n"
+        "on init\n"
+        "    store(1)\n"
+        "end on\n"
+    )
+    fixture = workspace.write("global_local_initializers.cksp", source)
+    server.did_open(fixture)
+    ported, applied = port_with_quick_fixes(fixture, server, source)
+    expect(len(applied) == 2,
+           f"expected both fatal initializer fixes across analyses, applied {applied}")
+    expect("declare global first\n    first := control" in ported,
+           f"first declaration was not split:\n{ported}")
+    expect("declare global second\n    second := control + 1" in ported,
+           f"second declaration was not split:\n{ported}")
+    expect(not server.diagnostics(fixture),
+           f"ported source still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: a name that differs only in case is offered as an edit",
+      entry_points=["case_variable.cksp"])
+def _(workspace, server):
+    # SublimeKSP resolves names case-insensitively, so this is the single most common
+    # error a ported script produces.
+    source = ("on init\n    declare myCounter\nend on\n"
+              "\non note\n    MyCounter := 1\nend on\n")
+    fixture = workspace.write("case_variable.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(len(diagnostics) == 1, f"expected one diagnostic, got {messages_of(diagnostics)}")
+    data = diagnostics[0].get("data") or {}
+    expect(data.get("migrationKind") == "IdentifierCase",
+           f"case-only mismatch is not marked for migration: {diagnostics[0]}")
+    expect(data.get("fixKind") == "CorrectNameCase",
+           f"case-only mismatch has the wrong fix kind: {diagnostics[0]}")
+    action = action_titled(server.code_actions(fixture), "MyCounter")
+    expect(action["title"] == "Change 'MyCounter' to 'myCounter'",
+           f"unexpected title: {action['title']!r}")
+    ported = apply_action(source, action, fixture)
+    server.did_change(fixture, ported)
+    expect(not server.diagnostics(fixture),
+           f"corrected source still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: a miscased function name and a dotted one are both offered",
+      entry_points=["case_function.cksp", "case_dotted.cksp"])
+def _(workspace, server):
+    for name, source, title in [
+        ("case_function.cksp",
+         "function doThing(a)\n    message(a)\nend function\n"
+         "\non note\n    DoThing(1)\nend on\n",
+         "Change 'DoThing' to 'doThing'"),
+        # The reference token spans the whole dotted name, so the edit replaces all of it.
+        ("case_dotted.cksp",
+         "namespace audio\n    declare sampleRate := 44100\nend namespace\n"
+         "\non init\n    message(audio.SampleRate)\nend on\n",
+         "Change 'audio.SampleRate' to 'audio.sampleRate'"),
+    ]:
+        fixture = workspace.write(name, source)
+        server.did_open(fixture)
+        diagnostics = server.diagnostics(fixture)
+        expect(any((diagnostic.get("data") or {}).get("migrationKind") == "IdentifierCase"
+                   for diagnostic in diagnostics),
+               f"{name}: case-only mismatch is not marked for migration: {diagnostics}")
+        action = action_titled(server.code_actions(fixture), "Change")
+        expect(action["title"] == title, f"{name}: unexpected title {action['title']!r}")
+        server.did_change(fixture, apply_action(source, action, fixture))
+        expect(not server.diagnostics(fixture),
+               f"{name} still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: a real typo stays a suggestion and offers no edit",
+      entry_points=["case_typo.cksp"])
+def _(workspace, server):
+    # Same letters in a different order is a guess about intent, not the same identifier;
+    # only a pure case difference is safe to apply on the user's behalf.
+    fixture = workspace.write("case_typo.cksp",
+                              "on init\n    declare counter\nend on\n"
+                              "\non note\n    countr := 1\nend on\n")
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(any("counter" in message for message in messages_of(diagnostics)),
+           f"the message should still suggest the name; got {messages_of(diagnostics)}")
+    expect(all("migrationKind" not in (diagnostic.get("data") or {})
+               for diagnostic in diagnostics),
+           f"an ordinary typo must not become a migration diagnostic: {diagnostics}")
+    expect(not server.code_actions(fixture),
+           "a typo that is not a case difference must not be offered as an edit")
+
+
+@test("diagnostics: an invisible character is named instead of printed",
+      entry_points=["invisible_character.cksp"])
+def _(workspace, server):
+    # A zero width space, as pasted out of a website. Printing it back would show the reader
+    # an empty box on a line that already looks correct. This also exercises the JSON
+    # parser's \\uXXXX handling: the harness escapes every non-ASCII character it sends.
+    source = "on init\n  declare x\n\u200b\nend on\n"
+    fixture = workspace.write("invisible_character.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(diagnostics, "expected a token error")
+    message = diagnostics[0]["message"]
+    expect("U+200B" in message and "zero width space" in message,
+           f"the character has to be named, got {message!r}")
+    expect("invisible" in message or "no mark on screen" in message,
+           f"why the line looks correct should be said: {message!r}")
+
+    action = action_titled(server.code_actions(fixture), "Remove")
+    ported = apply_action(source, action, fixture)
+    expect("\u200b" not in ported, f"the character was not removed:\n{ported!r}")
+    server.did_change(fixture, ported)
+    expect(not server.diagnostics(fixture),
+           f"cleaned source still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("diagnostics: a no-break space is offered as the space it stands for",
+      entry_points=["nbsp_character.cksp"])
+def _(workspace, server):
+    source = "on init\n\u00a0 declare x\nend on\n"
+    fixture = workspace.write("nbsp_character.cksp", source)
+    server.did_open(fixture)
+    expect(any("U+00A0" in message for message in messages_of(server.diagnostics(fixture))),
+           f"got {messages_of(server.diagnostics(fixture))}")
+    action = action_titled(server.code_actions(fixture), "Replace")
+    ported = apply_action(source, action, fixture)
+    expect("\u00a0" not in ported and ported.startswith("on init\n  declare x"),
+           f"the space was not put in its place:\n{ported!r}")
+    server.did_change(fixture, ported)
+    expect(not server.diagnostics(fixture),
+           f"cleaned source still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("diagnostics: no edit is offered where the column cannot be trusted",
+      entry_points=["invisible_character_utf8.cksp"])
+def _(workspace, server):
+    # The compiler counts a column per byte, an editor per UTF-16 unit. They part ways after
+    # the first non-ASCII character on the line, and an edit placed by column would then land
+    # beside the character it means to remove.
+    fixture = workspace.write(
+        "invisible_character_utf8.cksp",
+        "on init\n  declare @label := \"\u00e4\"\u200b\nend on\n")
+    server.did_open(fixture)
+    expect(any("U+200B" in message for message in messages_of(server.diagnostics(fixture))),
+           f"the character should still be named: {messages_of(server.diagnostics(fixture))}")
+    expect(not server.code_actions(fixture),
+           "an edit that cannot be placed exactly must not be offered")
+
+
+@test("diagnostics: a name CKSP reserves is named as what it is reserved for",
+      entry_points=["reserved_name.cksp"])
+def _(workspace, server):
+    # SublimeKSP reserves fewer words, so a ported script names things <xor> or <mod>. Told
+    # only "expected: keyword, got: xor", the reader has to work out what is wrong with it.
+    for name, source, expected in [
+        ("reserved_name.cksp",
+         "function xor(a, b) -> result\n  result := a\nend function\n",
+         "<xor> is reserved as a boolean operator"),
+        ("reserved_name_declare.cksp",
+         "on init\n  declare mod\nend on\n",
+         "<mod> is reserved as an arithmetic operator"),
+        ("reserved_name_struct.cksp",
+         "struct not\n  id: int\nend struct\n",
+         "<not> is reserved as a boolean operator"),
+    ]:
+        fixture = workspace.write(name, source)
+        server.did_open(fixture)
+        messages = messages_of(server.diagnostics(fixture))
+        expect(any(expected in message for message in messages),
+               f"{name}: expected {expected!r}, got {messages}")
+
+
+@test("diagnostics: the reserved-name message points at the name, not the keyword",
+      entry_points=["reserved_name_range.cksp"])
+def _(workspace, server):
+    fixture = workspace.write(
+        "reserved_name_range.cksp",
+        "function xor(a, b) -> result\n  result := a\nend function\n")
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(diagnostics, "expected a parse error")
+    start = diagnostics[0]["range"]["start"]
+    expect(start["line"] == 0 and start["character"] == 9,
+           f"the range should cover <xor> at column 10, got {diagnostics[0]['range']}")
+
+
+@test("migration: a result named after the return keyword is renamed, then converted",
+      entry_points=["return_named_result.cksp"])
+def _(workspace, server):
+    # SublimeKSP has no return statement, so the word is free there and its deprecated result
+    # syntax uses it. CKSP reserves it, and no pass could tell the variable from a statement -
+    # so the rename comes first, and the ordinary conversion follows it.
+    source = ("function acc(x) -> return\n"
+              "  declare i\n"
+              "  return := 0\n"
+              "  for i := 0 to x\n"
+              "    return := return + i\n"
+              "  end for\n"
+              "end function\n"
+              "\non note\n  message(acc($EVENT_NOTE))\nend on\n")
+    fixture = workspace.write("return_named_result.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(len(diagnostics) == 1, f"expected one diagnostic, got {messages_of(diagnostics)}")
+    data = diagnostics[0].get("data") or {}
+    expect(data.get("migrationKind") == "ReservedResultName",
+           f"a reserved result name is not marked for migration: {diagnostics[0]}")
+    expect(data.get("fixKind") == "RenameReservedResult",
+           f"wrong fix kind: {diagnostics[0]}")
+
+    action = action_titled(server.code_actions(fixture), "Rename result")
+    expect(action["title"] == "Rename result 'return' to 'return1'",
+           f"unexpected title: {action['title']!r}")
+    ported = apply_action(source, action, fixture)
+    expect("function acc(x) -> return1" in ported,
+           f"the header was not renamed:\n{ported}")
+    expect("return1 := return1 + i" in ported,
+           f"a read of the result was left behind:\n{ported}")
+
+    # Renaming leaves an ordinary deprecated result, which converts as any other one does.
+    fixture = server.did_change(fixture, ported)
+    ported, applied = port_with_quick_fixes(fixture, server, ported)
+    expect(applied, "the renamed result should still offer its conversion")
+    expect(not server.diagnostics(fixture),
+           f"ported source still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: the rename skips a number the function already spells",
+      entry_points=["return_named_result_taken.cksp"])
+def _(workspace, server):
+    source = ("function acc(x) -> return\n"
+              "  declare return1\n"
+              "  return1 := x\n"
+              "  return := return1 + 1\n"
+              "end function\n"
+              "\non note\n  message(acc(5))\nend on\n")
+    fixture = workspace.write("return_named_result_taken.cksp", source)
+    server.did_open(fixture)
+    action = action_titled(server.code_actions(fixture), "Rename result")
+    expect(action["title"] == "Rename result 'return' to 'return2'",
+           f"an occupied name must not be reused: {action['title']!r}")
+    ported = apply_action(source, action, fixture)
+    expect("-> return2" in ported and "return2 := return1 + 1" in ported,
+           f"the free name was not used throughout:\n{ported}")
+    expect("declare return1" in ported,
+           f"the existing variable must keep its name:\n{ported}")
+
+
+@test("migration: a return statement in an ordinary function stays one",
+      entry_points=["return_statement_plain.cksp"])
+def _(workspace, server):
+    fixture = workspace.write(
+        "return_statement_plain.cksp",
+        "function twice(x)\n  return x * 2\nend function\n"
+        "\non note\n  message(twice(5))\nend on\n")
+    server.did_open(fixture)
+    expect(not server.diagnostics(fixture),
+           f"a real return statement must be untouched: "
+           f"{messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: every miscased name in a file is reported by one analysis",
+      entry_points=["case_many.cksp"])
+def _(workspace, server):
+    # Each of these used to end the analysis, so porting a script cost one run per name.
+    source = ("on init\n"
+              "    declare myCounter\n"
+              "    declare otherName\n"
+              "    declare thirdThing\n"
+              "end on\n"
+              "\non note\n"
+              "    MyCounter := 1\n"
+              "    OTHERNAME := 2\n"
+              "    thirdthing := 3\n"
+              "end on\n")
+    fixture = workspace.write("case_many.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    case_diagnostics = [
+        diagnostic for diagnostic in diagnostics
+        if (diagnostic.get("data") or {}).get("migrationKind") == "IdentifierCase"
+    ]
+    expect(len(case_diagnostics) == 3,
+           f"expected all three case errors from one analysis, got {messages_of(diagnostics)}")
+    expect(all((diagnostic.get("data") or {}).get("fixKind") == "CorrectNameCase"
+               for diagnostic in case_diagnostics),
+           f"every one of them should carry its edit: {case_diagnostics}")
+
+    ported, applied = port_with_quick_fixes(fixture, server, source)
+    expect(len(applied) == 3, f"expected three fixes in one pass, applied {applied}")
+    expect(not server.diagnostics(fixture),
+           f"ported source still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: an ambiguous name still stops the analysis",
+      entry_points=["case_many_ambiguous.cksp"])
+def _(workspace, server):
+    # Recovery resolves a name to the one declaration it can mean. Two spellings of the same
+    # name are two declarations, so there is nothing to resolve to and the analysis ends -
+    # which is why the second error below never gets reported.
+    source = ("on init\n"
+              "    declare Foo\n"
+              "    declare foo\n"
+              "    declare counter\n"
+              "end on\n"
+              "\non note\n"
+              "    FOO := 1\n"
+              "    COUNTER := 2\n"
+              "end on\n")
+    fixture = workspace.write("case_many_ambiguous.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(len(diagnostics) == 1,
+           f"an unresolvable name has to stop the run: {messages_of(diagnostics)}")
+    expect("ambiguous" in diagnostics[0]["message"].lower(),
+           f"expected the ambiguity blocker, got {diagnostics[0]['message']!r}")
+    expect(not server.code_actions(fixture),
+           "an ambiguous spelling must not choose a declaration")
+
+
+@test("migration: a real typo still stops the analysis",
+      entry_points=["case_many_typo.cksp"])
+def _(workspace, server):
+    source = ("on init\n    declare counter\n    declare other\nend on\n"
+              "\non note\n    countr := 1\n    othr := 2\nend on\n")
+    fixture = workspace.write("case_many_typo.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(len(diagnostics) == 1,
+           f"a name that is not a case mismatch has to stop the run: "
+           f"{messages_of(diagnostics)}")
+    expect("countr" in diagnostics[0]["message"],
+           f"expected the first typo, got {diagnostics[0]['message']!r}")
+
+
+@test("migration: a raw ndarray reference is corrected without losing its underscore",
+      entry_points=["case_raw_ndarray.cksp"])
+def _(workspace, server):
+    # <_env2.arr> addresses <ENV2.arr> as the flat array it is stored as. The underscore
+    # belongs to the reference, so measured against the declaration it is a difference the
+    # correction must not try to remove.
+    source = ("declare ENV2.arr[2,3]: int[][]\n"
+              "\non note\n    search(_env2.arr, 5)\nend on\n")
+    fixture = workspace.write("case_raw_ndarray.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(len(diagnostics) == 1, f"expected one diagnostic, got {messages_of(diagnostics)}")
+    expect("_ENV2.arr" in diagnostics[0]["message"],
+           f"the raw spelling should be the one suggested: {diagnostics[0]['message']!r}")
+    data = diagnostics[0].get("data") or {}
+    expect(data.get("migrationKind") == "IdentifierCase",
+           f"a miscased raw reference is not marked for migration: {diagnostics[0]}")
+
+    action = action_titled(server.code_actions(fixture), "Change")
+    expect(action["title"] == "Change '_env2.arr' to '_ENV2.arr'",
+           f"unexpected title: {action['title']!r}")
+    ported = apply_action(source, action, fixture)
+    expect("search(_ENV2.arr, 5)" in ported,
+           f"the raw reference was not corrected in place:\n{ported}")
+    server.did_change(fixture, ported)
+    expect(not server.diagnostics(fixture),
+           f"corrected raw reference still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: a pasted macro parameter can be corrected at its call site",
+      entry_points=["case_macro_parameter.cksp"])
+def _(workspace, server):
+    source = ("macro show_page(#family#)\n"
+              "    message(UIpage_#family#)\n"
+              "end macro\n\n"
+              "on init\n"
+              "    declare UIpage_ARP1 := 1\n"
+              "    show_page(arp1)\n"
+              "end on\n")
+    fixture = workspace.write("case_macro_parameter.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    case_diagnostic = next(
+        (diagnostic for diagnostic in diagnostics
+         if (diagnostic.get("data") or {}).get("fixKind") == "CorrectNameCase"),
+        None
+    )
+    expect(case_diagnostic is not None,
+           f"expected a case fix for the pasted macro parameter, got {diagnostics}")
+    action = action_titled(server.code_actions(fixture), "macro argument")
+    expect(action["title"] == "Change macro argument 'arp1' to 'ARP1'",
+           f"unexpected title: {action['title']!r}")
+    ported = apply_action(source, action, fixture)
+    expect("show_page(ARP1)" in ported,
+           f"the macro call argument was not corrected:\n{ported}")
+    server.did_change(fixture, ported)
+    expect(not server.diagnostics(fixture),
+           f"corrected macro call still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: a macro argument forwarded through another macro stays editable",
+      entry_points=["case_nested_macro_parameter.cksp"])
+def _(workspace, server):
+    source = ("namespace ARP1\n"
+              "    declare morph_label_shift[2, 2]\n"
+              "end namespace\n\n"
+              "macro update_inner(#family#)\n"
+              "    #family#.morph_label_shift[0, 0] := 1\n"
+              "end macro\n\n"
+              "macro update_outer(#family#)\n"
+              "    update_inner(#family#)\n"
+              "end macro\n\n"
+              "on init\n"
+              "    update_outer(arp1)\n"
+              "end on\n")
+    fixture = workspace.write("case_nested_macro_parameter.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    case_diagnostic = next(
+        (diagnostic for diagnostic in diagnostics
+         if (diagnostic.get("data") or {}).get("fixKind") == "CorrectNameCase"),
+        None
+    )
+    expect(case_diagnostic is not None,
+           f"expected a fix at the outer call site, got {diagnostics}")
+    action = action_titled(server.code_actions(fixture), "macro argument")
+    ported = apply_action(source, action, fixture)
+    expect("update_outer(ARP1)" in ported,
+           f"the root macro argument was not corrected:\n{ported}")
+    server.did_change(fixture, ported)
+    expect(not server.diagnostics(fixture),
+           f"corrected nested macro call still reports "
+           f"{messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: one argument pasted twice is not corrected against itself",
+      entry_points=["case_macro_parameter_twice.cksp"])
+def _(workspace, server):
+    # <fam#_#fam> would have to become <ARP1_arp1>: the same call argument, corrected two
+    # different ways. Rewriting it either way leaves the other half unresolved.
+    source = ("macro show_pair(#family#)\n"
+              "    message(#family#_#family#)\n"
+              "end macro\n\n"
+              "on init\n"
+              "    declare ARP1_arp1 := 1\n"
+              "    show_pair(arp1)\n"
+              "end on\n")
+    fixture = workspace.write("case_macro_parameter_twice.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(diagnostics, "expected an undeclared-variable diagnostic")
+    expect(all((diagnostic.get("data") or {}).get("fixKind") != "CorrectNameCase"
+               for diagnostic in diagnostics),
+           f"a self-contradicting correction must not be offered: {diagnostics}")
+    expect(not server.code_actions(fixture),
+           "one argument cannot be corrected two ways at once")
+
+
+@test("migration: ambiguous case-insensitive names block instead of choosing one",
+      entry_points=["case_ambiguous.cksp"])
+def _(workspace, server):
+    fixture = workspace.write(
+        "case_ambiguous.cksp",
+        "on init\n    declare Foo\n    declare foo\nend on\n"
+        "\non note\n    FOO := 1\nend on\n")
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    case_diagnostic = next(
+        (diagnostic for diagnostic in diagnostics
+         if (diagnostic.get("data") or {}).get("migrationKind") == "IdentifierCase"),
+        None
+    )
+    expect(case_diagnostic is not None,
+           f"expected an IdentifierCase blocker, got {diagnostics}")
+    expect("ambiguous" in case_diagnostic["message"].lower(),
+           f"ambiguity should be explained: {case_diagnostic}")
+    expect("fixKind" not in (case_diagnostic.get("data") or {}),
+           f"an ambiguous spelling must not advertise a fix: {case_diagnostic}")
+    expect(not server.code_actions(fixture),
+           "an ambiguous case-insensitive spelling must not choose a declaration")
+
+
+@test("migration: a property block is named as SublimeKSP's in every position it can appear",
+      entry_points=["property_callback.cksp", "property_struct.cksp"])
+def _(workspace, server):
+    for name, source in [
+        # where SublimeKSP puts one
+        ("property_callback.cksp",
+         "on init\n    declare data[100]\n    property matrix\n"
+         "        function get(x) -> result\n            result := data[x]\n"
+         "        end function\n    end property\nend on\n")
+    ]:
+        fixture = workspace.write(name, source)
+        server.did_open(fixture)
+        messages = messages_of(server.diagnostics(fixture))
+        expect(any("SublimeKSP <property>" in message for message in messages),
+               f"{name}: expected the property message, got {messages}")
+        diagnostic = next(d for d in server.diagnostics(fixture)
+                          if "SublimeKSP <property>" in d["message"])
+        expect((diagnostic.get("data") or {}).get("migrationKind") == "Property",
+               f"{name}: property is not identifiable as a migration blocker: {diagnostic}")
+
+
+@test("migration: 'property' stays usable as an ordinary name",
+      entry_points=["property_identifier.cksp"])
+def _(workspace, server):
+    # The construct is recognised by shape, not by a reserved keyword: two shipped builtins
+    # take a parameter called <property>, and so may any script.
+    fixture = workspace.write("property_identifier.cksp",
+                              "on init\n    declare property := 5\n"
+                              "    property := property + 1\n    message(property)\nend on\n")
+    server.did_open(fixture)
+    expect(not server.diagnostics(fixture),
+           f"a variable named property must compile; got {messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: a SublimeKSP pragma warns without stopping the compile",
+      entry_points=["pragma_output.cksp"])
+def _(workspace, server):
+    # {...} is a comment to CKSP and a pragma to SublimeKSP. Left as a warning so a file
+    # carrying one keeps compiling under both; only the quick fix commits it to CKSP.
+    windows_path = "D:\\Program Files\\Native Instruments\\Kontakt 4\\test.txt"
+    source = ("{#pragma save_compiled_source " + windows_path + "}\n"
+              "\non init\n    declare x := 1\nend on\n")
+    fixture = workspace.write("pragma_output.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(len(diagnostics) == 1, f"expected exactly one diagnostic, got {messages_of(diagnostics)}")
+    expect(diagnostics[0]["severity"] == 2,
+           f"must be a warning (2), got severity {diagnostics[0]['severity']}")
+    expect("save_compiled_source" in diagnostics[0]["message"],
+           f"the message should name the pragma; got {diagnostics[0]['message']!r}")
+    expect((diagnostics[0].get("data") or {}).get("migrationKind") == "SublimePragma",
+           f"pragma diagnostic is not marked for migration: {diagnostics[0]}")
+    expect((diagnostics[0].get("data") or {}).get("fixKind") == "ConvertSublimePragma",
+           f"pragma diagnostic has the wrong fix kind: {diagnostics[0]}")
+
+    action = action_titled(server.code_actions(fixture), "output_path")
+    ported = apply_action(source, action, fixture)
+    # The braces go with the content, and the backslashes survive: CKSP only escapes a
+    # backslash before the quote character itself.
+    expect('#pragma output_path("' + windows_path + '")' in ported,
+           f"unexpected rewrite:\n{ported}")
+    expect("{#pragma" not in ported, f"the SublimeKSP line survived:\n{ported}")
+
+
+@test("migration: a pragma CKSP has no equivalent for warns without a fix",
+      entry_points=["pragma_unknown.cksp"])
+def _(workspace, server):
+    fixture = workspace.write(
+        "pragma_unknown.cksp",
+        "{#pragma compile_with_extra_syntax_checks}\non init\n    declare x := 1\nend on\n")
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(len(diagnostics) == 1, f"expected one diagnostic, got {messages_of(diagnostics)}")
+    expect(diagnostics[0]["severity"] == 2, "must be a warning")
+    expect((diagnostics[0].get("data") or {}).get("migrationKind") == "SublimePragma",
+           f"unknown pragma must remain identifiable as a migration blocker: {diagnostics[0]}")
+    expect("fixKind" not in (diagnostics[0].get("data") or {}),
+           f"unknown pragma must not advertise a fix: {diagnostics[0]}")
+    expect(not server.code_actions(fixture),
+           "there is nothing to rewrite a pragma to that CKSP does not have")
+
+
+@test("migration: an ordinary comment is not mistaken for a pragma",
+      entry_points=["pragma_decoys.cksp"])
+def _(workspace, server):
+    fixture = workspace.write(
+        "pragma_decoys.cksp",
+        "{ a comment that merely mentions #pragma }\n"          # not at the start
+        "{#pragmatic is not one either}\n"                      # the word has to end there
+        "{\n  #pragma save_compiled_source foo.txt\n}\n"        # a pragma is written on one line
+        "on init\n    declare x := 1\nend on\n")
+    server.did_open(fixture)
+    expect(not server.diagnostics(fixture),
+           f"none of these are pragmas; got {messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: the post macro variants name the adopted one they are not",
+      entry_points=["post_iterate.cksp", "post_literate.cksp"])
+def _(workspace, server):
+    # CKSP adopted iterate_macro/literate_macro, which run during macro expansion. The post
+    # variants run after it, which is what lets their bounds come out of the expansion.
+    for name, source, spelling, adopted in [
+        ("post_iterate.cksp",
+         "macro make_buttons(start, end)\n"
+         "    iterate_post_macro(declare ui_button btn_#n#) := #start# to #end#\n"
+         "end macro\n",
+         "iterate_post_macro", "iterate_macro"),
+        ("post_literate.cksp",
+         "macro make(obj)\n    literate_post_macro(declare #l#) on #obj#.CONTROLS\nend macro\n",
+         "literate_post_macro", "literate_macro"),
+    ]:
+        fixture = workspace.write(name, source)
+        server.did_open(fixture)
+        messages = messages_of(server.diagnostics(fixture))
+        expect(any(spelling in message and adopted in message for message in messages),
+               f"{name}: expected {spelling} and {adopted} to be named, got {messages}")
+        diagnostic = next(d for d in server.diagnostics(fixture) if spelling in d["message"])
+        expect((diagnostic.get("data") or {}).get("migrationKind") == "PostMacro",
+               f"{name}: post macro is not identifiable as a migration blocker: {diagnostic}")
+        # No fix: renaming is only correct when the bounds are known during expansion, and
+        # CKSP rejects a macro parameter there outright.
+        expect(not server.code_actions(fixture),
+               f"{name}: a rename is not a safe fix for the case the post variant exists for")
 
 
 if __name__ == "__main__":

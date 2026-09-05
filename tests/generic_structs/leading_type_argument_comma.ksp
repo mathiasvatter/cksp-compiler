@@ -1,0 +1,8 @@
+// EXPECT_ERROR Expected a type argument before <,> in parameterized type <Pair>
+
+struct Pair<T, U>
+end struct
+
+on init
+    declare value: Pair<, int>
+end on

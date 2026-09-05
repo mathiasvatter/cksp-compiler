@@ -1,72 +1,57 @@
 # Changelog
 
-## [0.1.0-alpha.4]
+## [0.1.0-alpha.5]
 
 > [!IMPORTANT]
-> This alpha rounds out **structs**: members and methods can be `static`, constant blocks can live inside a struct, and object arrays can be queried by member. The **cksp Language Server** gains code completion. On the compiler side it is mostly about correctness — fixes to initializer lists, multidimensional members and the thread-safety analysis, several of which silently produced wrong values or invalid KSP.
+> This alpha adds **generic structs** and a new **type cast** syntax. Other than that, it is mostly about **porting from SublimeKSP**: the constructs cksp has no equivalent for are now recognised by name and named in a meaningful error/warning message or answered with a quick fix instead of an *"unknown construct"*.
 
 ## Language
 
 ### Added
-- Added **`static` struct members and methods**. A `static` member holds one value shared by all instances instead of one per instance, and is reached through the struct itself without an instance by **type-qualified member access** such as `Foo.MAX`. A `static` method belongs to the struct, takes no `self` and is called as `Struct.method(...)`.
-- Added **`static const` blocks inside structs**. The entries are scoped to the struct and reachable as `Struct.Block.Entry`. They stay compile-time constants and can be used as array dimensions.
+- Added **generic structs**. A struct can declare type parameters, and each set of type arguments instantiates its own struct with its own storage:
   ```cksp
-  struct Voice
-      static const MAX_ALLOWED := 420
-      static const State
-          IDLE, ACTIVE
-      end const
-      state: int
-
-      static function foo()
-      ...
-      end function
+  struct Box<T>
+      static const MAX := 42
+      value: T
   end struct
 
-  declare pool[Voice.MAX_ALLOWED]: Voice[]
+  on init
+      declare number: Box<int> := new Box<int>(1)
+      declare text: Box<string> := new Box<string>("hello")
+      message(Box<int>.MAX)
+  end on
   ```
-- Added **`search_by(array, .field, value)`**, which returns an object in an array of objects whose member matches a value, or `nil`. The member path may reach through nested objects (`.child.id`). *Experimental.*
-- Added **`Struct.storage(.member)`**, which returns a reference to the 'heap' array a struct member is stored in. *Experimental.*
-- Added support for **user functions overriding builtin commands** of the same name.
-- Added the new **Kontakt 8.4, 8.8 and 8.12** engine constants and engine functions.
+  Type arguments are written wherever the type is: in declarations, in constructor calls (`new List<int>(3, nil)`) and in type qualifiers. A parameterized type cannot be a type argument itself yet (`List<List<int>>`).
+- Added **type casts** with `as`. `real(EVENT_NOTE) as int`, `x as real`, `x as bool` and `x as string` convert between the primitive types, and `id as Item` reads an object id back as an object of that struct — in a string context that goes through the struct's string representation rather than printing the raw id.
 
 ### Improved
-- Improved parser and preprocessor **diagnostics** including better error reporting on incorrect define substitutions ([#61](<https://github.com/mathiasvatter/cksp-compiler/issues/61>)).
-- A `const` array is now rejected as the target of an array load instead of being written to silently.
-- Improved compile times through a shared source-file table instead of per-token paths: large projects compile around **18% faster** than `v0.1.0-alpha.3` and use about **20%** less memory.
-- Compiling the same sources twice now produces the **same output**, apart from the timestamp the compiler writes into it. Generated variable names and the order of the generated declarations used to shift from one compile to the next, which made a `diff` between two builds of a script unreadable.
-- Improved compile times at `-O3` (`--optimize aggressive`): scalar vars to array optimization is now **1.5–3× faster**, which takes around **200 ms** off a large project.
+- An **annotated return type is now enforced**. `function get(self): Box<T>` returning `1` is an error instead of being inferred away; `nil` stays accepted for a function returning an object.
+- An **array initializer reading a non-constant variable** now warns. The initializer copies the value it sees at the declaration and does not follow the variable afterwards, which is what `declare arr[3] := [0, 1, variable]` suggests.
+- **Reading a variable in its own declaration** (`declare x := f(x)`) is now diagnosed. The compiler used to accept it while the language server called the name undeclared.
+- Improved **import diagnostics**: importing the same file twice under two different aliases is an error, and a circular import is reported as one.
+- The **obfuscator** leaves the identifiers of `ui_control` variables alone, since KUI and KScript address them by name, and likewise the variables handed to the load/save array commands and the KSP log functions.
+- A **pass-by-value warning names the parameter as it was written**, instead of offering to rewrite `ctrl0` for a parameter spelled `ctrl`.
 
 ### Fixed
-- Fixed an array copy running past the end of the shorter of the two arrays. `declare dst[3] := src` (and `src` has size 4) made Kontakt report *"Array %dst[3] is out of range"*, and the other direction silently read `0` past the end. The copy is now bounded by whichever array declares fewer elements.
-- Fixed a single non-constant value in an initializer list not spreading over the whole array. `declare chord[3]: Note[] := [n1]` wrote only `chord[0]` and left the rest at `0`, so the remaining elements pointed at whatever object lives in slot 0.
-- Fixed a raised initializer list spreading its last value over the array. `declare a[4]: int[]` followed by `a[0] := 7` was raised to `declare %a[4] := (7)`, which made every element read `7`.
-- Fixed an initializer list passed as an argument being copied into an array sized after the list rather than after the parameter, which left the callee reading past the end of a shorter list.
-- Fixed a compiler crash on a multidimensional object member such as `declare grid[2,3]: Note[][]` inside a struct.
-- Fixed `num_elements` returning the wrong dimension of a multidimensional member. A loop over a `[5,7]` member ran 7×7 instead of 5×7, straight into the storage of the next instance.
-- Fixed a multidimensional array reference producing invalid KSP or a missing-declaration error during function inlining.
-- Fixed a member initializer holding several values reaching only the first instance. KSP repeats the last value of an initializer list, which spreads over one instance but not over the storage of all of them — `row[3]: int[] := (7, 8, 9)` left the second instance reading `(9, 9, 9)`. Such a value now moves into the constructor, which runs per instance.
-- Fixed several issues in the **thread-safety analysis** that let concurrent invocations of a callback share variables meant to be unique to each: variables were marked thread-safe too early, `return_flag` variables generated for returning functions failed to get marked, `on init` was mistakenly analysed. 
-- Fixed: certain thread-safe variables would initialize across their entire callback dimension, wiping the slots of every other invocation still waiting.
-- Fixed: the discarded result of an expression function called as an isolated statement being emitted as a bare statement, which is not valid KSP.
+- Fixed **`sh_left` and `sh_right` being pre-calculated differently than the Kontakt engine evaluates them**. The fold now takes only the low five bits of the count the way Kontakt does: `sh_left(1, 33)` is 2, `sh_right(1, -1)` is 0, `sh_left(1, 31)` is `INT32_MIN`.
+- Fixed compiles failing at random with *"`<Variable>` has not been declared"* ([#124](https://github.com/mathiasvatter/cksp-compiler/issues/124)).
+- Fixed a **`select` case with a single value being read past the end of its storage**, which any script using named constants as case labels runs into.
+- Fixed an **array-returning function handing its result through a shared global copy**. Arrays are now returned by reference and land in the caller's variable directly.
+- Fixed **`search`, `sort` and `num_elements` rejecting function calls returning arrays**, such as `Struct.storage(.member)`.
+- Fixed a crash on a **type-qualified storage access** such as `List<int>.storage(.value)`.
+- Fixed a **function whose return expression holds more than one function call**, such as `return self.a() > other.a()`, being miscompiled: it stayed in expression position and its arguments were then read out of bounds.
+- Fixed **dead code elimination dropping a store whose value is read inside an expression**. `acc := table[0]` followed by `tmp := acc + 1` and `acc := table[1]` lost the first store, so `tmp` was built from a variable that was never written.
 
-## Language Server
+## Migrating from SublimeKSP
 
 ### Added
-- Added **code completion**, in four parts:
-  - **Qualifiers** — members offered after a `.` for namespaces, families, const blocks and the `static` members and methods of a struct.
-  - **Instance members** — `inst.`, `audio.inst.`, `inst.child.`, `self.` and `zones[0].` resolve through declared types and offer the members of the struct the chain arrives at.
-  - **Unqualified names** — globals, structs, functions, qualifier blocks and the locals of the enclosing function, each offered the way it has to be written at that position.
-  - **Defines and macros** — including what a define actually expands to, since the preprocessor substitutes them away before parsing.
-- Added a protocol test harness for the language server.
-
-### Improved
-- Improved macro support: declarations reached through a macro parameter are offered, and references and diagnostics point at the line the word was actually written on.
-- Completion declarations are now scoped to the loop or branch they live in, and compiler-renamed declarations are kept out of the list.
-
-### Fixed
-- Fixed dangling pointers to structs handed out by the struct table, which crashed the compiler and the language server on everything lowered afterwards ([#122](https://github.com/mathiasvatter/cksp-compiler/issues/122)).
-- Fixed a crash caused by the shared reference validator being used across threads.
+- Added a **quick fix for `taskfunc` and `tcm.*`**, which used to hit *"Found unknown construct"*. The block is parsed in full and rewritten by the fix: the keywords, `var`/`out` to `ref`, `tcm.wait` to `wait` and `tcm.init` to `#pragma max_callback_depth`.
+- Added recognition of the **SublimeKSP property block**, which used to be read as a declaration of a variable called `property` and reported as whatever went wrong after it. It is now named wherever it can appear — a callback, the global scope, a struct body — together with what replaces it.
+- Added a warning for **SublimeKSP pragmas cksp has no equivalent for**. `{#pragma save_compiled_source ...}` is a comment here, so the output silently went to the default path while the compile reported success; it now warns and offers `#pragma output_path("...")`. The line stays, so the same source keeps compiling under both compilers until the fix is applied.
+- Added an **identifier-case migration**. SublimeKSP resolves names case-insensitively, so every declaration a ported script spells in a case of its own used to land on an undeclared-name error. A name that differs from exactly one declaration in nothing but case is now resolved to it and offered a rename — including a name assembled by a macro, which is corrected at the call site, and a raw ndarray reference such as `_env2.arr`.
+- Added a **global initializer migration**.
+- Added a rename for a **function result spelled `return`**, offered across every place the name stands.
+- Added an answer for **`iterate_post_macro` and `literate_post_macro`**, naming them as SublimeKSP's and saying why the post variants differ: cksp evaluates `iterate_macro`/`literate_macro` during macro expansion, the post ones run after it. No fix is offered, since a rename only works when the bounds are known at expansion time.
 
 Please keep reporting regressions, confusing diagnostics, and editor-integration issues on GitHub.
 

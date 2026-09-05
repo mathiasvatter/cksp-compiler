@@ -252,11 +252,23 @@ private:
 				if(all_params_are_type(node, NodeType::Int)) {
 					const auto value = node.function->get_arg(0)->cast<NodeInt>();
 					const auto shift = node.function->get_arg(1)->cast<NodeInt>();
+					// Kontakt evaluates both commands as the native 32 bit shift of its host, which
+					// takes only the low five bits of the count. Measured in Kontakt 7:
+					//   sh_right(-1, 31) = -1     sh_right(-1, 32) = -1    sh_right(-1, 33) = -1
+					//   sh_right(1, 32)  =  1     sh_right(1, -1)  =  0    (-1 counts as 31)
+					//   sh_left(1, 32)   =  1     sh_left(1, 33)   =  2
+					//   sh_left(1, 31)   = INT32_MIN                 sh_left(-1, 1) = -2
+					// Masking the count here reproduces that and keeps the fold defined: shifting an
+					// <int32_t> by 32 or more, or by a negative count, is undefined behaviour, and so
+					// is a left shift of a negative value or one that reaches the sign bit.
+					const auto bits = static_cast<uint32_t>(shift->value) & 31u;
 					int32_t result = 0;
 					if(node.function->name == "sh_left") {
-						result = value->value << shift->value;
+						// on the unsigned representation, which is where the sign bit may be reached
+						result = static_cast<int32_t>(static_cast<uint32_t>(value->value) << bits);
 					} else {
-						result = value->value >> shift->value;
+						// arithmetic, so <sh_right> of a negative value keeps its sign
+						result = value->value >> bits;
 					}
 					auto new_node = std::make_unique<NodeInt>(result, node.tok);
 					return node.replace_with(std::move(new_node));

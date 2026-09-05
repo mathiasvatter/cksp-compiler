@@ -1,0 +1,8 @@
+// EXPECT_ERROR Parameterized type <List> must provide at least one type argument
+
+struct List<T>
+end struct
+
+on init
+    declare value: List<>
+end on

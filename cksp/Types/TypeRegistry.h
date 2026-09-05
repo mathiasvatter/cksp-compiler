@@ -33,8 +33,10 @@ public:
 	static bool is_type_neutral_element(const Type* ty, const std::unique_ptr<NodeAST>& value);
     /// adds a new object type to the registry, if object type already exists, the existing type is returned
     static ObjectType* add_object_type(const std::string& name);
+	static ObjectType* add_object_type(const std::string& name, const std::vector<Type*>& arguments);
     /// returns the object type from the name, if no object type with the name exists, nullptr is returned
     static ObjectType* get_object_type(const std::string& name);
+	static ObjectType* get_object_type(const std::string& name, const std::vector<Type*>& arguments);
     /// returns pointer to the composite type in registry by looking at the element type and dimensions
     /// returns nullptr if no composite type with the given element type and dimensions exists
     static CompositeType* get_composite_type(CompoundKind comp_type, Type* element_type, int dimensions=1);
@@ -43,6 +45,11 @@ public:
 
 	static FunctionType* get_function_type(std::vector<Type*> params, Type* return_type);
 	static FunctionType* add_function_type(const std::vector<Type*>& params, Type* return_type);
+
+	/// takes all object types that need struct clones and struct monomorphization and leaves empty list.
+	static std::vector<ObjectType*> take_pending_parameterized_object_types() {
+		return std::exchange(pending_parameterized_object_types, {});
+	}
 
     // Declaration of standard types
     static inline std::unique_ptr<BasicType> IntegerType;
@@ -80,6 +87,7 @@ public:
 
 private:
     static inline std::unordered_map<std::string, std::unique_ptr<ObjectType>> object_types;
+	static inline std::vector<ObjectType*> pending_parameterized_object_types;
     static inline std::unordered_map<std::string, std::unique_ptr<CompositeType>> composite_types;
 	static inline std::unordered_map<std::string, std::unique_ptr<FunctionType>> function_types;
 

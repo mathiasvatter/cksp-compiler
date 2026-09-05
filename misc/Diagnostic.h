@@ -69,10 +69,30 @@ struct DiagnosticExpansion {
  */
 struct Diagnostic {
 
+    enum class MigrationKind {
+        SublimePragma,
+        Taskfunc,
+        TCM,
+        PostMacro,
+        Property,
+        IdentifierCase,
+        GlobalDeclarationInitializer,
+        ReservedResultName,
+        InvalidCharacter
+    };
+
     struct DiagnosticFix {
         enum class FixKind {
             AddRefToFuncParam,
-            ConvertDeprecatedFunctionReturn
+            AssignDiscardedReturnToThrowaway,
+            ConvertDeprecatedFunctionReturn,
+            ConvertTaskfuncToFunction,
+            ConvertTCMCall,
+            CorrectNameCase,
+            ConvertSublimePragma,
+            SplitGlobalDeclarationAssignment,
+            RenameReservedResult,
+            ReplaceInvalidCharacter
         };
         enum class EditKind {
             InsertBefore,
@@ -98,7 +118,30 @@ struct Diagnostic {
     static std::string fix_kind_to_string(const DiagnosticFix::FixKind kind) {
         switch (kind) {
             case DiagnosticFix::FixKind::AddRefToFuncParam: return "AddRefToFuncParam";
+            case DiagnosticFix::FixKind::AssignDiscardedReturnToThrowaway: return "AssignDiscardedReturnToThrowaway";
             case DiagnosticFix::FixKind::ConvertDeprecatedFunctionReturn: return "ConvertDeprecatedFunctionReturn";
+            case DiagnosticFix::FixKind::ConvertTaskfuncToFunction: return "ConvertTaskfuncToFunction";
+            case DiagnosticFix::FixKind::ConvertTCMCall: return "ConvertTCMCall";
+            case DiagnosticFix::FixKind::CorrectNameCase: return "CorrectNameCase";
+            case DiagnosticFix::FixKind::ConvertSublimePragma: return "ConvertSublimePragma";
+            case DiagnosticFix::FixKind::SplitGlobalDeclarationAssignment: return "SplitGlobalDeclarationAssignment";
+            case DiagnosticFix::FixKind::RenameReservedResult: return "RenameReservedResult";
+            case DiagnosticFix::FixKind::ReplaceInvalidCharacter: return "ReplaceInvalidCharacter";
+            default: break;
+        }
+        return "unknown";
+    }
+    static std::string migration_kind_to_string(const MigrationKind kind) {
+        switch (kind) {
+            case MigrationKind::SublimePragma: return "SublimePragma";
+            case MigrationKind::Taskfunc: return "Taskfunc";
+            case MigrationKind::TCM: return "TCM";
+            case MigrationKind::PostMacro: return "PostMacro";
+            case MigrationKind::Property: return "Property";
+            case MigrationKind::IdentifierCase: return "IdentifierCase";
+            case MigrationKind::GlobalDeclarationInitializer: return "GlobalDeclarationInitializer";
+            case MigrationKind::ReservedResultName: return "ReservedResultName";
+            case MigrationKind::InvalidCharacter: return "InvalidCharacter";
             default: break;
         }
         return "unknown";
@@ -115,7 +158,17 @@ struct Diagnostic {
     std::vector<DiagnosticFrame> call_stack;
     /// Set when the reported token was assembled by a macro or define substitution.
     std::optional<DiagnosticExpansion> expansion;
+    /// Marks a diagnostic about porting a file rather than about the program in it: source
+    /// written in another dialect, or a character that came along with it. What they have in
+    /// common is that a whole workspace of them can be dealt with in one sweep, which is what
+    /// the migration assistant does with them.
+    ///
+    /// Unlike DiagnosticFix this remains present when the construct cannot be rewritten safely.
+    std::optional<MigrationKind> migration_kind;
     std::optional<DiagnosticFix> fix;
+    /// Set on an error the compilation carried on past, which tells it apart from the one
+    /// that ended the run - the only one a console sink should follow with a failure notice.
+    bool recovered = false;
 
     Diagnostic() = default;
     Diagnostic(ErrorType type, std::string message, std::string expected, const struct Token& token);
@@ -124,6 +177,13 @@ struct Diagnostic {
 
     /// Emits a non-fatal diagnostic through the supplied compilation context.
     void report(DiagnosticEngine& diagnostics) const;
+    /// Emits an error the compilation recovered from and goes on past.
+    ///
+    /// Between <report>, which downgrades to a warning and lets the compile succeed, and
+    /// <exit>, which stops at the first message. An error emitted this way is counted by the
+    /// engine, and the compiler refuses to generate code while that count is not zero - the
+    /// run reaches its end so every further error is found, and still fails.
+    void report_as_error(DiagnosticEngine& diagnostics) const;
     /// Aborts the current compilation by throwing CompilationAborted.
     [[noreturn]] void exit() const;
 

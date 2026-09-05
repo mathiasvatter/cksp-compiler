@@ -1,0 +1,24 @@
+{ <Object.storage(.member)> hands out the array a member lives in for every instance.
+
+  It is an access chain when the array commands are desugared and only becomes an array
+  reference much later, through the accessor that LoweringStorageAccess builds and function
+  inlining resolves. The commands therefore have to accept it as the expression it still is,
+  and the heap has to arrive at the call site itself rather than as a copy of it. }
+
+// EXPECT message\(search\(%Note____pitch, 62\)\)
+// EXPECT message\(num_elements\(%Note____pitch\)\)
+// EXPECT sort\(%Note____pitch, 0\)
+{ the heap itself reaches the command, so nothing is copied element by element }
+// EXPECT_NOT ^[[:space:]]*while
+
+on init
+    declare a: Note := new Note(60)
+    declare b: Note := new Note(62)
+    message(search(Note.storage(.pitch), 62))
+    message(num_elements(Note.storage(.pitch)))
+    sort(Note.storage(.pitch), 0)
+end on
+
+struct Note
+    declare pitch: int
+end struct

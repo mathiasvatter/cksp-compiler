@@ -17,6 +17,15 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse() {
 /// <declare 1: int>, and reporting the <1> names something that stands nowhere in the
 /// declaration. The origin still knows what the source spells, so the message can say what
 /// actually happened - and the sink shows the declaration line underneath.
+Diagnostic Parser::make_name_expected_diagnostic(
+	const ErrorType type, std::string message, std::string expected, const Token& found) {
+	if (const auto role = reserved_word_role(found); !role.empty()) {
+		message += " <" + found.val + "> is reserved as " + role
+			+ " and cannot be used as a name.";
+	}
+	return Diagnostic(type, std::move(message), std::move(expected), found);
+}
+
 Diagnostic Parser::make_declare_modifier_diagnostic(const Token& found) {
 	Diagnostic error(ErrorType::ParseError,
 		"Incorrect syntax in declare statement. Found unknown <modifier>.",
@@ -25,6 +34,15 @@ Diagnostic Parser::make_declare_modifier_diagnostic(const Token& found) {
 	// beats sending the reader looking for a modifier they never wrote.
 	if (found.type == token::LINEBRK || found.type == token::END_TOKEN) {
 		error.set_message("The <declare> statement has no name yet.");
+		return error;
+	}
+	// A word the declaration cannot borrow because CKSP already spends it. Reads as an
+	// unknown modifier from here, which is not what went wrong.
+	if (const auto role = reserved_word_role(found); !role.empty()) {
+		error.set_message(
+			"Incorrect syntax in declare statement. <" + found.val + "> is reserved as " + role
+			+ " and cannot be used as a name.");
+		error.expected = "<name>";
 		return error;
 	}
 	if (!found.origin) return error;
@@ -57,6 +75,11 @@ std::optional<Diagnostic> Parser::check_invalid_end_statement(const std::string&
 		return std::nullopt;
 	}
 	return make_invalid_end_statement_diagnostic(construct, get_token_string(expected_end), start, next);
+}
+
+bool Parser::is_sublime_property() {
+	return peek().type == token::KEYWORD and peek().val == "property"
+		and peek(1).type == token::KEYWORD and peek(2).type == token::LINEBRK;
 }
 
 /// check if end statement starts with "end" but sth else comes after (not "on", "while", etc)
@@ -453,12 +476,18 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_reference_chain(NodeAST *parent) 
 		std::unique_ptr<NodeAST> stmt = nullptr;
 		if (peek().type == token::KEYWORD) {
 			// is function
-			if (peek(1).type == token::OPEN_PARENTH) {
+			if (peek(1).type == token::OPEN_PARENTH || looks_like_parameterized_call()) {
 				auto var_function = parse_function_call(parent);
 				if (var_function.is_error()) {
 					return Result<std::unique_ptr<NodeAST>>(var_function.get_error());
 				}
 				stmt = std::move(var_function.unwrap());
+			} else if (looks_like_type_qualified_access()) {
+				auto type_qualifier = parse_type_qualifier(parent);
+				if (type_qualifier.is_error()) {
+					return Result<std::unique_ptr<NodeAST>>(type_qualifier.get_error());
+				}
+				stmt = std::move(type_qualifier.unwrap());
 			} else if (peek(1).type == token::OPEN_BRACKET) {
 				auto var_array = parse_array_ref(parent);
 				if (var_array.is_error()) {
@@ -518,11 +547,68 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_reference_chain(NodeAST *parent) 
 	return Result<std::unique_ptr<NodeAST>>(std::move(chain));
 }
 
+int Parser::type_argument_list_end() const {
+	if (peek_type() != token::KEYWORD || peek_type(1) != token::LESS_THAN) return NO_TYPE_ARGUMENTS;
+
+	int ahead = 2;
+	const auto skip_linebreaks = [&]() {
+		while (peek_type(ahead) == token::LINEBRK) ++ahead;
+	};
+	skip_linebreaks();
+
+	while (true) {
+		if (peek_type(ahead) != token::KEYWORD) return NO_TYPE_ARGUMENTS;
+		++ahead;
+
+		// Match the same non-recursive type arguments currently accepted by
+		// Processor::_parse_type_arguments, including array suffixes.
+		while (peek_type(ahead) == token::OPEN_BRACKET
+			&& peek_type(ahead + 1) == token::CLOSED_BRACKET) {
+			ahead += 2;
+		}
+		skip_linebreaks();
+
+		if (peek_type(ahead) == token::GREATER_THAN) return ahead + 1;
+		if (peek_type(ahead) != token::COMMA) return NO_TYPE_ARGUMENTS;
+
+		++ahead;
+		skip_linebreaks();
+		if (peek_type(ahead) == token::GREATER_THAN) return ahead + 1;
+	}
+}
+
+bool Parser::looks_like_parameterized_call() const {
+	const int end = type_argument_list_end();
+	return end != NO_TYPE_ARGUMENTS && peek_type(end) == token::OPEN_PARENTH;
+}
+
+bool Parser::looks_like_type_qualified_access() const {
+	const int end = type_argument_list_end();
+	return end != NO_TYPE_ARGUMENTS && peek_type(end) == token::DOT;
+}
+
+Result<std::unique_ptr<NodeVariableRef>> Parser::parse_type_qualifier(NodeAST* parent) {
+	const Token name_token = consume(); // consume the struct name
+	auto node_variable_ref = std::make_unique<NodeVariableRef>(name_token.val, name_token);
+	auto type_arguments = _parse_type_arguments(name_token, &node_variable_ref->type_references);
+	if (type_arguments.is_error()) {
+		return Result<std::unique_ptr<NodeVariableRef>>(type_arguments.get_error());
+	}
+	auto* object_type = TypeRegistry::add_object_type(name_token.val, type_arguments.unwrap());
+	// Retain the written type itself, not only its arguments, the way an annotation does.
+	node_variable_ref->type_references.insert(
+		node_variable_ref->type_references.begin(), {object_type, name_token});
+	node_variable_ref->kind = NodeReference::Kind::TypeQualifier;
+	node_variable_ref->ty = object_type;
+	node_variable_ref->set_range(name_token, peek(-1));
+	node_variable_ref->parent = parent;
+	return Result<std::unique_ptr<NodeVariableRef>>(std::move(node_variable_ref));
+}
+
 Result<std::unique_ptr<NodeAST>> Parser::parse_expression(NodeAST* parent) {
 	auto lhs = parse_string_expr(parent);
-	if(lhs.is_error()) {
-		return Result<std::unique_ptr<NodeAST>>(lhs.get_error());
-	}
+	if(lhs.is_error()) return Result<std::unique_ptr<NodeAST>>(lhs.get_error());
+
 	auto concat_done = _parse_string_expr_rhs(std::move(lhs.unwrap()), parent);
 	if (concat_done.is_error()) return Result<std::unique_ptr<NodeAST>>(concat_done.get_error());
 
@@ -562,11 +648,11 @@ Parser::_parse_null_coalesce_rhs(std::unique_ptr<NodeAST> lhs, NodeAST* parent) 
 Result<std::unique_ptr<NodeAST>> Parser::parse_string_expr(NodeAST* parent) {
 	if (peek().type == token::STRING) {
 		if (auto expr = parse_string(parent); !expr.is_error()) {
-			return Result<std::unique_ptr<NodeAST>>(std::move(expr.unwrap()));
+			return parse_cast(std::move(expr.unwrap()), parent);
 		} else return Result<std::unique_ptr<NodeAST>>(expr.get_error());
 	} else if (peek().type == token::FSTRING_START) {
 		if (auto expr = parse_fstring(parent); !expr.is_error()) {
-			return Result<std::unique_ptr<NodeAST>>(std::move(expr.unwrap()));
+			return parse_cast(std::move(expr.unwrap()), parent);
 		} else return Result<std::unique_ptr<NodeAST>>(expr.get_error());
 	} else {
 		if (auto expr = parse_binary_expr(parent); !expr.is_error()) {
@@ -598,9 +684,30 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_string_expr_rhs(std::unique_ptr<
 	}
 }
 
+Result<std::unique_ptr<NodeAST>> Parser::parse_cast(std::unique_ptr<NodeAST> value, NodeAST *parent) {
+	while (peek().type == token::AS) {
+		Token as = consume();
+		TypeReferences target_type_references;
+		auto type = parse_type(&target_type_references);
+		if(type.is_error()) {
+			auto error = type.get_error();
+			error.add_message("Could not parse the target type after <as>.");
+			return Result<std::unique_ptr<NodeAST>>(error);
+		}
+		auto cast = std::make_unique<NodeCast>(std::move(value), type.unwrap(), as);
+		cast->type_references = std::move(target_type_references);
+		cast->set_range(cast->value->range, source_range_from_token(peek(-1)));
+		cast->parent = parent;
+		value = std::move(cast);
+	}
+	return Result<std::unique_ptr<NodeAST>>(std::move(value));
+}
+
 Result<std::unique_ptr<NodeAST>> Parser::parse_binary_expr(NodeAST* parent) {
 	auto lhs = _parse_primary_expr(parent);
 	if(!lhs.is_error()) {
+		lhs = parse_cast(std::move(lhs.unwrap()), parent);
+		if (lhs.is_error()) return lhs;
 		return _parse_binary_expr_rhs(0, std::move(lhs.unwrap()), parent);
 	}
 	return Result<std::unique_ptr<NodeAST>>(lhs.get_error());
@@ -628,12 +735,13 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_binary_expr_rhs(const int preced
 		if(prec < precedence)
 			return Result<std::unique_ptr<NodeAST>>(std::move(lhs));
 		// its not -1 so it is a binop
-		auto bin_op = peek();
-		consume();
+		auto bin_op = consume();
 		auto rhs = _parse_primary_expr(parent);
 		if (rhs.is_error()) {
 			return Result<std::unique_ptr<NodeAST>>(rhs.get_error());
 		}
+		rhs = parse_cast(std::move(rhs.unwrap()), parent);
+		if (rhs.is_error()) return rhs;
 		if (const int next_precedence = Parser::get_binop_precedence(peek().type); prec < next_precedence) {
 			rhs = _parse_binary_expr_rhs(prec + 1, std::move(rhs.unwrap()), parent);
 			if (rhs.is_error()) {
@@ -725,7 +833,7 @@ Parser::_parse_ternary_rhs(std::unique_ptr<NodeAST> condition, NodeAST* parent) 
 	std::move(condition),
 	std::move(thenExpr),
 	std::move(elseExpr),
-	qmark
+			qmark
         );
         node->parent = parent;
         node->set_range(node->condition->range, node->else_branch->range);
@@ -757,12 +865,18 @@ Result<std::unique_ptr<NodeFunctionParam>> Parser::parse_function_param(NodeAST*
 	if (start_token.type == token::REF) {
 		consume(); // consume ref
 		node_func_param->is_pass_by_ref = true;
+	} else if (m_taskfunc_migration
+		and start_token.type == token::KEYWORD
+		and (start_token.val == "var" or start_token.val == "out")) {
+		// SublimeKSP's taskfunc parameter modifiers, both of which CKSP spells <ref>.
+		m_taskfunc_migration->add_param_modifier_edit(consume());
+		node_func_param->is_pass_by_ref = true;
 	}
 
 	auto error = Diagnostic(ErrorType::ParseError,"Incorrect syntax in function parameter.", "", peek());
 	if(peek().type != token::KEYWORD) {
-		error.expected = "<variable>, <array>";
-		return Result<std::unique_ptr<NodeFunctionParam>>(error);
+		return Result<std::unique_ptr<NodeFunctionParam>>(make_name_expected_diagnostic(
+			ErrorType::ParseError, error.message, "<variable>, <array>", peek()));
 	}
 
 	if (is_array_declaration()) {
@@ -1090,10 +1204,22 @@ Result<std::unique_ptr<NodeStatement> > Parser::parse_statement(NodeAST *parent)
 	auto start_token = peek();
 	auto node_statement = std::make_unique<NodeStatement>(start_token);
 	_skip_linebreaks();
+	// The result of <function neg(x) -> return> is a variable named after a keyword, which
+	// the header takes as a name already. An assignment to it has to be taken the same way,
+	// or the keyword starts a return statement and meets a <:=> it cannot use. Every other
+	// spelling of <return> in such a body stays the statement it is.
+	if (m_result_named_return && peek().type == token::RETURN && peek(1).type == token::ASSIGN) {
+		m_tokens[m_pos].type = token::KEYWORD;
+	}
 	std::unique_ptr<NodeAST> stmt;
 	// assign statement
 	if (peek().type == token::KEYWORD || peek().type == token::DECLARE
 		|| peek().type == token::CALL || peek().type == token::SET_CONDITION || peek().type == token::RESET_CONDITION) {
+		// where SublimeKSP puts one: a <property> block inside <on init>
+		if (is_sublime_property()) {
+			return Result<std::unique_ptr<NodeStatement> >(
+				property_migration::make_diagnostic(peek()));
+		}
 		if (peek().type == token::DECLARE) {
 			auto declare_stmt = parse_declare_statement(node_statement.get());
 			if (declare_stmt.is_error()) {
@@ -1301,8 +1427,9 @@ Result<std::unique_ptr<NodeNamespace>> Parser::parse_namespace(NodeAST *parent) 
 	token end_construct = token::END_NAMESPACE;
 	auto error = Diagnostic(ErrorType::SyntaxError, "Found invalid <namespace> syntax.", "", peek());
 	if(peek().type != token::KEYWORD) {
-		error.set_message( "Expected <namespace> name after <namespace> keyword.");
-		return Result<std::unique_ptr<NodeNamespace>>(error);
+		return Result<std::unique_ptr<NodeNamespace>>(make_name_expected_diagnostic(
+			ErrorType::ParseError, "Expected <namespace> name after <namespace> keyword.",
+			"<name>", peek()));
 	}
 	auto name = consume(); //consume name
 	auto l = consume_linebreak("<namespace>");
@@ -1342,7 +1469,9 @@ Result<std::unique_ptr<NodeNamespace>> Parser::parse_namespace(NodeAST *parent) 
 			auto stmt = node_declarations->add_as_stmt(std::move(struct_def.unwrap()));
 			m_program->struct_definitions.push_back(stmt->statement->cast<NodeStruct>());
 		} else {
-			error.add_message("<namespaces> can only contain <declare> statements or <function> definitions that get added to the global scope.");
+			error.add_message("<namespaces> can only contain <declare> statements, <function> definitions, "
+				"<struct> definitions and nested <namespaces>, all of which get added to the global "
+				"scope under the namespace prefix.");
 			error.set_token(peek());
 			return Result<std::unique_ptr<NodeNamespace>>(error);
 		}
@@ -1371,12 +1500,12 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
             if (callback.is_error())
                 return Result<std::unique_ptr<NodeProgram>>(callback.get_error());
 			m_callbacks.push_back(std::move(callback.unwrap()));
-        } else if (peek().type == token::FUNCTION) {
+        } else if (peek().type == token::FUNCTION or peek().type == token::TASKFUNC) {
 			auto function = parse_function_definition(node_program.get());
 			if (function.is_error())
 				return Result<std::unique_ptr<NodeProgram>>(function.get_error());
 			auto node_function = std::move(function.unwrap());
-	node_program->add_function_or_override(node_function);
+			node_program->add_function_or_override(node_function);
 		} else if(peek().type == token::STRUCT) {
 			auto struct_def = parse_struct(node_program.get());
 			if(struct_def.is_error())
@@ -1416,6 +1545,9 @@ Result<std::unique_ptr<NodeProgram>> Parser::parse_program() {
 				return Result<std::unique_ptr<NodeProgram>>(list_block.get_error());
 			}
 			node_program->global_declarations->add_as_stmt(std::move(list_block.unwrap()));
+        } else if (is_sublime_property()) {
+			return Result<std::unique_ptr<NodeProgram>>(
+				property_migration::make_diagnostic(peek()));
         } else {
             return Result<std::unique_ptr<NodeProgram>>(Diagnostic(ErrorType::ParseError,
              "Found unknown construct.", "<callback>, <function_definition>", peek()));
@@ -1652,6 +1784,27 @@ Result<std::unique_ptr<NodeFunctionHeaderRef>> Parser::parse_function_header_ref
 	Token start_token = consume();
 	func_name = start_token.val;
 	auto node_function_header_ref = std::make_unique<NodeFunctionHeaderRef>(func_name, start_token);
+	if (peek().type == token::LESS_THAN) {
+		auto type_arguments = _parse_type_arguments(start_token, &node_function_header_ref->type_references);
+		if (type_arguments.is_error()) {
+			return Result<std::unique_ptr<NodeFunctionHeaderRef>>(type_arguments.get_error());
+		}
+		node_function_header_ref->parameterized_type = TypeRegistry::add_object_type(
+			func_name,
+			type_arguments.unwrap()
+		);
+		node_function_header_ref->type_references.insert(
+			node_function_header_ref->type_references.begin(),
+			{node_function_header_ref->parameterized_type, start_token}
+		);
+		if (peek().type != token::OPEN_PARENTH) {
+			return Result<std::unique_ptr<NodeFunctionHeaderRef>>(Diagnostic(
+				ErrorType::ParseError,
+				"Expected constructor arguments after parameterized type <"
+					+ node_function_header_ref->parameterized_type->to_string() + ">.",
+				"(", peek()));
+		}
+	}
 	auto func_args = parse_function_args(node_function_header_ref.get());
 	if(func_args.is_error()) {
 		return Result<std::unique_ptr<NodeFunctionHeaderRef>>(func_args.get_error());
@@ -1727,7 +1880,15 @@ Result<std::unique_ptr<NodeFunctionCall>> Parser::parse_function_call(NodeAST* p
 
 Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definition(NodeAST* parent) {
     auto error = Diagnostic(ErrorType::ParseError,"", "", peek());
+	const size_t definition_start = m_pos;
     auto start_token = consume(); //consume "function"
+	// A SublimeKSP <taskfunc> is parsed exactly like a function so the migration diagnostic
+	// below can describe - and offer to rewrite - the whole block. See TaskfuncMigration.
+	const bool is_taskfunc = start_token.type == token::TASKFUNC;
+	const token end_token_type = is_taskfunc ? token::END_TASKFUNC : token::END_FUNCTION;
+	const char* construct = is_taskfunc ? "taskfunc" : "function";
+	m_taskfunc_migration.reset();
+	if (is_taskfunc) m_taskfunc_migration.emplace(start_token);
     auto node_function_definition = std::make_shared<NodeFunctionDefinition>(get_tok());
 	m_current_function_def = node_function_definition;
     std::unique_ptr<NodeFunctionHeader> func_header;
@@ -1735,9 +1896,9 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     auto func_body = std::make_unique<NodeBlock>(get_tok(), true);
     bool func_override = false;
     if (peek().type != token::KEYWORD) {
-        error.set_message( "Missing function name.");
-        error.expected = "keyword";
-        return Result<std::shared_ptr<NodeFunctionDefinition>>(error);
+        return Result<std::shared_ptr<NodeFunctionDefinition>>(make_name_expected_diagnostic(
+            ErrorType::ParseError, std::string("Missing ") + construct + " name.",
+            "<name>", peek()));
     }
     auto header = parse_function_header(node_function_definition.get());
     if (header.is_error()) {
@@ -1745,10 +1906,12 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     }
     func_header = std::move(header.unwrap());
     func_return_var = {};
+    m_result_named_return = false;
     if (peek().type == token::ARROW) {
         consume();
         if(peek().type == token::RETURN) {
             m_tokens[m_pos].type = token::KEYWORD;
+            m_result_named_return = true;
         }
         if (peek().type == token::KEYWORD) {
             auto return_vars = parse_declare_statement(node_function_definition.get());
@@ -1779,10 +1942,10 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     }
     consume(); // consume linebreak
 
-	while (peek().type != token::END_FUNCTION) {
+	while (peek().type != end_token_type) {
 		_skip_linebreaks();
-		if(peek().type == token::END_FUNCTION) break;
-		if (auto end_error = check_invalid_end_statement("function", token::END_FUNCTION, peek(), peek(1))) {
+		if(peek().type == end_token_type) break;
+		if (auto end_error = check_invalid_end_statement(construct, end_token_type, peek(), peek(1))) {
 			return Result<std::shared_ptr<NodeFunctionDefinition>>(
 				*end_error);
 		}
@@ -1794,6 +1957,27 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
 			func_body->add_stmt(std::move(stmt.unwrap()));
 	}
     auto end_token = consume();
+	if (m_taskfunc_migration) {
+		m_taskfunc_migration->add_keyword_edits(end_token);
+		// The body is rescanned rather than hooked into the expression path: <tcm.wait> is
+		// one token, and every call to it inside the block sits in this token range.
+		for (size_t index = definition_start; index < m_pos; ++index) {
+			if (m_tokens[index].type == token::KEYWORD and m_tokens[index].val == "tcm.wait") {
+				m_taskfunc_migration->add_tcm_wait_edit(m_tokens[index]);
+			}
+		}
+		m_current_function_def = nullptr;
+		m_taskfunc_migration->make_diagnostic(func_header->name).exit();
+	}
+	if (m_result_named_return) {
+		// Parsed to here only so the rename can name every place the result stands. The word
+		// stays reserved - see ReservedResultMigration.
+		m_current_function_def = nullptr;
+		m_result_named_return = false;
+		reserved_result_migration::make_diagnostic(
+			func_header->name,
+			std::span(m_tokens).subspan(definition_start, m_pos - definition_start)).exit();
+	}
 	node_function_definition->set_range(start_token, end_token);
     node_function_definition->header = std::move(func_header);
     node_function_definition->return_variable = std::move(func_return_var);
@@ -1802,6 +1986,7 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     node_function_definition->set_child_parents();
     node_function_definition->parent = parent;
 	m_current_function_def = nullptr;
+	m_result_named_return = false;
     return Result<std::shared_ptr<NodeFunctionDefinition>>(std::move(node_function_definition));
 }
 
@@ -1990,8 +2175,9 @@ Result<std::unique_ptr<NodeVariable>> Parser::parse_declare_variable(NodeAST* pa
 	}
 
     if(peek().type != token::KEYWORD) {
-        return Result<std::unique_ptr<NodeVariable>>(Diagnostic(ErrorType::SyntaxError,
-                                                                  "Found unknown variable declaration syntax.", "variable keyword", peek()));
+        return Result<std::unique_ptr<NodeVariable>>(make_name_expected_diagnostic(
+            ErrorType::SyntaxError, "Found unknown variable declaration syntax.",
+            "variable keyword", peek()));
     }
     auto parsed_var = parse_variable(parent, persistence, var_type);
     if(parsed_var.is_error()) {
@@ -2068,8 +2254,8 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_declare_array(NodeAST* 
 		consume(); // Verarbeite den Modifikator-Token
 	}
     if(peek().type != token::KEYWORD) {
-	error.expected = "array name (<keyword>)";
-        return Result<std::unique_ptr<NodeDataStructure>>(error);
+        return Result<std::unique_ptr<NodeDataStructure>>(make_name_expected_diagnostic(
+            ErrorType::ParseError, error.message, "array name (<keyword>)", peek()));
     }
     auto parsed_arr = parse_array(parent, persistence, var_type);
     if(parsed_arr.is_error()) {
@@ -2106,8 +2292,9 @@ Result<std::unique_ptr<NodeUIControl>> Parser::parse_declare_ui_control(NodeAST*
     }
     std::string ui_control_type = consume().val;
     if(peek().type != token::KEYWORD) {
-        return Result<std::unique_ptr<NodeUIControl>>(Diagnostic(ErrorType::SyntaxError,
-                                                                   "Found unknown ui_control declaration syntax.", "array or variable keyword", peek()));
+        return Result<std::unique_ptr<NodeUIControl>>(make_name_expected_diagnostic(
+            ErrorType::SyntaxError, "Found unknown ui_control declaration syntax.",
+            "array or variable keyword", peek()));
     }
     std::unique_ptr<NodeDataStructure> control_var;
     // check if it has second Brackets -> ui_control array
@@ -2547,8 +2734,8 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_family_statement(NodeAST* parent)
 	auto start_token = consume(); //consume family
 	token end_construct = token::END_FAMILY;
 	if(peek().type != token::KEYWORD) {
-		return Result<std::unique_ptr<NodeAST>>(Diagnostic(ErrorType::SyntaxError,
-															 "Found unknown family syntax.", "valid prefix", peek()));
+		return Result<std::unique_ptr<NodeAST>>(make_name_expected_diagnostic(
+			ErrorType::SyntaxError, "Found unknown family syntax.", "valid prefix", peek()));
 	}
 	auto prefix = consume(); //consume prefix
 	auto node_family_statement = std::make_unique<NodeFamily>(prefix);
@@ -2583,20 +2770,34 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 	auto start_token = consume(); //consume struct
 	auto end_construct = token::END_STRUCT;
 	if(peek().type != token::KEYWORD) {
-		return Result<std::unique_ptr<NodeStruct>>(Diagnostic(ErrorType::SyntaxError,
-															 "Found unknown <struct> syntax.", "valid <struct> name", peek()));
+		return Result<std::unique_ptr<NodeStruct>>(make_name_expected_diagnostic(
+			ErrorType::SyntaxError, "Found unknown <struct> syntax.", "valid <struct> name", peek()));
 	}
 	auto name = consume(); //consume name
-	auto l = consume_linebreak("<struct>");
-	if(l.is_error())
-		return Result<std::unique_ptr<NodeStruct>>(l.get_error());
-
 	auto node_struct = std::make_unique<NodeStruct>(
 		name.val,
 		std::make_unique<NodeBlock>(start_token),
 		std::vector<std::shared_ptr<NodeFunctionDefinition>>(),
 		name
 	);
+	StructTypeScope type_scope(m_struct_stack, node_struct.get());
+	if (peek().type != token::LINEBRK) {
+		if (peek().type != token::LESS_THAN) {
+			return Result<std::unique_ptr<NodeStruct>>(Diagnostic(
+				ErrorType::SyntaxError,
+				"Expected a line break or a type parameter list after struct name <" + name.val + ">.",
+				"linebreak or <T, U, ...>", peek()));
+		}
+		auto type_params = parse_struct_type_parameters(name);
+		if (type_params.is_error())
+			return Result<std::unique_ptr<NodeStruct>>(type_params.get_error());
+		node_struct->type_parameters = std::move(type_params.unwrap());
+	}
+
+	auto l = consume_linebreak("<struct>");
+	if(l.is_error())
+		return Result<std::unique_ptr<NodeStruct>>(l.get_error());
+
 
 	auto& node_member_block = node_struct->members;
 
@@ -2673,11 +2874,107 @@ Result<std::unique_ptr<NodeStruct>> Parser::parse_struct(NodeAST* parent) {
 	return Result<std::unique_ptr<NodeStruct>>(std::move(node_struct));
 }
 
+Result<std::vector<Token>> Parser::parse_struct_type_parameters(const Token& struct_name) {
+	consume(); // consume <; parse_struct has already established the opening token
+	std::vector<Token> type_parameters;
+	std::unordered_map<std::string, Token> first_declarations;
+
+	_skip_linebreaks();
+	if (peek().type == token::GREATER_THAN) {
+		return Result<std::vector<Token>>(Diagnostic(
+			ErrorType::SyntaxError,
+			"Generic struct <" + struct_name.val + "> must declare at least one type parameter.",
+			"type parameter name such as <T>", peek()));
+	}
+
+	while (true) {
+		_skip_linebreaks();
+		if (peek().type == token::END_TOKEN || peek().type == token::END_STRUCT) {
+			return Result<std::vector<Token>>(Diagnostic(
+				ErrorType::SyntaxError,
+				"The type parameter list for generic struct <" + struct_name.val + "> is not closed.",
+				">", peek()));
+		}
+		if (peek().type != token::KEYWORD) {
+			if (peek().type == token::COMMA) {
+				return Result<std::vector<Token>>(Diagnostic(
+					ErrorType::SyntaxError,
+					"Expected a type parameter before <,> in generic struct <" + struct_name.val + ">.",
+					"type parameter name such as <T>", peek()));
+			}
+			auto error = make_name_expected_diagnostic(
+				ErrorType::SyntaxError,
+				"Expected a type parameter name in generic struct <" + struct_name.val + ">.",
+				"type parameter name such as <T>", peek());
+			return Result<std::vector<Token>>(std::move(error));
+		}
+
+		Token parameter = consume();
+		if (TypeRegistry::get_type_from_annotation(parameter.val) != TypeRegistry::Unknown) {
+			return Result<std::vector<Token>>(Diagnostic(
+				ErrorType::SyntaxError,
+				"Built-in type <" + parameter.val + "> cannot be used as a type parameter name in generic struct <"
+					+ struct_name.val + ">.",
+				"a distinct type parameter name such as <T>", parameter));
+		}
+		if (const auto first = first_declarations.find(parameter.val); first != first_declarations.end()) {
+			auto error = Diagnostic(
+				ErrorType::SyntaxError,
+				"Type parameter <" + parameter.val + "> is declared more than once in generic struct <"
+					+ struct_name.val + ">.",
+				"unique type parameter name", parameter);
+			error.add_message("The first declaration is at line " + std::to_string(first->second.line)
+				+ ", column " + std::to_string(first->second.pos) + ".");
+			return Result<std::vector<Token>>(std::move(error));
+		}
+		first_declarations.emplace(parameter.val, parameter);
+		m_struct_stack.back()->type_parameter_table.emplace(
+			parameter.val,
+			std::make_shared<TypeParameterType>(
+				struct_name.val, parameter.val, static_cast<int>(type_parameters.size())));
+		type_parameters.push_back(std::move(parameter));
+
+		_skip_linebreaks();
+		if (peek().type == token::GREATER_THAN) {
+			consume(); // consume >
+			return Result<std::vector<Token>>(std::move(type_parameters));
+		}
+		if (peek().type == token::COMMA) {
+			consume(); // consume ,
+			_skip_linebreaks();
+			// A trailing comma keeps multiline parameter lists easy to edit.
+			if (peek().type == token::GREATER_THAN) {
+				consume(); // consume >
+				return Result<std::vector<Token>>(std::move(type_parameters));
+			}
+			continue;
+		}
+		if (peek().type == token::END_TOKEN || peek().type == token::END_STRUCT) {
+			return Result<std::vector<Token>>(Diagnostic(
+				ErrorType::SyntaxError,
+				"The type parameter list for generic struct <" + struct_name.val + "> is not closed.",
+				">", peek()));
+		}
+		if (peek().type == token::KEYWORD) {
+			return Result<std::vector<Token>>(Diagnostic(
+				ErrorType::SyntaxError,
+				"Missing comma between type parameters <" + type_parameters.back().val + "> and <"
+					+ peek().val + "> in generic struct <" + struct_name.val + ">.",
+				", or >", peek()));
+		}
+		return Result<std::vector<Token>>(Diagnostic(
+			ErrorType::SyntaxError,
+			"Expected a comma or the closing angle bracket after type parameter <"
+				+ type_parameters.back().val + "> in generic struct <" + struct_name.val + ">.",
+			", or >", peek()));
+	}
+}
+
 Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 	Token construct = consume(); //consume list
 	if(peek().type != token::KEYWORD) {
-		return Result<std::unique_ptr<NodeAST>>(Diagnostic(ErrorType::SyntaxError,
-															 "Found unknown <list> syntax.", "valid <keyword>", peek()));
+		return Result<std::unique_ptr<NodeAST>>(make_name_expected_diagnostic(
+			ErrorType::SyntaxError, "Found unknown <list> syntax.", "valid <keyword>", peek()));
 	}
 	Token name_tok = consume(); // consume keyword
 	auto ty = normalize_ksp_identifier_token(name_tok);
@@ -2753,8 +3050,8 @@ Result<std::unique_ptr<NodeConst>> Parser::parse_const_statement(NodeAST* parent
 	auto start_token = consume(); //consume family, struct, const
 	auto end_construct = token::END_CONST;
 	if(peek().type != token::KEYWORD) {
-		return Result<std::unique_ptr<NodeConst>>(Diagnostic(ErrorType::SyntaxError,
-															 "Found unknown const syntax.", "valid prefix", peek()));
+		return Result<std::unique_ptr<NodeConst>>(make_name_expected_diagnostic(
+			ErrorType::SyntaxError, "Found unknown const syntax.", "valid prefix", peek()));
 	}
 	auto prefix = consume(); //consume prefix
 	auto node_const_statement = std::make_unique<NodeConst>(prefix);

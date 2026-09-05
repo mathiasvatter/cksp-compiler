@@ -1,0 +1,11 @@
+// EXPECT_ERROR Struct <Box<int, string>> does not exist
+
+struct Box<T>
+    static count: int := 0
+    value: T
+end struct
+
+on init
+    declare b := new Box<int>(1)
+    message(Box<int, string>.count)
+end on

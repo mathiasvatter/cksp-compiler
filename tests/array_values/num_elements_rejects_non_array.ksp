@@ -1,0 +1,8 @@
+{ <num_elements> is declared as <any[]>, and every type is compatible with that, so its builtin
+  signature catches nothing. Type inference has to reject a non-array argument itself. }
+
+// EXPECT_ERROR <num_elements> can only be used with <Composite> types
+
+on init
+    message(num_elements(3 + 4))
+end on

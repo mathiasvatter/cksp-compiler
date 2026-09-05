@@ -1,0 +1,9 @@
+// Importing each file once is what stops a cycle from looping, and must stay silent.
+// EXPECT declare \$a_val := 1
+// EXPECT declare \$b_val := 2
+
+import "fixtures/cycle_a.cksp"
+
+on init
+    message(a_val + b_val)
+end on

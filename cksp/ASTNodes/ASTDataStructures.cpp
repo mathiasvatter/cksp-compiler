@@ -389,12 +389,20 @@ NodeAST *NodeStruct::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeStruct::NodeStruct(const NodeStruct& other)
-	: NodeDataStructure(other), members(clone_unique(other.members)),
-	  methods(other.methods), constructor(other.constructor),
-	  member_table(other.member_table), method_table(other.method_table),
+	: NodeDataStructure(other), type_parameters(other.type_parameters), type_parameter_table(other.type_parameter_table),
+	  members(clone_unique(other.members)),
 	  member_node_types(other.member_node_types), max_individual_structs_var(other.max_individual_structs_var),
 	  max_individual_structs_count(clone_unique(other.max_individual_structs_count))
 {
+	methods.reserve(other.methods.size());
+	for (const auto& method : other.methods) {
+		auto cloned_method = clone_shared(method);
+		if (method == other.constructor) constructor = cloned_method;
+		methods.push_back(std::move(cloned_method));
+	}
+	method_set = other.method_set;
+	member_set = other.member_set;
+	rebuild_method_table();
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeStruct::clone() const {
@@ -450,7 +458,7 @@ std::unique_ptr<NodeBlock> NodeStruct::declare_struct_constants() {
 		std::make_unique<NodeInt>(1000000, Token()),
 		Token()
 	);
-	node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_declare_max_structs), Token()));
+	node_block->add_as_stmt(std::move(node_declare_max_structs));
 	auto node_mem_warning = std::make_unique<NodeVariable>(std::nullopt, "MEM::WARNING", TypeRegistry::String, Token(), DataType::Const);
 	node_mem_warning->is_global = true;
 	auto node_declare_mem_warning = std::make_unique<NodeSingleDeclaration>(
@@ -458,7 +466,7 @@ std::unique_ptr<NodeBlock> NodeStruct::declare_struct_constants() {
 		std::make_unique<NodeString>("\"Memory Error: No more free space available to allocate objects of type\"", Token()),
 		Token()
 	);
-	node_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_declare_mem_warning), Token()));
+	node_block->add_as_stmt(std::move(node_declare_mem_warning));
 	return node_block;
 }
 
@@ -486,7 +494,7 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_constructor() {
 				std::move(param_ref),
 				mem->tok
 			);
-			node_block->add_stmt(std::make_unique<NodeStatement>(std::move(assignment), this->tok));
+			node_block->add_as_stmt(std::move(assignment));
 		} else if (auto const_block = member->statement->cast<NodeConst>()) {
 			continue;
 		} else {
@@ -506,7 +514,7 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_constructor() {
 		std::move(node_block),
 		this->tok
 	);
-	function_def->ty = TypeRegistry::add_object_type(this->name);
+	function_def->ty = this->ty;
 	function_def->parent = this;
 	return add_method(function_def);
 }
@@ -516,17 +524,13 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_repr_method() {
 	auto self_ref = self_param->variable->to_reference();
 	auto message = std::make_unique<NodeBinaryExpr>(
 		token::STRING_OP,
-		std::make_unique<NodeString>("\"<"+this->name+"> Object: \"", tok),
+		std::make_unique<NodeString>("\"<"+this->ty->to_string()+"> Object: \"", tok),
 		std::move(self_ref),
 		tok
 		);
-	auto node_body = std::make_unique<NodeBlock>(
-		this->tok,
-		std::make_unique<NodeStatement>(
-			std::make_unique<NodeReturn>(this->tok, std::move(message)), this->tok
-		)
-	);
-	node_body->scope = true;
+
+	auto node_body = std::make_unique<NodeBlock>(this->tok, true);
+	node_body->add_as_stmt(std::make_unique<NodeReturn>(this->tok, std::move(message)));
 	auto function_def = std::make_shared<NodeFunctionDefinition>(
 		std::make_unique<NodeFunctionHeader>(
 			NodeStruct::REPRESENTOR,
@@ -601,53 +605,13 @@ std::unique_ptr<NodeWhile> NodeStruct::generate_ref_count_while(std::shared_ptr<
 	return rf_methods.get_stack_while_loop(std::move(self), std::move(num_refs));
 }
 
-// void NodeStruct::collect_recursive_structs(NodeProgram *program) {
-// 	std::unordered_map<NodeStruct*, int> visit_counts;
-//
-// 	std::function<void(NodeStruct*)> collect = [&](NodeStruct* node_struct) {
-// 	  // base case
-// 	  if (!node_struct) return;
-// 	  // Inkrementiere den Besuchszähler für das aktuelle NodeStruct
-// 	  visit_counts[node_struct]++;
-// 	  // Wenn das NodeStruct bereits mehr als einmal besucht wurde, füge es den rekursiven Structs hinzu
-// 	  if (visit_counts[node_struct] > 1) {
-// 		  // Wir müssen nicht weiter in diesem Pfad suchen, da wir bereits festgestellt haben, dass es rekursiv ist
-// 		  return;
-// 	  }
-//
-// 	  // Iteriere über die Mitglieder in member_table
-// 	  for (const auto& mem : node_struct->member_table) {
-// 		  auto member = mem.second.lock();
-// 		  if(mem.first == NodeStruct::SELF) continue;
-// 		  if(member->is_engine) continue;
-// 		  if(member->data_type == DataType::Const) continue;
-// 		  // Hole den Typ des Mitglieds
-// 		  Type* mem_type = member->ty->get_element_type();
-// 		  // Überprüfe, ob der Typ ein Struct ist
-// 		  if (mem_type->get_type_kind() == TypeKind::Object) {
-// 			  // Hole den Namen des Structs
-// 			  std::string structName = mem_type->to_string();
-// 			  auto it = program->struct_lookup.find(structName);
-// 			  if (it != program->struct_lookup.end()) {
-// 				  NodeStruct* memberStruct = it->second;
-// 				  recursive_structs.insert(memberStruct);
-// 				  collect(memberStruct);
-// 			  }
-// 		  }
-// 	  }
-// 	};
-//
-// 	collect(this);
-// }
-
-void NodeStruct::collect_recursive_structs(NodeProgram* program)
-{
+void NodeStruct::collect_recursive_structs(NodeProgram* program) {
     // 1) Hilfsstrukturen
-    std::unordered_map<NodeStruct*, bool>  visited;
-    std::unordered_map<NodeStruct*, bool>  inStack;
+    std::unordered_map<NodeStruct*, bool> visited;
+    std::unordered_map<NodeStruct*, bool> inStack;
     std::unordered_map<NodeStruct*, NodeStruct*> parent;
     // Sammler für Zyklus-Knoten
-    std::unordered_set<NodeStruct*>        cycleMembers;
+    std::unordered_set<NodeStruct*> cycleMembers;
 
     // DFS-Funktion
     std::function<void(NodeStruct*)> dfsVisit = [&](NodeStruct* current){
@@ -668,19 +632,14 @@ void NodeStruct::collect_recursive_structs(NodeProgram* program)
                 continue;
 
             // Zugehöriges Struct holen
-            std::string structName = mem_type->to_string();
-            auto it = program->struct_lookup.find(structName);
-            if (it == program->struct_lookup.end())
-                continue;
-            NodeStruct* child = it->second;
-
+			NodeStruct* child = program->find_struct(mem_type->ksp_encoded_string());
+			if (!child) continue;
             // 1. Child noch nicht besucht: DFS aufrufen
             if (!visited[child]) {
                 parent[child] = current;
                 dfsVisit(child);
-            }
+            } else if (inStack[child]) {
             // 2. Child ist bereits im 'inStack' => Zyklus gefunden
-            else if (inStack[child]) {
                 // jetzt markieren wir alle Knoten von current zurück bis child
                 // (einschließlich child) als Zyklus-Mitglieder
                 NodeStruct* loopNode = current;
@@ -693,14 +652,12 @@ void NodeStruct::collect_recursive_structs(NodeProgram* program)
                 cycleMembers.insert(child);
             }
         }
-
         // Knoten aus dem Stack nehmen (Rückweg fertig)
         inStack[current] = false;
     };
 
     // 2) DFS von `this` aus starten
     dfsVisit(this);
-
     // 3) Set zurückgeben
     // => Enthält **nur** die Knoten, die tatsächlich in einem Zyklus
     //    mit `this` stehen.

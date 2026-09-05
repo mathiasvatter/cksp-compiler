@@ -2,11 +2,43 @@
 #pragma combine_callbacks(true)
 // #pragma max_callback_depth(420)
 
+struct List
+    value: string
+    next: List
+end struct
+
+struct List<T>
+    static const pipi := 5
+    value: T
+    next: List<T>
+end struct
+
+declare sdf := (3+3) as List
+
+declare ENV2.arr[2,3]: int[][]
+declare ls := new List<int>(0, nil)
+declare l2 := new List("bubu", nil)
+declare d : List
 on note
-    declare x := $EVENT_ID   
-    wait(1000)                 
-    message(x+1) 
-    wait(1000)  
-    declare y := EVENT_ID
-    message(y+2)               
+    search(_ENV2.arr, 5)
+    message((3+3) as List)
+    // test_single($EVENT_ID)
+    // test_dual($EVENT_ID)
+    message(List<int>.pipi)
+    message(arr[0], variable)
 end on
+
+declare variable := 2
+declare arr[3] := (0,1,variable)
+
+// taskfunc swap_get_max(var a, var b, out max)
+//   declare tmp
+//   tmp := a
+//   a := b
+//   b := tmp
+//   if a > b
+//     max := a
+//   else
+//     max := b
+//   end if
+// end taskfunc

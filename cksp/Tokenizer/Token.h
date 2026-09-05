@@ -1,7 +1,9 @@
 #pragma once
 
 #include <algorithm>
+#include <cctype>
 #include <memory>
+#include <vector>
 
 #include "Tokens.h"
 #include "../../misc/FileTable.h"
@@ -10,6 +12,8 @@
 /*
  * Token struct that gets line numbers, the token type and its value
  */
+struct TokenOrigin;
+
 struct Token {
     token type;
     std::string val;
@@ -28,7 +32,7 @@ struct Token {
     ///
     /// Null on the overwhelming majority of tokens, which are their own spelling. Shared
     /// rather than owned so the copies every clone and substitution makes stay cheap.
-    std::shared_ptr<const Token> origin;
+    std::shared_ptr<const TokenOrigin> origin;
 
     Token() : type(token::INVALID), val(""), line(-1), pos(0), file_ref(&FileTable::none()) {}
     Token(token type, std::string val, size_t line, size_t pos, const std::string &file)
@@ -60,6 +64,104 @@ struct Token {
     }
 };
 
+/// A span of a generated token that came from one concrete macro/define argument.
+/// Only the source data needed by a diagnostic edit is retained; copying a complete Token
+/// here would carry irrelevant type and provenance fields into every pasted word.
+struct TokenSubstitutionSource {
+    size_t generated_start;
+    size_t generated_length;
+    std::string spelling;
+    size_t line;
+    size_t pos;
+    const std::string* file_ref;
+    bool editable;
+
+    [[nodiscard]] const std::string& file() const { return *file_ref; }
+};
+
+/// Provenance paid for only by generated tokens. Inheriting Token deliberately preserves
+/// the existing `origin->val`, `origin->file()` and source-range interface while keeping the
+/// overwhelmingly common Token itself at its original size.
+struct TokenOrigin final : Token {
+    std::vector<TokenSubstitutionSource> substitution_sources;
+
+    explicit TokenOrigin(Token written, std::vector<TokenSubstitutionSource> sources = {})
+        : Token(std::move(written)), substitution_sources(std::move(sources)) {}
+};
+
+[[nodiscard]] inline TokenSubstitutionSource substitution_source(
+    const Token& source, const size_t generated_start, const size_t generated_length) {
+    return {
+        .generated_start = generated_start,
+        .generated_length = generated_length,
+        .spelling = source.val,
+        .line = source.line,
+        .pos = source.pos,
+        .file_ref = source.file_ref,
+        .editable = !source.origin
+    };
+}
+
+[[nodiscard]] inline std::shared_ptr<const TokenOrigin> token_origin(
+    const Token& written, std::vector<TokenSubstitutionSource> sources = {}) {
+    return std::make_shared<const TokenOrigin>(written, std::move(sources));
+}
+
+/// Keeps the recorded spans lined up with a replacement of `removed_length` characters at
+/// `at` by `inserted_length` new ones. A span the replacement reaches into no longer
+/// describes the text that stands there now and is dropped; everything behind it only moves.
+inline void shift_substitution_sources(
+    std::vector<TokenSubstitutionSource>& sources,
+    const size_t at, const size_t removed_length, const size_t inserted_length) {
+    const auto replaced_end = at + removed_length;
+    std::erase_if(sources, [&](const TokenSubstitutionSource& existing) {
+        return existing.generated_start + existing.generated_length > at
+            && existing.generated_start < replaced_end;
+    });
+    for (auto& existing : sources) {
+        if (existing.generated_start < replaced_end) continue;
+        existing.generated_start = existing.generated_start - removed_length + inserted_length;
+    }
+}
+
+/// Adds the concrete source spans behind one substitution. When an outer macro passes one
+/// of its parameters straight into an inner macro, `source` is generated too; in that case
+/// forward its already validated spans instead of stopping at the intermediate token.
+inline void append_substitution_sources(
+    std::vector<TokenSubstitutionSource>& target,
+    const Token& source,
+    const size_t generated_start,
+    const size_t generated_length) {
+    if (source.origin && generated_length == source.val.length()
+        && !source.origin->substitution_sources.empty()
+        && std::ranges::all_of(source.origin->substitution_sources, [&](const auto& nested) {
+            return nested.generated_start + nested.generated_length <= source.val.length();
+        })) {
+        for (const auto& nested : source.origin->substitution_sources) {
+            auto forwarded = nested;
+            forwarded.generated_start += generated_start;
+            target.push_back(std::move(forwarded));
+        }
+        return;
+    }
+    target.push_back(substitution_source(source, generated_start, generated_length));
+}
+
+
+/// What CKSP reserves `token` for, when a name was expected and one of the language's own
+/// words stood there instead.
+///
+/// Empty for an identifier, which is a name already, and for anything not spelled like one -
+/// a bracket or a number explains itself. SublimeKSP reserves fewer words than CKSP, so a
+/// ported script runs into this with names like <xor> or <mod> that were free there.
+[[nodiscard]] inline std::string reserved_word_role(const Token& token) {
+    if (token.type == token::KEYWORD || token.val.empty()) return "";
+    if (std::isalpha(static_cast<unsigned char>(token.val.front())) == 0) return "";
+    if (BOOL_OPERATORS.contains(token.val)) return "a boolean operator";
+    if (MATH_OPERATORS.contains(token.val)) return "an arithmetic operator";
+    if (BOOLEAN_SYNTAX.contains(token.val)) return "a boolean literal";
+    return "a keyword";
+}
 
 /// Extracts positional information without copying the token's file path.
 [[nodiscard]] inline SourceRange source_range_from_token(const Token& token) {
@@ -96,8 +198,8 @@ struct Token {
 /// 0 of <browser.foo> is segment 0 of <#browser#.foo>, sharing no text at all. Returns
 /// nothing when a replacement brought a dot of its own along and the two no longer line up
 /// - a wrong range is worse than none, which merely leaves the word unlinked.
-[[nodiscard]] inline std::shared_ptr<const Token> written_segment(
-    const Token& written, const std::string& value, const std::string& segment, const size_t offset) {
+[[nodiscard]] inline std::shared_ptr<const TokenOrigin> written_segment(
+    const TokenOrigin& written, const std::string& value, const std::string& segment, const size_t offset) {
     const auto at = value.find(segment, offset);
     if (at == std::string::npos) return nullptr;
     if (segment_count(written.val) != segment_count(value)) return nullptr;
@@ -112,7 +214,17 @@ struct Token {
     Token token = written;
     token.pos = written.pos + start;
     token.val = written.val.substr(start, end == std::string::npos ? end : end - start);
-    return std::make_shared<const Token>(std::move(token));
+
+    std::vector<TokenSubstitutionSource> sources;
+    const auto segment_end = at + segment.length();
+    for (const auto& source : written.substitution_sources) {
+        const auto source_end = source.generated_start + source.generated_length;
+        if (source.generated_start < at || source_end > segment_end) continue;
+        auto adjusted = source;
+        adjusted.generated_start -= at;
+        sources.push_back(std::move(adjusted));
+    }
+    return std::make_shared<const TokenOrigin>(std::move(token), std::move(sources));
 }
 
 /// Builds a token for one dotted segment of a combined access-chain token (whose value is
@@ -122,10 +234,12 @@ struct Token {
 [[nodiscard]] inline Token segment_token(const Token& base, const size_t offset, std::string segment) {
     Token token = base;
     const auto source_offset = base.val.find(segment, offset);
-    token.pos = base.pos + (source_offset == std::string::npos ? offset : source_offset);
+    const auto segment_start = source_offset == std::string::npos ? offset : source_offset;
+    token.pos = base.pos + segment_start;
     // Splitting a substituted word has to split its written spelling too, or every member
     // of the chain would claim the whole word it was assembled from.
     if (base.origin) token.origin = written_segment(*base.origin, base.val, segment, offset);
+
     token.val = std::move(segment);
     return token;
 }

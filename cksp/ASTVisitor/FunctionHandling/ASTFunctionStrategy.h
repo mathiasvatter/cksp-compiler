@@ -73,6 +73,9 @@ private:
 			} else if (definition->has_local_dynamic_arrays or is_initializer_function(node) or is_wildcard_function(node)) {
 				definition->is_inlined = true;
 				node.strategy = NodeFunctionCall::Strategy::PreemptiveInlining;
+			} else if (returns_composite(*definition)) {
+				definition->is_inlined = true;
+				node.strategy = NodeFunctionCall::Strategy::Inlining;
 			} else if (is_callable_env and node.function->has_no_args() /*and definition->call_sites.size() > 1*/) {
 				node.strategy = NodeFunctionCall::Strategy::Call;
 			} else if (is_callable_env and is_parameterstack_candidate(*definition)) {
@@ -105,6 +108,16 @@ private:
 		}
 	}
 
+
+	/// A function that returns an array gets an array as its promoted return parameter, and arrays are
+	/// passed by reference, see decide_by_ref_or_value(). ReturnParamPromotion creates that parameter
+	/// only after this pass, so the return type stands in for it here: LoweringFunctionDefReturnStmts
+	/// picks the return-flag rewrite over the <exit> one from is_inlined and runs in between.
+	static bool returns_composite(const NodeFunctionDefinition& def) {
+		if (def.num_return_params <= 0) return false;
+		const auto function_type = def.header->ty ? def.header->ty->cast<FunctionType>() : nullptr;
+		return function_type and function_type->get_return_type()->cast<CompositeType>();
+	}
 
 public:
 	static bool is_parameterstack_candidate(const NodeFunctionDefinition& def) {

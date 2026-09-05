@@ -1,0 +1,13 @@
+// EXPECT_ERROR Return value does not match the function's annotated return type
+
+struct Box<T>
+    value: T
+
+    function wrong(self): Box<T>
+        return 1
+    end function
+end struct
+
+on init
+    declare box: Box<int> := Box<int>(1)
+end on

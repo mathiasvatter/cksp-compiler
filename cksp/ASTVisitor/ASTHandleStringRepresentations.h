@@ -60,6 +60,10 @@ public:
 		node.function->accept(*this);
 		return wrap_in_repr_call(node);
 	}
+	NodeAST * visit(NodeCast& node) override {
+		node.value->accept(*this);
+		return wrap_in_repr_call(node);
+	}
 
 private:
 	DefinitionProvider* m_def_provider;
@@ -84,13 +88,13 @@ private:
 			return nullptr;
 
 		if(call.is_string_env()) {
-			std::string prefix = call.ty->to_string();
+			std::string prefix = call.ty->ksp_encoded_string();
 			return call.replace_with(construct_repr_call(call, prefix));
 		}
 		return &call;
 	}
 
-	NodeAST * wrap_in_repr_call(NodeReference& ref) const {
+	NodeAST * wrap_in_repr_call(NodeAST& ref) const {
 		if(ref.ty->get_type_kind() != TypeKind::Object and ref.ty->get_type_kind() != TypeKind::Composite)
 			return nullptr;
 
@@ -108,7 +112,7 @@ private:
 				}
 			}
 
-			std::string prefix = ref.ty->to_string();
+			std::string prefix = ref.ty->ksp_encoded_string();
 			return ref.replace_with(construct_repr_call(ref, prefix));
 		}
 		return &ref;
@@ -131,7 +135,7 @@ private:
 			error.message = "ArrayRef has no declaration";
 			error.exit();
 		}
-		std::string func_name = node.ty->to_string()+OBJ_DELIMITER+NodeStruct::REPRESENTOR;
+		std::string func_name = node.ty->ksp_encoded_string()+OBJ_DELIMITER+NodeStruct::REPRESENTOR;
 		if(m_program->function_lookup.find({func_name, 1}) != m_program->function_lookup.end()) {
 			return false;
 		}
@@ -181,7 +185,7 @@ private:
 			error.message = "NDArrayRef has no declaration";
 			error.exit();
 		}
-		std::string func_name = node.ty->to_string()+OBJ_DELIMITER+NodeStruct::REPRESENTOR;
+		std::string func_name = node.ty->ksp_encoded_string()+OBJ_DELIMITER+NodeStruct::REPRESENTOR;
 		if(m_program->function_lookup.contains({func_name, 1})) {
 			return false;
 		}

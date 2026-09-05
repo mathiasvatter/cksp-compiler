@@ -33,6 +33,8 @@
 #include "../ASTVisitor/FunctionHandling/FunctionShortCircuit.h"
 #include "../ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 
+#include <algorithm>
+
 // ************* NodeStatement ***************
 NodeAST *NodeStatement::accept(ASTVisitor &visitor) {
     return visitor.visit(*this);
@@ -170,16 +172,18 @@ std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_property_definiti
 
 
 std::shared_ptr<NodeFunctionDefinition> NodeFunctionCall::find_constructor_definition(NodeProgram *program) {
-	const auto it = program->struct_lookup.find(function->name);
-	if(it != program->struct_lookup.end()) {
-		const auto constructor = it->second->constructor;
+	const auto struct_name = function->parameterized_type
+		? function->parameterized_type->ksp_encoded_string()
+		: function->name;
+	if (auto* struct_definition = program->find_struct(struct_name)) {
+		const auto constructor = struct_definition->constructor;
 		if(!constructor) return nullptr;
 		function->ty = constructor->header->ty;
 		definition = constructor;
 		function->name = constructor->header->name;
 //		constructor->call_sites.emplace(this);
 		kind = Kind::Constructor;
-		return it->second->constructor;
+		return constructor;
 	}
 	return nullptr;
 }
@@ -190,8 +194,22 @@ bool NodeFunctionCall::bind_definition(NodeProgram* program, const bool fail, co
 //		if(kind == Kind::UserDefined) {
 //			definition->call_sites.emplace(this);
 //		}
-        return true;
-    }
+		return true;
+	}
+	// Explicit type arguments currently belong to struct constructors, not generic
+	// functions. Resolve them first so <List<int>()> cannot bind accidentally to
+	// an unrelated function named <List>.
+	if (function->parameterized_type) {
+		if (find_constructor_definition(program)) return true;
+		if (fail) {
+			auto error = Diagnostic(ErrorType::TypeError, "", "", function->tok);
+			error.message = "Generic struct constructor <"
+				+ function->parameterized_type->to_string() + "> does not exist.";
+			error.expected = "a matching generic struct declaration";
+			error.exit();
+		}
+		return false;
+	}
 	// <obj.method()>: the receiver decides which definition the call refers to, and the method is
 	// registered under its qualified name. A builtin that happens to share the unqualified name and
 	// parameter count would bind here first and stamp its type onto the call, which then makes the
@@ -372,8 +390,9 @@ std::unique_ptr<NodeAST> NodeSortSearch::clone() const {
 }
 NodeAST *NodeSortSearch::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (array.get() == oldChild) {
-		if(auto new_ref = cast_node<NodeReference>(newChild.release())) {
-			array = std::unique_ptr<NodeReference>(new_ref);
+		// cast before releasing: a node the slot cannot hold would otherwise be dropped on the floor
+		if(cast_node<NodeReference>(newChild.get())) {
+			array = unique_ptr_cast<NodeReference>(std::move(newChild));
 			return array.get();
 		}
 	} else if (value.get() == oldChild) {
@@ -480,8 +499,9 @@ std::unique_ptr<NodeAST> NodeNumElements::clone() const {
 }
 NodeAST *NodeNumElements::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (array.get() == oldChild) {
-		if(auto new_ref = cast_node<NodeReference>(newChild.release())) {
-			array = std::unique_ptr<NodeReference>(new_ref);
+		// cast before releasing: a node the slot cannot hold would otherwise be dropped on the floor
+		if(cast_node<NodeReference>(newChild.get())) {
+			array = unique_ptr_cast<NodeReference>(std::move(newChild));
 			return array.get();
 		}
 	} else if (dimension.get() == oldChild) {
@@ -516,8 +536,9 @@ std::unique_ptr<NodeAST> NodeUseCount::clone() const {
 }
 NodeAST *NodeUseCount::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> newChild) {
 	if (ref.get() == oldChild) {
-		if(auto new_ref = cast_node<NodeReference>(newChild.release())) {
-			ref = std::unique_ptr<NodeReference>(new_ref);
+		// cast before releasing: a node the slot cannot hold would otherwise be dropped on the floor
+		if(cast_node<NodeReference>(newChild.get())) {
+			ref = unique_ptr_cast<NodeReference>(std::move(newChild));
 			return ref.get();
 		}
 	}
@@ -940,6 +961,22 @@ NodeStatement* NodeBlock::add_stmt(std::unique_ptr<NodeStatement> stmt) {
     stmt->parent = this;
     statements.push_back(std::move(stmt));
 	return statements.back().get();
+}
+
+NodeStatement* NodeBlock::insert_stmt_after(
+	const NodeStatement& previous,
+	std::unique_ptr<NodeStatement> stmt
+) {
+	const auto previous_it = std::find_if(
+		statements.begin(),
+		statements.end(),
+		[&previous](const auto& current) { return current.get() == &previous; }
+	);
+	if (previous_it == statements.end()) return nullptr;
+
+	stmt->parent = this;
+	const auto inserted = statements.insert(std::next(previous_it), std::move(stmt));
+	return inserted->get();
 }
 
 //void NodeBlock::flatten() {
@@ -1571,13 +1608,14 @@ NodeAST *NodeSelect::replace_child(NodeAST* oldChild, std::unique_ptr<NodeAST> n
         expression = std::move(newChild);
         return expression.get();
     }
+    // a case holds one value or, for a range like <case 3 to 5>, two. Walking what is there
+    // rather than both slots keeps the single-value case from reading past the end of its vector.
     for ( auto & cas : cases) {
-        if(cas.first[0].get() == oldChild) {
-            cas.first[0] = std::move(newChild);
-            return cas.first[0].get();
-        } else if(cas.first[1].get() == oldChild) {
-        	cas.first[1] = std::move(newChild);
-        	return cas.first[1].get();
+        for (auto & value : cas.first) {
+            if(value.get() == oldChild) {
+                value = std::move(newChild);
+                return value.get();
+            }
         }
     }
     return nullptr;

@@ -5,11 +5,23 @@
 #include "ASTVariableChecking.h"
 
 #include "../CompilerConfig.h"
+#include "../Optimization/VarExistsValidator.h"
 #include "ReferenceManagement/ASTCollectDeclarations.h"
 
 ASTVariableChecking::ASTVariableChecking(NodeProgram* main, const Pass pass)
 	: m_def_provider(main->def_provider), pass(pass) {
 	m_program = main;
+}
+
+std::string ASTVariableChecking::self_hint(const Token& token, const std::string& kind) {
+	return "When referencing a struct " + kind + ", remember to use the '" + NodeStruct::SELF
+		+ "' keyword to access it. Example: <" + NodeStruct::SELF + "." + token.val + ">.";
+}
+
+NodeAST* ASTVariableChecking::fail_or_recover(NodeReference& node, const std::string& add_msg) {
+	node.match_data_structure(DefinitionProvider::report_declaration_error(
+		node, diagnostics(), add_msg, m_def_provider));
+	return &node;
 }
 
 NodeAST* ASTVariableChecking::visit(NodeProgram& node) {
@@ -180,6 +192,31 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 	return &node;
 }
 
+void ASTVariableChecking::check_read_in_own_declaration(NodeSingleDeclaration& node) const {
+	if (!node.value) return;
+	const auto& variable = node.variable;
+	// UI controls and lists get their values from passes of their own - leave those to the
+	// checks that own them.
+	if (variable->cast<NodeUIControl>() or variable->cast<NodeList>()) return;
+	// A name something else already declares is shadowed, not read before it exists:
+	// <declare counter := counter + 1> next to an outer <counter> declares a second variable
+	// and seeds it from the outer one.
+	if (m_def_provider->get_declared_data_structure(variable->name)) return;
+	// Only the initializer counts. collect_free_vars() would also walk the definition of
+	// whatever the initializer calls, where a same-named variable of the callee - the <result>
+	// of a deprecated return function, say - has nothing to do with this declaration.
+	static VarExistsValidator var_exists_validator;
+	if (!var_exists_validator.check(*node.value, variable->name)) return;
+
+	auto error = Diagnostic(ErrorType::VariableError, "", "", variable->tok);
+	error.message = "<" + variable->name + "> is read inside its own declaration. Nothing of that "
+		"name is declared yet, so the read can only see the zero the declaration writes right "
+		"before it - in a callback it does so on every run, which makes the value it is meant to "
+		"carry over unreachable. Declare it in <on init> and assign to it here instead.";
+	error.expected = "Declaration before use";
+	error.exit();
+}
+
 NodeAST* ASTVariableChecking::visit(NodeSingleDeclaration& node) {
 	node.variable->determine_locality(m_program, get_current_block());
 
@@ -189,6 +226,8 @@ NodeAST* ASTVariableChecking::visit(NodeSingleDeclaration& node) {
 						  "to be declared in the <on init> callback.";
 		error.exit();
 	}
+	// the pass both the compiler and the language server reach before any rewriting
+	if (pass == Pass::PostUIControlLowering) check_read_in_own_declaration(node);
     if(node.value) node.value->accept(*this);
     node.variable->accept(*this);
 	m_def_provider->add_to_declarations(&node);
@@ -233,12 +272,10 @@ NodeAST* ASTVariableChecking::visit(NodeArrayRef& node) {
 			return node.replace_with(std::move(access_chain));
 		}
 		if(m_current_struct) {
-			auto msg = "When referencing a struct member, remember to use the '" + NodeStruct::SELF
-				+ "' keyword to access it. Example: <" + NodeStruct::SELF + "." + node.tok.val + ">.";
-			DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
+			return fail_or_recover(node, self_hint(node.tok, "member"));
 		}
         if(pass == Pass::PostUIControlLowering) return &node;
-	    DefinitionProvider::throw_declaration_error(node, "", m_def_provider).exit();
+	    return fail_or_recover(node);
     }
 
     node.match_data_structure(node_declaration);
@@ -265,12 +302,9 @@ NodeAST* ASTVariableChecking::visit(NodeNDArrayRef& node) {
 			return node.replace_with(std::move(access_chain));
 		}
 		if(m_current_struct) {
-			const auto msg = "When referencing a struct member, remember to use the '" + NodeStruct::SELF
-				+ "' keyword to access it. Example: <" + NodeStruct::SELF + "." + node.tok.val + ">.";
-			DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
+			return fail_or_recover(node, self_hint(node.tok, "member"));
 		}
-		DefinitionProvider::throw_declaration_error(node, "", m_def_provider).exit();
-		return &node;
+		return fail_or_recover(node);
 	}
 	node.match_data_structure(node_declaration);
 	return &node;
@@ -295,15 +329,13 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionHeaderRef& node) {
 	if(!node_declaration) {
 		// if (!fail) return &node;
 		if(m_current_struct) {
-			const auto msg = "When referencing a struct method, remember to use the '" + NodeStruct::SELF
-				+ "' keyword to access it. Example: <" + NodeStruct::SELF + "." + node.tok.val + ">.";
-			DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
+			return fail_or_recover(node, self_hint(node.tok, "method"));
 		}
 		if (!node.parent -> cast<NodeFunctionCall>()) {
 			// when declaration is missing, throw this error only if this node is used as a function variable
 			// if it is used in a call and the function is not found, the official missing function error will be
 			// handled after type checking
-			DefinitionProvider::throw_declaration_error(node, "", m_def_provider).exit();
+			return fail_or_recover(node);
 		}
 		return &node;
 	}
@@ -342,22 +374,20 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 		} else {
 
 			if(m_current_struct) {
-				const auto msg = "When referencing a struct member, remember to use the '" + NodeStruct::SELF
-					+ "' keyword to access it. Example: <" + NodeStruct::SELF + "." + node.tok.val + ">.";
-				DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
+				return fail_or_recover(node, self_hint(node.tok, "member"));
 			}
 
 			// if is assigned to a const variable, it should be known in frontend
 			if (auto single_decl = node.parent->cast<NodeSingleDeclaration>()) {
 				if (single_decl->variable->data_type == DataType::Const) {
 					auto msg = "<Variable> was assigned to a constant variable and therefore has to be constant itself.";
-					DefinitionProvider::throw_declaration_error(node, msg, m_def_provider).exit();
+					return fail_or_recover(node, msg);
 				}
 			}
 			// could still fail on ui control array values or raw list subarrays
 			if(pass == Pass::PostUIControlLowering)
 				return &node;
-			DefinitionProvider::throw_declaration_error(node, "", m_def_provider).exit();
+			return fail_or_recover(node);
 		}
     }
 
@@ -382,7 +412,7 @@ NodeAST* ASTVariableChecking::visit(NodePointerRef& node) {
 			return node.replace_with(std::move(access_chain));
 		}
 		// if fail is set to false, return early. the rest is determined after lowering
-		DefinitionProvider::throw_declaration_error(node, "", m_def_provider).exit();
+		return fail_or_recover(node);
 	}
 
 	node.match_data_structure(node_declaration);

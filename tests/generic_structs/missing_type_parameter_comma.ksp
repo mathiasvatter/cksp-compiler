@@ -1,0 +1,7 @@
+// EXPECT_ERROR Missing comma between type parameters <T> and <U> in generic struct <Pair>
+
+struct Pair<T U>
+end struct
+
+on init
+end on

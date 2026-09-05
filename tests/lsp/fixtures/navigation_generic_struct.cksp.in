@@ -1,0 +1,11 @@
+// A type-qualified access to a shared member of a generic struct. The qualifier names a
+// type instead of a variable, so the only thing it can navigate to is the template.
+struct <|box_decl|>Box<T>
+    static const MAX := 8
+    declare value: T
+end struct
+
+on init
+    declare b := new Box<int>(1)
+    message(<|qualifier_use|>Box<int>.MAX)
+end on

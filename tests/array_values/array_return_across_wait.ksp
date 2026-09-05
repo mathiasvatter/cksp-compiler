@@ -1,0 +1,31 @@
+{ A promoted return array used to be one global array shared by every call of the function.
+
+  A function that waits before returning writes into it after the wait, so two overlapping
+  notes hand each other their result. Passing the parameter by reference removes the shared
+  array: the returned values land in the caller's variable, which the thread safety pass has
+  expanded per callback because it lives across the wait. }
+
+{ both arrays are expanded per callback and indexed by the callback id }
+// EXPECT declare %_v[0-9]*\[4000\]
+// EXPECT declare %_loc[0-9]*\[4000\]
+// EXPECT %_v[0-9]*\[\(\(\$NI_CALLBACK_ID mod 1000\) \* 4\) \+ \$[A-Za-z_0-9]+\] := %_loc[0-9]*\[\(\(\$NI_CALLBACK_ID mod 1000\) \* 4\) \+ \$[A-Za-z_0-9]+\]
+{ no shared return array that the wait would race on }
+// EXPECT_NOT declare %ret[0-9]*\[4\]
+// EXPECT_NOT := %ret
+
+declare g[4] := [1, 2, 3, 4]
+
+function fetch(n: int): int[]
+    declare loc[4]
+    declare i
+    for i := 0 to 3
+        loc[i] := g[i] + n
+    end for
+    wait(1000)
+    return loc
+end function
+
+on note
+    declare v[4] := fetch(2)
+    message(v[0])
+end on

@@ -8,6 +8,8 @@
 #include <utility>
 
 #include "../ASTVisitor/ASTVisitor.h"
+#include "../Migration/GlobalDeclarationMigration.h"
+#include "../Migration/IdentifierCaseMigration.h"
 #include "../../utils/Gensym.h"
 #include "../../misc/HashFunctions.h"
 
@@ -225,6 +227,37 @@ public:
 	/// only returns data structure declaration in current scope or global_scope
 	[[nodiscard]] std::shared_ptr<NodeDataStructure> get_scoped_data_structure(const std::string& data, bool global_scope) const;
 
+	/// Reports the error for a reference that resolved to nothing and aborts - unless the name
+	/// differs from a declaration in nothing but case, which is a spelling CKSP can resolve on
+	/// its own. Returns the declaration such a recovery resolved to.
+	///
+	/// A ported SublimeKSP script lands here by the hundred: names there resolve case
+	/// insensitively, so every one of them spelled differently from its declaration is an
+	/// error, and stopping at the first turns porting a script into one compile per name. The
+	/// reference is resolved to the declaration it means and the error reported without
+	/// stopping, so a single run names all of them.
+	///
+	/// The compilation still fails: Compiler refuses to generate code while the engine counts
+	/// errors. Recovering here is what finds the rest of them, not what accepts the spelling.
+	/// `diagnostics` is passed in rather than looked up from `node`: a reference reached by a
+	/// pass is not always attached to the program - a definition visited out of the program's
+	/// function list, a node a lowering already replaced - and the lookup walks parent
+	/// pointers to find it. The visitor always knows the engine.
+	static std::shared_ptr<NodeDataStructure> report_declaration_error(
+		NodeReference& node,
+		DiagnosticEngine& diagnostics,
+		const std::string& add_msg = "",
+		const DefinitionProvider* ctx = nullptr) {
+		const auto diagnostic = throw_declaration_error(node, add_msg, ctx);
+		if (ctx) {
+			if (auto declaration = ctx->recover_case_mismatch(node)) {
+				diagnostic.report_as_error(diagnostics);
+				return declaration;
+			}
+		}
+		diagnostic.exit();
+	}
+
 	/// variable error handling
 	static Diagnostic throw_declaration_error(NodeReference &node, const std::string& add_msg="", const DefinitionProvider* ctx = nullptr, const std::string& alternate_name = "") {
 		auto diagnostic = Diagnostic(ErrorType::VariableError, "", "", node.tok);
@@ -240,9 +273,9 @@ public:
 
 		// check if reference is assignment in declaration of global variable
 		// like : declare global ctrl := control <- where control is a lokal variable
-		if (auto single_decl = node.parent->cast<NodeSingleDeclaration>()) {
+		if (auto single_decl = get_parent_of_type<NodeSingleDeclaration>(node)) {
 			if (single_decl->variable->is_global) {
-				diagnostic.message += "This <Reference> is assigned in a global declaration. Local variables should "
+				diagnostic.message += " This <Reference> is assigned in a global declaration. Local variables should "
 							   "not be assigned in global declarations. \nTry splitting this into a declaration and an assignment.";
 			}
 		}
@@ -250,9 +283,35 @@ public:
 		if (ctx) {
 			auto name = alternate_name.empty() ? node.tok.val : alternate_name;
 			auto suggestions = ctx->misspelled_suggestions(name);
+			// A raw <NDArray> reference resolves to a declaration that does not carry its
+			// underscore, so suggesting that declaration as it stands would read as an
+			// instruction to drop the prefix. The raw spelling takes its place, which is both
+			// what the source has to write and what leaves a miscased name nothing but its case
+			// to differ in.
+			if (node.has_raw_spelling()) {
+				auto raw_suggestions = ctx->misspelled_raw_array_suggestions(node);
+				for (const auto& raw : raw_suggestions) {
+					std::erase(suggestions, NodeReference::sanitized(raw));
+				}
+				suggestions.insert(
+					suggestions.begin(), raw_suggestions.begin(), raw_suggestions.end());
+			}
 			if (!suggestions.empty()) {
 				diagnostic.message += " Did you mean: "
 					+ StringUtils::join(suggestions, ", ") + "?";
+				identifier_case_migration::apply(diagnostic, name, suggestions, node.tok);
+			}
+		}
+
+		// A pure case mismatch is the less invasive correction and wins when both patterns
+		// happen to apply. Otherwise the source-level split restores SublimeKSP's evaluation
+		// order: the declaration is hoisted, while the assignment remains in the function.
+		// Gated on the fix rather than on the kind: a case mismatch that could not be turned
+		// into one has nothing to lose against, and the split is then the only offer left.
+		if (!diagnostic.fix) {
+			if (auto fix = global_declaration_migration::make_fix(node)) {
+				diagnostic.migration_kind = Diagnostic::MigrationKind::GlobalDeclarationInitializer;
+				diagnostic.fix = std::move(*fix);
 			}
 		}
 
@@ -296,6 +355,11 @@ public:
 
 	/// Returns the actual declarations rather than losing type and node information
 	/// by reducing suggestions to strings too early.
+	/// The declarations behind <misspelled_suggestions>, scoped the way that one scopes them.
+	[[nodiscard]] std::vector<std::shared_ptr<NodeDataStructure>> misspelled_declarations(
+		const std::string& name,
+		size_t max_results) const;
+
 	[[nodiscard]] std::vector<std::shared_ptr<NodeDataStructure>> misspelled_data_structures(
 		const std::string& name,
 		std::optional<int> num_args = std::nullopt,
@@ -304,6 +368,34 @@ public:
 
 	[[nodiscard]] std::vector<std::string> misspelled_suggestions(
 		const std::string& name,
+		size_t max_results = 4) const;
+
+	/// The one declaration whose name matches `data` in every character but case, or nothing
+	/// when none does - or when several do, which is a name CKSP cannot choose for.
+	///
+	/// Scans, because the scopes are keyed by the exact spelling. Only ever reached on the
+	/// error path, where a Levenshtein ranking over the same declarations is already being
+	/// paid to build the suggestion list.
+	[[nodiscard]] std::shared_ptr<NodeDataStructure> get_case_insensitive_data_structure(
+		const std::string& data) const;
+
+	/// Resolves a reference that names a declaration in a different case, adopting the
+	/// declared spelling so every later pass sees the name the program actually declares.
+	/// Nothing when the name is not a case mismatch, or not an unambiguous one.
+	[[nodiscard]] std::shared_ptr<NodeDataStructure> recover_case_mismatch(
+		NodeReference& reference) const;
+
+	/// Suggestions for a raw <NDArray> reference, spelled the way such a reference has to be
+	/// written rather than the way its declaration is.
+	///
+	/// <_env2.arr> and <env2.arr.raw()> both name the declaration <ENV2.arr>: the raw spelling
+	/// is what addresses a multidimensional array as the flat one it is stored as, and the
+	/// underscore or the suffix belongs to the reference alone. Looking a misspelling up under
+	/// the written word would measure that character as a difference from every declaration;
+	/// looking it up sanitized and putting the spelling back on measures the name itself.
+	/// Only declarations a raw reference can name are offered.
+	[[nodiscard]] std::vector<std::string> misspelled_raw_array_suggestions(
+		const NodeReference& reference,
 		size_t max_results = 4) const;
 
 	[[nodiscard]] Diagnostic make_missing_function_definition_error(

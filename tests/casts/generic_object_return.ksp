@@ -1,0 +1,16 @@
+// EXPECT declare %Box____int____allocation\[
+// EXPECT message\(%Box____int____value\[
+
+struct Box<T>
+    value: T
+
+    function from_id(self, id: int): Box<T>
+        return id as Box<T>
+    end function
+end struct
+
+on init
+    declare original: Box<int> := new Box<int>(9)
+    declare restored: Box<int> := original.from_id(original as int)
+    message(restored.value)
+end on

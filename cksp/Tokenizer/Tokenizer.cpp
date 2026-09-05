@@ -9,6 +9,9 @@
 
 #include "../../utils/StringUtils.h"
 #include "../../misc/DiagnosticEngine.h"
+#include "../../misc/DiagnosticFixBuilder.h"
+#include "../Migration/PragmaMigration.h"
+#include "InvalidCharacter.h"
 
 
 /*
@@ -43,6 +46,7 @@ void Tokenizer::token_loop() {
 			consume();
 		}
 		else if (peek() == '/' && (peek(1) == '*' || peek(1) == '/') || peek() == '{') {
+			warn_about_sublime_pragma();
 			get_comment();
 		} else if (peek() == '\n') {
 			get_linebreak();
@@ -137,13 +141,66 @@ char Tokenizer::peek(const int ahead) const {
 
 void Tokenizer::get_invalid() {
 	flush_buffer();
+	const size_t character_start = m_pos;
 	consume();
 	auto got = !m_buffer.empty() ? m_buffer : std::string(1, m_current_char);
 	add_token(token::INVALID, m_buffer);
 	auto error = Diagnostic(ErrorType::TokenError, "", "valid token", m_tokens.back());
-	error.add_message("Found invalid token: " + got);
+
+	const auto [codepoint, length, valid] = invalid_character::decode(m_input, character_start);
+	if (valid && codepoint < 0x80) {
+		error.add_message("Found invalid token: " + got);
+		error.exit();
+	}
+	if (!valid) {
+		// Not a character at all from here: the bytes decode to nothing, which is what a file
+		// written in another encoding looks like to a compiler that reads UTF-8. Marked for
+		// migration too, so a workspace sweep names it - but never fixed, because re-encoding
+		// a file is not an edit.
+		error.migration_kind = Diagnostic::MigrationKind::InvalidCharacter;
+		char byte[8];
+		std::snprintf(byte, sizeof(byte), "0x%02X", static_cast<unsigned>(codepoint));
+		error.actual = std::string("byte ") + byte;
+		error.add_message(
+			"Found the " + error.actual + ", which begins no UTF-8 character. The file is"
+			" probably saved in another encoding; re-save it as UTF-8.");
+		error.exit();
+	}
+
+	error.actual = invalid_character::describe(codepoint);
+	// Ported files carry these by the dozen, and one sweep can take them all out.
+	error.migration_kind = Diagnostic::MigrationKind::InvalidCharacter;
+	error.add_message("Found invalid character: " + error.actual + ".");
+	if (invalid_character::is_invisible(codepoint)) {
+		error.add_message(
+			"It leaves no mark on screen, which is why the line looks correct. A character"
+			" like this usually arrives by pasting a line out of a website, a PDF or a chat"
+			" window.");
+	}
+	if (const auto replacement = invalid_character::replacement_for(codepoint)) {
+		add_invalid_character_fix(error, character_start, *replacement);
+	}
 	error.exit();
 	skip_whitespace();
+}
+
+/// Offers to take the character out, when the column the edit needs can be trusted.
+///
+/// The compiler counts a column per byte while an editor counts one per UTF-16 unit, so the
+/// two only agree while the line before the character is plain ASCII. That covers the case
+/// this exists for - one pasted character in an otherwise ordinary line - and a line that
+/// already holds other non-ASCII keeps the message without an edit, rather than an edit that
+/// might land next to the character instead of on it.
+void Tokenizer::add_invalid_character_fix(
+	Diagnostic& error, const size_t character_start, const std::string& replacement) const {
+	for (size_t index = m_input.rfind('\n', character_start) + 1; index < character_start; ++index) {
+		if (static_cast<unsigned char>(m_input[index]) >= 0x80) return;
+	}
+	const auto& range = error.range;
+	const auto title = replacement.empty() ? "Remove " + error.actual : "Replace " + error.actual + " with a space";
+	error.fix = DiagnosticFixBuilder(Diagnostic::DiagnosticFix::FixKind::ReplaceInvalidCharacter, title)
+		.replace(error.file, SourceRange(range.start, {range.start.line, range.start.column + 1}), replacement)
+		.build();
 }
 
 bool Tokenizer::is_pragma() const {
@@ -157,6 +214,41 @@ bool Tokenizer::is_pragma() const {
 		error.report(m_diagnostics);
 	}
 	return workaround_pragma;
+}
+
+void Tokenizer::warn_about_sublime_pragma() {
+	if (m_pos >= m_input_length or m_input[m_pos] != '{') return;
+
+	// A pragma is written on one line. Bounding the search there keeps an ordinary block
+	// comment that merely mentions one from being reported as the real thing.
+	const size_t line_end = m_input.find('\n', m_pos);
+	const size_t close = m_input.find('}', m_pos);
+	if (close == std::string::npos) return;
+	if (line_end != std::string::npos and close > line_end) return;
+
+	auto body = StringUtils::trim(
+		std::string_view(m_input).substr(m_pos + 1, close - m_pos - 1));
+	static constexpr std::string_view PRAGMA = "#pragma";
+	if (!StringUtils::starts_with(body, PRAGMA)) return;
+	body = body.substr(PRAGMA.size());
+	// <{#pragmatic}> is a comment, not a pragma: the word has to end where <#pragma> does
+	if (body.empty() or !is_space(body.front())) return;
+	body = StringUtils::trim_start(body);
+	if (body.empty()) return;
+
+	const auto option_end = body.find_first_of(" \t");
+	const auto option = std::string(body.substr(0, option_end));
+	const auto argument = option_end == std::string_view::npos
+		? std::string()
+		: std::string(StringUtils::trim(body.substr(option_end)));
+
+	const Token pragma_token(
+		token::PRAGMA,
+		m_input.substr(m_pos, close - m_pos + 1),
+		m_line,
+		m_line_pos,
+		m_current_file);
+	pragma_migration::make_diagnostic(pragma_token, option, argument).report(m_diagnostics);
 }
 
 bool Tokenizer::is_line_continuation() const {
@@ -225,19 +317,19 @@ void Tokenizer::get_format_string() {
         if (peek() == '\\' and peek(1) == fstring_starting_char.top()) {
             consume();
         }
-	if (peek() == '\\' and peek(1) == '<') {
-		consume();
-	}
-	if (peek() == '<') {
-		if (!m_buffer.empty()) {
-			add_token(token::STRING, m_buffer);
+		if (peek() == '\\' and peek(1) == '<') {
+			consume();
 		}
-		flush_buffer();
+		if (peek() == '<') {
+			if (!m_buffer.empty()) {
+				add_token(token::STRING, m_buffer);
+			}
+			flush_buffer();
+			consume();
+			add_token(token::FSTRING_EXPR_START, m_buffer);
+			return;
+		}
 		consume();
-		add_token(token::FSTRING_EXPR_START, m_buffer);
-		return;
-	}
-	consume();
     }
 	add_token(token::STRING, m_buffer);
 	consume(); // consume the fstring_starting_char

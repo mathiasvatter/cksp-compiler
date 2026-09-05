@@ -7,14 +7,18 @@
 #include <utility>
 #include <memory>
 #include <typeindex>
+
+#include "../../utils/StringUtils.h"
 #include "../Tokenizer/Tokens.h"
 
-inline static std::string type_kind_names[] = {"Basic", "Composite", "Object", "Function"};
-enum class TypeKind {Basic, Composite, Object, Function};
+inline static std::string type_kind_names[] = {"Basic", "Composite", "Object", "Function", "Parameter"};
+enum class TypeKind {Basic, Composite, Object, Function, Parameter};
 inline static std::string kind_names[] = {"int", "bool", "string", "real", "unknown", "object", "any", "void", "number", "comparison", "pgs"};
 enum class Kind {Integer, Boolean, String, Real, Unknown, Object, Any, Void, Number, Comparison, PGS};
 inline static std::string compound_kind_names[] = {"Array", "List"};
 enum class CompoundKind {Array, List};
+/// substitution list for placeholder type -> real type in generic structs
+using TypeSubstitutions = std::unordered_map<const class TypeParameterType*, class Type*>;
 
 /**
  * @class Type
@@ -25,13 +29,21 @@ enum class CompoundKind {Array, List};
  * The Type class is an abstract base class for different types of types.
  */
 class Type {
+protected:
+	Kind m_kind = Kind::Unknown;
 public:
     explicit Type(Kind kind=Kind::Unknown) : m_kind(kind) {}
     virtual ~Type() = default;
     Type(const Type& other) = default;
     [[nodiscard]] virtual std::unique_ptr<Type> clone() const = 0;
     [[nodiscard]] virtual std::string to_string() const = 0;
+	/// Stable structural identity used by TypeRegistry for interning.
+	[[nodiscard]] virtual std::string registry_key() const = 0;
+	virtual std::string ksp_encoded_string() const = 0;
     [[nodiscard]] virtual TypeKind get_type_kind() const = 0;
+	virtual Type* substitute_type_parameters(const TypeSubstitutions& substitutions) const = 0;
+	/// returns if type has placeholder values of TypeParameterType
+	virtual bool contains_type_parameters() const = 0;
 	[[nodiscard]] virtual std::string get_type_kind_name() const {return type_kind_names[(int)get_type_kind()];}
 	[[nodiscard]] virtual Type* get_element_type() const {return nullptr;}
     [[nodiscard]] virtual int get_dimensions() const {return 0;}
@@ -63,8 +75,6 @@ public:
 		}
 		return nullptr;
 	}
-protected:
-    Kind m_kind = Kind::Unknown;
 };
 
 class BasicType: public Type {
@@ -76,7 +86,13 @@ public:
     }
     [[nodiscard]] std::string to_string() const override {
         return kind_names[(int)m_kind];
-    };
+    }
+	[[nodiscard]] std::string registry_key() const override {
+		return "basic$" + std::to_string(static_cast<int>(m_kind));
+	}
+	std::string ksp_encoded_string() const override {
+		return kind_names[(int)m_kind];
+	}
     [[nodiscard]] TypeKind get_type_kind() const override {
         return TypeKind::Basic;
     }
@@ -88,6 +104,12 @@ public:
 		bool string_number = m_kind == Kind::String && (other->get_kind() == Kind::Number || other->get_kind() == Kind::Integer || other->get_kind() == Kind::Real);
 		if(string_number) return true;
 		return is_compatible(other);
+	}
+	[[nodiscard]] Type* substitute_type_parameters(const TypeSubstitutions& substitutions) const override {
+		return const_cast<BasicType*>(this);
+	}
+	[[nodiscard]] bool contains_type_parameters() const override {
+		return false;
 	}
 	// bool is_string_int_assignment(const Type* other) const override {
  //    	return m_kind == Kind::String && (other->get_kind() == Kind::Number || other->get_kind() == Kind::Integer || other->get_kind() == Kind::Real);
@@ -160,6 +182,9 @@ public:
 };
 
 class CompositeType : public Type {
+	CompoundKind m_compound_kind;
+	Type* m_element_type;
+	int m_dimensions;
 public:
     CompositeType(CompoundKind compound_kind, Type* element_type, int dimensions=1)
         : Type(element_type->get_kind()), m_compound_kind(compound_kind),
@@ -174,11 +199,20 @@ public:
     [[nodiscard]] std::string to_string() const override {
 		std::string output = m_element_type->to_string();
     	if (m_dimensions == 0) output += "[]";
-		for(int i = 0; i < m_dimensions; i++) {
-			output += "[]";
-		}
+		for(int i = 0; i < m_dimensions; i++) output += "[]";
 		return output;
-    };
+    }
+	[[nodiscard]] std::string registry_key() const override {
+		return "composite$" + std::to_string(static_cast<int>(m_compound_kind))
+			+ "$" + m_element_type->registry_key()
+			+ "$" + std::to_string(m_dimensions);
+	}
+	std::string ksp_encoded_string() const override {
+		std::string output = m_element_type->ksp_encoded_string();
+		if (m_dimensions == 0) output += OBJ_DELIMITER;
+		for(int i = 0; i < m_dimensions; i++) output += OBJ_DELIMITER;
+		return output;
+    }
     [[nodiscard]] TypeKind get_type_kind() const override {
         return TypeKind::Composite;
     }
@@ -202,38 +236,111 @@ public:
 	void set_element_type(Type* element_type) {
 		m_element_type = element_type;
 	}
-private:
-	CompoundKind m_compound_kind;
-	Type* m_element_type;
-    int m_dimensions;
+	[[nodiscard]] Type* substitute_type_parameters(const TypeSubstitutions &substitutions) const override;
+
+	[[nodiscard]] bool contains_type_parameters() const override {
+	    return m_element_type->contains_type_parameters();
+    }
 };
 
 class ObjectType : public Type {
+	std::string m_name;
+	std::vector<Type*> m_arguments; // {int, string} for generic structs
 public:
     explicit ObjectType(std::string name): Type(Kind::Object), m_name(std::move(name)) {}
+	ObjectType(std::string name, std::vector<Type*> arguments)
+		: Type(Kind::Object), m_name(std::move(name)), m_arguments(std::move(arguments)) {}
     ObjectType(const ObjectType& other) = default;
     [[nodiscard]] std::unique_ptr<Type> clone() const override {
         return std::make_unique<ObjectType>(*this);
     }
     [[nodiscard]] std::string to_string() const override {
-        return m_name;
-    };
+    	if (!is_parameterized()) return m_name;
+    	std::string result = m_name + "<";
+    	result += StringUtils::join_apply(m_arguments, [](auto arg) {return arg->to_string();}, ", ");
+    	return result + ">";
+    }
+	[[nodiscard]] std::string registry_key() const override {
+		std::string key = "object$" + m_name;
+		for (const auto* argument : m_arguments) {
+			key += "$" + argument->registry_key();
+		}
+		return key;
+	}
+	std::string ksp_encoded_string() const override {
+		if (!is_parameterized()) return m_name;
+		std::string result = m_name + OBJ_DELIMITER;
+		return result + StringUtils::join_apply(
+			m_arguments,
+			[](const auto* argument) { return argument->ksp_encoded_string(); },
+			OBJ_DELIMITER
+		);
+	}
     [[nodiscard]] TypeKind get_type_kind() const override {
         return TypeKind::Object;
     }
 	[[nodiscard]] Type* get_element_type() const override {return (Type *) this;}
 	[[nodiscard]] bool is_compatible(const Type* other) const override {
-		bool is_object_type = get_type_kind() == other->get_type_kind() && (m_name == other->to_string() or other->to_string() == "nil" or m_name == "nil");
+		bool is_object_type = get_type_kind() == other->get_type_kind()
+			&& (to_string() == other->to_string() or other->to_string() == "nil" or m_name == "nil");
 		return is_object_type or other->get_kind() == Kind::Unknown or other->get_kind() == Kind::Any;
 	}
 	bool is_same_type(const Type* other) const override {
-		return get_type_kind() == other->get_type_kind() and m_name == other->to_string();
+		return get_type_kind() == other->get_type_kind() and to_string() == other->to_string();
 	}
-private:
-    std::string m_name;
+	[[nodiscard]] bool is_parameterized() const { return !m_arguments.empty(); }
+	[[nodiscard]] const std::string& get_name() const { return m_name; }
+	[[nodiscard]] const std::vector<Type*>& get_type_arguments() const { return m_arguments; }
+	[[nodiscard]] Type* substitute_type_parameters(const TypeSubstitutions &substitutions) const override;
+
+	[[nodiscard]] bool contains_type_parameters() const override {
+	    for (const auto* argument : m_arguments) {
+		    if (argument->contains_type_parameters()) return true;
+	    }
+    	return false;
+    }
+};
+
+class TypeParameterType final : public Type {
+	std::string m_owner; // struct name
+	std::string m_name;
+	int m_index; // index in the parameterized declaration: <T, U> (T = idx 0, U = idx 1)
+public:
+	TypeParameterType(std::string owner, std::string name, const int index)
+		: Type(Kind::Unknown), m_owner(std::move(owner)), m_name(std::move(name)), m_index(index) {}
+	[[nodiscard]] std::unique_ptr<Type> clone() const override {
+		return std::make_unique<TypeParameterType>(*this);
+	}
+	[[nodiscard]] std::string to_string() const override { return m_name; }
+	[[nodiscard]] std::string registry_key() const override {
+		return "parameter$" + m_owner + "$" + std::to_string(m_index);
+	}
+	std::string ksp_encoded_string() const override { return m_owner + OBJ_DELIMITER + m_name; }
+	[[nodiscard]] TypeKind get_type_kind() const override { return TypeKind::Parameter; }
+	[[nodiscard]] Type* get_element_type() const override {
+		return const_cast<TypeParameterType*>(this);
+	}
+	[[nodiscard]] bool is_compatible(const Type* other) const override {
+		if (other->get_type_kind() == TypeKind::Parameter) return is_same_type(other);
+		return other->get_kind() == Kind::Unknown || other->get_kind() == Kind::Any;
+	}
+	[[nodiscard]] bool is_same_type(const Type* other) const override {
+		const auto* parameter = other->cast<TypeParameterType>();
+		return parameter && m_owner == parameter->m_owner && m_index == parameter->m_index;
+	}
+	[[nodiscard]] const std::string& owner() const { return m_owner; }
+	[[nodiscard]] const std::string& name() const { return m_name; }
+	[[nodiscard]] int index() const { return m_index; }
+	Type* substitute_type_parameters(const TypeSubstitutions &substitutions) const override;
+
+	[[nodiscard]] bool contains_type_parameters() const override {
+		return true;
+	}
 };
 
 class FunctionType : public Type {
+	std::vector<Type*> m_params;
+	Type* m_return_type;
 public:
 	explicit FunctionType(std::vector<Type*> params, Type* return_type)
 		: Type(return_type->get_kind()), m_params(std::move(params)), m_return_type(return_type) {}
@@ -243,23 +350,35 @@ public:
 	}
 	[[nodiscard]] std::string to_string() const override {
 		std::string result = "(";
-		for (size_t i = 0; i < m_params.size(); ++i) {
-			result += m_params[i]->to_string();
-			if (i < m_params.size() - 1) {
-				result += ", ";
-			}
-		}
-		result += "): " + m_return_type->to_string();
-		return result;
+    	result += StringUtils::join_apply(m_params, [](auto arg) {return arg->to_string();}, ", ");
+		return result + "): " + m_return_type->to_string();
 	}
-
+	[[nodiscard]] std::string registry_key() const override {
+		std::string key = "function";
+		for (const auto* param : m_params) {
+			key += "$" + param->registry_key();
+		}
+		return key + "$returns$" + m_return_type->registry_key();
+	}
+	std::string ksp_encoded_string() const override {
+		return to_string();
+	}
 	[[nodiscard]] TypeKind get_type_kind() const override {
 		return TypeKind::Function;
 	}
 	[[nodiscard]] Type* get_element_type() const override {return (Type *) this;}
 	[[nodiscard]] const std::vector<Type*>& get_params() const { return m_params; }
+	[[nodiscard]] const Type* get_param(const size_t i) const { return m_params[i]; }
 	[[nodiscard]] Type* get_return_type() const { return m_return_type; }
+	[[nodiscard]] Type* substitute_type_parameters(const TypeSubstitutions &substitutions) const override;
 
+	[[nodiscard]] bool contains_type_parameters() const override {
+		for (const auto* param : m_params) {
+			if (param->contains_type_parameters()) return true;
+		}
+		if (m_return_type->contains_type_parameters()) return true;
+		return false;
+	}
 	[[nodiscard]] bool is_compatible(const Type* other) const override {
 		// First, check whether the other type is also a function type
 		if (other->get_type_kind() != TypeKind::Function and other->get_kind() != Kind::Unknown) {
@@ -268,27 +387,22 @@ public:
 		if (other->get_type_kind() == TypeKind::Basic and other->get_kind() == Kind::Unknown) {
 			return true;
 		}
-
 		// Cast to function type
 		const auto other_function = other->cast<FunctionType>();
-
 		// Check parameter count
 		if (m_params.size() != other_function->get_params().size()) {
 			return false;
 		}
-
 		// Every parameter must be compatible
 		for (size_t i = 0; i < m_params.size(); ++i) {
 			if (!m_params[i]->is_compatible(other_function->get_params()[i])) {
 				return false;
 			}
 		}
-
 		// The return type must also be compatible
 		if (!m_return_type->is_compatible(other_function->get_return_type())) {
 			return false;
 		}
-
 		// If all checks were successful, the function types are compatible
 		return true;
 	}
@@ -315,6 +429,15 @@ public:
 		return true;
 	}
 
-	std::vector<Type*> m_params;
-	Type* m_return_type;
+	[[nodiscard]] bool same_input_same_output() const {
+		auto& func_param_types = get_params();
+		if (func_param_types.empty()) return false;
+		// check if all param types are the same;
+		if (std::ranges::adjacent_find(func_param_types, std::not_equal_to<>()) != func_param_types.end()) return false;
+		if (!get_param(0)->is_union_type()) return false;
+		// check if return type is the same as param type
+		if (get_return_type() != get_param(0)) return false;
+		return true;
+	}
+
 };

@@ -334,7 +334,7 @@ public:
 				node_while->body->add_as_stmt(std::make_unique<NodeFunctionCall>(
 					false,
 					std::make_unique<NodeFunctionHeaderRef>(
-						mem->ty->get_element_type()->to_string() + OBJ_DELIMITER + NodeStruct::DECREMENTER,
+						mem->ty->get_element_type()->ksp_encoded_string() + OBJ_DELIMITER + NodeStruct::DECREMENTER,
 						std::make_unique<NodeParamList>(mem->tok, to_member_chain_ref(mem), std::make_unique<NodeInt>(1, mem->tok)),
 						mem->tok
 					),
@@ -470,7 +470,7 @@ public:
 				outer_while->body->add_as_stmt(std::make_unique<NodeFunctionCall>(
 					false,
 					std::make_unique<NodeFunctionHeaderRef>(
-						mem->ty->get_element_type()->to_string() + OBJ_DELIMITER + NodeStruct::DECREMENTER,
+						mem->ty->get_element_type()->ksp_encoded_string() + OBJ_DELIMITER + NodeStruct::DECREMENTER,
 						std::make_unique<NodeParamList>(mem->tok, to_member_chain_ref(mem), std::make_unique<NodeInt>(1, mem->tok)),
 						mem->tok
 					),
@@ -551,8 +551,7 @@ private:
 
 	/// returns the struct definition of a member of object type
 	[[nodiscard]] NodeStruct* get_struct_of(const std::shared_ptr<NodeDataStructure>& mem) const {
-		const auto it = m_program->struct_lookup.find(mem->ty->get_element_type()->to_string());
-		return it == m_program->struct_lookup.end() ? nullptr : it->second;
+		return m_program->find_struct(mem->ty->get_element_type()->ksp_encoded_string());
 	}
 
 	/// STRUCT::stack_top
@@ -635,7 +634,7 @@ private:
 			if(member->is_shared_member()) continue;
 			if(member->ty->get_element_type()->get_type_kind() == TypeKind::Object) {
 				const auto mem_type = member->ty->get_element_type();
-				if(recursive_structs.contains(mem_type->to_string())) {
+				if(recursive_structs.contains(mem_type->ksp_encoded_string())) {
 					m_recursive_member_structs.push_back(member);
 				} else {
 					m_non_recursive_member_structs.push_back(member);

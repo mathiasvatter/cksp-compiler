@@ -6,6 +6,8 @@
 
 #include <utility>
 
+#include "../Migration/TCMMigration.h"
+
 DefinitionProvider::DefinitionProvider(
 		std::unordered_map<std::string, std::shared_ptr<NodeVariable>> m_builtin_variables,
 		std::unordered_map<StringIntKey, std::shared_ptr<NodeFunctionDefinition>, StringIntKeyHash> m_builtin_functions,
@@ -114,7 +116,7 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::get_declaration(NodeRefer
 	auto node_declaration = get_declared_data_structure(var.name);
 	if(!node_declaration) {
 		// sanitize name if array
-		const std::string sanitized = var.sanitize_name();
+		const std::string sanitized = NodeReference::sanitized(var.name);
 		node_declaration = get_declared_data_structure(sanitized);
 	}
 	if (node_declaration) {
@@ -303,17 +305,18 @@ std::vector<std::shared_ptr<NodeDataStructure>> DefinitionProvider::misspelled_d
 	return suggestions;
 }
 
-std::vector<std::string> DefinitionProvider::misspelled_suggestions(
+std::vector<std::shared_ptr<NodeDataStructure>> DefinitionProvider::misspelled_declarations(
 	const std::string& name,
 	const size_t max_results) const {
 	const bool scopes_are_empty = m_declared_data_structures.size() == 1
 		&& m_declared_data_structures.front().empty();
-	const auto declarations = misspelled_data_structures(
-		name,
-		std::nullopt,
-		max_results,
-		scopes_are_empty
-	);
+	return misspelled_data_structures(name, std::nullopt, max_results, scopes_are_empty);
+}
+
+std::vector<std::string> DefinitionProvider::misspelled_suggestions(
+	const std::string& name,
+	const size_t max_results) const {
+	const auto declarations = misspelled_declarations(name, max_results);
 
 	std::vector<std::string> suggestions;
 	suggestions.reserve(declarations.size());
@@ -323,11 +326,69 @@ std::vector<std::string> DefinitionProvider::misspelled_suggestions(
 	return suggestions;
 }
 
+std::vector<std::string> DefinitionProvider::misspelled_raw_array_suggestions(
+	const NodeReference& reference,
+	const size_t max_results) const {
+	const auto sanitized = NodeReference::sanitized(reference.name);
+	if (sanitized.empty() || sanitized == reference.name) return {};
+
+	// <sanitized> strips either spelling, so which one the source used has to be read
+	// back off the reference to put it on again.
+	std::vector<std::string> suggestions;
+	for (const auto& declaration : misspelled_declarations(sanitized, max_results)) {
+		if (!declaration->cast<NodeNDArray>()) continue;
+		suggestions.push_back(reference.raw_spelling_of(declaration->name));
+	}
+	return suggestions;
+}
+
+std::shared_ptr<NodeDataStructure> DefinitionProvider::get_case_insensitive_data_structure(
+	const std::string& data) const {
+	const auto lower_data = StringUtils::to_lower(data);
+	// Innermost scope first, like the exact lookup: a declaration that shadows another one
+	// answers for it here too, so an outer scope's spelling cannot make an inner one
+	// ambiguous. Within one scope two spellings of the same name are two declarations
+	// SublimeKSP never had to tell apart and CKSP cannot choose between.
+	for (const auto& scope : std::ranges::reverse_view(m_declared_data_structures)) {
+		std::shared_ptr<NodeDataStructure> match = nullptr;
+		for (const auto& [declared_name, declaration] : scope) {
+			if (!declaration || StringUtils::to_lower(declared_name) != lower_data) continue;
+			if (match && match != declaration) return nullptr;
+			match = declaration;
+		}
+		if (match) return match;
+	}
+	return nullptr;
+}
+
+std::shared_ptr<NodeDataStructure> DefinitionProvider::recover_case_mismatch(
+	NodeReference& reference) const {
+	if (auto declaration = get_case_insensitive_data_structure(reference.name)) {
+		reference.name = declaration->name;
+		return declaration;
+	}
+	// A raw reference resolves under its sanitized name, so a miscased one has to be matched
+	// there and spelled raw again - <_env2.arr> means the declaration <ENV2.arr>.
+	if (reference.has_raw_spelling()) {
+		auto declaration = get_case_insensitive_data_structure(
+			NodeReference::sanitized(reference.name));
+		if (declaration && declaration->cast<NodeNDArray>()) {
+			reference.name = reference.raw_spelling_of(declaration->name);
+			return declaration;
+		}
+	}
+	return nullptr;
+}
+
 Diagnostic DefinitionProvider::make_missing_function_definition_error(
 	const NodeFunctionCall& node) const {
 	const auto* function = node.function.get();
 	const std::string function_name = function ? function->name : node.tok.val;
 	const int num_args = function ? function->get_num_args() : 0;
+
+	// SublimeKSP's TCM has no declaration to find because CKSP needs none; say that instead
+	// of listing near-miss overloads for a name that was never going to resolve.
+	if (auto tcm = tcm_migration::make_diagnostic(node, function_name)) return *tcm;
 
 	auto declarations = find_data_structures(function_name, true);
 	if (function) {
@@ -408,6 +469,8 @@ Diagnostic DefinitionProvider::make_missing_function_definition_error(
 				names.push_back(suggestion->name);
 			}
 			diagnostic.message += " Did you mean: " + StringUtils::join(names, ", ") + "?";
+			identifier_case_migration::apply(
+				diagnostic, function_name, names, function ? function->tok : node.tok);
 		}
 	}
 

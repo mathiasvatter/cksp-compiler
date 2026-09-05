@@ -31,6 +31,28 @@ struct SourcePosition {
     }
 };
 
+/// The character an indentation step `step` columns wide is spelled with.
+///
+/// A tab occupies exactly one of the columns the compiler counts in, so a step of one column
+/// can only be a tab and anything wider can only be spaces. The step is the one measurement
+/// that says which - an absolute column cannot, because two tabs and two spaces both put the
+/// next token in column 3.
+[[nodiscard]] inline char indent_character(const size_t step) {
+    return step == 1 ? '\t' : ' ';
+}
+
+/// An indentation `width` columns wide, given that one step of its file's indentation is
+/// `step` columns. A step of zero means it could not be measured; the width itself is then
+/// the only reading left, and a single column of it can still only be a tab.
+[[nodiscard]] inline std::string indentation(const size_t width, const size_t step) {
+    return std::string(width, indent_character(step != 0 ? step : width));
+}
+
+/// The indentation of a line whose first token stands at `column`.
+[[nodiscard]] inline std::string indentation_at(const size_t column, const size_t step) {
+    return indentation(column > 0 ? column - 1 : 0, step);
+}
+
 /**
  * A lightweight half-open source range [start, end).
  *

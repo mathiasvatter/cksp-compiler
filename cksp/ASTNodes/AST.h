@@ -178,6 +178,19 @@ T* get_parent_of_type(const NodeAST& node) {
 	return nullptr;
 }
 
+/// Whether `node` sits anywhere below `subtree`, `subtree` itself included.
+///
+/// Tells apart which part of a node a reference was found in, which <get_parent_of_type>
+/// cannot: a name in a declaration's initializer and one in its type annotation have the
+/// same declaration as their parent.
+inline bool is_in_subtree(const NodeAST& node, const NodeAST* subtree) {
+	if (!subtree) return false;
+	for (const NodeAST* current = &node; current; current = current->parent) {
+		if (current == subtree) return true;
+	}
+	return false;
+}
+
 struct NodeDeadCode final : NodeAST {
     explicit NodeDeadCode(Token tok) : NodeAST(std::move(tok), NodeType::DeadCode) {};
     NodeAST *accept(ASTVisitor &visitor) override;
@@ -261,21 +274,34 @@ struct NodeReference : NodeAST {
 	// [[nodiscard]] bool needs_get_ui_id() const;
 	/// determines if reference is reference to struct member
 	[[nodiscard]] struct NodeStruct* is_member_ref() const;
-	/// checks if reference is raw version of multidimensional array
-	[[nodiscard]] bool is_raw_array() const {
+	/// Whether the reference is spelled the way a raw multidimensional array is addressed:
+	/// <_arr> or <arr.raw()>, both of which name the declaration <arr>.
+	///
+	/// A test on the spelling, not a claim about the declaration - nothing here knows whether
+	/// <_x> stands for a raw <NDArray> or for a variable someone named <_x>. That is by
+	/// design: <ASTSemanticAnalysis> asks this of a <NodeVariableRef> to decide whether it
+	/// becomes a <NodeArrayRef> in the first place, so narrowing it to references that are
+	/// one already would make the answer always no. A caller that needs the declaration to be
+	/// a multidimensional array checks that itself, the way <UniqueParameterNamesProvider>
+	/// pairs this with a cast.
+	[[nodiscard]] bool has_raw_spelling() const {
 		return (name[0] == '_' && name[1] != '_') or name.ends_with(".raw()");
 	}
-	/// when is variable = raw array? if variable has _ in front and is array and was declared without _
-	/// returns sanitized name of reference
-	[[nodiscard]] std::string sanitize_name() const {
+	/// `name` spelled the way this reference addresses a raw array, which is the inverse of
+	/// <sanitized> for the form this reference happens to use.
+	[[nodiscard]] std::string raw_spelling_of(const std::string& name) const {
+		return this->name.starts_with('_') ? "_" + name : name + ".raw()";
+	}
+	/// The name a reference spelled `name` is declared under: that spelling stripped of
+	/// whatever marks it as raw.
+	[[nodiscard]] static std::string sanitized(std::string_view name) {
 		if (name.empty()) return "";
-		std::string_view sanitized_name = name;
-		if (sanitized_name[0] == '_' && (sanitized_name.size() == 1 || sanitized_name[1] != '_')) {
-			sanitized_name.remove_prefix(1); // Effizienter als erase
-		} else if (sanitized_name.size() >= 6 && sanitized_name.substr(sanitized_name.size() - 6) == ".raw()") {
-			sanitized_name.remove_suffix(6); // Effizienter als replace
+		if (name[0] == '_' && (name.size() == 1 || name[1] != '_')) {
+			name.remove_prefix(1); // Effizienter als erase
+		} else if (name.ends_with(".raw()")) {
+			name.remove_suffix(6); // Effizienter als replace
 		}
-		return std::string(sanitized_name); // Erzeugt das Resultat nur einmal
+		return std::string(name); // Erzeugt das Resultat nur einmal
 	}
 
 	[[nodiscard]] std::vector<std::string> get_ptr_chain() const {
@@ -288,7 +314,6 @@ struct NodeReference : NodeAST {
 		return ptr_chain;
 	}
 
-	static NodeStruct* get_object_ptr(NodeProgram* program, const std::string& obj);
 	/// lower type from object to int if applicable
 	NodeReference* lower_type();
 	/// checks if reference is l_value in an assignment
@@ -299,7 +324,9 @@ struct NodeReference : NodeAST {
 		return nullptr;
 	}
 	void remove_obj_prefix() {
-		const size_t pos = name.find(OBJ_DELIMITER);
+		// A monomorphized owner may itself contain delimiters (<List::int::next>).
+		// The member name is therefore the part after the final delimiter.
+		const size_t pos = name.rfind(OBJ_DELIMITER);
 		if (pos != std::string::npos)
 			name = name.substr(pos + OBJ_DELIMITER.size());
 	}
@@ -390,6 +417,7 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 	// 	if(pos == std::string::npos) return false;
 	// 	return true;
 	// }
+
 	std::shared_ptr<NodeDataStructure> get_shared() {
 		return shared_from_this();
 	}
@@ -433,7 +461,7 @@ struct NodeDataStructure : NodeAST, std::enable_shared_from_this<NodeDataStructu
 };
 
 struct NodeInstruction : NodeAST {
-	enum Kind{Promoted, ReturnVar, None, ParameterStack};
+	enum Kind{Promoted, ReturnVar, None, ParameterStack, HoistedGlobal};
 	Kind kind = None;
     explicit NodeInstruction(const NodeType node_type, Token tok) : NodeAST(std::move(tok), node_type) {};
     ~NodeInstruction() override = default;
@@ -915,6 +943,41 @@ struct NodeInitializerList final : NodeAST {
 
 };
 
+/// ast representation of a cast -> '(3+4) as List<T>' or '0 as bool'
+struct NodeCast final : NodeAST {
+	std::unique_ptr<NodeAST> value; // is expression
+	Type* target_type = nullptr;
+	explicit NodeCast(Token tok) : NodeAST(std::move(tok), NodeType::Cast) {}
+	NodeCast(std::unique_ptr<NodeAST> value, Type* target_type, Token tok)
+	: NodeAST(std::move(tok), NodeType::Cast), value(std::move(value)), target_type(target_type) {
+		NodeCast::set_child_parents();
+	}
+	NodeAST* accept(ASTVisitor &visitor) override;
+	NodeAST* replace_child(NodeAST *oldChild, std::unique_ptr<NodeAST> newChild) override;
+	NodeCast(const NodeCast& other);
+	[[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
+	void update_parents(NodeAST *new_parent) override {
+		parent = new_parent;
+		value->update_parents(this);
+	}
+	void set_child_parents() override {
+		value->parent = this;
+	}
+	std::string get_string() override {
+		return value->get_string() + " as " + target_type->to_string();
+	}
+	std::string get_token_string() const override {
+		return value->get_token_string() + " as " + target_type->to_string();
+	}
+	void update_token_data(const Token &token) override {
+		value->update_token_data(token);
+	}
+	void set_target_type(Type* new_target_type) {
+		target_type = new_target_type;
+	}
+	[[nodiscard]] ASTLowering *get_lowering(NodeProgram *program) const override;
+};
+
 struct NodeUnaryExpr final : NodeAST {
     Token op;
     std::unique_ptr<NodeAST> operand;
@@ -1109,6 +1172,8 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	[[nodiscard]] size_t get_num_params() const;
 	[[nodiscard]] bool has_no_params() const;
 	bool is_expression_function() const;
+	/// true when every function call inside <expression> can stay inside an expression
+	bool returned_calls_are_inlinable(NodeAST& expression) const;
 	std::shared_ptr<NodeFunctionDefinition> get_shared() {
 		return shared_from_this();
 	}
@@ -1155,7 +1220,10 @@ struct NodeProgram final : NodeAST {
 	/// reachable - both for the emitted KSP and for the body of the overriding function.
 	std::unordered_map<StringIntKey, std::weak_ptr<NodeFunctionDefinition>, StringIntKeyHash> builtin_overrides;
 	std::vector<NodeStruct*> struct_definitions;
-	std::unordered_map<std::string, NodeStruct*> struct_lookup;
+	/// Struct declarations keyed by source/symbol name and generic arity.
+	/// <List> is {"List", 0}, the template <List<T>> is {"List", 1}, and a
+	/// monomorphized <List<int>> is {"List::int", 0}.
+	std::unordered_map<StringIntKey, NodeStruct*, StringIntKeyHash> struct_lookup;
 	/// Struct nodes that lowering already replaced by their member block, kept alive until
 	/// the end of that pass. <struct_definitions> and <struct_lookup> hand out raw pointers
 	/// and are only cleared once every struct is lowered, so destroying a struct the moment
@@ -1195,6 +1263,7 @@ struct NodeProgram final : NodeAST {
 	void check_builtin_shadowing();
 	static NodeFunctionDefinition *replace_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def, const std::shared_ptr<NodeFunctionDefinition> &replacement);
 	void update_struct_lookup();
+	[[nodiscard]] NodeStruct* find_struct(const std::string& name, int type_parameter_count = 0) const;
 	/// Puts a lowered struct's member block in its place in the AST and keeps the struct node
 	/// itself alive in <lowered_structs> instead of destroying it. Returns the member block.
 	NodeAST* retire_lowered_struct(NodeStruct& node);

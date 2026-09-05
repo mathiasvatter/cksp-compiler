@@ -56,6 +56,9 @@ public:
 	NodeAST* visit(NodeInitializerList& node) override {
 		return &node;
 	}
+	NodeAST* visit(NodeCast &node) override {
+	    return &node;
+    }
 	NodeAST* visit(NodeArray& node) override {
 		return &node;
 	}

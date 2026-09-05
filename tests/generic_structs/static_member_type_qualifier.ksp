@@ -1,0 +1,22 @@
+// EXPECT declare \$Box____int____count
+// EXPECT declare \$Box____string____count
+// EXPECT \$Box____int____count := \$Box____int____count \+ 1
+// EXPECT message\(\$Box____string____count\)
+
+// Every instantiation is a struct of its own, so each carries its own shared member.
+struct Box<T>
+    static count: int := 0
+    value: T
+
+    function __init__(self, v: T)
+        self.value := v
+        Box.count := Box.count + 1
+    end function
+end struct
+
+on init
+    declare a := new Box<int>(1)
+    declare b := new Box<string>("x")
+    message(Box<int>.count)
+    message(Box<string>.count)
+end on

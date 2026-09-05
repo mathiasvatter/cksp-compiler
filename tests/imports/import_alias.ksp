@@ -1,0 +1,17 @@
+// An alias wraps the imported file in a namespace, so its members carry the alias as a prefix.
+// EXPECT declare \$lib__offset := 7
+// EXPECT declare %lib__Point____allocation\[
+// EXPECT message\(3\)
+// A define and a macro are lifted out of the namespace and stay global.
+// EXPECT message\(4\)
+
+import "fixtures/module.cksp" as lib
+
+on init
+    declare p := new lib.Point(1, 2)
+    message(lib.add(1, 2))
+    message(lib.offset)
+    declare v := MODULE_TWO
+    module_double(v)
+    message(v)
+end on

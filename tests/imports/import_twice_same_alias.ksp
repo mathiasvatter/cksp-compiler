@@ -1,0 +1,9 @@
+// Spelling both imports the same way asks for nothing the first import did not already do.
+// EXPECT message\(7\)
+
+import "fixtures/module.cksp" as lib
+import "fixtures/module.cksp" as lib
+
+on init
+    message(lib.offset)
+end on

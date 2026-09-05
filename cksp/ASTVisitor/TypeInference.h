@@ -18,6 +18,9 @@ class TypeInference final : public ASTVisitor {
 	std::unordered_set<std::string> m_discard_warnings;
 	/// source locations and contexts of already reported persistent-pointer warnings
 	std::unordered_set<std::string> m_persistent_pointer_warnings;
+	/// Source annotations describe pre-lowering types. Later inference passes operate on KSP
+	/// representations (objects and nil are integers) and must not compare those again.
+	bool m_enforce_source_return_annotations = false;
 
 	void warn_if_persistent_pointer(const NodeAST& node, const std::string& context) {
 		if (!has_pointer_element_type(node)) return;
@@ -250,6 +253,7 @@ public:
 	}
 
 	NodeAST* do_complete_traversal(NodeProgram& node) {
+		m_enforce_source_return_annotations = true;
 		m_func_calls.clear();
 		m_discard_warnings.clear();
 		m_persistent_pointer_warnings.clear();
@@ -284,10 +288,12 @@ public:
 			s->collect_recursive_structs(m_program);
 		}
 		apply_types_to_data_structures();
+		m_enforce_source_return_annotations = false;
 		return &node;
 	}
 
 	NodeAST* do_reachable_traversal(NodeProgram& node) {
+		m_enforce_source_return_annotations = false;
 		m_func_calls.clear();
 		m_discard_warnings.clear();
 		m_persistent_pointer_warnings.clear();
@@ -326,6 +332,7 @@ public:
 	NodeAST * visit(NodeParamList& node) override;
     /// check if every member has same type
     NodeAST * visit(NodeInitializerList& node) override;
+	NodeAST * visit(NodeCast& node) override;
 
 	NodeAST * visit(NodeVariableRef& node) override;
 	NodeAST * visit(NodeVariable& node) override;
@@ -422,17 +429,11 @@ public:
 
 	/// check for function that has same param types as return type
 	static bool is_same_input_same_output_type(const NodeFunctionHeader& header) {
-	if (!header.ty) return false;
-	if (header.params.empty()) return false;
-	const auto func_type = header.ty->cast<FunctionType>();
-	if (!func_type) return false;
-	if (func_type->m_params.empty()) return false;
-	// check if all param types are the same;
-	if (std::ranges::adjacent_find(func_type->m_params, std::not_equal_to<>()) != func_type->m_params.end()) return false;
-	if (!func_type->m_params[0]->is_union_type()) return false;
-	// check if return type is the same as param type
-	if (func_type->m_return_type != func_type->m_params[0]) return false;
-	return true;
+		if (!header.ty) return false;
+		if (header.params.empty()) return false;
+		const auto func_type = header.ty->cast<FunctionType>();
+		if (!func_type) return false;
+    	return func_type->same_input_same_output();
     }
 
     /// check types of initializations and try to infer overall element type
@@ -507,7 +508,7 @@ public:
             throw_type_error(node1, node2, message).exit();
 		}
 
-	match_composite_type(node1, node2);
+		match_composite_type(node1, node2);
 		// specialize types:
         node1.set_element_type(specialize_type(node1.ty, node2.ty));
 
@@ -668,8 +669,8 @@ public:
 		if (node_2 == TypeRegistry::String) {
 			return node_1;
 		} else {
-				return TypeRegistry::Any;
-			}
+			return TypeRegistry::Any;
+		}
 	}
 
 	return node_1;
@@ -677,19 +678,29 @@ public:
 
 	/// only there to match/generalize formal parameter to actual parameter
 	static Type* match_parameters(NodeAST& node1, Type* type, const std::string& message="") {
-	// if(!node1.ty->is_compatible(type)) {
-	// 	throw_type_error(node1, type, message).exit();
-	// }
-	// if type is composite and node1 is unknown, set type of node1 to type
-	if(type->cast<CompositeType>() and node1.ty == TypeRegistry::Unknown) {
-		// stash elem_typ temporarily
-		const auto elem_type = node1.ty->get_element_type();
-		node1.ty = type;
-		node1.set_element_type(elem_type);
-	}
-	// specialize types:
-	node1.set_element_type(generalize_type(node1.ty, type));
-	return node1.ty;
+		// if(!node1.ty->is_compatible(type)) {
+		// 	throw_type_error(node1, type, message).exit();
+		// }
+		// if type is composite and node1 is unknown, set type of node1 to type
+		if(type->cast<CompositeType>() and node1.ty == TypeRegistry::Unknown) {
+			// stash elem_typ temporarily
+			const auto elem_type = node1.ty->get_element_type();
+			node1.ty = type;
+			node1.set_element_type(elem_type);
+		}
+		// specialize types:
+		node1.set_element_type(generalize_type(node1.ty, type));
+		return node1.ty;
     }
+
+	// static Diagnostic make_missing_object_type_error(NodeProgram& program, NodeAST& node) {
+	//     auto type = node.ty->get_element_type();
+ //    	auto type_internal_string = type->ksp_encoded_string();
+ //    	auto type_diagnostic_string = type->to_string();
+ //    	auto strct = program.find_struct(type_internal_string);
+ //    	auto error = Diagnostic(ErrorType::TypeError, "", "", node.tok);
+ //    	error.set_message("Found incorrect <Object> type <"+ type_diagnostic_string + ">.");
+ //
+ //    }
 
 };

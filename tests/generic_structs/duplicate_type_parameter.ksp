@@ -1,0 +1,8 @@
+// EXPECT_ERROR Type parameter <T> is declared more than once in generic struct <Pair>
+// EXPECT_ERROR The first declaration is at line 4, column 13
+
+struct Pair<T, T>
+end struct
+
+on init
+end on

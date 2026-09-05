@@ -1,0 +1,11 @@
+// EXPECT_ERROR <namespaces> can only contain <declare> statements, <function> definitions, <struct> definitions and nested <namespaces>
+
+namespace Config
+    const Limits
+        MAX := 8
+    end const
+end namespace
+
+on init
+    message(1)
+end on

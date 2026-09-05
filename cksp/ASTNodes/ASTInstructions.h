@@ -940,6 +940,14 @@ struct NodeBlock final : NodeInstruction {
     void prepend_body(std::unique_ptr<NodeBlock> new_body);
     /// adds a node statement to internal vector and sets parent pointer, returns pointer to moved object
 	NodeStatement* add_stmt(std::unique_ptr<NodeStatement> stmt);
+	/// inserts a statement directly after an existing statement in this block.
+	/// Returns nullptr when <previous> does not belong to this block.
+	NodeStatement* insert_stmt_after(const NodeStatement& previous, std::unique_ptr<NodeStatement> stmt);
+	/// wraps <node> in a statement and inserts it directly after <previous>.
+	NodeStatement* insert_as_stmt_after(const NodeStatement& previous, std::unique_ptr<NodeAST> node) {
+		auto node_stmt = std::make_unique<NodeStatement>(std::move(node), tok);
+		return insert_stmt_after(previous, std::move(node_stmt));
+	}
 	/// prepends a node statement to internal vector and sets parent pointer
 	void prepend_stmt(std::unique_ptr<NodeStatement> stmt) {
 		stmt->parent = this;

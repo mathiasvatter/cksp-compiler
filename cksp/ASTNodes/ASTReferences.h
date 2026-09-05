@@ -238,6 +238,9 @@ struct NodeNDArrayRef final : NodeCompositeRef {
 
 struct NodeFunctionHeaderRef final : NodeReference {
 	bool has_forced_parenth = false;
+	/// Present for an explicitly parameterized constructor call such as <List<int>()>.
+	/// The semantic spelling stays <List<int>>; binding uses its KSP-encoded struct name.
+	ObjectType* parameterized_type = nullptr;
 	std::unique_ptr<NodeParamList> args;
 	NodeFunctionHeaderRef(std::string name, Token tok) : NodeReference(std::move(name), NodeType::FunctionHeaderRef, tok, DataType::Mutable) {
 		set_args(std::make_unique<NodeParamList>(std::move(tok)));
@@ -257,7 +260,8 @@ struct NodeFunctionHeaderRef final : NodeReference {
 		return name + "(" + (args ? args->get_string() : "") + ")";
 	}
 	std::string get_token_string() const override {
-		return tok.val + "(" + (args ? args->get_token_string() : "") + ")";
+		const auto& source_name = parameterized_type ? parameterized_type->to_string() : tok.val;
+		return source_name + "(" + (args ? args->get_token_string() : "") + ")";
 	}
 	void set_child_parents() override;
 	[[nodiscard]] int get_num_args() const;
@@ -387,6 +391,12 @@ struct NodeAccessChain final : NodeReference {
 			types.push_back(c->ty);
 		}
 	}
+
+	/// A type-qualified chain whose only method is the compiler-provided <storage>:
+	/// <Note.storage(.pitch)> names a generated member heap rather than anything reached through
+	/// an instance. Recognising the shape is all this does - every malformed spelling is rejected
+	/// by type inference.
+	[[nodiscard]] bool is_storage_access();
 
 	/// The dotted name spanning the chain elements <from>..<to>, as written in the source.
 	[[nodiscard]] std::string joined_name(const size_t from, const size_t to) const {

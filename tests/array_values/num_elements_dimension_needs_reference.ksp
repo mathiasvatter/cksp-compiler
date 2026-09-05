@@ -1,0 +1,14 @@
+{ The dimension argument selects one dimension of an NDArray, which is read off the declaration
+  behind the reference. An expression has no declaration, so this spelling stays rejected. }
+
+// EXPECT_ERROR First argument for function call <num_elements> must be a reference when a dimension is given
+
+declare nd[3, 4]
+
+function get_nd(): int[]
+    return nd
+end function
+
+on init
+    message(num_elements(get_nd(), 2))
+end on

@@ -1,0 +1,5 @@
+// EXPECT_ERROR Could not parse the target type after <as>
+
+on init
+    declare broken := 1 as
+end on

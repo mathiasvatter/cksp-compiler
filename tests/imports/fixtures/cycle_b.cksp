@@ -1,0 +1,2 @@
+import "cycle_a.cksp"
+declare b_val: int := 2

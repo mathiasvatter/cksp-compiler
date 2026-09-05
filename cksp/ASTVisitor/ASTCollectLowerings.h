@@ -54,6 +54,7 @@ public:
 	NodeAST * visit(NodeSetControl& node) override;
 	/// lower property functions to get_control_par
 	NodeAST * visit(NodeFunctionCall& node) override;
+	NodeAST * visit(NodeCast& node) override;
     /// determine size of array in declaration if possible
 	NodeAST * visit(NodeArray& node) override;
 	/// lower ndarray when in function params

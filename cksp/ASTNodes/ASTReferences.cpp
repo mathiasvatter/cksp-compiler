@@ -477,7 +477,8 @@ NodeAST *NodeFunctionHeaderRef::accept(ASTVisitor &visitor) {
 
 // ************* NodeFunctionHeaderRef ***************
 NodeFunctionHeaderRef::NodeFunctionHeaderRef(const NodeFunctionHeaderRef& other)
-	: NodeReference(other), args(clone_unique(other.args)), has_forced_parenth(other.has_forced_parenth) {
+	: NodeReference(other), has_forced_parenth(other.has_forced_parenth),
+	  parameterized_type(other.parameterized_type), args(clone_unique(other.args)) {
 	set_child_parents();
 }
 
@@ -616,6 +617,16 @@ NodeAST *NodeAccessChain::replace_child(NodeAST* oldChild, std::unique_ptr<NodeA
 
 std::unique_ptr<NodeAST> NodeAccessChain::clone() const {
 	return std::make_unique<NodeAccessChain>(*this);
+}
+
+bool NodeAccessChain::is_storage_access() {
+	if (chain.size() != 2) return false;
+	const auto object = chain[0]->is_reference();
+	if (!object or object->kind != NodeReference::Kind::TypeQualifier) return false;
+	const auto call = chain[1]->cast<NodeFunctionCall>();
+	if (!call or call->function->name != NodeStruct::STORAGE) return false;
+	return call->function->get_num_args() == 1
+		and call->function->get_arg(0)->cast<NodeMemberPath>() != nullptr;
 }
 
 std::unique_ptr<NodeAST> NodeAccessChain::split(const size_t idx) {
@@ -759,4 +770,3 @@ ASTLowering* NodeSetControl::get_lowering(NodeProgram *program) const {
 	lowering.set_program(program);
 	return &lowering;
 }
-

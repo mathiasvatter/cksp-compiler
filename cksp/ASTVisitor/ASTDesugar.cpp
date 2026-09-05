@@ -5,11 +5,14 @@
 #include "ASTDesugar.h"
 
 #include "../CompilerConfig.h"
+#include "../Desugaring/DesugarGenericStruct.h"
 #include "../Desugaring/DesugarNamespace.h"
 #include "FunctionHandling/DeprecatedReturnSyntaxAnalyzer.h"
 
 NodeAST* ASTDesugar::visit(NodeProgram& node) {
     m_program = &node;
+
+	do_struct_monomorphization(node);
 
 	// add boolean funcs to program to ensure correct var and type checking
 	for (auto val : m_program->def_provider->boolean_functions | std::views::values) {
@@ -85,12 +88,18 @@ NodeAST* ASTDesugar::visit(NodeSingleDeclaration& node) {
     node.variable->accept(*this);
     if(node.value) node.value->accept(*this);
 
-	// if var is global -> make assignment and move declaration to global declarations
+    // if var is global -> make assignment and move declaration to global declarations
     if(node.variable->is_global and (!is_global_declaration or !m_program->function_definition_stack.empty())) {
     	node.variable->is_global = true;
-        m_global_variable_declarations->add_as_stmt(
-			std::make_unique<NodeSingleDeclaration>(node.variable, std::move(node.value), node.tok)
-		);
+		auto hoisted = std::make_unique<NodeSingleDeclaration>(
+			node.variable, std::move(node.value), node.tok);
+		// Only a declaration moved out of a function can lose access to function-local
+		// values. A declaration moved out of on init is already evaluated globally, so an
+		// unknown name there must not be disguised by offering this migration.
+		if (!m_program->function_definition_stack.empty()) {
+			hoisted->kind = NodeInstruction::Kind::HoistedGlobal;
+		}
+		m_global_variable_declarations->add_as_stmt(std::move(hoisted));
     	// m_global_variable_declarations->get_last_statement()->desugar(m_program);
 		return node.remove_node();
     }
@@ -167,4 +176,65 @@ NodeAST *ASTDesugar::visit(NodeBinaryExpr &node) {
 	node.left->accept(*this);
 	node.right->accept(*this);
 	return node.desugar(m_program);
+}
+
+
+bool ASTDesugar::do_struct_monomorphization(NodeProgram& node) const {
+	DesugarGenericStruct generic_struct(m_program);
+	node.update_struct_lookup();
+	while (true) {
+		auto pending = TypeRegistry::take_pending_parameterized_object_types();
+		if (pending.empty()) break;
+
+		for (auto & t : pending) {
+			const auto& name = t->get_name();
+			auto it = node.struct_lookup.find({name, static_cast<int>(t->get_type_arguments().size())});
+			if (it != node.struct_lookup.end()) {
+				const auto* node_struct = it->second;
+				auto clone = unique_ptr_cast<NodeStruct>(node_struct->clone());
+				generic_struct.run(*clone, t);
+
+				auto* parent_stmt = node_struct->get_parent_statement();
+				auto* parent_block = node_struct->get_parent_block();
+				if (!parent_stmt || !parent_block) {
+					auto error = Diagnostic(
+						ErrorType::InternalError,
+						"Generic struct is not owned by a statement block.",
+						"<NodeStatement> inside <NodeBlock>",
+						node_struct->tok
+					);
+					error.exit();
+				}
+
+				auto* clone_ptr = clone.get();
+				if (!parent_block->insert_as_stmt_after(*parent_stmt, std::move(clone))) {
+					auto error = Diagnostic(
+						ErrorType::InternalError,
+						"Owning struct statement was not found in its parent block.",
+						"statement belonging to its parent block",
+						node_struct->tok
+					);
+					error.exit();
+				}
+				m_program->struct_definitions.push_back(clone_ptr);
+			}
+		}
+	}
+
+	// Monomorphized clones have their type parameter metadata cleared by
+	// DesugarGenericStruct. Everything still carrying parameters is therefore a
+	// generic template and must not enter the regular struct desugaring passes.
+	node.struct_lookup.clear();
+	for (auto it = node.struct_definitions.begin(); it != node.struct_definitions.end();) {
+		auto* struct_definition = *it;
+		if (!struct_definition->is_parameterized()) {
+			++it;
+			continue;
+		}
+		// Remove the non-owning pointer before replacing and destroying the AST node.
+		it = node.struct_definitions.erase(it);
+		struct_definition->remove_node();
+	}
+	node.update_struct_lookup();
+	return true;
 }

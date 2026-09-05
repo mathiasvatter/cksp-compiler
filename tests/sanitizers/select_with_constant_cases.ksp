@@ -1,0 +1,31 @@
+{ Regression input for NodeSelect::replace_child reading past a single-value case.
+
+  A case holds one value, or two for a range like <case 3 to 5>. replace_child indexed both
+  slots unconditionally, so a plain <case A> read one element past the end of its vector.
+
+  Constant propagation is what walks into it: the named constants make it replace the case value
+  nodes, and every replacement goes through replace_child. There is nothing to assert on in the
+  generated ksp - the out of bounds read almost always compares unequal and the compile succeeds -
+  so this file only earns its keep under a sanitizer. }
+
+declare const A := 1
+declare const B := 2
+declare const RANGE_START := 3
+declare const RANGE_END := 5
+
+function pick(n: int): int
+    declare v := 0
+    select n
+        case A
+            v := 10
+        case B
+            v := 20
+        case RANGE_START to RANGE_END
+            v := 30
+    end select
+    return v
+end function
+
+on init
+    message(pick(1) & " " & pick(4))
+end on

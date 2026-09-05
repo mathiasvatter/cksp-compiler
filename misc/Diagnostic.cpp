@@ -21,11 +21,7 @@ std::string error_type_to_string(const ErrorType type) {
     return "UnknownError";
 }
 
-Diagnostic::Diagnostic(
-    const ErrorType type,
-    std::string message,
-    std::string expected,
-    const Token& token)
+Diagnostic::Diagnostic(const ErrorType type, std::string message, std::string expected, const Token& token)
     : type(type),
       severity(type == ErrorType::CompileWarning ? DiagnosticSeverity::Warning : DiagnosticSeverity::Error),
       message(std::move(message)),
@@ -61,6 +57,13 @@ Diagnostic::Diagnostic(
 void Diagnostic::report(DiagnosticEngine& diagnostics) const {
     auto diagnostic = *this;
     diagnostic.severity = DiagnosticSeverity::Warning;
+    diagnostics.report(std::move(diagnostic));
+}
+
+void Diagnostic::report_as_error(DiagnosticEngine& diagnostics) const {
+    auto diagnostic = *this;
+    diagnostic.severity = DiagnosticSeverity::Error;
+    diagnostic.recovered = true;
     diagnostics.report(std::move(diagnostic));
 }
 

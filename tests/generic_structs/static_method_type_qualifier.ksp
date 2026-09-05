@@ -1,0 +1,18 @@
+// The static method is reached through the type qualifier and writes to the shared member of that
+// instantiation - without the call the counter would still read 0.
+// EXPECT message\(7\)
+
+struct Box<T>
+    static count: int := 0
+    value: T
+
+    static function reset()
+        Box.count := 7
+    end function
+end struct
+
+on init
+    declare b := new Box<int>(1)
+    Box<int>.reset()
+    message(Box<int>.count)
+end on

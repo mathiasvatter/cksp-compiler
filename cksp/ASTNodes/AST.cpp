@@ -27,6 +27,7 @@
 #include "../Optimization/ConstantFolding.h"
 #include "../Lowering/LoweringInitializerList.h"
 #include "../Optimization/FreeVarCollector.h"
+#include "../Optimization/FunctionCallCollector.h"
 #include "../Optimization/ReferenceValidator.h"
 #include "../ASTVisitor/ASTCollectLowerings.h"
 #include "../ASTVisitor/ASTVariableChecking.h"
@@ -39,7 +40,7 @@
 #include "../ASTVisitor/ReferenceManagement/ASTCollectCallSites.h"
 #include "../ASTVisitor/ReferenceManagement/ASTCollectDeclarations.h"
 #include "../ASTVisitor/FunctionHandling/FunctionShortCircuit.h"
-
+#include "../Lowering/LoweringCast.h"
 
 // ************* NodeAST Base Class ***************
 NodeAST::NodeAST(Token tok, const NodeType node_type) : range(source_range_from_token(tok)),
@@ -341,13 +342,6 @@ NodeStruct* NodeReference::is_member_ref() const {
 	return nullptr;
 }
 
-NodeStruct *NodeReference::get_object_ptr(NodeProgram* program, const std::string& obj) {
-	if(const auto it = program->struct_lookup.find(obj); it != program->struct_lookup.end()) {
-		return it->second;
-	}
-	return nullptr;
-}
-
 NodeReference* NodeReference::lower_type() {
 	if (ty -> get_element_type() == TypeRegistry::Boolean) {
 		set_element_type(TypeRegistry::Integer);
@@ -367,6 +361,12 @@ NodeSingleAssignment* NodeReference::is_l_value() const {
 }
 
 // ************* NodeDataStructure ***************
+/// <references> is deliberately not copied. It holds raw pointers to the references of the
+/// declaration being copied, and every one of them keeps pointing at that declaration - a
+/// reference unregisters itself in ~NodeReference() through its own <declaration>, so it would
+/// never take itself out of the copy's set. The copy would collect entries that dangle as soon as
+/// the original references die, and replace_datastruct() writes through every entry it finds.
+/// A copy is a new declaration that nothing refers to yet; whoever points references at it says so.
 NodeDataStructure::NodeDataStructure(const NodeDataStructure& other)
 	: NodeAST(other), prefix(clone_unique(other.prefix)),
 	  is_used(other.is_used), is_engine(other.is_engine), persistence(other.persistence),
@@ -374,7 +374,7 @@ NodeDataStructure::NodeDataStructure(const NodeDataStructure& other)
 	  has_obj_assigned(other.has_obj_assigned), is_thread_safe(other.is_thread_safe),
 	  is_restricted(other.is_restricted), num_reuses(other.num_reuses),
 	  renamed(other.renamed), data_type(other.data_type),
-	  name(other.name), references(other.references) {
+	  name(other.name) {
 	NodeDataStructure::set_child_parents();
 }
 
@@ -475,6 +475,10 @@ NodeDataStructure *NodeDataStructure::replace_datastruct(std::unique_ptr<NodeDat
 	// 				ref->declaration = new_data;
 	// 			  });
 	new_data->add_references(old_data->references);
+	// the references answer to <new_data> from here on and unregister themselves there. Keeping
+	// them listed on the replaced declaration as well would leave entries behind that nothing
+	// takes out again, and this loop is what walks such a list.
+	old_data->clear_references();
 	if(const auto strct = new_data->is_member()) {
 		strct->replace_member_in_table(old_data, new_data);
 	}
@@ -632,21 +636,20 @@ std::shared_ptr<NodeDataStructure> NodeMemberPath::resolve_members(NodeProgram* 
 
 	for (size_t i = 0; i < segments.size(); ++i) {
 		const Token& current_segment = segment(i);
-		const std::string object_name = current_type->to_string();
-		const auto struct_it = program->struct_lookup.find(object_name);
-		if (struct_it == program->struct_lookup.end() || !struct_it->second) {
+		const std::string object_name = current_type->ksp_encoded_string();
+		auto* strct = program->find_struct(object_name);
+		if (!strct) {
 			auto error = Diagnostic(ErrorType::TypeError, "", "", current_segment);
-			error.message = "Struct <" + object_name + "> does not exist.";
+			error.message = "Struct <" + current_type->to_string() + "> does not exist.";
 			error.exit();
 		}
 
-		auto* strct = struct_it->second;
-		member = strct->get_member(object_name + OBJ_DELIMITER + current_segment.val);
+		member = strct->get_member(strct->name + OBJ_DELIMITER + current_segment.val);
 		if (!member) {
 			// A previous inference visit may have replaced the member's concrete
 			// data-structure node, leaving an expired weak entry in the table.
 			strct->rebuild_member_table();
-			member = strct->get_member(object_name + OBJ_DELIMITER + current_segment.val);
+			member = strct->get_member(strct->name + OBJ_DELIMITER + current_segment.val);
 		}
 		if (!member) {
 			auto error = Diagnostic(ErrorType::SyntaxError, "", "", current_segment);
@@ -1092,6 +1095,33 @@ ASTLowering *NodeInitializerList::get_lowering(NodeProgram *program) const {
 	return &lowering;
 }
 
+// ************* NodeCast ***************
+NodeAST * NodeCast::accept(ASTVisitor &visitor) {
+	return visitor.visit(*this);
+}
+
+NodeAST * NodeCast::replace_child(NodeAST *oldChild, std::unique_ptr<NodeAST> newChild) {
+	if (value.get() == oldChild) {
+		value = std::move(newChild);
+		value->parent = this;
+		return value.get();
+	}
+	return nullptr;
+}
+
+NodeCast::NodeCast(const NodeCast& other): NodeAST(other), value(clone_unique(other.value)), target_type(other.target_type) {
+	NodeCast::set_child_parents();
+}
+std::unique_ptr<NodeAST> NodeCast::clone() const {
+	return std::make_unique<NodeCast>(*this);
+}
+
+ASTLowering * NodeCast::get_lowering(NodeProgram *program) const {
+	static LoweringCast lowering(program);
+	lowering.set_program(program);
+	return &lowering;
+}
+
 // ************* NodeUnaryExpr ***************
 NodeAST *NodeUnaryExpr::accept(ASTVisitor &visitor) {
     return visitor.visit(*this);
@@ -1320,7 +1350,7 @@ NodeFunctionDefinition::NodeFunctionDefinition(const NodeFunctionDefinition& oth
 		visited(other.visited), has_exit_command(other.has_exit_command),
           num_return_params(other.num_return_params), num_return_stmts(other.num_return_stmts),
           return_stmts(other.return_stmts), call_sites(other.call_sites),
-		  header(clone_shared(other.header)), override(other.override),
+		  header(clone_shared(other.header)), override(other.override), is_static(other.is_static),
 		  body(clone_unique(other.body)) {
     if (other.return_variable) {
         return_variable = std::make_optional(clone_shared(other.return_variable.value()));
@@ -1384,28 +1414,42 @@ std::shared_ptr<NodeDataStructure> &NodeFunctionDefinition::get_param(const int 
 	return header->get_param(i);
 }
 
-bool NodeFunctionDefinition::is_expression_function() const {
-	if(num_return_params == 1 and num_return_stmts == 1) {
-		// in case of builtin functions
-		if(body->statements.empty()) return true;
-		if(return_variable.has_value()) return false;
-		if(body->statements.size() == 1) {
-			const auto& stmt = body->get_last_statement();
-			if(const auto node_return = stmt->cast<NodeReturn>()) {
-				if(const auto func_call = node_return->return_variables[0]->cast<NodeFunctionCall>()) {
-					if(func_call->is_builtin_kind()) {
-						return true;
-					}
-					if(func_call->get_definition()) {
-						return func_call->get_definition()->is_expression_function();
-					}
-				} else {
-					return true;
-				}
-			}
-		}
+/// A call in the returned expression only stays an expression if it disappears together with it:
+/// a builtin, or another expression function. Every other call is rewritten into statements of its
+/// own - a hoisted return variable, then the call - and those cannot travel along into the
+/// expression the caller substitutes this function into. Anywhere in the expression counts, not
+/// just at its root: <return self.a() > other.a()> hoists two calls just as <return self.a()> does.
+bool NodeFunctionDefinition::returned_calls_are_inlinable(NodeAST &expression) const {
+	FunctionCallCollector collector;
+	for(const auto call : collector.collect(expression)) {
+		if(call->is_builtin_kind()) continue;
+		const auto callee = call->get_definition();
+		if(!callee or !callee->is_expression_function()) return false;
 	}
-	return false;
+	return true;
+}
+
+bool NodeFunctionDefinition::is_expression_function() const {
+	if(num_return_params != 1 or num_return_stmts != 1) return false;
+	// in case of builtin functions
+	if(body->statements.empty()) return true;
+	if(return_variable.has_value()) return false;
+	if(body->statements.size() != 1) return false;
+	const auto node_return = body->get_last_statement()->cast<NodeReturn>();
+	if(!node_return) return false;
+
+	// A function whose returned expression reaches itself is not an expression function, and
+	// without this the recursion below would not terminate.
+	static thread_local std::unordered_set<const NodeFunctionDefinition*> in_progress;
+	if(!in_progress.insert(this).second) return false;
+	bool inlinable = true;
+	for(const auto& returned : node_return->return_variables) {
+		if(returned_calls_are_inlinable(*returned)) continue;
+		inlinable = false;
+		break;
+	}
+	in_progress.erase(this);
+	return inlinable;
 }
 
 size_t NodeFunctionDefinition::get_num_params() const {
@@ -1676,8 +1720,13 @@ void NodeProgram::merge_function_definitions() {
 void NodeProgram::update_struct_lookup() {
 	struct_lookup.clear();
 	for(const auto & def : struct_definitions) {
-		struct_lookup.insert({def->name, def});
+		struct_lookup.insert({{def->name, static_cast<int>(def->type_parameters.size())}, def});
 	}
+}
+
+NodeStruct* NodeProgram::find_struct(const std::string& name, const int type_parameter_count) const {
+	const auto it = struct_lookup.find({name, type_parameter_count});
+	return it == struct_lookup.end() ? nullptr : it->second;
 }
 
 NodeAST* NodeProgram::retire_lowered_struct(NodeStruct& node) {

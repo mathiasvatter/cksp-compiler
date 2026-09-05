@@ -60,13 +60,20 @@ public:
 				error.message = "Too few arguments for function call <num_elements>.";
 				error.exit();
 			}
-			std::unique_ptr<NodeReference> array = nullptr;
-			if(is_instance_of<NodeReference>(node.function->get_arg(0).get())) {
-				array = unique_ptr_cast<NodeReference>(std::move(node.function->get_arg(0)));
-			} else {
-				error.message = "First argument for function call <num_elements> must be a reference.";
+			// An argument that is not a reference yet is left as the builtin call it already is,
+			// see the <search> case below. The dimension argument is the exception: NDArray
+			// semantics need the declaration behind the reference, which an expression has not.
+			const auto ref = hands_out_storage(node.function->get_arg(0))
+				? nullptr
+				: node.function->get_arg(0)->is_reference();
+			if(!ref) {
+				if(node.function->get_num_args() == 1) return &node;
+				error.message = "First argument for function call <num_elements> must be a reference "
+					"when a dimension is given.";
+				error.actual = node.function->get_arg(0)->get_token_string();
 				error.exit();
 			}
+			auto array = unique_ptr_cast<NodeReference>(std::move(node.function->get_arg(0)));
 			std::unique_ptr<NodeAST> dimension = nullptr;
 			if (node.function->get_num_args() == 2) {
 				dimension = std::move(node.function->get_arg(1));
@@ -78,8 +85,13 @@ public:
 		if((node.function->get_num_args() == 2 || node.function->get_num_args() == 4) &&
 			(node.function->name == "search" || node.function->name == "sort")) {
 			node.kind = NodeFunctionCall::Kind::Builtin;
-			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
-			if(is_instance_of<NodeReference>(node.function->get_arg(0).get())) {
+			// Desugaring runs on the parse tree, so an argument that only becomes a reference
+			// later - <Note.storage(.pitch)> or any call of a function returning an array - is
+			// not one yet. NodeSortSearch only exists for what needs the declaration behind the
+			// reference (wildcard bounds), so those calls stay the builtin call they already
+			// are: expression function inlining leaves the array itself at the call site, and
+			// the builtin signature reports a mismatch for an argument that is no array at all.
+			if(node.function->get_arg(0)->is_reference() and !hands_out_storage(node.function->get_arg(0))) {
 				auto search = std::make_unique<NodeSortSearch>(
 					node.function->name,
 					unique_ptr_cast<NodeReference>(std::move(node.function->get_arg(0))),
@@ -97,8 +109,7 @@ public:
 				}
 				return node.replace_with(std::move(search));
 			} else {
-				error.message = "First argument for function call <"+node.function->name+"> must be a reference.";
-				error.exit();
+				return &node;
 			}
 		}
 
@@ -155,6 +166,17 @@ public:
 	}
 
 private:
+
+	/// <Note.storage(.pitch)> is a reference in spelling only. Written with type arguments
+	/// (<List<int>.storage(.value)>) the parser hands it over as an access chain, which the
+	/// commands below would take for an array reference - but lowering turns it into a call to
+	/// the generated accessor, and no <NodeReference> slot can hold a call. Such an argument
+	/// belongs to the same group as the ones that only become a reference later: leave the
+	/// builtin call untouched and let the chain lower itself where it sits.
+	static bool hands_out_storage(const std::unique_ptr<NodeAST>& arg) {
+		const auto chain = arg->cast<NodeAccessChain>();
+		return chain and chain->is_storage_access();
+	}
 
 	static Diagnostic throw_insufficient_args_error(const Token &tok) {
 		auto error = Diagnostic(ErrorType::SyntaxError, "", "", tok);

@@ -175,21 +175,22 @@ public:
 	bool kill_last_assignment(NodeReference* node) {
 		if(m_last_reference.empty()) return false;
 		const auto key = get_hash_value(*node);
-		// if current reference is arg in a function, make sure to not delete the last assignment
-		// remove ref out of last reference map
-		if (node->is_func_arg() or node->is_r_value()) {
+		// Everything that is not the l_value of its own assignment reads the variable: a function
+		// argument or a bare right hand side, but a name nested in an expression or in an array
+		// index just as much. <is_r_value> only recognises the bare form - it asks the reference's
+		// direct parent for the assignment - so asking it alone leaves <a := b[i]; c := c + a;
+		// a := b[i]> looking like two stores with no read between them, and the first one gets
+		// killed while <c> still needs it. A read keeps the pending store alive, so it has to take
+		// that store out of the map.
+		const auto assign = node->is_l_value();
+		if (!assign) {
 			m_last_reference.erase(key);
-            return false;
-		}
-		// if we are not an l_value of an assignment, return false
-		if (const auto assign = node->is_l_value()) {
-			// if (node->data_type == DataType::Return) return false;
-			// if we are l_value in an parameter stack related assignment -> return false
-			if (assign->kind == NodeInstruction::ParameterStack) return false;
-			if (assign->kind == NodeInstruction::ReturnVar) return false;
-		} else {
 			return false;
 		}
+		// if (node->data_type == DataType::Return) return false;
+		// if we are l_value in an parameter stack related assignment -> return false
+		if (assign->kind == NodeInstruction::ParameterStack) return false;
+		if (assign->kind == NodeInstruction::ReturnVar) return false;
 
 		auto const it = m_last_reference.find(key);
 		if(it != m_last_reference.end()) {

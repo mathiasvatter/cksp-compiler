@@ -1,0 +1,15 @@
+// EXPECT message\(1\)
+
+struct Box<T>
+    value: T
+
+    function maybe(self): Box<T>
+        return nil
+    end function
+end struct
+
+on init
+    declare box: Box<int> := Box<int>(1)
+    declare missing: Box<int> := box.maybe()
+    message(1)
+end on

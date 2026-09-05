@@ -1,0 +1,18 @@
+// EXPECT message\(8\)
+// EXPECT message\(1\)
+// EXPECT declare %[a-zA-Z_]*arr[a-zA-Z0-9_]*\[8\]
+
+struct Box<T>
+    static const MAX := 8
+    static const State
+        IDLE, ACTIVE
+    end const
+    value: T
+end struct
+
+on init
+    message(Box<int>.MAX)
+    message(Box<int>.State.ACTIVE)
+    declare arr[Box<int>.MAX]
+    _ := num_elements(arr)
+end on

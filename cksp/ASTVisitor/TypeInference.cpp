@@ -120,7 +120,7 @@ NodeAST * TypeInference::visit(NodeVariableRef& node) {
 			composite_type and node.ty->get_type_kind() != TypeKind::Composite
 			and !decl->cast<NodeList>() and !decl->cast<NodeStruct>()) {
 			std::unique_ptr<NodeReference> composite_ref = nullptr;
-			if(composite_type->get_dimensions() > 1 and !node.is_raw_array()) {
+			if(composite_type->get_dimensions() > 1 and !node.has_raw_spelling()) {
 				composite_ref = std::make_unique<NodeNDArrayRef>(node.name, nullptr, node.tok);
 			} else {
 				composite_ref = std::make_unique<NodeArrayRef>(node.name, nullptr, node.tok);
@@ -232,14 +232,14 @@ NodeAST * TypeInference::visit(NodeArrayRef& node) {
 			error.exit();
 		}
 		// in case declaration has more dimensions and this node was written as e.g. arr[i]
-		if (decl_type and decl_type->get_dimensions() > 1 and node.index and !node.is_raw_array()) {
+		if (decl_type and decl_type->get_dimensions() > 1 and node.index and !node.has_raw_spelling()) {
 			auto error = Diagnostic(ErrorType::TypeError, "", "", node.tok);
 			error.set_message("Reference <"+node.name+"> is notated with only one dimension but was declared with multiple dimensions.");
 			error.exit();
 		}
 		// swap out to ndarray
 		// in case declaration has more dimensions and this node is written as e.g. num_elements(arr, 3)
-		if (decl_type and decl_type->get_dimensions() > 1 and !node.index and !node.is_raw_array()) {
+		if (decl_type and decl_type->get_dimensions() > 1 and !node.index and !node.has_raw_spelling()) {
 			auto ndarray = node.to_ndarray_ref();
 			ndarray->match_data_structure(decl);
 			ndarray->ty = decl->ty;
@@ -666,15 +666,18 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				error.add_message("Method chaining can only be used on <Object> types, got '" + prev_ptr->get_token_string() + ": " + prev_type->to_string() + "' instead.");
 				error.exit();
 			}
-			auto prev_obj = prev_type->to_string();
-			auto strct = NodeReference::get_object_ptr(m_program, prev_obj);
+			auto prev_obj = prev_type->ksp_encoded_string(); //prev_type->to_string();
+			// The name a monomorphized struct is declared under (<List::int>) is not the one it was
+			// written as (<List<int>>). Lookups need the former, diagnostics the latter.
+			const auto prev_name = prev_type->to_string();
+			auto strct = m_program->find_struct(prev_obj);
 			if(!strct) {
 				if(prev_type == TypeRegistry::Nil) {
 					error.message = "Method chaining can not be used on <Nil> types.";
 				} else if(prev_ptr->cast<NodeFunctionCall>()) {
 					error.message = prev_ptr->get_token_string()+" does not return <Object> type.";
 				} else {
-					error.message = "Struct "+prev_obj+" does not exist.";
+					error.message = "Struct <"+prev_name+"> does not exist.";
 				}
 				error.exit();
 			}
@@ -693,13 +696,13 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				if (!definition and i == 1 and resolve_storage_access(node, *func_call)) return &node;
 
 				if (!definition) {
-					error.message = "Method <"+func_call->function->name+"> does not exist in "+prev_obj+".";
+					error.message = "Method <"+func_call->function->name+"> does not exist in <"+prev_name+">.";
 					error.exit();
 				}
 				// <Foo.bar()>: without an instance only a static method can be called
 				const auto object = node.chain[0]->is_reference();
 				if(i == 1 and object and object->kind == NodeReference::Kind::TypeQualifier and !definition->is_static) {
-					error.message = "Method <"+func_call->function->name+"> of struct <"+prev_obj+"> operates on an "
+					error.message = "Method <"+func_call->function->name+"> of struct <"+prev_name+"> operates on an "
 						"instance and cannot be called on the struct itself. Declare it as <static function>, "
 						"or call it on a variable.";
 					error.exit();
@@ -717,6 +720,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 						+ (definition->num_return_params > 1 ? "are" : "is")
 						+ " discarded here. Assign the result <result := obj."+func_call->function->name+"(...)> if it is needed.\n"
 						"To get rid of this warning use a throwaway variable <_ := ...> to assign to.";
+					warning.fix = make_discarded_return_fix(node);
 					warning.report(diagnostics());
 				}
 
@@ -737,7 +741,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 					node_declaration = strct->get_member(prev_obj+OBJ_DELIMITER+reference->name);
 				}
 				if(!node_declaration) {
-					error.message = "Member "+reference->name+" does not exist in "+prev_obj+".";
+					error.message = "Member <"+reference->name+"> does not exist in <"+prev_name+">.";
 					error.exit();
 				}
 				// <Foo.MAX>: without an instance only a shared member can be reached. Only the element
@@ -745,7 +749,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				if(const auto object = node.chain[0]->is_reference();
 					i == 1 and object and object->kind == NodeReference::Kind::TypeQualifier
 					and !node_declaration->is_shared_member()) {
-					error.message = "Member <"+reference->name+"> of struct <"+prev_obj+"> can only be accessed "
+					error.message = "Member <"+reference->name+"> of struct <"+prev_name+"> can only be accessed "
 						"through an instance, because every instance holds its own value. Declare it as "
 						"<static> to give it one shared value, or access it through a variable.";
 					error.exit();
@@ -831,6 +835,39 @@ NodeAST * TypeInference::visit(NodeInitializerList& node) {
 		node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, element_type, dimensions);
 	}
 
+	return &node;
+}
+
+NodeAST * TypeInference::visit(NodeCast &node) {
+	node.value->accept(*this);
+	const auto source_type = node.value->ty->get_element_type();
+	const auto target_type = node.target_type->get_element_type();
+	if (node.value->ty->cast<CompositeType>() or node.target_type->cast<CompositeType>()) {
+		auto error = Diagnostic(ErrorType::TypeError, "", "<int/real/bool/string/object>", node.tok);
+		error.set_message("Cannot cast from or to a <Composite> type. Only scalar values can be cast.");
+		error.exit();
+	}
+	const bool supported_basic_target = target_type == TypeRegistry::Integer
+		or target_type == TypeRegistry::Real
+		or target_type == TypeRegistry::Boolean
+		or target_type == TypeRegistry::String;
+	if (!supported_basic_target and !target_type->cast<ObjectType>()) {
+		auto error = Diagnostic(ErrorType::TypeError, "", "<int/real/bool/string/object>", node.tok);
+		error.set_message("Unsupported cast target <" + node.target_type->to_string() + ">.");
+		error.exit();
+	}
+	if (target_type->cast<ObjectType>()) {
+		const bool integer_id = source_type == TypeRegistry::Integer;
+		const bool nil = source_type == TypeRegistry::Nil;
+		const bool same_object = source_type->is_same_type(target_type);
+		if (!integer_id and !nil and !same_object) {
+			auto error = Diagnostic(ErrorType::TypeError, "", "<int>", node.value->tok);
+			error.set_message("Only an <Integer> object ID can be cast to <" + target_type->to_string() + ">.");
+			error.actual = "<" + node.value->ty->to_string() + ">";
+			error.exit();
+		}
+	}
+	node.ty = node.target_type;
 	return &node;
 }
 
@@ -1066,6 +1103,21 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 	}
 
 
+	// <num_elements> is declared as <any[]>, and every type is compatible with that, so the argument
+	// check above lets anything through. The reference form is a NodeNumElements and never gets here;
+	// what does is the expression form DesugarFunctionCall leaves as a builtin call, which only turns
+	// into an array reference through inlining and has to be rejected here if it never can.
+	if(node.is_builtin_kind() and node.function->name == "num_elements"
+		and node.function->get_num_args() == 1) {
+		if(const auto& array = node.function->get_arg(0);
+			array->ty and array->ty != TypeRegistry::Unknown and !array->ty->cast<CompositeType>()) {
+			auto error = Diagnostic(ErrorType::TypeError, "", "", array->tok);
+			error.message = "<num_elements> can only be used with <Composite> types like <Arrays> or <NDArrays>.";
+			error.actual = array->ty->to_string();
+			error.exit();
+		}
+	}
+
 	if(node.is_destructive_builtin_func()) {
 		if(node.function->get_arg(0)->is_constant()) {
 			auto error = Diagnostic(ErrorType::TypeError, "", "", node.tok);
@@ -1218,7 +1270,15 @@ NodeAST * TypeInference::visit(NodeFunctionDefinition& node) {
 		error.message = "Function type expected.";
 		error.exit();
 	}
-	node.set_element_type(specialize_type(node.ty, header_type->get_return_type()));
+	if(m_enforce_source_return_annotations) {
+		match_against(
+			node,
+			header_type->get_return_type(),
+			"Function return type does not match its annotation."
+		);
+	} else {
+		node.set_element_type(specialize_type(node.ty, header_type->get_return_type()));
+	}
 	node.header->ty = TypeRegistry::add_function_type(header_type->get_params(), node.ty);
 
 	// try to update def type with return var type
@@ -1235,8 +1295,22 @@ NodeAST * TypeInference::visit(NodeReturn& node) {
 		ret->accept(*this);
 	}
 	if(!node.return_variables.empty() ) {
-		if(node.get_definition())
-			match_type(*node.get_definition(), *node.return_variables[0]);
+		if(const auto definition = node.get_definition()) {
+			if(m_enforce_source_return_annotations) {
+				const auto function_type = definition->header->ty->cast<FunctionType>();
+				if(!function_type) {
+					auto error = Diagnostic(ErrorType::TypeError, "", "", definition->header->tok);
+					error.message = "Function type expected.";
+					error.exit();
+				}
+				match_against(
+					*node.return_variables[0],
+					function_type->get_return_type(),
+					"Return value does not match the function's annotated return type."
+				);
+			}
+			match_type(*definition, *node.return_variables[0]);
+		}
 	}
 	// a second time to get the new types to the declaration pointer!
 	for(auto &ret : node.return_variables) {
@@ -1254,7 +1328,7 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	bool is_object = false;
 	// if type is object -> check for operator overloading
 	if(node.left->ty->cast<ObjectType>()) {
-		auto strct = NodeReference::get_object_ptr(m_program, node.left->ty->to_string());
+		auto strct = m_program->find_struct(node.left->ty->ksp_encoded_string());
 		if(auto def = strct->get_overloaded_method(node.op.type)) {
 			match_type(*node.right, *def->header->get_param(1), "Second argument of overloaded operator does not match expected type.");
 			auto call = std::make_unique<NodeFunctionCall>(
@@ -1354,7 +1428,7 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 	bool is_object = false;
 	// if type if object -> check for operator overloading
 	if(node.operand->ty->get_type_kind() == TypeKind::Object) {
-		auto strct = NodeReference::get_object_ptr(m_program, node.operand->ty->to_string());
+		auto strct = m_program->find_struct(node.operand->ty->ksp_encoded_string());
 		if(auto def = strct->get_overloaded_method(node.op.type)) {
 			auto call = std::make_unique<NodeFunctionCall>(
 				false,

@@ -24,7 +24,7 @@ struct LinesProcessed {
 	size_t lines_comment = 0;
 	size_t lines_blank = 0;
 
-	std::string get_report() const {
+	[[nodiscard]] std::string get_report() const {
 		auto l = "Lexer lines processed: " + std::to_string(lines_total-lines_comment-lines_blank);
 		auto further_info = " (" + std::to_string(lines_total) + " including comment and blank lines)";
 		return l + further_info;
@@ -66,13 +66,16 @@ protected:
 	void add_token(token type, std::string val);
 	void skip_whitespace();
 
-
-
 	static bool is_space(const char& ch);
 	[[nodiscard]] bool is_string() const;
     bool is_keyword_or_num() const;
 
     bool is_pragma() const;
+	/// Warns when the comment about to be read is a SublimeKSP <{#pragma ...}>.
+	///
+	/// Only looks - the comment is consumed as one afterwards, exactly as before, so the line
+	/// keeps working under SublimeKSP. See cksp/Migration/PragmaMigration.h.
+	void warn_about_sublime_pragma();
 //	void get_pragma();
 	bool is_line_continuation() const;
     void get_line_continuation();
@@ -92,6 +95,10 @@ protected:
     void get_linebreak();
     void get_comment();
 	void get_invalid();
+	/// Attaches the edit that takes an unusable character out of the source, when the column
+	/// it needs can be trusted. See the definition.
+	void add_invalid_character_fix(
+		Diagnostic& error, size_t character_start, const std::string& replacement) const;
     void get_comparison_operators();
 	void get_compound_assignment_operators();
 	void get_string();

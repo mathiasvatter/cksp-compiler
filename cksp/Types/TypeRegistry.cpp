@@ -9,6 +9,7 @@
 // Implementation of the initialization method
 void TypeRegistry::initialize() {
     object_types.clear();
+	pending_parameterized_object_types.clear();
     composite_types.clear();
     function_types.clear();
     annotation_to_type.clear();
@@ -176,20 +177,48 @@ ObjectType *TypeRegistry::add_object_type(const std::string &name) {
     if(auto obj_ty = get_object_type(name)) {
         return obj_ty;
     }
-    object_types[name] = std::make_unique<ObjectType>(name);
-    return object_types[name].get();
+	auto object_type = std::make_unique<ObjectType>(name);
+	auto key = object_type->registry_key();
+	object_types[key] = std::move(object_type);
+	return object_types[key].get();
+}
+
+ObjectType *TypeRegistry::add_object_type(const std::string &name, const std::vector<Type*>& arguments) {
+	if (auto obj_ty = get_object_type(name, arguments)) {
+		return obj_ty;
+	}
+	auto object_type = std::make_unique<ObjectType>(name, arguments);
+	auto key = object_type->registry_key();
+	object_types[key] = std::move(object_type);
+	auto result = object_types[key].get();
+	if (result->is_parameterized() && !result->contains_type_parameters()) {
+		pending_parameterized_object_types.push_back(result);
+	}
+	return result;
 }
 
 ObjectType *TypeRegistry::get_object_type(const std::string &name) {
-    auto it = object_types.find(name);
+	const ObjectType object_type(name);
+	auto it = object_types.find(object_type.registry_key());
     if (it != object_types.end()) {
         return it->second.get();
     }
     return nullptr;
 }
 
+ObjectType *TypeRegistry::get_object_type(
+		const std::string &name, const std::vector<Type*>& arguments) {
+	const ObjectType object_type(name, arguments);
+	auto it = object_types.find(object_type.registry_key());
+	if (it != object_types.end()) {
+		return it->second.get();
+	}
+	return nullptr;
+}
+
 CompositeType *TypeRegistry::get_composite_type(CompoundKind comp_type, Type *element_type, int dimensions) {
-    auto hash_val = std::to_string((int)comp_type)+element_type->to_string()+std::to_string(dimensions);
+	const CompositeType composite_type(comp_type, element_type, dimensions);
+	auto hash_val = composite_type.registry_key();
     auto it = composite_types.find(hash_val);
     if (it != composite_types.end()) {
         return it->second.get();
@@ -198,17 +227,18 @@ CompositeType *TypeRegistry::get_composite_type(CompoundKind comp_type, Type *el
 }
 
 CompositeType *TypeRegistry::add_composite_type(CompoundKind comp_type, Type *element_type, int dimensions) {
-    auto hash_val = std::to_string((int)comp_type)+element_type->to_string()+std::to_string(dimensions);
     if(auto comp_ty = get_composite_type(comp_type, element_type, dimensions)) {
         return comp_ty;
     }
-    composite_types[hash_val] = std::make_unique<CompositeType>(comp_type, element_type, dimensions);
+	auto composite_type = std::make_unique<CompositeType>(comp_type, element_type, dimensions);
+	auto hash_val = composite_type->registry_key();
+	composite_types[hash_val] = std::move(composite_type);
     return composite_types[hash_val].get();
 }
 
 FunctionType *TypeRegistry::get_function_type(std::vector<Type *> params, Type *return_type) {
-	auto func_type = std::make_unique<FunctionType>(params, return_type);
-	auto hash_val = func_type->to_string();
+	const FunctionType function_type(std::move(params), return_type);
+	auto hash_val = function_type.registry_key();
 	auto it = function_types.find(hash_val);
 	if (it != function_types.end()) {
 		return it->second.get();
@@ -221,7 +251,7 @@ FunctionType *TypeRegistry::add_function_type(const std::vector<Type *>& params,
 		return func_ty;
 	}
 	auto func_type = std::make_unique<FunctionType>(params, return_type);
-	auto hash_val = func_type->to_string();
+	auto hash_val = func_type->registry_key();
 	function_types[hash_val] = std::move(func_type);
 	return function_types[hash_val].get();
 }

@@ -1,0 +1,15 @@
+// EXPECT declare %Item____allocation\[
+// EXPECT \$ret[0-9]+ := 1
+// EXPECT %Item____allocation\[\$value[0-9]+\] := %Item____allocation\[\$value[0-9]+\] \+ \$ret[0-9]+
+// EXPECT message\(%Item____value\[\$restored\]\)
+
+struct Item
+    value: int
+end struct
+
+on init
+    declare item: Item := new Item(7)
+    declare raw: int := item as int
+    declare restored: Item := raw as Item
+    message(restored.value)
+end on

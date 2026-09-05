@@ -60,6 +60,15 @@ public:
 		return &node;
 	}
 
+	/// Resolves `node` to the declaration it names in a different case, or ends the
+	/// compilation with the declaration error. `add_msg` carries whatever the call site knows
+	/// beyond "not declared". See DefinitionProvider::report_declaration_error.
+	NodeAST* fail_or_recover(NodeReference& node, const std::string& add_msg = "");
+
+	/// The hint for a name that did not resolve inside a struct body, where forgetting
+	/// <self> is what it nearly always is. `kind` is the word for what was referenced.
+	static std::string self_hint(const Token& token, const std::string& kind);
+
 	NodeAST * visit(NodeProgram& node) override;
 	/// check if on init callback currently
 	NodeAST * visit(NodeCallback& node) override;
@@ -113,6 +122,18 @@ private:
 
 
 
+	/// An initializer that reads the very variable it declares:
+	/// <declare last_idx := non_rpt_random(last_idx, 0, 5)>. Nothing of that name is declared at
+	/// that point, so the read can only see the declaration's own zero-initialization. Whether
+	/// the read stays unresolved long enough to be noticed depends on the pipeline, which is why
+	/// this is diagnosed here rather than left to the missing-declaration error:
+	/// ASTReturnFunctionRewriting splits <declare x := f(...)> into a declaration and an
+	/// assignment, after which the reference resolves and the compiler falls silent, while the
+	/// language server runs its final variable check before any rewriting and reports the name as
+	/// undeclared. Called from the PostUIControlLowering pass, the last one both pipelines reach
+	/// before any rewriting.
+	void check_read_in_own_declaration(NodeSingleDeclaration& node) const;
+
 	/// node can be NodeFunctionCall or NodeReference
 	/// transformation when first object is clearly a reference this_list.next.next()
 	/// tries to get declaration of first object and if there is one, replaces it with method chain
@@ -159,7 +180,8 @@ private:
 	/// `count` is how many leading segments the struct name spans.
 	std::unique_ptr<NodeAccessChain> try_type_qualified_transform(
 		const std::string& struct_name, const size_t count, NodeAST* node) const {
-		if(!NodeReference::get_object_ptr(m_program, struct_name)) return nullptr;
+		const auto* struct_definition = m_program->find_struct(struct_name);
+		if(!struct_definition) return nullptr;
 		auto method_chain = node->to_method_chain();
 		if(!method_chain) return nullptr;
 		method_chain->merge_members(0, count - 1);
@@ -170,7 +192,7 @@ private:
 			error.exit();
 		}
 		object->kind = NodeReference::Kind::TypeQualifier;
-		object->ty = TypeRegistry::get_object_type(struct_name);
+		object->ty = struct_definition->ty;
 		return method_chain;
 	}
 	

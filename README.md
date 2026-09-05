@@ -45,7 +45,7 @@ CKSP addresses these limitations by adding features like:
 - **Preprocessor functions** are adjusted for simplified migration from the Sublime KSP syntax. Implemented features include: macros, defines, line incrementors, iterate_macro, literate_macro.
 
 All features are compiled to standard KSP, requiring no changes to the Kontakt runtime.
-The above list is not comprehensive when compared to vanilla KSP syntax. For more completeness, please refer to the [Syntax](https://mathiasvatter.github.io/cksp-compiler/2.%20The%20CKSP%20Syntax.html) chapter of the online documentation.
+The above list is not comprehensive when compared to vanilla KSP syntax. For more completeness, please refer to the [Syntax](https://mathiasvatter.github.io/cksp-compiler/syntax/) chapter of the online documentation.
 
 ## Usage
 
@@ -54,10 +54,20 @@ Compile a `cksp` file:
 cksp input.cksp -o output.txt
 ```
 
+## Editor Integration
+
+The compiler doubles as a language server, serving diagnostics, go-to-definition, references, rename, completion and quick fixes over stdio:
+
+```cksp
+cksp --lsp
+```
+
+[CKSP Tools](https://mathiasvatter.github.io/cksp-compiler/vs-code-extension/) for Visual Studio Code is built on it, but nothing about it is VS Code specific — any editor that can launch a process and speak JSON-RPC can integrate against it. The protocol contract, including the entry point configuration and the quick fix round-trip that a client has to get right, is documented in the [Language Server](https://mathiasvatter.github.io/cksp-compiler/language-server/) chapter.
+
 ## Installation
 
-Refer to the [Installation](https://mathiasvatter.github.io/cksp-compiler/5.%20Installation.html) chapter for detailed installation instructions.
-With the [CKSP Tools](https://mathiasvatter.github.io/cksp-compiler/6.%20VS%20Code%20Extension.html) extension for Visual Studio Code, you can compile your CKSP/KSP files directly from the editor. The extension will automatically download the latest version of the compiler executable and use it to compile your files. 
+Refer to the [Installation](https://mathiasvatter.github.io/cksp-compiler/installation/) chapter for detailed installation instructions.
+With the [CKSP Tools](https://mathiasvatter.github.io/cksp-compiler/vs-code-extension/) extension for Visual Studio Code, you can compile your CKSP/KSP files directly from the editor. The extension will automatically download the latest version of the compiler executable and use it to compile your files. 
 The compiler is in active development, but the latest version of the CLI executable can be downloaded from [Releases](https://github.com/mathiasvatter/cksp-compiler/releases/latest).
 
 ## Contributing

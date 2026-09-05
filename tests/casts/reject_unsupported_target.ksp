@@ -1,0 +1,5 @@
+// EXPECT_ERROR Unsupported cast target <void>
+
+on init
+    declare impossible := 1 as void
+end on

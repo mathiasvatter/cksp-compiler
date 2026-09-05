@@ -16,7 +16,10 @@ class PreASTImport final : public PreASTVisitor {
 	SourceId m_current_source;
 	SourceId m_root_source;
 	SourceParser& m_parser;
-	std::unordered_set<std::string> &m_imported_files; // Um zirkuläre Abhängigkeiten zu vermeiden
+	/// Every file already imported, with the alias it was imported under (empty for none). Keeping
+	/// the alias is what makes a second import under a different one reportable; the map itself is
+	/// what stops a circular import from looping.
+	std::unordered_map<std::string, std::string> &m_imported_files;
 	std::unordered_map<std::string, std::string> &m_basename_map; // Map to store basename to full path mapping
 	ReferenceIndex* m_reference_index;
 
@@ -66,11 +69,16 @@ class PreASTImport final : public PreASTVisitor {
 		// program.set_child_parents();
 	}
 
+	/// How an import spelled its alias, for a diagnostic that has to name both spellings.
+	static std::string describe_alias(const std::string& alias) {
+		return alias.empty() ? "without an alias" : "as <" + alias + ">";
+	}
+
 public:
 	PreASTImport(SourceId  root_source,
 	             SourceId  current_source,
 	             SourceParser& parser,
-	             std::unordered_set<std::string>& imported_files,
+	             std::unordered_map<std::string, std::string>& imported_files,
 	             std::unordered_map<std::string, std::string>& basename_map,
 	             ReferenceIndex* reference_index = nullptr)
 		: PreASTVisitor(), m_current_source(std::move(current_source)), m_root_source(std::move(root_source)),
@@ -92,9 +100,11 @@ public:
 		}
 		std::filesystem::path current_file_path(import_source.value);
 		std::string import_path = current_file_path.string();
+		const std::string alias = node.alias ? node.alias->tok.val : std::string();
 		// check for circular dependencies
-		if (!m_imported_files.contains(import_path)) {
-			m_imported_files.insert(import_path);
+		const auto imported = m_imported_files.find(import_path);
+		if (imported == m_imported_files.end()) {
+			m_imported_files.emplace(import_path, alias);
 
 			// check for basename conflicts
 			auto basename = current_file_path.filename().string();
@@ -139,6 +149,19 @@ public:
 			);
 			wrap_imported_program_in_namespace(node, *import_program->program);
 			node.replace_with(std::move(import_program->program));
+		} else if (imported->second != alias) {
+			// A file is imported once, so this import contributes nothing - but it was written
+			// with a different alias than the one that won, and every name reached through it
+			// would be missing. Silent for a plain second import, which is the ordinary case of
+			// two files needing the same module.
+			auto error = Diagnostic(ErrorType::FileError, "", "", node.tok);
+			error.message = "<" + node.path + "> is already imported " + describe_alias(imported->second)
+				+ " and cannot be imported again " + describe_alias(alias) + ".";
+			error.add_message("A file is only imported once, so this import has no effect and its "
+				"members stay reachable " + describe_alias(imported->second) + ". Import it once, or "
+				"spell both imports the same way.");
+			error.expected = "one import per file";
+			error.exit();
 		}
 
 		return &node;

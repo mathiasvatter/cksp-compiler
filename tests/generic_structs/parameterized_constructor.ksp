@@ -1,0 +1,15 @@
+// EXPECT declare %Box____allocation\[
+// EXPECT declare %Box____string____allocation\[
+
+struct Box
+    value: int
+end struct
+
+struct Box<T>
+    value: T
+end struct
+
+on init
+    declare plain: Box := Box(1)
+    declare generic: Box<string> := Box<string>("hello")
+end on

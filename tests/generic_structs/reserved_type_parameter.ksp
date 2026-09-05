@@ -1,0 +1,7 @@
+// EXPECT_ERROR Expected a type parameter name in generic struct <List>.*<if> is reserved as a keyword
+
+struct List<if>
+end struct
+
+on init
+end on

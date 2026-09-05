@@ -1,0 +1,16 @@
+define MODULE_TWO := 2
+
+macro module_double(#x#)
+    #x# := #x# * 2
+end macro
+
+struct Point
+    x: int
+    y: int
+end struct
+
+declare offset: int := 7
+
+function add(a: int, b: int) : int
+    return a + b
+end function

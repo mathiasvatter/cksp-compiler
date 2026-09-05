@@ -42,6 +42,22 @@ public:
 	/// Clears diagnostics for one source without changing entry ownership.
 	void clear_source(const SourceId& source);
 
+	/**
+	 * The diagnostics currently published for one source file.
+	 *
+	 * A code action must not reconstruct this from the diagnostics a request carries: a client
+	 * sends only those intersecting the requested range, and which range that is depends on how
+	 * the action was triggered - the whole document on save, the selection for a manually
+	 * invoked one. Reading what was published keeps a whole-file action whole either way.
+	 */
+	[[nodiscard]] std::vector<Diagnostic> diagnostics_for(const SourceId& source) const;
+
+	/// The LSP `{targetUri, range, newText}` an edit describes. Insertions carry an empty range
+	/// at the insertion point, replacements the range they overwrite.
+	[[nodiscard]] static std::unique_ptr<JSONObject> make_lsp_edit_data(
+		const Diagnostic::DiagnosticFix::Edit& edit
+	);
+
 private:
 
 	[[nodiscard]] static SourceId diagnostic_source(const Diagnostic& diagnostic, const SourceId& entry_source);
@@ -51,9 +67,6 @@ private:
 	);
 	[[nodiscard]] static std::unique_ptr<JSONObject> make_lsp_diagnostic(const Diagnostic& diagnostic);
 	[[nodiscard]] static std::unique_ptr<JSONObject> make_lsp_fix_data(const Diagnostic::DiagnosticFix& fix);
-	[[nodiscard]] static std::unique_ptr<JSONObject> make_lsp_edit_data(
-		const Diagnostic::DiagnosticFix::Edit& edit
-	);
 	void publish_merged_source(const SourceId& source) const;
 	void publish_source(const SourceId& source, const std::vector<Diagnostic>& diagnostics) const;
 };

@@ -13,18 +13,22 @@
  * -> not builtin vars/commands are obfuscated and no PGS variables (since they are dependent on vars
  * declared in other scripts)
  * Uses IdentifierObfuscator class to make variable names random and hard to read
- * Uses EngineConstantsIntegers.h to substitute readable KSP constants with their integer counterparts
+ * DEPRECATED: Uses EngineConstantsIntegers.h to substitute readable KSP constants with their integer counterparts
+ * important: does not scramble names of ui control because those ids need to be deterministic for KUI scripts
+ * important: does not scramble names of arrays used in array_load_save_functions (load_array(...))
+ * important: does not scramble names of vars used in watch_var or watch_idx
  */
 class ASTObfuscate final : public ASTVisitor {
 	DefinitionProvider* m_def_provider = nullptr;
 	IdentifierObfuscator gen;
-
+	std::unordered_map<NodeDataStructure*, std::string> m_og_var_names;
 public:
 	explicit ASTObfuscate(NodeProgram *main) : m_def_provider(main->def_provider) {
 		m_program = main;
 	}
 
 	NodeAST* run(NodeProgram& node) {
+		m_og_var_names.clear();
 		node.accept(*this);
 		return &node;
 	}
@@ -34,23 +38,43 @@ private:
 	void generate_new_name(NodeDataStructure& node) {
 		if (node.kind == NodeDataStructure::Kind::Builtin) return;
 		if (node.ty == TypeRegistry::PGS) return;
+		m_og_var_names.insert({&node, node.name});
 		node.name = gen.next();
-		// parallel_for_each(node.references.begin(), node.references.end(),
-		// 	[&](const auto& ref) {
-		// 		ref->name = node.name;
-		// 	}
-		// );
 	}
 
-	static void get_new_name(NodeReference& node) {
+	void get_new_name(NodeReference& node) {
 		if (node.kind == NodeReference::Kind::Builtin) return;
 		if (node.ty == TypeRegistry::PGS) return;
+
+		// check if this is arg in array_load_save_func or is ksp log func
+		if (const auto func = node.is_direct_func_arg()) {
+			if (func->kind == NodeReference::Builtin and
+				(BuiltinRestrictionValidator::is_load_save_function(func->name) or
+					BuiltinRestrictionValidator::is_ksp_log_func(func->name))) {
+				// rename back all references and og data structure
+				rename_references_back(node);
+				return;
+			}
+		}
+
 		if (auto decl = node.get_declaration()) {
 			node.name = decl->name;
-		// -> there are errors sometimes with builtin func headers "search" so no error throwing here
-		// } else {
-		// 	DefinitionProvider::internal_missing_declaration_error(node).exit();
 		}
+	}
+
+	// can be used once we find out that one reference
+	void rename_references_back(const NodeReference& ref) {
+		const auto node = ref.get_declaration();
+		if (!node) return;
+		const auto it = m_og_var_names.find(node.get());
+		if (it == m_og_var_names.end()) {
+			return;
+		}
+		const std::string og_name = it->second;
+		for (const auto& reff : node->references) {
+			reff->name = og_name;
+		}
+		node->name = og_name;
 	}
 
 	NodeAST* visit(NodeProgram& node) override {
@@ -62,7 +86,13 @@ private:
 	}
 
 	NodeAST* visit(NodeSingleDeclaration& node) override {
-		return ASTVisitor::visit(node);
+		// do not scramble names of ui control variables because of identifiers and KUI they need
+		// to be deterministic
+		if (!node.variable->cast<NodeUIControl>()) {
+			node.variable->accept(*this);
+		}
+		if (node.value) node.value->accept(*this);
+		return &node;
 	}
 
 	NodeAST* visit(NodeVariable& node) override {

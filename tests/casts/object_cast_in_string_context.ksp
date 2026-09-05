@@ -1,0 +1,12 @@
+// EXPECT @ret[0-9]+ := "<Item> Object: " & \$self[0-9]+
+// EXPECT call Item______rep__
+// EXPECT message\(@_ret[0-9]+\)
+// EXPECT_NOT message\(\$EVENT_NOTE\)
+
+struct Item
+    value: int
+end struct
+
+on note
+    message($EVENT_NOTE as Item)
+end on
