@@ -385,8 +385,16 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 		std::make_unique<JSONBool>(false)
 	);
 
+	// A client cannot tell "this compiler reports no SublimeKSP migrations" from "this
+	// workspace has none" by looking at diagnostics: both are silence. Announcing it here is
+	// the compiler saying which of the two it is, so a migration tool can refuse before it
+	// analyses anything rather than reporting a clean workspace it never checked.
+	auto experimental = std::make_unique<JSONObject>();
+	experimental->add("ckspMigrationProvider", std::make_unique<JSONBool>(true));
+
 	JSONObject capabilities;
 	capabilities.add("textDocumentSync", std::make_unique<JSONObject>(sync));
+	capabilities.add("experimental", std::move(experimental));
 	capabilities.add("definitionProvider", std::make_unique<JSONBool>(true));
 	capabilities.add("documentLinkProvider", std::make_unique<JSONObject>(document_link_options));
 	capabilities.add("referencesProvider", std::make_unique<JSONBool>(true));
