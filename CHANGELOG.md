@@ -3,7 +3,7 @@
 ## [0.1.0-alpha.5]
 
 > [!IMPORTANT]
-> This alpha adds **generic structs** and a new **type cast** syntax. Other than that, it is mostly about **porting from SublimeKSP**: the constructs cksp has no equivalent for are now recognised by name and answered with a quick fix instead of an *"unknown construct"*.
+> This alpha adds **generic structs** and a new **type cast** syntax. Other than that, it is mostly about **porting from SublimeKSP**: the constructs cksp has no equivalent for are now recognised by name and named in a meaningful error/warning message or answered with a quick fix instead of an *"unknown construct"*.
 
 ## Language
 
@@ -21,8 +21,8 @@
       message(Box<int>.MAX)
   end on
   ```
-  Type arguments are written wherever the type is: in declarations, in constructor calls (`new List<int>(3, nil)`) and in type qualifiers. A parameterized type cannot be a type argument itself yet (`List<List<int>>`). *Experimental.*
-- Added **type casts** with `as`. `real(EVENT_NOTE) as int`, `x as real`, `x as bool` and `x as string` convert between the primitive types, and `id as Item` reads an object id back as an object of that struct — in a string context that goes through the struct's string representation rather than printing the raw id. *Experimental.*
+  Type arguments are written wherever the type is: in declarations, in constructor calls (`new List<int>(3, nil)`) and in type qualifiers. A parameterized type cannot be a type argument itself yet (`List<List<int>>`).
+- Added **type casts** with `as`. `real(EVENT_NOTE) as int`, `x as real`, `x as bool` and `x as string` convert between the primitive types, and `id as Item` reads an object id back as an object of that struct — in a string context that goes through the struct's string representation rather than printing the raw id.
 
 ### Improved
 - An **annotated return type is now enforced**. `function get(self): Box<T>` returning `1` is an error instead of being inferred away; `nil` stays accepted for a function returning an object.
@@ -33,13 +33,13 @@
 - A **pass-by-value warning names the parameter as it was written**, instead of offering to rewrite `ctrl0` for a parameter spelled `ctrl`.
 
 ### Fixed
-- Fixed **`sh_left` and `sh_right` being folded differently than the engine evaluates them**, which silently changed the value of a shift whose count is negative or reaches 32 — `sh_right(-1, 32)`, the usual spelling of a full 32-bit mask, among them. The fold now takes only the low five bits of the count the way Kontakt does: `sh_left(1, 33)` is 2, `sh_right(1, -1)` is 0, `sh_left(1, 31)` is `INT32_MIN`.
-- Fixed compiles failing at random with *"`<Variable>` has not been declared"* for a declaration that is right there, or with a segfault during lowering. A copied declaration inherited the references of the original, which dangle as soon as those die ([#124](https://github.com/mathiasvatter/cksp-compiler/issues/124)).
+- Fixed **`sh_left` and `sh_right` being pre-calculated differently than the Kontakt engine evaluates them**. The fold now takes only the low five bits of the count the way Kontakt does: `sh_left(1, 33)` is 2, `sh_right(1, -1)` is 0, `sh_left(1, 31)` is `INT32_MIN`.
+- Fixed compiles failing at random with *"`<Variable>` has not been declared"* ([#124](https://github.com/mathiasvatter/cksp-compiler/issues/124)).
 - Fixed a **`select` case with a single value being read past the end of its storage**, which any script using named constants as case labels runs into.
 - Fixed an **array-returning function handing its result through a shared global copy**. Arrays are now returned by reference and land in the caller's variable directly.
-- Fixed **`search`, `sort` and `num_elements` rejecting an array that only becomes a reference later**, such as `Struct.storage(.member)` or a call of a function returning an array.
+- Fixed **`search`, `sort` and `num_elements` rejecting function calls returning arrays**, such as `Struct.storage(.member)`.
 - Fixed a crash on a **type-qualified storage access** such as `List<int>.storage(.value)`.
-- Fixed a **function whose return expression holds more than one call**, such as `return self.a() > other.a()`, being miscompiled: it stayed in expression position and its arguments were then read out of bounds.
+- Fixed a **function whose return expression holds more than one function call**, such as `return self.a() > other.a()`, being miscompiled: it stayed in expression position and its arguments were then read out of bounds.
 - Fixed **dead code elimination dropping a store whose value is read inside an expression**. `acc := table[0]` followed by `tmp := acc + 1` and `acc := table[1]` lost the first store, so `tmp` was built from a variable that was never written.
 
 ## Migrating from SublimeKSP
