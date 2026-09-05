@@ -74,6 +74,7 @@ add_library(cksp_core STATIC
         misc/DiagnosticFixBuilder.h
         misc/DiagnosticFixBuilder.cpp
         misc/DiagnosticReport.h
+        misc/DiagnosticReport.cpp
         misc/DiagnosticEngine.h
         misc/DiagnosticEngine.cpp
         misc/DiagnosticSink.h
@@ -290,6 +291,7 @@ target_compile_definitions(cksp_core PUBLIC PRINTER_OUTPUT_PATH="${CMAKE_SOURCE_
 add_executable(cksp
         main.cpp
         misc/CommandLineOptions.cpp
+        misc/CrashReporter.cpp
         misc/CrashReporter.h
         lsp/JsonRpcConnection.h
         lsp/JsonRpcMessage.h
