@@ -1,0 +1,40 @@
+// A function is only an expression function when its body reduces to an expression the caller can
+// substitute. <__gt__> returns a comparison, but the two calls inside it are lowered to statements
+// of their own first - a hoisted return variable, then the call - and statements cannot travel into
+// the expression the caller substitutes. Calling it as an expression function left those calls
+// where no pass could reach them: parameter promotion never visited the body, so <total> grew the
+// parameters for its promoted locals while the calls in <__gt__> kept passing two arguments, and
+// the parameter stack transformation aborted on the argument index.
+
+// EXPECT \$self[0-9]* := \$other[0-9]*
+// EXPECT \$acc[0-9]* := %Stamp____high\[\$self[0-9]*\]
+// EXPECT \$rest[0-9]* := %Stamp____low\[\$self[0-9]*\]
+// EXPECT := - sh_right\(
+
+struct Stamp
+    declare high: int
+    declare low: int
+
+    // the locals are what parameter promotion turns into extra parameters of <total>
+    function total(self): int
+        declare acc: int := self.high
+        declare rest: int := self.low
+        acc := acc + rest
+        return acc
+    end function
+
+    function __gt__(self, other: Stamp): bool
+        return self.total() > other.total()
+    end function
+end struct
+
+on init
+    declare first: Stamp := new Stamp(3, 4)
+    declare second: Stamp := new Stamp(1, 2)
+    // the call from a statement is what promotes the locals of <total>
+    declare direct: int := first.total()
+    // the operator reaches <__gt__> from an expression, which is where the bug lived
+    if first > second
+        message(direct)
+    end if
+end on

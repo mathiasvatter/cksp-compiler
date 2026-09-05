@@ -27,6 +27,7 @@
 #include "../Optimization/ConstantFolding.h"
 #include "../Lowering/LoweringInitializerList.h"
 #include "../Optimization/FreeVarCollector.h"
+#include "../Optimization/FunctionCallCollector.h"
 #include "../Optimization/ReferenceValidator.h"
 #include "../ASTVisitor/ASTCollectLowerings.h"
 #include "../ASTVisitor/ASTVariableChecking.h"
@@ -1413,28 +1414,42 @@ std::shared_ptr<NodeDataStructure> &NodeFunctionDefinition::get_param(const int 
 	return header->get_param(i);
 }
 
-bool NodeFunctionDefinition::is_expression_function() const {
-	if(num_return_params == 1 and num_return_stmts == 1) {
-		// in case of builtin functions
-		if(body->statements.empty()) return true;
-		if(return_variable.has_value()) return false;
-		if(body->statements.size() == 1) {
-			const auto& stmt = body->get_last_statement();
-			if(const auto node_return = stmt->cast<NodeReturn>()) {
-				if(const auto func_call = node_return->return_variables[0]->cast<NodeFunctionCall>()) {
-					if(func_call->is_builtin_kind()) {
-						return true;
-					}
-					if(func_call->get_definition()) {
-						return func_call->get_definition()->is_expression_function();
-					}
-				} else {
-					return true;
-				}
-			}
-		}
+/// A call in the returned expression only stays an expression if it disappears together with it:
+/// a builtin, or another expression function. Every other call is rewritten into statements of its
+/// own - a hoisted return variable, then the call - and those cannot travel along into the
+/// expression the caller substitutes this function into. Anywhere in the expression counts, not
+/// just at its root: <return self.a() > other.a()> hoists two calls just as <return self.a()> does.
+bool NodeFunctionDefinition::returned_calls_are_inlinable(NodeAST &expression) const {
+	FunctionCallCollector collector;
+	for(const auto call : collector.collect(expression)) {
+		if(call->is_builtin_kind()) continue;
+		const auto callee = call->get_definition();
+		if(!callee or !callee->is_expression_function()) return false;
 	}
-	return false;
+	return true;
+}
+
+bool NodeFunctionDefinition::is_expression_function() const {
+	if(num_return_params != 1 or num_return_stmts != 1) return false;
+	// in case of builtin functions
+	if(body->statements.empty()) return true;
+	if(return_variable.has_value()) return false;
+	if(body->statements.size() != 1) return false;
+	const auto node_return = body->get_last_statement()->cast<NodeReturn>();
+	if(!node_return) return false;
+
+	// A function whose returned expression reaches itself is not an expression function, and
+	// without this the recursion below would not terminate.
+	static thread_local std::unordered_set<const NodeFunctionDefinition*> in_progress;
+	if(!in_progress.insert(this).second) return false;
+	bool inlinable = true;
+	for(const auto& returned : node_return->return_variables) {
+		if(returned_calls_are_inlinable(*returned)) continue;
+		inlinable = false;
+		break;
+	}
+	in_progress.erase(this);
+	return inlinable;
 }
 
 size_t NodeFunctionDefinition::get_num_params() const {

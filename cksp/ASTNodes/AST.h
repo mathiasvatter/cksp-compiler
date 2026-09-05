@@ -1172,6 +1172,8 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	[[nodiscard]] size_t get_num_params() const;
 	[[nodiscard]] bool has_no_params() const;
 	bool is_expression_function() const;
+	/// true when every function call inside <expression> can stay inside an expression
+	bool returned_calls_are_inlinable(NodeAST& expression) const;
 	std::shared_ptr<NodeFunctionDefinition> get_shared() {
 		return shared_from_this();
 	}
