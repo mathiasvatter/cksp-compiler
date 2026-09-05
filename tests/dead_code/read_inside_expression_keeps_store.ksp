@@ -1,0 +1,25 @@
+// A store is dead when the next thing that happens to the variable is another store. The read in
+// between only counted when it was the whole right hand side, because the check asked the
+// reference's direct parent for the assignment - so <tmp := acc + 1> did not register as a use of
+// <acc> and the store feeding it was dropped, leaving <tmp> built from an unwritten variable.
+// The second block is the case the pass is for and still has to eliminate.
+
+// EXPECT \$acc[0-9]* := %table[0-9]*\[0\]
+// EXPECT \$acc[0-9]* := %table[0-9]*\[1\]
+// EXPECT_NOT \$dead[0-9]* := %table[0-9]*\[0\]
+
+on init
+    declare table[2] := (10, 20)
+
+    declare acc: int
+    declare tmp: int
+    acc := table[0]
+    tmp := acc + 1
+    acc := table[1]
+
+    declare dead: int
+    dead := table[0]
+    dead := table[1]
+
+    message(tmp + acc + dead)
+end on
