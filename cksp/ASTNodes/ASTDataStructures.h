@@ -337,6 +337,8 @@ struct NodeUIControl final : NodeDataStructure {
 
 struct NodeList final : NodeDataStructure {
 	int32_t size = 0;
+	// Syntax determines the shape even when every jagged row has one element.
+	bool is_jagged = false;
 	std::vector<std::unique_ptr<NodeInitializerList>> body;
 	explicit NodeList(Token tok) : NodeDataStructure("", TypeRegistry::Unknown, std::move(tok), NodeType::List, DataType::Mutable) {}
 	NodeList(std::string name, Type* ty, const int32_t size, std::vector<std::unique_ptr<NodeInitializerList>> body, Token tok)

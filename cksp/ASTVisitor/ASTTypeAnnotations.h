@@ -194,7 +194,7 @@ public:
 	}
 	NodeAST* visit(NodeListRef &node) override {
 		desanitize_ref_name(node);
-		node.indexes->accept(*this);
+		if (node.indexes) node.indexes->accept(*this);
 		return &node;
 	}
 

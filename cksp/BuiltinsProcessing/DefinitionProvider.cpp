@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "../Migration/TCMMigration.h"
+#include "../Migration/ListMigration.h"
 
 DefinitionProvider::DefinitionProvider(
 		std::unordered_map<std::string, std::shared_ptr<NodeVariable>> m_builtin_variables,
@@ -389,6 +390,9 @@ Diagnostic DefinitionProvider::make_missing_function_definition_error(
 	// SublimeKSP's TCM has no declaration to find because CKSP needs none; say that instead
 	// of listing near-miss overloads for a name that was never going to resolve.
 	if (auto tcm = tcm_migration::make_diagnostic(node, function_name)) return *tcm;
+	if (function_name == "list_add" && find_data_structures(function_name, true).empty()) {
+		return list_migration::append(function ? function->tok : node.tok);
+	}
 
 	auto declarations = find_data_structures(function_name, true);
 	if (function) {

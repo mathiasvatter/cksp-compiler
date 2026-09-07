@@ -370,7 +370,7 @@ public:
 	}
 	NodeAST * visit(NodeListRef& node) override {
 		node.name = replace_self_struct_prefix(node.name, node.tok);
-		node.indexes->accept(*this);
+		if (node.indexes) node.indexes->accept(*this);
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			return node.replace_with(std::move(access_chain));
 		}

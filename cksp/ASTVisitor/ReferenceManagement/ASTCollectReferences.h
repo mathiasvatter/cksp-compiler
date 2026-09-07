@@ -108,7 +108,7 @@ public:
 		return &node;
 	}
 	NodeAST *visit(NodeListRef &node) override {
-		node.indexes->accept(*this);
+		if (node.indexes) node.indexes->accept(*this);
 //		check_for_valid_declaration(node);
 		add_reference(&node);
 		return &node;

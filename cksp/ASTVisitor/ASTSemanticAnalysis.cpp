@@ -399,7 +399,18 @@ NodeAST * ASTSemanticAnalysis::visit(NodeList& node) {
 }
 
 NodeAST * ASTSemanticAnalysis::visit(NodeListRef& node) {
-	node.indexes->accept(*this);
+    if (const auto declaration = node.get_declaration()) {
+        if (const auto list = declaration->cast<NodeList>(); list && node.indexes) {
+            const auto expected = list->is_jagged && !node.has_raw_spelling() ? 2 : 1;
+            if (node.indexes->size() != expected) {
+                Diagnostic(ErrorType::SyntaxError,
+                    "List <" + node.name + "> requires " + std::to_string(expected) + " index(es). "
+                    "Use the underscore-prefixed name for flat access to a jagged list.",
+                    std::to_string(expected) + " index(es)", node.tok).exit();
+            }
+        }
+    }
+	if (node.indexes) node.indexes->accept(*this);
 	NodeReference* new_node = &node;
 	if(const auto repl = replace_incorrectly_detected_reference(&node)) {
 		new_node = repl;
@@ -581,11 +592,13 @@ NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(NodeR
 				nullptr,
 				reference->tok);
 		}
+	} else if(reference->cast<NodeVariableRef>() && declaration->cast<NodeList>()) {
+		node_replacement = std::make_unique<NodeListRef>(reference->name, nullptr, reference->tok);
 		// check if it is NodeListRef
 	} else if(auto node_array_ref = reference->cast<NodeArrayRef>(); node_array_ref and declaration->cast<NodeList>()) {
 		node_replacement = std::make_unique<NodeListRef>(
 			reference->name,
-			std::make_unique<NodeParamList>(reference->tok, std::move(node_array_ref->index)),
+			node_array_ref->index ? std::make_unique<NodeParamList>(reference->tok, std::move(node_array_ref->index)) : nullptr,
 			reference->tok);
 	} else if(auto node_nd_array_ref = reference->cast<NodeNDArrayRef>(); node_nd_array_ref and declaration->cast<NodeList>()) {
 		node_replacement = std::make_unique<NodeListRef>(

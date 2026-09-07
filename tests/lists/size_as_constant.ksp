@@ -1,0 +1,11 @@
+// EXPECT declare %a\[2\]
+// EXPECT message\(num_elements\(%a\)\)|message\(2\)
+on init
+list xs[,]
+1,2
+3
+end list
+declare const N := xs.SIZE
+declare a[N]
+message(num_elements(a))
+end on

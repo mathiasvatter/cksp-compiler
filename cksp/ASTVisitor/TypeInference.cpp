@@ -297,29 +297,46 @@ NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
 }
 
 NodeAST * TypeInference::visit(NodeList& node) {
-	// if list is unknown type -> set to list of unknown
-	if(node.ty == TypeRegistry::Unknown) {
-		node.ty = TypeRegistry::add_composite_type(CompoundKind::List, TypeRegistry::Unknown, node.size);
-	}
-
-    // check if all types are the same and try to infer list type from it
+    auto element_type = node.ty == TypeRegistry::Unknown ? TypeRegistry::Unknown : node.ty->get_element_type();
+    node.ty = TypeRegistry::add_composite_type(CompoundKind::List, element_type, node.is_jagged ? 2 : 1);
     std::vector<Type*> types;
-    types.reserve(node.body.size());
-    for(auto & b : node.body) {
-        b->accept(*this);
-        types.push_back(b->ty);
+    for (auto& row : node.body) {
+        // A lone array is a row to copy, not an array-valued element.
+        if (row->size() == 1) {
+            row->elem(0)->accept(*this);
+            if (const auto composite = row->elem(0)->ty->cast<CompositeType>()) {
+                if (!node.is_jagged || composite->get_dimensions() > 1) {
+                    Diagnostic(ErrorType::TypeError,
+                        "An array row requires a jagged list <[,]>, and must be one-dimensional.",
+                        "one-dimensional array in a jagged list", row->tok).exit();
+                }
+                row->ty = composite->get_element_type();
+                types.push_back(row->ty);
+                continue;
+            }
+        }
+        std::vector<Type*> row_types;
+        for (const auto& value : row->elements) {
+            // The single-element case was visited above to detect an array row.
+            if (row->size() != 1) value->accept(*this);
+            row_types.push_back(value->ty);
+        }
+        row->ty = infer_initialization_types(row_types, &node);
+        types.push_back(row->ty);
     }
-    node.set_element_type(infer_initialization_types(types, &node));
-	m_def_provider->add_to_data_structures(node.weak_from_this());
-	return &node;
+    // Empty blocks have the annotated element type, or default to integer like arrays.
+    if (!types.empty()) node.set_element_type(infer_initialization_types(types, &node));
+    else if (element_type == TypeRegistry::Unknown) node.set_element_type(TypeRegistry::Integer);
+    m_def_provider->add_to_data_structures(node.weak_from_this());
+    return &node;
 }
 
 NodeAST * TypeInference::visit(NodeListRef& node) {
-	if(node.indexes) node.indexes->accept(*this);
+	if (node.indexes) node.indexes->accept(*this);
     // if handed over without index -> as whole list structure type
     if(!node.indexes) {
         if(node.ty == TypeRegistry::Unknown) {
-            node.ty = TypeRegistry::get_composite_type(CompoundKind::List, TypeRegistry::Unknown, node.sizes->params.size());
+            node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, TypeRegistry::Unknown, 1);
             if(!node.ty) throw_composite_error(&node).exit();
         }
     } else {

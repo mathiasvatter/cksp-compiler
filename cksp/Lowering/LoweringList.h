@@ -5,6 +5,7 @@
 #pragma once
 
 #include "ASTLowering.h"
+#include <limits>
 
 class LoweringList final : public ASTLowering {
 public:
@@ -14,9 +15,34 @@ public:
 		if(auto list = node.variable->cast<NodeList>()) {
 
 			std::string list_name = list->name;
-			bool is_one_dim = is_one_dimensional(*list);
+			bool is_one_dim = !list->is_jagged;
 			auto list_body = std::move(list->body);
 			auto list_size = (int32_t)list_body.size();
+			std::vector<int32_t> sizes(list_size);
+			int64_t total_size = 0;
+			for (int i = 0; i < list_size; ++i) {
+				sizes[i] = static_cast<int32_t>(list_body[i]->size());
+				if (auto source = array_row(*list_body[i])) {
+					const auto declaration = source->get_declaration();
+					const auto array = declaration ? declaration->cast<NodeArray>() : nullptr;
+					if (!array || !array->size) {
+						Diagnostic(ErrorType::TypeError, "List rows must be arrays with a known compile-time size.",
+							"one-dimensional array", source->tok).exit();
+					}
+					array->size->do_constant_folding();
+					const auto size = array->size->cast<NodeInt>();
+					if (!size || size->value < 0) {
+						Diagnostic(ErrorType::TypeError, "List row size must be a non-negative compile-time integer.",
+							"constant array size", source->tok).exit();
+					}
+					sizes[i] = size->value;
+				}
+				total_size += sizes[i];
+				if (total_size > std::numeric_limits<int32_t>::max()) {
+					Diagnostic(ErrorType::TypeError, "List exceeds the supported array size.", "32-bit array size", list->tok).exit();
+				}
+			}
+			list->size = static_cast<int32_t>(total_size);
 			node.variable->accept(*this);
 
 			auto node_body = std::make_unique<NodeBlock>(node.tok);
@@ -47,7 +73,7 @@ public:
 				for(int i = 1; i<list_body.size(); i++) {
 					list_body[0]->add_element(std::move(list_body[i]->elem(0)));
 				}
-				node_declare_main_array->set_value(std::move(list_body[0]));
+				if (!list_body.empty()) node_declare_main_array->set_value(std::move(list_body[0]));
 				node_body->add_as_stmt(std::move(node_declare_main_array));
 				return node.replace_with(std::move(node_body));
 			}
@@ -67,42 +93,47 @@ public:
 				std::make_unique<NodeInt>(list_size, node.tok), node.tok
 			);
 
-			std::vector<int32_t> sizes(list_body.size());
 			std::vector<int32_t> positions(list_body.size());
 			auto node_sizes = std::make_unique<NodeInitializerList>(node.tok);
 			auto node_positions = std::make_unique<NodeInitializerList>(node.tok);
-			positions[0] = 0;
+			if (!positions.empty()) positions[0] = 0;
 			for(int i = 0; i<list_body.size(); i++) {
-				sizes[i] = static_cast<int32_t>(list_body[i]->size());
 				if(i>0) positions[i] = positions[i - 1] + sizes[i - 1];
 				node_sizes->add_element(std::make_unique<NodeInt>(sizes[i], node.tok));
 				node_positions->add_element(std::make_unique<NodeInt>(positions[i], node.tok));
 			}
 			auto node_sizes_declaration = std::make_unique<NodeSingleDeclaration>(
 				std::move(node_sizes_array),
-				std::move(node_sizes), node.tok
+				list_size ? std::move(node_sizes) : nullptr, node.tok
 			);
 			auto node_positions_declaration = std::make_unique<NodeSingleDeclaration>(
 				std::move(node_positions_array),
-				std::move(node_positions), node.tok
+				list_size ? std::move(node_positions) : nullptr, node.tok
 			);
 			node_body->add_as_stmt(std::move(node_sizes_declaration));
 			node_body->add_as_stmt(std::move(node_positions_declaration));
 
 			const auto node_iterator_var = m_program->get_global_iterator()->to_reference();
 			for(int i = 0; i<list_body.size(); i++) {
-				auto node_array = std::make_unique<NodeArray>(
-					std::nullopt,
-					list_name+std::to_string(i),
-					TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1),
-					std::make_unique<NodeInt>(sizes[i], node.tok), node.tok
-				);
-				auto node_array_declaration = std::make_unique<NodeSingleDeclaration>(
-					clone_as<NodeDataStructure>(node_array.get()),
-					std::move(list_body[i]),
-					node.tok
-				);
-				node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_array_declaration), node.tok));
+				auto source = array_row(*list_body[i]);
+				std::string source_name;
+				if (source) {
+					source_name = source->name;
+				} else {
+					auto node_array = std::make_unique<NodeArray>(
+						std::nullopt,
+						m_def_provider->get_fresh_name(list_name + "_row"),
+						TypeRegistry::add_composite_type(CompoundKind::Array, node.ty->get_element_type(), 1),
+						std::make_unique<NodeInt>(sizes[i], node.tok), node.tok
+					);
+					source_name = node_array->name;
+					auto node_array_declaration = std::make_unique<NodeSingleDeclaration>(
+						clone_as<NodeDataStructure>(node_array.get()),
+						std::move(list_body[i]),
+						node.tok
+					);
+					node_body->add_stmt(std::make_unique<NodeStatement>(std::move(node_array_declaration), node.tok));
+				}
 
 				auto node_while_body = std::make_unique<NodeBlock>(node.tok);
 				auto node_expression = std::make_unique<NodeBinaryExpr>(
@@ -114,7 +145,7 @@ public:
 				node_expression->ty = TypeRegistry::Integer;
 
 				auto node_array_ref = std::make_unique<NodeArrayRef>(
-					node_array->name,
+					source_name,
 					node_iterator_var->clone(),  node.tok
 				);
 				auto node_main_array_ref = std::make_unique<NodeArrayRef>(
@@ -149,6 +180,14 @@ public:
 	};
 
 	NodeAST * visit(NodeListRef& node) override {
+		if (!node.indexes) {
+			auto name = node.name;
+			if (const auto decl = node.get_declaration()) {
+				if (const auto list = decl->cast<NodeList>(); list && list->is_jagged && !node.has_raw_spelling()) name = "_" + name;
+				else if (decl->cast<NodeArray>()) name = decl->name;
+			}
+			return node.replace_reference(std::make_unique<NodeArrayRef>(name, nullptr, node.tok));
+		}
 		// list references can only have one or two (jagged lists) index
 		if(node.indexes->size() != 2 && node.indexes->size() != 1) {
 			auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.tok);
@@ -193,14 +232,9 @@ public:
 	}
 
 private:
-	static bool is_one_dimensional(const NodeList& list) {
-		//check dimension -> if only 1 then treat as an array
-		int max_dimension = 0;
-		for(auto & ls : list.body) {
-			max_dimension = std::max(max_dimension, (int)ls->size());
-		}
-		return max_dimension == 1;
+	static NodeArrayRef* array_row(const NodeInitializerList& row) {
+		if (row.size() != 1) return nullptr;
+		const auto array = row.elements[0]->cast<NodeArrayRef>();
+		return array && !array->index ? array : nullptr;
 	}
-
 };
-

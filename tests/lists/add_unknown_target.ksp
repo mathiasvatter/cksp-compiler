@@ -1,0 +1,4 @@
+// EXPECT_ERROR SublimeKSP <list_add>
+on init
+list_add(missing, 1)
+end on

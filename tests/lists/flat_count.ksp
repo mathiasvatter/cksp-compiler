@@ -1,0 +1,11 @@
+// EXPECT message\(2\)
+// EXPECT message\(num_elements\(%_xs\)\)|message\(3\)
+on init
+list xs[,]
+1,2
+3
+end list
+message(xs.SIZE)
+message(num_elements(xs))
+message(num_elements(_xs))
+end on

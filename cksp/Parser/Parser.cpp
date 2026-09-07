@@ -3,6 +3,7 @@
 //
 
 #include "Parser.h"
+#include "../Migration/ListMigration.h"
 
 Parser::Parser(std::vector<Token> tokens): Processor(std::move(tokens)) {}
 
@@ -1994,6 +1995,9 @@ Result<std::unique_ptr<NodeDeclaration>> Parser::parse_declare_statement(NodeAST
     auto node_declare_statement = std::make_unique<NodeDeclaration>(get_tok());
 	auto start_token = get_tok();
     if(peek().type == token::DECLARE) start_token = consume(); //consume declare
+	if (peek().type == token::LIST) {
+		return Result<std::unique_ptr<NodeDeclaration>>(list_migration::declaration(peek()));
+	}
     std::vector<std::unique_ptr<NodeDataStructure>> to_be_declared;
 	if(!modifier_keywords.contains(peek().type) and peek().type != token::KEYWORD) {
 		return Result<std::unique_ptr<NodeDeclaration>>(make_declare_modifier_diagnostic(peek()));
@@ -2992,6 +2996,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 		consume(); // consume [
 	}
 	if(peek().type == token::COMMA) {
+		node_list_block->is_jagged = true;
 		consume(); // consume comma
 	}
 	if(has_open_bracket && peek().type != token::CLOSED_BRACKET) {
@@ -3024,6 +3029,13 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 		if(param_list.is_error()) {
 			return Result<std::unique_ptr<NodeAST>>(param_list.get_error());
 		}
+		if (param_list.unwrap()->size() > 1) {
+			if (has_open_bracket && !node_list_block->is_jagged) {
+				return Result<std::unique_ptr<NodeAST>>(Diagnostic(ErrorType::SyntaxError,
+					"A list with multiple values per row requires <[,]>. Use <list " + name + "[,]>.", "[,]", name_tok));
+			}
+			if (!has_open_bracket) node_list_block->is_jagged = true;
+		}
 		size += static_cast<int32_t>(param_list.unwrap()->size());
 		auto init_list = param_list.unwrap()->to_initializer_list();
 		init_list->parent = node_list_block.get();
@@ -3040,7 +3052,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 	node_list_block->ty = type.unwrap();
 	node_list_block->type_references = std::move(type_references);
 	node_list_block->set_range(construct, end_token);
-	auto node_declaration = std::make_unique<NodeSingleDeclaration>(std::move(node_list_block), node_list_block->tok);
+	auto node_declaration = std::make_unique<NodeSingleDeclaration>(std::move(node_list_block), name_tok);
 	node_declaration->parent = parent;
 	return Result<std::unique_ptr<NodeAST>>(std::move(node_declaration));
 }

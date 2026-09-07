@@ -1,0 +1,7 @@
+// EXPECT_ERROR requires 2 index
+on init
+list xs[,]
+1
+end list
+message(xs[0])
+end on

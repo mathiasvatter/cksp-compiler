@@ -333,7 +333,7 @@ NodeAST *NodeList::accept(ASTVisitor &visitor) {
 }
 
 NodeList::NodeList(const NodeList& other)
-	: NodeDataStructure(other), size(other.size), body(clone_vector(other.body)) {
+	: NodeDataStructure(other), size(other.size), is_jagged(other.is_jagged), body(clone_vector(other.body)) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeList::clone() const {

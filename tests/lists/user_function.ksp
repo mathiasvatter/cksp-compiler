@@ -1,0 +1,7 @@
+// EXPECT message\(42\)
+function list_add(x, y): int
+    return x + y
+end function
+on init
+    message(list_add(20, 22))
+end on

@@ -1740,5 +1740,42 @@ def _(workspace, server):
                f"{name}: a rename is not a safe fix for the case the post variant exists for")
 
 
+@test("lists: incremental SublimeKSP syntax reports migration blockers without fixes",
+      entry_points=["list_declare.cksp", "list_append.cksp"])
+def _(workspace, server):
+    cases = [
+        ("list_declare.cksp", "on init\n    declare list ids[]\nend on\n",
+         "ListDeclaration", "SublimeKSP <declare list>", 1, 12),
+        ("list_append.cksp", "on init\n    list_add(missing, 1)\nend on\n",
+         "ListAdd", "SublimeKSP <list_add>", 1, 4),
+    ]
+    for name, source, kind, message, line, character in cases:
+        fixture = workspace.write(name, source)
+        server.did_open(fixture)
+        diagnostics = server.diagnostics(fixture)
+        diagnostic = next((d for d in diagnostics if message in d["message"]), None)
+        expect(diagnostic is not None, f"expected the list migration message: {diagnostics}")
+        data = diagnostic.get("data") or {}
+        expect(data.get("migrationKind") == kind, f"missing migration kind: {diagnostic}")
+        expect("fixKind" not in data, f"a list migration must not advertise a fix yet: {diagnostic}")
+        expect(diagnostic["severity"] == 1, f"must be an error: {diagnostic}")
+        expect(diagnostic["range"]["start"] == {"line": line, "character": character},
+               f"must point at the unsupported construct: {diagnostic}")
+        expect("preserve evaluation order" in diagnostic["message"], "must explain the safe alternative")
+        expect(not server.code_actions(fixture), "no automatic migration is offered")
+
+
+@test("lists: row counts, array rows and raw storage survive analysis",
+      entry_points=["list_blocks.cksp"])
+def _(workspace, server):
+    source = ("on init\n    declare a[] := (1, 2)\n    list rows[,]\n"
+              "        a\n        3\n    end list\n    message(rows.SIZE)\n"
+              "    message(rows[0, 1])\n    message(rows.sizes[0])\n"
+              "    message(num_elements(_rows))\nend on\n")
+    fixture = workspace.write("list_blocks.cksp", source)
+    server.did_open(fixture)
+    expect(not server.diagnostics(fixture), f"list blocks must analyze: {server.diagnostics(fixture)}")
+
+
 if __name__ == "__main__":
     raise SystemExit(run_suite())

@@ -1,0 +1,11 @@
+// EXPECT xs__sizes\[2\].*\(1, 1\)
+// EXPECT xs__pos\[2\].*\(0, 1\)
+// EXPECT message\(%_xs\[%xs__pos\[1\]\]\)
+on init
+list xs[,]
+1
+2
+end list
+message(xs[1,0])
+message(xs.sizes[0])
+end on

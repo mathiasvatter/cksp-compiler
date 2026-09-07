@@ -1,0 +1,8 @@
+// EXPECT message\("A"\)|message\(!xs\[0\]\)
+on init
+list !xs[]
+"A"
+"B"
+end list
+message(xs[0])
+end on

@@ -1,0 +1,13 @@
+// EXPECT message\(2\)
+// EXPECT %_ui__xs
+on init
+family ui
+list xs[,]
+1,2
+3
+end list
+end family
+message(ui.xs[0,1])
+message(ui.xs.SIZE)
+message(num_elements(_ui.xs))
+end on

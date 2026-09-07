@@ -154,7 +154,7 @@ public:
 		return &node;
 	}
 	NodeAST *visit(NodeListRef &node) override {
-		node.indexes->accept(*this);
+		if (node.indexes) node.indexes->accept(*this);
 		auto node_declaration = m_def_provider->get_declaration(node);
 		if (node_declaration) node.match_data_structure(node_declaration);
 		return &node;

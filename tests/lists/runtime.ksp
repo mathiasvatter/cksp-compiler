@@ -1,0 +1,9 @@
+// EXPECT get_ui_id\(\$slider0\)
+// EXPECT message\(
+on init
+declare ui_slider slider0 (0,100)
+list xs[]
+get_ui_id(slider0)
+end list
+message(xs[0])
+end on

@@ -1,0 +1,8 @@
+// EXPECT message\(%_xs\[1\]\)
+on init
+list xs[,]
+1,2
+3
+end list
+message(_xs[1])
+end on

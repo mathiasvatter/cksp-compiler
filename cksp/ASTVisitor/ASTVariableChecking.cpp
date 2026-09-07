@@ -5,6 +5,7 @@
 #include "ASTVariableChecking.h"
 
 #include "../CompilerConfig.h"
+#include "../Migration/ListMigration.h"
 #include "../Optimization/VarExistsValidator.h"
 #include "ReferenceManagement/ASTCollectDeclarations.h"
 
@@ -177,6 +178,12 @@ NodeAST* ASTVariableChecking::visit(NodeAccessChain& node) {
 
 NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 	node.bind_definition(m_program);
+    // Diagnose the unsupported construct before an undeclared list argument hides it.
+    // A user-defined function of this name remains an ordinary function.
+    if (node.function->name == "list_add" && !node.get_definition()
+        && m_def_provider->find_data_structures("list_add", true).empty()) {
+        list_migration::append(node.function->tok).exit();
+    }
 	if(!node.get_definition()) {
 		if (auto access_chain = try_access_chain_transform(node.function->name, &node)) {
 			// needs to visit the arguments of the function call too
@@ -353,6 +360,30 @@ NodeAST* ASTVariableChecking::visit(NodeVariable& node) {
 NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 	if(node.get_declaration()) return &node;
 	auto node_declaration = m_def_provider->get_declaration(node);
+    if (!node_declaration && node.name.ends_with(".sizes")) {
+        NodeVariableRef list_ref(node.name.substr(0, node.name.size() - 6), node.tok);
+        if (const auto declaration = m_def_provider->get_declaration(list_ref)) {
+            if (const auto list = declaration->cast<NodeList>(); list && list->is_jagged) {
+                auto array = std::make_unique<NodeArrayRef>(node.name, nullptr, node.tok);
+                array->ty = TypeRegistry::ArrayOfInt;
+                return node.replace_with(std::move(array))->accept(*this);
+            }
+        }
+    }
+	// A list's SIZE counts rows; num_elements counts the flattened storage.
+	if (!node_declaration && node.name.ends_with(".SIZE")) {
+		NodeVariableRef list_ref(node.name.substr(0, node.name.size() - 5), node.tok);
+		if (const auto declaration = m_def_provider->get_declaration(list_ref)) {
+			if (const auto list = declaration->cast<NodeList>()) {
+				return node.replace_with(std::make_unique<NodeInt>(static_cast<int32_t>(list->body.size()), node.tok));
+			}
+		}
+	}
+	// Respect generated size constants once list lowering has declared them.
+	if (node_declaration && node_declaration->data_type == DataType::Const) {
+		node.match_data_structure(node_declaration);
+		return &node;
+	}
 	// check for array constants
 	if(auto nd_constant = node.transform_ndarray_constant()) {
 		return node.replace_with(std::move(nd_constant))->accept(*this);
@@ -429,7 +460,7 @@ NodeAST* ASTVariableChecking::visit(NodeList& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeListRef& node) {
-	node.indexes->accept(*this);
+	if (node.indexes) node.indexes->accept(*this);
 
 	if(node.get_declaration()) return &node;
 	auto node_declaration = m_def_provider->get_declaration(node);

@@ -1,0 +1,9 @@
+// EXPECT xs__sizes\[2\].*\(0, 1\)
+on init
+declare a[0]
+list xs[,]
+a
+1
+end list
+message(xs.sizes[0])
+end on

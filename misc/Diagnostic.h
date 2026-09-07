@@ -75,6 +75,8 @@ struct Diagnostic {
         TCM,
         PostMacro,
         Property,
+        ListDeclaration,
+        ListAdd,
         IdentifierCase,
         GlobalDeclarationInitializer,
         ReservedResultName,
@@ -138,6 +140,8 @@ struct Diagnostic {
             case MigrationKind::TCM: return "TCM";
             case MigrationKind::PostMacro: return "PostMacro";
             case MigrationKind::Property: return "Property";
+            case MigrationKind::ListDeclaration: return "ListDeclaration";
+            case MigrationKind::ListAdd: return "ListAdd";
             case MigrationKind::IdentifierCase: return "IdentifierCase";
             case MigrationKind::GlobalDeclarationInitializer: return "GlobalDeclarationInitializer";
             case MigrationKind::ReservedResultName: return "ReservedResultName";
