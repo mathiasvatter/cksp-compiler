@@ -2653,6 +2653,12 @@ Result<std::unique_ptr<NodeWhile>> Parser::parse_while_statement(NodeAST* parent
 Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* parent) {
     auto start_token = consume(); //consume select
     auto node_select_statement = std::make_unique<NodeSelect>(start_token);
+    const auto is_select_branch = [](const token type) {
+        return type == token::CASE || type == token::DEFAULT || type == token::ELSE;
+    };
+    const auto is_fallback = [](const token type) {
+        return type == token::DEFAULT || type == token::ELSE;
+    };
     auto expression = parse_expression(node_select_statement.get());
     if(peek().type != token::LINEBRK) {
         return Result<std::unique_ptr<NodeSelect>>(Diagnostic(ErrorType::SyntaxError,
@@ -2660,9 +2666,9 @@ Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* pare
     }
     consume(); //consume linebreak
     _skip_linebreaks();
-    if(peek().type != token::CASE && peek().type != token::DEFAULT) {
+    if(!is_select_branch(peek().type)) {
         return Result<std::unique_ptr<NodeSelect>>(Diagnostic(ErrorType::SyntaxError,
-		"Expected cases in select-expression.", "case <expression> or default", peek()));
+		"Expected cases in select-expression.", "case <expression>, default or else", peek()));
     }
 	std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBlock>>> cases;
 	while (peek().type != token::END_SELECT) {
@@ -2671,14 +2677,14 @@ Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* pare
 		if (auto end_error = check_invalid_end_statement("select", token::END_SELECT, peek(), peek(1))) {
 			return Result<std::unique_ptr<NodeSelect>>(*end_error);
 		}
-	    if(peek().type == token::CASE || peek().type == token::DEFAULT) {
-		    const bool bare_default = peek().type == token::DEFAULT;
-		    if (!bare_default) consume(); // consume case
+	    if(is_select_branch(peek().type)) {
+		    const bool bare_fallback = is_fallback(peek().type);
+		    if (!bare_fallback) consume(); // consume case
             std::vector<std::unique_ptr<NodeAST>> cas = {};
-            if(bare_default || peek().type == token::DEFAULT) {
-                auto default_token = consume(); // consume default token
-                Token low_end = Token(token::INT, "080000000H", default_token.line,default_token.pos, default_token.file_ref);
-                Token high_end = Token(token::INT, "07FFFFFFH", default_token.line,default_token.pos, default_token.file_ref);
+            if(bare_fallback || is_fallback(peek().type)) {
+                auto fallback_token = consume(); // consume default/else token
+                Token low_end = Token(token::INT, "080000000H", fallback_token.line,fallback_token.pos, fallback_token.file_ref);
+                Token high_end = Token(token::INT, "07FFFFFFH", fallback_token.line,fallback_token.pos, fallback_token.file_ref);
                 auto node_int_low = std::move(parse_int(low_end, 16, node_select_statement.get()).unwrap());
                 cas.push_back(std::move(node_int_low));
                 auto node_int_high = std::move(parse_int(high_end, 16, node_select_statement.get()).unwrap());
@@ -2704,12 +2710,10 @@ Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* pare
 			_skip_linebreaks();
 			auto stmts = std::make_unique<NodeBlock>(get_tok());
 			while(peek().type != token::END_SELECT
-				&& peek().type != token::CASE
-				&& peek().type != token::DEFAULT) {
+				&& !is_select_branch(peek().type)) {
 				_skip_linebreaks();
 				if(peek().type == token::END_SELECT
-					|| peek().type == token::CASE
-					|| peek().type == token::DEFAULT) break;
+					|| is_select_branch(peek().type)) break;
 				if (auto end_error = check_invalid_end_statement("select", token::END_SELECT, peek(), peek(1))) {
 					return Result<std::unique_ptr<NodeSelect>>(*end_error);
 				}
