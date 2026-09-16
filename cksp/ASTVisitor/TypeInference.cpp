@@ -29,14 +29,9 @@ NodeAST* TypeInference::resolve_property_get(NodeReference& node) {
 	if (!m_enforce_source_return_annotations or !node.ty->cast<ObjectType>()
 		or node.is_raw_object_context()) return &node;
 
+	// the return count of every overload is validated where it is registered, in <DesugarStruct>
 	auto strct = m_program->find_struct(node.ty->ksp_encoded_string());
-	auto getter = strct ? strct->get_overloaded_method(token::GET_VALUE) : nullptr;
-	if (!getter) return &node;
-	if (getter->num_return_params != 1) {
-		auto error = make_diagnostic(ErrorType::TypeError, node);
-		error.message = "Property getter <__get__> must return exactly one value.";
-		error.exit();
-	}
+	if (!strct or !strct->get_overloaded_method(token::GET_VALUE)) return &node;
 
 	auto receiver = node.clone_keeping_children();
 	auto get_token = node.tok;

@@ -87,7 +87,7 @@ class DesugarStruct final : public ASTDesugaring {
 		static const std::unordered_map<StringIntKey, token, StringIntKeyHash> operator_overload_methods = [](){
 			std::unordered_map<StringIntKey, token, StringIntKeyHash> result;
 			for (const auto& [key, value] : OPERATOR_OVERWRITES) {
-				result[StringIntKey{value.first, value.second}] = key;
+				result[StringIntKey{value.name, value.num_params}] = key;
 			}
 			return result;
 		}();
@@ -97,6 +97,30 @@ class DesugarStruct final : public ASTDesugaring {
 			return it->second;
 		}
 		return std::nullopt;
+	}
+
+	/// The operator a method of this name would overload, whatever its signature looks like.
+	static const OperatorOverload* find_operator_overload(const std::string& name) {
+		for (const auto& [op, overload] : OPERATOR_OVERWRITES) {
+			if (overload.name == name) return &overload;
+		}
+		return nullptr;
+	}
+
+	/// Checks the method against the return count <OPERATOR_OVERWRITES> demands for this operator.
+	static void validate_operator_overload(const NodeFunctionDefinition& node, const OperatorOverload& overload) {
+		if (node.num_return_params == overload.num_returns) return;
+
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+		error.message = overload.num_returns == 0
+			? "Operator overload <" + overload.name + "> must not return a value, because it "
+				"replaces a statement."
+			: "Operator overload <" + overload.name + "> must return exactly "
+				+ std::to_string(overload.num_returns) + " value.";
+		error.expected = overload.num_returns == 0
+			? "no return value" : std::to_string(overload.num_returns) + " return value";
+		error.actual = std::to_string(node.num_return_params) + " return values";
+		error.exit();
 	}
 public:
 	explicit DesugarStruct(NodeProgram *program) : ASTDesugaring(program) {};
@@ -279,7 +303,19 @@ public:
 		}
 		// check if method is operator overload
 		if(auto token = get_operator_token(node.header->name, node.header->params.size())) {
+			validate_operator_overload(node, OPERATOR_OVERWRITES.at(*token));
 			m_structs.top()->overloaded_operators.insert({*token, node.get_shared()});
+		} else if (const auto overload = find_operator_overload(node.header->name)) {
+			// the name is an operator overload, but with a parameter count no operator uses, so
+			// <get_operator_token> would silently leave it as an ordinary method
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+			error.message = "Operator overload <" + overload->name + "> must take exactly "
+				+ std::to_string(overload->num_params)
+				+ (overload->num_params == 1 ? " parameter, " : " parameters, ")
+				+ "<" + NodeStruct::SELF + "> included.";
+			error.expected = std::to_string(overload->num_params) + " parameters";
+			error.actual = std::to_string(node.header->params.size()) + " parameters";
+			error.exit();
 		}
 
 		node.header->accept(*this);

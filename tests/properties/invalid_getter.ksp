@@ -1,4 +1,4 @@
-// EXPECT_ERROR Property getter <__get__> must return exactly one value
+// EXPECT_ERROR Operator overload <__get__> must return exactly 1 value
 struct Value
     number: int
     function __get__(self)

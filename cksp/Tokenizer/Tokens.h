@@ -229,24 +229,32 @@ inline std::unordered_map<token, std::vector<std::string>> PERSISTENCE_TOKENS = 
 															{token::INSTPERS, {"make_instr_persistent"}}};
 
 inline static std::string OBJ_DELIMITER = "::";
-inline std::unordered_map<token, std::pair<std::string, int>> OPERATOR_OVERWRITES = {{
-			{token::ADD, {"__add__", 2}},             // +
-			{token::SUB, {"__sub__", 2}},             // -
-			{token::MULT, {"__mul__", 2}},            // *
-			{token::DIV, {"__div__", 2}},         	// /
-			{token::MODULO, {"__mod__", 2}},          // %
-			{token::EQUAL, {"__eq__", 2}},            // =
-			{token::NOT_EQUAL, {"__ne__", 2}},        // #
-			{token::LESS_THAN, {"__lt__", 2}},        // <
-			{token::LESS_EQUAL, {"__le__", 2}},       // <=
-			{token::GREATER_THAN, {"__gt__", 2}},     // >
-			{token::GREATER_EQUAL, {"__ge__", 2}},    // >=
-			{token::BIT_NOT, {"__invert__", 1}},      // .not.
-			{token::BIT_AND, {"__and__", 2}},         // .and.
-			{token::BIT_OR, {"__or__", 2}},           // .or.
-			{token::BIT_XOR, {"__xor__", 2}},         // .xor.
-			{token::GET_VALUE, {"__get__", 1}},         // in expression context
-			{token::SET_VALUE, {"__set__", 2}},         // in assignment context
+/// An operator a struct can overload: the method name, the number of parameters the method takes
+/// (<self> included) and the number of values it has to return. Everything that stands in for an
+/// expression returns one value; <__set__> replaces an assignment, which is a statement.
+struct OperatorOverload {
+	std::string name;
+	int num_params;
+	int num_returns;
+};
+inline std::unordered_map<token, OperatorOverload> OPERATOR_OVERWRITES = {{
+			{token::ADD, {"__add__", 2, 1}},             // +
+			{token::SUB, {"__sub__", 2, 1}},             // -
+			{token::MULT, {"__mul__", 2, 1}},            // *
+			{token::DIV, {"__div__", 2, 1}},         	// /
+			{token::MODULO, {"__mod__", 2, 1}},          // %
+			{token::EQUAL, {"__eq__", 2, 1}},            // =
+			{token::NOT_EQUAL, {"__ne__", 2, 1}},        // #
+			{token::LESS_THAN, {"__lt__", 2, 1}},        // <
+			{token::LESS_EQUAL, {"__le__", 2, 1}},       // <=
+			{token::GREATER_THAN, {"__gt__", 2, 1}},     // >
+			{token::GREATER_EQUAL, {"__ge__", 2, 1}},    // >=
+			{token::BIT_NOT, {"__invert__", 1, 1}},      // .not.
+			{token::BIT_AND, {"__and__", 2, 1}},         // .and.
+			{token::BIT_OR, {"__or__", 2, 1}},           // .or.
+			{token::BIT_XOR, {"__xor__", 2, 1}},         // .xor.
+			{token::GET_VALUE, {"__get__", 1, 1}},       // in expression context
+			{token::SET_VALUE, {"__set__", 2, 0}},       // in assignment context
 		}};
 
 inline std::unordered_map<token, std::pair<std::string, int>> BOOLEAN_FUNCTIONS = {
