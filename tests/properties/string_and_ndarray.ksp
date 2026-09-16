@@ -1,0 +1,23 @@
+// EXPECT message\("value=" & %[^ ]+|message\("value=" & !
+struct Text
+    value: string
+    function __get__(self): string
+        return self.value
+    end function
+end struct
+struct Value
+    value: int
+    function __get__(self): int
+        return self.value
+    end function
+end struct
+on init
+    declare text := Text("hello")
+    message("value=" & text)
+    // Compile-only coverage of multidimensional element lookup.
+    declare grid[2,2]: Value[][]
+    message(grid[0,1])
+    declare i := Value(0)
+    declare numbers[2] := (12,13)
+    message(numbers[i])
+end on

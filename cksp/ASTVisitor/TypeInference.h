@@ -395,6 +395,31 @@ public:
 		return false;
 	}
 
+	NodeAST* register_reference(NodeReference& node);
+	NodeAST* resolve_property_get(NodeReference& node);
+
+	// Keep ownership with the caller until a matching overload is found.
+	template<typename Receiver, typename... Args>
+	std::unique_ptr<NodeFunctionCall> check_operator_overloading(const Token& op,
+		std::unique_ptr<Receiver>& receiver, std::unique_ptr<Args>&... args) {
+		if (!receiver or !receiver->ty->template cast<ObjectType>()) return nullptr;
+		auto strct = m_program->find_struct(receiver->ty->ksp_encoded_string());
+		if (!strct) return nullptr;
+		auto def = strct->get_overloaded_method(op.type);
+		if (!def or def->get_num_params() != 1 + sizeof...(Args)) return nullptr;
+
+		std::size_t param_index = 1;
+		([&] {
+			match_type(*args, *def->header->get_param(param_index++),
+				"Argument of overloaded operator does not match expected type.");
+		}(), ...);
+
+		auto call = std::make_unique<NodeFunctionCall>(
+			def->header->name, op, std::move(receiver), std::move(args)...);
+		// Binding and return-type inference are handled by the function-call visitor.
+		return call;
+	}
+
 	/// <Note.storage(.pitch)>: resolves the selector against the receiver struct and types the
 	/// chain, see the definition. Returns false if the call is not <storage>.
 	bool resolve_storage_access(NodeAccessChain& node, NodeFunctionCall& call);

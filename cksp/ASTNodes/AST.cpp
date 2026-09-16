@@ -360,6 +360,39 @@ NodeSingleAssignment* NodeReference::is_l_value() const {
 	return nullptr;
 }
 
+bool NodeReference::is_raw_object_context() const {
+	if (!parent or parent->cast<NodeAccessChain>() or parent->cast<NodeUseCount>()
+		or parent->cast<NodeCast>()) return true;
+	if (const auto assignment = parent->cast<NodeSingleAssignment>(); assignment
+		and (assignment->initializes_storage or assignment->l_value.get() == this)) return true;
+	if (const auto deletion = parent->cast<NodeSingleDelete>(); deletion
+		and deletion->ptr.get() == this) return true;
+	if (const auto retain = parent->cast<NodeSingleRetain>(); retain
+		and retain->ptr.get() == this) return true;
+
+	const auto args = parent->cast<NodeParamList>();
+	if (!args or args->params.empty() or args->params.front().get() != this) return false;
+	const auto header = args->parent ? args->parent->cast<NodeFunctionHeaderRef>() : nullptr;
+	return header and (header->tok.type == token::GET_VALUE
+		or header->tok.type == token::SET_VALUE);
+}
+
+std::unique_ptr<NodeAST> NodeReference::clone_keeping_children() {
+	auto copy = clone();
+	if (const auto from = cast<NodeArrayRef>()) {
+		std::swap(from->index, copy->cast<NodeArrayRef>()->index);
+	} else if (const auto from = cast<NodeNDArrayRef>()) {
+		std::swap(from->indexes, copy->cast<NodeNDArrayRef>()->indexes);
+		std::swap(from->sizes, copy->cast<NodeNDArrayRef>()->sizes);
+	} else if (const auto from = cast<NodeListRef>()) {
+		std::swap(from->indexes, copy->cast<NodeListRef>()->indexes);
+	} else if (const auto from = cast<NodeAccessChain>()) {
+		std::swap(from->chain, copy->cast<NodeAccessChain>()->chain);
+	}
+	copy->set_child_parents();
+	return copy;
+}
+
 // ************* NodeDataStructure ***************
 /// <references> is deliberately not copied. It holds raw pointers to the references of the
 /// declaration being copied, and every one of them keeps pointing at that declaration - a

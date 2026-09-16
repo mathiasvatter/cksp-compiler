@@ -1,0 +1,14 @@
+// EXPECT_ERROR Type mismatch
+struct RealValue
+    value: real
+    function __get__(self): real
+        return self.value
+    end function
+end struct
+function consume(value: int)
+    message(value)
+end function
+on init
+    declare text := RealValue(1.5)
+    consume(text)
+end on

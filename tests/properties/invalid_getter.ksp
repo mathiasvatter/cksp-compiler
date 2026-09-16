@@ -1,0 +1,11 @@
+// EXPECT_ERROR Property getter <__get__> must return exactly one value
+struct Value
+    number: int
+    function __get__(self)
+        message(self.number)
+    end function
+end struct
+on init
+    declare v := Value(5)
+    message(v)
+end on

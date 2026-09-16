@@ -676,7 +676,7 @@ NodeAST *NodeSingleAssignment::accept(ASTVisitor &visitor) {
     return visitor.visit(*this);
 }
 NodeSingleAssignment::NodeSingleAssignment(const NodeSingleAssignment& other)
-        : NodeInstruction(other), l_value(clone_unique(other.l_value)),
+        : NodeInstruction(other), initializes_storage(other.initializes_storage), l_value(clone_unique(other.l_value)),
           r_value(clone_unique(other.r_value)) {
     set_child_parents();
 }

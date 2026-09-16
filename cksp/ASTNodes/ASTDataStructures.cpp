@@ -494,6 +494,7 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_constructor() {
 				std::move(param_ref),
 				mem->tok
 			);
+			assignment->initializes_storage = true;
 			node_block->add_as_stmt(std::move(assignment));
 		} else if (auto const_block = member->statement->cast<NodeConst>()) {
 			continue;

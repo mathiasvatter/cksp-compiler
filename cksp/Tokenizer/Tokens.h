@@ -31,8 +31,10 @@
 	XX(KEYWORD, "Keyword") \
 	XX(BEGIN_CALLBACK, "begin callback") \
 	XX(END_CALLBACK, "end on") \
-	XX(ASSIGN, "assignment")     \
-	XX(ARROW, "arrow")     \
+	XX(ASSIGN, ":=")     \
+	XX(SET_VALUE, "set_value")     \
+	XX(GET_VALUE, "get_value")     \
+	XX(ARROW, "->")     \
 	XX(SUB, "-") \
 	XX(ADD, "+") \
     XX(DIV, "/")      \
@@ -105,9 +107,9 @@
     XX(STEP, "step") \
     XX(DOWNTO, "downto") \
     XX(ELSE, "else") \
-    XX(CASE, "select_case")   \
+    XX(CASE, "case")   \
     XX(IMPORT, "import") \
-    XX(AS, "import_as") \
+    XX(AS, "as") \
     XX(DECLARE, "declare") \
     XX(LOCAL, "local") \
     XX(GLOBAL, "global") \
@@ -243,6 +245,8 @@ inline std::unordered_map<token, std::pair<std::string, int>> OPERATOR_OVERWRITE
 			{token::BIT_AND, {"__and__", 2}},         // .and.
 			{token::BIT_OR, {"__or__", 2}},           // .or.
 			{token::BIT_XOR, {"__xor__", 2}},         // .xor.
+			{token::GET_VALUE, {"__get__", 1}},         // in expression context
+			{token::SET_VALUE, {"__set__", 2}},         // in assignment context
 		}};
 
 inline std::unordered_map<token, std::pair<std::string, int>> BOOLEAN_FUNCTIONS = {

@@ -17,9 +17,40 @@ NodeAST * TypeInference::visit(NodeProgram& node) {
 	return &node;
 }
 
+/// Registers the reference so later passes can match its type, unless a property getter
+/// takes its place - then the getter call is visited and registers its own receiver instead.
+NodeAST* TypeInference::register_reference(NodeReference& node) {
+	if (const auto replacement = resolve_property_get(node); replacement != &node) return replacement;
+	if (m_def_provider) m_def_provider->add_to_references(&node);
+	return &node;
+}
+
+NodeAST* TypeInference::resolve_property_get(NodeReference& node) {
+	if (!m_enforce_source_return_annotations or !node.ty->cast<ObjectType>()
+		or node.is_raw_object_context()) return &node;
+
+	auto strct = m_program->find_struct(node.ty->ksp_encoded_string());
+	auto getter = strct ? strct->get_overloaded_method(token::GET_VALUE) : nullptr;
+	if (!getter) return &node;
+	if (getter->num_return_params != 1) {
+		auto error = make_diagnostic(ErrorType::TypeError, node);
+		error.message = "Property getter <__get__> must return exactly one value.";
+		error.exit();
+	}
+
+	auto receiver = node.clone_keeping_children();
+	auto get_token = node.tok;
+	get_token.type = token::GET_VALUE;
+	auto call = check_operator_overloading(get_token, receiver);
+	call->range = node.range;
+
+	auto replacement = node.replace_with(std::move(call));
+	replacement->collect_references();
+	return replacement->accept(*this);
+}
+
 void TypeInference::cast_data_structure_types(const NodeProgram* program, const bool cast) {
 	const auto def_provider = program->def_provider;
-
 	for (auto& ref : def_provider->get_all_references()) {
 		if (auto declaration = ref->get_declaration()) {
 			match_reference_declaration(*ref, declaration);
@@ -135,8 +166,7 @@ NodeAST * TypeInference::visit(NodeVariableRef& node) {
 	// }
 
     match_reference_declaration(node, decl);
-	if(m_def_provider) m_def_provider->add_to_references(&node);
-	return &node;
+	return register_reference(node);
 }
 
 NodeAST * TypeInference::visit(NodeVariable& node) {
@@ -177,8 +207,7 @@ NodeAST * TypeInference::visit(NodePointerRef& node) {
 		node.ty = TypeRegistry::Nil;
 	}
 	match_reference_declaration(node, node.get_declaration());
-	if(m_def_provider) m_def_provider->add_to_references(&node);
-	return &node;
+	return register_reference(node);
 }
 
 NodeAST * TypeInference::visit(NodePointer& node) {
@@ -250,8 +279,7 @@ NodeAST * TypeInference::visit(NodeArrayRef& node) {
 		}
 	}
 
-	if(m_def_provider) m_def_provider->add_to_references(&node);
-	return &node;
+	return register_reference(node);
 }
 
 NodeAST * TypeInference::visit(NodeNDArray& node) {
@@ -292,8 +320,7 @@ NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
 		match_against(*node.indexes, TypeRegistry::Integer, "Array index has to be of type <Integer>.");
     }
     match_reference_declaration(node, node.get_declaration());
-	if(m_def_provider) m_def_provider->add_to_references(&node);
-	return &node;
+	return register_reference(node);
 }
 
 NodeAST * TypeInference::visit(NodeList& node) {
@@ -344,8 +371,7 @@ NodeAST * TypeInference::visit(NodeListRef& node) {
         if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
     }
     match_reference_declaration(node, node.get_declaration());
-	if(m_def_provider) m_def_provider->add_to_references(&node);
-	return &node;
+	return register_reference(node);
 }
 
 NodeAST * TypeInference::visit(NodeStruct& node) {
@@ -799,7 +825,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 
 	}
 	match_type(node, *node.chain.back());
-	return &node;
+	return resolve_property_get(node);
 }
 
 
@@ -1047,6 +1073,14 @@ NodeAST * TypeInference::visit(NodeSetControl& node) {
 NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 	node.l_value->accept(*this);
 	node.r_value->accept(*this);
+
+	auto set_tok = node.tok;
+	set_tok.type = token::SET_VALUE;
+	if (m_enforce_source_return_annotations and !node.initializes_storage) {
+		if (auto repl = check_operator_overloading(set_tok, node.l_value, node.r_value)) {
+			return node.replace_with(std::move(repl))->accept(*this);
+		}
+	}
 
 	match_assignment_types(*node.l_value, *node.r_value);
 
@@ -1342,27 +1376,10 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	node.left->accept(*this);
 	node.right->accept(*this);
 
-	bool is_object = false;
-	// if type is object -> check for operator overloading
-	if(node.left->ty->cast<ObjectType>()) {
-		auto strct = m_program->find_struct(node.left->ty->ksp_encoded_string());
-		if(auto def = strct->get_overloaded_method(node.op.type)) {
-			match_type(*node.right, *def->header->get_param(1), "Second argument of overloaded operator does not match expected type.");
-			auto call = std::make_unique<NodeFunctionCall>(
-				false,
-				std::make_unique<NodeFunctionHeaderRef>(
-					def->header->name,
-					std::make_unique<NodeParamList>(node.left->tok, std::move(node.left), std::move(node.right)),
-					node.op
-				),
-				node.op
-			);
-			// do not yet add definition to call -> will be done in function call
-			return node.replace_with(std::move(call))->accept(*this);
-		}
-		is_object = true;
-
+	if (auto repl = check_operator_overloading(node.op, node.left, node.right)) {
+		return node.replace_with(std::move(repl))->accept(*this);
 	}
+	const bool is_object = node.left->ty->cast<ObjectType>() != nullptr;
 
 	// do not infer type if together in string
 	if(STRING_TOKENS.contains(node.op.type)) {
@@ -1404,7 +1421,7 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 		}
 		if(node.left->ty != node.right->ty)
 			is_compatible = false;
-		error.add_message("Please use real() and int() to use <Real> and <Integer> numbers in a single expression.");
+		error.add_message("Please use type casting syntax real() and int() to use <Real> and <Integer> numbers in a single expression.");
 
 	} else if (BITWISE_TOKENS.contains(node.op.type)) {
 		node.ty = TypeRegistry::Integer;
@@ -1443,23 +1460,8 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 	node.operand->accept(*this);
 
 	bool is_object = false;
-	// if type if object -> check for operator overloading
-	if(node.operand->ty->get_type_kind() == TypeKind::Object) {
-		auto strct = m_program->find_struct(node.operand->ty->ksp_encoded_string());
-		if(auto def = strct->get_overloaded_method(node.op.type)) {
-			auto call = std::make_unique<NodeFunctionCall>(
-				false,
-				std::make_unique<NodeFunctionHeaderRef>(
-					def->header->name,
-					std::make_unique<NodeParamList>(node.operand->tok, std::move(node.operand)),
-					node.op
-				),
-				node.op
-			);
-			// do not yet add definition to call -> will be done in function call
-			return node.replace_with(std::move(call))->accept(*this);
-		}
-
+	if (auto repl = check_operator_overloading(node.op, node.operand)) {
+		return node.replace_with(std::move(repl))->accept(*this);
 	}
 
 	bool is_compatible = node.ty->is_compatible(node.operand->ty) && node.operand->ty->is_compatible(node.ty);
@@ -1476,7 +1478,7 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 		} else if(is_compatible and node.operand->ty == TypeRegistry::Real) {
 			node.ty = TypeRegistry::Real;
 		}
-		error.add_message("Please use real() and int() to use <Real> and <Integer> numbers in a single expression.");
+		error.add_message("Please use type casting syntax or real() and int() to use <Real> and <Integer> numbers in a single expression.");
 	} else if (node.op.type == token::BIT_NOT) {
 		node.ty = TypeRegistry::Integer;
 		is_compatible = node.operand->ty->is_compatible(node.ty);

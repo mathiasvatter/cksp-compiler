@@ -320,6 +320,11 @@ struct NodeReference : NodeAST {
     [[nodiscard]] struct NodeSingleAssignment* is_l_value() const;
 	/// checks if reference is somewhere in the r_value expresssion
     [[nodiscard]] NodeSingleAssignment *is_r_value() const;
+	/// checks if the object itself is used here instead of its value, so no property getter applies
+	[[nodiscard]] bool is_raw_object_context() const;
+	/// Copies the reference but hands over its children, because raw pointers to them may already
+	/// be registered (references, function calls, call sites) and must stay valid.
+	std::unique_ptr<NodeAST> clone_keeping_children();
 	virtual std::unique_ptr<NodeReference> expand_dimension(std::unique_ptr<NodeAST> new_index) {
 		return nullptr;
 	}
