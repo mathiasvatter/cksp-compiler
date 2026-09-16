@@ -73,7 +73,6 @@ struct Diagnostic {
         SublimePragma,
         Taskfunc,
         TCM,
-        PostMacro,
         Property,
         ListDeclaration,
         ListAdd,
@@ -138,7 +137,6 @@ struct Diagnostic {
             case MigrationKind::SublimePragma: return "SublimePragma";
             case MigrationKind::Taskfunc: return "Taskfunc";
             case MigrationKind::TCM: return "TCM";
-            case MigrationKind::PostMacro: return "PostMacro";
             case MigrationKind::Property: return "Property";
             case MigrationKind::ListDeclaration: return "ListDeclaration";
             case MigrationKind::ListAdd: return "ListAdd";

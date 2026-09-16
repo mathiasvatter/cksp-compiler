@@ -1,0 +1,16 @@
+// The callee is only a macro name once the parameter is substituted, which is what the post
+// variant waits for.
+// EXPECT message\(0\)
+// EXPECT message\(1\)
+// EXPECT message\(2\)
+macro inner(#n#)
+    message(#n#)
+end macro
+
+macro outer(#name#)
+    iterate_post_macro(#name#(#n#)) := 0 to 2
+end macro
+
+on init
+    outer(inner)
+end on

@@ -126,7 +126,8 @@ public:
 		std::unordered_map<std::string, std::string> basename_map{};
 		ReferenceIndex* reference_index = m_cli_config->lsp ? &m_reference_index : nullptr;
 		pre_ast->do_import_processing(
-			entry_source, entry_source, parser, imported_files, basename_map, reference_index);
+			entry_source, entry_source, parser, imported_files, basename_map, reference_index
+		);
 
 		m_timer.stop("Import");
 		m_timer.start("Preprocessor");
@@ -145,6 +146,21 @@ public:
 		PreASTMacros macros(reference_index);
 		pre_ast->accept(macros);
 		pre_ast->debug_print();
+
+		// <iterate_post_macro> and <literate_post_macro> are expanded once every macro is, so
+		// their bounds, their list and their callee can be built from macro parameters. The
+		// define pass runs again first: a name like <#obj#.CONTROLS> only exists now.
+		constexpr int max_post_macro_rounds = 8;
+		for (int round = 0, deferred = macros.get_deferred_post_macros();
+			deferred > 0 and round < max_post_macro_rounds; round++) {
+			PreASTDefines post_defines(reference_index);
+			pre_ast->accept(post_defines);
+
+			PreASTMacros post_macros(reference_index, /*expand_post_macros=*/true);
+			pre_ast->accept(post_macros);
+			deferred = post_macros.get_deferred_post_macros();
+			pre_ast->debug_print();
+		}
 
 		// <define>s and <macro>s never reach the AST, so they are harvested here - after
 		// substitution, which folds constant define bodies into the value they stand for.

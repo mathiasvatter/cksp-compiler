@@ -1,0 +1,18 @@
+// <#obj#.CONTROLS> names a define list only after the substitution, so the define pass has to
+// run again before the post macro is expanded.
+// EXPECT message\("knob_a"\)
+// EXPECT message\("knob_b"\)
+// EXPECT_NOT PANEL.CONTROLS
+define PANEL.CONTROLS := knob_a, knob_b
+
+macro show(#lit#)
+    message("#lit#")
+end macro
+
+macro make(#obj#)
+    literate_post_macro(show(#l#)) on #obj#.CONTROLS
+end macro
+
+on init
+    make(PANEL)
+end on

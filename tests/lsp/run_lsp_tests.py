@@ -1711,33 +1711,28 @@ def _(workspace, server):
            f"none of these are pragmas; got {messages_of(server.diagnostics(fixture))}")
 
 
-@test("migration: the post macro variants name the adopted one they are not",
+@test("the post macro variants are expanded, not reported",
       entry_points=["post_iterate.cksp", "post_literate.cksp"])
 def _(workspace, server):
-    # CKSP adopted iterate_macro/literate_macro, which run during macro expansion. The post
-    # variants run after it, which is what lets their bounds come out of the expansion.
-    for name, source, spelling, adopted in [
+    # iterate_post_macro/literate_post_macro are expanded after every macro is, so their
+    # bounds, their list and their callee may be built from macro parameters.
+    for name, source in [
         ("post_iterate.cksp",
-         "macro make_buttons(start, end)\n"
-         "    iterate_post_macro(declare ui_button btn_#n#) := #start# to #end#\n"
-         "end macro\n",
-         "iterate_post_macro", "iterate_macro"),
+         "macro inner(#n#)\n    message(#n#)\nend macro\n"
+         "macro make_buttons(#start#, #end#)\n"
+         "    iterate_post_macro(inner(#n#)) := #start# to #end#\n"
+         "end macro\n"
+         "on init\n    make_buttons(0, 2)\nend on\n"),
         ("post_literate.cksp",
-         "macro make(obj)\n    literate_post_macro(declare #l#) on #obj#.CONTROLS\nend macro\n",
-         "literate_post_macro", "literate_macro"),
+         "define PANEL.CONTROLS := knob_a, knob_b\n"
+         'macro show(#lit#)\n    message("#lit#")\nend macro\n'
+         "macro make(#obj#)\n    literate_post_macro(show(#l#)) on #obj#.CONTROLS\nend macro\n"
+         "on init\n    make(PANEL)\nend on\n"),
     ]:
         fixture = workspace.write(name, source)
         server.did_open(fixture)
-        messages = messages_of(server.diagnostics(fixture))
-        expect(any(spelling in message and adopted in message for message in messages),
-               f"{name}: expected {spelling} and {adopted} to be named, got {messages}")
-        diagnostic = next(d for d in server.diagnostics(fixture) if spelling in d["message"])
-        expect((diagnostic.get("data") or {}).get("migrationKind") == "PostMacro",
-               f"{name}: post macro is not identifiable as a migration blocker: {diagnostic}")
-        # No fix: renaming is only correct when the bounds are known during expansion, and
-        # CKSP rejects a macro parameter there outright.
-        expect(not server.code_actions(fixture),
-               f"{name}: a rename is not a safe fix for the case the post variant exists for")
+        expect(not server.diagnostics(fixture),
+               f"{name}: expected no diagnostics, got {messages_of(server.diagnostics(fixture))}")
 
 
 @test("lists: incremental SublimeKSP syntax reports migration blockers without fixes",

@@ -4,7 +4,6 @@
 
 #include "PreprocessorParser.h"
 #include "PreAST/PreASTConditions.h"
-#include "../Migration/MacroMigration.h"
 #include <charconv>
 
 Result<std::unique_ptr<PreNodeProgram>> PreprocessorParser::parse_program(PreNodeAST *parent) {
@@ -118,21 +117,22 @@ Result<std::unique_ptr<PreNodeAST>> PreprocessorParser::parse_token(PreNodeAST* 
         //            return Result<std::unique_ptr<PreNodeAST>>(result_macro_call.get_error());
         //        node_statement->statement = std::move(result_macro_call.unwrap());
         //        stmt = std::move(node_statement);
-    } else if(curr_type == token::ITERATE_MACRO) {
+    } else if(curr_type == token::ITERATE_MACRO || curr_type == token::ITERATE_POST_MACRO) {
         auto result_iterate_macro = parse_iterate_macro(node_statement.get());
         if(result_iterate_macro.is_error())
             return Result<std::unique_ptr<PreNodeAST>>(result_iterate_macro.get_error());
-        node_statement->statement = std::move(result_iterate_macro.unwrap());
+        auto node_iterate_macro = std::move(result_iterate_macro.unwrap());
+        node_iterate_macro->is_post = curr_type == token::ITERATE_POST_MACRO;
+        node_statement->statement = std::move(node_iterate_macro);
         stmt = std::move(node_statement);
-    } else if(curr_type == token::LITERATE_MACRO) {
+    } else if(curr_type == token::LITERATE_MACRO || curr_type == token::LITERATE_POST_MACRO) {
         auto result_literate_macro = parse_literate_macro(node_statement.get());
         if(result_literate_macro.is_error())
             return Result<std::unique_ptr<PreNodeAST>>(result_literate_macro.get_error());
-        node_statement->statement = std::move(result_literate_macro.unwrap());
+        auto node_literate_macro = std::move(result_literate_macro.unwrap());
+        node_literate_macro->is_post = curr_type == token::LITERATE_POST_MACRO;
+        node_statement->statement = std::move(node_literate_macro);
         stmt = std::move(node_statement);
-    } else if(curr_type == token::ITERATE_POST_MACRO || curr_type == token::LITERATE_POST_MACRO) {
-        return Result<std::unique_ptr<PreNodeAST>>(
-            macro_migration::make_post_macro_diagnostic(curr));
     } else if (curr_type == token::SET_CONDITION && !PreASTConditions::is_builtin_condition(peek(1))) {
         auto result_condition_def = parse_set_condition(node_statement.get());
         if (result_condition_def.is_error())
