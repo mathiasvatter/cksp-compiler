@@ -14,9 +14,13 @@ class PreASTPragma final : public PreASTVisitor {
 	CompilerConfig* m_config = nullptr;
 	std::unordered_map<std::string, std::function<void(const std::string&, const Token&)>> pragma_handlers{};
 	ReferenceIndex* m_reference_index = nullptr;
+	/// The folder of the entry file, which is what a "./" prefixed path is relative to.
+	std::string m_root_directory{};
 public:
-	explicit PreASTPragma(CompilerConfig* config, ReferenceIndex* reference_index = nullptr)
-		: m_config(config), m_reference_index(reference_index) {
+	explicit PreASTPragma(CompilerConfig* config, ReferenceIndex* reference_index = nullptr,
+	                      std::string root_directory = {})
+		: m_config(config), m_reference_index(reference_index),
+		  m_root_directory(std::move(root_directory)) {
 		register_pragma_handlers();
 	}
 
@@ -62,18 +66,11 @@ private:
 		pragma_handlers["output_path"] = [this](const std::string& arg, const Token& token) {
 			auto path = StringUtils::remove_quotes(arg);
 
-			std::string error_message = "Found unknown <output_path> option in <#pragma>. ";
-			PathHandler path_handler(token, token.file(), "");
-			auto output_path = path_handler.resolve_path(path);
-			if (output_path.is_error()) {
-				auto error = output_path.get_error();
-				error.message.insert(0, error_message);
-				error.exit();
-			}
-			auto valid_output_path = path_handler.check_valid_output_file(output_path.unwrap());
+			PathHandler path_handler(token, token.file(), m_root_directory);
+			auto valid_output_path = path_handler.resolve_output_path(path);
 			if (valid_output_path.is_error()) {
 				auto error = valid_output_path.get_error();
-				error.message.insert(0, error_message);
+				error.set_location(token);
 				error.exit();
 			}
 			if (m_reference_index) {

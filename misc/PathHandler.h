@@ -69,6 +69,18 @@ public:
 	Result<std::string> resolve_overlap(const std::string& base_path, const std::string& relative_path);
 
 	/**
+	 * @brief Resolves the path a compiled script is written to.
+	 *
+	 * Unlike an import, the file is not expected to exist yet - only the folder holding it has
+	 * to. A path that resolves nowhere is therefore reported as the missing folder it is, with
+	 * a fix that creates it.
+	 *
+	 * @param output_path The path provided in the #pragma.
+	 * @return A Result object containing the resolved path as a string if successful, or a Diagnostic if unsuccessful.
+	 */
+	Result<std::string> resolve_output_path(const std::string& output_path);
+
+	/**
 	 * @brief Returns a vector of all files in a given directory.
 	 *
 	 * @param directory_path The path of the directory.

@@ -135,7 +135,8 @@ public:
 		PreASTConditions conditions_processor;
 		pre_ast->accept(conditions_processor);
 
-		PreASTPragma pragma(m_pragma_config.get(), reference_index);
+		PreASTPragma pragma(m_pragma_config.get(), reference_index,
+			std::filesystem::path(entry_source.value).parent_path().string());
 		pre_ast->accept(pragma);
 
 		// in lsp mode the substitution passes record define/macro usage -> definition links

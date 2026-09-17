@@ -4,6 +4,7 @@
 
 #include "PathHandler.h"
 #include "Diagnostic.h"
+#include "DiagnosticFixBuilder.h"
 
 PathHandler::PathHandler(Token current_token, std::string current_file, std::string root_directory)
 	: m_current_token(std::move(current_token)), m_current_file(std::move(current_file)),
@@ -171,6 +172,31 @@ Result<std::string> PathHandler::resolve_import_path(const std::string &import_p
 		: "Tried <" + near_importer.string() + "> and <" + from_root.string() + ">.");
 	m_error.expected = "valid path";
 	m_error.actual = import_path;
+	return Result<std::string>(m_error);
+}
+
+Result<std::string> PathHandler::resolve_output_path(const std::string &output_path) {
+	if (auto resolved = resolve_path(output_path); !resolved.is_error()) {
+		return check_valid_output_file(resolved.unwrap());
+	}
+
+	// resolve_path fails once neither the file nor the folder holding it is there, and reports
+	// the file it could not find. An output file is written by the compile and is not expected
+	// to exist yet - the folder is the part that has to, so that is what the message names.
+	const auto combined = std::filesystem::absolute(
+		base_directory_for(output_path) / std::filesystem::path(output_path)).lexically_normal();
+	const auto folder = combined.parent_path();
+	m_error.message = "The folder of this output path does not exist.";
+	m_error.add_message("<" + folder.string() + "> has to exist before the compile can write "
+		"<" + combined.filename().string() + "> into it. The file itself does not, it is created "
+		"by the compile.");
+	m_error.expected = "an existing folder";
+	m_error.actual = folder.string();
+	m_error.fix = DiagnosticFixBuilder(
+			Diagnostic::DiagnosticFix::FixKind::CreateOutputFolder,
+			"Create folder '" + folder.filename().string() + "' for this output path")
+		.create_file(combined.string())
+		.build();
 	return Result<std::string>(m_error);
 }
 

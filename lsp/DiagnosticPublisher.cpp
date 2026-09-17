@@ -100,6 +100,15 @@ bool DiagnosticPublisher::same_published_diagnostic(
 
 std::unique_ptr<JSONObject> DiagnosticPublisher::make_lsp_edit_data(
 	const Diagnostic::DiagnosticFix::Edit& edit) {
+	// A creation names a file that does not exist yet, so it carries no range and no text.
+	// The flag is what tells the code action to send a resource operation instead of an edit.
+	if (edit.kind == Diagnostic::DiagnosticFix::EditKind::CreateFile) {
+		auto data = std::make_unique<JSONObject>();
+		data->add("targetUri", std::make_unique<JSONString>(uri_from_source(SourceId(edit.file))));
+		data->add("createFile", std::make_unique<JSONBool>(true));
+		return data;
+	}
+
 	auto edit_range = std::make_unique<JSONObject>();
 	switch (edit.kind) {
 		case Diagnostic::DiagnosticFix::EditKind::InsertBefore:
@@ -111,6 +120,7 @@ std::unique_ptr<JSONObject> DiagnosticPublisher::make_lsp_edit_data(
 			edit_range->add("end", edit.range.end.get_lsp_position());
 			break;
 		case Diagnostic::DiagnosticFix::EditKind::Replace:
+		case Diagnostic::DiagnosticFix::EditKind::CreateFile:
 			edit_range = edit.range.get_lsp_range();
 			break;
 	}

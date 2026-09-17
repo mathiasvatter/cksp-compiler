@@ -93,12 +93,16 @@ struct Diagnostic {
             ConvertSublimePragma,
             SplitGlobalDeclarationAssignment,
             RenameReservedResult,
-            ReplaceInvalidCharacter
+            ReplaceInvalidCharacter,
+            CreateOutputFolder
         };
         enum class EditKind {
             InsertBefore,
             InsertAfter,
-            Replace
+            Replace,
+            /// Creates <file> and the folders leading to it, rather than editing any source.
+            /// <range> and <new_text> are unused.
+            CreateFile
         };
         struct Edit {
             EditKind kind = EditKind::Replace;
@@ -128,6 +132,7 @@ struct Diagnostic {
             case DiagnosticFix::FixKind::SplitGlobalDeclarationAssignment: return "SplitGlobalDeclarationAssignment";
             case DiagnosticFix::FixKind::RenameReservedResult: return "RenameReservedResult";
             case DiagnosticFix::FixKind::ReplaceInvalidCharacter: return "ReplaceInvalidCharacter";
+            case DiagnosticFix::FixKind::CreateOutputFolder: return "CreateOutputFolder";
             default: break;
         }
         return "unknown";

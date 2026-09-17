@@ -1679,6 +1679,56 @@ def _(workspace, server):
     expect("{#pragma" not in ported, f"the SublimeKSP line survived:\n{ported}")
 
 
+@test("pragma: an output path names the folder that is missing, not the file",
+      entry_points=["pragma_output_folder.cksp"])
+def _(workspace, server):
+    # The file is written by the compile and is not expected to exist; the folder holding it
+    # is. Reported as a missing file, the reader goes looking for a script that was never
+    # there. A ported project runs into this whenever it was copied out of its library folder.
+    source = ('#pragma output_path("Resources/scripts/compiled.txt")\n'
+              "\non init\n    declare x := 1\nend on\n")
+    fixture = workspace.write("pragma_output_folder.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(len(diagnostics) == 1, f"expected one diagnostic, got {messages_of(diagnostics)}")
+    message = diagnostics[0]["message"]
+    expect("folder" in message and "Resources/scripts" in message,
+           f"the missing folder has to be named: {message!r}")
+    expect("unknown" not in message,
+           f"nothing about the pragma is unknown, it is the folder that is missing: {message!r}")
+    expect((diagnostics[0].get("data") or {}).get("fixKind") == "CreateOutputFolder",
+           f"the diagnostic should offer to create the folder: {diagnostics[0]}")
+
+    action = action_titled(server.code_actions(fixture), "Create folder")
+    changes = action["edit"].get("documentChanges")
+    expect(changes and len(changes) == 1,
+           f"a creation travels as a resource operation: {action['edit']}")
+    expect(changes[0]["kind"] == "create" and changes[0]["options"]["ignoreIfExists"],
+           f"unexpected resource operation: {changes[0]}")
+    created = Path(uri_to_path(changes[0]["uri"]))
+    expect(same_path(str(created), workspace.root / "Resources/scripts/compiled.txt"),
+           f"the operation creates the wrong file: {created}")
+
+    # What the editor does with that operation, by hand: the parent folders come with it.
+    created.parent.mkdir(parents=True, exist_ok=True)
+    created.touch()
+    server.did_change(fixture, source + "\n")
+    expect(not server.diagnostics(fixture),
+           f"the folder exists now; got {messages_of(server.diagnostics(fixture))}")
+
+
+@test("pragma: an output path is offered no folder it already has",
+      entry_points=["pragma_output_ok.cksp"])
+def _(workspace, server):
+    (workspace.root / "build").mkdir(parents=True, exist_ok=True)
+    fixture = workspace.write("pragma_output_ok.cksp",
+                              '#pragma output_path("build/compiled.txt")\n'
+                              "\non init\n    declare x := 1\nend on\n")
+    server.did_open(fixture)
+    expect(not server.diagnostics(fixture),
+           f"an output file need not exist yet; got {messages_of(server.diagnostics(fixture))}")
+
+
 @test("migration: a pragma CKSP has no equivalent for warns without a fix",
       entry_points=["pragma_unknown.cksp"])
 def _(workspace, server):
