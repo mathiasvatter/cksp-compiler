@@ -860,12 +860,35 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_parenth_expr(NodeAST* parent) {
     return expr;
 }
 
+void Parser::read_reserved_ref_as_name() {
+	// Bounded by the end of the definition: a <ref> beyond it belongs to another one, where
+	// the word may well be the qualifier it is meant to be. A definition holds no other, so
+	// the first end token is this one's.
+	for (size_t index = m_pos; index + 1 < m_tokens.size(); ++index) {
+		const auto type = m_tokens[index].type;
+		if (type == token::END_FUNCTION or type == token::END_TASKFUNC) return;
+		// The qualifier stands before the name it applies to. Anything else after the word -
+		// a <)>, a <,>, an operator - leaves it as the name itself.
+		if (type == token::REF and m_tokens[index + 1].type != token::KEYWORD) {
+			m_tokens[index].type = token::KEYWORD;
+		}
+	}
+}
+
 Result<std::unique_ptr<NodeFunctionParam>> Parser::parse_function_param(NodeAST* parent) {
 	auto start_token = peek();
 	auto node_func_param = std::make_unique<NodeFunctionParam>(start_token);
-	if (start_token.type == token::REF) {
+	if (start_token.type == token::REF && peek(1).type == token::KEYWORD) {
 		consume(); // consume ref
 		node_func_param->is_pass_by_ref = true;
+	} else if (start_token.type == token::REF) {
+		// A <ref> that no name follows is not the qualifier: it is the parameter's own name,
+		// which is what the word is in SublimeKSP. Read as a qualifier it leaves the parser at
+		// the <)> with nothing to say about the name that got it there, so the definition is
+		// walked as if the word were ordinary and reported at its end - by then the rename
+		// can name every place it stands. See ReservedParameterMigration.
+		read_reserved_ref_as_name();
+		m_param_named_ref = true;
 	} else if (m_taskfunc_migration
 		and start_token.type == token::KEYWORD
 		and (start_token.val == "var" or start_token.val == "out")) {
@@ -1970,6 +1993,15 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
 		m_current_function_def = nullptr;
 		m_taskfunc_migration->make_diagnostic(func_header->name).exit();
 	}
+	if (m_param_named_ref) {
+		// Reported before a result named <return>, which stands later in the same header.
+		m_current_function_def = nullptr;
+		m_param_named_ref = false;
+		m_result_named_return = false;
+		reserved_parameter_migration::make_diagnostic(
+			func_header->name,
+			std::span(m_tokens).subspan(definition_start, m_pos - definition_start)).exit();
+	}
 	if (m_result_named_return) {
 		// Parsed to here only so the rename can name every place the result stands. The word
 		// stays reserved - see ReservedResultMigration.
@@ -1988,6 +2020,7 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     node_function_definition->parent = parent;
 	m_current_function_def = nullptr;
 	m_result_named_return = false;
+	m_param_named_ref = false;
     return Result<std::shared_ptr<NodeFunctionDefinition>>(std::move(node_function_definition));
 }
 

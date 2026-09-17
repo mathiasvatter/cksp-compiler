@@ -12,6 +12,7 @@
 #include "../Processor/Processor.h"
 #include "../ASTNodes/ASTReferences.h"
 #include "../Migration/PropertyMigration.h"
+#include "../Migration/ReservedParameterMigration.h"
 #include "../Migration/ReservedResultMigration.h"
 #include "../Migration/TaskfuncMigration.h"
 
@@ -214,6 +215,13 @@ public:
 	/// with a word CKSP reserves - see parse_function_definition, which already takes it as a
 	/// name in the header, and parse_statement, which has to take it as one in the body too.
 	bool m_result_named_return = false;
+	/// Set while a definition holds a parameter named <ref>, which CKSP reserves for the
+	/// pass-by-reference qualifier. See ReservedParameterMigration.
+	bool m_param_named_ref = false;
+	/// Rewrites every <ref> in the rest of the current definition that is a name rather than
+	/// a qualifier into an ordinary keyword token, so the definition parses and the migration
+	/// finds those places again.
+	void read_reserved_ref_as_name();
 	/// Engaged while a SublimeKSP <taskfunc> block is being parsed, so its parameters accept
 	/// the <var>/<out> modifiers and the edits reach the migration diagnostic. Owned rather
 	/// than pointed at because the block's error paths return without unwinding through here.

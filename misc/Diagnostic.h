@@ -79,6 +79,7 @@ struct Diagnostic {
         IdentifierCase,
         GlobalDeclarationInitializer,
         ReservedResultName,
+        ReservedParameterName,
         InvalidCharacter
     };
 
@@ -93,6 +94,7 @@ struct Diagnostic {
             ConvertSublimePragma,
             SplitGlobalDeclarationAssignment,
             RenameReservedResult,
+            RenameReservedParameter,
             ReplaceInvalidCharacter,
             CreateOutputFolder
         };
@@ -131,6 +133,7 @@ struct Diagnostic {
             case DiagnosticFix::FixKind::ConvertSublimePragma: return "ConvertSublimePragma";
             case DiagnosticFix::FixKind::SplitGlobalDeclarationAssignment: return "SplitGlobalDeclarationAssignment";
             case DiagnosticFix::FixKind::RenameReservedResult: return "RenameReservedResult";
+            case DiagnosticFix::FixKind::RenameReservedParameter: return "RenameReservedParameter";
             case DiagnosticFix::FixKind::ReplaceInvalidCharacter: return "ReplaceInvalidCharacter";
             case DiagnosticFix::FixKind::CreateOutputFolder: return "CreateOutputFolder";
             default: break;
@@ -148,6 +151,7 @@ struct Diagnostic {
             case MigrationKind::IdentifierCase: return "IdentifierCase";
             case MigrationKind::GlobalDeclarationInitializer: return "GlobalDeclarationInitializer";
             case MigrationKind::ReservedResultName: return "ReservedResultName";
+            case MigrationKind::ReservedParameterName: return "ReservedParameterName";
             case MigrationKind::InvalidCharacter: return "InvalidCharacter";
             default: break;
         }

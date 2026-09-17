@@ -1365,6 +1365,64 @@ def _(workspace, server):
            f"ported source still reports {messages_of(server.diagnostics(fixture))}")
 
 
+@test("migration: a parameter named after the ref keyword is renamed",
+      entry_points=["ref_named_parameter.cksp"])
+def _(workspace, server):
+    # CKSP writes <ref> before a parameter to pass it by reference. SublimeKSP has no such
+    # qualifier, so a ported script uses the word for what it reads like - a reference pitch.
+    # Taken as the qualifier, the parser ends up at the <)> and reports that instead.
+    source = ("function note_to_freq(midi_note, ref) -> result\n"
+              "  result := midi_note * ref\n"
+              "end function\n"
+              "\non init\n  message(note_to_freq(60, 440))\nend on\n")
+    fixture = workspace.write("ref_named_parameter.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(len(diagnostics) == 1, f"expected one diagnostic, got {messages_of(diagnostics)}")
+    message = diagnostics[0]["message"]
+    expect("<ref>" in message and "pass-by-reference" in message,
+           f"the message should say what the word is reserved for: {message!r}")
+    data = diagnostics[0].get("data") or {}
+    expect(data.get("migrationKind") == "ReservedParameterName",
+           f"a reserved parameter name is not marked for migration: {diagnostics[0]}")
+    expect(data.get("fixKind") == "RenameReservedParameter", f"wrong fix kind: {diagnostics[0]}")
+
+    action = action_titled(server.code_actions(fixture), "Rename parameter")
+    expect(action["title"] == "Rename parameter 'ref' to 'ref1'",
+           f"unexpected title: {action['title']!r}")
+    ported = apply_action(source, action, fixture)
+    expect("function note_to_freq(midi_note, ref1)" in ported,
+           f"the parameter was not renamed:\n{ported}")
+    expect("result := midi_note * ref1" in ported,
+           f"a read of the parameter was left behind:\n{ported}")
+
+    # What is left is an ordinary deprecated result, which converts as any other one does.
+    fixture = server.did_change(fixture, ported)
+    ported, applied = port_with_quick_fixes(fixture, server, ported)
+    expect(applied, "the renamed parameter should leave a convertible function behind")
+    expect(not server.diagnostics(fixture),
+           f"ported source still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: a by-reference parameter keeps its qualifier",
+      entry_points=["ref_qualifier.cksp"])
+def _(workspace, server):
+    # The word only becomes a name where no name follows it. A parameter list that uses both
+    # has to come out with the qualifier untouched and the name renamed.
+    source = ("function scale(ref values, ref) -> result\n"
+              "  values[0] := values[0] * ref\n"
+              "  result := values[0]\n"
+              "end function\n"
+              "\non init\n  declare arr[2]\n  message(scale(arr, 2))\nend on\n")
+    fixture = workspace.write("ref_qualifier.cksp", source)
+    server.did_open(fixture)
+    action = action_titled(server.code_actions(fixture), "Rename parameter")
+    ported = apply_action(source, action, fixture)
+    expect("function scale(ref values, ref1)" in ported,
+           f"the qualifier and the name were not told apart:\n{ported}")
+    expect("values[0] * ref1" in ported, f"a read of the parameter was left behind:\n{ported}")
+
+
 @test("migration: the rename skips a number the function already spells",
       entry_points=["return_named_result_taken.cksp"])
 def _(workspace, server):
