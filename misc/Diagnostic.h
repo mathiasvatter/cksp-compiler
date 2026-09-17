@@ -195,7 +195,12 @@ struct Diagnostic {
         message += value;
     }
     void set_expected(const std::string& value) { expected = value; }
+    /// Points the diagnostic at a token, and reports that token as what was found.
     void set_token(const Token& token);
+    /// Points the diagnostic at a token without touching <actual>: for a diagnostic that was
+    /// raised away from the source and already says what it found, such as a path resolver
+    /// reporting the paths it tried.
+    void set_location(const Token& token);
     [[nodiscard]] std::string display_message() const;
     /// "Expected: …" / "Got: …", rendered readable. Empty when neither is known.
     [[nodiscard]] std::string display_detail() const;

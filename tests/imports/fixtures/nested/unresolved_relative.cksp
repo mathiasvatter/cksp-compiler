@@ -1,0 +1,3 @@
+// Imported from tests/imports/import_unresolved_path.ksp. Neither candidate for this path exists,
+// which is what the error there asserts on.
+import "shared/does_not_exist.cksp"

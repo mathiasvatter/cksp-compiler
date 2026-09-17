@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <filesystem>
+
 #include "../cksp/Tokenizer/Tokenizer.h"
 
 
@@ -34,7 +36,11 @@ public:
 	Result<std::string> check_valid_output_file(const std::string& absolute_path);;
 
 	/**
-	 * @brief Resolves the import path to an absolute path.
+	 * @brief Resolves the import path to an absolute path of a file that exists.
+	 *
+	 * The path is resolved against the folder of the importing file first. Failing that, it is
+	 * resolved against the project root, which is how SublimeKSP reads every import path - a
+	 * project ported from there keeps working without rewriting its imports.
 	 *
 	 * @param import_path The path provided in the import statement.
 	 * @return A Result object containing the resolved path as a string if successful, or a Diagnostic if unsuccessful.
@@ -69,6 +75,11 @@ public:
 	 * @return A Result object containing the vector of file paths if successful, or a Diagnostic if unsuccessful.
 	 */
 	Result<std::vector<std::string>> get_directory_files(const std::string& directory_path);
+
+private:
+	/// The folder a relative path is resolved against: the project root for a "./" prefix,
+	/// the folder of the importing file otherwise.
+	[[nodiscard]] std::filesystem::path base_directory_for(const std::string& import_path) const;
 
 };
 

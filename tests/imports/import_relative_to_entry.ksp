@@ -1,0 +1,9 @@
+// A path that resolves against neither the importing file nor an overlapping segment falls back
+// to the entry file's folder, which is how a project ported from SublimeKSP writes every import.
+// EXPECT message\(42\)
+
+import "fixtures/nested/entry_relative.cksp"
+
+on init
+    message(helper_double(HELPER_VALUE))
+end on

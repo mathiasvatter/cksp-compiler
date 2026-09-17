@@ -73,11 +73,15 @@ void Diagnostic::exit() const {
     throw CompilationAborted(std::move(diagnostic));
 }
 
-void Diagnostic::set_token(const Token& token) {
-    actual = token.val;
+void Diagnostic::set_location(const Token& token) {
     file = token.file();
     range = source_range_from_token(token);
     expansion = expansion_of(token);
+}
+
+void Diagnostic::set_token(const Token& token) {
+    actual = token.val;
+    set_location(token);
 }
 
 std::string Diagnostic::display_detail() const {

@@ -89,7 +89,9 @@ public:
 		auto source_result = m_parser.resolve_import(m_root_source, m_current_source, node.path);
 		if (source_result.is_error()) {
 			auto error = source_result.get_error();
-			error.set_token(node.tok);
+			// The path is what failed, not the keyword, and the resolver has already filled in
+			// what it looked for - underline the one and keep the other.
+			error.set_location(node.path_token);
 			error.exit();
 		}
 
@@ -172,7 +174,7 @@ public:
 		auto source_result = m_parser.resolve_import(m_root_source, m_current_source, node.path);
 		if (source_result.is_error()) {
 			auto error = source_result.get_error();
-			error.set_token(node.tok);
+			error.set_location(node.path_token);
 			error.exit();
 		}
 

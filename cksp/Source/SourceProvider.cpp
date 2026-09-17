@@ -176,13 +176,22 @@ Result<SourceId> OverlaySourceProvider::resolve_import(
     auto resolved = m_fallback.resolve_import(root, importer, import_path);
     if (!resolved.is_error()) return resolved;
 
+    // An unsaved buffer is invisible to the filesystem resolver, so the same two candidates it
+    // tries - next to the importing file, then the project root - are looked for here.
     const std::filesystem::path relative(import_path);
+    if (relative.is_absolute()) {
+        const auto candidate = FileSystemSourceProvider::normalize(relative.string());
+        std::shared_lock lock(m_mutex);
+        if (m_documents.contains(candidate.value)) return Result<SourceId>(candidate);
+        return resolved;
+    }
+
+    const auto root_directory = std::filesystem::path(root.value).parent_path();
     const auto base = import_path.starts_with("./")
-        ? std::filesystem::path(root.value).parent_path()
+        ? root_directory
         : std::filesystem::path(importer.value).parent_path();
-    const auto candidate = FileSystemSourceProvider::normalize(
-        relative.is_absolute() ? relative.string() : (base / relative).string());
-    {
+    for (const auto& directory : {base, root_directory}) {
+        const auto candidate = FileSystemSourceProvider::normalize((directory / relative).string());
         std::shared_lock lock(m_mutex);
         if (m_documents.contains(candidate.value)) return Result<SourceId>(candidate);
     }
