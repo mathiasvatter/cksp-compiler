@@ -69,7 +69,6 @@ add_library(cksp_core STATIC
         cksp/Migration/PropertyMigration.h
         cksp/Migration/ListMigration.h
         cksp/Migration/PragmaMigration.h
-        cksp/Migration/MacroMigration.h
         misc/Diagnostic.h
         misc/Diagnostic.cpp
         misc/DiagnosticFixBuilder.h
