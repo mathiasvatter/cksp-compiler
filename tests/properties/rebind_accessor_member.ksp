@@ -1,0 +1,22 @@
+// A member of a type that defines <__set__> cannot be filled by assignment: the assignment is
+// the setter. Reported as that rather than as a mismatch against the setter's parameter.
+// EXPECT_ERROR <EnginePar> defines <__set__>
+// EXPECT_ERROR can only be filled where the object is built
+// EXPECT_ERROR pass it to the constructor
+struct EnginePar
+    par: int
+    function __get__(self): int
+        return self.par
+    end function
+    function __set__(self, value: int)
+        self.par := value
+    end function
+end struct
+struct Slot
+    volume: EnginePar
+end struct
+on init
+    declare s := Slot(EnginePar(1))
+    s.volume := EnginePar(9)
+    message(s.volume)
+end on

@@ -1,0 +1,17 @@
+// Without <__set__> the member is an ordinary object reference, and assigning another object
+// to it stays what it always was.
+// EXPECT %Slot____volume\[
+struct EnginePar
+    par: int
+    function __get__(self): int
+        return self.par
+    end function
+end struct
+struct Slot
+    volume: EnginePar
+end struct
+on init
+    declare s := Slot(EnginePar(1))
+    s.volume := EnginePar(9)
+    message(s.volume)
+end on

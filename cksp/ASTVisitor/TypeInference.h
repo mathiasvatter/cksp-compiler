@@ -397,6 +397,7 @@ public:
 
 	NodeAST* register_reference(NodeReference& node);
 	NodeAST* resolve_property_get(NodeReference& node);
+	void reject_rebinding_an_accessor(const NodeSingleAssignment& node) const;
 
 	// Keep ownership with the caller until a matching overload is found.
 	template<typename Receiver, typename... Args>

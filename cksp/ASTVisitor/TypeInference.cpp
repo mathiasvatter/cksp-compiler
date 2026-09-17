@@ -1065,6 +1065,34 @@ NodeAST * TypeInference::visit(NodeSetControl& node) {
 	return &node;
 }
 
+/// The one assignment a <__set__> makes impossible, reported as that rather than as the type
+/// mismatch it turns into.
+///
+/// An accessor type says that a reference to it is its value: the assignment is the setter,
+/// so it takes what the setter takes and the object itself no longer fits. That is the rule
+/// Python holds to as well - an instance attribute assignment always reaches the descriptor's
+/// <__set__>, and the descriptor is only replaceable through the class. What is left here is
+/// the constructor, which is why it is the one the message names.
+void TypeInference::reject_rebinding_an_accessor(const NodeSingleAssignment& node) const {
+	const auto* target = node.l_value->ty ? node.l_value->ty->cast<ObjectType>() : nullptr;
+	if (!target or node.r_value->ty != node.l_value->ty) return;
+
+	const auto strct = m_program->find_struct(node.l_value->ty->ksp_encoded_string());
+	if (!strct or !strct->get_overloaded_method(token::SET_VALUE)) return;
+
+	const auto type_name = node.l_value->ty->to_string();
+	auto error = make_diagnostic(ErrorType::TypeError, *node.r_value);
+	error.message =
+		"<" + type_name + "> defines <__set__>, so this assignment sets the value of <"
+		+ node.l_value->get_string() + "> instead of putting another <" + type_name + "> there."
+		" A member of a type that defines <__set__> can only be filled where the object is"
+		" built - pass it to the constructor, as <" + type_name + "(...)> in the initializer"
+		" of the struct that holds it.";
+	error.expected = "the value <" + type_name + "> stands for";
+	error.actual = type_name;
+	error.exit();
+}
+
 NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 	node.l_value->accept(*this);
 	node.r_value->accept(*this);
@@ -1072,6 +1100,7 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 	auto set_tok = node.tok;
 	set_tok.type = token::SET_VALUE;
 	if (m_enforce_source_return_annotations and !node.initializes_storage) {
+		reject_rebinding_an_accessor(node);
 		if (auto repl = check_operator_overloading(set_tok, node.l_value, node.r_value)) {
 			return node.replace_with(std::move(repl))->accept(*this);
 		}
