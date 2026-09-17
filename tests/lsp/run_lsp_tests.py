@@ -1729,6 +1729,65 @@ def _(workspace, server):
            f"an output file need not exist yet; got {messages_of(server.diagnostics(fixture))}")
 
 
+@test("migration: a compile toggle CKSP has a pragma for is offered as that pragma",
+      entry_points=["pragma_toggle.cksp"])
+def _(workspace, server):
+    # SublimeKSP switches these through <compile_with>/<compile_without>, CKSP through a pragma
+    # of its own. The three that map are worth a fix; the rest carry nothing to port.
+    for name, line, expected in [
+        ("pragma_optimize.cksp", "{#pragma compile_without optimize_code}",
+         '#pragma optimize("none")'),
+        ("pragma_optimize_on.cksp", "{#pragma compile_with optimize_code}",
+         '#pragma optimize("standard")'),
+        ("pragma_combine.cksp", "{#pragma compile_with combine_callbacks}",
+         "#pragma combine_callbacks(true)"),
+        ("pragma_compact.cksp", "{#pragma compile_without compact_variables}",
+         "#pragma obfuscate(false)"),
+    ]:
+        source = line + "\n\non init\n    declare x := 1\nend on\n"
+        fixture = workspace.write(name, source)
+        server.did_open(fixture)
+        diagnostics = server.diagnostics(fixture)
+        expect(len(diagnostics) == 1,
+               f"{name}: expected one diagnostic, got {messages_of(diagnostics)}")
+        expect(diagnostics[0]["severity"] == 2, f"{name}: must stay a warning")
+        expect(expected in diagnostics[0]["message"],
+               f"{name}: the message should spell the CKSP pragma: {diagnostics[0]['message']!r}")
+        expect((diagnostics[0].get("data") or {}).get("fixKind") == "ConvertSublimePragma",
+               f"{name}: the toggle should be portable: {diagnostics[0]}")
+
+        action = action_titled(server.code_actions(fixture), expected)
+        ported = apply_action(source, action, fixture)
+        expect(ported.startswith(expected) and "{#pragma" not in ported,
+               f"{name}: unexpected rewrite:\n{ported}")
+        server.did_change(fixture, ported)
+        expect(not server.diagnostics(fixture),
+               f"{name}: ported file still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: a compile toggle CKSP has nothing for invents no pragma",
+      entry_points=["pragma_no_counterpart.cksp"])
+def _(workspace, server):
+    # The message used to offer <#pragma compile_with(...)>, which does not exist - following
+    # it traded a harmless warning for a hard error.
+    fixture = workspace.write("pragma_no_counterpart.cksp",
+                              "{#pragma compile_with remove_whitespace}\n"
+                              "\non init\n    declare x := 1\nend on\n")
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(len(diagnostics) == 1, f"expected one diagnostic, got {messages_of(diagnostics)}")
+    message = diagnostics[0]["message"]
+    expect("remove_whitespace" in message, f"the toggle should be named: {message!r}")
+    # The <got:> part quotes the line itself, so the invented spelling is what to look for:
+    # the old message read "written without the braces, as <#pragma compile_with(...)>".
+    expect("compile_with(" not in message,
+           f"a pragma that does not exist must not be suggested: {message!r}")
+    expect("fixKind" not in (diagnostics[0].get("data") or {}),
+           f"there is nothing to port it to: {diagnostics[0]}")
+    expect(not server.code_actions(fixture),
+           "a toggle CKSP has no counterpart for has no rewrite")
+
+
 @test("migration: a pragma CKSP has no equivalent for warns without a fix",
       entry_points=["pragma_unknown.cksp"])
 def _(workspace, server):
