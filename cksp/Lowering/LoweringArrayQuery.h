@@ -367,8 +367,7 @@ private:
 			tok
 		);
 		definition->ty = return_type;
-		definition->num_return_params = 1;
-		definition->num_return_stmts = 2;
+		definition->set_returns(1, 2);
 
 		std::vector<std::shared_ptr<NodeVariable>> candidates;
 		candidates.reserve(heap_types.size());

@@ -278,8 +278,9 @@ Result<std::shared_ptr<NodeFunctionDefinition>> BuiltinsProcessor::parse_builtin
 	node_function->visited = true;
     node_function->ty = ret_type;
 	BuiltinRestrictionValidator::write_builtin_function_restrictions(*node_function);
-	node_function->num_return_params = num_return_vars;
-	node_function->num_return_stmts = num_return_vars;
+	// A builtin has no body, so its <return> statements are not nodes anywhere - the signature
+	// is all there is to count.
+	node_function->set_returns(num_return_vars, num_return_vars);
     return Result<std::shared_ptr<NodeFunctionDefinition>>(std::move(node_function));
 }
 

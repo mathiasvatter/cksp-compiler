@@ -26,9 +26,9 @@ class LoweringFunctionDefReturnStmts final : public ASTLowering {
 	/// - the function has one return stmt but its not the last stmt in the block
 	/// - (the function consists NOT of only one if statement with a return stmt in each branch)
 	static bool needs_rewrite(const NodeFunctionDefinition& def) {
-		if(def.num_return_stmts == 0) return false;
+		if(def.num_return_stmts() == 0) return false;
 		/// function has one return stmt and its the last one
-		if(def.num_return_stmts == 1) {
+		if(def.num_return_stmts() == 1) {
 			if(def.body->get_last_statement()->cast<NodeReturn>()) {
 				return false;
 			}

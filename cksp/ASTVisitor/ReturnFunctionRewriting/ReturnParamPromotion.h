@@ -37,7 +37,7 @@ private:
 		if(node.is_expression_function()) return &node;
 
 		if(node.return_variable.has_value()) {
-			node.num_return_params = 1;
+			node.num_return_values = 1;
 			node.return_variable.value()->data_type = DataType::Return;
 
 			auto decl = std::make_unique<NodeFunctionParam>(node.return_variable.value(), nullptr, node.tok);
@@ -48,25 +48,25 @@ private:
 		}
 
 		// generate return parameters
-		for (int i = 0; i< node.num_return_params; i++) {
+		for (int i = 0; i< node.num_return_values; i++) {
 			m_return_param_names.push_back(m_def_provider->get_fresh_name(m_return_param_name));
 		}
 
-		m_current_function->return_stmts.clear();
+		m_current_function->clear_return_stmts();
 		node.body->accept(*this);
 		m_current_function = nullptr;
 		return &node;
 	};
 
 	NodeAST* visit(NodeReturn &node) override {
-		if(node.return_variables.size() != m_current_function->num_return_params) {
+		if(node.return_variables.size() != m_current_function->num_return_values) {
 			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
 			error.message = "Return Statement has incorrect number of return values.";
-			error.expected = std::to_string(m_current_function->num_return_params);
+			error.expected = std::to_string(m_current_function->num_return_values);
 			error.actual = std::to_string(node.return_variables.size());
 			error.exit();
 		}
-		m_current_function->return_stmts.push_back(&node);
+		m_current_function->add_return_stmt(&node);
 		// parameter promotion of return parameters
 		// replace parameter placeholders instantiated in Desugaring with copies of return values when references
 		auto block_replace = std::make_unique<NodeBlock>(Token());

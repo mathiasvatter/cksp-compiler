@@ -265,11 +265,11 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 	// a bare statement call to a function with return values discards them -> warn,
 	// since this is usually an oversight
 	if (definition and node.kind == NodeFunctionCall::Kind::UserDefined
-		and node.parent->cast<NodeStatement>() and definition->num_return_params > 0) {
+		and node.parent->cast<NodeStatement>() and definition->num_return_values > 0) {
 		auto warning = Diagnostic(ErrorType::CompileWarning, "", "", node.tok);
-		const std::string values = definition->num_return_params > 1 ? "values" : "value";
+		const std::string values = definition->num_return_values > 1 ? "values" : "value";
 		warning.message = "The return "+values+" of function <"+node.function->name+"> "
-			+ (definition->num_return_params > 1 ? "are" : "is")
+			+ (definition->num_return_values > 1 ? "are" : "is")
 			+ " discarded here. Assign the result <result := "+node.function->name+"(...)> if it is needed.\n"
 			"To get rid of this warning use a throwaway variable <_ := ...> to assign to.";
 		warning.fix = make_discarded_return_fix(node);

@@ -234,8 +234,7 @@ private:
 		}
 
 		coalesce_def->body->scope = true;
-		coalesce_def->num_return_stmts = 2;
-		coalesce_def->num_return_params = 1;
+		coalesce_def->set_returns(1, 2);
 		coalesce_def->collect_declarations(m_program);
 		coalesce_call->kind = NodeFunctionCall::Kind::UserDefined;
 		coalesce_call->definition = coalesce_def;

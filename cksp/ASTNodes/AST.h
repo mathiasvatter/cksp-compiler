@@ -1157,8 +1157,15 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	bool has_exit_command = false;
     bool is_used = false;
 	bool visited = false;
-	int num_return_params = 0;
-	int num_return_stmts = 0;
+	/// How many values the function yields: 0 for one that returns nothing, 1 for the ordinary
+	/// case, more for one returning several. This is a property of the signature, which is why
+	/// it stands without a <return> statement anywhere - the deprecated <-> result> form and a
+	/// builtin both have it. Not to be confused with the header parameters the values are later
+	/// promoted into, see ReturnParamPromotion.
+	int num_return_values = 0;
+	/// The <return> statements in the body, in the order they were met. Added through
+	/// <add_return_stmt>, which keeps the count beside it, and dropped through
+	/// <clear_return_stmts> when a pass is about to walk them again.
 	std::vector<NodeReturn*> return_stmts;
     std::unordered_set<NodeFunctionCall*> call_sites = {};
 	mutable std::mutex call_sites_mutex;
@@ -1168,6 +1175,37 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	/// <static function> member: belongs to the struct, not to an instance, and takes no <self>
 	bool is_static = false;
     std::unique_ptr<NodeBlock> body;
+
+	/// How many <return> statements the function has, which decides whether its body needs the
+	/// rewrite that turns early returns into one exit - see LoweringFunctionDefReturnStmts.
+	///
+	/// Nearly always <return_stmts.size()>, and kept that way by going through the two methods
+	/// below. It is a count of its own for the functions that have no body to hold the
+	/// statements: a builtin, and the ones the lowering passes synthesise.
+	[[nodiscard]] int num_return_stmts() const { return m_num_return_stmts; }
+	/// Registers a <return> statement of the body, counting it.
+	void add_return_stmt(NodeReturn* return_stmt) {
+		return_stmts.push_back(return_stmt);
+		++m_num_return_stmts;
+	}
+	/// Forgets the registered statements, for a pass that is about to collect them again.
+	void clear_return_stmts() {
+		return_stmts.clear();
+		m_num_return_stmts = 0;
+	}
+	/// The counts of a function whose <return> statements are not nodes of this AST: a builtin,
+	/// or one a lowering pass builds with a body it already knows the shape of.
+	void set_returns(const int values, const int statements) {
+		num_return_values = values;
+		m_num_return_stmts = statements;
+	}
+
+private:
+	/// Private so it cannot drift from <return_stmts>: the methods above are the only way in,
+	/// and each one leaves the two agreeing.
+	int m_num_return_stmts = 0;
+public:
+
     explicit NodeFunctionDefinition(Token tok);
     NodeFunctionDefinition(std::unique_ptr<NodeFunctionHeader> header,
 						   std::optional<std::unique_ptr<NodeDataStructure>> returnVariable, bool override,

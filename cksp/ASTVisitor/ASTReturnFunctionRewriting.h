@@ -102,7 +102,7 @@ private:
 				return &node;
 			}
 			// Fast path: only declarations from return-value functions need special handling.
-			if (definition->num_return_params <= 0) {
+			if (definition->num_return_values <= 0) {
 				node.value->accept(*this);
 				return &node;
 			}
@@ -113,7 +113,7 @@ private:
 				return node.value->accept(*this);
 			}
 
-			if (definition->num_return_params > 0) {
+			if (definition->num_return_values > 0) {
 				auto node_block = std::make_unique<NodeBlock>(node.tok, false);
 				auto node_assignment = std::make_unique<NodeSingleAssignment>(
 					node.variable->to_reference(), std::move(node.value), node.tok);

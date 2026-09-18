@@ -116,7 +116,7 @@ class DesugarStruct final : public ASTDesugaring {
 
 	/// Checks the method against the return count <OPERATOR_OVERWRITES> demands for this operator.
 	static void validate_operator_overload(const NodeFunctionDefinition& node, const OperatorOverload& overload) {
-		if (node.num_return_params == overload.num_returns) return;
+		if (node.num_return_values == overload.num_returns) return;
 
 		auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
 		error.message = overload.num_returns == 0
@@ -126,7 +126,7 @@ class DesugarStruct final : public ASTDesugaring {
 				+ std::to_string(overload.num_returns) + " value.";
 		error.expected = overload.num_returns == 0
 			? "no return value" : std::to_string(overload.num_returns) + " return value";
-		error.actual = std::to_string(node.num_return_params) + " return values";
+		error.actual = std::to_string(node.num_return_values) + " return values";
 		error.exit();
 	}
 public:
@@ -283,18 +283,18 @@ public:
 				error.exit();
 			}
 			m_structs.top()->constructor = node.get_shared();
-			if(node.num_return_params > 0) {
+			if(node.num_return_values > 0) {
 				error.message = "Constructor method cannot have return values.";
 				error.exit();
 			}
-			node.num_return_params = 1;
+			node.num_return_values = 1;
 			node.header->create_function_type(m_structs.top()->ty);
 			node.ty = m_structs.top()->ty;
 			// delete <self> keyword
 			node.header->params.erase(node.header->params.begin());
 		}
 		if(node.header->name == NodeStruct::REPRESENTOR) {
-			if(node.num_return_params > 1) {
+			if(node.num_return_values > 1) {
 				auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.tok);
 				error.message = "Repr method cannot have more than one return value.";
 				error.exit();
@@ -304,7 +304,7 @@ public:
 				error.message = "Repr method cannot have more than one argument.";
 				error.exit();
 			}
-			node.num_return_params = 1;
+			node.num_return_values = 1;
 			node.header->create_function_type(TypeRegistry::String);
 			node.ty = TypeRegistry::String;
 		}

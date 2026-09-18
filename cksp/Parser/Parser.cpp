@@ -1179,7 +1179,7 @@ Result<std::unique_ptr<NodeReturn>> Parser::parse_return_statement(NodeAST* pare
 			return Result<std::unique_ptr<NodeReturn>>(error);
 		}
 	}
-	m_current_function_def->num_return_params = node_return_statement->return_variables.size();
+	m_current_function_def->num_return_values = node_return_statement->return_variables.size();
 	node_return_statement->definition = m_current_function_def;
     node_return_statement->set_child_parents();
 	node_return_statement->set_range(ret_tok, peek(-1));
@@ -1947,7 +1947,7 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
 				error.set_message( "Only on return variable allowed. Use <Return> Statement to return multiple values.");
 				error.exit();
 			}
-			m_current_function_def->num_return_params = 1;
+			m_current_function_def->num_return_values = 1;
             func_return_var = std::move(return_var[0]);
         } else {
             error.set_message( "Missing return variable after ->");

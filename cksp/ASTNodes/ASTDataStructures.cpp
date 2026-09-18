@@ -545,7 +545,7 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_repr_method() {
 	);
 	function_def->parent = this;
 	function_def->ty = TypeRegistry::String;
-	function_def->num_return_params = 1;
+	function_def->num_return_values = 1;
 	return add_method(function_def);
 }
 

@@ -114,7 +114,7 @@ private:
 	/// only after this pass, so the return type stands in for it here: LoweringFunctionDefReturnStmts
 	/// picks the return-flag rewrite over the <exit> one from is_inlined and runs in between.
 	static bool returns_composite(const NodeFunctionDefinition& def) {
-		if (def.num_return_params <= 0) return false;
+		if (def.num_return_values <= 0) return false;
 		const auto function_type = def.header->ty ? def.header->ty->cast<FunctionType>() : nullptr;
 		return function_type and function_type->get_return_type()->cast<CompositeType>();
 	}

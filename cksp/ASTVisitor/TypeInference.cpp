@@ -832,14 +832,14 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 
 				// a bare statement chain ending in a method with return values discards them.
 				// deduplicated by position: monomorphization revisits function bodies
-				if (definition->num_return_params > 0 and i + 1 == node.chain.size()
+				if (definition->num_return_values > 0 and i + 1 == node.chain.size()
 					and node.parent->cast<NodeStatement>()
 					and func_call->kind != NodeFunctionCall::Kind::Constructor
 					and m_discard_warnings.insert(func_call->tok.get_position()).second) {
 					auto warning = Diagnostic(ErrorType::CompileWarning, "", "", func_call->tok);
-					const std::string values = definition->num_return_params > 1 ? "values" : "value";
+					const std::string values = definition->num_return_values > 1 ? "values" : "value";
 					warning.message = "The return "+values+" of method <"+func_call->function->name+"> "
-						+ (definition->num_return_params > 1 ? "are" : "is")
+						+ (definition->num_return_values > 1 ? "are" : "is")
 						+ " discarded here. Assign the result <result := obj."+func_call->function->name+"(...)> if it is needed.\n"
 						"To get rid of this warning use a throwaway variable <_ := ...> to assign to.";
 					warning.fix = make_discarded_return_fix(node);

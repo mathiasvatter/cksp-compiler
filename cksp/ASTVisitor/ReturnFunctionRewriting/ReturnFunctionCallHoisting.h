@@ -29,7 +29,7 @@ class ReturnFunctionCallHoisting final : public ASTVisitor {
 		if(!node.get_definition()) {
 			return false;
 		}
-		bool returns_values = node.get_definition() and node.get_definition()->num_return_params > 0;
+		bool returns_values = node.get_definition() and node.get_definition()->num_return_values > 0;
 		bool is_in_stmt = node.parent->cast<NodeStatement>();
 		// do not hoist if in declaration -> we do not need an extra declaration var
 		bool is_in_declaration = node.parent->cast<NodeSingleDeclaration>();

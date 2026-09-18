@@ -1383,10 +1383,10 @@ NodeFunctionDefinition::NodeFunctionDefinition(const NodeFunctionDefinition& oth
         : NodeAST(other), is_restricted(other.is_restricted), is_thread_safe(other.is_thread_safe),
 		is_inlined(other.is_inlined), has_local_dynamic_arrays(other.has_local_dynamic_arrays), is_used(other.is_used),
 		visited(other.visited), has_exit_command(other.has_exit_command),
-          num_return_params(other.num_return_params), num_return_stmts(other.num_return_stmts),
+          num_return_values(other.num_return_values),
           return_stmts(other.return_stmts), call_sites(other.call_sites),
 		  header(clone_shared(other.header)), override(other.override), is_static(other.is_static),
-		  body(clone_unique(other.body)) {
+		  body(clone_unique(other.body)), m_num_return_stmts(other.m_num_return_stmts) {
     if (other.return_variable) {
         return_variable = std::make_optional(clone_shared(other.return_variable.value()));
     }
@@ -1465,7 +1465,7 @@ bool NodeFunctionDefinition::returned_calls_are_inlinable(NodeAST &expression) c
 }
 
 bool NodeFunctionDefinition::is_expression_function() const {
-	if(num_return_params != 1 or num_return_stmts != 1) return false;
+	if(num_return_values != 1 or num_return_stmts() != 1) return false;
 	// in case of builtin functions
 	if(body->statements.empty()) return true;
 	if(return_variable.has_value()) return false;
