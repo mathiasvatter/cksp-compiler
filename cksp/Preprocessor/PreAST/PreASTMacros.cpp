@@ -239,6 +239,27 @@ PreNodeAST *PreASTMacros::visit(PreNodeMacroCall &node) {
 	return &node;
 }
 
+PreNodeAST *PreASTMacros::visit(PreNodeDefineStatement &node) {
+	// A define written in a macro body belongs to the expansion: the parser leaves it there, and
+	// here it is lifted to the program - after its header and body have been through the
+	// substitution, so <define MY_#name#> is registered under the name the call gave it. The
+	// compiler runs the define pass again for the names a lift brings.
+	if (m_program->macro_call_stack.empty()) return &node;
+
+	// The name is substituted along with the rest: <define MY_#name#> is the one the call
+	// spells. PreNodeDefineHeader leaves its own name alone when visited - the define pass has
+	// no business rewriting it - so it is handed over here.
+	node.header->name->accept(*this);
+	node.header->accept(*this);
+	node.body->accept(*this);
+	auto lifted = clone_as<PreNodeDefineStatement>(&node);
+	lifted->parent = m_program;
+	m_program->add_to_define_lookup(lifted);
+	m_program->define_statements.push_back(std::move(lifted));
+	++m_lifted_defines;
+	return node.replace_with(std::make_unique<PreNodeDeadCode>(node.tok, node.parent));
+}
+
 PreNodeAST *PreASTMacros::visit(PreNodeMacroHeader &node) {
 	node.name->accept(*this);
 	node.args->accept(*this);

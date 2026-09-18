@@ -1,0 +1,19 @@
+// A define written in a macro body is the expansion's: the macro's arguments reach its name and
+// its body, so one macro can declare a name per call.
+// EXPECT message\(42\)
+// EXPECT message\(7\)
+macro add_const(#name#, value)
+    define MY_#name# := value
+end macro
+
+macro add_pair(#name#, a, b)
+    define SUM_#name# := a + b
+end macro
+
+add_const(answer, 42)
+add_pair(three_four, 3, 4)
+
+on init
+    message(MY_answer)
+    message(SUM_three_four)
+end on

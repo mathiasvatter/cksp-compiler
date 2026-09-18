@@ -36,7 +36,19 @@ Result<SuccessTag> PreprocessorParser::parse_main_constructs(PreNodeAST *parent,
         auto result_define = parse_define_definition(parent);
         if (result_define.is_error())
             return Result<SuccessTag>(result_define.get_error());
-        m_program->define_statements.push_back(std::move(result_define.unwrap()));
+        auto define = std::move(result_define.unwrap());
+        if (m_in_macro_body) {
+            // A define in a macro body is two things. It is the file's, as written, which is
+            // what a script relies on that spells <define NUM_FX_TYPES := 7> inside a macro and
+            // reads it outside - so a copy is lifted to the program here, parameters and all.
+            // And it is the expansion's, where the macro's arguments turn <MY_#name#> into the
+            // name the call gave it: for that it stays where it stands, and PreASTMacros lifts
+            // it again for every expansion.
+            m_program->define_statements.push_back(clone_as<PreNodeDefineStatement>(define.get()));
+            chunk->add_chunk(std::move(define));
+        } else {
+            m_program->define_statements.push_back(std::move(define));
+        }
     } else {
         auto token_result = parse_token(parent);
         if (token_result.is_error())
@@ -452,6 +464,12 @@ Result<std::unique_ptr<PreNodeMacroDefinition>> PreprocessorParser::parse_macro_
     }
     consume(); // consume linebreak
     auto node_chunk = std::make_unique<PreNodeChunk>(peek(), node_macro_definition.get());
+    // Left again on every path out of here, error paths included.
+    struct MacroBodyScope {
+        bool& flag;
+        explicit MacroBodyScope(bool& f) : flag(f) { flag = true; }
+        ~MacroBodyScope() { flag = false; }
+    } macro_body_scope(m_in_macro_body);
     while(peek().type != token::END_MACRO) {
         if(peek().type == token::END_MACRO) break;
         if (peek().type == token::MACRO) {

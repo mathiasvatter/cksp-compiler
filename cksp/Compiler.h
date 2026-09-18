@@ -148,6 +148,20 @@ public:
 		pre_ast->accept(macros);
 		pre_ast->debug_print();
 
+		// A macro body may hold a define, which only exists once the macro is expanded and only
+		// then carries the arguments it was called with. Every round lifts the defines of the
+		// expansions it made, substitutes them, and expands what they in turn made callable.
+		constexpr int max_define_rounds = 8;
+		for (int round = 0, lifted = macros.get_lifted_defines();
+			lifted > 0 and round < max_define_rounds; round++) {
+			PreASTDefines lifted_defines(reference_index);
+			pre_ast->accept(lifted_defines);
+			PreASTMacros lifted_macros(reference_index);
+			pre_ast->accept(lifted_macros);
+			lifted = lifted_macros.get_lifted_defines();
+			pre_ast->debug_print();
+		}
+
 		// <iterate_post_macro> and <literate_post_macro> are expanded once every macro is, so
 		// their bounds, their list and their callee can be built from macro parameters. The
 		// define pass runs again first: a name like <#obj#.CONTROLS> only exists now.

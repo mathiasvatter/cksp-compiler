@@ -19,6 +19,9 @@ public:
 
 private:
 	PreNodeProgram* m_program = nullptr;
+	/// Set while a macro body is being parsed, where a <define> stays in the body instead of
+	/// being lifted to the program - see parse_main_constructs.
+	bool m_in_macro_body = false;
 	DefinitionProvider* m_definition_provider;
 
 	Result<SuccessTag> parse_main_constructs(PreNodeAST* parent, std::unique_ptr<PreNodeChunk>& chunk);

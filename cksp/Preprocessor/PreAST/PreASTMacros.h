@@ -20,6 +20,9 @@ public:
 
 	/// number of post macros this pass left in place for a later one
 	[[nodiscard]] int get_deferred_post_macros() const { return m_deferred_post_macros; }
+	/// number of defines this pass lifted out of expanded macro bodies, and with it whether the
+	/// define pass has to run again to substitute the names they bring
+	[[nodiscard]] int get_lifted_defines() const { return m_lifted_defines; }
 
 	// transform to macro calls if macro definition exists, otherwise return node
 	PreNodeAST *visit(PreNodeFunctionCall &node) override;
@@ -33,6 +36,7 @@ public:
     PreNodeAST *visit(PreNodeChunk &node) override;
     PreNodeAST *visit(PreNodeList &node) override;
 	PreNodeAST *visit(PreNodeMacroCall &node) override;
+	PreNodeAST *visit(PreNodeDefineStatement &node) override;
 	PreNodeAST *visit(PreNodeMacroHeader &node) override;
 	PreNodeAST *visit(PreNodeIterateMacro &node) override;
 	PreNodeAST *visit(PreNodeLiterateMacro &node) override;
@@ -43,6 +47,7 @@ private:
 	std::string m_debug_token;
 	bool m_expand_post_macros = false;
 	int m_deferred_post_macros = 0;
+	int m_lifted_defines = 0;
 	/// set while the children of a deferred post macro are visited: parameters are substituted,
 	/// but nothing is expanded - the callee still has to stand in for <#n#> in the later pass
 	bool m_defer_expansion = false;
