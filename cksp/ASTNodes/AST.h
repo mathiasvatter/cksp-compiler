@@ -267,9 +267,14 @@ struct NodeReference : NodeAST {
 	virtual std::unique_ptr<struct NodePointerRef> to_pointer_ref();
 	virtual std::unique_ptr<struct NodeNDArrayRef> to_ndarray_ref();
 	std::unique_ptr<NodeAccessChain> to_method_chain() override;
+	/// Whether this reference is written with a subscript.
+	[[nodiscard]] virtual bool has_indexes() const { return false; }
 	/// The indexes this reference is written with, moved out of it. Empty for a reference that
 	/// carries none, and for one that is no subscript at all.
 	[[nodiscard]] virtual std::vector<std::unique_ptr<NodeAST>> take_indexes() { return {}; }
+	/// What an overloaded subscript on this reference is called with: the object itself, then
+	/// the indexes it is written with. Both are moved out of the reference.
+	[[nodiscard]] std::unique_ptr<struct NodeParamList> take_subscript_operands(const Token& op);
 	[[nodiscard]] std::shared_ptr<NodeDataStructure> get_declaration() const;
 	/// Completes the data structure of reference by copying missing parameters of declaration
 	void match_data_structure(const std::shared_ptr<NodeDataStructure>& data_structure);
@@ -1272,9 +1277,16 @@ struct NodeProgram final : NodeAST {
 	static NodeFunctionDefinition *replace_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def, const std::shared_ptr<NodeFunctionDefinition> &replacement);
 	void update_struct_lookup();
 	[[nodiscard]] NodeStruct* find_struct(const std::string& name, int type_parameter_count = 0) const;
-	/// The method a subscript written on this reference calls, when the reference is a single
-	/// object of a struct that overloads <op> - nothing for an array, whose <[i]> keeps its own
-	/// meaning, and nothing for anything that is not an object.
+	/// The method the struct of <ty> overloads <op> with, or nothing: when <ty> is no object,
+	/// when its struct does not overload the operator, or when the overload is written for a
+	/// different number of parameters than <num_params> - the same token stands for the unary
+	/// and the binary operator, and only one of them is this one. A <num_params> of 0 asks for
+	/// the overload whatever its arity is, which is what a subscript is looked up with: it is
+	/// declared for as many indexes as the struct cares to take.
+	[[nodiscard]] std::shared_ptr<NodeFunctionDefinition> find_overloaded_method(
+		const Type* ty, token op, size_t num_params = 0) const;
+	/// The method a subscript written on this reference calls. The declaration decides, not the
+	/// reference: an array of objects keeps its own meaning for <[i]>, the element.
 	[[nodiscard]] std::shared_ptr<NodeFunctionDefinition> find_subscript_overload(
 		const NodeReference& node, token op) const;
 	/// Puts a lowered struct's member block in its place in the AST and keeps the struct node

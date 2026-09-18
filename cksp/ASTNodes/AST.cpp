@@ -1764,15 +1764,21 @@ NodeStruct* NodeProgram::find_struct(const std::string& name, const int type_par
 	return it == struct_lookup.end() ? nullptr : it->second;
 }
 
+std::shared_ptr<NodeFunctionDefinition> NodeProgram::find_overloaded_method(
+	const Type* ty, const token op, const size_t num_params) const {
+	if (!ty or !ty->cast<ObjectType>()) return nullptr;
+	const auto strct = find_struct(ty->ksp_encoded_string());
+	const auto method = strct ? strct->get_overloaded_method(op) : nullptr;
+	if (!method or num_params == 0) return method;
+	return OPERATOR_OVERWRITES.at(op).takes_indexes
+		or static_cast<size_t>(method->get_num_params()) == num_params ? method : nullptr;
+}
+
 std::shared_ptr<NodeFunctionDefinition> NodeProgram::find_subscript_overload(
 	const NodeReference& node, const token op) const {
 	const auto declaration = node.get_declaration();
-	if (!declaration or !declaration->ty or declaration->ty->cast<CompositeType>()
-		or !declaration->ty->cast<ObjectType>()) {
-		return nullptr;
-	}
-	const auto strct = find_struct(declaration->ty->ksp_encoded_string());
-	return strct ? strct->get_overloaded_method(op) : nullptr;
+	if (!declaration or !declaration->ty or declaration->ty->cast<CompositeType>()) return nullptr;
+	return find_overloaded_method(declaration->ty, op);
 }
 
 NodeAST* NodeProgram::retire_lowered_struct(NodeStruct& node) {

@@ -70,6 +70,7 @@ struct NodeCompositeRef : NodeReference {
 
 struct NodeArrayRef final : NodeCompositeRef {
 	std::unique_ptr<NodeAST> index;
+	[[nodiscard]] bool has_indexes() const override { return index != nullptr; }
 	std::vector<std::unique_ptr<NodeAST>> take_indexes() override {
 		if (!index) return {};
 		std::vector<std::unique_ptr<NodeAST>> indexes;
@@ -151,6 +152,7 @@ struct NodeArrayRef final : NodeCompositeRef {
 struct NodeNDArrayRef final : NodeCompositeRef {
 	std::unique_ptr<NodeParamList> indexes = nullptr;
     std::unique_ptr<NodeParamList> sizes = nullptr;
+	[[nodiscard]] bool has_indexes() const override { return indexes != nullptr; }
 	std::vector<std::unique_ptr<NodeAST>> take_indexes() override {
 		return indexes ? std::move(indexes->params) : std::vector<std::unique_ptr<NodeAST>>{};
 	}

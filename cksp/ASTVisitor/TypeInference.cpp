@@ -26,85 +26,22 @@ NodeAST* TypeInference::register_reference(NodeReference& node) {
 }
 
 NodeAST* TypeInference::resolve_property_get(NodeReference& node) {
-	if (!m_enforce_source_return_annotations or !node.ty->cast<ObjectType>()
-		or node.is_raw_object_context()) return &node;
-
+	if (!m_enforce_source_return_annotations or node.is_raw_object_context()) return &node;
 	// the return count of every overload is validated where it is registered, in <DesugarStruct>
-	auto strct = m_program->find_struct(node.ty->ksp_encoded_string());
-	if (!strct or !strct->get_overloaded_method(token::GET_VALUE)) return &node;
+	const auto method = m_program->find_overloaded_method(node.ty, token::GET_VALUE);
+	if (!method) return &node;
 
-	auto receiver = node.clone_keeping_children();
 	auto get_token = node.tok;
 	get_token.type = token::GET_VALUE;
-	auto call = check_operator_overloading(get_token, receiver);
-	call->range = node.range;
-
-	auto replacement = node.replace_with(std::move(call));
-	replacement->collect_references();
-	return replacement->accept(*this);
-}
-
-std::unique_ptr<NodeFunctionCall> TypeInference::check_operator_overloading(
-	const Token& op,
-	std::unique_ptr<NodeAST> receiver,
-	std::vector<std::unique_ptr<NodeAST>> args) {
-	const auto strct = receiver->ty ? m_program->find_struct(receiver->ty->ksp_encoded_string()) : nullptr;
-	const auto def = strct ? strct->get_overloaded_method(op.type) : nullptr;
-	if (!def) return nullptr;
-
-	const auto& overload = OPERATOR_OVERWRITES.at(op.type);
-	if (static_cast<size_t>(def->get_num_params()) != args.size() + 1) {
-		// Every other operator is written with the arity its declaration has, and a declaration
-		// of any other arity is refused in DesugarStruct. A subscript is the one that can be
-		// written with fewer or more indexes than the struct takes, so it is the one that has
-		// something left to say here.
-		// A setter stands in for a statement and carries the value it is given as its last
-		// argument, so that one is not an index.
-		const bool takes_a_value = overload.num_returns == 0;
-		const auto counted = [&](const size_t arguments) {
-			const auto indexes = arguments - (takes_a_value ? 1 : 0);
-			return std::to_string(indexes) + (indexes == 1 ? " index" : " indexes");
-		};
-		auto error = make_diagnostic(ErrorType::TypeError, *receiver);
-		error.message =
-			"<" + receiver->ty->to_string() + "> overloads <" + overload.name + "> for "
-			+ counted(def->get_num_params() - 1) + ", so <" + receiver->get_string()
-			+ "> is subscripted with that many.";
-		error.expected = counted(def->get_num_params() - 1);
-		error.actual = counted(args.size());
-		error.exit();
-	}
-
-	size_t param_index = 1;
-	for (auto& arg : args) {
-		match_type(*arg, *def->header->get_param(param_index++),
-			"Argument of overloaded operator does not match expected type.");
-	}
-
-	auto params = std::make_unique<NodeParamList>(op);
-	params->add_param(std::move(receiver));
-	for (auto& arg : args) params->add_param(std::move(arg));
-	// Binding and return-type inference are handled by the function-call visitor.
-	return std::make_unique<NodeFunctionCall>(
-		false, std::make_unique<NodeFunctionHeaderRef>(def->header->name, std::move(params), op), op);
-}
-
-/// The object a subscript is written on: the reference without its indexes, carrying the same
-/// declaration so it resolves to the same storage.
-namespace {
-std::unique_ptr<NodeVariableRef> subscript_receiver(const NodeReference& node) {
-	auto receiver = std::make_unique<NodeVariableRef>(node.name, node.tok);
-	receiver->match_data_structure(node.get_declaration());
-	receiver->ty = node.get_declaration()->ty;
-	return receiver;
-}
+	return replace_with_call(node, make_operator_call(
+		get_token, *method, std::make_unique<NodeParamList>(get_token, node.clone_keeping_children())));
 }
 
 NodeAST* TypeInference::resolve_subscript_get(NodeReference& node) {
 	auto op = node.tok;
 	op.type = token::GET_ITEM;
-	auto call = check_operator_overloading(op, subscript_receiver(node), node.take_indexes());
-	if (!call) {
+	const auto method = m_program->find_subscript_overload(node, op.type);
+	if (!method) {
 		// The struct answers <obj[i] := value> and nothing else. Reading it has no meaning to
 		// fall back on: the subscript is not an array element either.
 		auto error = make_diagnostic(ErrorType::TypeError, node);
@@ -117,25 +54,62 @@ NodeAST* TypeInference::resolve_subscript_get(NodeReference& node) {
 		error.actual = node.get_string();
 		error.exit();
 	}
-	call->range = node.range;
-	auto replacement = node.replace_with(std::move(call));
-	replacement->collect_references();
-	return replacement->accept(*this);
+
+	return replace_with_call(
+		node, make_operator_call(op, *method, node.take_subscript_operands(op)));
 }
 
 NodeAST* TypeInference::resolve_subscript_set(NodeSingleAssignment& node) {
 	// <cast> matches the exact node type, and the target is a subscript of either arity.
 	const auto target = cast_node<NodeReference>(node.l_value.get());
-	if (!target or !is_overloaded_subscript(*target)) return nullptr;
-
-	auto args = target->take_indexes();
-	if (args.empty()) return nullptr;
-	args.push_back(std::move(node.r_value));
+	if (!target or !target->has_indexes()) return nullptr;
+	const auto method = m_program->find_subscript_overload(*target, token::SET_ITEM);
+	if (!method) return nullptr;
 
 	auto op = target->tok;
 	op.type = token::SET_ITEM;
-	auto call = check_operator_overloading(op, subscript_receiver(*target), std::move(args));
-	if (!call) return nullptr;
+	auto operands = target->take_subscript_operands(op);
+	// The value the assignment carries is the setter's last argument, as it is for <__set__>.
+	operands->add_param(std::move(node.r_value));
+	return replace_with_call(node, make_operator_call(op, *method, std::move(operands)));
+}
+
+std::unique_ptr<NodeFunctionCall> TypeInference::make_operator_call(
+	const Token& op,
+	const NodeFunctionDefinition& method,
+	std::unique_ptr<NodeParamList> operands) {
+	const auto& overload = OPERATOR_OVERWRITES.at(op.type);
+	if (static_cast<size_t>(method.get_num_params()) != operands->params.size()) {
+		// Only a subscript reaches this: every other operator is declared with the one arity it
+		// has - DesugarStruct refuses any other - and is looked up with the number of operands
+		// it was written with. A subscript is declared for as many indexes as the struct likes,
+		// so the count that does not match is the one at the call site.
+		const bool takes_a_value = overload.num_returns == 0;
+		const auto counted = [&](const size_t arguments) {
+			const auto indexes = arguments - (takes_a_value ? 1 : 0);
+			return std::to_string(indexes) + (indexes == 1 ? " index" : " indexes");
+		};
+		const auto& receiver = *operands->params.front();
+		auto error = make_diagnostic(ErrorType::TypeError, receiver);
+		error.message =
+			"<" + receiver.ty->to_string() + "> overloads <" + overload.name + "> for "
+			+ counted(method.get_num_params() - 1) + ", so <" + receiver.get_token_string()
+			+ "> is subscripted with that many.";
+		error.expected = counted(method.get_num_params() - 1);
+		error.actual = counted(operands->params.size() - 1);
+		error.exit();
+	}
+
+	for (size_t i = 1; i < operands->params.size(); ++i) {
+		match_type(*operands->params[i], *method.header->get_param(i),
+			"Argument of overloaded operator does not match expected type.");
+	}
+	// Binding and return-type inference are handled by the function-call visitor.
+	return std::make_unique<NodeFunctionCall>(
+		false, std::make_unique<NodeFunctionHeaderRef>(method.header->name, std::move(operands), op), op);
+}
+
+NodeAST* TypeInference::replace_with_call(NodeAST& node, std::unique_ptr<NodeFunctionCall> call) {
 	call->range = node.range;
 	auto replacement = node.replace_with(std::move(call));
 	replacement->collect_references();
@@ -1185,8 +1159,7 @@ void TypeInference::reject_rebinding_an_accessor(const NodeSingleAssignment& nod
 	const auto* target = node.l_value->ty ? node.l_value->ty->cast<ObjectType>() : nullptr;
 	if (!target or node.r_value->ty != node.l_value->ty) return;
 
-	const auto strct = m_program->find_struct(node.l_value->ty->ksp_encoded_string());
-	if (!strct or !strct->get_overloaded_method(token::SET_VALUE)) return;
+	if (!m_program->find_overloaded_method(node.l_value->ty, token::SET_VALUE)) return;
 
 	const auto type_name = node.l_value->ty->to_string();
 	auto error = make_diagnostic(ErrorType::TypeError, *node.r_value);
@@ -1210,8 +1183,9 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 	if (m_enforce_source_return_annotations and !node.initializes_storage) {
 		if (auto replacement = resolve_subscript_set(node)) return replacement;
 		reject_rebinding_an_accessor(node);
-		if (auto repl = check_operator_overloading(set_tok, node.l_value, node.r_value)) {
-			return node.replace_with(std::move(repl))->accept(*this);
+		if (const auto method = m_program->find_overloaded_method(node.l_value->ty, set_tok.type, 2)) {
+			return replace_with_call(node, make_operator_call(set_tok, *method,
+				std::make_unique<NodeParamList>(set_tok, std::move(node.l_value), std::move(node.r_value))));
 		}
 	}
 
@@ -1509,8 +1483,9 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	node.left->accept(*this);
 	node.right->accept(*this);
 
-	if (auto repl = check_operator_overloading(node.op, node.left, node.right)) {
-		return node.replace_with(std::move(repl))->accept(*this);
+	if (const auto method = m_program->find_overloaded_method(node.left->ty, node.op.type, 2)) {
+		return replace_with_call(node, make_operator_call(node.op, *method,
+			std::make_unique<NodeParamList>(node.op, std::move(node.left), std::move(node.right))));
 	}
 	const bool is_object = node.left->ty->cast<ObjectType>() != nullptr;
 
@@ -1593,8 +1568,9 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 	node.operand->accept(*this);
 
 	bool is_object = false;
-	if (auto repl = check_operator_overloading(node.op, node.operand)) {
-		return node.replace_with(std::move(repl))->accept(*this);
+	if (const auto method = m_program->find_overloaded_method(node.operand->ty, node.op.type, 1)) {
+		return replace_with_call(node, make_operator_call(node.op, *method,
+			std::make_unique<NodeParamList>(node.op, std::move(node.operand))));
 	}
 
 	bool is_compatible = node.ty->is_compatible(node.operand->ty) && node.operand->ty->is_compatible(node.ty);
