@@ -267,6 +267,9 @@ struct NodeReference : NodeAST {
 	virtual std::unique_ptr<struct NodePointerRef> to_pointer_ref();
 	virtual std::unique_ptr<struct NodeNDArrayRef> to_ndarray_ref();
 	std::unique_ptr<NodeAccessChain> to_method_chain() override;
+	/// The indexes this reference is written with, moved out of it. Empty for a reference that
+	/// carries none, and for one that is no subscript at all.
+	[[nodiscard]] virtual std::vector<std::unique_ptr<NodeAST>> take_indexes() { return {}; }
 	[[nodiscard]] std::shared_ptr<NodeDataStructure> get_declaration() const;
 	/// Completes the data structure of reference by copying missing parameters of declaration
 	void match_data_structure(const std::shared_ptr<NodeDataStructure>& data_structure);
@@ -1269,6 +1272,11 @@ struct NodeProgram final : NodeAST {
 	static NodeFunctionDefinition *replace_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def, const std::shared_ptr<NodeFunctionDefinition> &replacement);
 	void update_struct_lookup();
 	[[nodiscard]] NodeStruct* find_struct(const std::string& name, int type_parameter_count = 0) const;
+	/// The method a subscript written on this reference calls, when the reference is a single
+	/// object of a struct that overloads <op> - nothing for an array, whose <[i]> keeps its own
+	/// meaning, and nothing for anything that is not an object.
+	[[nodiscard]] std::shared_ptr<NodeFunctionDefinition> find_subscript_overload(
+		const NodeReference& node, token op) const;
 	/// Puts a lowered struct's member block in its place in the AST and keeps the struct node
 	/// itself alive in <lowered_structs> instead of destroying it. Returns the member block.
 	NodeAST* retire_lowered_struct(NodeStruct& node);

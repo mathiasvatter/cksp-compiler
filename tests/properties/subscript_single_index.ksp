@@ -1,0 +1,26 @@
+// One index is the fewest a subscript is written with, and an array of objects keeps its own.
+// EXPECT %Table____base\[[^]]+\] := 18
+// EXPECT message\(%Table____base\[\$t\] \+ 2\)
+// EXPECT message\(%Cell____v\[%cells\[1\]\]\)
+struct Table
+    base: int
+    function __getitem__(self, i: int): int
+        return self.base + i
+    end function
+    function __setitem__(self, i: int, value: int)
+        self.base := value - i
+    end function
+end struct
+struct Cell
+    v: int
+    function __get__(self): int
+        return self.v
+    end function
+end struct
+on init
+    declare t := Table(10)
+    t[2] := 20
+    message(t[2])
+    declare cells[2]: Cell[] := (Cell(1), Cell(2))
+    message(cells[1])
+end on

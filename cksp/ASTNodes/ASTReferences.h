@@ -70,6 +70,12 @@ struct NodeCompositeRef : NodeReference {
 
 struct NodeArrayRef final : NodeCompositeRef {
 	std::unique_ptr<NodeAST> index;
+	std::vector<std::unique_ptr<NodeAST>> take_indexes() override {
+		if (!index) return {};
+		std::vector<std::unique_ptr<NodeAST>> indexes;
+		indexes.push_back(std::move(index));
+		return indexes;
+	}
 	NodeArrayRef(std::string name, std::unique_ptr<NodeAST> index, Token tok, DataType data_type=DataType::Mutable)
 		: NodeCompositeRef(std::move(name), NodeType::ArrayRef, std::move(tok), data_type), index(std::move(index)) {
 		set_child_parents();
@@ -145,6 +151,9 @@ struct NodeArrayRef final : NodeCompositeRef {
 struct NodeNDArrayRef final : NodeCompositeRef {
 	std::unique_ptr<NodeParamList> indexes = nullptr;
     std::unique_ptr<NodeParamList> sizes = nullptr;
+	std::vector<std::unique_ptr<NodeAST>> take_indexes() override {
+		return indexes ? std::move(indexes->params) : std::vector<std::unique_ptr<NodeAST>>{};
+	}
 	NodeNDArrayRef(std::string name, std::unique_ptr<NodeParamList> indexes, Token tok, DataType data_type=DataType::Mutable)
 		: NodeCompositeRef(std::move(name), NodeType::NDArrayRef, std::move(tok), data_type), indexes(std::move(indexes)) {
 		NodeNDArrayRef::set_child_parents();

@@ -96,6 +96,13 @@ class DesugarStruct final : public ASTDesugaring {
 		if (it != operator_overload_methods.end()) {
 			return it->second;
 		}
+		// A subscript is written with as many indexes as the struct cares to take, so its
+		// entry states the fewest and every count above it is the same operator.
+		for (const auto& [op, overload] : OPERATOR_OVERWRITES) {
+			if (overload.takes_indexes and overload.name == name and num_args > overload.num_params) {
+				return op;
+			}
+		}
 		return std::nullopt;
 	}
 
@@ -309,11 +316,17 @@ public:
 			// the name is an operator overload, but with a parameter count no operator uses, so
 			// <get_operator_token> would silently leave it as an ordinary method
 			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
-			error.message = "Operator overload <" + overload->name + "> must take exactly "
-				+ std::to_string(overload->num_params)
-				+ (overload->num_params == 1 ? " parameter, " : " parameters, ")
-				+ "<" + NodeStruct::SELF + "> included.";
-			error.expected = std::to_string(overload->num_params) + " parameters";
+			const auto count = std::to_string(overload->num_params)
+				+ (overload->num_params == 1 ? " parameter, " : " parameters, ");
+			error.message = overload->takes_indexes
+				// One index is the fewest a subscript can be written with; <self> and, for the
+				// setter, the value it is given account for the rest of the minimum.
+				? "Operator overload <" + overload->name + "> must take at least " + count
+					+ "<" + NodeStruct::SELF + "> and one index included."
+				: "Operator overload <" + overload->name + "> must take exactly " + count
+					+ "<" + NodeStruct::SELF + "> included.";
+			error.expected = (overload->takes_indexes ? "at least " : "")
+				+ std::to_string(overload->num_params) + " parameters";
 			error.actual = std::to_string(node.header->params.size()) + " parameters";
 			error.exit();
 		}

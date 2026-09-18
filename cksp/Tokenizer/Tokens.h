@@ -34,6 +34,8 @@
 	XX(ASSIGN, ":=")     \
 	XX(SET_VALUE, "set_value")     \
 	XX(GET_VALUE, "get_value")     \
+	XX(SET_ITEM, "set_item")     \
+	XX(GET_ITEM, "get_item")     \
 	XX(ARROW, "->")     \
 	XX(SUB, "-") \
 	XX(ADD, "+") \
@@ -236,26 +238,34 @@ struct OperatorOverload {
 	std::string name;
 	int num_params;
 	int num_returns;
+	/// A subscript carries one parameter per index it is written with, so <num_params> is the
+	/// fewest it takes rather than the only count: <__getitem__(self, i)> answers <obj[i]> and
+	/// <__getitem__(self, i, j)> answers <obj[i, j]>. Python keeps the arity fixed and packs
+	/// the indexes into a tuple instead; CKSP has no tuple, and it already writes a
+	/// multidimensional subscript as a comma-separated list, so here they are spread.
+	bool takes_indexes = false;
 };
 inline std::unordered_map<token, OperatorOverload> OPERATOR_OVERWRITES = {{
-			{token::ADD, {"__add__", 2, 1}},             // +
-			{token::SUB, {"__sub__", 2, 1}},             // -
-			{token::MULT, {"__mul__", 2, 1}},            // *
-			{token::DIV, {"__div__", 2, 1}},         	// /
-			{token::MODULO, {"__mod__", 2, 1}},          // %
-			{token::EQUAL, {"__eq__", 2, 1}},            // =
-			{token::NOT_EQUAL, {"__ne__", 2, 1}},        // #
-			{token::LESS_THAN, {"__lt__", 2, 1}},        // <
-			{token::LESS_EQUAL, {"__le__", 2, 1}},       // <=
-			{token::GREATER_THAN, {"__gt__", 2, 1}},     // >
-			{token::GREATER_EQUAL, {"__ge__", 2, 1}},    // >=
-			{token::BIT_NOT, {"__invert__", 1, 1}},      // .not.
-			{token::BIT_AND, {"__and__", 2, 1}},         // .and.
-			{token::BIT_OR, {"__or__", 2, 1}},           // .or.
-			{token::BIT_XOR, {"__xor__", 2, 1}},         // .xor.
-			{token::GET_VALUE, {"__get__", 1, 1}},       // in expression context
-			{token::SET_VALUE, {"__set__", 2, 0}},       // in assignment context
-		}};
+	{token::ADD, {"__add__", 2, 1}},             // +
+	{token::SUB, {"__sub__", 2, 1}},             // -
+	{token::MULT, {"__mul__", 2, 1}},            // *
+	{token::DIV, {"__div__", 2, 1}},         	// /
+	{token::MODULO, {"__mod__", 2, 1}},          // %
+	{token::EQUAL, {"__eq__", 2, 1}},            // =
+	{token::NOT_EQUAL, {"__ne__", 2, 1}},        // #
+	{token::LESS_THAN, {"__lt__", 2, 1}},        // <
+	{token::LESS_EQUAL, {"__le__", 2, 1}},       // <=
+	{token::GREATER_THAN, {"__gt__", 2, 1}},     // >
+	{token::GREATER_EQUAL, {"__ge__", 2, 1}},    // >=
+	{token::BIT_NOT, {"__invert__", 1, 1}},      // .not.
+	{token::BIT_AND, {"__and__", 2, 1}},         // .and.
+	{token::BIT_OR, {"__or__", 2, 1}},           // .or.
+	{token::BIT_XOR, {"__xor__", 2, 1}},         // .xor.
+	{token::GET_VALUE, {"__get__", 1, 1}},       // in expression context
+	{token::SET_VALUE, {"__set__", 2, 0}},       // in assignment context
+	{token::GET_ITEM, {"__getitem__", 2, 1, true}},  // obj[i, ...] in expression context
+	{token::SET_ITEM, {"__setitem__", 3, 0, true}},  // obj[i, ...] in assignment context
+}};
 
 inline std::unordered_map<token, std::pair<std::string, int>> BOOLEAN_FUNCTIONS = {
 	{token::GREATER_THAN, {"CKSP::__gt__", 2}},

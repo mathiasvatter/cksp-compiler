@@ -1,0 +1,22 @@
+// A subscript on a single object is the struct's <__getitem__>/<__setitem__>, with one
+// parameter per index and the value last - the indexes are arguments, so a sentinel like -1
+// reaches the call untouched instead of addressing storage.
+// EXPECT set_engine_par\(%EnginePar____par\[[^]]+\], 630000, 0, -1, -1\)
+// EXPECT message\(get_engine_par\(%EnginePar____par\[[^]]+\], 0, -1, -1\)\)
+struct EnginePar
+    par: int
+    function __getitem__(self, g: int, s: int): int
+        return get_engine_par(self.par, g, s, -1)
+    end function
+    function __setitem__(self, g: int, s: int, value: int)
+        set_engine_par(self.par, value, g, s, -1)
+    end function
+end struct
+namespace group.slot
+    declare volume := EnginePar($ENGINE_PAR_VOLUME)
+end namespace
+on init
+    declare g := 0
+    group.slot.volume[g, -1] := 630000
+    message(group.slot.volume[g, -1])
+end on

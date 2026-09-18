@@ -399,26 +399,43 @@ public:
 	NodeAST* resolve_property_get(NodeReference& node);
 	void reject_rebinding_an_accessor(const NodeSingleAssignment& node) const;
 
+	/// Whether <obj[i]> here stands for a call to an overloaded subscript rather than for an
+	/// array element. See NodeProgram::find_subscript_overload.
+	[[nodiscard]] bool is_overloaded_subscript(const NodeReference& node) const {
+		return m_enforce_source_return_annotations
+			and (m_program->find_subscript_overload(node, token::GET_ITEM)
+				or m_program->find_subscript_overload(node, token::SET_ITEM));
+	}
+	/// Replaces <obj[i, ...]> with the <__getitem__> call it stands for.
+	NodeAST* resolve_subscript_get(NodeReference& node);
+	/// Replaces <obj[i, ...] := value> with the <__setitem__> call it stands for, if it is one.
+	NodeAST* resolve_subscript_set(NodeSingleAssignment& node);
+
+	/// The one place an overloaded operator turns into the call it stands for: the receiver's
+	/// struct is asked for the method, its parameters are matched against the arguments, and
+	/// the call is built. Nothing if the struct does not overload this operator.
+	///
+	/// The receiver and the arguments are taken, so a caller that may not want the call asks
+	/// <is_overloaded_subscript> or goes through the template below, which looks the method up
+	/// before it moves anything.
+	std::unique_ptr<NodeFunctionCall> check_operator_overloading(
+		const Token& op,
+		std::unique_ptr<NodeAST> receiver,
+		std::vector<std::unique_ptr<NodeAST>> args);
+
 	// Keep ownership with the caller until a matching overload is found.
 	template<typename Receiver, typename... Args>
 	std::unique_ptr<NodeFunctionCall> check_operator_overloading(const Token& op,
 		std::unique_ptr<Receiver>& receiver, std::unique_ptr<Args>&... args) {
 		if (!receiver or !receiver->ty->template cast<ObjectType>()) return nullptr;
-		auto strct = m_program->find_struct(receiver->ty->ksp_encoded_string());
-		if (!strct) return nullptr;
-		auto def = strct->get_overloaded_method(op.type);
+		const auto strct = m_program->find_struct(receiver->ty->ksp_encoded_string());
+		const auto def = strct ? strct->get_overloaded_method(op.type) : nullptr;
 		if (!def or def->get_num_params() != 1 + sizeof...(Args)) return nullptr;
 
-		std::size_t param_index = 1;
-		([&] {
-			match_type(*args, *def->header->get_param(param_index++),
-				"Argument of overloaded operator does not match expected type.");
-		}(), ...);
-
-		auto call = std::make_unique<NodeFunctionCall>(
-			def->header->name, op, std::move(receiver), std::move(args)...);
-		// Binding and return-type inference are handled by the function-call visitor.
-		return call;
+		std::vector<std::unique_ptr<NodeAST>> arguments;
+		arguments.reserve(sizeof...(Args));
+		(arguments.push_back(std::move(args)), ...);
+		return check_operator_overloading(op, std::move(receiver), std::move(arguments));
 	}
 
 	/// <Note.storage(.pitch)>: resolves the selector against the receiver struct and types the

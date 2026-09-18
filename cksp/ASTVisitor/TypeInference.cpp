@@ -44,6 +44,104 @@ NodeAST* TypeInference::resolve_property_get(NodeReference& node) {
 	return replacement->accept(*this);
 }
 
+std::unique_ptr<NodeFunctionCall> TypeInference::check_operator_overloading(
+	const Token& op,
+	std::unique_ptr<NodeAST> receiver,
+	std::vector<std::unique_ptr<NodeAST>> args) {
+	const auto strct = receiver->ty ? m_program->find_struct(receiver->ty->ksp_encoded_string()) : nullptr;
+	const auto def = strct ? strct->get_overloaded_method(op.type) : nullptr;
+	if (!def) return nullptr;
+
+	const auto& overload = OPERATOR_OVERWRITES.at(op.type);
+	if (static_cast<size_t>(def->get_num_params()) != args.size() + 1) {
+		// Every other operator is written with the arity its declaration has, and a declaration
+		// of any other arity is refused in DesugarStruct. A subscript is the one that can be
+		// written with fewer or more indexes than the struct takes, so it is the one that has
+		// something left to say here.
+		// A setter stands in for a statement and carries the value it is given as its last
+		// argument, so that one is not an index.
+		const bool takes_a_value = overload.num_returns == 0;
+		const auto counted = [&](const size_t arguments) {
+			const auto indexes = arguments - (takes_a_value ? 1 : 0);
+			return std::to_string(indexes) + (indexes == 1 ? " index" : " indexes");
+		};
+		auto error = make_diagnostic(ErrorType::TypeError, *receiver);
+		error.message =
+			"<" + receiver->ty->to_string() + "> overloads <" + overload.name + "> for "
+			+ counted(def->get_num_params() - 1) + ", so <" + receiver->get_string()
+			+ "> is subscripted with that many.";
+		error.expected = counted(def->get_num_params() - 1);
+		error.actual = counted(args.size());
+		error.exit();
+	}
+
+	size_t param_index = 1;
+	for (auto& arg : args) {
+		match_type(*arg, *def->header->get_param(param_index++),
+			"Argument of overloaded operator does not match expected type.");
+	}
+
+	auto params = std::make_unique<NodeParamList>(op);
+	params->add_param(std::move(receiver));
+	for (auto& arg : args) params->add_param(std::move(arg));
+	// Binding and return-type inference are handled by the function-call visitor.
+	return std::make_unique<NodeFunctionCall>(
+		false, std::make_unique<NodeFunctionHeaderRef>(def->header->name, std::move(params), op), op);
+}
+
+/// The object a subscript is written on: the reference without its indexes, carrying the same
+/// declaration so it resolves to the same storage.
+namespace {
+std::unique_ptr<NodeVariableRef> subscript_receiver(const NodeReference& node) {
+	auto receiver = std::make_unique<NodeVariableRef>(node.name, node.tok);
+	receiver->match_data_structure(node.get_declaration());
+	receiver->ty = node.get_declaration()->ty;
+	return receiver;
+}
+}
+
+NodeAST* TypeInference::resolve_subscript_get(NodeReference& node) {
+	auto op = node.tok;
+	op.type = token::GET_ITEM;
+	auto call = check_operator_overloading(op, subscript_receiver(node), node.take_indexes());
+	if (!call) {
+		// The struct answers <obj[i] := value> and nothing else. Reading it has no meaning to
+		// fall back on: the subscript is not an array element either.
+		auto error = make_diagnostic(ErrorType::TypeError, node);
+		error.message =
+			"<" + node.get_declaration()->ty->to_string() + "> overloads <"
+			+ OPERATOR_OVERWRITES.at(token::SET_ITEM).name + "> but not <"
+			+ OPERATOR_OVERWRITES.at(token::GET_ITEM).name + ">, so <" + node.name
+			+ "> can be subscripted to write it and not to read it.";
+		error.expected = "an overloaded <" + OPERATOR_OVERWRITES.at(token::GET_ITEM).name + ">";
+		error.actual = node.get_string();
+		error.exit();
+	}
+	call->range = node.range;
+	auto replacement = node.replace_with(std::move(call));
+	replacement->collect_references();
+	return replacement->accept(*this);
+}
+
+NodeAST* TypeInference::resolve_subscript_set(NodeSingleAssignment& node) {
+	// <cast> matches the exact node type, and the target is a subscript of either arity.
+	const auto target = cast_node<NodeReference>(node.l_value.get());
+	if (!target or !is_overloaded_subscript(*target)) return nullptr;
+
+	auto args = target->take_indexes();
+	if (args.empty()) return nullptr;
+	args.push_back(std::move(node.r_value));
+
+	auto op = target->tok;
+	op.type = token::SET_ITEM;
+	auto call = check_operator_overloading(op, subscript_receiver(*target), std::move(args));
+	if (!call) return nullptr;
+	call->range = node.range;
+	auto replacement = node.replace_with(std::move(call));
+	replacement->collect_references();
+	return replacement->accept(*this);
+}
+
 void TypeInference::cast_data_structure_types(const NodeProgram* program, const bool cast) {
 	const auto def_provider = program->def_provider;
 	for (auto& ref : def_provider->get_all_references()) {
@@ -228,6 +326,12 @@ NodeAST * TypeInference::visit(NodeArray& node) {
 
 NodeAST * TypeInference::visit(NodeArrayRef& node) {
 	if(node.index) node.index->accept(*this);
+	if (node.index and is_overloaded_subscript(node)) {
+		// The target of an assignment becomes the <__setitem__> call in the assignment itself,
+		// which is where the value it takes comes from. Everything else is a read.
+		if (node.is_raw_object_context()) return &node;
+		return resolve_subscript_get(node);
+	}
 	// if handed over without index -> as whole array structure type
 	if(!node.index) {
 		if(node.ty == TypeRegistry::Unknown) {
@@ -289,6 +393,10 @@ NodeAST * TypeInference::visit(NodeNDArray& node) {
 
 NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
 	if(node.indexes) node.indexes->accept(*this);
+	if (node.indexes and is_overloaded_subscript(node)) {
+		if (node.is_raw_object_context()) return &node;
+		return resolve_subscript_get(node);
+	}
 	if(node.sizes) node.sizes->accept(*this);
     // if handed over without index -> as whole array structure type
     if(!node.indexes) {
@@ -1100,6 +1208,7 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 	auto set_tok = node.tok;
 	set_tok.type = token::SET_VALUE;
 	if (m_enforce_source_return_annotations and !node.initializes_storage) {
+		if (auto replacement = resolve_subscript_set(node)) return replacement;
 		reject_rebinding_an_accessor(node);
 		if (auto repl = check_operator_overloading(set_tok, node.l_value, node.r_value)) {
 			return node.replace_with(std::move(repl))->accept(*this);

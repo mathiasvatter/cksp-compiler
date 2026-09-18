@@ -307,6 +307,10 @@ NodeAST * ASTSemanticAnalysis::visit(NodeArray &node) {
 
 NodeAST * ASTSemanticAnalysis::visit(NodeArrayRef &node) {
     if(node.index) node.index->accept(*this);
+	// A subscript on a single object is a call to the struct's <__getitem__>/<__setitem__>,
+	// which TypeInference builds once the types are known. Until then the reference is left
+	// as it stands - it refers to no array, and looking for one would end here.
+	if (node.index and may_be_overloaded_subscript(node)) return &node;
 	NodeReference* new_node = &node;
 	if(const auto repl = replace_incorrectly_detected_reference(&node)) {
 		new_node = repl;
@@ -344,6 +348,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeNDArrayRef& node) {
 	// TypeInference, which runs after this pass: the owning struct is not known before its type is.
 	// determine_sizes() would report a missing declaration as an internal error instead.
 	if (!node.get_declaration() and node.in_access_chain()) return &node;
+	if (node.indexes and may_be_overloaded_subscript(node)) return &node;
 
 	if (!node.determine_sizes()) {
 		NodeReference *new_node = &node;

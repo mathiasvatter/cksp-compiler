@@ -374,7 +374,9 @@ bool NodeReference::is_raw_object_context() const {
 	if (!args or args->params.empty() or args->params.front().get() != this) return false;
 	const auto header = args->parent ? args->parent->cast<NodeFunctionHeaderRef>() : nullptr;
 	return header and (header->tok.type == token::GET_VALUE
-		or header->tok.type == token::SET_VALUE);
+		or header->tok.type == token::SET_VALUE
+		or header->tok.type == token::GET_ITEM
+		or header->tok.type == token::SET_ITEM);
 }
 
 std::unique_ptr<NodeAST> NodeReference::clone_keeping_children() {
@@ -1760,6 +1762,17 @@ void NodeProgram::update_struct_lookup() {
 NodeStruct* NodeProgram::find_struct(const std::string& name, const int type_parameter_count) const {
 	const auto it = struct_lookup.find({name, type_parameter_count});
 	return it == struct_lookup.end() ? nullptr : it->second;
+}
+
+std::shared_ptr<NodeFunctionDefinition> NodeProgram::find_subscript_overload(
+	const NodeReference& node, const token op) const {
+	const auto declaration = node.get_declaration();
+	if (!declaration or !declaration->ty or declaration->ty->cast<CompositeType>()
+		or !declaration->ty->cast<ObjectType>()) {
+		return nullptr;
+	}
+	const auto strct = find_struct(declaration->ty->ksp_encoded_string());
+	return strct ? strct->get_overloaded_method(op) : nullptr;
 }
 
 NodeAST* NodeProgram::retire_lowered_struct(NodeStruct& node) {
