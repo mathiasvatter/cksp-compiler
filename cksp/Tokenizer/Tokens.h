@@ -7,6 +7,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -180,6 +181,9 @@ struct Keyword {
 	std::string value;
 };
 
+/// Source spelling of the CKSP pragma directive.
+inline constexpr std::string_view PRAGMA_LEXEME = "#pragma";
+
 template <typename K, typename V>
 std::unordered_map<V, K> invert_map(const std::unordered_map<K, V>& map) {
     std::unordered_map<V, K> inverted_map;
@@ -203,7 +207,7 @@ inline std::unordered_set<std::string> UI_CONTROLS = {"ui_label", "ui_button", "
 										   "ui_panel", "ui_mouse_area"};
 inline std::unordered_map<std::string, token> DECLARATION_SYNTAX = {{"declare", token::DECLARE}, {"define", token::DEFINE}, {"const", token::CONST}, {"polyphonic", token::POLYPHONIC},
                                                   {"read", token::READ},{"pers", token::PERS}, {"instpers", token::INSTPERS}, {"local", token::LOCAL}, {"global", token::GLOBAL}};
-inline std::unordered_map<std::string, token> PREPROCESSOR_SYNTAX = {{"#pragma", token::PRAGMA}, {"import", token::IMPORT}, {"as", token::AS}, {"on", token::ON},
+inline std::unordered_map<std::string, token> PREPROCESSOR_SYNTAX = {{std::string(PRAGMA_LEXEME), token::PRAGMA}, {"import", token::IMPORT}, {"as", token::AS}, {"on", token::ON},
 												   {"iterate_macro", token::ITERATE_MACRO}, {"literate_macro", token::LITERATE_MACRO}, {"iterate_post_macro", token::ITERATE_POST_MACRO}, {"literate_post_macro", token::LITERATE_POST_MACRO},
 													{"START_INC", token::START_INC}, {"END_INC", token::END_INC}, {"SET_CONDITION", token::SET_CONDITION}, {"RESET_CONDITION", token::RESET_CONDITION},
                                                    {"USE_CODE_IF", token::USE_CODE_IF}, {"USE_CODE_IF_NOT", token::USE_CODE_IF_NOT}, {"END_USE_CODE", token::END_USE_CODE}};

@@ -96,7 +96,8 @@ struct Diagnostic {
             RenameReservedResult,
             RenameReservedParameter,
             ReplaceInvalidCharacter,
-            CreateOutputFolder
+            CreateOutputFolder,
+            ReplacePragmaWorkaround,
         };
         enum class EditKind {
             InsertBefore,

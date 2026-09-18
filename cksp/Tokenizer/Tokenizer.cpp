@@ -204,14 +204,16 @@ void Tokenizer::add_invalid_character_fix(
 }
 
 bool Tokenizer::is_pragma() const {
-    auto workaround_pragma = peek(0) == '/' and peek(1) == '/' and peek(2) == '#' and
-            peek(3) == 'p' and peek(4) == 'r' and peek(5) == 'a' and
-            peek(6) == 'g' and peek(7) == 'm' and peek(8) == 'a';
+	const auto remaining = std::string_view(m_input).substr(m_pos);
+	const auto workaround_pragma = remaining.starts_with("//") and remaining.substr(2).starts_with(PRAGMA_LEXEME);
 	if(workaround_pragma) {
-		auto token = Token(token::PRAGMA, "//#pragma", m_line, m_line_pos, m_current_file);
-		auto error = Diagnostic(ErrorType::CompileWarning, "", "#pragma", token);
-		error.message = "Found usage of //#pragma. Note that this is a workaround and will be removed in future versions.";
-		error.report(m_diagnostics);
+		const auto token = Token(token::PRAGMA, "//" + std::string(PRAGMA_LEXEME), m_line, m_line_pos, m_current_file);
+		auto warning = Diagnostic(ErrorType::CompileWarning, "", std::string(PRAGMA_LEXEME), token);
+		warning.message = "Found usage of //#pragma. Note that this is a workaround and will be removed in future versions.";
+		warning.fix = DiagnosticFixBuilder(Diagnostic::DiagnosticFix::FixKind::ReplacePragmaWorkaround, "Replace '//#pragma' workaround")
+			.replace(token, std::string(PRAGMA_LEXEME))
+			.build();
+		warning.report(m_diagnostics);
 	}
 	return workaround_pragma;
 }
@@ -228,9 +230,8 @@ void Tokenizer::warn_about_sublime_pragma() {
 
 	auto body = StringUtils::trim(
 		std::string_view(m_input).substr(m_pos + 1, close - m_pos - 1));
-	static constexpr std::string_view PRAGMA = "#pragma";
-	if (!StringUtils::starts_with(body, PRAGMA)) return;
-	body = body.substr(PRAGMA.size());
+	if (!StringUtils::starts_with(body, PRAGMA_LEXEME)) return;
+	body = body.substr(PRAGMA_LEXEME.size());
 	// <{#pragmatic}> is a comment, not a pragma: the word has to end where <#pragma> does
 	if (body.empty() or !is_space(body.front())) return;
 	body = StringUtils::trim_start(body);
@@ -242,12 +243,7 @@ void Tokenizer::warn_about_sublime_pragma() {
 		? std::string()
 		: std::string(StringUtils::trim(body.substr(option_end)));
 
-	const Token pragma_token(
-		token::PRAGMA,
-		m_input.substr(m_pos, close - m_pos + 1),
-		m_line,
-		m_line_pos,
-		m_current_file);
+	const Token pragma_token(token::PRAGMA,m_input.substr(m_pos, close - m_pos + 1), m_line, m_line_pos, m_current_file);
 	pragma_migration::make_diagnostic(pragma_token, option, argument).report(m_diagnostics);
 }
 

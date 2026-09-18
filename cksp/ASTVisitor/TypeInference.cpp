@@ -33,8 +33,7 @@ NodeAST* TypeInference::resolve_property_get(NodeReference& node) {
 
 	auto get_token = node.tok;
 	get_token.type = token::GET_VALUE;
-	return replace_with_call(node, make_operator_overload_call(
-		get_token, *method, node.clone_keeping_children()));
+	return replace_with_call(node, make_operator_overload_call(get_token, *method, node.clone_keeping_children()));
 }
 
 NodeAST* TypeInference::resolve_subscript_get(NodeReference& node) {
@@ -55,8 +54,7 @@ NodeAST* TypeInference::resolve_subscript_get(NodeReference& node) {
 		error.exit();
 	}
 
-	return replace_with_call(
-		node, make_operator_overload_call(op, *method, node.take_subscript_operands(op)));
+	return replace_with_call(node, make_operator_overload_call(op, *method, node.take_subscript_operands(op)));
 }
 
 NodeAST* TypeInference::resolve_subscript_set(NodeSingleAssignment& node) {
@@ -1188,8 +1186,7 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 		if (auto replacement = resolve_subscript_set(node)) return replacement;
 		reject_rebinding_an_accessor(node);
 		if (const auto method = m_program->find_overloaded_method(node.l_value->ty, set_tok.type, 2)) {
-			return replace_with_call(node, make_operator_overload_call(
-				set_tok, *method, std::move(node.l_value), std::move(node.r_value)));
+			return replace_with_call(node, make_operator_overload_call(set_tok, *method, std::move(node.l_value), std::move(node.r_value)));
 		}
 	}
 
@@ -1488,8 +1485,7 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	node.right->accept(*this);
 
 	if (const auto method = m_program->find_overloaded_method(node.left->ty, node.op.type, 2)) {
-		return replace_with_call(node, make_operator_overload_call(
-			node.op, *method, std::move(node.left), std::move(node.right)));
+		return replace_with_call(node, make_operator_overload_call(node.op, *method, std::move(node.left), std::move(node.right)));
 	}
 	const bool is_object = node.left->ty->cast<ObjectType>() != nullptr;
 
