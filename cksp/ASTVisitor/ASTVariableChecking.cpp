@@ -366,7 +366,7 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
             if (const auto list = declaration->cast<NodeList>(); list && list->is_jagged) {
                 auto array = std::make_unique<NodeArrayRef>(node.name, nullptr, node.tok);
                 array->ty = TypeRegistry::ArrayOfInt;
-                return node.replace_with(std::move(array))->accept(*this);
+                return node.replace_and_visit(std::move(array), *this);
             }
         }
     }
@@ -386,9 +386,9 @@ NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 	}
 	// check for array constants
 	if(auto nd_constant = node.transform_ndarray_constant()) {
-		return node.replace_with(std::move(nd_constant))->accept(*this);
+		return node.replace_and_visit(std::move(nd_constant), *this);
 	} else if(auto array_constant = node.transform_array_constant()) {
-		return node.replace_with(std::move(array_constant))->accept(*this);
+		return node.replace_and_visit(std::move(array_constant), *this);
 	}
     if(!node_declaration) {
 		if (pass == Pass::PreUIControlLowering) return &node;

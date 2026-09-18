@@ -121,7 +121,7 @@ private:
 				auto node_decl = std::make_unique<NodeSingleDeclaration>(std::move(node.variable), nullptr, node.tok);
 				node_block->add_as_stmt(std::move(node_decl));
 				node_block->add_as_stmt(std::move(node_assignment));
-				return node.replace_with(std::move(node_block))->accept(*this);
+				return node.replace_and_visit(std::move(node_block), *this);
 			}
 		}
 		node.value->accept(*this);

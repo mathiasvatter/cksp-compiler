@@ -33,8 +33,8 @@ NodeAST* TypeInference::resolve_property_get(NodeReference& node) {
 
 	auto get_token = node.tok;
 	get_token.type = token::GET_VALUE;
-	return replace_with_call(node, make_operator_call(
-		get_token, *method, std::make_unique<NodeParamList>(get_token, node.clone_keeping_children())));
+	return replace_with_call(node, make_operator_overload_call(
+		get_token, *method, node.clone_keeping_children()));
 }
 
 NodeAST* TypeInference::resolve_subscript_get(NodeReference& node) {
@@ -56,7 +56,7 @@ NodeAST* TypeInference::resolve_subscript_get(NodeReference& node) {
 	}
 
 	return replace_with_call(
-		node, make_operator_call(op, *method, node.take_subscript_operands(op)));
+		node, make_operator_overload_call(op, *method, node.take_subscript_operands(op)));
 }
 
 NodeAST* TypeInference::resolve_subscript_set(NodeSingleAssignment& node) {
@@ -71,15 +71,12 @@ NodeAST* TypeInference::resolve_subscript_set(NodeSingleAssignment& node) {
 	auto operands = target->take_subscript_operands(op);
 	// The value the assignment carries is the setter's last argument, as it is for <__set__>.
 	operands->add_param(std::move(node.r_value));
-	return replace_with_call(node, make_operator_call(op, *method, std::move(operands)));
+	return replace_with_call(node, make_operator_overload_call(op, *method, std::move(operands)));
 }
 
-std::unique_ptr<NodeFunctionCall> TypeInference::make_operator_call(
-	const Token& op,
-	const NodeFunctionDefinition& method,
-	std::unique_ptr<NodeParamList> operands) {
+std::unique_ptr<NodeFunctionCall> TypeInference::make_operator_overload_call(const Token& op, const NodeFunctionDefinition& method, std::unique_ptr<NodeParamList> operands) {
 	const auto& overload = OPERATOR_OVERWRITES.at(op.type);
-	if (static_cast<size_t>(method.get_num_params()) != operands->params.size()) {
+	if (method.get_num_params() != operands->params.size()) {
 		// Only a subscript reaches this: every other operator is declared with the one arity it
 		// has - DesugarStruct refuses any other - and is looked up with the number of operands
 		// it was written with. A subscript is declared for as many indexes as the struct likes,
@@ -106,7 +103,14 @@ std::unique_ptr<NodeFunctionCall> TypeInference::make_operator_call(
 	}
 	// Binding and return-type inference are handled by the function-call visitor.
 	return std::make_unique<NodeFunctionCall>(
-		false, std::make_unique<NodeFunctionHeaderRef>(method.header->name, std::move(operands), op), op);
+		false,
+		std::make_unique<NodeFunctionHeaderRef>(
+			method.header->name,
+			std::move(operands),
+			op
+		),
+		op
+	);
 }
 
 NodeAST* TypeInference::replace_with_call(NodeAST& node, std::unique_ptr<NodeFunctionCall> call) {
@@ -919,19 +923,19 @@ NodeAST * TypeInference::visit(NodeInitializerList& node) {
 	if(node.size() == 1 and node.elem(0)->get_node_type() != NodeType::InitializerList) {
 		if(auto decl = node.parent->cast<NodeSingleDeclaration>()) {
 			if(decl->variable->ty->get_type_kind() != TypeKind::Composite) {
-				return node.replace_with(std::move(node.elem(0)))->accept(*this);
+				return node.replace_and_visit(std::move(node.elem(0)), *this);
 			}
 		} else if(auto assign = node.parent->cast<NodeSingleAssignment>()) {
 			if(assign->l_value->ty->get_type_kind() != TypeKind::Composite) {
-				return node.replace_with(std::move(node.elem(0)))->accept(*this);
+				return node.replace_and_visit(std::move(node.elem(0)), *this);
 			}
 		} else if(auto ret = node.parent->cast<NodeReturn>()) {
 			if(ret->get_definition() and ret->get_definition()->ty->get_type_kind() != TypeKind::Composite) {
-				return node.replace_with(std::move(node.elem(0)))->accept(*this);
+				return node.replace_and_visit(std::move(node.elem(0)), *this);
 			}
 		} else if(auto set = node.parent->cast<NodeSetControl>()) {
 			if(set->value->ty->get_type_kind() != TypeKind::Composite) {
-				return node.replace_with(std::move(node.elem(0)))->accept(*this);
+				return node.replace_and_visit(std::move(node.elem(0)), *this);
 			}
 		}
 	}
@@ -1184,8 +1188,8 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 		if (auto replacement = resolve_subscript_set(node)) return replacement;
 		reject_rebinding_an_accessor(node);
 		if (const auto method = m_program->find_overloaded_method(node.l_value->ty, set_tok.type, 2)) {
-			return replace_with_call(node, make_operator_call(set_tok, *method,
-				std::make_unique<NodeParamList>(set_tok, std::move(node.l_value), std::move(node.r_value))));
+			return replace_with_call(node, make_operator_overload_call(
+				set_tok, *method, std::move(node.l_value), std::move(node.r_value)));
 		}
 	}
 
@@ -1484,8 +1488,8 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	node.right->accept(*this);
 
 	if (const auto method = m_program->find_overloaded_method(node.left->ty, node.op.type, 2)) {
-		return replace_with_call(node, make_operator_call(node.op, *method,
-			std::make_unique<NodeParamList>(node.op, std::move(node.left), std::move(node.right))));
+		return replace_with_call(node, make_operator_overload_call(
+			node.op, *method, std::move(node.left), std::move(node.right)));
 	}
 	const bool is_object = node.left->ty->cast<ObjectType>() != nullptr;
 
@@ -1569,8 +1573,7 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 
 	bool is_object = false;
 	if (const auto method = m_program->find_overloaded_method(node.operand->ty, node.op.type, 1)) {
-		return replace_with_call(node, make_operator_call(node.op, *method,
-			std::make_unique<NodeParamList>(node.op, std::move(node.operand))));
+		return replace_with_call(node, make_operator_overload_call(node.op, *method, std::move(node.operand)));
 	}
 
 	bool is_compatible = node.ty->is_compatible(node.operand->ty) && node.operand->ty->is_compatible(node.ty);

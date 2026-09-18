@@ -54,7 +54,7 @@ public:
 				std::make_unique<NodeBlock>(node.tok),
 				node.tok
 			);
-			return node.replace_with(std::move(node_if))->accept(*this);
+			return node.replace_and_visit(std::move(node_if), *this);
 		}
 
 		// optional chaining used where a value is required

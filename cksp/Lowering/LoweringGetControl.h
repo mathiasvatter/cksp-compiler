@@ -25,7 +25,7 @@ public:
 //		auto new_node = lowering(control_function, get_control_statement);
 //		// add r_value as third parameter to set_control_par
 //		new_node->function->add_arg(std::move(node.r_value));
-//		return node.replace_with(std::move(new_node))->accept(*this);
+//		return node.replace_and_visit(std::move(new_node), *this);
 //	};
 
 	NodeAST * visit(NodeSetControl &node) override {

@@ -412,12 +412,20 @@ public:
 	/// Replaces <obj[i, ...] := value> with the <__setitem__> call it stands for, if it is one.
 	NodeAST* resolve_subscript_set(NodeSingleAssignment& node);
 
-	/// The call an overloaded operator stands for: <operands> is the receiver followed by the
-	/// operator's arguments, and is matched against the parameters the method declares.
+	/// The call an overloaded operator stands for: the operands are the receiver followed by
+	/// the operator's arguments, and are matched against the parameters the method declares.
 	///
 	/// The method is looked up by the caller - NodeProgram::find_overloaded_method - because
 	/// the operands are moved in here and a caller that finds none keeps its own.
-	std::unique_ptr<NodeFunctionCall> make_operator_call(
+	template<typename... Operands>
+	static std::unique_ptr<NodeFunctionCall> make_operator_overload_call(
+		const Token& op, const NodeFunctionDefinition& method, Operands&&... operands) {
+		return make_operator_overload_call(
+			op, method, std::make_unique<NodeParamList>(op, std::forward<Operands>(operands)...));
+	}
+	/// The same for a subscript, which is written with as many indexes as the struct takes, so
+	/// its operands are only counted while it is read.
+	static std::unique_ptr<NodeFunctionCall> make_operator_overload_call(
 		const Token& op,
 		const NodeFunctionDefinition& method,
 		std::unique_ptr<NodeParamList> operands);

@@ -57,6 +57,10 @@ struct NodeAST {
 	// Methode zum Ersetzen des aktuellen Knotens durch einen neuen Knoten
 	// Gibt den alten Knoten zurück, um die Referenzierung zu aktualisieren
 	virtual NodeAST* replace_with(std::unique_ptr<NodeAST> newNode);
+	/// Puts <replacement> in this node's place and hands it back visited - the shape of every
+	/// rewrite a visitor makes while it walks, and what its <visit> then returns. The node is
+	/// gone once this is called, so nothing of it may be read afterwards.
+	NodeAST* replace_and_visit(std::unique_ptr<NodeAST> replacement, class ASTVisitor& visitor);
     // Hinzugefügte Methode zum Aktualisieren der Parent-Pointer
     virtual void update_parents(NodeAST* new_parent) {
         parent = new_parent;

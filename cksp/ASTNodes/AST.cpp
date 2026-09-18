@@ -1781,6 +1781,10 @@ std::shared_ptr<NodeFunctionDefinition> NodeProgram::find_subscript_overload(
 	return find_overloaded_method(declaration->ty, op);
 }
 
+NodeAST* NodeAST::replace_and_visit(std::unique_ptr<NodeAST> replacement, ASTVisitor& visitor) {
+	return replace_with(std::move(replacement))->accept(visitor);
+}
+
 NodeAST* NodeProgram::retire_lowered_struct(NodeStruct& node) {
 	auto members = std::move(node.members);
 	const auto statement = node.parent ? node.parent->cast<NodeStatement>() : nullptr;

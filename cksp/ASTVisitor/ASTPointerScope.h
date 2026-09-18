@@ -241,7 +241,7 @@ public:
 			auto block = std::make_unique<NodeBlock>(node.tok, true);
 			block->add_as_stmt(std::move(tmp_decl));
 			block->add_as_stmt(std::move(new_assignment));
-			return node.replace_with(std::move(block))->accept(*this);
+			return node.replace_and_visit(std::move(block), *this);
 		}
 
 		node.l_value->accept(*this);
