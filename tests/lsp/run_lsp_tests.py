@@ -368,6 +368,159 @@ def _(workspace, server):
     )
 
 
+@test("diagnostics: persistence keywords reject local declarations")
+def _(workspace, server):
+    cases = [
+        (
+            "persistent_local_function.cksp",
+            "pers",
+            "function f()\n"
+            "    declare pers value := 1\n"
+            "end function\n\n"
+            "on init\n"
+            "    f()\n"
+            "end on\n",
+        ),
+        (
+            "persistent_local_callback.cksp",
+            "instpers",
+            "on note\n"
+            "    declare instpers value := 1\n"
+            "    message(value)\n"
+            "end on\n",
+        ),
+        (
+            "persistent_local_loop.cksp",
+            "read",
+            "on note\n"
+            "    for i in range(2)\n"
+            "        declare read value := i\n"
+            "        message(value)\n"
+            "    end for\n"
+            "end on\n",
+        ),
+        (
+            "persistent_explicit_local.cksp",
+            "pers",
+            "on init\n"
+            "    declare local pers value := 1\n"
+            "end on\n",
+        ),
+    ]
+
+    for name, keyword, source in cases:
+        fixture = workspace.write(name, source)
+        server.did_open(fixture)
+        diagnostics = server.diagnostics(fixture)
+        matching = [
+            diagnostic for diagnostic in diagnostics
+            if "cannot be used on local declaration" in diagnostic["message"]
+        ]
+        expect(len(matching) == 1,
+               f"{name}: expected one local-persistence error, got {messages_of(diagnostics)}")
+        diagnostic = matching[0]
+        expect(diagnostic["severity"] == 1,
+               f"{name}: local persistence must be an error: {diagnostic}")
+        start = position_of(diagnostic)
+        source_line = source.splitlines()[start.line]
+        expect(source_line[start.character:].startswith(keyword),
+               f"{name}: diagnostic should point at {keyword!r}, got {diagnostic['range']}")
+
+
+@test("diagnostics: persistence builtins reject local variable arguments")
+def _(workspace, server):
+    cases = [
+        ("make_persistent", "function"),
+        ("make_instr_persistent", "callback"),
+        ("read_persistent_var", "loop"),
+    ]
+
+    for command, context in cases:
+        if context == "function":
+            source = (
+                "function f()\n"
+                "    declare value := 1\n"
+                f"    {command}(value)\n"
+                "end function\n\n"
+                "on init\n"
+                "    f()\n"
+                "end on\n"
+            )
+        elif context == "callback":
+            source = (
+                "on note\n"
+                "    declare value := 1\n"
+                f"    {command}(value)\n"
+                "end on\n"
+            )
+        else:
+            source = (
+                "on note\n"
+                "    for i in range(2)\n"
+                "        declare value := i\n"
+                f"        {command}(value)\n"
+                "    end for\n"
+                "end on\n"
+            )
+
+        name = f"persistent_builtin_local_{command}.cksp"
+        fixture = workspace.write(name, source)
+        server.did_open(fixture)
+        diagnostics = server.diagnostics(fixture)
+        matching = [
+            diagnostic for diagnostic in diagnostics
+            if f"Persistence operation <{command}>" in diagnostic["message"]
+        ]
+        expect(len(matching) == 1,
+               f"{name}: expected one local-persistence error, got {messages_of(diagnostics)}")
+        diagnostic = matching[0]
+        expect(diagnostic["severity"] == 1,
+               f"{name}: local persistence must be an error: {diagnostic}")
+        start = position_of(diagnostic)
+        source_line = source.splitlines()[start.line]
+        expect(source_line[start.character:].startswith("value"),
+               f"{name}: diagnostic should point at the local argument, got "
+               f"{diagnostic['range']}")
+
+
+@test("diagnostics: persistence remains valid for global storage")
+def _(workspace, server):
+    cases = [
+        (
+            "persistent_nested_init.cksp",
+            "on init\n"
+            "    if true\n"
+            "        declare pers nested_init := 1\n"
+            "    end if\n"
+            "end on\n",
+        ),
+        (
+            "persistent_explicit_global.cksp",
+            "function f()\n"
+            "    declare global pers shared := 1\n"
+            "end function\n\n"
+            "on init\n"
+            "    f()\n"
+            "end on\n",
+        ),
+        (
+            "persistent_builtin_global.cksp",
+            "on init\n"
+            "    declare shared := 1\n"
+            "    make_persistent(shared)\n"
+            "    read_persistent_var(shared)\n"
+            "end on\n",
+        ),
+    ]
+
+    for name, source in cases:
+        fixture = workspace.write(name, source)
+        server.did_open(fixture)
+        expect(server.diagnostics(fixture) == [],
+               f"{name}: global persistence should remain valid, got "
+               f"{messages_of(server.diagnostics(fixture))}")
+
+
 @test("diagnostics: a clean file publishes an empty list")
 def _(workspace, server):
     fixture = workspace.open("navigation.cksp")

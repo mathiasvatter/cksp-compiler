@@ -7,6 +7,7 @@
 #include "../CompilerConfig.h"
 #include "../Migration/ListMigration.h"
 #include "../Optimization/VarExistsValidator.h"
+#include "FunctionHandling/BuiltinRestrictionValidator.h"
 #include "ReferenceManagement/ASTCollectDeclarations.h"
 
 ASTVariableChecking::ASTVariableChecking(NodeProgram* main, const Pass pass)
@@ -196,7 +197,32 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 		}
 	}
 	node.function->accept(*this);
+	// The declaration modifier check below covers generated persistence calls. A user can also
+	// write the engine commands directly, so apply the same storage rule after the argument has
+	// been visited and bound to its declaration.
+	if (pass == Pass::PostUIControlLowering
+		&& node.kind == NodeFunctionCall::Kind::Builtin
+		&& node.function->get_num_args() > 0
+		&& BuiltinRestrictionValidator::is_persistence_command(node.function->name)) {
+		if (const auto* reference = node.function->get_arg(0)->is_reference()) {
+			if (const auto declaration = reference->get_declaration()) {
+				reject_local_persistence(
+					*declaration, node.function->name, reference->tok);
+			}
+		}
+	}
 	return &node;
+}
+
+void ASTVariableChecking::reject_local_persistence(const NodeDataStructure& variable, const std::string& operation, const Token& location) {
+	if (!variable.is_local) return;
+
+	auto error = Diagnostic(ErrorType::VariableError, "", "", location);
+	error.message = "Persistence operation <" + operation
+		+ "> cannot be used on local declaration <" + variable.tok.val
+		+ ">. Persistent variables must be declared globally.";
+	error.expected = "Global declaration";
+	error.exit();
 }
 
 void ASTVariableChecking::check_read_in_own_declaration(NodeSingleDeclaration& node) const {
@@ -226,6 +252,16 @@ void ASTVariableChecking::check_read_in_own_declaration(NodeSingleDeclaration& n
 
 NodeAST* ASTVariableChecking::visit(NodeSingleDeclaration& node) {
 	node.variable->determine_locality(m_program, get_current_block());
+
+	// Persistence is tied to the generated KSP variable name and therefore only has stable
+	// meaning for global storage. Local declarations are renamed, reused and, in thread-unsafe
+	// contexts, potentially dimension-expanded; persisting any of those would silently bind
+	// saved state to compiler-generated storage. Run this in the shared pre-rewriting pass so
+	// the compiler and language server diagnose the source declaration exactly once.
+	if (pass == Pass::PostUIControlLowering && node.variable->persistence.has_value()) {
+		const auto& persistence = node.variable->persistence.value();
+		reject_local_persistence(*node.variable, persistence.val, persistence);
+	}
 
 	if(node.variable->cast<NodeUIControl>() and node.variable->is_local) {
 		auto error = make_diagnostic(ErrorType::SyntaxError, node);
@@ -506,4 +542,3 @@ NodeAST* ASTVariableChecking::visit(NodeStruct& node) {
 	m_current_struct = nullptr;
 	return &node;
 }
-
