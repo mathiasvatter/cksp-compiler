@@ -1,6 +1,10 @@
 { Instance member completion: the chain is resolved through the declared type of
   its leading run, not through a qualifier path. }
 
+const preset
+    GLOBAL_ONLY := 1
+end const
+
 struct Zone
     static const MAX: int := 8
     idx: int
@@ -50,11 +54,17 @@ function uses_group()
     message(item.<|local_group|>count)
 end function
 
+{ A local typed declaration shadows a same-named qualifier block. }
+function removes_preset(preset: Zone)
+    message(preset.<|parameter_shadows_const|>idx)
+end function
+
 on init
     declare g: Group := new Group(new Zone(1, "d"), 2)
     declare h: Holder := new Holder([new Zone(1, "e")])
     uses_zone()
     <|instance_scope|>uses_group()
+    removes_preset(new Zone(3, "f"))
     message(g.<|instance|>count)
     message(g.zone.<|chained|>idx)
     message(audio.inst.<|qualified|>idx)

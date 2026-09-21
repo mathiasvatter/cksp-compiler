@@ -672,6 +672,15 @@ def _(workspace, server):
     expect_labels(server.completion(fixture, "local_group"), ["zone", "count", "tick"], exactly=True)
 
 
+@test("completion: a typed parameter shadows a same-named const block",
+      requires="completionProvider")
+def _(workspace, server):
+    fixture = workspace.open("completion_instance.cksp")
+    items = server.completion(fixture, "parameter_shadows_const")
+    expect_labels(items, ["idx", "file", "ping"], exactly=True)
+    expect_no_labels(items, ["GLOBAL_ONLY"])
+
+
 @test("completion: a struct name still offers only its statics",
       requires="completionProvider")
 def _(workspace, server):
