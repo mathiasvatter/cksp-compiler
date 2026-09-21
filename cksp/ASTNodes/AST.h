@@ -1170,6 +1170,7 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
     std::unordered_set<NodeFunctionCall*> call_sites = {};
 	mutable std::mutex call_sites_mutex;
     std::shared_ptr<NodeFunctionHeader> header;
+	/// variable written as '-> result' in deprecated sksp return value syntax
     std::optional<std::shared_ptr<NodeDataStructure>> return_variable;
     bool override = false;
 	/// <static function> member: belongs to the struct, not to an instance, and takes no <self>

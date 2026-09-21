@@ -37,6 +37,7 @@ private:
 
 	void generate_new_name(NodeDataStructure& node) {
 		if (node.kind == NodeDataStructure::Kind::Builtin) return;
+		if (node.persistence.has_value()) return;
 		if (node.ty == TypeRegistry::PGS) return;
 		m_og_var_names.insert({&node, node.name});
 		node.name = gen.next();
