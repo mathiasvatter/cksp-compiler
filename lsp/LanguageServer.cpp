@@ -5,6 +5,7 @@
 #include "LanguageServer.h"
 
 #include "CodeActionProvider.h"
+#include "CallSiteScanner.h"
 #include "QualifierScanner.h"
 #include "RequestParams.h"
 #include "TrackingSourceProvider.h"
@@ -70,6 +71,8 @@ void LanguageServer::handle_request(const JsonRpcMessage& message) {
 		handle_document_highlight(message);
 	} else if (method->value == "textDocument/completion") {
 		handle_completion(message);
+	} else if (method->value == "textDocument/signatureHelp") {
+		handle_signature_help(message);
 	} else if (method->value == "textDocument/codeAction") {
 		handle_code_action(message);
 	} else if (const auto* id = message.id()) {
@@ -374,6 +377,17 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 	completion_item_options->add("labelDetailsSupport", std::make_unique<JSONBool>(true));
 	completion_options->add("completionItem", std::move(completion_item_options));
 
+	auto signature_help_options = std::make_unique<JSONObject>();
+	auto signature_trigger_characters = std::make_unique<JSONArray>();
+	signature_trigger_characters->add(std::make_unique<JSONString>("("));
+	signature_trigger_characters->add(std::make_unique<JSONString>(","));
+	signature_help_options->add(
+		"triggerCharacters", std::move(signature_trigger_characters));
+	auto signature_retrigger_characters = std::make_unique<JSONArray>();
+	signature_retrigger_characters->add(std::make_unique<JSONString>(","));
+	signature_help_options->add(
+		"retriggerCharacters", std::move(signature_retrigger_characters));
+
 	auto code_action_options = std::make_unique<JSONObject>();
 	auto code_action_kinds = std::make_unique<JSONArray>();
 	code_action_kinds->add(std::make_unique<JSONString>("quickfix"));
@@ -401,6 +415,7 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 	capabilities.add("renameProvider", std::make_unique<JSONObject>(rename_options));
 	capabilities.add("documentHighlightProvider", std::make_unique<JSONBool>(true));
 	capabilities.add("completionProvider", std::move(completion_options));
+	capabilities.add("signatureHelpProvider", std::move(signature_help_options));
 	capabilities.add("codeActionProvider", std::move(code_action_options));
 
 	JSONObject server_info;
@@ -661,6 +676,43 @@ void LanguageServer::handle_completion(const JsonRpcMessage& message) {
 
 	m_connection.send_response(*id, m_completion.items(
 		entries, query.chain, position->source, position->line, position->character));
+}
+
+void LanguageServer::handle_signature_help(const JsonRpcMessage& message) {
+	const auto* id = message.id();
+	if (!id) return;
+
+	const auto position = position_params(message);
+	if (!position) {
+		m_connection.send_response(*id, JSONNull{});
+		return;
+	}
+
+	auto document = m_sources.load(position->source);
+	if (document.is_error()) {
+		m_connection.send_response(*id, JSONNull{});
+		return;
+	}
+	const auto query = lsp::call_site_in(
+		*document.unwrap().text, position->line, position->character);
+	if (!query) {
+		m_connection.send_response(*id, JSONNull{});
+		return;
+	}
+
+	std::vector<SourceId> entries;
+	{
+		std::lock_guard lock(m_state_mutex);
+		entries = m_entry_points.affected_entries(position->source);
+	}
+
+	auto help = m_signature_help.help(
+		entries, *query, position->source, position->line, position->character);
+	if (!help) {
+		m_connection.send_response(*id, JSONNull{});
+		return;
+	}
+	m_connection.send_response(*id, *help);
 }
 
 void LanguageServer::handle_did_open(const JsonRpcMessage& message) {

@@ -119,3 +119,22 @@ JSONArray CompletionProvider::items(
 	}
 	return items;
 }
+
+std::vector<CompletionMember> CompletionProvider::callables(
+	const std::vector<SourceId>& preferred_entries,
+	const std::vector<std::string>& qualifier,
+	const std::string& callable,
+	const SourceId& source,
+	const size_t line,
+	const size_t character) const {
+	std::vector<CompletionMember> found;
+	for (auto& member : members(
+		preferred_entries, qualifier, source, line, character)) {
+		// `parameters` distinguishes a callable, including a zero-argument one whose
+		// spelling is "()", from variables and parameterless value defines.
+		if (member.label == callable && !member.parameters.empty()) {
+			found.push_back(std::move(member));
+		}
+	}
+	return found;
+}

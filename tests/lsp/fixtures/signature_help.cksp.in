@@ -1,0 +1,55 @@
+define SCALE(value, factor) := value * factor
+
+macro prepare(#name#, #count#)
+    declare #name#[#count#]
+end macro
+
+macro nks.init(#name#, #count#)
+    declare #name#_ready := #count#
+end macro
+
+namespace audio
+    function fade(amount: int, target: int): int
+        return amount + target
+    end function
+
+    function reset()
+    end function
+end namespace
+
+struct Envelope
+    value: int
+
+    static function describe(label: string, count: int): int
+        message(label)
+        return count
+    end function
+
+    function set(self, amount: int, target: int): int
+        self.value := amount + target
+        return self.value
+    end function
+
+    function exercise(self)
+        self.set(1, <|self_method_second|>2)
+    end function
+end struct
+
+on init
+    declare env: Envelope := new Envelope(0)
+    message(audio.fade(<|function_first|>1, 2))
+    message(audio.fade(1, <|function_second|>2))
+    message(audio.fade(audio.fade(1, 2), <|nested_outer_second|>3))
+    message(audio.fade(
+        1,
+        <|multiline_second|>2
+    ))
+    message(Envelope.describe("x", <|static_method_second|>1))
+    message(env.set(1, <|instance_method_second|>2))
+    message(SCALE(3, <|define_second|>4))
+    prepare(buffer, <|macro_second|>2)
+    nks.init(other, <|dotted_macro_second|>3)
+    message(audio.fade("a, )", <|string_second|>2))
+    message(audio.fade(1, /* ignored <|inside_comment|> (, [ */ <|comment_second|>2))
+    audio.reset(<|zero_parameters|>)
+end on

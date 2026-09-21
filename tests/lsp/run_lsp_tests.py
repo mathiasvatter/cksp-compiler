@@ -957,6 +957,132 @@ def _(workspace, server):
 
 
 # ==========================================================================
+# Signature help — reuses completion snapshots and live-buffer call scanning
+# ==========================================================================
+
+def expect_signature(server, fixture, marker, label, parameters, active=None):
+    help_result = server.signature_help(
+        fixture, marker, trigger_character="," if active else "("
+    )
+    expect(help_result is not None, f"{marker}: expected signature help")
+    signatures = help_result.get("signatures", [])
+    expect(len(signatures) == 1, f"{marker}: expected one signature, got {signatures}")
+    signature = signatures[0]
+    expect(signature.get("label") == label,
+           f"{marker}: expected label {label!r}, got {signature.get('label')!r}")
+    found_parameters = [parameter.get("label") for parameter in signature.get("parameters", [])]
+    expect(found_parameters == parameters,
+           f"{marker}: expected parameters {parameters}, got {found_parameters}")
+    if active is None:
+        expect("activeParameter" not in help_result,
+               f"{marker}: zero-parameter signature should have no active parameter")
+    else:
+        expect(help_result.get("activeParameter") == active,
+               f"{marker}: expected active parameter {active}, got {help_result}")
+
+
+@test("signature help: capability advertises call and comma triggers",
+      requires="signatureHelpProvider")
+def _(workspace, server):
+    options = server.capabilities.get("signatureHelpProvider")
+    expect(isinstance(options, dict), f"signatureHelpProvider should be an object: {options}")
+    triggers = options.get("triggerCharacters", [])
+    expect("(" in triggers and "," in triggers, f"unexpected signature triggers: {triggers}")
+
+
+@test("signature help: functions resolve active parameters",
+      requires="signatureHelpProvider")
+def _(workspace, server):
+    fixture = workspace.open("signature_help.cksp")
+    label = "function fade(amount: int, target: int): int"
+    parameters = ["amount: int", "target: int"]
+    expect_signature(server, fixture, "function_first", label, parameters, 0)
+    expect_signature(server, fixture, "function_second", label, parameters, 1)
+    expect_signature(server, fixture, "nested_outer_second", label, parameters, 1)
+    expect_signature(server, fixture, "multiline_second", label, parameters, 1)
+    expect_signature(server, fixture, "string_second", label, parameters, 1)
+    expect_signature(server, fixture, "comment_second", label, parameters, 1)
+
+
+@test("signature help: static, instance and self methods share receiver resolution",
+      requires="signatureHelpProvider")
+def _(workspace, server):
+    fixture = workspace.open("signature_help.cksp")
+    expect_signature(
+        server, fixture, "static_method_second",
+        "static function describe(label: string, count: int): int",
+        ["label: string", "count: int"], 1,
+    )
+    method_label = "function set(amount: int, target: int): int"
+    method_parameters = ["amount: int", "target: int"]
+    expect_signature(
+        server, fixture, "instance_method_second", method_label, method_parameters, 1)
+    expect_signature(
+        server, fixture, "self_method_second", method_label, method_parameters, 1)
+
+
+@test("signature help: preprocessor and dotted callables use harvested signatures",
+      requires="signatureHelpProvider")
+def _(workspace, server):
+    fixture = workspace.open("signature_help.cksp")
+    expect_signature(
+        server, fixture, "define_second", "define SCALE(value, factor)",
+        ["value", "factor"], 1,
+    )
+    expect_signature(
+        server, fixture, "macro_second", "macro prepare(#name#, #count#)",
+        ["#name#", "#count#"], 1,
+    )
+    expect_signature(
+        server, fixture, "dotted_macro_second", "macro nks.init(#name#, #count#)",
+        ["#name#", "#count#"], 1,
+    )
+
+
+@test("signature help: zero parameters and non-call contexts",
+      requires="signatureHelpProvider")
+def _(workspace, server):
+    fixture = workspace.open("signature_help.cksp")
+    expect_signature(
+        server, fixture, "zero_parameters", "function reset()", [], None)
+    expect(server.signature_help(fixture, "inside_comment") is None,
+           "signature help must stay silent inside a comment")
+
+
+@test("signature help: last good snapshot serves an unfinished call",
+      requires="signatureHelpProvider")
+def _(workspace, server):
+    fixture = workspace.open("signature_help.cksp")
+    broken = server.did_change(
+        fixture,
+        fixture.text.replace(
+            "message(audio.fade(1, 2))",
+            "message(audio.fade(1, <|broken_second|>",
+            1,
+        ),
+    )
+    expect(server.diagnostics(broken), "precondition: unfinished call should not parse")
+    expect_signature(
+        server, broken, "broken_second",
+        "function fade(amount: int, target: int): int",
+        ["amount: int", "target: int"], 1,
+    )
+
+
+@test("signature help: an unknown callable yields no result",
+      requires="signatureHelpProvider")
+def _(workspace, server):
+    fixture = workspace.open("signature_help.cksp")
+    broken = server.did_change(
+        fixture,
+        fixture.text.replace(
+            "message(audio.fade(1, 2))", "message(missing(<|unknown|>", 1),
+    )
+    expect(server.signature_help(broken, "unknown") is None,
+           "an unknown callable must not inherit another signature")
+
+
+# ==========================================================================
 # SublimeKSP migration — taskfunc and TCM are rejected, but with a way out
 # ==========================================================================
 

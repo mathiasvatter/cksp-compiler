@@ -37,6 +37,17 @@ public:
 		size_t line,
 		size_t character) const;
 
+	/// Callable declarations matching a source-level call. Uses the same lexical scope,
+	/// instance/member and dotted-name resolution as completion, backed by the same
+	/// last-successful snapshots.
+	[[nodiscard]] std::vector<CompletionMember> callables(
+		const std::vector<SourceId>& preferred_entries,
+		const std::vector<std::string>& qualifier,
+		const std::string& callable,
+		const SourceId& source,
+		size_t line,
+		size_t character) const;
+
 private:
 	/// Members behind items(), kept separate so the lookup stays testable on its own.
 	[[nodiscard]] std::vector<CompletionMember> members(
