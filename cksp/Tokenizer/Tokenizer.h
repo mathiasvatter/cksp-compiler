@@ -13,6 +13,7 @@
 
 #include "../../misc/Result.h"
 #include "Token.h"
+#include "LexicalRules.h"
 #include "../../misc/FileHandler.h"
 #include "../../misc/FreeFunctions.h"
 

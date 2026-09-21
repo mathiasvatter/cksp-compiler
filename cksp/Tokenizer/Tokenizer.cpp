@@ -290,7 +290,7 @@ void Tokenizer::get_comment() {
 }
 
 bool Tokenizer::is_string() const {
-	return peek() == '\'' || peek() == '"';
+	return cksp::lexical::is_string_delimiter(peek());
 }
 
 void Tokenizer::get_string() {
@@ -394,10 +394,8 @@ void Tokenizer::get_arrow() {
 }
 
 bool Tokenizer::is_keyword_or_num() const {
-    bool is_keyword_or_num = std::isalnum(peek()) || peek() == '_' || VAR_IDENT.contains(peek()) ||
-            ARRAY_IDENT.contains(peek());
-    bool is_macro = peek() == '#' and (std::isalnum(peek(1)) || peek(1) == '_' || VAR_IDENT.contains(peek(1)) ||
-            ARRAY_IDENT.contains(peek(1)));
+	bool is_keyword_or_num = cksp::lexical::is_identifier_start(peek());
+	bool is_macro = peek() == '#' and cksp::lexical::is_identifier_start(peek(1));
 	bool is_float_start = peek() == '.' and std::isdigit(peek(1));
 //	bool is_method_chain = peek() == '.' and (std::isalnum(peek(1)) || peek(1) == '_');
     return is_keyword_or_num or is_macro or is_float_start;
@@ -460,9 +458,9 @@ void Tokenizer::get_keyword_or_num() {
     } else if (is_keyword_or_num()) {
 	    //        if(peek() =='#') consume(); //consume # for macro iteration
 		consume(); //consume possible identifier
-		while (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
+		while (cksp::lexical::is_identifier_body(peek())) {
 			consume();
-	}
+		}
 	// here could come a single dot or a line continuation 'and...'
 	// an identifier directly behind a DOT token (emitted by ?. and by chain
 	// continuations) is an access chain member: keep its dotted parts separate
@@ -471,8 +469,8 @@ void Tokenizer::get_keyword_or_num() {
 	if (!is_line_continuation() and (m_tokens.empty() or m_tokens.back().type != token::DOT)) {
 		while (peek() == '.') {
 			consume();
-			if (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
-				while(std::isalnum(peek()) || peek() == '_' || peek() == '#') {
+			if (cksp::lexical::is_identifier_body(peek())) {
+				while(cksp::lexical::is_identifier_body(peek())) {
 					consume();
 				}
 			} else {
@@ -645,7 +643,7 @@ void Tokenizer::get_bitwise_operator() {
         add_token(*tok, m_buffer);
     } else {
 		// method chaining
-		while (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
+		while (cksp::lexical::is_identifier_body(peek())) {
 			consume();
 		}
 		const auto dot_pos = m_line_pos - m_buffer.length();
@@ -658,7 +656,7 @@ void Tokenizer::get_bitwise_operator() {
 }
 
 bool Tokenizer::is_space(const char &ch) {
-	return ch == '\t' || ch == '\v' || ch == '\f' || ch == '\r' || ch == ' ';
+	return cksp::lexical::is_horizontal_space(ch);
 }
 
 void Tokenizer::flush_buffer() {

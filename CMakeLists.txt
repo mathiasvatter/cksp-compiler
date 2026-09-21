@@ -58,6 +58,7 @@ add_library(cksp_core STATIC
         cksp/Tokenizer/Tokenizer.h
         cksp/Tokenizer/Tokenizer.cpp
         cksp/Tokenizer/Token.h
+        cksp/Tokenizer/LexicalRules.h
         cksp/Source/SourceProvider.h
         cksp/Source/SourceProvider.cpp
         cksp/Source/SourceParser.h
@@ -303,7 +304,9 @@ add_executable(cksp
         lsp/ReferenceProvider.h
         lsp/CompletionProvider.cpp
         lsp/CompletionProvider.h
+        lsp/CallSiteScanner.h
         lsp/QualifierScanner.h
+        lsp/SourceTextScanner.h
         lsp/RenameProvider.cpp
         lsp/RenameProvider.h
         lsp/RequestParams.cpp

@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "version.h"
+#include "LexicalRules.h"
 
 /// defines the token names and the string that represents them while debugging
 #define ENUM_LIST(XX) \
@@ -194,9 +195,16 @@ std::unordered_map<V, K> invert_map(const std::unordered_map<K, V>& map) {
 }
 
 inline std::unordered_set<char> BINARY_OPERATORS = {'-', '+', '/', '*', '&'};
-inline std::unordered_map<char, token> PARENTH = {{'(', token::OPEN_PARENTH},{')', token::CLOSED_PARENTH}, {'[', token::OPEN_BRACKET}, {']', token::CLOSED_BRACKET}};
-inline std::unordered_set<char> VAR_IDENT = {'$', '~', '@'};
-inline std::unordered_set<char> ARRAY_IDENT = {'%', '?', '!'}; //int, real, string
+inline std::unordered_map<char, token> PARENTH = {
+	{cksp::lexical::OPEN_PARENTHESIS, token::OPEN_PARENTH},
+	{cksp::lexical::CLOSE_PARENTHESIS, token::CLOSED_PARENTH},
+	{cksp::lexical::OPEN_BRACKET, token::OPEN_BRACKET},
+	{cksp::lexical::CLOSE_BRACKET, token::CLOSED_BRACKET},
+};
+inline std::unordered_set<char> VAR_IDENT(
+	cksp::lexical::VARIABLE_SIGILS.begin(), cksp::lexical::VARIABLE_SIGILS.end());
+inline std::unordered_set<char> ARRAY_IDENT(
+	cksp::lexical::ARRAY_SIGILS.begin(), cksp::lexical::ARRAY_SIGILS.end()); //int, real, string
 inline std::unordered_map<std::string, token> TYPES = {{"$", token::INT}, {"~", token::FLOAT}, {"@", token::STRING}, {"%", token::INT}, {"?", token::FLOAT}, {"!", token::STRING}};
 inline std::unordered_set<char> COMMENT_START = {'{', '/'};
 inline std::unordered_set<char> COMPARISON_OPERATORS_START = {'<', '>', '=', '#'};
