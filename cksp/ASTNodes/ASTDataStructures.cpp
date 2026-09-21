@@ -486,7 +486,12 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::generate_constructor() {
 			std::unique_ptr<NodeSingleAssignment> assignment;
 			auto member_ref = mem->to_reference();
 			member_ref->name = NodeStruct::SELF + "." + member_ref->name;
-			auto func_param = std::make_unique<NodeFunctionParam>(clone_as<NodeDataStructure>(mem.get()));
+			// The constructor parameter is a temporary input, not the member's backing storage.
+			// Cloning the member also clones its persistence token, which would otherwise make
+			// KSPPersistency emit a useless make_persistent() for the generated parameter.
+			auto param_variable = clone_as<NodeDataStructure>(mem.get());
+			param_variable->persistence.reset();
+			auto func_param = std::make_unique<NodeFunctionParam>(std::move(param_variable));
 			auto param_ref = func_param->variable->to_reference();
 			param_list.push_back(std::move(func_param));
 			assignment = std::make_unique<NodeSingleAssignment>(

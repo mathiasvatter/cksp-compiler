@@ -215,7 +215,11 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 }
 
 void ASTVariableChecking::reject_local_persistence(const NodeDataStructure& variable, const std::string& operation, const Token& location) {
-	if (!variable.is_local) return;
+	// Instance members are represented as local while the struct is analysed, but their
+	// lowered backing arrays are global and may legitimately be persistent. Constructor
+	// parameters cloned from those members are ordinary function parameters (not members),
+	// so they remain covered by this check if persistence ever leaks onto one.
+	if (!variable.is_local || variable.is_member()) return;
 
 	auto error = Diagnostic(ErrorType::VariableError, "", "", location);
 	error.message = "Persistence operation <" + operation
