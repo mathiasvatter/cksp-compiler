@@ -1211,6 +1211,30 @@ def _(workspace, server):
            "signature help must stay silent inside a comment")
 
 
+@test("signature help: parenthesis-star comments hide calls and delimiters",
+      requires="signatureHelpProvider")
+def _(workspace, server):
+    fixture = workspace.open("signature_help.cksp")
+    changed = server.did_change(
+        fixture,
+        fixture.text.replace(
+            "message(audio.fade(1, 2))",
+            '(* audio.fade(1, <|star_comment|> /* } " *) '
+            'message(audio.fade(1, (* ignored , ) *) <|after_star_comment|>2))',
+            1,
+        ),
+    )
+    expect(not any(d.get("severity") == 1 for d in server.diagnostics(changed)),
+           "parenthesis-star comments should compile")
+    expect(server.signature_help(changed, "star_comment") is None,
+           "signature help must stay silent inside a parenthesis-star comment")
+    expect_signature(
+        server, changed, "after_star_comment",
+        "function fade(amount: int, target: int): int",
+        ["amount: int", "target: int"], 1,
+    )
+
+
 @test("signature help: last good snapshot serves an unfinished call",
       requires="signatureHelpProvider")
 def _(workspace, server):

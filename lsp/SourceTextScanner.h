@@ -25,12 +25,12 @@ namespace lsp::source_text {
 struct LexicalState {
 	char string_delimiter = 0;
 	size_t brace_comment_depth = 0;
-	bool slash_block_comment = false;
+	char block_comment_closing = 0;
 	bool line_comment = false;
 
 	[[nodiscard]] bool in_string() const { return string_delimiter != 0; }
 	[[nodiscard]] bool in_comment() const {
-		return brace_comment_depth > 0 || slash_block_comment || line_comment;
+		return brace_comment_depth > 0 || block_comment_closing != 0 || line_comment;
 	}
 	[[nodiscard]] bool outside_code() const { return in_string() || in_comment(); }
 };
@@ -52,9 +52,9 @@ struct LexicalState {
 		else if (c == '}') --state.brace_comment_depth;
 		return true;
 	}
-	if (state.slash_block_comment) {
-		if (c == '*' && position + 1 < text.size() && text[position + 1] == '/') {
-			state.slash_block_comment = false;
+	if (state.block_comment_closing != 0) {
+		if (c == '*' && position + 1 < text.size() && text[position + 1] == state.block_comment_closing) {
+			state.block_comment_closing = 0;
 			++position;
 		}
 		return true;
@@ -77,6 +77,11 @@ struct LexicalState {
 		state.brace_comment_depth = 1;
 		return true;
 	}
+	if (c == '(' && position + 1 < text.size() && text[position + 1] == '*') {
+		state.block_comment_closing = ')';
+		++position;
+		return true;
+	}
 	if (c == '/' && position + 1 < text.size()) {
 		if (text[position + 1] == '/') {
 			state.line_comment = true;
@@ -84,7 +89,7 @@ struct LexicalState {
 			return true;
 		}
 		if (text[position + 1] == '*') {
-			state.slash_block_comment = true;
+			state.block_comment_closing = '/';
 			++position;
 			return true;
 		}

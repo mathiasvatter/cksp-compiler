@@ -1,0 +1,4 @@
+// EXPECT_ERROR Reached end of file
+on init
+end on
+(*)

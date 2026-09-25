@@ -1,0 +1,16 @@
+// EXPECT message\(6\)
+// EXPECT message\("\(\* literal \*\)"\)
+// EXPECT_NOT hidden
+(* top-level comment *)
+on init
+    (**)
+    (* arbitrary invalid code
+       { } /* */ // " '
+    *)
+    message((2 * 3))
+    message("(* literal *)")
+    /* (* hidden */
+    { (* hidden }
+    // (* hidden
+    (* nested opener (* ends at the first closer *) message(7)
+end on

@@ -45,7 +45,8 @@ void Tokenizer::token_loop() {
 			consume();
 			consume();
 		}
-		else if (peek() == '/' && (peek(1) == '*' || peek(1) == '/') || peek() == '{') {
+		else if ((peek() == '/' && (peek(1) == '*' || peek(1) == '/'))
+			|| (peek() == '(' && peek(1) == '*') || peek() == '{') {
 			warn_about_sublime_pragma();
 			get_comment();
 		} else if (peek() == '\n') {
@@ -266,23 +267,23 @@ void Tokenizer::get_comment() {
             }
         }
         consume();
-	} else if (peek() == '/') {
-        // if one-m_line comment c++ style
-        if (peek(1) == '/') {
-            while (peek() != '\n') {
-				consume();
-            }
-	m_line_comment++;
-            // skip nex_char(); so that the \n can be tokenized
-        // if multi-line comment c++ style
-        } else if (peek(1) == '*') {
-            while (peek() != '*' or peek(1) != '/') {
-				consume();
-                if (peek() == '\n') {m_line++; m_line_pos = 1; m_line_comment++;}
-            }
-			consume();
+	} else if (peek() == '/' && peek(1) == '/') {
+        while (peek() != '\n') {
             consume();
         }
+        m_line_comment++;
+        // Leave the newline for token_loop().
+    } else {
+        // Non-nesting block comments: /* ... */ and (* ... *).
+        const char closing = peek() == '(' ? ')' : '/';
+        consume();
+        consume();
+        while (peek() != '*' || peek(1) != closing) {
+            const char current = consume();
+            if (current == '\n') {m_line++; m_line_pos = 1; m_line_comment++;}
+        }
+        consume();
+        consume();
     }
     // if (not m_buffer.empty())
 	   //  add_token(token::COMMENT, m_buffer);
