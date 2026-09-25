@@ -1,57 +1,87 @@
 # Changelog
 
-## [0.1.0-alpha.5]
+## [0.1.0-alpha.6]
 
 > [!IMPORTANT]
-> This alpha adds **generic structs** and a new **type cast** syntax. Other than that, it is mostly about **porting from SublimeKSP**: the constructs cksp has no equivalent for are now recognised by name and named in a meaningful error/warning message or answered with a quick fix instead of an *"unknown construct"*.
+> This alpha adds **property accessors** and **subscript overloads** to structs, and **signature help** to the language server. Porting from SublimeKSP gets further again: `iterate_post_macro` and `literate_post_macro` are now supported, and several constructs that used to stop a ported script now come with a quick fix.
 
 ## Language
 
 ### Added
-- Added **generic structs**. A struct can declare type parameters, and each set of type arguments instantiates its own struct with its own storage:
+- Added **property accessors** `__get__` and `__set__` to structs. Reading an object where a value is expected calls `__get__`, and assigning to it calls `__set__`:
   ```cksp
-  struct Box<T>
-      static const MAX := 42
-      value: T
+  struct Value
+      number: int
+      function __get__(self): int
+          return self.number
+      end function
+      function __set__(self, value: int)
+          self.number := value
+      end function
   end struct
 
   on init
-      declare number: Box<int> := new Box<int>(1)
-      declare text: Box<string> := new Box<string>("hello")
-      message(Box<int>.MAX)
+      declare v := new Value(5)
+      message(v + 7)   // __get__
+      v := 42          // __set__
   end on
   ```
-  Type arguments are written wherever the type is: in declarations, in constructor calls (`new List<int>(3, nil)`) and in type qualifiers. A parameterized type cannot be a type argument itself yet (`List<List<int>>`).
-- Added **type casts** with `as`. `real(EVENT_NOTE) as int`, `x as real`, `x as bool` and `x as string` convert between the primitive types, and `id as Item` reads an object id back as an object of that struct — in a string context that goes through the struct's string representation rather than printing the raw id.
+- Added **subscript overloads** `__getitem__` and `__setitem__`. A subscript on a single object calls them with one parameter per index and, for the setter, the value last:
+  ```cksp
+  struct EnginePar
+      par: int
+      function __getitem__(self, g: int, s: int): int
+          return get_engine_par(self.par, g, s, -1)
+      end function
+      function __setitem__(self, g: int, s: int, value: int)
+          set_engine_par(self.par, value, g, s, -1)
+      end function
+  end struct
+
+  on init
+      declare volume := EnginePar(ENGINE_PAR_VOLUME)
+      volume[0, -1] := 630000 // for group 0, slot -1
+  end on
+  ```
+- Added **member access and assignment through a cast**: `(id as Item).value := 5`, `(id as Item).value += 2` and `(id as Item).bump()` now work.
+- Added **`const` blocks inside namespaces** ([#128](https://github.com/mathiasvatter/cksp-compiler/issues/128)). They are reached as `Namespace.Block.Entry` and still count as constants, so they can size an array.
+- Added 14 missing **Twin Delay engine parameters** (`ENGINE_PAR_TDL_*`) to the builtin constants.
+- Added a warning for **`ctrl -> par` on a UI control par passed by value**. The function received the control's value instead of its ID. It now comes with the same *"Pass by reference"* quick fix as `get_ui_id(param)`.
 
 ### Improved
-- An **annotated return type is now enforced**. `function get(self): Box<T>` returning `1` is an error instead of being inferred away; `nil` stays accepted for a function returning an object.
-- An **array initializer reading a non-constant variable** now warns. The initializer copies the value it sees at the declaration and does not follow the variable afterwards, which is what `declare arr[3] := [0, 1, variable]` suggests.
-- **Reading a variable in its own declaration** (`declare x := f(x)`) is now diagnosed. The compiler used to accept it while the language server called the name undeclared.
-- Improved **import diagnostics**: importing the same file twice under two different aliases is an error, and a circular import is reported as one.
-- The **obfuscator** leaves the identifiers of `ui_control` variables alone, since KUI and KScript address them by name, and likewise the variables handed to the load/save array commands and the KSP log functions.
-- A **pass-by-value warning names the parameter as it was written**, instead of offering to rewrite `ctrl0` for a parameter spelled `ctrl`.
+- **Operator overload signatures are checked where the method is defined.** A wrong parameter or return count used to show up as a type mismatch where the operator was used, or not at all.
+- Assigning an object to a member whose type has a `__set__` now **explains that the accessor is the reason**, instead of naming the setter's parameter.
+- A `struct` inside a namespace is now **resolved by the name it is written with**, also in type annotations and from sibling structs that come further down.
+- The **non-constant array initializer** message is now a **hint**: it no longer shows up in the Problems panel or in the console. Arrays of `get_ui_id(...)` no longer trigger it at all, since a control's ID never changes.
+- A **missing output folder** is reported as such, with a quick fix that creates it. A `./` output path now means the entry file's folder, just as it does for imports.
 
 ### Fixed
-- Fixed **`sh_left` and `sh_right` being pre-calculated differently than the Kontakt engine evaluates them**. The fold now takes only the low five bits of the count the way Kontakt does: `sh_left(1, 33)` is 2, `sh_right(1, -1)` is 0, `sh_left(1, 31)` is `INT32_MIN`.
-- Fixed compiles failing at random with *"`<Variable>` has not been declared"* ([#124](https://github.com/mathiasvatter/cksp-compiler/issues/124)).
-- Fixed a **`select` case with a single value being read past the end of its storage**, which any script using named constants as case labels runs into.
-- Fixed an **array-returning function handing its result through a shared global copy**. Arrays are now returned by reference and land in the caller's variable directly.
-- Fixed **`search`, `sort` and `num_elements` rejecting function calls returning arrays**, such as `Struct.storage(.member)`.
-- Fixed a crash on a **type-qualified storage access** such as `List<int>.storage(.value)`.
-- Fixed a **function whose return expression holds more than one function call**, such as `return self.a() > other.a()`, being miscompiled: it stayed in expression position and its arguments were then read out of bounds.
-- Fixed **dead code elimination dropping a store whose value is read inside an expression**. `acc := table[0]` followed by `tmp := acc + 1` and `acc := table[1]` lost the first store, so `tmp` was built from a variable that was never written.
+- Fixed [#132](https://github.com/mathiasvatter/cksp-compiler/issues/132): **persistent local variables** are now reported as an error instead of being accepted.
+- Fixed [#131](https://github.com/mathiasvatter/cksp-compiler/issues/131): the **parameters of an auto-generated constructor** no longer inherit persistence from the struct members they initialize.
+- Fixed the **obfuscator renaming persistent variables**, which lost their saved values.
+- Fixed **list blocks** with rows of arrays, rows of different lengths, and string or real values. `list.SIZE` can now size an array.
 
 ## Migrating from SublimeKSP
 
 ### Added
-- Added a **quick fix for `taskfunc` and `tcm.*`**, which used to hit *"Found unknown construct"*. The block is parsed in full and rewritten by the fix: the keywords, `var`/`out` to `ref`, `tcm.wait` to `wait` and `tcm.init` to `#pragma max_callback_depth`.
-- Added recognition of the **SublimeKSP property block**, which used to be read as a declaration of a variable called `property` and reported as whatever went wrong after it. It is now named wherever it can appear — a callback, the global scope, a struct body — together with what replaces it.
-- Added a warning for **SublimeKSP pragmas cksp has no equivalent for**. `{#pragma save_compiled_source ...}` is a comment here, so the output silently went to the default path while the compile reported success; it now warns and offers `#pragma output_path("...")`. The line stays, so the same source keeps compiling under both compilers until the fix is applied.
-- Added an **identifier-case migration**. SublimeKSP resolves names case-insensitively, so every declaration a ported script spells in a case of its own used to land on an undeclared-name error. A name that differs from exactly one declaration in nothing but case is now resolved to it and offered a rename — including a name assembled by a macro, which is corrected at the call site, and a raw ndarray reference such as `_env2.arr`.
-- Added a **global initializer migration**.
-- Added a rename for a **function result spelled `return`**, offered across every place the name stands.
-- Added an answer for **`iterate_post_macro` and `literate_post_macro`**, naming them as SublimeKSP's and saying why the post variants differ: cksp evaluates `iterate_macro`/`literate_macro` during macro expansion, the post ones run after it. No fix is offered, since a rename only works when the bounds are known at expansion time.
+- Added support for **`iterate_post_macro` and `literate_post_macro`**. They expand after every other macro, so their bounds, list and callee can be built from macro parameters.
+- Added the **`else` fallback in `select` statements** as an alternative to `default` ([#119](https://github.com/mathiasvatter/cksp-compiler/issues/119)).
+- Added **`(* ... *)` block comments**.
+- Added **imports relative to the entry file**. SublimeKSP resolves every import against the main script, so a nested module importing a sibling of the entry file no longer fails. The path next to the importing file is still tried first, and the error names both folders.
+- Added a rename for a **parameter named `ref`**, which cksp reads as the pass-by-reference keyword.
+- Added quick fixes for the **SublimeKSP compile toggles** that have a cksp pragma: `optimize_code`, `combine_callbacks` and `compact_variables` become `#pragma optimize`, `combine_callbacks` and `obfuscate`.
+
+### Improved
+- A **`define` inside a macro body** now receives the macro's arguments, so `define MY_#name#` creates one define per expansion.
+- The migration assistant now also fixes pass-by reference warnings. It is only rewritten when every call passes a variable, since `ref` would break a call that passes an expression.
+
+## Language Server
+
+### Added
+- Added **signature help** for user-defined functions and methods.
+
+### Improved
+- **Member completion prefers a typed declaration**: inside `function remove(preset: Preset)`, `preset.` now completes the parameter even when a `const preset` block exists.
 
 Please keep reporting regressions, confusing diagnostics, and editor-integration issues on GitHub.
 
