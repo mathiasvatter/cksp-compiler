@@ -208,6 +208,8 @@ NodeAST * ASTSemanticAnalysis::visit(NodeSingleDeclaration &node) {
 			std::unordered_set<const NodeDataStructure*> warned_references;
 			for (const auto reference : collector.get_non_const_references()) {
 				const auto declaration = reference->get_declaration();
+				// the ui id of a control never changes, so copying it once is exactly what is wanted
+				if (reference->is_in_get_ui_id()) continue;
 				if (!declaration or !warned_references.insert(declaration.get()).second) continue;
 				auto warning = Diagnostic(ErrorType::CompileWarning, "", "", reference->tok);
 				warning.message = "Array <" + node.variable->name
