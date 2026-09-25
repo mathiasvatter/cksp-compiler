@@ -64,12 +64,11 @@ public:
         		if (!m_program->function_definition_stack.empty()) {
         			const auto& current_func = m_program->function_definition_stack.top();
         			if (auto func = current_func.lock()) {
-						func->num_return_stmts++;
         				auto block = std::make_unique<NodeBlock>(node.tok);
 						block->add_as_stmt(std::make_unique<NodeReturn>(node.tok));
         				const auto return_stmt = block->get_last_statement()->cast<NodeReturn>();
         				return_stmt->definition = func;
-        				func->return_stmts.push_back(return_stmt);
+        				func->add_return_stmt(return_stmt);
         				return node.replace_with(std::move(block));
         			}
         		}

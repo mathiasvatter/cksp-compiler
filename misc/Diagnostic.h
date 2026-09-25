@@ -73,12 +73,15 @@ struct Diagnostic {
         SublimePragma,
         Taskfunc,
         TCM,
-        PostMacro,
         Property,
+        ListDeclaration,
+        ListAdd,
         IdentifierCase,
         GlobalDeclarationInitializer,
         ReservedResultName,
-        InvalidCharacter
+        ReservedParameterName,
+        InvalidCharacter,
+        PassByReference
     };
 
     struct DiagnosticFix {
@@ -92,12 +95,18 @@ struct Diagnostic {
             ConvertSublimePragma,
             SplitGlobalDeclarationAssignment,
             RenameReservedResult,
-            ReplaceInvalidCharacter
+            RenameReservedParameter,
+            ReplaceInvalidCharacter,
+            CreateOutputFolder,
+            ReplacePragmaWorkaround,
         };
         enum class EditKind {
             InsertBefore,
             InsertAfter,
-            Replace
+            Replace,
+            /// Creates <file> and the folders leading to it, rather than editing any source.
+            /// <range> and <new_text> are unused.
+            CreateFile
         };
         struct Edit {
             EditKind kind = EditKind::Replace;
@@ -126,7 +135,9 @@ struct Diagnostic {
             case DiagnosticFix::FixKind::ConvertSublimePragma: return "ConvertSublimePragma";
             case DiagnosticFix::FixKind::SplitGlobalDeclarationAssignment: return "SplitGlobalDeclarationAssignment";
             case DiagnosticFix::FixKind::RenameReservedResult: return "RenameReservedResult";
+            case DiagnosticFix::FixKind::RenameReservedParameter: return "RenameReservedParameter";
             case DiagnosticFix::FixKind::ReplaceInvalidCharacter: return "ReplaceInvalidCharacter";
+            case DiagnosticFix::FixKind::CreateOutputFolder: return "CreateOutputFolder";
             default: break;
         }
         return "unknown";
@@ -136,12 +147,15 @@ struct Diagnostic {
             case MigrationKind::SublimePragma: return "SublimePragma";
             case MigrationKind::Taskfunc: return "Taskfunc";
             case MigrationKind::TCM: return "TCM";
-            case MigrationKind::PostMacro: return "PostMacro";
             case MigrationKind::Property: return "Property";
+            case MigrationKind::ListDeclaration: return "ListDeclaration";
+            case MigrationKind::ListAdd: return "ListAdd";
             case MigrationKind::IdentifierCase: return "IdentifierCase";
             case MigrationKind::GlobalDeclarationInitializer: return "GlobalDeclarationInitializer";
             case MigrationKind::ReservedResultName: return "ReservedResultName";
+            case MigrationKind::ReservedParameterName: return "ReservedParameterName";
             case MigrationKind::InvalidCharacter: return "InvalidCharacter";
+            case MigrationKind::PassByReference: return "PassByReference";
             default: break;
         }
         return "unknown";
@@ -184,6 +198,9 @@ struct Diagnostic {
     /// engine, and the compiler refuses to generate code while that count is not zero - the
     /// run reaches its end so every further error is found, and still fails.
     void report_as_error(DiagnosticEngine& diagnostics) const;
+    /// Emits a hint: for code that is most likely fine but worth pointing out. The editor
+    /// shows it without listing it among the problems, and the console does not print it.
+    void report_as_hint(DiagnosticEngine& diagnostics) const;
     /// Aborts the current compilation by throwing CompilationAborted.
     [[noreturn]] void exit() const;
 
@@ -193,7 +210,12 @@ struct Diagnostic {
         message += value;
     }
     void set_expected(const std::string& value) { expected = value; }
+    /// Points the diagnostic at a token, and reports that token as what was found.
     void set_token(const Token& token);
+    /// Points the diagnostic at a token without touching <actual>: for a diagnostic that was
+    /// raised away from the source and already says what it found, such as a path resolver
+    /// reporting the paths it tried.
+    void set_location(const Token& token);
     [[nodiscard]] std::string display_message() const;
     /// "Expected: …" / "Got: …", rendered readable. Empty when neither is known.
     [[nodiscard]] std::string display_detail() const;

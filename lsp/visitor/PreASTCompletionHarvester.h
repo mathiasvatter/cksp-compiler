@@ -5,6 +5,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "../../cksp/Preprocessor/PreAST/PreASTNodes/PreAST.h"
 #include "../../cksp/Source/CompletionIndex.h"
@@ -23,12 +24,23 @@ namespace lsp {
 namespace detail {
 
 /// "(a, b)" for a parameterised definition, empty when it has no parameter list.
-[[nodiscard]] inline std::string parameters_of(PreNodeList* args, const bool has_parenth) {
-	if (!args || (!has_parenth && args->params.empty())) return {};
+[[nodiscard]] inline std::vector<std::string> parameter_labels_of(PreNodeList* args) {
+	std::vector<std::string> labels;
+	if (!args) return labels;
+	labels.reserve(args->params.size());
+	for (const auto& parameter : args->params) {
+		if (parameter) labels.push_back(parameter->get_string());
+	}
+	return labels;
+}
+
+[[nodiscard]] inline std::string parameters_of(
+	const std::vector<std::string>& labels, const bool has_parenth) {
+	if (!has_parenth && labels.empty()) return {};
 	std::string parameters = "(";
-	for (size_t i = 0; i < args->params.size(); ++i) {
+	for (size_t i = 0; i < labels.size(); ++i) {
 		if (i) parameters += ", ";
-		if (args->params[i]) parameters += args->params[i]->get_string();
+		parameters += labels[i];
 	}
 	return parameters + ")";
 }
@@ -60,8 +72,9 @@ inline void harvest_preprocessor_definitions(PreNodeProgram& program, Completion
 		if (!define || !define->header) continue;
 		const auto name = define->header->get_name();
 		if (name.empty()) continue;
+		const auto parameter_labels = detail::parameter_labels_of(define->header->args.get());
 		const auto parameters = detail::parameters_of(
-			define->header->args.get(), define->header->has_parenth);
+			parameter_labels, define->header->has_parenth);
 
 		std::string signature = "define " + name + parameters;
 		// A parameterless define stands for a value; showing it is the point.
@@ -77,6 +90,7 @@ inline void harvest_preprocessor_definitions(PreNodeProgram& program, Completion
 			.detail = signature,
 			.kind = parameters.empty() ? CompletionKind::Constant : CompletionKind::Function,
 			.category = "define",
+			.parameter_labels = parameter_labels,
 		});
 	}
 
@@ -84,14 +98,16 @@ inline void harvest_preprocessor_definitions(PreNodeProgram& program, Completion
 		if (!macro || !macro->header) continue;
 		const auto name = macro->header->get_name();
 		if (name.empty()) continue;
+		const auto parameter_labels = detail::parameter_labels_of(macro->header->args.get());
 		const auto parameters = detail::parameters_of(
-			macro->header->args.get(), macro->header->has_parenth);
+			parameter_labels, macro->header->has_parenth);
 		index.add_declaration({
 			.name = name,
 			.parameters = parameters,
 			.detail = "macro " + name + parameters,
 			.kind = CompletionKind::Function,
 			.category = "macro",
+			.parameter_labels = parameter_labels,
 		});
 	}
 }

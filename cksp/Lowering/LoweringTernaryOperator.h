@@ -102,8 +102,7 @@ private:
 		}
 
 		ternary_def->body->scope = true;
-		ternary_def->num_return_stmts = 2;
-		ternary_def->num_return_params = 1;
+		ternary_def->set_returns(1, 2);
 		ternary_def->collect_declarations(m_program);
 		ternary_call->kind = NodeFunctionCall::Kind::UserDefined;
 		ternary_call->definition = ternary_def;

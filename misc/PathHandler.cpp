@@ -4,6 +4,7 @@
 
 #include "PathHandler.h"
 #include "Diagnostic.h"
+#include "DiagnosticFixBuilder.h"
 
 PathHandler::PathHandler(Token current_token, std::string current_file, std::string root_directory)
 	: m_current_token(std::move(current_token)), m_current_file(std::move(current_file)),
@@ -67,14 +68,7 @@ Result<std::string> PathHandler::resolve_path(const std::string &import_path) {
 		return Result<std::string>(rel.string());
 	}
 
-	std::filesystem::path base_path;
-	// check if import_path starts with "./" to determine the base path
-	if (!import_path.empty() && import_path.rfind("./", 0) == 0) {
-		base_path = m_root_directory;
-	} else {
-		std::filesystem::path current_file(m_current_file);
-		base_path = current_file.parent_path();
-	}
+	const std::filesystem::path base_path = base_directory_for(import_path);
 
 	// 1. try standard path resolution
 	std::filesystem::path combined_path = (base_path / rel).lexically_normal();
@@ -140,14 +134,70 @@ Result<std::string> PathHandler::resolve_overlap(const std::string &base_path, c
 	return Result<std::string>(mergedPath.string());
 }
 
+// The base an import without a "./" prefix is resolved against: the folder of the file the
+// import is written in. A "./" prefix asks for the project root instead, which is the folder
+// of the entry file the compilation started from.
+std::filesystem::path PathHandler::base_directory_for(const std::string &import_path) const {
+	if (import_path.starts_with("./")) {
+		return {m_root_directory};
+	}
+	return std::filesystem::path(m_current_file).parent_path();
+}
+
 Result<std::string> PathHandler::resolve_import_path(const std::string &import_path) {
-	auto absolute_path_result = resolve_path(import_path);
-	if(absolute_path_result.is_error()) {
-		return absolute_path_result;
+	if (auto near_importer = resolve_path(import_path); !near_importer.is_error()) {
+		// resolve_path also accepts a path whose file does not exist yet - what an output
+		// path needs, and never what an import means.
+		if (auto existing = check_valid_path(near_importer.unwrap()); !existing.is_error()) {
+			return existing;
+		}
 	}
 
-	// check_valid_path prüft, ob die aufgelöste Datei tatsächlich existiert.
-	return check_valid_path(absolute_path_result.unwrap());
+	const std::filesystem::path relative(import_path);
+	const auto from_root = (std::filesystem::path(m_root_directory) / relative).lexically_normal();
+
+	// SublimeKSP resolves every import against the main script's folder, so a ported project
+	// imports a sibling of its entry file from any nesting depth. Reached only once the
+	// candidate next to the importing file has failed, which keeps that one authoritative.
+	if (!relative.is_absolute() && !m_root_directory.empty() && std::filesystem::exists(from_root)) {
+		return Result<std::string>(std::filesystem::absolute(from_root).string());
+	}
+
+	// Both candidates belong in the message: which one was meant is exactly what the reader
+	// has to decide, and neither path is visible in the import statement the error points at.
+	const auto near_importer = (base_directory_for(import_path) / relative).lexically_normal();
+	m_error.message = "Could not resolve path. File not found.";
+	m_error.add_message(near_importer == from_root || relative.is_absolute()
+		? "Tried <" + near_importer.string() + ">."
+		: "Tried <" + near_importer.string() + "> and <" + from_root.string() + ">.");
+	m_error.expected = "valid path";
+	m_error.actual = import_path;
+	return Result<std::string>(m_error);
+}
+
+Result<std::string> PathHandler::resolve_output_path(const std::string &output_path) {
+	if (auto resolved = resolve_path(output_path); !resolved.is_error()) {
+		return check_valid_output_file(resolved.unwrap());
+	}
+
+	// resolve_path fails once neither the file nor the folder holding it is there, and reports
+	// the file it could not find. An output file is written by the compile and is not expected
+	// to exist yet - the folder is the part that has to, so that is what the message names.
+	const auto combined = std::filesystem::absolute(
+		base_directory_for(output_path) / std::filesystem::path(output_path)).lexically_normal();
+	const auto folder = combined.parent_path();
+	m_error.message = "The folder of this output path does not exist.";
+	m_error.add_message("<" + folder.string() + "> has to exist before the compile can write "
+		"<" + combined.filename().string() + "> into it. The file itself does not, it is created "
+		"by the compile.");
+	m_error.expected = "an existing folder";
+	m_error.actual = folder.string();
+	m_error.fix = DiagnosticFixBuilder(
+			Diagnostic::DiagnosticFix::FixKind::CreateOutputFolder,
+			"Create folder '" + folder.filename().string() + "' for this output path")
+		.create_file(combined.string())
+		.build();
+	return Result<std::string>(m_error);
 }
 
 Result<std::vector<std::string>> PathHandler::get_directory_files(const std::string &directory_path) {

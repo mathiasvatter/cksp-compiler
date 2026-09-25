@@ -368,6 +368,159 @@ def _(workspace, server):
     )
 
 
+@test("diagnostics: persistence keywords reject local declarations")
+def _(workspace, server):
+    cases = [
+        (
+            "persistent_local_function.cksp",
+            "pers",
+            "function f()\n"
+            "    declare pers value := 1\n"
+            "end function\n\n"
+            "on init\n"
+            "    f()\n"
+            "end on\n",
+        ),
+        (
+            "persistent_local_callback.cksp",
+            "instpers",
+            "on note\n"
+            "    declare instpers value := 1\n"
+            "    message(value)\n"
+            "end on\n",
+        ),
+        (
+            "persistent_local_loop.cksp",
+            "read",
+            "on note\n"
+            "    for i in range(2)\n"
+            "        declare read value := i\n"
+            "        message(value)\n"
+            "    end for\n"
+            "end on\n",
+        ),
+        (
+            "persistent_explicit_local.cksp",
+            "pers",
+            "on init\n"
+            "    declare local pers value := 1\n"
+            "end on\n",
+        ),
+    ]
+
+    for name, keyword, source in cases:
+        fixture = workspace.write(name, source)
+        server.did_open(fixture)
+        diagnostics = server.diagnostics(fixture)
+        matching = [
+            diagnostic for diagnostic in diagnostics
+            if "cannot be used on local declaration" in diagnostic["message"]
+        ]
+        expect(len(matching) == 1,
+               f"{name}: expected one local-persistence error, got {messages_of(diagnostics)}")
+        diagnostic = matching[0]
+        expect(diagnostic["severity"] == 1,
+               f"{name}: local persistence must be an error: {diagnostic}")
+        start = position_of(diagnostic)
+        source_line = source.splitlines()[start.line]
+        expect(source_line[start.character:].startswith(keyword),
+               f"{name}: diagnostic should point at {keyword!r}, got {diagnostic['range']}")
+
+
+@test("diagnostics: persistence builtins reject local variable arguments")
+def _(workspace, server):
+    cases = [
+        ("make_persistent", "function"),
+        ("make_instr_persistent", "callback"),
+        ("read_persistent_var", "loop"),
+    ]
+
+    for command, context in cases:
+        if context == "function":
+            source = (
+                "function f()\n"
+                "    declare value := 1\n"
+                f"    {command}(value)\n"
+                "end function\n\n"
+                "on init\n"
+                "    f()\n"
+                "end on\n"
+            )
+        elif context == "callback":
+            source = (
+                "on note\n"
+                "    declare value := 1\n"
+                f"    {command}(value)\n"
+                "end on\n"
+            )
+        else:
+            source = (
+                "on note\n"
+                "    for i in range(2)\n"
+                "        declare value := i\n"
+                f"        {command}(value)\n"
+                "    end for\n"
+                "end on\n"
+            )
+
+        name = f"persistent_builtin_local_{command}.cksp"
+        fixture = workspace.write(name, source)
+        server.did_open(fixture)
+        diagnostics = server.diagnostics(fixture)
+        matching = [
+            diagnostic for diagnostic in diagnostics
+            if f"Persistence operation <{command}>" in diagnostic["message"]
+        ]
+        expect(len(matching) == 1,
+               f"{name}: expected one local-persistence error, got {messages_of(diagnostics)}")
+        diagnostic = matching[0]
+        expect(diagnostic["severity"] == 1,
+               f"{name}: local persistence must be an error: {diagnostic}")
+        start = position_of(diagnostic)
+        source_line = source.splitlines()[start.line]
+        expect(source_line[start.character:].startswith("value"),
+               f"{name}: diagnostic should point at the local argument, got "
+               f"{diagnostic['range']}")
+
+
+@test("diagnostics: persistence remains valid for global storage")
+def _(workspace, server):
+    cases = [
+        (
+            "persistent_nested_init.cksp",
+            "on init\n"
+            "    if true\n"
+            "        declare pers nested_init := 1\n"
+            "    end if\n"
+            "end on\n",
+        ),
+        (
+            "persistent_explicit_global.cksp",
+            "function f()\n"
+            "    declare global pers shared := 1\n"
+            "end function\n\n"
+            "on init\n"
+            "    f()\n"
+            "end on\n",
+        ),
+        (
+            "persistent_builtin_global.cksp",
+            "on init\n"
+            "    declare shared := 1\n"
+            "    make_persistent(shared)\n"
+            "    read_persistent_var(shared)\n"
+            "end on\n",
+        ),
+    ]
+
+    for name, source in cases:
+        fixture = workspace.write(name, source)
+        server.did_open(fixture)
+        expect(server.diagnostics(fixture) == [],
+               f"{name}: global persistence should remain valid, got "
+               f"{messages_of(server.diagnostics(fixture))}")
+
+
 @test("diagnostics: a clean file publishes an empty list")
 def _(workspace, server):
     fixture = workspace.open("navigation.cksp")
@@ -672,6 +825,15 @@ def _(workspace, server):
     expect_labels(server.completion(fixture, "local_group"), ["zone", "count", "tick"], exactly=True)
 
 
+@test("completion: a typed parameter shadows a same-named const block",
+      requires="completionProvider")
+def _(workspace, server):
+    fixture = workspace.open("completion_instance.cksp")
+    items = server.completion(fixture, "parameter_shadows_const")
+    expect_labels(items, ["idx", "file", "ping"], exactly=True)
+    expect_no_labels(items, ["GLOBAL_ONLY"])
+
+
 @test("completion: a struct name still offers only its statics",
       requires="completionProvider")
 def _(workspace, server):
@@ -957,6 +1119,156 @@ def _(workspace, server):
 
 
 # ==========================================================================
+# Signature help — reuses completion snapshots and live-buffer call scanning
+# ==========================================================================
+
+def expect_signature(server, fixture, marker, label, parameters, active=None):
+    help_result = server.signature_help(
+        fixture, marker, trigger_character="," if active else "("
+    )
+    expect(help_result is not None, f"{marker}: expected signature help")
+    signatures = help_result.get("signatures", [])
+    expect(len(signatures) == 1, f"{marker}: expected one signature, got {signatures}")
+    signature = signatures[0]
+    expect(signature.get("label") == label,
+           f"{marker}: expected label {label!r}, got {signature.get('label')!r}")
+    found_parameters = [parameter.get("label") for parameter in signature.get("parameters", [])]
+    expect(found_parameters == parameters,
+           f"{marker}: expected parameters {parameters}, got {found_parameters}")
+    if active is None:
+        expect("activeParameter" not in help_result,
+               f"{marker}: zero-parameter signature should have no active parameter")
+    else:
+        expect(help_result.get("activeParameter") == active,
+               f"{marker}: expected active parameter {active}, got {help_result}")
+
+
+@test("signature help: capability advertises call and comma triggers",
+      requires="signatureHelpProvider")
+def _(workspace, server):
+    options = server.capabilities.get("signatureHelpProvider")
+    expect(isinstance(options, dict), f"signatureHelpProvider should be an object: {options}")
+    triggers = options.get("triggerCharacters", [])
+    expect("(" in triggers and "," in triggers, f"unexpected signature triggers: {triggers}")
+
+
+@test("signature help: functions resolve active parameters",
+      requires="signatureHelpProvider")
+def _(workspace, server):
+    fixture = workspace.open("signature_help.cksp")
+    label = "function fade(amount: int, target: int): int"
+    parameters = ["amount: int", "target: int"]
+    expect_signature(server, fixture, "function_first", label, parameters, 0)
+    expect_signature(server, fixture, "function_second", label, parameters, 1)
+    expect_signature(server, fixture, "nested_outer_second", label, parameters, 1)
+    expect_signature(server, fixture, "multiline_second", label, parameters, 1)
+    expect_signature(server, fixture, "string_second", label, parameters, 1)
+    expect_signature(server, fixture, "comment_second", label, parameters, 1)
+
+
+@test("signature help: static, instance and self methods share receiver resolution",
+      requires="signatureHelpProvider")
+def _(workspace, server):
+    fixture = workspace.open("signature_help.cksp")
+    expect_signature(
+        server, fixture, "static_method_second",
+        "static function describe(label: string, count: int): int",
+        ["label: string", "count: int"], 1,
+    )
+    method_label = "function set(amount: int, target: int): int"
+    method_parameters = ["amount: int", "target: int"]
+    expect_signature(
+        server, fixture, "instance_method_second", method_label, method_parameters, 1)
+    expect_signature(
+        server, fixture, "self_method_second", method_label, method_parameters, 1)
+
+
+@test("signature help: preprocessor and dotted callables use harvested signatures",
+      requires="signatureHelpProvider")
+def _(workspace, server):
+    fixture = workspace.open("signature_help.cksp")
+    expect_signature(
+        server, fixture, "define_second", "define SCALE(value, factor)",
+        ["value", "factor"], 1,
+    )
+    expect_signature(
+        server, fixture, "macro_second", "macro prepare(#name#, #count#)",
+        ["#name#", "#count#"], 1,
+    )
+    expect_signature(
+        server, fixture, "dotted_macro_second", "macro nks.init(#name#, #count#)",
+        ["#name#", "#count#"], 1,
+    )
+
+
+@test("signature help: zero parameters and non-call contexts",
+      requires="signatureHelpProvider")
+def _(workspace, server):
+    fixture = workspace.open("signature_help.cksp")
+    expect_signature(
+        server, fixture, "zero_parameters", "function reset()", [], None)
+    expect(server.signature_help(fixture, "inside_comment") is None,
+           "signature help must stay silent inside a comment")
+
+
+@test("signature help: parenthesis-star comments hide calls and delimiters",
+      requires="signatureHelpProvider")
+def _(workspace, server):
+    fixture = workspace.open("signature_help.cksp")
+    changed = server.did_change(
+        fixture,
+        fixture.text.replace(
+            "message(audio.fade(1, 2))",
+            '(* audio.fade(1, <|star_comment|> /* } " *) '
+            'message(audio.fade(1, (* ignored , ) *) <|after_star_comment|>2))',
+            1,
+        ),
+    )
+    expect(not any(d.get("severity") == 1 for d in server.diagnostics(changed)),
+           "parenthesis-star comments should compile")
+    expect(server.signature_help(changed, "star_comment") is None,
+           "signature help must stay silent inside a parenthesis-star comment")
+    expect_signature(
+        server, changed, "after_star_comment",
+        "function fade(amount: int, target: int): int",
+        ["amount: int", "target: int"], 1,
+    )
+
+
+@test("signature help: last good snapshot serves an unfinished call",
+      requires="signatureHelpProvider")
+def _(workspace, server):
+    fixture = workspace.open("signature_help.cksp")
+    broken = server.did_change(
+        fixture,
+        fixture.text.replace(
+            "message(audio.fade(1, 2))",
+            "message(audio.fade(1, <|broken_second|>",
+            1,
+        ),
+    )
+    expect(server.diagnostics(broken), "precondition: unfinished call should not parse")
+    expect_signature(
+        server, broken, "broken_second",
+        "function fade(amount: int, target: int): int",
+        ["amount: int", "target: int"], 1,
+    )
+
+
+@test("signature help: an unknown callable yields no result",
+      requires="signatureHelpProvider")
+def _(workspace, server):
+    fixture = workspace.open("signature_help.cksp")
+    broken = server.did_change(
+        fixture,
+        fixture.text.replace(
+            "message(audio.fade(1, 2))", "message(missing(<|unknown|>", 1),
+    )
+    expect(server.signature_help(broken, "unknown") is None,
+           "an unknown callable must not inherit another signature")
+
+
+# ==========================================================================
 # SublimeKSP migration — taskfunc and TCM are rejected, but with a way out
 # ==========================================================================
 
@@ -1020,6 +1332,88 @@ def _(workspace, server):
     action = action_titled(server.code_actions(fixture), "max_callback_depth")
     expect("#pragma max_callback_depth(64)" in apply_action(fixture.text, action, fixture),
            "the fix should write the pragma with the call's own depth")
+
+
+@test("diagnostics: a non-constant array initializer is a hint, not a warning",
+      entry_points=["array_initializer.cksp"])
+def _(workspace, server):
+    # Copying a value into an array is usually intended, so it is pointed out without being
+    # listed among the problems. The console does not print hints, which is why this lives
+    # here rather than in the expect suites.
+    fixture = workspace.write(
+        "array_initializer.cksp",
+        "on init\n"
+        "    declare ui_knob knb(0, 100, 1)\n"
+        "    declare variable := 2\n"
+        "    declare arr[3] := [0, 1, variable]\n"
+        "    declare const fixed := 4\n"
+        "    declare const_arr[2] := [0, fixed]\n"
+        "    declare source_arr[1] := [5]\n"
+        "    declare copied_arr[1] := [source_arr[0]]\n"
+        "    declare const fixed_source_arr[1] := [6]\n"
+        "    declare copied_const_arr[1] := [fixed_source_arr[0]]\n"
+        "    declare ids[1] := [get_ui_id(knb)]\n"
+        "end on\n")
+    server.did_open(fixture)
+    hints = [d for d in server.diagnostics(fixture) if "non-constant variable" in d["message"]]
+    named = sorted(d["message"].split("non-constant variable <")[1].split(">")[0] for d in hints)
+    expect(named == ["source_arr", "variable"],
+           f"expected hints for <variable> and <source_arr> only; got {messages_of(hints)}")
+    expect(all(d["severity"] == 4 for d in hints), f"expected hint severity: {hints}")
+
+
+def pass_by_reference_diagnostics(server, fixture):
+    return [d for d in server.diagnostics(fixture)
+            if (d.get("data") or {}).get("fixKind") == "AddRefToFuncParam"]
+
+
+@test("migration: a modified by-value parameter is ported to ref",
+      entry_points=["param_modified.cksp"])
+def _(workspace, server):
+    # SublimeKSP substitutes arguments, so the caller saw the change. Only a warning: it
+    # joins a migration run but must not be the reason one is offered.
+    fixture = workspace.write(
+        "param_modified.cksp",
+        "on init\n    declare y := 2\nend on\n"
+        "function bump(x)\n    x := x + 1\nend function\n"
+        "on note\n    bump(y)\nend on\n")
+    server.did_open(fixture)
+    diagnostics = pass_by_reference_diagnostics(server, fixture)
+    expect(len(diagnostics) == 1, f"expected one ref fix: {server.diagnostics(fixture)}")
+    expect(diagnostics[0]["data"].get("migrationKind") == "PassByReference",
+           f"the ref fix is not marked for migration: {diagnostics[0]}")
+    expect(diagnostics[0]["severity"] == 2, f"expected a warning: {diagnostics[0]}")
+
+
+@test("migration: a parameter called with an expression is not ported to ref",
+      entry_points=["param_expression.cksp"])
+def _(workspace, server):
+    # <ref> would turn <bump(y + 1)> into an assignment to an expression.
+    fixture = workspace.write(
+        "param_expression.cksp",
+        "on init\n    declare y := 2\nend on\n"
+        "function bump(x)\n    x := x + 1\n    message(x)\nend function\n"
+        "on note\n    bump(y)\n    bump(y + 1)\nend on\n")
+    server.did_open(fixture)
+    diagnostics = pass_by_reference_diagnostics(server, fixture)
+    expect(len(diagnostics) == 1, f"expected one ref fix: {server.diagnostics(fixture)}")
+    expect("migrationKind" not in diagnostics[0]["data"],
+           f"a fix that breaks a call site must stay out of the migration: {diagnostics[0]}")
+
+
+@test("migration: a ui control parameter used with -> is ported to ref",
+      entry_points=["param_ui_control.cksp"])
+def _(workspace, server):
+    fixture = workspace.write(
+        "param_ui_control.cksp",
+        "on init\n    declare ui_knob knb(0, 100, 1)\nend on\n"
+        "function reset(ctrl)\n    ctrl -> value := 0\nend function\n"
+        "on ui_control(knb)\n    reset(knb)\nend on\n")
+    server.did_open(fixture)
+    diagnostics = pass_by_reference_diagnostics(server, fixture)
+    expect(len(diagnostics) == 1, f"expected one ref fix: {server.diagnostics(fixture)}")
+    expect(diagnostics[0]["data"].get("migrationKind") == "PassByReference",
+           f"the ref fix is not marked for migration: {diagnostics[0]}")
 
 
 @test("migration: a computed tcm.init depth is explained instead of half-fixed",
@@ -1365,6 +1759,64 @@ def _(workspace, server):
            f"ported source still reports {messages_of(server.diagnostics(fixture))}")
 
 
+@test("migration: a parameter named after the ref keyword is renamed",
+      entry_points=["ref_named_parameter.cksp"])
+def _(workspace, server):
+    # CKSP writes <ref> before a parameter to pass it by reference. SublimeKSP has no such
+    # qualifier, so a ported script uses the word for what it reads like - a reference pitch.
+    # Taken as the qualifier, the parser ends up at the <)> and reports that instead.
+    source = ("function note_to_freq(midi_note, ref) -> result\n"
+              "  result := midi_note * ref\n"
+              "end function\n"
+              "\non init\n  message(note_to_freq(60, 440))\nend on\n")
+    fixture = workspace.write("ref_named_parameter.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(len(diagnostics) == 1, f"expected one diagnostic, got {messages_of(diagnostics)}")
+    message = diagnostics[0]["message"]
+    expect("<ref>" in message and "pass-by-reference" in message,
+           f"the message should say what the word is reserved for: {message!r}")
+    data = diagnostics[0].get("data") or {}
+    expect(data.get("migrationKind") == "ReservedParameterName",
+           f"a reserved parameter name is not marked for migration: {diagnostics[0]}")
+    expect(data.get("fixKind") == "RenameReservedParameter", f"wrong fix kind: {diagnostics[0]}")
+
+    action = action_titled(server.code_actions(fixture), "Rename parameter")
+    expect(action["title"] == "Rename parameter 'ref' to 'ref1'",
+           f"unexpected title: {action['title']!r}")
+    ported = apply_action(source, action, fixture)
+    expect("function note_to_freq(midi_note, ref1)" in ported,
+           f"the parameter was not renamed:\n{ported}")
+    expect("result := midi_note * ref1" in ported,
+           f"a read of the parameter was left behind:\n{ported}")
+
+    # What is left is an ordinary deprecated result, which converts as any other one does.
+    fixture = server.did_change(fixture, ported)
+    ported, applied = port_with_quick_fixes(fixture, server, ported)
+    expect(applied, "the renamed parameter should leave a convertible function behind")
+    expect(not server.diagnostics(fixture),
+           f"ported source still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: a by-reference parameter keeps its qualifier",
+      entry_points=["ref_qualifier.cksp"])
+def _(workspace, server):
+    # The word only becomes a name where no name follows it. A parameter list that uses both
+    # has to come out with the qualifier untouched and the name renamed.
+    source = ("function scale(ref values, ref) -> result\n"
+              "  values[0] := values[0] * ref\n"
+              "  result := values[0]\n"
+              "end function\n"
+              "\non init\n  declare arr[2]\n  message(scale(arr, 2))\nend on\n")
+    fixture = workspace.write("ref_qualifier.cksp", source)
+    server.did_open(fixture)
+    action = action_titled(server.code_actions(fixture), "Rename parameter")
+    ported = apply_action(source, action, fixture)
+    expect("function scale(ref values, ref1)" in ported,
+           f"the qualifier and the name were not told apart:\n{ported}")
+    expect("values[0] * ref1" in ported, f"a read of the parameter was left behind:\n{ported}")
+
+
 @test("migration: the rename skips a number the function already spells",
       entry_points=["return_named_result_taken.cksp"])
 def _(workspace, server):
@@ -1679,6 +2131,115 @@ def _(workspace, server):
     expect("{#pragma" not in ported, f"the SublimeKSP line survived:\n{ported}")
 
 
+@test("pragma: an output path names the folder that is missing, not the file",
+      entry_points=["pragma_output_folder.cksp"])
+def _(workspace, server):
+    # The file is written by the compile and is not expected to exist; the folder holding it
+    # is. Reported as a missing file, the reader goes looking for a script that was never
+    # there. A ported project runs into this whenever it was copied out of its library folder.
+    source = ('#pragma output_path("Resources/scripts/compiled.txt")\n'
+              "\non init\n    declare x := 1\nend on\n")
+    fixture = workspace.write("pragma_output_folder.cksp", source)
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(len(diagnostics) == 1, f"expected one diagnostic, got {messages_of(diagnostics)}")
+    message = diagnostics[0]["message"]
+    expect("folder" in message and "Resources/scripts" in message,
+           f"the missing folder has to be named: {message!r}")
+    expect("unknown" not in message,
+           f"nothing about the pragma is unknown, it is the folder that is missing: {message!r}")
+    expect((diagnostics[0].get("data") or {}).get("fixKind") == "CreateOutputFolder",
+           f"the diagnostic should offer to create the folder: {diagnostics[0]}")
+
+    action = action_titled(server.code_actions(fixture), "Create folder")
+    changes = action["edit"].get("documentChanges")
+    expect(changes and len(changes) == 1,
+           f"a creation travels as a resource operation: {action['edit']}")
+    expect(changes[0]["kind"] == "create" and changes[0]["options"]["ignoreIfExists"],
+           f"unexpected resource operation: {changes[0]}")
+    created = Path(uri_to_path(changes[0]["uri"]))
+    expect(same_path(str(created), workspace.root / "Resources/scripts/compiled.txt"),
+           f"the operation creates the wrong file: {created}")
+
+    # What the editor does with that operation, by hand: the parent folders come with it.
+    created.parent.mkdir(parents=True, exist_ok=True)
+    created.touch()
+    server.did_change(fixture, source + "\n")
+    expect(not server.diagnostics(fixture),
+           f"the folder exists now; got {messages_of(server.diagnostics(fixture))}")
+
+
+@test("pragma: an output path is offered no folder it already has",
+      entry_points=["pragma_output_ok.cksp"])
+def _(workspace, server):
+    (workspace.root / "build").mkdir(parents=True, exist_ok=True)
+    fixture = workspace.write("pragma_output_ok.cksp",
+                              '#pragma output_path("build/compiled.txt")\n'
+                              "\non init\n    declare x := 1\nend on\n")
+    server.did_open(fixture)
+    expect(not server.diagnostics(fixture),
+           f"an output file need not exist yet; got {messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: a compile toggle CKSP has a pragma for is offered as that pragma",
+      entry_points=["pragma_toggle.cksp"])
+def _(workspace, server):
+    # SublimeKSP switches these through <compile_with>/<compile_without>, CKSP through a pragma
+    # of its own. The three that map are worth a fix; the rest carry nothing to port.
+    for name, line, expected in [
+        ("pragma_optimize.cksp", "{#pragma compile_without optimize_code}",
+         '#pragma optimize("none")'),
+        ("pragma_optimize_on.cksp", "{#pragma compile_with optimize_code}",
+         '#pragma optimize("standard")'),
+        ("pragma_combine.cksp", "{#pragma compile_with combine_callbacks}",
+         "#pragma combine_callbacks(true)"),
+        ("pragma_compact.cksp", "{#pragma compile_without compact_variables}",
+         "#pragma obfuscate(false)"),
+    ]:
+        source = line + "\n\non init\n    declare x := 1\nend on\n"
+        fixture = workspace.write(name, source)
+        server.did_open(fixture)
+        diagnostics = server.diagnostics(fixture)
+        expect(len(diagnostics) == 1,
+               f"{name}: expected one diagnostic, got {messages_of(diagnostics)}")
+        expect(diagnostics[0]["severity"] == 2, f"{name}: must stay a warning")
+        expect(expected in diagnostics[0]["message"],
+               f"{name}: the message should spell the CKSP pragma: {diagnostics[0]['message']!r}")
+        expect((diagnostics[0].get("data") or {}).get("fixKind") == "ConvertSublimePragma",
+               f"{name}: the toggle should be portable: {diagnostics[0]}")
+
+        action = action_titled(server.code_actions(fixture), expected)
+        ported = apply_action(source, action, fixture)
+        expect(ported.startswith(expected) and "{#pragma" not in ported,
+               f"{name}: unexpected rewrite:\n{ported}")
+        server.did_change(fixture, ported)
+        expect(not server.diagnostics(fixture),
+               f"{name}: ported file still reports {messages_of(server.diagnostics(fixture))}")
+
+
+@test("migration: a compile toggle CKSP has nothing for invents no pragma",
+      entry_points=["pragma_no_counterpart.cksp"])
+def _(workspace, server):
+    # The message used to offer <#pragma compile_with(...)>, which does not exist - following
+    # it traded a harmless warning for a hard error.
+    fixture = workspace.write("pragma_no_counterpart.cksp",
+                              "{#pragma compile_with remove_whitespace}\n"
+                              "\non init\n    declare x := 1\nend on\n")
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(len(diagnostics) == 1, f"expected one diagnostic, got {messages_of(diagnostics)}")
+    message = diagnostics[0]["message"]
+    expect("remove_whitespace" in message, f"the toggle should be named: {message!r}")
+    # The <got:> part quotes the line itself, so the invented spelling is what to look for:
+    # the old message read "written without the braces, as <#pragma compile_with(...)>".
+    expect("compile_with(" not in message,
+           f"a pragma that does not exist must not be suggested: {message!r}")
+    expect("fixKind" not in (diagnostics[0].get("data") or {}),
+           f"there is nothing to port it to: {diagnostics[0]}")
+    expect(not server.code_actions(fixture),
+           "a toggle CKSP has no counterpart for has no rewrite")
+
+
 @test("migration: a pragma CKSP has no equivalent for warns without a fix",
       entry_points=["pragma_unknown.cksp"])
 def _(workspace, server):
@@ -1711,33 +2272,65 @@ def _(workspace, server):
            f"none of these are pragmas; got {messages_of(server.diagnostics(fixture))}")
 
 
-@test("migration: the post macro variants name the adopted one they are not",
+@test("the post macro variants are expanded, not reported",
       entry_points=["post_iterate.cksp", "post_literate.cksp"])
 def _(workspace, server):
-    # CKSP adopted iterate_macro/literate_macro, which run during macro expansion. The post
-    # variants run after it, which is what lets their bounds come out of the expansion.
-    for name, source, spelling, adopted in [
+    # iterate_post_macro/literate_post_macro are expanded after every macro is, so their
+    # bounds, their list and their callee may be built from macro parameters.
+    for name, source in [
         ("post_iterate.cksp",
-         "macro make_buttons(start, end)\n"
-         "    iterate_post_macro(declare ui_button btn_#n#) := #start# to #end#\n"
-         "end macro\n",
-         "iterate_post_macro", "iterate_macro"),
+         "macro inner(#n#)\n    message(#n#)\nend macro\n"
+         "macro make_buttons(#start#, #end#)\n"
+         "    iterate_post_macro(inner(#n#)) := #start# to #end#\n"
+         "end macro\n"
+         "on init\n    make_buttons(0, 2)\nend on\n"),
         ("post_literate.cksp",
-         "macro make(obj)\n    literate_post_macro(declare #l#) on #obj#.CONTROLS\nend macro\n",
-         "literate_post_macro", "literate_macro"),
+         "define PANEL.CONTROLS := knob_a, knob_b\n"
+         'macro show(#lit#)\n    message("#lit#")\nend macro\n'
+         "macro make(#obj#)\n    literate_post_macro(show(#l#)) on #obj#.CONTROLS\nend macro\n"
+         "on init\n    make(PANEL)\nend on\n"),
     ]:
         fixture = workspace.write(name, source)
         server.did_open(fixture)
-        messages = messages_of(server.diagnostics(fixture))
-        expect(any(spelling in message and adopted in message for message in messages),
-               f"{name}: expected {spelling} and {adopted} to be named, got {messages}")
-        diagnostic = next(d for d in server.diagnostics(fixture) if spelling in d["message"])
-        expect((diagnostic.get("data") or {}).get("migrationKind") == "PostMacro",
-               f"{name}: post macro is not identifiable as a migration blocker: {diagnostic}")
-        # No fix: renaming is only correct when the bounds are known during expansion, and
-        # CKSP rejects a macro parameter there outright.
-        expect(not server.code_actions(fixture),
-               f"{name}: a rename is not a safe fix for the case the post variant exists for")
+        expect(not server.diagnostics(fixture),
+               f"{name}: expected no diagnostics, got {messages_of(server.diagnostics(fixture))}")
+
+
+@test("lists: incremental SublimeKSP syntax reports migration blockers without fixes",
+      entry_points=["list_declare.cksp", "list_append.cksp"])
+def _(workspace, server):
+    cases = [
+        ("list_declare.cksp", "on init\n    declare list ids[]\nend on\n",
+         "ListDeclaration", "SublimeKSP <declare list>", 1, 12),
+        ("list_append.cksp", "on init\n    list_add(missing, 1)\nend on\n",
+         "ListAdd", "SublimeKSP <list_add>", 1, 4),
+    ]
+    for name, source, kind, message, line, character in cases:
+        fixture = workspace.write(name, source)
+        server.did_open(fixture)
+        diagnostics = server.diagnostics(fixture)
+        diagnostic = next((d for d in diagnostics if message in d["message"]), None)
+        expect(diagnostic is not None, f"expected the list migration message: {diagnostics}")
+        data = diagnostic.get("data") or {}
+        expect(data.get("migrationKind") == kind, f"missing migration kind: {diagnostic}")
+        expect("fixKind" not in data, f"a list migration must not advertise a fix yet: {diagnostic}")
+        expect(diagnostic["severity"] == 1, f"must be an error: {diagnostic}")
+        expect(diagnostic["range"]["start"] == {"line": line, "character": character},
+               f"must point at the unsupported construct: {diagnostic}")
+        expect("preserve evaluation order" in diagnostic["message"], "must explain the safe alternative")
+        expect(not server.code_actions(fixture), "no automatic migration is offered")
+
+
+@test("lists: row counts, array rows and raw storage survive analysis",
+      entry_points=["list_blocks.cksp"])
+def _(workspace, server):
+    source = ("on init\n    declare a[] := (1, 2)\n    list rows[,]\n"
+              "        a\n        3\n    end list\n    message(rows.SIZE)\n"
+              "    message(rows[0, 1])\n    message(rows.sizes[0])\n"
+              "    message(num_elements(_rows))\nend on\n")
+    fixture = workspace.write("list_blocks.cksp", source)
+    server.did_open(fixture)
+    expect(not server.diagnostics(fixture), f"list blocks must analyze: {server.diagnostics(fixture)}")
 
 
 if __name__ == "__main__":

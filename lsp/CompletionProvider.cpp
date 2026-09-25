@@ -42,13 +42,15 @@ std::vector<CompletionMember> CompletionProvider::members(
 			? state->second.last_successful
 			: state->second.current;
 		if (!index) continue;
-		// An empty chain means a bare identifier is being typed.
+		// A visible declaration shadows a same-named qualifier. For example, inside
+		// <function remove(preset: Preset)>, <preset.> is the parameter even when a
+		// global <const preset> block also exists. Struct names still reach their static
+		// container because their declaration has no instance type.
 		auto members = chain.empty()
 			? index->visible_symbols(file, line, character)
-			: index->members_of(chain, file, line, character);
-		// A chain that names no qualifier may still name an instance: <inst.>, <self.>.
+			: index->instance_members_of(chain, file, line, character);
 		if (members.empty() && !chain.empty()) {
-			members = index->instance_members_of(chain, file, line, character);
+			members = index->members_of(chain, file, line, character);
 		}
 		// Last: a name that merely contains dots, like <macro nks.init()>.
 		if (members.empty() && !chain.empty()) {
@@ -118,4 +120,23 @@ JSONArray CompletionProvider::items(
 		items.add(make_item(member));
 	}
 	return items;
+}
+
+std::vector<CompletionMember> CompletionProvider::callables(
+	const std::vector<SourceId>& preferred_entries,
+	const std::vector<std::string>& qualifier,
+	const std::string& callable,
+	const SourceId& source,
+	const size_t line,
+	const size_t character) const {
+	std::vector<CompletionMember> found;
+	for (auto& member : members(
+		preferred_entries, qualifier, source, line, character)) {
+		// `parameters` distinguishes a callable, including a zero-argument one whose
+		// spelling is "()", from variables and parameterless value defines.
+		if (member.label == callable && !member.parameters.empty()) {
+			found.push_back(std::move(member));
+		}
+	}
+	return found;
 }

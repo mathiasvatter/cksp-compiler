@@ -1,0 +1,29 @@
+// A struct of a namespace names its siblings as they are written: <Slot> inside <engine> is
+// <engine.Slot>, in a constructor call and in a type annotation alike. The annotation is
+// resolved before the block is read, so its type has to be re-pointed to the struct's own.
+// EXPECT declare %engine__Slot____v\[2\]
+// EXPECT message\(%engine__Slot____v\[\$s\]\)
+// EXPECT message\(%engine__Slot____v\[\$direct\]\)
+namespace engine
+    struct Slot
+        v: int
+    end struct
+
+    struct Group
+        function slot(self, x: int): Slot
+            return Slot(x)
+        end function
+    end struct
+
+    function make(x: int): Slot
+        return Slot(x)
+    end function
+end namespace
+
+on init
+    declare g := engine.Group()
+    declare s := g.slot(7)
+    message(s.v)
+    declare direct := engine.make(9)
+    message(direct.v)
+end on

@@ -57,6 +57,10 @@ struct NodeAST {
 	// Methode zum Ersetzen des aktuellen Knotens durch einen neuen Knoten
 	// Gibt den alten Knoten zurück, um die Referenzierung zu aktualisieren
 	virtual NodeAST* replace_with(std::unique_ptr<NodeAST> newNode);
+	/// Puts <replacement> in this node's place and hands it back visited - the shape of every
+	/// rewrite a visitor makes while it walks, and what its <visit> then returns. The node is
+	/// gone once this is called, so nothing of it may be read afterwards.
+	NodeAST* replace_and_visit(std::unique_ptr<NodeAST> replacement, class ASTVisitor& visitor);
     // Hinzugefügte Methode zum Aktualisieren der Parent-Pointer
     virtual void update_parents(NodeAST* new_parent) {
         parent = new_parent;
@@ -267,6 +271,14 @@ struct NodeReference : NodeAST {
 	virtual std::unique_ptr<struct NodePointerRef> to_pointer_ref();
 	virtual std::unique_ptr<struct NodeNDArrayRef> to_ndarray_ref();
 	std::unique_ptr<NodeAccessChain> to_method_chain() override;
+	/// Whether this reference is written with a subscript.
+	[[nodiscard]] virtual bool has_indexes() const { return false; }
+	/// The indexes this reference is written with, moved out of it. Empty for a reference that
+	/// carries none, and for one that is no subscript at all.
+	[[nodiscard]] virtual std::vector<std::unique_ptr<NodeAST>> take_indexes() { return {}; }
+	/// What an overloaded subscript on this reference is called with: the object itself, then
+	/// the indexes it is written with. Both are moved out of the reference.
+	[[nodiscard]] std::unique_ptr<struct NodeParamList> take_subscript_operands(const Token& op);
 	[[nodiscard]] std::shared_ptr<NodeDataStructure> get_declaration() const;
 	/// Completes the data structure of reference by copying missing parameters of declaration
 	void match_data_structure(const std::shared_ptr<NodeDataStructure>& data_structure);
@@ -320,6 +332,11 @@ struct NodeReference : NodeAST {
     [[nodiscard]] struct NodeSingleAssignment* is_l_value() const;
 	/// checks if reference is somewhere in the r_value expresssion
     [[nodiscard]] NodeSingleAssignment *is_r_value() const;
+	/// checks if the object itself is used here instead of its value, so no property getter applies
+	[[nodiscard]] bool is_raw_object_context() const;
+	/// Copies the reference but hands over its children, because raw pointers to them may already
+	/// be registered (references, function calls, call sites) and must stay valid.
+	std::unique_ptr<NodeAST> clone_keeping_children();
 	virtual std::unique_ptr<NodeReference> expand_dimension(std::unique_ptr<NodeAST> new_index) {
 		return nullptr;
 	}
@@ -1140,17 +1157,56 @@ struct NodeFunctionDefinition final : NodeAST, std::enable_shared_from_this<Node
 	bool has_exit_command = false;
     bool is_used = false;
 	bool visited = false;
-	int num_return_params = 0;
-	int num_return_stmts = 0;
+	/// How many values the function yields: 0 for one that returns nothing, 1 for the ordinary
+	/// case, more for one returning several. This is a property of the signature, which is why
+	/// it stands without a <return> statement anywhere - the deprecated <-> result> form and a
+	/// builtin both have it. Not to be confused with the header parameters the values are later
+	/// promoted into, see ReturnParamPromotion.
+	int num_return_values = 0;
+	/// The <return> statements in the body, in the order they were met. Added through
+	/// <add_return_stmt>, which keeps the count beside it, and dropped through
+	/// <clear_return_stmts> when a pass is about to walk them again.
 	std::vector<NodeReturn*> return_stmts;
     std::unordered_set<NodeFunctionCall*> call_sites = {};
 	mutable std::mutex call_sites_mutex;
     std::shared_ptr<NodeFunctionHeader> header;
+	/// variable written as '-> result' in deprecated sksp return value syntax
     std::optional<std::shared_ptr<NodeDataStructure>> return_variable;
     bool override = false;
 	/// <static function> member: belongs to the struct, not to an instance, and takes no <self>
 	bool is_static = false;
     std::unique_ptr<NodeBlock> body;
+
+	/// How many <return> statements the function has, which decides whether its body needs the
+	/// rewrite that turns early returns into one exit - see LoweringFunctionDefReturnStmts.
+	///
+	/// Nearly always <return_stmts.size()>, and kept that way by going through the two methods
+	/// below. It is a count of its own for the functions that have no body to hold the
+	/// statements: a builtin, and the ones the lowering passes synthesise.
+	[[nodiscard]] int num_return_stmts() const { return m_num_return_stmts; }
+	/// Registers a <return> statement of the body, counting it.
+	void add_return_stmt(NodeReturn* return_stmt) {
+		return_stmts.push_back(return_stmt);
+		++m_num_return_stmts;
+	}
+	/// Forgets the registered statements, for a pass that is about to collect them again.
+	void clear_return_stmts() {
+		return_stmts.clear();
+		m_num_return_stmts = 0;
+	}
+	/// The counts of a function whose <return> statements are not nodes of this AST: a builtin,
+	/// or one a lowering pass builds with a body it already knows the shape of.
+	void set_returns(const int values, const int statements) {
+		num_return_values = values;
+		m_num_return_stmts = statements;
+	}
+
+private:
+	/// Private so it cannot drift from <return_stmts>: the methods above are the only way in,
+	/// and each one leaves the two agreeing.
+	int m_num_return_stmts = 0;
+public:
+
     explicit NodeFunctionDefinition(Token tok);
     NodeFunctionDefinition(std::unique_ptr<NodeFunctionHeader> header,
 						   std::optional<std::unique_ptr<NodeDataStructure>> returnVariable, bool override,
@@ -1264,6 +1320,18 @@ struct NodeProgram final : NodeAST {
 	static NodeFunctionDefinition *replace_function_definition(const std::shared_ptr<NodeFunctionDefinition> &def, const std::shared_ptr<NodeFunctionDefinition> &replacement);
 	void update_struct_lookup();
 	[[nodiscard]] NodeStruct* find_struct(const std::string& name, int type_parameter_count = 0) const;
+	/// The method the struct of <ty> overloads <op> with, or nothing: when <ty> is no object,
+	/// when its struct does not overload the operator, or when the overload is written for a
+	/// different number of parameters than <num_params> - the same token stands for the unary
+	/// and the binary operator, and only one of them is this one. A <num_params> of 0 asks for
+	/// the overload whatever its arity is, which is what a subscript is looked up with: it is
+	/// declared for as many indexes as the struct cares to take.
+	[[nodiscard]] std::shared_ptr<NodeFunctionDefinition> find_overloaded_method(
+		const Type* ty, token op, size_t num_params = 0) const;
+	/// The method a subscript written on this reference calls. The declaration decides, not the
+	/// reference: an array of objects keeps its own meaning for <[i]>, the element.
+	[[nodiscard]] std::shared_ptr<NodeFunctionDefinition> find_subscript_overload(
+		const NodeReference& node, token op) const;
 	/// Puts a lowered struct's member block in its place in the AST and keeps the struct node
 	/// itself alive in <lowered_structs> instead of destroying it. Returns the member block.
 	NodeAST* retire_lowered_struct(NodeStruct& node);

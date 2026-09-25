@@ -1,0 +1,17 @@
+// EXPECT message\(.*\+ 10\)
+struct Value
+    number: int
+    function __get__(self): int
+        return self.number
+    end function
+    function raw(self): int
+        return self.number + 10
+    end function
+end struct
+on init
+    declare v := Value(5)
+    message(v.raw())
+    message(use_count(v))
+    message(v as int)
+    delete v
+end on

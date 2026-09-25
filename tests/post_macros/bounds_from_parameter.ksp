@@ -1,0 +1,15 @@
+// Bounds out of macro parameters, the case SublimeKSP's wiki names for the post variant.
+// EXPECT message\(2\)
+// EXPECT message\(3\)
+// EXPECT_NOT message\(1\)
+macro inner(#n#)
+    message(#n#)
+end macro
+
+macro outer(#start#, #end#)
+    iterate_post_macro(inner(#n#)) := #start# to #end#
+end macro
+
+on init
+    outer(2, 3)
+end on

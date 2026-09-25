@@ -1,0 +1,25 @@
+// EXPECT message\(%Item____value\[\$id\]\)
+// EXPECT %Item____value\[\$id\] := 5
+// EXPECT %Item____value\[\$id\] := 7
+// EXPECT %Item____next\[\$id\] := -1
+// EXPECT inc\(%Item____value\[\$self[0-9]*\]\)
+
+struct Item
+    value: int
+    next: Item
+
+    function bump(self)
+        self.value += 1
+    end function
+end struct
+
+on init
+    declare item: Item := new Item(7, nil)
+    declare id: int := item as int
+    message((id as Item).value)
+    (id as Item).value := 5
+    (id as Item).value += 2
+    (id as Item).next := nil
+    (id as Item).bump()
+    message(item.value)
+end on

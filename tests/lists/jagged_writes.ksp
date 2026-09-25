@@ -1,0 +1,14 @@
+// EXPECT %_xs\[.*\] := 77
+// EXPECT %_xs\[1\] := 88
+// EXPECT xs__sizes\[2\].*\(2, 1\)
+on init
+    list xs[,]
+        10, 20
+        30
+    end list
+    declare row := random(0, 1)
+    xs[row, 0] := 77
+    _xs[1] := 88
+    message(xs[row, 0])
+    message(xs.sizes[row])
+end on

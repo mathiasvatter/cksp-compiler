@@ -1,0 +1,10 @@
+// A define in a macro body is also the file's, as written - a script that spells its constants
+// inside a macro and reads them outside keeps working, whether the macro is called or not.
+// EXPECT message\(7\)
+macro never_called(parent)
+    define NUM_SLOTS := 7
+end macro
+
+on init
+    message(NUM_SLOTS)
+end on

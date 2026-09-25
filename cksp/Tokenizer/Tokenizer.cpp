@@ -45,7 +45,8 @@ void Tokenizer::token_loop() {
 			consume();
 			consume();
 		}
-		else if (peek() == '/' && (peek(1) == '*' || peek(1) == '/') || peek() == '{') {
+		else if ((peek() == '/' && (peek(1) == '*' || peek(1) == '/'))
+			|| (peek() == '(' && peek(1) == '*') || peek() == '{') {
 			warn_about_sublime_pragma();
 			get_comment();
 		} else if (peek() == '\n') {
@@ -204,14 +205,16 @@ void Tokenizer::add_invalid_character_fix(
 }
 
 bool Tokenizer::is_pragma() const {
-    auto workaround_pragma = peek(0) == '/' and peek(1) == '/' and peek(2) == '#' and
-            peek(3) == 'p' and peek(4) == 'r' and peek(5) == 'a' and
-            peek(6) == 'g' and peek(7) == 'm' and peek(8) == 'a';
+	const auto remaining = std::string_view(m_input).substr(m_pos);
+	const auto workaround_pragma = remaining.starts_with("//") and remaining.substr(2).starts_with(PRAGMA_LEXEME);
 	if(workaround_pragma) {
-		auto token = Token(token::PRAGMA, "//#pragma", m_line, m_line_pos, m_current_file);
-		auto error = Diagnostic(ErrorType::CompileWarning, "", "#pragma", token);
-		error.message = "Found usage of //#pragma. Note that this is a workaround and will be removed in future versions.";
-		error.report(m_diagnostics);
+		const auto token = Token(token::PRAGMA, "//" + std::string(PRAGMA_LEXEME), m_line, m_line_pos, m_current_file);
+		auto warning = Diagnostic(ErrorType::CompileWarning, "", std::string(PRAGMA_LEXEME), token);
+		warning.message = "Found usage of //#pragma. Note that this is a workaround and will be removed in future versions.";
+		warning.fix = DiagnosticFixBuilder(Diagnostic::DiagnosticFix::FixKind::ReplacePragmaWorkaround, "Replace '//#pragma' workaround")
+			.replace(token, std::string(PRAGMA_LEXEME))
+			.build();
+		warning.report(m_diagnostics);
 	}
 	return workaround_pragma;
 }
@@ -228,9 +231,8 @@ void Tokenizer::warn_about_sublime_pragma() {
 
 	auto body = StringUtils::trim(
 		std::string_view(m_input).substr(m_pos + 1, close - m_pos - 1));
-	static constexpr std::string_view PRAGMA = "#pragma";
-	if (!StringUtils::starts_with(body, PRAGMA)) return;
-	body = body.substr(PRAGMA.size());
+	if (!StringUtils::starts_with(body, PRAGMA_LEXEME)) return;
+	body = body.substr(PRAGMA_LEXEME.size());
 	// <{#pragmatic}> is a comment, not a pragma: the word has to end where <#pragma> does
 	if (body.empty() or !is_space(body.front())) return;
 	body = StringUtils::trim_start(body);
@@ -242,12 +244,7 @@ void Tokenizer::warn_about_sublime_pragma() {
 		? std::string()
 		: std::string(StringUtils::trim(body.substr(option_end)));
 
-	const Token pragma_token(
-		token::PRAGMA,
-		m_input.substr(m_pos, close - m_pos + 1),
-		m_line,
-		m_line_pos,
-		m_current_file);
+	const Token pragma_token(token::PRAGMA,m_input.substr(m_pos, close - m_pos + 1), m_line, m_line_pos, m_current_file);
 	pragma_migration::make_diagnostic(pragma_token, option, argument).report(m_diagnostics);
 }
 
@@ -270,23 +267,23 @@ void Tokenizer::get_comment() {
             }
         }
         consume();
-	} else if (peek() == '/') {
-        // if one-m_line comment c++ style
-        if (peek(1) == '/') {
-            while (peek() != '\n') {
-				consume();
-            }
-	m_line_comment++;
-            // skip nex_char(); so that the \n can be tokenized
-        // if multi-line comment c++ style
-        } else if (peek(1) == '*') {
-            while (peek() != '*' or peek(1) != '/') {
-				consume();
-                if (peek() == '\n') {m_line++; m_line_pos = 1; m_line_comment++;}
-            }
-			consume();
+	} else if (peek() == '/' && peek(1) == '/') {
+        while (peek() != '\n') {
             consume();
         }
+        m_line_comment++;
+        // Leave the newline for token_loop().
+    } else {
+        // Non-nesting block comments: /* ... */ and (* ... *).
+        const char closing = peek() == '(' ? ')' : '/';
+        consume();
+        consume();
+        while (peek() != '*' || peek(1) != closing) {
+            const char current = consume();
+            if (current == '\n') {m_line++; m_line_pos = 1; m_line_comment++;}
+        }
+        consume();
+        consume();
     }
     // if (not m_buffer.empty())
 	   //  add_token(token::COMMENT, m_buffer);
@@ -294,7 +291,7 @@ void Tokenizer::get_comment() {
 }
 
 bool Tokenizer::is_string() const {
-	return peek() == '\'' || peek() == '"';
+	return cksp::lexical::is_string_delimiter(peek());
 }
 
 void Tokenizer::get_string() {
@@ -398,10 +395,8 @@ void Tokenizer::get_arrow() {
 }
 
 bool Tokenizer::is_keyword_or_num() const {
-    bool is_keyword_or_num = std::isalnum(peek()) || peek() == '_' || VAR_IDENT.contains(peek()) ||
-            ARRAY_IDENT.contains(peek());
-    bool is_macro = peek() == '#' and (std::isalnum(peek(1)) || peek(1) == '_' || VAR_IDENT.contains(peek(1)) ||
-            ARRAY_IDENT.contains(peek(1)));
+	bool is_keyword_or_num = cksp::lexical::is_identifier_start(peek());
+	bool is_macro = peek() == '#' and cksp::lexical::is_identifier_start(peek(1));
 	bool is_float_start = peek() == '.' and std::isdigit(peek(1));
 //	bool is_method_chain = peek() == '.' and (std::isalnum(peek(1)) || peek(1) == '_');
     return is_keyword_or_num or is_macro or is_float_start;
@@ -464,9 +459,9 @@ void Tokenizer::get_keyword_or_num() {
     } else if (is_keyword_or_num()) {
 	    //        if(peek() =='#') consume(); //consume # for macro iteration
 		consume(); //consume possible identifier
-		while (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
+		while (cksp::lexical::is_identifier_body(peek())) {
 			consume();
-	}
+		}
 	// here could come a single dot or a line continuation 'and...'
 	// an identifier directly behind a DOT token (emitted by ?. and by chain
 	// continuations) is an access chain member: keep its dotted parts separate
@@ -475,8 +470,8 @@ void Tokenizer::get_keyword_or_num() {
 	if (!is_line_continuation() and (m_tokens.empty() or m_tokens.back().type != token::DOT)) {
 		while (peek() == '.') {
 			consume();
-			if (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
-				while(std::isalnum(peek()) || peek() == '_' || peek() == '#') {
+			if (cksp::lexical::is_identifier_body(peek())) {
+				while(cksp::lexical::is_identifier_body(peek())) {
 					consume();
 				}
 			} else {
@@ -649,7 +644,7 @@ void Tokenizer::get_bitwise_operator() {
         add_token(*tok, m_buffer);
     } else {
 		// method chaining
-		while (std::isalnum(peek()) || peek() == '_' || peek() == '#') {
+		while (cksp::lexical::is_identifier_body(peek())) {
 			consume();
 		}
 		const auto dot_pos = m_line_pos - m_buffer.length();
@@ -662,7 +657,7 @@ void Tokenizer::get_bitwise_operator() {
 }
 
 bool Tokenizer::is_space(const char &ch) {
-	return ch == '\t' || ch == '\v' || ch == '\f' || ch == '\r' || ch == ' ';
+	return cksp::lexical::is_horizontal_space(ch);
 }
 
 void Tokenizer::flush_buffer() {

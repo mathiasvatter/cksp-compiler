@@ -1,0 +1,14 @@
+// The struct decides how many indexes its subscript takes; writing another number is the one
+// arity mismatch a declaration cannot be refused for, since any count is a valid declaration.
+// EXPECT_ERROR overloads <__getitem__> for 2 indexes
+// EXPECT_ERROR Got: +'1 index'
+struct Table
+    base: int
+    function __getitem__(self, i: int, j: int): int
+        return self.base + i + j
+    end function
+end struct
+on init
+    declare t := Table(10)
+    message(t[1])
+end on

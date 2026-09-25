@@ -232,8 +232,7 @@ public:
 			Token()
 		);
 		node_function_def->body->scope = true;
-		node_function_def->num_return_params = 1;
-		node_function_def->num_return_stmts = 1;
+		node_function_def->set_returns(1, 1);
 		node_function_def->ty = TypeRegistry::Integer;
 
 		// abs(a - b)

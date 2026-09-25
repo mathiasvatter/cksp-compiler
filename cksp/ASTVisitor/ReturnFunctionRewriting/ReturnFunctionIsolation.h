@@ -102,7 +102,7 @@ private:
 			// is a bare statement and its return value is discarded: func_call() -> func_call(_)
 			// the remaining return values already received throwaways in DesugarFunctionCall
 			if (node.parent->cast<NodeStatement>() and !node.is_builtin_kind()) {
-				if (definition->num_return_params > 0) {
+				if (definition->num_return_values > 0) {
 					auto throwaway_ref = std::make_unique<NodeVariableRef>("_", node.tok);
 					throwaway_ref->kind = NodeReference::Kind::Throwaway;
 					node.function->prepend_arg(std::move(throwaway_ref));
@@ -140,7 +140,7 @@ private:
 			func_call->bind_definition(m_program);
 			const auto definition = func_call->get_definition();
 			if (definition and !definition->is_expression_function() and !func_call->is_builtin_kind()
-				and definition->num_return_params > 0) {
+				and definition->num_return_values > 0) {
 				node.remove_references();
 				func_call->function->prepend_arg(std::move(node.l_value));
 				return node.replace_with(std::move(node.r_value));
@@ -191,7 +191,7 @@ private:
 			if (!definition) return &node;
 			if (func_call->is_builtin_kind()) return &node;
 			if (definition->is_expression_function()) return &node;
-			if (definition->num_return_params > 0) {
+			if (definition->num_return_values > 0) {
 				func_call->function->prepend_arg(node.variable->to_reference());
 				node.remove_references();
 				auto node_block = std::make_unique<NodeBlock>(node.tok, false);

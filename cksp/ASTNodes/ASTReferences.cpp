@@ -15,7 +15,21 @@
 // The conversions a reference kind does not offer. Out of line because the returned node types
 // are only forward declared in AST.h - see the note on <NodeAST::to_method_chain>.
 std::unique_ptr<NodeArrayRef> NodeReference::to_array_ref(std::unique_ptr<NodeAST>) { return nullptr; }
-std::unique_ptr<NodeVariableRef> NodeReference::to_variable_ref() { return nullptr; }
+/// The same reference without whatever it is written with - an index, a chain, a call. It
+/// carries the declaration and the type over, so it resolves to the storage this one does.
+std::unique_ptr<NodeVariableRef> NodeReference::to_variable_ref() {
+	auto variable_ref = std::make_unique<NodeVariableRef>(name, tok);
+	variable_ref->match_data_structure(get_declaration());
+	variable_ref->ty = get_declaration() ? get_declaration()->ty : ty;
+	variable_ref->range = range;
+	return variable_ref;
+}
+std::unique_ptr<NodeParamList> NodeReference::take_subscript_operands(const Token& op) {
+	auto operands = std::make_unique<NodeParamList>(op, to_variable_ref());
+	for (auto& index : take_indexes()) operands->add_param(std::move(index));
+	return operands;
+}
+
 std::unique_ptr<NodePointerRef> NodeReference::to_pointer_ref() { return nullptr; }
 std::unique_ptr<NodeNDArrayRef> NodeReference::to_ndarray_ref() { return nullptr; }
 std::unique_ptr<NodeAccessChain> NodeReference::to_method_chain() { return nullptr; }

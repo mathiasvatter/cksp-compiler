@@ -67,7 +67,8 @@ for_statement = "for" assign_statement ("to" | "downto") binary_expression lineb
 foreach_statement = "for" variable "," variable "in" array linebreak+ statements "end for" linebreak+
 if_statement = "if" (? condition )? linebreak+ statements (else linebreak+ statements)? "end if" linebreak+
 while_statement = "while" (? condition )? linebreak+ statements "end while" linebreak+
-select_statement = "select" (? expression )? linebreak+ ("case" (expression | "default") linebreak statements)+ "end select" linebreak+
+select_branch = "case" (expression | "default" | "else") | "default" | "else"
+select_statement = "select" (? expression )? linebreak+ (select_branch linebreak statements)+ "end select" linebreak+
 (* const *)
 const_statement = "const" keyword linebreak+ (assign_statement linebreak)+ "end const" linebreak+
 (* struct *)

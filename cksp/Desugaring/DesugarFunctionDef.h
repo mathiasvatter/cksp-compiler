@@ -43,7 +43,7 @@ public:
 	NodeAST* visit(NodeFunctionDefinition &node) override {
 		m_current_function = &node;
 		if(node.return_variable.has_value()) {
-			node.num_return_params = 1;
+			node.num_return_values = 1;
 			if(!m_program->compiler_config->lsp and !throw_deprecated_warning) {
 				DeprecatedReturnSyntaxAnalyzer::make_warning(
 					node.return_variable.value()->tok
@@ -52,19 +52,18 @@ public:
 			}
 			transform_expr_only_to_return_function(&node);
 		}
-		m_num_last_ret_values = node.num_return_params;
+		m_num_last_ret_values = node.num_return_values;
 		node.body->accept(*this);
 
 		// a void function may fall off the end like in other languages: append the implicit
 		// trailing return so the early-return lowering (while-wrap) terminates without
 		// requiring an explicit return on every code path
-		if (node.num_return_params == 0 and node.num_return_stmts > 0 and !node.body->empty()) {
+		if (node.num_return_values == 0 and node.num_return_stmts() > 0 and !node.body->empty()) {
 			static ReturnPathValidator return_validator;
 			if (!return_validator.all_paths_return(node)) {
 				auto implicit_return = std::make_unique<NodeReturn>(node.body->get_last_statement()->tok);
 				implicit_return->definition = node.get_shared();
-				node.return_stmts.push_back(implicit_return.get());
-				node.num_return_stmts++;
+				node.add_return_stmt(implicit_return.get());
 				node.body->add_as_stmt(std::move(implicit_return));
 			}
 		}
@@ -94,10 +93,9 @@ public:
 			error.actual = std::to_string(node.return_variables.size());
 			error.exit();
 		}
-		m_current_function->num_return_stmts++;
-		m_current_function->return_stmts.push_back(&node);
+		m_current_function->add_return_stmt(&node);
 		// parameter promotion when multiple return values present
-		if(node.return_variables.size() > 1 and m_current_function->num_return_stmts == 1) {
+		if(node.return_variables.size() > 1 and m_current_function->num_return_stmts() == 1) {
 			for(int i = 1; i<node.return_variables.size(); i++) {
 				auto new_param = std::make_unique<NodeVariable>(
 					std::nullopt,

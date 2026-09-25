@@ -3,6 +3,7 @@
 //
 
 #include "Parser.h"
+#include "../Migration/ListMigration.h"
 
 Parser::Parser(std::vector<Token> tokens): Processor(std::move(tokens)) {}
 
@@ -448,8 +449,8 @@ Result<std::unique_ptr<NodeReference>> Parser::parse_array_ref(NodeAST *parent) 
 }
 
 
-Result<std::unique_ptr<NodeAST>> Parser::parse_reference_chain(NodeAST *parent) {
-	if (peek().type == token::NEW) {
+Result<std::unique_ptr<NodeAST>> Parser::parse_reference_chain(NodeAST *parent, std::unique_ptr<NodeAST> head) {
+	if (!head and peek().type == token::NEW) {
 		consume();
 		if (peek().type != token::KEYWORD and peek(1).type != token::OPEN_PARENTH) {
 			auto error = Diagnostic(
@@ -462,8 +463,8 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_reference_chain(NodeAST *parent) 
 		}
 	}
 
-	auto chain = std::make_unique<NodeAccessChain>(peek());
-	if (peek().type != token::KEYWORD) {
+	auto chain = std::make_unique<NodeAccessChain>(head ? head->tok : peek());
+	if (!head and peek().type != token::KEYWORD) {
 		auto error = Diagnostic(
 			ErrorType::SyntaxError,
 			"Expected identifier at start of reference chain.",
@@ -472,9 +473,10 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_reference_chain(NodeAST *parent) 
 		);
 		return Result<std::unique_ptr<NodeAST>>(error);
 	}
-	while(peek().type == token::KEYWORD) {
-		std::unique_ptr<NodeAST> stmt = nullptr;
-		if (peek().type == token::KEYWORD) {
+	while(head or peek().type == token::KEYWORD) {
+		// a given head stands in for the first element and is only used once
+		std::unique_ptr<NodeAST> stmt = std::move(head);
+		if (!stmt) {
 			// is function
 			if (peek(1).type == token::OPEN_PARENTH || looks_like_parameterized_call()) {
 				auto var_function = parse_function_call(parent);
@@ -777,7 +779,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr(NodeAST* parent) {
 		return parse_reference_chain(parent);
 		// is expression in brackets
 	} else if (peek().type == token::OPEN_PARENTH) {
-		return _parse_parenth_expr(parent);
+		return _parse_parenth_chain(parent);
 	} else if (peek().type == token::INT || peek().type == token::FLOAT || peek().type == token::HEXADECIMAL || peek().type == token::BINARY) {
 		return parse_number(parent);
 		// unary operators bool_not, bit_not, sub
@@ -859,12 +861,49 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_parenth_expr(NodeAST* parent) {
     return expr;
 }
 
+Result<std::unique_ptr<NodeAST>> Parser::_parse_parenth_chain(NodeAST* parent) {
+	const auto start_tok = peek();
+	auto expr = _parse_parenth_expr(parent);
+	if (expr.is_error()) return expr;
+	// <(id as Note).value>: the parenthesised value is the receiver of an access chain.
+	// Type inference rejects a receiver that is not an object.
+	// Only a plain <.> continues it: <(cond) ? .member : ...> would read as <?.>.
+	if (peek().type != token::DOT) return expr;
+	auto chain = parse_reference_chain(parent, std::move(expr.unwrap()));
+	if (chain.is_error()) return chain;
+	chain.unwrap()->set_range(start_tok, peek(-1));
+	return chain;
+}
+
+void Parser::read_reserved_ref_as_name() {
+	// Bounded by the end of the definition: a <ref> beyond it belongs to another one, where
+	// the word may well be the qualifier it is meant to be. A definition holds no other, so
+	// the first end token is this one's.
+	for (size_t index = m_pos; index + 1 < m_tokens.size(); ++index) {
+		const auto type = m_tokens[index].type;
+		if (type == token::END_FUNCTION or type == token::END_TASKFUNC) return;
+		// The qualifier stands before the name it applies to. Anything else after the word -
+		// a <)>, a <,>, an operator - leaves it as the name itself.
+		if (type == token::REF and m_tokens[index + 1].type != token::KEYWORD) {
+			m_tokens[index].type = token::KEYWORD;
+		}
+	}
+}
+
 Result<std::unique_ptr<NodeFunctionParam>> Parser::parse_function_param(NodeAST* parent) {
 	auto start_token = peek();
 	auto node_func_param = std::make_unique<NodeFunctionParam>(start_token);
-	if (start_token.type == token::REF) {
+	if (start_token.type == token::REF && peek(1).type == token::KEYWORD) {
 		consume(); // consume ref
 		node_func_param->is_pass_by_ref = true;
+	} else if (start_token.type == token::REF) {
+		// A <ref> that no name follows is not the qualifier: it is the parameter's own name,
+		// which is what the word is in SublimeKSP. Read as a qualifier it leaves the parser at
+		// the <)> with nothing to say about the name that got it there, so the definition is
+		// walked as if the word were ordinary and reported at its end - by then the rename
+		// can name every place it stands. See ReservedParameterMigration.
+		read_reserved_ref_as_name();
+		m_param_named_ref = true;
 	} else if (m_taskfunc_migration
 		and start_token.type == token::KEYWORD
 		and (start_token.val == "var" or start_token.val == "out")) {
@@ -1045,8 +1084,22 @@ Result<std::vector<std::unique_ptr<NodeReference>>> Parser::parse_l_values(NodeA
 	}
 	do {
 		if(peek().type == token::COMMA) consume();
+		if (peek().type == token::OPEN_PARENTH) {
+			const auto start_tok = peek();
+			auto ref = _parse_parenth_chain(parent);
+			if (ref.is_error()) {
+				return Result<std::vector<std::unique_ptr<NodeReference>>>(ref.get_error());
+			}
+			// only a member reached through the parentheses can be assigned, not the value itself
+			if (!ref.unwrap()->cast<NodeAccessChain>()) {
+				auto error = Diagnostic(ErrorType::SyntaxError, "Found invalid <l_value> Syntax.",
+					"<(...).member>", start_tok);
+				error.message += " A parenthesised expression can only be assigned through a member, like <(id as Note).value>.";
+				return Result<std::vector<std::unique_ptr<NodeReference>>>(error);
+			}
+			vars.push_back(unique_ptr_cast<NodeReference>(std::move(ref.unwrap())));
 		// ui_control
-		if (peek().type == token::KEYWORD) {
+		} else if (peek().type == token::KEYWORD) {
 			auto ref = parse_reference_chain(parent);
 			if (ref.is_error()) {
 				return Result<std::vector<std::unique_ptr<NodeReference>>>(ref.get_error());
@@ -1155,7 +1208,7 @@ Result<std::unique_ptr<NodeReturn>> Parser::parse_return_statement(NodeAST* pare
 			return Result<std::unique_ptr<NodeReturn>>(error);
 		}
 	}
-	m_current_function_def->num_return_params = node_return_statement->return_variables.size();
+	m_current_function_def->num_return_values = node_return_statement->return_variables.size();
 	node_return_statement->definition = m_current_function_def;
     node_return_statement->set_child_parents();
 	node_return_statement->set_range(ret_tok, peek(-1));
@@ -1213,7 +1266,9 @@ Result<std::unique_ptr<NodeStatement> > Parser::parse_statement(NodeAST *parent)
 	}
 	std::unique_ptr<NodeAST> stmt;
 	// assign statement
-	if (peek().type == token::KEYWORD || peek().type == token::DECLARE
+	// a leading <(> is an access chain on a parenthesised receiver: <(id as Note).value := 5>
+	const bool parenth_receiver = peek().type == token::OPEN_PARENTH;
+	if (peek().type == token::KEYWORD || peek().type == token::DECLARE || parenth_receiver
 		|| peek().type == token::CALL || peek().type == token::SET_CONDITION || peek().type == token::RESET_CONDITION) {
 		// where SublimeKSP puts one: a <property> block inside <on init>
 		if (is_sublime_property()) {
@@ -1226,7 +1281,7 @@ Result<std::unique_ptr<NodeStatement> > Parser::parse_statement(NodeAST *parent)
 				return Result<std::unique_ptr<NodeStatement> >(declare_stmt.get_error());
 			}
 			stmt = std::move(declare_stmt.unwrap());
-		} else if ((peek().type == token::CALL) xor
+		} else if (!parenth_receiver and (peek().type == token::CALL) xor
 			(peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK or peek(1).type ==
 				token::CLOSED_PARENTH)) {
 			auto function_call = parse_function_call(node_statement.get());
@@ -1468,9 +1523,15 @@ Result<std::unique_ptr<NodeNamespace>> Parser::parse_namespace(NodeAST *parent) 
 			}
 			auto stmt = node_declarations->add_as_stmt(std::move(struct_def.unwrap()));
 			m_program->struct_definitions.push_back(stmt->statement->cast<NodeStruct>());
+		} else if (peek().type == token::CONST) {
+			auto const_def = parse_const_statement(node_declarations.get());
+			if (const_def.is_error()) {
+				return Result<std::unique_ptr<NodeNamespace>>(const_def.get_error());
+			}
+			node_declarations->add_as_stmt(std::move(const_def.unwrap()));
 		} else {
-			error.add_message("<namespaces> can only contain <declare> statements, <function> definitions, "
-				"<struct> definitions and nested <namespaces>, all of which get added to the global "
+			error.add_message("<namespaces> can only contain <declare> statements, <const> blocks, "
+				"<function> definitions, <struct> definitions and nested <namespaces>, all of which get added to the global "
 				"scope under the namespace prefix.");
 			error.set_token(peek());
 			return Result<std::unique_ptr<NodeNamespace>>(error);
@@ -1923,7 +1984,7 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
 				error.set_message( "Only on return variable allowed. Use <Return> Statement to return multiple values.");
 				error.exit();
 			}
-			m_current_function_def->num_return_params = 1;
+			m_current_function_def->num_return_values = 1;
             func_return_var = std::move(return_var[0]);
         } else {
             error.set_message( "Missing return variable after ->");
@@ -1969,6 +2030,15 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
 		m_current_function_def = nullptr;
 		m_taskfunc_migration->make_diagnostic(func_header->name).exit();
 	}
+	if (m_param_named_ref) {
+		// Reported before a result named <return>, which stands later in the same header.
+		m_current_function_def = nullptr;
+		m_param_named_ref = false;
+		m_result_named_return = false;
+		reserved_parameter_migration::make_diagnostic(
+			func_header->name,
+			std::span(m_tokens).subspan(definition_start, m_pos - definition_start)).exit();
+	}
 	if (m_result_named_return) {
 		// Parsed to here only so the rename can name every place the result stands. The word
 		// stays reserved - see ReservedResultMigration.
@@ -1987,6 +2057,7 @@ Result<std::shared_ptr<NodeFunctionDefinition>> Parser::parse_function_definitio
     node_function_definition->parent = parent;
 	m_current_function_def = nullptr;
 	m_result_named_return = false;
+	m_param_named_ref = false;
     return Result<std::shared_ptr<NodeFunctionDefinition>>(std::move(node_function_definition));
 }
 
@@ -1994,6 +2065,9 @@ Result<std::unique_ptr<NodeDeclaration>> Parser::parse_declare_statement(NodeAST
     auto node_declare_statement = std::make_unique<NodeDeclaration>(get_tok());
 	auto start_token = get_tok();
     if(peek().type == token::DECLARE) start_token = consume(); //consume declare
+	if (peek().type == token::LIST) {
+		return Result<std::unique_ptr<NodeDeclaration>>(list_migration::declaration(peek()));
+	}
     std::vector<std::unique_ptr<NodeDataStructure>> to_be_declared;
 	if(!modifier_keywords.contains(peek().type) and peek().type != token::KEYWORD) {
 		return Result<std::unique_ptr<NodeDeclaration>>(make_declare_modifier_diagnostic(peek()));
@@ -2649,6 +2723,12 @@ Result<std::unique_ptr<NodeWhile>> Parser::parse_while_statement(NodeAST* parent
 Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* parent) {
     auto start_token = consume(); //consume select
     auto node_select_statement = std::make_unique<NodeSelect>(start_token);
+    const auto is_select_branch = [](const token type) {
+        return type == token::CASE || type == token::DEFAULT || type == token::ELSE;
+    };
+    const auto is_fallback = [](const token type) {
+        return type == token::DEFAULT || type == token::ELSE;
+    };
     auto expression = parse_expression(node_select_statement.get());
     if(peek().type != token::LINEBRK) {
         return Result<std::unique_ptr<NodeSelect>>(Diagnostic(ErrorType::SyntaxError,
@@ -2656,9 +2736,9 @@ Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* pare
     }
     consume(); //consume linebreak
     _skip_linebreaks();
-    if(peek().type != token::CASE && peek().type != token::DEFAULT) {
+    if(!is_select_branch(peek().type)) {
         return Result<std::unique_ptr<NodeSelect>>(Diagnostic(ErrorType::SyntaxError,
-		"Expected cases in select-expression.", "case <expression> or default", peek()));
+		"Expected cases in select-expression.", "case <expression>, default or else", peek()));
     }
 	std::vector<std::pair<std::vector<std::unique_ptr<NodeAST>>, std::unique_ptr<NodeBlock>>> cases;
 	while (peek().type != token::END_SELECT) {
@@ -2667,14 +2747,14 @@ Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* pare
 		if (auto end_error = check_invalid_end_statement("select", token::END_SELECT, peek(), peek(1))) {
 			return Result<std::unique_ptr<NodeSelect>>(*end_error);
 		}
-	    if(peek().type == token::CASE || peek().type == token::DEFAULT) {
-		    const bool bare_default = peek().type == token::DEFAULT;
-		    if (!bare_default) consume(); // consume case
+	    if(is_select_branch(peek().type)) {
+		    const bool bare_fallback = is_fallback(peek().type);
+		    if (!bare_fallback) consume(); // consume case
             std::vector<std::unique_ptr<NodeAST>> cas = {};
-            if(bare_default || peek().type == token::DEFAULT) {
-                auto default_token = consume(); // consume default token
-                Token low_end = Token(token::INT, "080000000H", default_token.line,default_token.pos, default_token.file_ref);
-                Token high_end = Token(token::INT, "07FFFFFFH", default_token.line,default_token.pos, default_token.file_ref);
+            if(bare_fallback || is_fallback(peek().type)) {
+                auto fallback_token = consume(); // consume default/else token
+                Token low_end = Token(token::INT, "080000000H", fallback_token.line,fallback_token.pos, fallback_token.file_ref);
+                Token high_end = Token(token::INT, "07FFFFFFH", fallback_token.line,fallback_token.pos, fallback_token.file_ref);
                 auto node_int_low = std::move(parse_int(low_end, 16, node_select_statement.get()).unwrap());
                 cas.push_back(std::move(node_int_low));
                 auto node_int_high = std::move(parse_int(high_end, 16, node_select_statement.get()).unwrap());
@@ -2700,12 +2780,10 @@ Result<std::unique_ptr<NodeSelect>> Parser::parse_select_statement(NodeAST* pare
 			_skip_linebreaks();
 			auto stmts = std::make_unique<NodeBlock>(get_tok());
 			while(peek().type != token::END_SELECT
-				&& peek().type != token::CASE
-				&& peek().type != token::DEFAULT) {
+				&& !is_select_branch(peek().type)) {
 				_skip_linebreaks();
 				if(peek().type == token::END_SELECT
-					|| peek().type == token::CASE
-					|| peek().type == token::DEFAULT) break;
+					|| is_select_branch(peek().type)) break;
 				if (auto end_error = check_invalid_end_statement("select", token::END_SELECT, peek(), peek(1))) {
 					return Result<std::unique_ptr<NodeSelect>>(*end_error);
 				}
@@ -2992,6 +3070,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 		consume(); // consume [
 	}
 	if(peek().type == token::COMMA) {
+		node_list_block->is_jagged = true;
 		consume(); // consume comma
 	}
 	if(has_open_bracket && peek().type != token::CLOSED_BRACKET) {
@@ -3024,6 +3103,13 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 		if(param_list.is_error()) {
 			return Result<std::unique_ptr<NodeAST>>(param_list.get_error());
 		}
+		if (param_list.unwrap()->size() > 1) {
+			if (has_open_bracket && !node_list_block->is_jagged) {
+				return Result<std::unique_ptr<NodeAST>>(Diagnostic(ErrorType::SyntaxError,
+					"A list with multiple values per row requires <[,]>. Use <list " + name + "[,]>.", "[,]", name_tok));
+			}
+			if (!has_open_bracket) node_list_block->is_jagged = true;
+		}
 		size += static_cast<int32_t>(param_list.unwrap()->size());
 		auto init_list = param_list.unwrap()->to_initializer_list();
 		init_list->parent = node_list_block.get();
@@ -3040,7 +3126,7 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_list_block(NodeAST* parent) {
 	node_list_block->ty = type.unwrap();
 	node_list_block->type_references = std::move(type_references);
 	node_list_block->set_range(construct, end_token);
-	auto node_declaration = std::make_unique<NodeSingleDeclaration>(std::move(node_list_block), node_list_block->tok);
+	auto node_declaration = std::make_unique<NodeSingleDeclaration>(std::move(node_list_block), name_tok);
 	node_declaration->parent = parent;
 	return Result<std::unique_ptr<NodeAST>>(std::move(node_declaration));
 }

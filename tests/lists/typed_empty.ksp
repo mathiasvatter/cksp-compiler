@@ -1,0 +1,11 @@
+// EXPECT message\(0\)
+on init
+    list !text[]
+    end list
+    list ?values[,]
+    end list
+    message(text.SIZE)
+    message(values.SIZE)
+    message(num_elements(text))
+    message(num_elements(_values))
+end on

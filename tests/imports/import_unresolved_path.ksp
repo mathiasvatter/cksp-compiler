@@ -1,0 +1,11 @@
+// An import that resolves nowhere names both folders it was looked for in, and points at the path
+// rather than at the keyword.
+// EXPECT_ERROR Could not resolve path
+// EXPECT_ERROR Tried <.*/fixtures/nested/shared/does_not_exist\.cksp> and <.*/tests/imports/shared/does_not_exist\.cksp>
+// EXPECT_ERROR Got: +'shared/does_not_exist\.cksp'
+
+import "fixtures/nested/unresolved_relative.cksp"
+
+on init
+    message(1)
+end on

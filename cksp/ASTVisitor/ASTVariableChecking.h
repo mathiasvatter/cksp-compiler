@@ -134,6 +134,12 @@ private:
 	/// before any rewriting.
 	void check_read_in_own_declaration(NodeSingleDeclaration& node) const;
 
+	/// Reject persistence attached to compiler-local storage, whether written as a declaration
+	/// modifier (<declare pers value>) or as a direct engine command
+	/// (<make_persistent(value)>). `operation` names the keyword/command in the message, while
+	/// `location` is the exact source token the diagnostic should underline.
+	static void reject_local_persistence(const NodeDataStructure& variable, const std::string& operation, const Token& location);
+
 	/// node can be NodeFunctionCall or NodeReference
 	/// transformation when first object is clearly a reference this_list.next.next()
 	/// tries to get declaration of first object and if there is one, replaces it with method chain

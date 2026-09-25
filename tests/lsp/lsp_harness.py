@@ -535,6 +535,16 @@ class LanguageServerClient:
             return []
         return result["items"] if isinstance(result, dict) else result
 
+    def signature_help(self, fixture: Fixture, marker: str = "", *,
+                       trigger_character: str | None = "("):
+        params = self._position_params(fixture, fixture.at(marker))
+        params["context"] = (
+            {"triggerKind": 2, "triggerCharacter": trigger_character,
+             "isRetrigger": trigger_character == ","}
+            if trigger_character else {"triggerKind": 1, "isRetrigger": False}
+        )
+        return self.request("textDocument/signatureHelp", params)
+
 
 # --------------------------------------------------------------------------
 # Assertions

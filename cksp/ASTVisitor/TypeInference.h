@@ -395,6 +395,45 @@ public:
 		return false;
 	}
 
+	NodeAST* register_reference(NodeReference& node);
+	/// Replaces a reference of an accessor type in value context with its <__get__> call.
+	NodeAST* resolve_property_get(NodeReference& node);
+	void reject_rebinding_an_accessor(const NodeSingleAssignment& node) const;
+
+	/// Whether <obj[i]> here stands for a call to an overloaded subscript rather than for an
+	/// array element. See NodeProgram::find_subscript_overload.
+	[[nodiscard]] bool is_overloaded_subscript(const NodeReference& node) const {
+		return m_enforce_source_return_annotations
+			and (m_program->find_subscript_overload(node, token::GET_ITEM)
+				or m_program->find_subscript_overload(node, token::SET_ITEM));
+	}
+	/// Replaces <obj[i, ...]> with the <__getitem__> call it stands for.
+	NodeAST* resolve_subscript_get(NodeReference& node);
+	/// Replaces <obj[i, ...] := value> with the <__setitem__> call it stands for, if it is one.
+	NodeAST* resolve_subscript_set(NodeSingleAssignment& node);
+
+	/// The call an overloaded operator stands for: the operands are the receiver followed by
+	/// the operator's arguments, and are matched against the parameters the method declares.
+	///
+	/// The method is looked up by the caller - NodeProgram::find_overloaded_method - because
+	/// the operands are moved in here and a caller that finds none keeps its own.
+	template<typename... Operands>
+	static std::unique_ptr<NodeFunctionCall> make_operator_overload_call(
+		const Token& op, const NodeFunctionDefinition& method, Operands&&... operands) {
+		return make_operator_overload_call(
+			op, method, std::make_unique<NodeParamList>(op, std::forward<Operands>(operands)...));
+	}
+	/// The same for a subscript, which is written with as many indexes as the struct takes, so
+	/// its operands are only counted while it is read.
+	static std::unique_ptr<NodeFunctionCall> make_operator_overload_call(
+		const Token& op,
+		const NodeFunctionDefinition& method,
+		std::unique_ptr<NodeParamList> operands);
+
+	/// Puts the call in the node's place and hands it back typed: what every rewrite of an
+	/// expression into the call behind it ends with.
+	NodeAST* replace_with_call(NodeAST& node, std::unique_ptr<NodeFunctionCall> call);
+
 	/// <Note.storage(.pitch)>: resolves the selector against the receiver struct and types the
 	/// chain, see the definition. Returns false if the call is not <storage>.
 	bool resolve_storage_access(NodeAccessChain& node, NodeFunctionCall& call);

@@ -1,0 +1,12 @@
+// <self> and one index are the fewest a subscript overload can take.
+// EXPECT_ERROR Operator overload <__getitem__> must take at least 2 parameters
+struct Table
+    base: int
+    function __getitem__(self): int
+        return self.base
+    end function
+end struct
+on init
+    declare t := Table(10)
+    message(t[1])
+end on

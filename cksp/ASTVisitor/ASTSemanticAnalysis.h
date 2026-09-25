@@ -25,6 +25,27 @@
 class ASTSemanticAnalysis final : public ASTVisitor {
 	DefinitionProvider* m_def_provider = nullptr;
 
+	/// Whether <obj[i]> here may be a call to an overloaded subscript rather than an array
+	/// element.
+	///
+	/// An object declared from its constructor has no type yet in this pass - that is what
+	/// TypeInference is for - so the overload cannot always be found here. What can be seen is
+	/// that the declaration is no array, and a subscript on something that is no array is
+	/// either the overload or an error TypeInference reports with the types in hand. Either
+	/// way this pass has nothing left to say about it.
+	[[nodiscard]] bool may_be_overloaded_subscript(const NodeReference& node) const {
+		const auto declaration = node.get_declaration();
+		if (!m_program or !declaration) return false;
+		if (m_program->find_subscript_overload(node, token::GET_ITEM)
+			or m_program->find_subscript_overload(node, token::SET_ITEM)) {
+			return true;
+		}
+		return declaration->ty == TypeRegistry::Unknown
+			and declaration->get_node_type() != NodeType::NDArray
+			and declaration->get_node_type() != NodeType::Array
+			and declaration->get_node_type() != NodeType::List;
+	}
+
 public:
 	explicit ASTSemanticAnalysis(NodeProgram* main);
 
@@ -81,6 +102,13 @@ public:
 	std::unordered_set<NodeFunctionDefinition*> m_functions_in_use{};
 	/// parameters already warned about being modified while passed by value
 	std::unordered_set<const NodeFunctionParam*> m_warned_params{};
+	/// the warnings above, reported at the end of the pass once every call site has been seen
+	std::vector<std::pair<const NodeFunctionParam*, Diagnostic>> m_param_modification_warnings{};
+	/// parameters some call site passes a value that cannot be bound by reference: an
+	/// expression, a literal, a constant. <ref> would break that call site
+	std::unordered_set<const NodeFunctionParam*> m_params_with_value_args{};
+	void record_param_arguments(const NodeFunctionCall& call, const NodeFunctionDefinition& definition);
+	void report_param_modification_warnings();
 	bool check_recursion(NodeFunctionDefinition* func) const {
 		if(m_functions_in_use.contains(func)) {
 			// recursive function call detected

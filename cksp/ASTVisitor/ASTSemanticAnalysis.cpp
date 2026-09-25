@@ -31,6 +31,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeProgram& node) {
 		}
 	}
 	node.reset_function_visited_flag();
+	report_param_modification_warnings();
 	return &node;
 }
 
@@ -159,7 +160,36 @@ void ASTSemanticAnalysis::check_param_modification(NodeReference& ref) {
 	warning.fix = DiagnosticFixBuilder(Diagnostic::DiagnosticFix::FixKind::AddRefToFuncParam, "Pass '" + written_name + "' by reference")
 		.insert_before(declaration->tok, "ref ")
 		.build();
-	warning.report(diagnostics());
+	warning.call_stack = diagnostics().materialize_call_stack();
+	m_param_modification_warnings.emplace_back(param, std::move(warning));
+}
+
+void ASTSemanticAnalysis::record_param_arguments(const NodeFunctionCall& call, const NodeFunctionDefinition& definition) {
+	const auto offset = call.get_param_offset(&definition);
+	for (size_t i = 0; i < definition.get_num_params(); ++i) {
+		const auto param = definition.get_param(static_cast<int>(i))->is_function_param();
+		if (!param) continue;
+		const auto arg_idx = static_cast<int>(i) - offset;
+		if (arg_idx < 0 or arg_idx >= static_cast<int>(call.function->get_num_args())) continue;
+		const auto ref = call.function->get_arg(arg_idx)->is_reference();
+		const auto arg_decl = ref ? ref->get_declaration() : nullptr;
+		if (!ref or (arg_decl and arg_decl->data_type == DataType::Const)) {
+			m_params_with_value_args.insert(param);
+		}
+	}
+}
+
+void ASTSemanticAnalysis::report_param_modification_warnings() {
+	for (auto& [param, warning] : m_param_modification_warnings) {
+		// SublimeKSP substitutes arguments textually, so a ported parameter was always by
+		// reference - and a call passing an expression would not have compiled there either
+		if (!m_params_with_value_args.contains(param)) {
+			warning.migration_kind = Diagnostic::MigrationKind::PassByReference;
+		}
+		warning.report(diagnostics());
+	}
+	m_param_modification_warnings.clear();
+	m_params_with_value_args.clear();
 }
 
 NodeAST * ASTSemanticAnalysis::visit(NodeCallback& node) {
@@ -208,12 +238,14 @@ NodeAST * ASTSemanticAnalysis::visit(NodeSingleDeclaration &node) {
 			std::unordered_set<const NodeDataStructure*> warned_references;
 			for (const auto reference : collector.get_non_const_references()) {
 				const auto declaration = reference->get_declaration();
+				// the ui id of a control never changes, so copying it once is exactly what is wanted
+				if (reference->is_in_get_ui_id()) continue;
 				if (!declaration or !warned_references.insert(declaration.get()).second) continue;
 				auto warning = Diagnostic(ErrorType::CompileWarning, "", "", reference->tok);
 				warning.message = "Array <" + node.variable->name
 					+ "> is initialized using non-constant variable <" + reference->name
 					+ ">. The value is copied once; later changes to the variable do not update the array.";
-				warning.report(diagnostics());
+				warning.report_as_hint(diagnostics());
 			}
 		}
 	}
@@ -246,6 +278,9 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 
 	node.bind_definition(m_program);
 	const auto definition = node.get_definition();
+	if (definition and node.kind == NodeFunctionCall::Kind::UserDefined) {
+		record_param_arguments(node, *definition);
+	}
 	// set has_exit_command of function definition node if we are in a function definition
 	if (definition and node.is_builtin_kind() and !m_program->function_definition_stack.empty()) {
 		if (node.function->name == "exit") {
@@ -265,11 +300,11 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 	// a bare statement call to a function with return values discards them -> warn,
 	// since this is usually an oversight
 	if (definition and node.kind == NodeFunctionCall::Kind::UserDefined
-		and node.parent->cast<NodeStatement>() and definition->num_return_params > 0) {
+		and node.parent->cast<NodeStatement>() and definition->num_return_values > 0) {
 		auto warning = Diagnostic(ErrorType::CompileWarning, "", "", node.tok);
-		const std::string values = definition->num_return_params > 1 ? "values" : "value";
+		const std::string values = definition->num_return_values > 1 ? "values" : "value";
 		warning.message = "The return "+values+" of function <"+node.function->name+"> "
-			+ (definition->num_return_params > 1 ? "are" : "is")
+			+ (definition->num_return_values > 1 ? "are" : "is")
 			+ " discarded here. Assign the result <result := "+node.function->name+"(...)> if it is needed.\n"
 			"To get rid of this warning use a throwaway variable <_ := ...> to assign to.";
 		warning.fix = make_discarded_return_fix(node);
@@ -307,6 +342,10 @@ NodeAST * ASTSemanticAnalysis::visit(NodeArray &node) {
 
 NodeAST * ASTSemanticAnalysis::visit(NodeArrayRef &node) {
     if(node.index) node.index->accept(*this);
+	// A subscript on a single object is a call to the struct's <__getitem__>/<__setitem__>,
+	// which TypeInference builds once the types are known. Until then the reference is left
+	// as it stands - it refers to no array, and looking for one would end here.
+	if (node.index and may_be_overloaded_subscript(node)) return &node;
 	NodeReference* new_node = &node;
 	if(const auto repl = replace_incorrectly_detected_reference(&node)) {
 		new_node = repl;
@@ -344,6 +383,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeNDArrayRef& node) {
 	// TypeInference, which runs after this pass: the owning struct is not known before its type is.
 	// determine_sizes() would report a missing declaration as an internal error instead.
 	if (!node.get_declaration() and node.in_access_chain()) return &node;
+	if (node.indexes and may_be_overloaded_subscript(node)) return &node;
 
 	if (!node.determine_sizes()) {
 		NodeReference *new_node = &node;
@@ -399,7 +439,18 @@ NodeAST * ASTSemanticAnalysis::visit(NodeList& node) {
 }
 
 NodeAST * ASTSemanticAnalysis::visit(NodeListRef& node) {
-	node.indexes->accept(*this);
+    if (const auto declaration = node.get_declaration()) {
+        if (const auto list = declaration->cast<NodeList>(); list && node.indexes) {
+            const auto expected = list->is_jagged && !node.has_raw_spelling() ? 2 : 1;
+            if (node.indexes->size() != expected) {
+                Diagnostic(ErrorType::SyntaxError,
+                    "List <" + node.name + "> requires " + std::to_string(expected) + " index(es). "
+                    "Use the underscore-prefixed name for flat access to a jagged list.",
+                    std::to_string(expected) + " index(es)", node.tok).exit();
+            }
+        }
+    }
+	if (node.indexes) node.indexes->accept(*this);
 	NodeReference* new_node = &node;
 	if(const auto repl = replace_incorrectly_detected_reference(&node)) {
 		new_node = repl;
@@ -581,11 +632,13 @@ NodeReference* ASTSemanticAnalysis::replace_incorrectly_detected_reference(NodeR
 				nullptr,
 				reference->tok);
 		}
+	} else if(reference->cast<NodeVariableRef>() && declaration->cast<NodeList>()) {
+		node_replacement = std::make_unique<NodeListRef>(reference->name, nullptr, reference->tok);
 		// check if it is NodeListRef
 	} else if(auto node_array_ref = reference->cast<NodeArrayRef>(); node_array_ref and declaration->cast<NodeList>()) {
 		node_replacement = std::make_unique<NodeListRef>(
 			reference->name,
-			std::make_unique<NodeParamList>(reference->tok, std::move(node_array_ref->index)),
+			node_array_ref->index ? std::make_unique<NodeParamList>(reference->tok, std::move(node_array_ref->index)) : nullptr,
 			reference->tok);
 	} else if(auto node_nd_array_ref = reference->cast<NodeNDArrayRef>(); node_nd_array_ref and declaration->cast<NodeList>()) {
 		node_replacement = std::make_unique<NodeListRef>(

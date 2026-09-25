@@ -1,0 +1,16 @@
+// EXPECT_ERROR Operator overload <__set__> must not return a value
+struct Value
+    number: int
+    function __get__(self): int
+        return self.number
+    end function
+    function __set__(self, value: int): int
+        self.number := value
+        return value
+    end function
+end struct
+on init
+    declare v := Value(5)
+    v := 7
+    message(v)
+end on

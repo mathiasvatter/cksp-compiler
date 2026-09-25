@@ -7,12 +7,14 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "version.h"
+#include "LexicalRules.h"
 
 /// defines the token names and the string that represents them while debugging
 #define ENUM_LIST(XX) \
@@ -31,8 +33,12 @@
 	XX(KEYWORD, "Keyword") \
 	XX(BEGIN_CALLBACK, "begin callback") \
 	XX(END_CALLBACK, "end on") \
-	XX(ASSIGN, "assignment")     \
-	XX(ARROW, "arrow")     \
+	XX(ASSIGN, ":=")     \
+	XX(SET_VALUE, "set_value")     \
+	XX(GET_VALUE, "get_value")     \
+	XX(SET_ITEM, "set_item")     \
+	XX(GET_ITEM, "get_item")     \
+	XX(ARROW, "->")     \
 	XX(SUB, "-") \
 	XX(ADD, "+") \
     XX(DIV, "/")      \
@@ -105,9 +111,9 @@
     XX(STEP, "step") \
     XX(DOWNTO, "downto") \
     XX(ELSE, "else") \
-    XX(CASE, "select_case")   \
+    XX(CASE, "case")   \
     XX(IMPORT, "import") \
-    XX(AS, "import_as") \
+    XX(AS, "as") \
     XX(DECLARE, "declare") \
     XX(LOCAL, "local") \
     XX(GLOBAL, "global") \
@@ -176,6 +182,9 @@ struct Keyword {
 	std::string value;
 };
 
+/// Source spelling of the CKSP pragma directive.
+inline constexpr std::string_view PRAGMA_LEXEME = "#pragma";
+
 template <typename K, typename V>
 std::unordered_map<V, K> invert_map(const std::unordered_map<K, V>& map) {
     std::unordered_map<V, K> inverted_map;
@@ -186,9 +195,16 @@ std::unordered_map<V, K> invert_map(const std::unordered_map<K, V>& map) {
 }
 
 inline std::unordered_set<char> BINARY_OPERATORS = {'-', '+', '/', '*', '&'};
-inline std::unordered_map<char, token> PARENTH = {{'(', token::OPEN_PARENTH},{')', token::CLOSED_PARENTH}, {'[', token::OPEN_BRACKET}, {']', token::CLOSED_BRACKET}};
-inline std::unordered_set<char> VAR_IDENT = {'$', '~', '@'};
-inline std::unordered_set<char> ARRAY_IDENT = {'%', '?', '!'}; //int, real, string
+inline std::unordered_map<char, token> PARENTH = {
+	{cksp::lexical::OPEN_PARENTHESIS, token::OPEN_PARENTH},
+	{cksp::lexical::CLOSE_PARENTHESIS, token::CLOSED_PARENTH},
+	{cksp::lexical::OPEN_BRACKET, token::OPEN_BRACKET},
+	{cksp::lexical::CLOSE_BRACKET, token::CLOSED_BRACKET},
+};
+inline std::unordered_set<char> VAR_IDENT(
+	cksp::lexical::VARIABLE_SIGILS.begin(), cksp::lexical::VARIABLE_SIGILS.end());
+inline std::unordered_set<char> ARRAY_IDENT(
+	cksp::lexical::ARRAY_SIGILS.begin(), cksp::lexical::ARRAY_SIGILS.end()); //int, real, string
 inline std::unordered_map<std::string, token> TYPES = {{"$", token::INT}, {"~", token::FLOAT}, {"@", token::STRING}, {"%", token::INT}, {"?", token::FLOAT}, {"!", token::STRING}};
 inline std::unordered_set<char> COMMENT_START = {'{', '/'};
 inline std::unordered_set<char> COMPARISON_OPERATORS_START = {'<', '>', '=', '#'};
@@ -199,7 +215,7 @@ inline std::unordered_set<std::string> UI_CONTROLS = {"ui_label", "ui_button", "
 										   "ui_panel", "ui_mouse_area"};
 inline std::unordered_map<std::string, token> DECLARATION_SYNTAX = {{"declare", token::DECLARE}, {"define", token::DEFINE}, {"const", token::CONST}, {"polyphonic", token::POLYPHONIC},
                                                   {"read", token::READ},{"pers", token::PERS}, {"instpers", token::INSTPERS}, {"local", token::LOCAL}, {"global", token::GLOBAL}};
-inline std::unordered_map<std::string, token> PREPROCESSOR_SYNTAX = {{"#pragma", token::PRAGMA}, {"import", token::IMPORT}, {"as", token::AS}, {"on", token::ON},
+inline std::unordered_map<std::string, token> PREPROCESSOR_SYNTAX = {{std::string(PRAGMA_LEXEME), token::PRAGMA}, {"import", token::IMPORT}, {"as", token::AS}, {"on", token::ON},
 												   {"iterate_macro", token::ITERATE_MACRO}, {"literate_macro", token::LITERATE_MACRO}, {"iterate_post_macro", token::ITERATE_POST_MACRO}, {"literate_post_macro", token::LITERATE_POST_MACRO},
 													{"START_INC", token::START_INC}, {"END_INC", token::END_INC}, {"SET_CONDITION", token::SET_CONDITION}, {"RESET_CONDITION", token::RESET_CONDITION},
                                                    {"USE_CODE_IF", token::USE_CODE_IF}, {"USE_CODE_IF_NOT", token::USE_CODE_IF_NOT}, {"END_USE_CODE", token::END_USE_CODE}};
@@ -227,23 +243,41 @@ inline std::unordered_map<token, std::vector<std::string>> PERSISTENCE_TOKENS = 
 															{token::INSTPERS, {"make_instr_persistent"}}};
 
 inline static std::string OBJ_DELIMITER = "::";
-inline std::unordered_map<token, std::pair<std::string, int>> OPERATOR_OVERWRITES = {{
-			{token::ADD, {"__add__", 2}},             // +
-			{token::SUB, {"__sub__", 2}},             // -
-			{token::MULT, {"__mul__", 2}},            // *
-			{token::DIV, {"__div__", 2}},         	// /
-			{token::MODULO, {"__mod__", 2}},          // %
-			{token::EQUAL, {"__eq__", 2}},            // =
-			{token::NOT_EQUAL, {"__ne__", 2}},        // #
-			{token::LESS_THAN, {"__lt__", 2}},        // <
-			{token::LESS_EQUAL, {"__le__", 2}},       // <=
-			{token::GREATER_THAN, {"__gt__", 2}},     // >
-			{token::GREATER_EQUAL, {"__ge__", 2}},    // >=
-			{token::BIT_NOT, {"__invert__", 1}},      // .not.
-			{token::BIT_AND, {"__and__", 2}},         // .and.
-			{token::BIT_OR, {"__or__", 2}},           // .or.
-			{token::BIT_XOR, {"__xor__", 2}},         // .xor.
-		}};
+/// An operator a struct can overload: the method name, the number of parameters the method takes
+/// (<self> included) and the number of values it has to return. Everything that stands in for an
+/// expression returns one value; <__set__> replaces an assignment, which is a statement.
+struct OperatorOverload {
+	std::string name;
+	int num_params;
+	int num_returns;
+	/// A subscript carries one parameter per index it is written with, so <num_params> is the
+	/// fewest it takes rather than the only count: <__getitem__(self, i)> answers <obj[i]> and
+	/// <__getitem__(self, i, j)> answers <obj[i, j]>. Python keeps the arity fixed and packs
+	/// the indexes into a tuple instead; CKSP has no tuple, and it already writes a
+	/// multidimensional subscript as a comma-separated list, so here they are spread.
+	bool takes_indexes = false;
+};
+inline std::unordered_map<token, OperatorOverload> OPERATOR_OVERWRITES = {{
+	{token::ADD, {"__add__", 2, 1}},             // +
+	{token::SUB, {"__sub__", 2, 1}},             // -
+	{token::MULT, {"__mul__", 2, 1}},            // *
+	{token::DIV, {"__div__", 2, 1}},         	// /
+	{token::MODULO, {"__mod__", 2, 1}},          // %
+	{token::EQUAL, {"__eq__", 2, 1}},            // =
+	{token::NOT_EQUAL, {"__ne__", 2, 1}},        // #
+	{token::LESS_THAN, {"__lt__", 2, 1}},        // <
+	{token::LESS_EQUAL, {"__le__", 2, 1}},       // <=
+	{token::GREATER_THAN, {"__gt__", 2, 1}},     // >
+	{token::GREATER_EQUAL, {"__ge__", 2, 1}},    // >=
+	{token::BIT_NOT, {"__invert__", 1, 1}},      // .not.
+	{token::BIT_AND, {"__and__", 2, 1}},         // .and.
+	{token::BIT_OR, {"__or__", 2, 1}},           // .or.
+	{token::BIT_XOR, {"__xor__", 2, 1}},         // .xor.
+	{token::GET_VALUE, {"__get__", 1, 1}},       // in expression context
+	{token::SET_VALUE, {"__set__", 2, 0}},       // in assignment context
+	{token::GET_ITEM, {"__getitem__", 2, 1, true}},  // obj[i, ...] in expression context
+	{token::SET_ITEM, {"__setitem__", 3, 0, true}},  // obj[i, ...] in assignment context
+}};
 
 inline std::unordered_map<token, std::pair<std::string, int>> BOOLEAN_FUNCTIONS = {
 	{token::GREATER_THAN, {"CKSP::__gt__", 2}},

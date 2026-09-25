@@ -1,0 +1,37 @@
+// EXPECT message\(.*\+ 7\)
+// EXPECT := 42
+// EXPECT \$copied := %Value____number\[\$v\]
+// EXPECT \$tmp[0-9]+ := %Value____number\[\$local_value[0-9]+\]
+struct Value
+    number: int
+    function __get__(self): int
+        return self.number
+    end function
+    function __set__(self, value: int)
+        self.number := value
+    end function
+    function raw(self): int
+        return self.number + 7
+    end function
+end struct
+function consume(value: int): int
+    return value + 7
+end function
+function read_value(): int
+    declare local_value := Value(9)
+    return local_value
+end function
+on init
+    declare v := Value(5)
+    declare copied := v
+    message(consume(v))
+    message(v + 7)
+    message(-v)
+    message(v.raw())
+    v := 42
+    message(v)
+    message(read_value())
+    if v > 0
+        message(copied)
+    end if
+end on

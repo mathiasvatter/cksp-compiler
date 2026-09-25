@@ -34,7 +34,8 @@ get_control_statement = (array | variable) "->" keyword
 set_control_statement = get_control_statement ":=" expression
 if_statement = "if" (? condition )? linebreak+ statements ("else" linebreak+ statements)? "end if" linebreak+
 while_statement = "while" (? condition )? linebreak+ statements "end while" linebreak+
-select_statement = "select" (? expression )? linebreak+ ("case" (expression | "default") linebreak statements)+ "end select" linebreak+
+select_branch = "case" (expression | "default" | "else") | "default" | "else"
+select_statement = "select" (? expression )? linebreak+ (select_branch linebreak statements)+ "end select" linebreak+
 
 (* Functions *)
 function_header = keyword ("(" (param_list | expression)? ")")?
@@ -64,7 +65,6 @@ callback_identifier = "async_complete" | "controller" | "init" |
 ui_control = "ui_label" | "ui_button" | "ui_switch" | "ui_slider" | "ui_menu" | "ui_value_edit" | 
             "ui_waveform" | "ui_wavetable" | "ui_knob" | "ui_table" | "ui_xy" | "ui_text_edit" | 
             "ui_level_meter" | "ui_file_selector" | "ui_panel" | "ui_mouse_area"
-
 
 
 

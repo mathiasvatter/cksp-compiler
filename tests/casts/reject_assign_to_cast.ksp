@@ -1,0 +1,10 @@
+// EXPECT_ERROR A parenthesised expression can only be assigned through a member
+
+struct Item
+    value: int
+end struct
+
+on init
+    declare id: int := 0
+    (id as Item) := 5
+end on

@@ -1,0 +1,14 @@
+// A persistent struct member owns persistent backing storage. The generated constructor's
+// same-named parameter is only a temporary and must not inherit the member's persistence.
+// EXPECT     make_persistent\(%Preset____level\)
+// EXPECT_NOT make_persistent\(\$level[0-9]*\)
+
+struct Preset
+    declare pers level: int
+    declare name: string
+end struct
+
+on init
+    declare preset := new Preset(1, "a")
+    message(preset.level)
+end on

@@ -167,8 +167,7 @@ private:
 			node.tok
 		);
 		function_def->ty = TypeRegistry::String;
-		function_def->num_return_params = 1;
-		function_def->num_return_stmts = 1;
+		function_def->set_returns(1, 1);
 		function_def->parent = m_program;
 		m_program->add_function_definition(function_def);
 //		m_program->additional_function_definitions.push_back(std::move(function_def));
@@ -218,8 +217,7 @@ private:
 			node.tok
 		);
 		function_def->ty = TypeRegistry::String;
-		function_def->num_return_params = 1;
-		function_def->num_return_stmts = 1;
+		function_def->set_returns(1, 1);
 		function_def->parent = m_program;
 		function_def->collect_references();
 		m_program->add_function_definition(function_def);

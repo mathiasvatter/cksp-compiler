@@ -1,0 +1,5 @@
+define HELPER_VALUE := 21
+
+function helper_double(x: int) : int
+    return x * 2
+end function

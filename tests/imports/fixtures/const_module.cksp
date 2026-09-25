@@ -1,0 +1,8 @@
+const Limits
+    MIN := 2
+    MAX
+end const
+
+function get_max(): int
+    return Limits.MAX
+end function

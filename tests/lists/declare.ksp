@@ -1,0 +1,5 @@
+// EXPECT_ERROR SublimeKSP <declare list>
+on init
+declare list xs[]
+list_add(xs,1)
+end on

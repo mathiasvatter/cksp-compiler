@@ -1,0 +1,20 @@
+// A file holding a const block can be imported with an alias, and the aliased block does not
+// clash with a global block of the same name. Issue #128.
+// EXPECT declare %lib__Limits\[2\] := \(2, 3\)
+// EXPECT message\(3\)
+// EXPECT message\(2\)
+// EXPECT declare %arr\[3\]
+
+import "fixtures/const_module.cksp" as lib
+
+const Limits
+    X, Y, Z
+end const
+
+on init
+    declare arr[lib.Limits.MAX]
+    message(num_elements(arr))
+    message(lib.get_max())
+    message(Limits.Z)
+    message(num_elements(lib.Limits))
+end on

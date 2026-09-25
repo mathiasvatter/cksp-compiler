@@ -49,6 +49,15 @@ Diagnostic::DiagnosticFix::Edit DiagnosticFixBuilder::insert_after_edit(const To
     return insert_after_edit(token.file(), source_range_from_token(token), std::move(new_text));
 }
 
+Diagnostic::DiagnosticFix::Edit DiagnosticFixBuilder::create_file_edit(std::string file) {
+    return {
+        .kind = Diagnostic::DiagnosticFix::EditKind::CreateFile,
+        .file = std::move(file),
+        .range = {},
+        .new_text = {}
+    };
+}
+
 DiagnosticFixBuilder& DiagnosticFixBuilder::add_edit(Diagnostic::DiagnosticFix::Edit edit) {
     m_fix.edits.push_back(std::move(edit));
     return *this;
@@ -82,6 +91,10 @@ DiagnosticFixBuilder& DiagnosticFixBuilder::insert_after(std::string file, const
 
 DiagnosticFixBuilder& DiagnosticFixBuilder::insert_after(const Token& token, std::string new_text) {
     return add_edit(insert_after_edit(token, std::move(new_text)));
+}
+
+DiagnosticFixBuilder& DiagnosticFixBuilder::create_file(std::string file) {
+    return add_edit(create_file_edit(std::move(file)));
 }
 
 Diagnostic::DiagnosticFix DiagnosticFixBuilder::build() {

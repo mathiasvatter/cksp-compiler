@@ -5,7 +5,9 @@
 #include "ASTVariableChecking.h"
 
 #include "../CompilerConfig.h"
+#include "../Migration/ListMigration.h"
 #include "../Optimization/VarExistsValidator.h"
+#include "FunctionHandling/BuiltinRestrictionValidator.h"
 #include "ReferenceManagement/ASTCollectDeclarations.h"
 
 ASTVariableChecking::ASTVariableChecking(NodeProgram* main, const Pass pass)
@@ -177,6 +179,12 @@ NodeAST* ASTVariableChecking::visit(NodeAccessChain& node) {
 
 NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 	node.bind_definition(m_program);
+    // Diagnose the unsupported construct before an undeclared list argument hides it.
+    // A user-defined function of this name remains an ordinary function.
+    if (node.function->name == "list_add" && !node.get_definition()
+        && m_def_provider->find_data_structures("list_add", true).empty()) {
+        list_migration::append(node.function->tok).exit();
+    }
 	if(!node.get_definition()) {
 		if (auto access_chain = try_access_chain_transform(node.function->name, &node)) {
 			// needs to visit the arguments of the function call too
@@ -189,7 +197,36 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionCall &node) {
 		}
 	}
 	node.function->accept(*this);
+	// The declaration modifier check below covers generated persistence calls. A user can also
+	// write the engine commands directly, so apply the same storage rule after the argument has
+	// been visited and bound to its declaration.
+	if (pass == Pass::PostUIControlLowering
+		&& node.kind == NodeFunctionCall::Kind::Builtin
+		&& node.function->get_num_args() > 0
+		&& BuiltinRestrictionValidator::is_persistence_command(node.function->name)) {
+		if (const auto* reference = node.function->get_arg(0)->is_reference()) {
+			if (const auto declaration = reference->get_declaration()) {
+				reject_local_persistence(
+					*declaration, node.function->name, reference->tok);
+			}
+		}
+	}
 	return &node;
+}
+
+void ASTVariableChecking::reject_local_persistence(const NodeDataStructure& variable, const std::string& operation, const Token& location) {
+	// Instance members are represented as local while the struct is analysed, but their
+	// lowered backing arrays are global and may legitimately be persistent. Constructor
+	// parameters cloned from those members are ordinary function parameters (not members),
+	// so they remain covered by this check if persistence ever leaks onto one.
+	if (!variable.is_local || variable.is_member()) return;
+
+	auto error = Diagnostic(ErrorType::VariableError, "", "", location);
+	error.message = "Persistence operation <" + operation
+		+ "> cannot be used on local declaration <" + variable.tok.val
+		+ ">. Persistent variables must be declared globally.";
+	error.expected = "Global declaration";
+	error.exit();
 }
 
 void ASTVariableChecking::check_read_in_own_declaration(NodeSingleDeclaration& node) const {
@@ -219,6 +256,16 @@ void ASTVariableChecking::check_read_in_own_declaration(NodeSingleDeclaration& n
 
 NodeAST* ASTVariableChecking::visit(NodeSingleDeclaration& node) {
 	node.variable->determine_locality(m_program, get_current_block());
+
+	// Persistence is tied to the generated KSP variable name and therefore only has stable
+	// meaning for global storage. Local declarations are renamed, reused and, in thread-unsafe
+	// contexts, potentially dimension-expanded; persisting any of those would silently bind
+	// saved state to compiler-generated storage. Run this in the shared pre-rewriting pass so
+	// the compiler and language server diagnose the source declaration exactly once.
+	if (pass == Pass::PostUIControlLowering && node.variable->persistence.has_value()) {
+		const auto& persistence = node.variable->persistence.value();
+		reject_local_persistence(*node.variable, persistence.val, persistence);
+	}
 
 	if(node.variable->cast<NodeUIControl>() and node.variable->is_local) {
 		auto error = make_diagnostic(ErrorType::SyntaxError, node);
@@ -353,11 +400,35 @@ NodeAST* ASTVariableChecking::visit(NodeVariable& node) {
 NodeAST* ASTVariableChecking::visit(NodeVariableRef& node) {
 	if(node.get_declaration()) return &node;
 	auto node_declaration = m_def_provider->get_declaration(node);
+    if (!node_declaration && node.name.ends_with(".sizes")) {
+        NodeVariableRef list_ref(node.name.substr(0, node.name.size() - 6), node.tok);
+        if (const auto declaration = m_def_provider->get_declaration(list_ref)) {
+            if (const auto list = declaration->cast<NodeList>(); list && list->is_jagged) {
+                auto array = std::make_unique<NodeArrayRef>(node.name, nullptr, node.tok);
+                array->ty = TypeRegistry::ArrayOfInt;
+                return node.replace_and_visit(std::move(array), *this);
+            }
+        }
+    }
+	// A list's SIZE counts rows; num_elements counts the flattened storage.
+	if (!node_declaration && node.name.ends_with(".SIZE")) {
+		NodeVariableRef list_ref(node.name.substr(0, node.name.size() - 5), node.tok);
+		if (const auto declaration = m_def_provider->get_declaration(list_ref)) {
+			if (const auto list = declaration->cast<NodeList>()) {
+				return node.replace_with(std::make_unique<NodeInt>(static_cast<int32_t>(list->body.size()), node.tok));
+			}
+		}
+	}
+	// Respect generated size constants once list lowering has declared them.
+	if (node_declaration && node_declaration->data_type == DataType::Const) {
+		node.match_data_structure(node_declaration);
+		return &node;
+	}
 	// check for array constants
 	if(auto nd_constant = node.transform_ndarray_constant()) {
-		return node.replace_with(std::move(nd_constant))->accept(*this);
+		return node.replace_and_visit(std::move(nd_constant), *this);
 	} else if(auto array_constant = node.transform_array_constant()) {
-		return node.replace_with(std::move(array_constant))->accept(*this);
+		return node.replace_and_visit(std::move(array_constant), *this);
 	}
     if(!node_declaration) {
 		if (pass == Pass::PreUIControlLowering) return &node;
@@ -429,7 +500,7 @@ NodeAST* ASTVariableChecking::visit(NodeList& node) {
 }
 
 NodeAST* ASTVariableChecking::visit(NodeListRef& node) {
-	node.indexes->accept(*this);
+	if (node.indexes) node.indexes->accept(*this);
 
 	if(node.get_declaration()) return &node;
 	auto node_declaration = m_def_provider->get_declaration(node);
@@ -475,4 +546,3 @@ NodeAST* ASTVariableChecking::visit(NodeStruct& node) {
 	m_current_struct = nullptr;
 	return &node;
 }
-

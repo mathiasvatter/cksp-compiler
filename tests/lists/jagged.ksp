@@ -1,0 +1,12 @@
+// EXPECT %_xs\[3\]
+// EXPECT xs__sizes\[2\].*\(2, 1\)
+// EXPECT xs__pos\[2\].*\(0, 2\)
+on init
+list xs[,]
+1,2
+3
+end list
+message(xs[0,1])
+message(xs.sizes[0])
+message(num_elements(_xs))
+end on

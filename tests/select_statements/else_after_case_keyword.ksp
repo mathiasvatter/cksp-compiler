@@ -1,0 +1,12 @@
+// EXPECT     case -2147483648 to 134217727
+// EXPECT     message\("fallback"\)
+
+on init
+    declare value
+    select value
+        case 1
+            message("case")
+        case else
+            message("fallback")
+    end select
+end on

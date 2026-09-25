@@ -41,6 +41,9 @@ struct CompletionMember {
 	/// Struct this member is itself an instance of, so a chain can walk on through it
 	/// (<inst.child.>). Index-internal; never serialized.
 	std::string object_type;
+	/// Individual source-level parameter labels for LSP signature help. Kept structured
+	/// because a type annotation may itself contain commas.
+	std::vector<std::string> parameter_labels;
 };
 
 /// A named declaration the user can write, with the scope it is visible in.
@@ -57,6 +60,7 @@ struct CompletionDeclaration {
 	std::string category;     ///< see CompletionMember::category
 	std::string file;
 	SourceRange scope;
+	std::vector<std::string> parameter_labels;
 };
 
 /// A qualifier block's body, used to resolve a shortened qualifier against the
@@ -272,10 +276,15 @@ public:
 		std::unordered_set<std::string> seen;
 		const auto offer = [&](std::string label, const CompletionDeclaration& declaration) {
 			if (label.empty() || !seen.insert(label).second) return;
-			found.push_back({
-				std::move(label), declaration.parameters, declaration.detail, declaration.kind,
-				declaration.category,
-			});
+			CompletionMember member{
+				.label = std::move(label),
+				.parameters = declaration.parameters,
+				.detail = declaration.detail,
+				.kind = declaration.kind,
+				.category = declaration.category,
+				.parameter_labels = declaration.parameter_labels,
+			};
+			found.push_back(std::move(member));
 		};
 
 		for (const auto& declaration : m_declarations) {
@@ -402,8 +411,12 @@ private:
 			if (dot == std::string::npos) {
 				if (seen.insert(remainder).second) {
 					found.push_back({
-						remainder, declaration.parameters, declaration.detail,
-						declaration.kind, declaration.category,
+						.label = remainder,
+						.parameters = declaration.parameters,
+						.detail = declaration.detail,
+						.kind = declaration.kind,
+						.category = declaration.category,
+						.parameter_labels = declaration.parameter_labels,
 					});
 				}
 				continue;

@@ -360,6 +360,41 @@ NodeSingleAssignment* NodeReference::is_l_value() const {
 	return nullptr;
 }
 
+bool NodeReference::is_raw_object_context() const {
+	if (!parent or parent->cast<NodeAccessChain>() or parent->cast<NodeUseCount>()
+		or parent->cast<NodeCast>()) return true;
+	if (const auto assignment = parent->cast<NodeSingleAssignment>(); assignment
+		and (assignment->initializes_storage or assignment->l_value.get() == this)) return true;
+	if (const auto deletion = parent->cast<NodeSingleDelete>(); deletion
+		and deletion->ptr.get() == this) return true;
+	if (const auto retain = parent->cast<NodeSingleRetain>(); retain
+		and retain->ptr.get() == this) return true;
+
+	const auto args = parent->cast<NodeParamList>();
+	if (!args or args->params.empty() or args->params.front().get() != this) return false;
+	const auto header = args->parent ? args->parent->cast<NodeFunctionHeaderRef>() : nullptr;
+	return header and (header->tok.type == token::GET_VALUE
+		or header->tok.type == token::SET_VALUE
+		or header->tok.type == token::GET_ITEM
+		or header->tok.type == token::SET_ITEM);
+}
+
+std::unique_ptr<NodeAST> NodeReference::clone_keeping_children() {
+	auto copy = clone();
+	if (const auto from = cast<NodeArrayRef>()) {
+		std::swap(from->index, copy->cast<NodeArrayRef>()->index);
+	} else if (const auto from = cast<NodeNDArrayRef>()) {
+		std::swap(from->indexes, copy->cast<NodeNDArrayRef>()->indexes);
+		std::swap(from->sizes, copy->cast<NodeNDArrayRef>()->sizes);
+	} else if (const auto from = cast<NodeListRef>()) {
+		std::swap(from->indexes, copy->cast<NodeListRef>()->indexes);
+	} else if (const auto from = cast<NodeAccessChain>()) {
+		std::swap(from->chain, copy->cast<NodeAccessChain>()->chain);
+	}
+	copy->set_child_parents();
+	return copy;
+}
+
 // ************* NodeDataStructure ***************
 /// <references> is deliberately not copied. It holds raw pointers to the references of the
 /// declaration being copied, and every one of them keeps pointing at that declaration - a
@@ -1348,10 +1383,10 @@ NodeFunctionDefinition::NodeFunctionDefinition(const NodeFunctionDefinition& oth
         : NodeAST(other), is_restricted(other.is_restricted), is_thread_safe(other.is_thread_safe),
 		is_inlined(other.is_inlined), has_local_dynamic_arrays(other.has_local_dynamic_arrays), is_used(other.is_used),
 		visited(other.visited), has_exit_command(other.has_exit_command),
-          num_return_params(other.num_return_params), num_return_stmts(other.num_return_stmts),
+          num_return_values(other.num_return_values),
           return_stmts(other.return_stmts), call_sites(other.call_sites),
 		  header(clone_shared(other.header)), override(other.override), is_static(other.is_static),
-		  body(clone_unique(other.body)) {
+		  body(clone_unique(other.body)), m_num_return_stmts(other.m_num_return_stmts) {
     if (other.return_variable) {
         return_variable = std::make_optional(clone_shared(other.return_variable.value()));
     }
@@ -1430,7 +1465,7 @@ bool NodeFunctionDefinition::returned_calls_are_inlinable(NodeAST &expression) c
 }
 
 bool NodeFunctionDefinition::is_expression_function() const {
-	if(num_return_params != 1 or num_return_stmts != 1) return false;
+	if(num_return_values != 1 or num_return_stmts() != 1) return false;
 	// in case of builtin functions
 	if(body->statements.empty()) return true;
 	if(return_variable.has_value()) return false;
@@ -1727,6 +1762,27 @@ void NodeProgram::update_struct_lookup() {
 NodeStruct* NodeProgram::find_struct(const std::string& name, const int type_parameter_count) const {
 	const auto it = struct_lookup.find({name, type_parameter_count});
 	return it == struct_lookup.end() ? nullptr : it->second;
+}
+
+std::shared_ptr<NodeFunctionDefinition> NodeProgram::find_overloaded_method(
+	const Type* ty, const token op, const size_t num_params) const {
+	if (!ty or !ty->cast<ObjectType>()) return nullptr;
+	const auto strct = find_struct(ty->ksp_encoded_string());
+	const auto method = strct ? strct->get_overloaded_method(op) : nullptr;
+	if (!method or num_params == 0) return method;
+	return OPERATOR_OVERWRITES.at(op).takes_indexes
+		or static_cast<size_t>(method->get_num_params()) == num_params ? method : nullptr;
+}
+
+std::shared_ptr<NodeFunctionDefinition> NodeProgram::find_subscript_overload(
+	const NodeReference& node, const token op) const {
+	const auto declaration = node.get_declaration();
+	if (!declaration or !declaration->ty or declaration->ty->cast<CompositeType>()) return nullptr;
+	return find_overloaded_method(declaration->ty, op);
+}
+
+NodeAST* NodeAST::replace_and_visit(std::unique_ptr<NodeAST> replacement, ASTVisitor& visitor) {
+	return replace_with(std::move(replacement))->accept(visitor);
 }
 
 NodeAST* NodeProgram::retire_lowered_struct(NodeStruct& node) {

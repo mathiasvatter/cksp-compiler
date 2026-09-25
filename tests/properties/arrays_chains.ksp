@@ -1,0 +1,31 @@
+// EXPECT := 42
+// EXPECT %Holder____item\[.*\] := \$item
+// EXPECT message\(%Value____number\[%Holder____item\[\$holder\]\]\)
+struct Value
+    number: int
+    function __get__(self): int
+        return self.number
+    end function
+    function __set__(self, value: int)
+        self.number := value
+    end function
+    function raw(self): int
+        return self.number
+    end function
+end struct
+struct Holder
+    item: Value
+end struct
+function index(): int
+    message(999)
+    return 0
+end function
+on init
+    declare values[2]: Value[] := (Value(1), Value(2))
+    declare holder := Holder(Value(5))
+    message(holder.item)
+    holder.item := 42
+    message(holder.item.raw())
+    message(values[index()])
+    values[1] := holder.item
+end on

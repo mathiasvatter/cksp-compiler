@@ -12,6 +12,7 @@
 #include "../Processor/Processor.h"
 #include "../ASTNodes/ASTReferences.h"
 #include "../Migration/PropertyMigration.h"
+#include "../Migration/ReservedParameterMigration.h"
 #include "../Migration/ReservedResultMigration.h"
 #include "../Migration/TaskfuncMigration.h"
 
@@ -141,7 +142,8 @@ public:
 	Result<std::unique_ptr<NodePointerRef>> parse_pointer_ref(NodeAST* parent);
     Result<std::unique_ptr<NodeDataStructure>> parse_array(NodeAST *parent, std::optional<Token> is_persistent = std::optional<Token>(), DataType var_type = DataType::Mutable);
 	Result<std::unique_ptr<NodeReference>> parse_array_ref(NodeAST *parent);
-	Result<std::unique_ptr<NodeAST>> parse_reference_chain(NodeAST *parent);
+	/// <head> is an already parsed first element, like the <(id as Note)> in <(id as Note).value>
+	Result<std::unique_ptr<NodeAST>> parse_reference_chain(NodeAST *parent, std::unique_ptr<NodeAST> head = nullptr);
 
 	Result<std::unique_ptr<NodeParamList>> parse_multiple_values(NodeAST* parent);
     Result<std::unique_ptr<NodeParamList>> parse_param_list(NodeAST* parent, bool allow_linebreaks = true);
@@ -162,6 +164,8 @@ public:
 		Result<std::unique_ptr<NodeAST>> _parse_null_coalesce_rhs(std::unique_ptr<NodeAST> lhs, NodeAST* parent);
 		/// ( expression )
 		Result<std::unique_ptr<NodeAST>> _parse_parenth_expr(NodeAST* parent);
+		/// ( expression ) with an optional access chain after it: <(id as Note).value>
+		Result<std::unique_ptr<NodeAST>> _parse_parenth_chain(NodeAST* parent);
 		/// parse identifierexpr, numberexpr, parenthexpr, functionheader
 		Result<std::unique_ptr<NodeAST>> _parse_primary_expr(NodeAST* parent);
     Result<std::unique_ptr<NodeDeclaration>> parse_declare_statement(NodeAST* parent);
@@ -214,6 +218,13 @@ public:
 	/// with a word CKSP reserves - see parse_function_definition, which already takes it as a
 	/// name in the header, and parse_statement, which has to take it as one in the body too.
 	bool m_result_named_return = false;
+	/// Set while a definition holds a parameter named <ref>, which CKSP reserves for the
+	/// pass-by-reference qualifier. See ReservedParameterMigration.
+	bool m_param_named_ref = false;
+	/// Rewrites every <ref> in the rest of the current definition that is a name rather than
+	/// a qualifier into an ordinary keyword token, so the definition parses and the migration
+	/// finds those places again.
+	void read_reserved_ref_as_name();
 	/// Engaged while a SublimeKSP <taskfunc> block is being parsed, so its parameters accept
 	/// the <var>/<out> modifiers and the edits reach the migration diagnostic. Owned rather
 	/// than pointed at because the block's error paths return without unwinding through here.

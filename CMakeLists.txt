@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 project(CKSP_Compiler VERSION 0.1.0)
-set(PRE_RELEASE_VERSION "-alpha.5")
+set(PRE_RELEASE_VERSION "-alpha.6")
 
 set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
 configure_file(
@@ -58,6 +58,7 @@ add_library(cksp_core STATIC
         cksp/Tokenizer/Tokenizer.h
         cksp/Tokenizer/Tokenizer.cpp
         cksp/Tokenizer/Token.h
+        cksp/Tokenizer/LexicalRules.h
         cksp/Source/SourceProvider.h
         cksp/Source/SourceProvider.cpp
         cksp/Source/SourceParser.h
@@ -67,8 +68,8 @@ add_library(cksp_core STATIC
         cksp/Migration/TaskfuncMigration.h
         cksp/Migration/TCMMigration.h
         cksp/Migration/PropertyMigration.h
+        cksp/Migration/ListMigration.h
         cksp/Migration/PragmaMigration.h
-        cksp/Migration/MacroMigration.h
         misc/Diagnostic.h
         misc/Diagnostic.cpp
         misc/DiagnosticFixBuilder.h
@@ -303,7 +304,11 @@ add_executable(cksp
         lsp/ReferenceProvider.h
         lsp/CompletionProvider.cpp
         lsp/CompletionProvider.h
+        lsp/CallSiteScanner.h
+        lsp/SignatureHelpProvider.cpp
+        lsp/SignatureHelpProvider.h
         lsp/QualifierScanner.h
+        lsp/SourceTextScanner.h
         lsp/RenameProvider.cpp
         lsp/RenameProvider.h
         lsp/RequestParams.cpp

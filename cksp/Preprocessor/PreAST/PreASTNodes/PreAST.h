@@ -882,6 +882,9 @@ struct PreNodeFunctionCall final : PreNodeAST {
 
 struct PreNodeIterateMacro final : PreNodeAST {
     std::unique_ptr<PreNodeList> macro_call;
+	/// <iterate_post_macro>: expanded after every macro, so bounds and callee may be built
+	/// from macro parameters
+	bool is_post = false;
     std::unique_ptr<PreNodeChunk> iterator_start;
     Token to;
     std::unique_ptr<PreNodeChunk> iterator_end;
@@ -923,6 +926,9 @@ struct PreNodeIterateMacro final : PreNodeAST {
 
 struct PreNodeLiterateMacro final : PreNodeAST {
     std::unique_ptr<PreNodeList> macro_call;
+	/// <literate_post_macro>: expanded after every macro, so the list and callee may be built
+	/// from macro parameters
+	bool is_post = false;
     std::unique_ptr<PreNodeChunk> literate_tokens;
 	PreNodeLiterateMacro(Token tok, PreNodeAST *parent) : PreNodeAST(std::move(tok), parent, PreNodeType::LITERATE_MACRO) {}
     PreNodeLiterateMacro(std::unique_ptr<PreNodeList> macro_call, std::unique_ptr<PreNodeChunk> literate_tokens, Token tok, PreNodeAST *parent) :

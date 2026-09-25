@@ -101,10 +101,9 @@ private:
 			tok
 		);
 		definition->ty = member.heap_type;
-		definition->num_return_params = 1;
 		// the single return keeps this an expression function, which is what makes the call site end
 		// up with the heap itself instead of a copy of it
-		definition->num_return_stmts = 1;
+		definition->set_returns(1, 1);
 
 		// No declaration is attached here deliberately. Struct lowering creates an array with this
 		// deterministic name, and the post-lowering ASTVariableChecking pass links this reference

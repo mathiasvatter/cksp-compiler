@@ -158,6 +158,29 @@ public:
 			}
 			const auto stmt = node.get_parent_statement();
 			if (stmt and !deletes->empty()) {
+				// A property getter may still read the objects that the cleanup releases.
+				// Evaluate scalar return expressions containing getters before those deletes.
+				class GetterFinder final : public ASTVisitor {
+				public:
+					bool found = false;
+					NodeAST* visit(NodeFunctionCall& call) override {
+						found |= call.function->tok.type == token::GET_VALUE;
+						return ASTVisitor::visit(call);
+					}
+				} finder;
+				for (auto& ret : node.return_variables) ret->accept(finder);
+				if (finder.found) {
+					auto values = std::make_unique<NodeBlock>(node.tok, false);
+					for (auto& ret : node.return_variables) {
+						if (ret->ty->cast<ObjectType>() or ret->ty->cast<CompositeType>()) continue;
+						auto temporary = m_program->get_tmp_var(ret->ty, DataType::Mutable, ret->tok);
+						auto reference = temporary->to_reference();
+						values->add_as_stmt(std::make_unique<NodeSingleDeclaration>(temporary, std::move(ret), node.tok));
+						ret = std::move(reference);
+					}
+					node.set_child_parents();
+					deletes->prepend_body(std::move(values));
+				}
 				deletes->add_as_stmt(std::move(stmt->statement));
 				stmt->set_statement(std::move(deletes));
 			}
@@ -218,7 +241,7 @@ public:
 			auto block = std::make_unique<NodeBlock>(node.tok, true);
 			block->add_as_stmt(std::move(tmp_decl));
 			block->add_as_stmt(std::move(new_assignment));
-			return node.replace_with(std::move(block))->accept(*this);
+			return node.replace_and_visit(std::move(block), *this);
 		}
 
 		node.l_value->accept(*this);

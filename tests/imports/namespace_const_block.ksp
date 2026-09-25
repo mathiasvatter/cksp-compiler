@@ -1,0 +1,37 @@
+// A const block inside a namespace is reachable as <Namespace.Block.Entry> and stays a
+// compile-time constant, so it can size an array. Issue #128.
+// EXPECT declare %Config__Limits\[2\] := \(0, 1\)
+// EXPECT declare %arr\[1\]
+// EXPECT declare %arr2\[4\]
+// EXPECT message\(4\)
+// Written relative to the namespace inside it.
+// EXPECT message\(1 & " " & num_elements\(%Config__Limits\)\)
+
+namespace Config
+    const Limits
+        MIN, MAX
+    end const
+
+    declare const STEPS: int := 4
+
+    function show()
+        message(Limits.MAX & " " & Limits.SIZE)
+    end function
+
+    namespace Inner
+        const Modes
+            A := 3
+            B
+        end const
+    end namespace
+end namespace
+
+on init
+    declare arr[Config.Limits.MAX]
+    declare arr2[Config.Inner.Modes.B]
+    message(num_elements(arr))
+    message(num_elements(arr2))
+    message(Config.STEPS)
+    message(Config.Limits[1])
+    Config.show()
+end on

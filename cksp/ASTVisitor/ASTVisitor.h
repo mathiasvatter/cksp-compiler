@@ -284,7 +284,7 @@ public:
 		return &node;
     }
 	virtual NodeAST* visit(NodeListRef& node) {
-		node.indexes->accept(*this);
+		if (node.indexes) node.indexes->accept(*this);
 		return &node;
 	}
     virtual NodeAST* visit(NodeStatement& node) {

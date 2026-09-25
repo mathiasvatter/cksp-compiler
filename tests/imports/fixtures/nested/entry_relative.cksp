@@ -1,0 +1,4 @@
+// Imported from tests/imports/import_relative_to_entry.ksp. The path below is written the way
+// SublimeKSP reads one: relative to the entry file, not to this file. No segment of it overlaps
+// with this folder, so only the project-root fallback can resolve it.
+import "shared/helper.cksp"

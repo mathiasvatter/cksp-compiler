@@ -1,0 +1,18 @@
+// EXPECT %_xs\[6\]
+// EXPECT xs__pos\[3\].*\(0, 3, 5\)
+// EXPECT %a\[2\] := 9
+// EXPECT %_xs\[.*\] := %a\[
+// EXPECT message\(3\)
+on init
+declare const N := 3
+declare a[N] := (1)
+declare b[] := (4,5)
+a[2] := 9
+list xs[,]
+a
+b
+7
+end list
+message(xs[0,2])
+message(xs.SIZE)
+end on

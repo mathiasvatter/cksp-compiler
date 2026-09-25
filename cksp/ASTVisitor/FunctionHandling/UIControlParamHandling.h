@@ -37,26 +37,18 @@ private:
 		}
 		return &node;
 	}
-	//
-	// NodeAST* visit(NodeGetControl& node) override {
-	// 	node.ui_id->accept(*this);
-	// 	if (auto ref = node.ui_id->is_reference()) {
-	// 		std::vector<NodeReference*> references;
-	// 		find_declaration(*ref, references);
-	// 		wrap_in_get_ui_id(references);
-	// 	}
-	// 	return &node;
-	// }
-	//
-	// NodeAST* visit(NodeSetControl& node) override {
-	// 	node.ui_id->accept(*this);
-	// 	if (auto ref = node.ui_id->is_reference()) {
-	// 		std::vector<NodeReference*> references;
-	// 		find_declaration(*ref, references);
-	// 		wrap_in_get_ui_id(references);
-	// 	}
-	// 	return &node;
-	// }
+	NodeAST* visit(NodeGetControl& node) override {
+		node.ui_id->accept(*this);
+		check_control_param_usage_and_warn(*node.ui_id);
+		return &node;
+	}
+
+	NodeAST* visit(NodeSetControl& node) override {
+		node.ui_id->accept(*this);
+		node.value->accept(*this);
+		check_control_param_usage_and_warn(*node.ui_id);
+		return &node;
+	}
 
 
 /// helper functions
@@ -76,12 +68,44 @@ private:
 						warning.fix = DiagnosticFixBuilder(Diagnostic::DiagnosticFix::FixKind::AddRefToFuncParam, "Pass '" + written_name + "' by reference")
 							.insert_before(decl->tok, "ref ")
 							.build();
+						warning.migration_kind = Diagnostic::MigrationKind::PassByReference;
 						warning.report(node.diagnostics());
 						param->is_pass_by_ref = true;
 					}
 				}
 			}
 		}
+	}
+
+	/// <ctrl -> par> lowers to <get_control_par(ctrl, ...)>, which needs the ui id just like <get_ui_id(ctrl)>.
+	/// Only warn if a call site passes a <ui control> directly: callers passing <get_ui_id(ctrl)> are fine.
+	void check_control_param_usage_and_warn(NodeAST& ui_id) {
+		const auto ref = ui_id.cast<NodeVariableRef>();
+		if (!ref) return;
+		const auto decl = ref->get_declaration();
+		if (!decl) return;
+		const auto param = decl->is_function_param();
+		if (!param or param->is_pass_by_ref) return;
+
+		std::vector<NodeReference*> references;
+		find_original_references(*param, references);
+		const bool gets_ui_control = std::ranges::any_of(references, [](const NodeReference* r) {
+			const auto d = r->get_declaration();
+			return d and d->data_type == DataType::UIControl;
+		});
+		if (!gets_ui_control) return;
+
+		const auto& written_name = decl->tok.val;
+		auto warning = Diagnostic(ErrorType::CompileWarning, "", "", ui_id.tok);
+		warning.message = "Found control parameter access (<->) on parameter <" + written_name + "> in function body. Due to pass-by-value"
+				 " semantics this will not work as expected since the <ui id> is only available directly from <ui controls>.\n "
+				"Try passing <ui control> variables by reference instead (using <ref> keyword before the parameter) or using <get_ui_id> when passing the parameter to the function.";
+		warning.fix = DiagnosticFixBuilder(Diagnostic::DiagnosticFix::FixKind::AddRefToFuncParam, "Pass '" + written_name + "' by reference")
+			.insert_before(decl->tok, "ref ")
+			.build();
+		warning.migration_kind = Diagnostic::MigrationKind::PassByReference;
+		warning.report(ui_id.diagnostics());
+		param->is_pass_by_ref = true;
 	}
 
 	static bool is_in_get_ui_id(const NodeReference& ref) {

@@ -477,7 +477,7 @@ PreNodeAST *PreNodeIterateMacro::accept(PreASTVisitor &visitor) {
 }
 
 PreNodeIterateMacro::PreNodeIterateMacro(const PreNodeIterateMacro& other)
-: PreNodeAST(other), macro_call(clone_unique(other.macro_call)),
+: PreNodeAST(other), macro_call(clone_unique(other.macro_call)), is_post(other.is_post),
 iterator_start(clone_unique(other.iterator_start)),
 iterator_end(clone_unique(other.iterator_end)), step(clone_unique(other.step)) {
 	PreNodeIterateMacro::set_child_parents();
@@ -493,7 +493,7 @@ PreNodeAST *PreNodeLiterateMacro::accept(PreASTVisitor &visitor) {
 }
 
 PreNodeLiterateMacro::PreNodeLiterateMacro(const PreNodeLiterateMacro& other)
-: PreNodeAST(other), macro_call(clone_unique(other.macro_call)),
+: PreNodeAST(other), macro_call(clone_unique(other.macro_call)), is_post(other.is_post),
 literate_tokens(clone_unique(other.literate_tokens)) {
 	PreNodeLiterateMacro::set_child_parents();
 }

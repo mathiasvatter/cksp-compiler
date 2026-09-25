@@ -1,0 +1,10 @@
+// EXPECT !_xs\[3\]
+// EXPECT !_xs\[.*\] := !a\[
+on init
+declare !a[] := ("A","B")
+list !xs[,]
+a
+"C"
+end list
+message(xs[0,1])
+end on

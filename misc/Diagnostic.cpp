@@ -67,17 +67,27 @@ void Diagnostic::report_as_error(DiagnosticEngine& diagnostics) const {
     diagnostics.report(std::move(diagnostic));
 }
 
+void Diagnostic::report_as_hint(DiagnosticEngine& diagnostics) const {
+    auto diagnostic = *this;
+    diagnostic.severity = DiagnosticSeverity::Hint;
+    diagnostics.report(std::move(diagnostic));
+}
+
 void Diagnostic::exit() const {
     auto diagnostic = *this;
     diagnostic.severity = DiagnosticSeverity::Error;
     throw CompilationAborted(std::move(diagnostic));
 }
 
-void Diagnostic::set_token(const Token& token) {
-    actual = token.val;
+void Diagnostic::set_location(const Token& token) {
     file = token.file();
     range = source_range_from_token(token);
     expansion = expansion_of(token);
+}
+
+void Diagnostic::set_token(const Token& token) {
+    actual = token.val;
+    set_location(token);
 }
 
 std::string Diagnostic::display_detail() const {

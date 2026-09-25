@@ -17,9 +17,109 @@ NodeAST * TypeInference::visit(NodeProgram& node) {
 	return &node;
 }
 
+/// Registers the reference so later passes can match its type, unless a property getter
+/// takes its place - then the getter call is visited and registers its own receiver instead.
+NodeAST* TypeInference::register_reference(NodeReference& node) {
+	if (const auto replacement = resolve_property_get(node); replacement != &node) return replacement;
+	if (m_def_provider) m_def_provider->add_to_references(&node);
+	return &node;
+}
+
+NodeAST* TypeInference::resolve_property_get(NodeReference& node) {
+	if (!m_enforce_source_return_annotations or node.is_raw_object_context()) return &node;
+	// the return count of every overload is validated where it is registered, in <DesugarStruct>
+	const auto method = m_program->find_overloaded_method(node.ty, token::GET_VALUE);
+	if (!method) return &node;
+
+	auto get_token = node.tok;
+	get_token.type = token::GET_VALUE;
+	return replace_with_call(node, make_operator_overload_call(get_token, *method, node.clone_keeping_children()));
+}
+
+NodeAST* TypeInference::resolve_subscript_get(NodeReference& node) {
+	auto op = node.tok;
+	op.type = token::GET_ITEM;
+	const auto method = m_program->find_subscript_overload(node, op.type);
+	if (!method) {
+		// The struct answers <obj[i] := value> and nothing else. Reading it has no meaning to
+		// fall back on: the subscript is not an array element either.
+		auto error = make_diagnostic(ErrorType::TypeError, node);
+		error.message =
+			"<" + node.get_declaration()->ty->to_string() + "> overloads <"
+			+ OPERATOR_OVERWRITES.at(token::SET_ITEM).name + "> but not <"
+			+ OPERATOR_OVERWRITES.at(token::GET_ITEM).name + ">, so <" + node.name
+			+ "> can be subscripted to write it and not to read it.";
+		error.expected = "an overloaded <" + OPERATOR_OVERWRITES.at(token::GET_ITEM).name + ">";
+		error.actual = node.get_string();
+		error.exit();
+	}
+
+	return replace_with_call(node, make_operator_overload_call(op, *method, node.take_subscript_operands(op)));
+}
+
+NodeAST* TypeInference::resolve_subscript_set(NodeSingleAssignment& node) {
+	// <cast> matches the exact node type, and the target is a subscript of either arity.
+	const auto target = cast_node<NodeReference>(node.l_value.get());
+	if (!target or !target->has_indexes()) return nullptr;
+	const auto method = m_program->find_subscript_overload(*target, token::SET_ITEM);
+	if (!method) return nullptr;
+
+	auto op = target->tok;
+	op.type = token::SET_ITEM;
+	auto operands = target->take_subscript_operands(op);
+	// The value the assignment carries is the setter's last argument, as it is for <__set__>.
+	operands->add_param(std::move(node.r_value));
+	return replace_with_call(node, make_operator_overload_call(op, *method, std::move(operands)));
+}
+
+std::unique_ptr<NodeFunctionCall> TypeInference::make_operator_overload_call(const Token& op, const NodeFunctionDefinition& method, std::unique_ptr<NodeParamList> operands) {
+	const auto& overload = OPERATOR_OVERWRITES.at(op.type);
+	if (method.get_num_params() != operands->params.size()) {
+		// Only a subscript reaches this: every other operator is declared with the one arity it
+		// has - DesugarStruct refuses any other - and is looked up with the number of operands
+		// it was written with. A subscript is declared for as many indexes as the struct likes,
+		// so the count that does not match is the one at the call site.
+		const bool takes_a_value = overload.num_returns == 0;
+		const auto counted = [&](const size_t arguments) {
+			const auto indexes = arguments - (takes_a_value ? 1 : 0);
+			return std::to_string(indexes) + (indexes == 1 ? " index" : " indexes");
+		};
+		const auto& receiver = *operands->params.front();
+		auto error = make_diagnostic(ErrorType::TypeError, receiver);
+		error.message =
+			"<" + receiver.ty->to_string() + "> overloads <" + overload.name + "> for "
+			+ counted(method.get_num_params() - 1) + ", so <" + receiver.get_token_string()
+			+ "> is subscripted with that many.";
+		error.expected = counted(method.get_num_params() - 1);
+		error.actual = counted(operands->params.size() - 1);
+		error.exit();
+	}
+
+	for (size_t i = 1; i < operands->params.size(); ++i) {
+		match_type(*operands->params[i], *method.header->get_param(i),
+			"Argument of overloaded operator does not match expected type.");
+	}
+	// Binding and return-type inference are handled by the function-call visitor.
+	return std::make_unique<NodeFunctionCall>(
+		false,
+		std::make_unique<NodeFunctionHeaderRef>(
+			method.header->name,
+			std::move(operands),
+			op
+		),
+		op
+	);
+}
+
+NodeAST* TypeInference::replace_with_call(NodeAST& node, std::unique_ptr<NodeFunctionCall> call) {
+	call->range = node.range;
+	auto replacement = node.replace_with(std::move(call));
+	replacement->collect_references();
+	return replacement->accept(*this);
+}
+
 void TypeInference::cast_data_structure_types(const NodeProgram* program, const bool cast) {
 	const auto def_provider = program->def_provider;
-
 	for (auto& ref : def_provider->get_all_references()) {
 		if (auto declaration = ref->get_declaration()) {
 			match_reference_declaration(*ref, declaration);
@@ -135,8 +235,7 @@ NodeAST * TypeInference::visit(NodeVariableRef& node) {
 	// }
 
     match_reference_declaration(node, decl);
-	if(m_def_provider) m_def_provider->add_to_references(&node);
-	return &node;
+	return register_reference(node);
 }
 
 NodeAST * TypeInference::visit(NodeVariable& node) {
@@ -177,8 +276,7 @@ NodeAST * TypeInference::visit(NodePointerRef& node) {
 		node.ty = TypeRegistry::Nil;
 	}
 	match_reference_declaration(node, node.get_declaration());
-	if(m_def_provider) m_def_provider->add_to_references(&node);
-	return &node;
+	return register_reference(node);
 }
 
 NodeAST * TypeInference::visit(NodePointer& node) {
@@ -204,6 +302,12 @@ NodeAST * TypeInference::visit(NodeArray& node) {
 
 NodeAST * TypeInference::visit(NodeArrayRef& node) {
 	if(node.index) node.index->accept(*this);
+	if (node.index and is_overloaded_subscript(node)) {
+		// The target of an assignment becomes the <__setitem__> call in the assignment itself,
+		// which is where the value it takes comes from. Everything else is a read.
+		if (node.is_raw_object_context()) return &node;
+		return resolve_subscript_get(node);
+	}
 	// if handed over without index -> as whole array structure type
 	if(!node.index) {
 		if(node.ty == TypeRegistry::Unknown) {
@@ -250,8 +354,7 @@ NodeAST * TypeInference::visit(NodeArrayRef& node) {
 		}
 	}
 
-	if(m_def_provider) m_def_provider->add_to_references(&node);
-	return &node;
+	return register_reference(node);
 }
 
 NodeAST * TypeInference::visit(NodeNDArray& node) {
@@ -266,6 +369,10 @@ NodeAST * TypeInference::visit(NodeNDArray& node) {
 
 NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
 	if(node.indexes) node.indexes->accept(*this);
+	if (node.indexes and is_overloaded_subscript(node)) {
+		if (node.is_raw_object_context()) return &node;
+		return resolve_subscript_get(node);
+	}
 	if(node.sizes) node.sizes->accept(*this);
     // if handed over without index -> as whole array structure type
     if(!node.indexes) {
@@ -292,34 +399,50 @@ NodeAST * TypeInference::visit(NodeNDArrayRef& node) {
 		match_against(*node.indexes, TypeRegistry::Integer, "Array index has to be of type <Integer>.");
     }
     match_reference_declaration(node, node.get_declaration());
-	if(m_def_provider) m_def_provider->add_to_references(&node);
-	return &node;
+	return register_reference(node);
 }
 
 NodeAST * TypeInference::visit(NodeList& node) {
-	// if list is unknown type -> set to list of unknown
-	if(node.ty == TypeRegistry::Unknown) {
-		node.ty = TypeRegistry::add_composite_type(CompoundKind::List, TypeRegistry::Unknown, node.size);
-	}
-
-    // check if all types are the same and try to infer list type from it
+    auto element_type = node.ty == TypeRegistry::Unknown ? TypeRegistry::Unknown : node.ty->get_element_type();
+    node.ty = TypeRegistry::add_composite_type(CompoundKind::List, element_type, node.is_jagged ? 2 : 1);
     std::vector<Type*> types;
-    types.reserve(node.body.size());
-    for(auto & b : node.body) {
-        b->accept(*this);
-        types.push_back(b->ty);
+    for (auto& row : node.body) {
+        // A lone array is a row to copy, not an array-valued element.
+        if (row->size() == 1) {
+            row->elem(0)->accept(*this);
+            if (const auto composite = row->elem(0)->ty->cast<CompositeType>()) {
+                if (!node.is_jagged || composite->get_dimensions() > 1) {
+                    Diagnostic(ErrorType::TypeError,
+                        "An array row requires a jagged list <[,]>, and must be one-dimensional.",
+                        "one-dimensional array in a jagged list", row->tok).exit();
+                }
+                row->ty = composite->get_element_type();
+                types.push_back(row->ty);
+                continue;
+            }
+        }
+        std::vector<Type*> row_types;
+        for (const auto& value : row->elements) {
+            // The single-element case was visited above to detect an array row.
+            if (row->size() != 1) value->accept(*this);
+            row_types.push_back(value->ty);
+        }
+        row->ty = infer_initialization_types(row_types, &node);
+        types.push_back(row->ty);
     }
-    node.set_element_type(infer_initialization_types(types, &node));
-	m_def_provider->add_to_data_structures(node.weak_from_this());
-	return &node;
+    // Empty blocks have the annotated element type, or default to integer like arrays.
+    if (!types.empty()) node.set_element_type(infer_initialization_types(types, &node));
+    else if (element_type == TypeRegistry::Unknown) node.set_element_type(TypeRegistry::Integer);
+    m_def_provider->add_to_data_structures(node.weak_from_this());
+    return &node;
 }
 
 NodeAST * TypeInference::visit(NodeListRef& node) {
-	if(node.indexes) node.indexes->accept(*this);
+	if (node.indexes) node.indexes->accept(*this);
     // if handed over without index -> as whole list structure type
     if(!node.indexes) {
         if(node.ty == TypeRegistry::Unknown) {
-            node.ty = TypeRegistry::get_composite_type(CompoundKind::List, TypeRegistry::Unknown, node.sizes->params.size());
+            node.ty = TypeRegistry::add_composite_type(CompoundKind::Array, TypeRegistry::Unknown, 1);
             if(!node.ty) throw_composite_error(&node).exit();
         }
     } else {
@@ -327,8 +450,7 @@ NodeAST * TypeInference::visit(NodeListRef& node) {
         if(node.ty->get_element_type()) node.ty = node.ty->get_element_type();
     }
     match_reference_declaration(node, node.get_declaration());
-	if(m_def_provider) m_def_provider->add_to_references(&node);
-	return &node;
+	return register_reference(node);
 }
 
 NodeAST * TypeInference::visit(NodeStruct& node) {
@@ -710,14 +832,14 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 
 				// a bare statement chain ending in a method with return values discards them.
 				// deduplicated by position: monomorphization revisits function bodies
-				if (definition->num_return_params > 0 and i + 1 == node.chain.size()
+				if (definition->num_return_values > 0 and i + 1 == node.chain.size()
 					and node.parent->cast<NodeStatement>()
 					and func_call->kind != NodeFunctionCall::Kind::Constructor
 					and m_discard_warnings.insert(func_call->tok.get_position()).second) {
 					auto warning = Diagnostic(ErrorType::CompileWarning, "", "", func_call->tok);
-					const std::string values = definition->num_return_params > 1 ? "values" : "value";
+					const std::string values = definition->num_return_values > 1 ? "values" : "value";
 					warning.message = "The return "+values+" of method <"+func_call->function->name+"> "
-						+ (definition->num_return_params > 1 ? "are" : "is")
+						+ (definition->num_return_values > 1 ? "are" : "is")
 						+ " discarded here. Assign the result <result := obj."+func_call->function->name+"(...)> if it is needed.\n"
 						"To get rid of this warning use a throwaway variable <_ := ...> to assign to.";
 					warning.fix = make_discarded_return_fix(node);
@@ -782,7 +904,7 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 
 	}
 	match_type(node, *node.chain.back());
-	return &node;
+	return resolve_property_get(node);
 }
 
 
@@ -799,19 +921,19 @@ NodeAST * TypeInference::visit(NodeInitializerList& node) {
 	if(node.size() == 1 and node.elem(0)->get_node_type() != NodeType::InitializerList) {
 		if(auto decl = node.parent->cast<NodeSingleDeclaration>()) {
 			if(decl->variable->ty->get_type_kind() != TypeKind::Composite) {
-				return node.replace_with(std::move(node.elem(0)))->accept(*this);
+				return node.replace_and_visit(std::move(node.elem(0)), *this);
 			}
 		} else if(auto assign = node.parent->cast<NodeSingleAssignment>()) {
 			if(assign->l_value->ty->get_type_kind() != TypeKind::Composite) {
-				return node.replace_with(std::move(node.elem(0)))->accept(*this);
+				return node.replace_and_visit(std::move(node.elem(0)), *this);
 			}
 		} else if(auto ret = node.parent->cast<NodeReturn>()) {
 			if(ret->get_definition() and ret->get_definition()->ty->get_type_kind() != TypeKind::Composite) {
-				return node.replace_with(std::move(node.elem(0)))->accept(*this);
+				return node.replace_and_visit(std::move(node.elem(0)), *this);
 			}
 		} else if(auto set = node.parent->cast<NodeSetControl>()) {
 			if(set->value->ty->get_type_kind() != TypeKind::Composite) {
-				return node.replace_with(std::move(node.elem(0)))->accept(*this);
+				return node.replace_and_visit(std::move(node.elem(0)), *this);
 			}
 		}
 	}
@@ -1027,9 +1149,46 @@ NodeAST * TypeInference::visit(NodeSetControl& node) {
 	return &node;
 }
 
+/// The one assignment a <__set__> makes impossible, reported as that rather than as the type
+/// mismatch it turns into.
+///
+/// An accessor type says that a reference to it is its value: the assignment is the setter,
+/// so it takes what the setter takes and the object itself no longer fits. That is the rule
+/// Python holds to as well - an instance attribute assignment always reaches the descriptor's
+/// <__set__>, and the descriptor is only replaceable through the class. What is left here is
+/// the constructor, which is why it is the one the message names.
+void TypeInference::reject_rebinding_an_accessor(const NodeSingleAssignment& node) const {
+	const auto* target = node.l_value->ty ? node.l_value->ty->cast<ObjectType>() : nullptr;
+	if (!target or node.r_value->ty != node.l_value->ty) return;
+
+	if (!m_program->find_overloaded_method(node.l_value->ty, token::SET_VALUE)) return;
+
+	const auto type_name = node.l_value->ty->to_string();
+	auto error = make_diagnostic(ErrorType::TypeError, *node.r_value);
+	error.message =
+		"<" + type_name + "> defines <__set__>, so this assignment sets the value of <"
+		+ node.l_value->get_string() + "> instead of putting another <" + type_name + "> there."
+		" A member of a type that defines <__set__> can only be filled where the object is"
+		" built - pass it to the constructor, as <" + type_name + "(...)> in the initializer"
+		" of the struct that holds it.";
+	error.expected = "the value <" + type_name + "> stands for";
+	error.actual = type_name;
+	error.exit();
+}
+
 NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 	node.l_value->accept(*this);
 	node.r_value->accept(*this);
+
+	auto set_tok = node.tok;
+	set_tok.type = token::SET_VALUE;
+	if (m_enforce_source_return_annotations and !node.initializes_storage) {
+		if (auto replacement = resolve_subscript_set(node)) return replacement;
+		reject_rebinding_an_accessor(node);
+		if (const auto method = m_program->find_overloaded_method(node.l_value->ty, set_tok.type, 2)) {
+			return replace_with_call(node, make_operator_overload_call(set_tok, *method, std::move(node.l_value), std::move(node.r_value)));
+		}
+	}
 
 	match_assignment_types(*node.l_value, *node.r_value);
 
@@ -1325,27 +1484,10 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	node.left->accept(*this);
 	node.right->accept(*this);
 
-	bool is_object = false;
-	// if type is object -> check for operator overloading
-	if(node.left->ty->cast<ObjectType>()) {
-		auto strct = m_program->find_struct(node.left->ty->ksp_encoded_string());
-		if(auto def = strct->get_overloaded_method(node.op.type)) {
-			match_type(*node.right, *def->header->get_param(1), "Second argument of overloaded operator does not match expected type.");
-			auto call = std::make_unique<NodeFunctionCall>(
-				false,
-				std::make_unique<NodeFunctionHeaderRef>(
-					def->header->name,
-					std::make_unique<NodeParamList>(node.left->tok, std::move(node.left), std::move(node.right)),
-					node.op
-				),
-				node.op
-			);
-			// do not yet add definition to call -> will be done in function call
-			return node.replace_with(std::move(call))->accept(*this);
-		}
-		is_object = true;
-
+	if (const auto method = m_program->find_overloaded_method(node.left->ty, node.op.type, 2)) {
+		return replace_with_call(node, make_operator_overload_call(node.op, *method, std::move(node.left), std::move(node.right)));
 	}
+	const bool is_object = node.left->ty->cast<ObjectType>() != nullptr;
 
 	// do not infer type if together in string
 	if(STRING_TOKENS.contains(node.op.type)) {
@@ -1387,7 +1529,7 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 		}
 		if(node.left->ty != node.right->ty)
 			is_compatible = false;
-		error.add_message("Please use real() and int() to use <Real> and <Integer> numbers in a single expression.");
+		error.add_message("Please use type casting syntax real() and int() to use <Real> and <Integer> numbers in a single expression.");
 
 	} else if (BITWISE_TOKENS.contains(node.op.type)) {
 		node.ty = TypeRegistry::Integer;
@@ -1426,23 +1568,8 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 	node.operand->accept(*this);
 
 	bool is_object = false;
-	// if type if object -> check for operator overloading
-	if(node.operand->ty->get_type_kind() == TypeKind::Object) {
-		auto strct = m_program->find_struct(node.operand->ty->ksp_encoded_string());
-		if(auto def = strct->get_overloaded_method(node.op.type)) {
-			auto call = std::make_unique<NodeFunctionCall>(
-				false,
-				std::make_unique<NodeFunctionHeaderRef>(
-					def->header->name,
-					std::make_unique<NodeParamList>(node.operand->tok, std::move(node.operand)),
-					node.op
-				),
-				node.op
-			);
-			// do not yet add definition to call -> will be done in function call
-			return node.replace_with(std::move(call))->accept(*this);
-		}
-
+	if (const auto method = m_program->find_overloaded_method(node.operand->ty, node.op.type, 1)) {
+		return replace_with_call(node, make_operator_overload_call(node.op, *method, std::move(node.operand)));
 	}
 
 	bool is_compatible = node.ty->is_compatible(node.operand->ty) && node.operand->ty->is_compatible(node.ty);
@@ -1459,7 +1586,7 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 		} else if(is_compatible and node.operand->ty == TypeRegistry::Real) {
 			node.ty = TypeRegistry::Real;
 		}
-		error.add_message("Please use real() and int() to use <Real> and <Integer> numbers in a single expression.");
+		error.add_message("Please use type casting syntax or real() and int() to use <Real> and <Integer> numbers in a single expression.");
 	} else if (node.op.type == token::BIT_NOT) {
 		node.ty = TypeRegistry::Integer;
 		is_compatible = node.operand->ty->is_compatible(node.ty);

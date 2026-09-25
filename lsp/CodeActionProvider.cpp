@@ -183,6 +183,12 @@ namespace {
 			std::vector<PlannedEdit> candidates;
 			bool fix_is_applicable = true;
 			for (const auto& edit : diagnostic.fix->edits) {
+				// Fix-all rewrites the source of a document. A fix that creates files on disk
+				// reaches past that, and stays the deliberate click of its own quick fix.
+				if (edit.kind == Diagnostic::DiagnosticFix::EditKind::CreateFile) {
+					fix_is_applicable = false;
+					break;
+				}
 				const auto planned = read_planned_edit(
 					DiagnosticPublisher::make_lsp_edit_data(edit).get());
 				if (!planned) {
@@ -249,6 +255,35 @@ namespace {
 		return action;
 	}
 
+	/// A resource operation that creates a file, and with it the folders leading to it.
+	std::unique_ptr<JSONObject> make_create_file_operation(const std::string& uri) {
+		auto options = std::make_unique<JSONObject>();
+		options->add("overwrite", std::make_unique<JSONBool>(false));
+		options->add("ignoreIfExists", std::make_unique<JSONBool>(true));
+
+		auto operation = std::make_unique<JSONObject>();
+		operation->add("kind", std::make_unique<JSONString>("create"));
+		operation->add("uri", std::make_unique<JSONString>(uri));
+		operation->add("options", std::move(options));
+		return operation;
+	}
+
+	/// The edits of one document, in the form a documentChanges list takes them.
+	std::unique_ptr<JSONObject> make_text_document_edit(
+		const std::string& uri, std::unique_ptr<JSONArray> edits) {
+		auto text_document = std::make_unique<JSONObject>();
+		text_document->add("uri", std::make_unique<JSONString>(uri));
+		// The null version says the edit applies to whatever the document currently holds. A
+		// fix is offered against the analysis the diagnostic came from, which the client may
+		// have moved past already; it declines the edit itself if it no longer fits.
+		text_document->add("version", std::make_unique<JSONNull>());
+
+		auto document_edit = std::make_unique<JSONObject>();
+		document_edit->add("textDocument", std::move(text_document));
+		document_edit->add("edits", std::move(edits));
+		return document_edit;
+	}
+
 	std::unique_ptr<JSONObject> make_code_action(const JSONValue& diagnostic_value) {
 		const auto* diagnostic = diagnostic_value.as<JSONObject>();
 		const auto* data = lsp::object_at(diagnostic, "data");
@@ -260,15 +295,24 @@ namespace {
 		}
 
 		std::map<std::string, std::unique_ptr<JSONArray>> edits_by_uri;
+		std::vector<std::string> created_uris;
 		for (size_t index = 0; index < fix_edits->size(); ++index) {
 			const auto* edit_data_value = fix_edits->at(index);
 			const auto* edit_data = edit_data_value
 				? edit_data_value->as<JSONObject>()
 				: nullptr;
 			const auto* target_uri = lsp::string_at(edit_data, "targetUri");
+			if (!target_uri) {
+				return nullptr;
+			}
+			if (const auto* creates = edit_data->get<JSONBool>("createFile");
+				creates && creates->value) {
+				created_uris.push_back(target_uri->value);
+				continue;
+			}
 			const auto* edit_range = lsp::object_at(edit_data, "range");
 			const auto* new_text = lsp::string_at(edit_data, "newText");
-			if (!target_uri || !edit_range || !new_text) {
+			if (!edit_range || !new_text) {
 				return nullptr;
 			}
 
@@ -283,12 +327,26 @@ namespace {
 			uri_edits->add(std::move(edit));
 		}
 
-		auto changes = std::make_unique<JSONObject>();
-		for (auto& [uri, edits] : edits_by_uri) {
-			changes->add(uri, std::move(edits));
-		}
 		auto workspace_edit = std::make_unique<JSONObject>();
-		workspace_edit->add("changes", std::move(changes));
+		if (created_uris.empty()) {
+			auto changes = std::make_unique<JSONObject>();
+			for (auto& [uri, edits] : edits_by_uri) {
+				changes->add(uri, std::move(edits));
+			}
+			workspace_edit->add("changes", std::move(changes));
+		} else {
+			// Creating a file is a resource operation, which only the documentChanges form of a
+			// workspace edit can carry. The creations come first: an edit of a file this fix
+			// also creates would otherwise arrive before the file is there.
+			auto document_changes = std::make_unique<JSONArray>();
+			for (const auto& uri : created_uris) {
+				document_changes->add(make_create_file_operation(uri));
+			}
+			for (auto& [uri, edits] : edits_by_uri) {
+				document_changes->add(make_text_document_edit(uri, std::move(edits)));
+			}
+			workspace_edit->add("documentChanges", std::move(document_changes));
+		}
 
 		auto action_diagnostics = std::make_unique<JSONArray>();
 		action_diagnostics->add(diagnostic_value.clone());

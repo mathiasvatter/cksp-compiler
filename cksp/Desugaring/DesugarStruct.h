@@ -87,7 +87,7 @@ class DesugarStruct final : public ASTDesugaring {
 		static const std::unordered_map<StringIntKey, token, StringIntKeyHash> operator_overload_methods = [](){
 			std::unordered_map<StringIntKey, token, StringIntKeyHash> result;
 			for (const auto& [key, value] : OPERATOR_OVERWRITES) {
-				result[StringIntKey{value.first, value.second}] = key;
+				result[StringIntKey{value.name, value.num_params}] = key;
 			}
 			return result;
 		}();
@@ -96,7 +96,38 @@ class DesugarStruct final : public ASTDesugaring {
 		if (it != operator_overload_methods.end()) {
 			return it->second;
 		}
+		// A subscript is written with as many indexes as the struct cares to take, so its
+		// entry states the fewest and every count above it is the same operator.
+		for (const auto& [op, overload] : OPERATOR_OVERWRITES) {
+			if (overload.takes_indexes and overload.name == name and num_args > overload.num_params) {
+				return op;
+			}
+		}
 		return std::nullopt;
+	}
+
+	/// The operator a method of this name would overload, whatever its signature looks like.
+	static const OperatorOverload* find_operator_overload(const std::string& name) {
+		for (const auto& [op, overload] : OPERATOR_OVERWRITES) {
+			if (overload.name == name) return &overload;
+		}
+		return nullptr;
+	}
+
+	/// Checks the method against the return count <OPERATOR_OVERWRITES> demands for this operator.
+	static void validate_operator_overload(const NodeFunctionDefinition& node, const OperatorOverload& overload) {
+		if (node.num_return_values == overload.num_returns) return;
+
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+		error.message = overload.num_returns == 0
+			? "Operator overload <" + overload.name + "> must not return a value, because it "
+				"replaces a statement."
+			: "Operator overload <" + overload.name + "> must return exactly "
+				+ std::to_string(overload.num_returns) + " value.";
+		error.expected = overload.num_returns == 0
+			? "no return value" : std::to_string(overload.num_returns) + " return value";
+		error.actual = std::to_string(node.num_return_values) + " return values";
+		error.exit();
 	}
 public:
 	explicit DesugarStruct(NodeProgram *program) : ASTDesugaring(program) {};
@@ -252,18 +283,18 @@ public:
 				error.exit();
 			}
 			m_structs.top()->constructor = node.get_shared();
-			if(node.num_return_params > 0) {
+			if(node.num_return_values > 0) {
 				error.message = "Constructor method cannot have return values.";
 				error.exit();
 			}
-			node.num_return_params = 1;
+			node.num_return_values = 1;
 			node.header->create_function_type(m_structs.top()->ty);
 			node.ty = m_structs.top()->ty;
 			// delete <self> keyword
 			node.header->params.erase(node.header->params.begin());
 		}
 		if(node.header->name == NodeStruct::REPRESENTOR) {
-			if(node.num_return_params > 1) {
+			if(node.num_return_values > 1) {
 				auto error = Diagnostic(ErrorType::SyntaxError,"", "", node.tok);
 				error.message = "Repr method cannot have more than one return value.";
 				error.exit();
@@ -273,13 +304,31 @@ public:
 				error.message = "Repr method cannot have more than one argument.";
 				error.exit();
 			}
-			node.num_return_params = 1;
+			node.num_return_values = 1;
 			node.header->create_function_type(TypeRegistry::String);
 			node.ty = TypeRegistry::String;
 		}
 		// check if method is operator overload
 		if(auto token = get_operator_token(node.header->name, node.header->params.size())) {
+			validate_operator_overload(node, OPERATOR_OVERWRITES.at(*token));
 			m_structs.top()->overloaded_operators.insert({*token, node.get_shared()});
+		} else if (const auto overload = find_operator_overload(node.header->name)) {
+			// the name is an operator overload, but with a parameter count no operator uses, so
+			// <get_operator_token> would silently leave it as an ordinary method
+			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
+			const auto count = std::to_string(overload->num_params)
+				+ (overload->num_params == 1 ? " parameter, " : " parameters, ");
+			error.message = overload->takes_indexes
+				// One index is the fewest a subscript can be written with; <self> and, for the
+				// setter, the value it is given account for the rest of the minimum.
+				? "Operator overload <" + overload->name + "> must take at least " + count
+					+ "<" + NodeStruct::SELF + "> and one index included."
+				: "Operator overload <" + overload->name + "> must take exactly " + count
+					+ "<" + NodeStruct::SELF + "> included.";
+			error.expected = (overload->takes_indexes ? "at least " : "")
+				+ std::to_string(overload->num_params) + " parameters";
+			error.actual = std::to_string(node.header->params.size()) + " parameters";
+			error.exit();
 		}
 
 		node.header->accept(*this);
@@ -370,7 +419,7 @@ public:
 	}
 	NodeAST * visit(NodeListRef& node) override {
 		node.name = replace_self_struct_prefix(node.name, node.tok);
-		node.indexes->accept(*this);
+		if (node.indexes) node.indexes->accept(*this);
 		if(auto access_chain = try_access_chain_transform(node.name, &node)) {
 			return node.replace_with(std::move(access_chain));
 		}

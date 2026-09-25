@@ -98,7 +98,7 @@ public:
 		return &node;
 	}
 	NodeAST *visit(NodeListRef &node) override {
-		node.indexes->accept(*this);
+		if (node.indexes) node.indexes->accept(*this);
 		remove_reference(&node);
 		return &node;
 	}

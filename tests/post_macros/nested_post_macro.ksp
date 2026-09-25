@@ -1,0 +1,20 @@
+// A post macro expanded in the post pass may itself produce one.
+// EXPECT message\("0_0"\)
+// EXPECT message\("0_1"\)
+// EXPECT message\("1_0"\)
+// EXPECT message\("1_1"\)
+macro leaf(#row#, #col#)
+    message("#row#_#col#")
+end macro
+
+macro row(#row#)
+    iterate_post_macro(leaf(#row#, #n#)) := 0 to 1
+end macro
+
+macro grid
+    iterate_post_macro(row(#n#)) := 0 to 1
+end macro
+
+on init
+    grid
+end on

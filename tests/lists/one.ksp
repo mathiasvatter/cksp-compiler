@@ -1,0 +1,10 @@
+// EXPECT message\(2\)
+// EXPECT message\(
+on init
+list xs[]
+1
+2
+end list
+message(xs[1])
+message(xs.SIZE)
+end on

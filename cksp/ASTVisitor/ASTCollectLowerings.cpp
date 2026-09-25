@@ -277,7 +277,7 @@ NodeAST * ASTCollectLowerings::visit(NodeVariableRef &node) {
 
 NodeAST * ASTCollectLowerings::visit(NodeListRef& node) {
 	//TRACE();
-	node.indexes->accept(*this);
+	if (node.indexes) node.indexes->accept(*this);
 	return node.lower(m_program);
 }
 

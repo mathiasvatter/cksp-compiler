@@ -57,6 +57,7 @@ void print_snippet(
 }
 
 void ConsoleDiagnosticSink::report(Diagnostic diagnostic) {
+    if (diagnostic.severity == DiagnosticSeverity::Hint) return;
     if (diagnostic.actual == "\n") diagnostic.actual = "linebreak";
 
     const bool has_location = diagnostic.range.start.line != static_cast<size_t>(-1) && !diagnostic.file.empty();

@@ -59,6 +59,10 @@ struct NodeFunctionCall final : NodeInstruction {
 	explicit NodeFunctionCall(Token tok);
 	NodeFunctionCall(bool is_call, std::unique_ptr<NodeFunctionHeaderRef> function, Token tok);
 	~NodeFunctionCall() override;
+	template<typename... Args>
+	NodeFunctionCall(const std::string &name, Token tok, Args&&... args)
+		: NodeFunctionCall(false, std::make_unique<NodeFunctionHeaderRef>(
+			name, std::make_unique<NodeParamList>(tok, std::forward<Args>(args)...), tok), tok) {}
     NodeAST * accept(ASTVisitor &visitor) override;
     NodeFunctionCall(const NodeFunctionCall& other);
     [[nodiscard]] std::unique_ptr<NodeAST> clone() const override;
@@ -559,6 +563,8 @@ struct NodeAssignment final : NodeInstruction {
 };
 
 struct NodeSingleAssignment final : NodeInstruction {
+	// Compiler-generated member initialization stores the reference, bypassing property accessors.
+	bool initializes_storage = false;
     std::unique_ptr<NodeReference> l_value;
     std::unique_ptr<NodeAST> r_value;
     explicit NodeSingleAssignment(Token tok) : NodeInstruction(NodeType::SingleAssignment, std::move(tok)) {}

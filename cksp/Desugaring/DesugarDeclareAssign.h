@@ -72,10 +72,10 @@ public:
 			auto &val = r_values[i];
 			if(auto func_call = val->cast<NodeFunctionCall>()) {
 				func_call->bind_definition(m_program);
-				int num_return_params = func_call->get_definition() ? func_call->get_definition()->num_return_params : 1;
-				num_values += num_return_params-1;
-				if(num_return_params > 1 and i+num_values < l_values.size() and func_call->kind == NodeFunctionCall::Kind::UserDefined) {
-					for (int ii = num_return_params-1; ii > 0; ii--) {
+				int num_return_values = func_call->get_definition() ? func_call->get_definition()->num_return_values : 1;
+				num_values += num_return_values-1;
+				if(num_return_values > 1 and i+num_values < l_values.size() and func_call->kind == NodeFunctionCall::Kind::UserDefined) {
+					for (int ii = num_return_values-1; ii > 0; ii--) {
 						if(node_type == NodeType::Declaration) {
 							func_call->function->prepend_arg(static_cast<NodeDataStructure*>(l_values[i + ii].get())->to_reference());
 							auto node_single_declare_stmt =

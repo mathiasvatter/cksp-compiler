@@ -144,16 +144,33 @@ private:
 	/// Read tok.val rather than get_token_string(): the latter reconstructs a declaration
 	/// from the *name* for composite structures (NodeArray returns "name[size]"), so it
 	/// carries the rename right back in.
-	static std::string parameters_of(const NodeFunctionHeader& header) {
-		std::string parameters = "(";
-		for (size_t i = 0; i < header.params.size(); ++i) {
-			if (i) parameters += ", ";
+	static std::vector<std::string> parameter_labels_of(
+		const NodeFunctionHeader& header, const bool omit_receiver = false) {
+		std::vector<std::string> labels;
+		size_t first = 0;
+		if (omit_receiver && !header.params.empty() && header.params.front()
+			&& header.params.front()->variable
+			&& header.params.front()->variable->tok.val == NodeStruct::SELF) {
+			first = 1;
+		}
+		labels.reserve(header.params.size() - first);
+		for (size_t i = first; i < header.params.size(); ++i) {
 			const auto& parameter = header.params[i];
 			if (!parameter || !parameter->variable) continue;
-			parameters += parameter->variable->tok.val;
+			std::string label = parameter->variable->tok.val;
 			if (const auto* type = parameter->variable->ty; type && !is_unknown(type)) {
-				parameters += ": " + type->to_string();
+				label += ": " + type->to_string();
 			}
+			labels.push_back(std::move(label));
+		}
+		return labels;
+	}
+
+	static std::string parameters_of(const std::vector<std::string>& labels) {
+		std::string parameters = "(";
+		for (size_t i = 0; i < labels.size(); ++i) {
+			if (i) parameters += ", ";
+			parameters += labels[i];
 		}
 		return parameters + ")";
 	}
@@ -163,10 +180,13 @@ private:
 	/// The name comes from the token, which is how it was written: a function in a
 	/// namespace is declared as <reset>, while <function nks.update_labels()> carries the
 	/// dots in its own name and should show them.
-	static std::string signature_of(const NodeFunctionHeader& header, const bool is_static) {
+	static std::string signature_of(
+		const NodeFunctionHeader& header,
+		const bool is_static,
+		const bool omit_receiver = false) {
 		std::string signature = is_static ? "static function " : "function ";
 		signature += (header.tok.val.empty() ? basename_of(header.name) : header.tok.val)
-			+ parameters_of(header);
+			+ parameters_of(parameter_labels_of(header, omit_receiver));
 		// The header's own type is a FunctionType; its return type is Unknown for a
 		// function that returns nothing, which must not be printed.
 		if (const auto* function_type = header.ty ? header.ty->cast<FunctionType>() : nullptr) {
@@ -279,13 +299,15 @@ public:
 	}
 
 	NodeAST* visit(NodeFunctionHeader& node) override {
+		const auto parameter_labels = parameter_labels_of(node);
 		if (m_pass == Pass::Members && !node.prefix->prefixes.empty()) {
 			record_nesting(node);
 			m_index.add(path_of(node), {
-				basename_of(node.name),
-				parameters_of(node),
-				signature_of(node, false),
-				CompletionKind::Function,
+				.label = basename_of(node.name),
+				.parameters = parameters_of(parameter_labels),
+				.detail = signature_of(node, false),
+				.kind = CompletionKind::Function,
+				.parameter_labels = parameter_labels,
 			});
 		}
 		// Also nameable without a qualifier. Methods carry the OBJ_DELIMITER and are
@@ -293,9 +315,10 @@ public:
 		if (m_pass == Pass::Members && !node.tok.file().empty()) {
 			m_index.add_declaration({
 				.name = node.name,
-				.parameters = parameters_of(node),
+				.parameters = parameters_of(parameter_labels),
 				.detail = signature_of(node, false),
 				.kind = CompletionKind::Function,
+				.parameter_labels = parameter_labels,
 			});
 		}
 		return ASTVisitor::visit(node);
@@ -399,12 +422,15 @@ public:
 					|| name == NodeStruct::REPRESENTOR) {
 					continue;
 				}
+				const bool omit_receiver = !method->is_static;
+				const auto parameter_labels = parameter_labels_of(*method->header, omit_receiver);
 				CompletionMember item{
 					.label = name,
-					.parameters = parameters_of(*method->header),
-					.detail = signature_of(*method->header, method->is_static),
+					.parameters = parameters_of(parameter_labels),
+					.detail = signature_of(*method->header, method->is_static, omit_receiver),
 					.kind = CompletionKind::Method,
 					.category = method->is_static ? "static function" : "method",
+					.parameter_labels = parameter_labels,
 				};
 				if (method->is_static) {
 					m_index.add(container, std::move(item));
