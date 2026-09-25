@@ -196,6 +196,9 @@ struct Diagnostic {
     /// engine, and the compiler refuses to generate code while that count is not zero - the
     /// run reaches its end so every further error is found, and still fails.
     void report_as_error(DiagnosticEngine& diagnostics) const;
+    /// Emits a hint: for code that is most likely fine but worth pointing out. The editor
+    /// shows it without listing it among the problems, and the console does not print it.
+    void report_as_hint(DiagnosticEngine& diagnostics) const;
     /// Aborts the current compilation by throwing CompilationAborted.
     [[noreturn]] void exit() const;
 

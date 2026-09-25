@@ -215,7 +215,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeSingleDeclaration &node) {
 				warning.message = "Array <" + node.variable->name
 					+ "> is initialized using non-constant variable <" + reference->name
 					+ ">. The value is copied once; later changes to the variable do not update the array.";
-				warning.report(diagnostics());
+				warning.report_as_hint(diagnostics());
 			}
 		}
 	}
