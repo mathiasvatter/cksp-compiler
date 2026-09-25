@@ -1334,6 +1334,34 @@ def _(workspace, server):
            "the fix should write the pragma with the call's own depth")
 
 
+@test("diagnostics: a non-constant array initializer is a hint, not a warning",
+      entry_points=["array_initializer.cksp"])
+def _(workspace, server):
+    # Copying a value into an array is usually intended, so it is pointed out without being
+    # listed among the problems. The console does not print hints, which is why this lives
+    # here rather than in the expect suites.
+    fixture = workspace.write(
+        "array_initializer.cksp",
+        "on init\n"
+        "    declare ui_knob knb(0, 100, 1)\n"
+        "    declare variable := 2\n"
+        "    declare arr[3] := [0, 1, variable]\n"
+        "    declare const fixed := 4\n"
+        "    declare const_arr[2] := [0, fixed]\n"
+        "    declare source_arr[1] := [5]\n"
+        "    declare copied_arr[1] := [source_arr[0]]\n"
+        "    declare const fixed_source_arr[1] := [6]\n"
+        "    declare copied_const_arr[1] := [fixed_source_arr[0]]\n"
+        "    declare ids[1] := [get_ui_id(knb)]\n"
+        "end on\n")
+    server.did_open(fixture)
+    hints = [d for d in server.diagnostics(fixture) if "non-constant variable" in d["message"]]
+    named = sorted(d["message"].split("non-constant variable <")[1].split(">")[0] for d in hints)
+    expect(named == ["source_arr", "variable"],
+           f"expected hints for <variable> and <source_arr> only; got {messages_of(hints)}")
+    expect(all(d["severity"] == 4 for d in hints), f"expected hint severity: {hints}")
+
+
 def pass_by_reference_diagnostics(server, fixture):
     return [d for d in server.diagnostics(fixture)
             if (d.get("data") or {}).get("fixKind") == "AddRefToFuncParam"]

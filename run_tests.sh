@@ -13,6 +13,8 @@ RELEASE_EXEC="$BASE_DIR/cmake-build-release/cksp"
 USE_KONTAKT=false        # compile + kontakt (enable via --with-kontakt)
 LSP_ONLY=false           # run only the LSP protocol suite (enable via --lsp)
 RUN_LSP=false            # run the LSP suite alongside the corpus (enable via --with-lsp)
+SUITES_ONLY=false        # run only the expect suites under tests/ (enable via --suites)
+RUN_SUITES=false         # run the expect suites alongside the corpus (enable via --with-suites)
 # KONTAKT_ONLY=false       # kontakt only (enable via --kontakt-only)
 
 # Kontakt executable and Python runner
@@ -75,6 +77,14 @@ while [[ $# -gt 0 ]]; do
       RUN_LSP=true
       shift
       ;;
+    --suites)
+      SUITES_ONLY=true
+      shift
+      ;;
+    --with-suites)
+      RUN_SUITES=true
+      shift
+      ;;
     --files)
       USE_CUSTOM_FILES=true
       shift
@@ -93,14 +103,18 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     -h|--help)
-      echo "Usage: $0 [--with-kontakt] [--lsp|--with-lsp] [--files <file1> <file2> ...] [--file <file>] [extra-files...]"
+      echo "Usage: $0 [--with-kontakt] [--lsp|--with-lsp] [--suites|--with-suites] [--files <file1> <file2> ...] [--file <file>] [extra-files...]"
       echo ""
-      echo "  --lsp        run only the LSP protocol suite (fast, no project corpus)"
-      echo "  --with-lsp   run the LSP suite in addition to the compile corpus"
+      echo "  --lsp          run only the LSP protocol suite (fast, no project corpus)"
+      echo "  --with-lsp     run the LSP suite in addition to the compile corpus"
+      echo "  --suites       run only the expect suites under tests/ (fast, no project corpus)"
+      echo "  --with-suites  run the expect suites in addition to the compile corpus"
+      echo "  --lsp and --suites combine to run both without the corpus"
       echo ""
       echo "Examples:"
       echo "  $0"
       echo "  $0 --lsp"
+      echo "  $0 --suites --lsp"
       echo "  $0 --with-kontakt"
       echo "  $0 --files /tmp/a.ksp /tmp/b.ksp"
       echo "  $0 --file /tmp/a.ksp --file /tmp/b.ksp"
@@ -136,9 +150,47 @@ run_lsp_suite() {
   python3 "$LSP_RUNNER" --binary "$RELEASE_EXEC"
 }
 
-if [[ "$LSP_ONLY" == true ]]; then
-  run_lsp_suite
-  exit $?
+# -----------------------------
+# Expect suites
+# -----------------------------
+# Every tests/<suite>/run.sh built on expect_suite.sh. The sanitizer and thread safety suites
+# are left out: they need their own builds and are run on their own.
+run_expect_suites() {
+  ./build.sh release || return $?
+  if [[ ! -x "$RELEASE_EXEC" ]]; then
+    echo "❗️ Executable not found or not executable: $RELEASE_EXEC"
+    return 127
+  fi
+  local passed=0
+  local failed_suites=()
+  local runner
+  for runner in "$BASE_DIR"/tests/*/run.sh; do
+    grep -q "expect_suite.sh" "$runner" || continue
+    echo ""
+    if bash "$runner" "$RELEASE_EXEC"; then
+      passed=$((passed + 1))
+    else
+      failed_suites+=("$(basename "$(dirname "$runner")")")
+    fi
+  done
+  echo "-------------------------------------"
+  echo "📦 Expect suites: ✅ ${passed}   ❌ ${#failed_suites[@]}"
+  if (( ${#failed_suites[@]} )); then
+    echo -e "   ${YELLOW}Failed:${RESET} ${failed_suites[*]}"
+    return 1
+  fi
+}
+
+if [[ "$LSP_ONLY" == true || "$SUITES_ONLY" == true ]]; then
+  status=0
+  if [[ "$SUITES_ONLY" == true ]]; then
+    run_expect_suites || status=$?
+  fi
+  if [[ "$LSP_ONLY" == true ]]; then
+    [[ "$SUITES_ONLY" == true ]] && echo ""
+    run_lsp_suite || status=$?
+  fi
+  exit $status
 fi
 
 if [[ "$USE_CUSTOM_FILES" == true ]]; then
@@ -376,8 +428,13 @@ for entry in "${BUILDS[@]}"; do
   fi
 done
 
+status=0
+if [[ "$RUN_SUITES" == true ]]; then
+  echo ""
+  run_expect_suites || status=$?
+fi
 if [[ "$RUN_LSP" == true ]]; then
   echo ""
-  run_lsp_suite
-  exit $?
+  run_lsp_suite || status=$?
 fi
+exit $status
