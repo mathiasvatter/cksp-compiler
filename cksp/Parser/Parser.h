@@ -142,7 +142,8 @@ public:
 	Result<std::unique_ptr<NodePointerRef>> parse_pointer_ref(NodeAST* parent);
     Result<std::unique_ptr<NodeDataStructure>> parse_array(NodeAST *parent, std::optional<Token> is_persistent = std::optional<Token>(), DataType var_type = DataType::Mutable);
 	Result<std::unique_ptr<NodeReference>> parse_array_ref(NodeAST *parent);
-	Result<std::unique_ptr<NodeAST>> parse_reference_chain(NodeAST *parent);
+	/// <head> is an already parsed first element, like the <(id as Note)> in <(id as Note).value>
+	Result<std::unique_ptr<NodeAST>> parse_reference_chain(NodeAST *parent, std::unique_ptr<NodeAST> head = nullptr);
 
 	Result<std::unique_ptr<NodeParamList>> parse_multiple_values(NodeAST* parent);
     Result<std::unique_ptr<NodeParamList>> parse_param_list(NodeAST* parent, bool allow_linebreaks = true);
@@ -163,6 +164,8 @@ public:
 		Result<std::unique_ptr<NodeAST>> _parse_null_coalesce_rhs(std::unique_ptr<NodeAST> lhs, NodeAST* parent);
 		/// ( expression )
 		Result<std::unique_ptr<NodeAST>> _parse_parenth_expr(NodeAST* parent);
+		/// ( expression ) with an optional access chain after it: <(id as Note).value>
+		Result<std::unique_ptr<NodeAST>> _parse_parenth_chain(NodeAST* parent);
 		/// parse identifierexpr, numberexpr, parenthexpr, functionheader
 		Result<std::unique_ptr<NodeAST>> _parse_primary_expr(NodeAST* parent);
     Result<std::unique_ptr<NodeDeclaration>> parse_declare_statement(NodeAST* parent);

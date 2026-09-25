@@ -39,7 +39,10 @@ public:
 		node.update_types();
 		// if first element is pointer do not accept
 		start_pointer = node.chain[0].get();
-		for(int i=0; i<node.chain.size(); i++) {
+		// the start is not a member and keeps its name. It is not visited either: a composite
+		// start like <(id as Note)> would otherwise have the references inside it renamed.
+		prev_type = node.types[0];
+		for(int i=1; i<node.chain.size(); i++) {
 			auto& ref = node.chain[i];
 			ref->accept(*this);
 			prev_type = node.types[i];

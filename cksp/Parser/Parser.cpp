@@ -449,8 +449,8 @@ Result<std::unique_ptr<NodeReference>> Parser::parse_array_ref(NodeAST *parent) 
 }
 
 
-Result<std::unique_ptr<NodeAST>> Parser::parse_reference_chain(NodeAST *parent) {
-	if (peek().type == token::NEW) {
+Result<std::unique_ptr<NodeAST>> Parser::parse_reference_chain(NodeAST *parent, std::unique_ptr<NodeAST> head) {
+	if (!head and peek().type == token::NEW) {
 		consume();
 		if (peek().type != token::KEYWORD and peek(1).type != token::OPEN_PARENTH) {
 			auto error = Diagnostic(
@@ -463,8 +463,8 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_reference_chain(NodeAST *parent) 
 		}
 	}
 
-	auto chain = std::make_unique<NodeAccessChain>(peek());
-	if (peek().type != token::KEYWORD) {
+	auto chain = std::make_unique<NodeAccessChain>(head ? head->tok : peek());
+	if (!head and peek().type != token::KEYWORD) {
 		auto error = Diagnostic(
 			ErrorType::SyntaxError,
 			"Expected identifier at start of reference chain.",
@@ -473,9 +473,10 @@ Result<std::unique_ptr<NodeAST>> Parser::parse_reference_chain(NodeAST *parent) 
 		);
 		return Result<std::unique_ptr<NodeAST>>(error);
 	}
-	while(peek().type == token::KEYWORD) {
-		std::unique_ptr<NodeAST> stmt = nullptr;
-		if (peek().type == token::KEYWORD) {
+	while(head or peek().type == token::KEYWORD) {
+		// a given head stands in for the first element and is only used once
+		std::unique_ptr<NodeAST> stmt = std::move(head);
+		if (!stmt) {
 			// is function
 			if (peek(1).type == token::OPEN_PARENTH || looks_like_parameterized_call()) {
 				auto var_function = parse_function_call(parent);
@@ -778,7 +779,7 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_primary_expr(NodeAST* parent) {
 		return parse_reference_chain(parent);
 		// is expression in brackets
 	} else if (peek().type == token::OPEN_PARENTH) {
-		return _parse_parenth_expr(parent);
+		return _parse_parenth_chain(parent);
 	} else if (peek().type == token::INT || peek().type == token::FLOAT || peek().type == token::HEXADECIMAL || peek().type == token::BINARY) {
 		return parse_number(parent);
 		// unary operators bool_not, bit_not, sub
@@ -858,6 +859,20 @@ Result<std::unique_ptr<NodeAST>> Parser::_parse_parenth_expr(NodeAST* parent) {
     auto end_tok = consume(); // eat )
     expr.unwrap()->set_range(start_tok, end_tok);
     return expr;
+}
+
+Result<std::unique_ptr<NodeAST>> Parser::_parse_parenth_chain(NodeAST* parent) {
+	const auto start_tok = peek();
+	auto expr = _parse_parenth_expr(parent);
+	if (expr.is_error()) return expr;
+	// <(id as Note).value>: the parenthesised value is the receiver of an access chain.
+	// Type inference rejects a receiver that is not an object.
+	// Only a plain <.> continues it: <(cond) ? .member : ...> would read as <?.>.
+	if (peek().type != token::DOT) return expr;
+	auto chain = parse_reference_chain(parent, std::move(expr.unwrap()));
+	if (chain.is_error()) return chain;
+	chain.unwrap()->set_range(start_tok, peek(-1));
+	return chain;
 }
 
 void Parser::read_reserved_ref_as_name() {
@@ -1069,8 +1084,22 @@ Result<std::vector<std::unique_ptr<NodeReference>>> Parser::parse_l_values(NodeA
 	}
 	do {
 		if(peek().type == token::COMMA) consume();
+		if (peek().type == token::OPEN_PARENTH) {
+			const auto start_tok = peek();
+			auto ref = _parse_parenth_chain(parent);
+			if (ref.is_error()) {
+				return Result<std::vector<std::unique_ptr<NodeReference>>>(ref.get_error());
+			}
+			// only a member reached through the parentheses can be assigned, not the value itself
+			if (!ref.unwrap()->cast<NodeAccessChain>()) {
+				auto error = Diagnostic(ErrorType::SyntaxError, "Found invalid <l_value> Syntax.",
+					"<(...).member>", start_tok);
+				error.message += " A parenthesised expression can only be assigned through a member, like <(id as Note).value>.";
+				return Result<std::vector<std::unique_ptr<NodeReference>>>(error);
+			}
+			vars.push_back(unique_ptr_cast<NodeReference>(std::move(ref.unwrap())));
 		// ui_control
-		if (peek().type == token::KEYWORD) {
+		} else if (peek().type == token::KEYWORD) {
 			auto ref = parse_reference_chain(parent);
 			if (ref.is_error()) {
 				return Result<std::vector<std::unique_ptr<NodeReference>>>(ref.get_error());
@@ -1237,7 +1266,9 @@ Result<std::unique_ptr<NodeStatement> > Parser::parse_statement(NodeAST *parent)
 	}
 	std::unique_ptr<NodeAST> stmt;
 	// assign statement
-	if (peek().type == token::KEYWORD || peek().type == token::DECLARE
+	// a leading <(> is an access chain on a parenthesised receiver: <(id as Note).value := 5>
+	const bool parenth_receiver = peek().type == token::OPEN_PARENTH;
+	if (peek().type == token::KEYWORD || peek().type == token::DECLARE || parenth_receiver
 		|| peek().type == token::CALL || peek().type == token::SET_CONDITION || peek().type == token::RESET_CONDITION) {
 		// where SublimeKSP puts one: a <property> block inside <on init>
 		if (is_sublime_property()) {
@@ -1250,7 +1281,7 @@ Result<std::unique_ptr<NodeStatement> > Parser::parse_statement(NodeAST *parent)
 				return Result<std::unique_ptr<NodeStatement> >(declare_stmt.get_error());
 			}
 			stmt = std::move(declare_stmt.unwrap());
-		} else if ((peek().type == token::CALL) xor
+		} else if (!parenth_receiver and (peek().type == token::CALL) xor
 			(peek(1).type == token::OPEN_PARENTH or peek(1).type == token::LINEBRK or peek(1).type ==
 				token::CLOSED_PARENTH)) {
 			auto function_call = parse_function_call(node_statement.get());

@@ -1,0 +1,6 @@
+// EXPECT_ERROR Method chaining can only be used on <Object> types
+
+on init
+    declare result := (3 + 4).field
+    message(result)
+end on
