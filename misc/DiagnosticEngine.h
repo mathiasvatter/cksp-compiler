@@ -40,6 +40,10 @@ public:
         return m_error_count;
     }
 
+    /// Copies the active non-owning frames into a diagnostic-safe representation, for a
+    /// diagnostic that is built now but reported once the stack has unwound.
+    [[nodiscard]] std::vector<DiagnosticFrame> materialize_call_stack() const;
+
 private:
     /// References AST data guarded by FunctionCallStackScope.
     struct ActiveFrame {
@@ -47,9 +51,6 @@ private:
         std::string_view file;
         const SourceRange* call_site;
     };
-
-    /// Copies the active non-owning frames into a diagnostic-safe representation.
-    [[nodiscard]] std::vector<DiagnosticFrame> materialize_call_stack() const;
 
     DiagnosticSink& m_sink;
     size_t m_diagnostic_count = 0;

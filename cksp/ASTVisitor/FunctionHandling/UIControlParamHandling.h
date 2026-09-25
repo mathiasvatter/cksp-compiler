@@ -68,6 +68,7 @@ private:
 						warning.fix = DiagnosticFixBuilder(Diagnostic::DiagnosticFix::FixKind::AddRefToFuncParam, "Pass '" + written_name + "' by reference")
 							.insert_before(decl->tok, "ref ")
 							.build();
+						warning.migration_kind = Diagnostic::MigrationKind::PassByReference;
 						warning.report(node.diagnostics());
 						param->is_pass_by_ref = true;
 					}
@@ -102,6 +103,7 @@ private:
 		warning.fix = DiagnosticFixBuilder(Diagnostic::DiagnosticFix::FixKind::AddRefToFuncParam, "Pass '" + written_name + "' by reference")
 			.insert_before(decl->tok, "ref ")
 			.build();
+		warning.migration_kind = Diagnostic::MigrationKind::PassByReference;
 		warning.report(ui_id.diagnostics());
 		param->is_pass_by_ref = true;
 	}

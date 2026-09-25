@@ -80,7 +80,8 @@ struct Diagnostic {
         GlobalDeclarationInitializer,
         ReservedResultName,
         ReservedParameterName,
-        InvalidCharacter
+        InvalidCharacter,
+        PassByReference
     };
 
     struct DiagnosticFix {
@@ -154,6 +155,7 @@ struct Diagnostic {
             case MigrationKind::ReservedResultName: return "ReservedResultName";
             case MigrationKind::ReservedParameterName: return "ReservedParameterName";
             case MigrationKind::InvalidCharacter: return "InvalidCharacter";
+            case MigrationKind::PassByReference: return "PassByReference";
             default: break;
         }
         return "unknown";

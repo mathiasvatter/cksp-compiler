@@ -102,6 +102,13 @@ public:
 	std::unordered_set<NodeFunctionDefinition*> m_functions_in_use{};
 	/// parameters already warned about being modified while passed by value
 	std::unordered_set<const NodeFunctionParam*> m_warned_params{};
+	/// the warnings above, reported at the end of the pass once every call site has been seen
+	std::vector<std::pair<const NodeFunctionParam*, Diagnostic>> m_param_modification_warnings{};
+	/// parameters some call site passes a value that cannot be bound by reference: an
+	/// expression, a literal, a constant. <ref> would break that call site
+	std::unordered_set<const NodeFunctionParam*> m_params_with_value_args{};
+	void record_param_arguments(const NodeFunctionCall& call, const NodeFunctionDefinition& definition);
+	void report_param_modification_warnings();
 	bool check_recursion(NodeFunctionDefinition* func) const {
 		if(m_functions_in_use.contains(func)) {
 			// recursive function call detected

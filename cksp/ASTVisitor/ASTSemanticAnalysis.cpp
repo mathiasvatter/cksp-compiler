@@ -31,6 +31,7 @@ NodeAST * ASTSemanticAnalysis::visit(NodeProgram& node) {
 		}
 	}
 	node.reset_function_visited_flag();
+	report_param_modification_warnings();
 	return &node;
 }
 
@@ -159,7 +160,36 @@ void ASTSemanticAnalysis::check_param_modification(NodeReference& ref) {
 	warning.fix = DiagnosticFixBuilder(Diagnostic::DiagnosticFix::FixKind::AddRefToFuncParam, "Pass '" + written_name + "' by reference")
 		.insert_before(declaration->tok, "ref ")
 		.build();
-	warning.report(diagnostics());
+	warning.call_stack = diagnostics().materialize_call_stack();
+	m_param_modification_warnings.emplace_back(param, std::move(warning));
+}
+
+void ASTSemanticAnalysis::record_param_arguments(const NodeFunctionCall& call, const NodeFunctionDefinition& definition) {
+	const auto offset = call.get_param_offset(&definition);
+	for (size_t i = 0; i < definition.get_num_params(); ++i) {
+		const auto param = definition.get_param(static_cast<int>(i))->is_function_param();
+		if (!param) continue;
+		const auto arg_idx = static_cast<int>(i) - offset;
+		if (arg_idx < 0 or arg_idx >= static_cast<int>(call.function->get_num_args())) continue;
+		const auto ref = call.function->get_arg(arg_idx)->is_reference();
+		const auto arg_decl = ref ? ref->get_declaration() : nullptr;
+		if (!ref or (arg_decl and arg_decl->data_type == DataType::Const)) {
+			m_params_with_value_args.insert(param);
+		}
+	}
+}
+
+void ASTSemanticAnalysis::report_param_modification_warnings() {
+	for (auto& [param, warning] : m_param_modification_warnings) {
+		// SublimeKSP substitutes arguments textually, so a ported parameter was always by
+		// reference - and a call passing an expression would not have compiled there either
+		if (!m_params_with_value_args.contains(param)) {
+			warning.migration_kind = Diagnostic::MigrationKind::PassByReference;
+		}
+		warning.report(diagnostics());
+	}
+	m_param_modification_warnings.clear();
+	m_params_with_value_args.clear();
 }
 
 NodeAST * ASTSemanticAnalysis::visit(NodeCallback& node) {
@@ -248,6 +278,9 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 
 	node.bind_definition(m_program);
 	const auto definition = node.get_definition();
+	if (definition and node.kind == NodeFunctionCall::Kind::UserDefined) {
+		record_param_arguments(node, *definition);
+	}
 	// set has_exit_command of function definition node if we are in a function definition
 	if (definition and node.is_builtin_kind() and !m_program->function_definition_stack.empty()) {
 		if (node.function->name == "exit") {

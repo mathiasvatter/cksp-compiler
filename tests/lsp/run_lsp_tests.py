@@ -1334,6 +1334,60 @@ def _(workspace, server):
            "the fix should write the pragma with the call's own depth")
 
 
+def pass_by_reference_diagnostics(server, fixture):
+    return [d for d in server.diagnostics(fixture)
+            if (d.get("data") or {}).get("fixKind") == "AddRefToFuncParam"]
+
+
+@test("migration: a modified by-value parameter is ported to ref",
+      entry_points=["param_modified.cksp"])
+def _(workspace, server):
+    # SublimeKSP substitutes arguments, so the caller saw the change. Only a warning: it
+    # joins a migration run but must not be the reason one is offered.
+    fixture = workspace.write(
+        "param_modified.cksp",
+        "on init\n    declare y := 2\nend on\n"
+        "function bump(x)\n    x := x + 1\nend function\n"
+        "on note\n    bump(y)\nend on\n")
+    server.did_open(fixture)
+    diagnostics = pass_by_reference_diagnostics(server, fixture)
+    expect(len(diagnostics) == 1, f"expected one ref fix: {server.diagnostics(fixture)}")
+    expect(diagnostics[0]["data"].get("migrationKind") == "PassByReference",
+           f"the ref fix is not marked for migration: {diagnostics[0]}")
+    expect(diagnostics[0]["severity"] == 2, f"expected a warning: {diagnostics[0]}")
+
+
+@test("migration: a parameter called with an expression is not ported to ref",
+      entry_points=["param_expression.cksp"])
+def _(workspace, server):
+    # <ref> would turn <bump(y + 1)> into an assignment to an expression.
+    fixture = workspace.write(
+        "param_expression.cksp",
+        "on init\n    declare y := 2\nend on\n"
+        "function bump(x)\n    x := x + 1\n    message(x)\nend function\n"
+        "on note\n    bump(y)\n    bump(y + 1)\nend on\n")
+    server.did_open(fixture)
+    diagnostics = pass_by_reference_diagnostics(server, fixture)
+    expect(len(diagnostics) == 1, f"expected one ref fix: {server.diagnostics(fixture)}")
+    expect("migrationKind" not in diagnostics[0]["data"],
+           f"a fix that breaks a call site must stay out of the migration: {diagnostics[0]}")
+
+
+@test("migration: a ui control parameter used with -> is ported to ref",
+      entry_points=["param_ui_control.cksp"])
+def _(workspace, server):
+    fixture = workspace.write(
+        "param_ui_control.cksp",
+        "on init\n    declare ui_knob knb(0, 100, 1)\nend on\n"
+        "function reset(ctrl)\n    ctrl -> value := 0\nend function\n"
+        "on ui_control(knb)\n    reset(knb)\nend on\n")
+    server.did_open(fixture)
+    diagnostics = pass_by_reference_diagnostics(server, fixture)
+    expect(len(diagnostics) == 1, f"expected one ref fix: {server.diagnostics(fixture)}")
+    expect(diagnostics[0]["data"].get("migrationKind") == "PassByReference",
+           f"the ref fix is not marked for migration: {diagnostics[0]}")
+
+
 @test("migration: a computed tcm.init depth is explained instead of half-fixed",
       entry_points=["tcm_computed.cksp"])
 def _(workspace, server):
