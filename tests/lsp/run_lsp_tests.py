@@ -2408,5 +2408,60 @@ def _(workspace, server):
     expect(after > before, f"expected a refresh request, got {server.server_requests}")
 
 
+def type_hints_of(server, fixture):
+    return {(hint["position"]["line"], hint["position"]["character"]): hint["label"]
+            for hint in server.inlay_hints(fixture) if hint.get("kind") == 1}
+
+
+@test("inlay hints: declarations without a type show the inferred one",
+      requires="inlayHintProvider")
+def _(workspace, server):
+    fixture = workspace.open("type_hints.cksp")
+    hints = type_hints_of(server, fixture)
+    for marker, label in [
+        ("count", ": int"), ("ratio", ": real"), ("label", ": string"),
+        ("values", ": int[]"), ("env", ": Envelope"), ("result", ": int"),
+        ("factor", ": int"), ("amount", ": int"), ("knob", ": int"),
+        ("twice", ": int"),
+    ]:
+        position = fixture.at(marker)
+        found = hints.get((position.line, position.character))
+        expect(found == label, f"{marker}: expected {label!r}, got {found!r} in {hints}")
+
+
+@test("inlay hints: no type hint where the source already names the type",
+      requires="inlayHintProvider")
+def _(workspace, server):
+    fixture = workspace.open("type_hints.cksp")
+    hints = type_hints_of(server, fixture)
+    lines = fixture.text.splitlines()
+    for declarator in ("level", "$legacy", "typed[2]", "offset"):
+        line = next(i for i, text in enumerate(lines) if declarator + ":" in text
+                    or "declare " + declarator + " " in text)
+        end = lines[line].index(declarator) + len(declarator)
+        expect((line, end) not in hints,
+               f"{declarator}: explicitly typed declaration got {hints.get((line, end))!r}")
+    named = next(i for i, text in enumerate(lines) if "function named()" in text)
+    expect(not any(line == named for line, _ in hints),
+           f"an annotated return type got a hint: {hints}")
+    scale = fixture.at("scale")
+    expect((scale.line, scale.character) not in hints,
+           f"a function without return value got a return type: {hints}")
+
+
+@test("inlay hints: type hints never point into an edited buffer at stale positions",
+      requires="inlayHintProvider")
+def _(workspace, server):
+    fixture = workspace.open("type_hints.cksp")
+    before = type_hints_of(server, fixture)
+    expect(before, "expected type hints after analysis")
+    # One line inserted on top: valid hints are the old ones one line further down. The
+    # request races the re-analysis, so either those or none are correct, never the old ones.
+    edited = server.did_change(fixture, "\n" + fixture.text, wait=False)
+    shifted = {(line + 1, character): label for (line, character), label in before.items()}
+    after = type_hints_of(server, edited)
+    expect(after.items() <= shifted.items(), f"stale type hints: {after}")
+
+
 if __name__ == "__main__":
     raise SystemExit(run_suite())

@@ -29,6 +29,7 @@
 #include "../lsp/visitor/ReferenceIndexBuilder.h"
 #include "../lsp/visitor/CompletionIndexBuilder.h"
 #include "../lsp/visitor/PreASTCompletionHarvester.h"
+#include "../lsp/visitor/TypeHintHarvester.h"
 #include "ASTVisitor/ASTOptimizations.h"
 #include "ASTVisitor/TypeInference.h"
 #include "ASTVisitor/ASTReturnFunctionRewriting.h"
@@ -87,6 +88,7 @@ class Compiler {
 	ImportGraph m_import_graph;
 	ReferenceIndex m_reference_index;
 	CompletionIndex m_completion_index;
+	TypeHintHarvester::UntypedDeclarations m_untyped_declarations;
 	ConstantDatabase m_constant_db;
 
 //	bool tokenize();
@@ -215,6 +217,7 @@ private:
 		// reset before preprocess: the substitution passes already record define/macro links
 		m_reference_index = ReferenceIndex{};
 		m_completion_index = CompletionIndex{};
+		m_untyped_declarations.clear();
 		SourceParser source_parser(*m_sources, m_definition_provider, m_lines_processed, diagnostic_engine, m_import_graph);
 		preprocess(source_parser);
 		m_final_config = combine_configs(m_cli_config, m_pragma_config);
@@ -232,6 +235,9 @@ private:
 			if (m_program->compiler_config->lsp) {
 				collect_reference_definitions();
 				collect_completion_scopes();
+				TypeHintHarvester untyped(
+					m_untyped_declarations, nullptr, TypeHintHarvester::Pass::Untyped);
+				ast->accept(untyped);
 			}
 			m_program->apply_callback_overrides();
 			if (m_pragma_config->combine_callbacks.value_or(false)) {
@@ -280,6 +286,9 @@ private:
 		if (m_program->compiler_config->lsp) {
 			build_reference_index();
 			build_completion_index();
+			TypeHintHarvester inferred(
+				m_untyped_declarations, &m_reference_index, TypeHintHarvester::Pass::Inferred);
+			ast->accept(inferred);
 		}
 
 		// ASTPointerScope pointer_scope(m_program);

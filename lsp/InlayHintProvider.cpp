@@ -7,7 +7,8 @@
 
 namespace {
 
-/// LSP InlayHintKind.Parameter.
+/// LSP InlayHintKind.
+constexpr int TYPE_HINT = 1;
 constexpr int PARAMETER_HINT = 2;
 constexpr size_t MAX_LABEL_LENGTH = 10;
 
@@ -82,9 +83,21 @@ JSONArray InlayHintProvider::hints(
 	const std::string_view text,
 	const size_t begin,
 	const size_t end,
-	const SourceId& source) const {
+	const SourceId& source,
+	const std::vector<TypeHint>& type_hints) const {
 	JSONArray hints;
 	const LineIndex lines(text);
+
+	for (const auto& type_hint : type_hints) {
+		const auto offset = lsp::source_text::offset_at(
+			text, type_hint.position.get_lsp_line(), type_hint.position.get_lsp_char());
+		if (!offset || *offset < begin || *offset > end) continue;
+		auto hint = std::make_unique<JSONObject>();
+		hint->add("position", lines.position_of(*offset));
+		hint->add("label", std::make_unique<JSONString>(": " + type_hint.type));
+		hint->add("kind", std::make_unique<JSONInt>(TYPE_HINT));
+		hints.add(std::move(hint));
+	}
 
 	for (const auto& call : lsp::call_sites_in(text, begin, end)) {
 		if (call.arguments.empty()) continue;

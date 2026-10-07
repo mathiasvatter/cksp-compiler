@@ -49,6 +49,11 @@ public:
 		const SourceId& source,
 		size_t line,
 		size_t character);
+	/// Inferred-type hints for `source`, only from a snapshot that still matches its text:
+	/// a hint is a bare position, so a stale one would land in the wrong place.
+	[[nodiscard]] std::vector<TypeHint> type_hints(
+		const std::vector<SourceId>& preferred_entries,
+		const SourceId& source);
 	[[nodiscard]] std::vector<ReferenceLocation> references_to(
 		const ReferenceLink& target,
 		bool include_declaration);

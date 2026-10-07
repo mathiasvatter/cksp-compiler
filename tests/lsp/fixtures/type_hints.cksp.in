@@ -1,0 +1,35 @@
+struct Envelope
+    value: int
+
+    function set(self, amount<|amount|>): int
+        self.value := amount
+        return self.value
+    end function
+end struct
+
+function scale(factor<|factor|>, offset: int)<|scale|>
+    declare result<|result|> := factor * offset
+    message(result)
+end function
+
+function twice(x)<|twice|>
+    return x * 2
+end function
+
+function named(): string
+    return "x"
+end function
+
+on init
+    declare count<|count|> := 4
+    declare level: real := 0.5
+    declare $legacy := 1
+    declare ratio<|ratio|> := 0.25
+    declare label<|label|> := "x"
+    declare values[2]<|values|> := (1, 2)
+    declare typed[2]: int[] := (3, 4)
+    declare env<|env|> := new Envelope(0)
+    declare ui_knob knob<|knob|>(0, 100, 1)
+    scale(count, 2)
+    message(env.set(3) & label & knob & twice(2) & named())
+end on

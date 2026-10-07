@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -49,6 +50,13 @@ struct DefinitionLink {
 	std::string tooltip;
 };
 
+/// The inferred type of a declaration written without one, shown after its declarator.
+struct TypeHint {
+	std::string file;
+	SourcePosition position;  ///< one-based, right after the name (or the array brackets)
+	std::string type;
+};
+
 /**
  * Position -> declaration index built for one analyzed entry.
  *
@@ -62,9 +70,35 @@ class ReferenceIndex {
 	std::unordered_set<std::string> m_seen_links;
 	std::unordered_set<std::string> m_seen_definition_links;
 	std::unordered_set<std::string> m_seen_references;
+	/// Keyed by position. One declaration written in a macro body is expanded once per
+	/// call; when the expansions disagree on the type, no single hint is true.
+	std::unordered_map<std::string, std::optional<TypeHint>> m_type_hints;
 	mutable std::unordered_map<std::string, std::string> m_normalized_files;
 
 public:
+	void add_type_hint(const std::string& file, const SourcePosition& position, std::string type) {
+		auto normalized = normalized_file(file);
+		const auto key = normalized + "@" + std::to_string(position.line) + ":" + std::to_string(position.column);
+		const auto [existing, inserted] = m_type_hints.try_emplace(
+			key, TypeHint{std::move(normalized), position, std::move(type)});
+		if (!inserted && existing->second && existing->second->type != type) {
+			existing->second.reset();
+		}
+	}
+
+	[[nodiscard]] std::vector<TypeHint> type_hints_in(const std::string& file) const {
+		std::vector<TypeHint> hints;
+		for (const auto& [_, hint] : m_type_hints) {
+			if (hint && hint->file == file) hints.push_back(*hint);
+		}
+		std::ranges::sort(hints, [](const TypeHint& left, const TypeHint& right) {
+			return left.position.line != right.position.line
+				? left.position.line < right.position.line
+				: left.position.column < right.position.column;
+		});
+		return hints;
+	}
+
 	/// Records a reference -> declaration link. The same visible source range can legitimately
 	/// carry both a preprocessor link and an AST semantic link after macro expansion, so dedupe
 	/// keeps distinct declaration targets while still suppressing exact duplicates.

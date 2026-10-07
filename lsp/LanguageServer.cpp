@@ -768,7 +768,9 @@ void LanguageServer::handle_inlay_hint(const JsonRpcMessage& message) {
 		std::lock_guard lock(m_state_mutex);
 		entries = m_entry_points.affected_entries(source);
 	}
-	m_connection.send_response(*id, m_inlay_hints.hints(entries, text, begin, end, source));
+	const auto type_hints = m_references.type_hints(entries, source);
+	m_connection.send_response(
+		*id, m_inlay_hints.hints(entries, text, begin, end, source, type_hints));
 }
 
 void LanguageServer::handle_did_open(const JsonRpcMessage& message) {

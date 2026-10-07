@@ -241,3 +241,17 @@ std::vector<ReferenceLocation> ReferenceProvider::references_to(
 	});
 	return locations;
 }
+
+std::vector<TypeHint> ReferenceProvider::type_hints(
+	const std::vector<SourceId>& preferred_entries,
+	const SourceId& source) {
+	const auto normalized_source = FileSystemSourceProvider::normalize(source.value).value;
+	std::lock_guard lock(m_mutex);
+	for (const auto& entry : preferred_entries) {
+		const auto state = m_states.find(FileSystemSourceProvider::normalize(entry.value).value);
+		if (state == m_states.end() || !state->second.last_successful) continue;
+		if (!source_matches_snapshot(state->second.last_successful_sources, normalized_source)) continue;
+		return state->second.last_successful->type_hints_in(normalized_source);
+	}
+	return {};
+}
