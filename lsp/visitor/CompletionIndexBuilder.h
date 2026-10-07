@@ -330,9 +330,9 @@ public:
 		return ASTVisitor::visit(node);
 	}
 
-	/// A function declared in a namespace is a member of it, but its body is not: the
-	/// namespace desugaring prefixes function-local declarations just like real members
-	/// (<PathUtils._id>), and those are unreachable through the qualifier.
+	/// A function declared in a namespace is a member of it, but its body is not: its locals
+	/// are never reachable through the qualifier. The namespace desugaring leaves them
+	/// unprefixed (#147), so they would not even land in its container.
 	///
 	/// The header is left to the base traversal below rather than being visited up front:
 	/// ASTVisitor::visit() accepts it too, and a parameter harvested by that first visit

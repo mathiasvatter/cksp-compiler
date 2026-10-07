@@ -1,0 +1,23 @@
+// The method after <?.> is a member of the receiver even when the namespace declares a global
+// of the same name; the global is still reachable as an argument (#146).
+// EXPECT call Ev____fade
+// EXPECT := \$Ns__fade$
+
+struct Ev
+	id: int
+	function fade(self, time: int)
+		fade_out(self.id, time, 1)
+	end function
+end struct
+
+namespace Ns
+	declare cur: Ev := nil
+	declare fade := 5
+	function stop()
+		Ns.cur?.fade(fade)
+	end function
+end namespace
+
+on note
+	Ns.stop()
+end on
