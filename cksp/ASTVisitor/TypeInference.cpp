@@ -545,12 +545,15 @@ NodeAST * TypeInference::visit(NodeUseCount& node) {
 
 NodeAST * TypeInference::visit(NodeSortSearch& node) {
 	node.array->accept(*this);
-	if (node.array->ty->get_element_type()->get_type_kind() != TypeKind::Object) {
-		match_against(*node.array, TypeRegistry::NDArrayOfInt, "<search> can only be used on <Composite> types like <Arrays> or <NDArrays>.");
+	expect_number_array(*node.array, node.name);
+	// a real array is <sort>'s as much as an integer one; the match below would make it one of ints
+	const bool sorted_reals = sorts_reals(node.name) and node.array->ty->get_element_type() == TypeRegistry::Real;
+	if (node.array->ty->get_element_type()->get_type_kind() != TypeKind::Object and !sorted_reals) {
+		match_against(*node.array, TypeRegistry::NDArrayOfInt, "<" + node.name + "> can only be used on <Composite> types like <Arrays> or <NDArrays>.");
 	}
 	if(!node.array->ty->cast<CompositeType>()) {
 		auto error = Diagnostic(ErrorType::TypeError, "", "", node.array->tok);
-		error.message = "<search> can only be used on <Composite> types like <Arrays> or <NDArrays>.";
+		error.message = "<" + node.name + "> can only be used on <Composite> types like <Arrays> or <NDArrays>.";
 		error.exit();
 	}
 	node.value->accept(*this);
@@ -1215,6 +1218,12 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 	node.function->accept(*this);
 
 	node.bind_definition(m_program);
+	// <search>/<sort> on an array that is no reference yet (<Item.storage(.name)>, a call returning
+	// one) stays this builtin call; a reference became a NodeSortSearch, checked the same way
+	if (node.is_builtin_kind() and node.function->get_num_args() > 0
+		and (node.function->name == "search" or node.function->name == "sort")) {
+		expect_number_array(*node.function->get_arg(0), node.function->name);
+	}
 	if (node.kind == NodeFunctionCall::Kind::Builtin
 		and node.function->get_num_args() > 0
 		and BuiltinRestrictionValidator::is_persistence_command(node.function->name)) {

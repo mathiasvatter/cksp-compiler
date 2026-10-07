@@ -1,0 +1,9 @@
+{ Kontakt's <sort> takes integer and real arrays; a string array slipped through as compatible
+  with <int> (#134). }
+
+// EXPECT_ERROR <sort> only works on integer or real arrays
+
+on init
+    declare names[2]: string[] := ["b", "a"]
+    sort(names, 0)
+end on

@@ -1,0 +1,9 @@
+{ A <real[]> is an array, so the error names what <search> takes instead of calling it no
+  composite (#134). }
+
+// EXPECT_ERROR <search> only works on integer arrays
+
+on init
+    declare vals[2]: real[] := [1.0, 2.0]
+    message(search(vals, 1.0))
+end on

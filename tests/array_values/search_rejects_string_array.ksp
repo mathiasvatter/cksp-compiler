@@ -1,0 +1,9 @@
+{ Kontakt's <search> only takes integer arrays. <string> is compatible with <int> elsewhere, so a
+  string array has to be rejected explicitly (#134). }
+
+// EXPECT_ERROR <search> only works on integer arrays
+
+on init
+    declare names[2]: string[] := ["a", "b"]
+    message(search(names, "b"))
+end on
