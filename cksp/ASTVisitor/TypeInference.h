@@ -166,7 +166,10 @@ class TypeInference final : public ASTVisitor {
 
 				// ----- Zeitmessung: Kopieren der Funktionsdefinition -----
 				// auto start_copy = std::chrono::high_resolution_clock::now();
-				auto new_func_def = clone_as<NodeFunctionDefinition>(def.get());
+				// shared before it is visited: visit(NodeFunctionDefinition) puts weak_from_this() on the
+				// function stack, and the returns of a unique clone found no definition there, so the
+				// specialization kept the number its generic body returned
+				std::shared_ptr<NodeFunctionDefinition> new_func_def = clone_as<NodeFunctionDefinition>(def.get());
 				new_func_def->set_header(std::shared_ptr(std::move(new_header)));
 				new_func_def->remove_references();
 				// auto end_copy = std::chrono::high_resolution_clock::now();
