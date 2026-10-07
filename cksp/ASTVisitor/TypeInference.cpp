@@ -118,7 +118,7 @@ NodeAST* TypeInference::replace_with_call(NodeAST& node, std::unique_ptr<NodeFun
 	return replacement->accept(*this);
 }
 
-void TypeInference::cast_data_structure_types(const NodeProgram* program, const bool cast) {
+void TypeInference::cast_data_structure_types(const NodeProgram* program, const bool cast, const bool cast_numbers) {
 	const auto def_provider = program->def_provider;
 	for (auto& ref : def_provider->get_all_references()) {
 		if (auto declaration = ref->get_declaration()) {
@@ -136,7 +136,9 @@ void TypeInference::cast_data_structure_types(const NodeProgram* program, const 
 			match_assignment_types(*decl->variable, *decl->value);
 		}
     	// cast as Integer if still unknown
-    	if (cast) decl->variable->cast_type();
+    	if (cast and (cast_numbers or decl->variable->ty->get_element_type() != TypeRegistry::Number)) {
+    		decl->variable->cast_type();
+    	}
 	}
 
 	for (auto& ref : def_provider->get_all_references()) {

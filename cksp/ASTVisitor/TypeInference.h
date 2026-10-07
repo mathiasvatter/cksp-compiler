@@ -206,6 +206,17 @@ class TypeInference final : public ASTVisitor {
 				}
 			}
 		}
+		// Calls take the return type of the specialization they are bound to now, so a declaration
+		// initialised from one gets a real type rather than the number the generic body produced.
+		// Numbers left after that are cast to integers; casting them before monomorphization turned
+		// <declare r := add(1.0, 2.0)> into an integer. Runs before merging, which deletes
+		// definitions whose declarations and calls are still collected here.
+		for (const auto& call : calls) {
+			if (call->kind != NodeFunctionCall::Kind::UserDefined) continue;
+			if (const auto def = call->get_definition()) match_type(*call, *def);
+		}
+		cast_data_structure_types(m_program, true);
+
 		// auto start_merge = std::chrono::high_resolution_clock::now();
 		m_program->merge_function_definitions();
 		m_program->update_function_lookup();
@@ -273,7 +284,8 @@ public:
 		node.accept(*this);
 
 		node.debug_print();
-		cast_data_structure_types(&node, true);
+		// numbers wait for monomorphization: their specialization may still make them reals
+		cast_data_structure_types(&node, true, false);
 		node.debug_print();
 
 		do_monomorphization();
@@ -446,8 +458,9 @@ public:
 	bool resolve_storage_access(NodeAccessChain& node, NodeFunctionCall& call);
 
     /// iterates through all references and declarations and tries to match the types
-    /// with cast set to true -> will cast types of data structures if no type could be infered
-    static void cast_data_structure_types(const NodeProgram* program, bool cast= false);
+    /// with cast set to true -> will cast types of data structures if no type could be infered;
+    /// cast_numbers set to false leaves declarations of type number for a later pass
+    static void cast_data_structure_types(const NodeProgram* program, bool cast= false, bool cast_numbers = true);
 
     /// error if composite type was not added to the type registry
     static Diagnostic throw_composite_error(NodeReference* node) {

@@ -1,0 +1,12 @@
+// A declaration initialised from a generic call is a number until monomorphization makes the
+// call real; it must not be cast to an integer before that.
+// EXPECT message\(int_to_real\(\$EVENT_VELOCITY\) \+ 2\.\)
+
+function add(a, b)
+    return a + b
+end function
+
+on note
+    declare sum := add(int_to_real(EVENT_VELOCITY), 2.0)
+    message(sum)
+end on
