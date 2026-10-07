@@ -221,6 +221,8 @@ class LanguageServerClient:
         self._write_lock = threading.Lock()
         self._state = threading.Condition()
         self._responses: dict[int, dict] = {}
+        # Methods of the requests the server sent to us, in arrival order.
+        self.server_requests: list[str] = []
         self._notifications: queue.Queue[dict] = queue.Queue()
         # path -> (diagnostics, generation). The generation counter is what makes
         # waiting race-free: capture it before an edit, wait for a higher one.
@@ -286,13 +288,19 @@ class LanguageServerClient:
 
         method = message.get("method")
         if method and "id" in message:
-            # The server does not currently send requests. Answer anyway so a
-            # future one cannot deadlock the test run.
-            self._send({
-                "jsonrpc": "2.0",
-                "id": message["id"],
-                "error": {"code": -32601, "message": "not implemented in harness"},
-            })
+            with self._state:
+                self.server_requests.append(method)
+                self._state.notify_all()
+            # Refresh requests carry no result; anything else is not implemented
+            # here, and is answered anyway so it cannot deadlock the test run.
+            if method == "workspace/inlayHint/refresh":
+                self._send({"jsonrpc": "2.0", "id": message["id"], "result": None})
+            else:
+                self._send({
+                    "jsonrpc": "2.0",
+                    "id": message["id"],
+                    "error": {"code": -32601, "message": "not implemented in harness"},
+                })
             return
 
         if method == "textDocument/publishDiagnostics":
@@ -356,7 +364,8 @@ class LanguageServerClient:
                 "textDocument": {
                     "completion": {"completionItem": {"snippetSupport": False}},
                     "definition": {"linkSupport": True},
-                }
+                },
+                "workspace": {"inlayHint": {"refreshSupport": True}},
             },
             "initializationOptions": options,
         })
@@ -485,6 +494,17 @@ class LanguageServerClient:
         params = self._position_params(fixture, fixture.at(marker))
         params["newName"] = new_name
         return self.request("textDocument/rename", params)
+
+    def inlay_hints(self, fixture: Fixture, start: Position | None = None,
+                    end: Position | None = None) -> list:
+        line_count = fixture.text.count("\n") + 1
+        return self.request("textDocument/inlayHint", {
+            "textDocument": {"uri": fixture.uri},
+            "range": {
+                "start": (start or Position(0, 0)).as_json(),
+                "end": (end or Position(line_count, 0)).as_json(),
+            },
+        }) or []
 
     def document_links(self, fixture: Fixture) -> list:
         return self.request(

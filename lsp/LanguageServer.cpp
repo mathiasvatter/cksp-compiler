@@ -73,6 +73,8 @@ void LanguageServer::handle_request(const JsonRpcMessage& message) {
 		handle_completion(message);
 	} else if (method->value == "textDocument/signatureHelp") {
 		handle_signature_help(message);
+	} else if (method->value == "textDocument/inlayHint") {
+		handle_inlay_hint(message);
 	} else if (method->value == "textDocument/codeAction") {
 		handle_code_action(message);
 	} else if (const auto* id = message.id()) {
@@ -227,6 +229,11 @@ void LanguageServer::analyze_entry(const SourceId& entry_source) {
 
 	m_references.publish(entry, compiler.reference_index(), result.success, std::move(successful_sources));
 	m_completion.publish(entry, compiler.completion_index(), result.success);
+	// Only a successful analysis replaces the snapshot inlay hints resolve against. Sent
+	// before the diagnostics, so a client that waits for those has seen the refresh too.
+	if (result.success && m_inlay_hint_refresh_support) {
+		m_connection.send_request("workspace/inlayHint/refresh");
+	}
 	m_diagnostic_publisher.publish(entry_source, diagnostics.diagnostics());
 }
 
@@ -343,6 +350,12 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 		m_workspace_root = FileSystemSourceProvider::normalize(m_workspace_root->value);
 	}
 	m_configured_entry_sources = resolve_configured_entries(params, m_workspace_root);
+	const auto* inlay_hint_client = object_at(
+		object_at(object_at(params, "capabilities"), "workspace"), "inlayHint");
+	const auto* refresh_support = inlay_hint_client
+		? inlay_hint_client->get<JSONBool>("refreshSupport")
+		: nullptr;
+	m_inlay_hint_refresh_support = refresh_support && refresh_support->value;
 	{
 		std::lock_guard lock(m_state_mutex);
 		m_entry_points.set_workspace_root(m_workspace_root);
@@ -416,6 +429,7 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 	capabilities.add("documentHighlightProvider", std::make_unique<JSONBool>(true));
 	capabilities.add("completionProvider", std::move(completion_options));
 	capabilities.add("signatureHelpProvider", std::move(signature_help_options));
+	capabilities.add("inlayHintProvider", std::make_unique<JSONBool>(true));
 	capabilities.add("codeActionProvider", std::move(code_action_options));
 
 	JSONObject server_info;
@@ -713,6 +727,48 @@ void LanguageServer::handle_signature_help(const JsonRpcMessage& message) {
 		return;
 	}
 	m_connection.send_response(*id, *help);
+}
+
+void LanguageServer::handle_inlay_hint(const JsonRpcMessage& message) {
+	const auto* id = message.id();
+	if (!id) return;
+
+	const auto* params = message.params() ? message.params()->as<JSONObject>() : nullptr;
+	const auto* uri = string_at(object_at(params, "textDocument"), "uri");
+	if (!uri) {
+		m_connection.send_response(*id, JSONArray{});
+		return;
+	}
+	const auto source = source_from_uri(uri->value);
+	auto document = m_sources.load(source);
+	if (document.is_error()) {
+		m_connection.send_response(*id, JSONArray{});
+		return;
+	}
+	const std::string_view text = *document.unwrap().text;
+
+	// The client asks for the visible range. Positions it cannot place in the current
+	// buffer fall back to the whole document rather than to no hints.
+	size_t begin = 0;
+	size_t end = text.size();
+	const auto* range = object_at(params, "range");
+	const auto offset_of = [&](const char* key) -> std::optional<size_t> {
+		const auto* position = object_at(range, key);
+		const auto line = position ? position->get_int("line") : std::nullopt;
+		const auto character = position ? position->get_int("character") : std::nullopt;
+		if (!line || !character || *line < 0 || *character < 0) return std::nullopt;
+		return lsp::source_text::offset_at(
+			text, static_cast<size_t>(*line), static_cast<size_t>(*character));
+	};
+	if (const auto start = offset_of("start")) begin = *start;
+	if (const auto stop = offset_of("end")) end = *stop;
+
+	std::vector<SourceId> entries;
+	{
+		std::lock_guard lock(m_state_mutex);
+		entries = m_entry_points.affected_entries(source);
+	}
+	m_connection.send_response(*id, m_inlay_hints.hints(entries, text, begin, end, source));
 }
 
 void LanguageServer::handle_did_open(const JsonRpcMessage& message) {

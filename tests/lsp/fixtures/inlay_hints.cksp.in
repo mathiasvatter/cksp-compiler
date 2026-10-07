@@ -1,0 +1,47 @@
+define SCALE(value, factor) := value * factor
+
+macro prepare(#name#, #count#)
+    declare #name#[#count#]
+end macro
+
+namespace audio
+    function fade(amount: int, target: int): int
+        return amount + target
+    end function
+
+    function reset()
+    end function
+
+    function velocity_scale(velocity_target: int): int
+        return velocity_target
+    end function
+end namespace
+
+struct Envelope
+    value: int
+
+    function set(self, amount: int, target: int): int
+        self.value := amount + target
+        return self.value
+    end function
+
+    function exercise(self)
+        self.set(<|self_first|>1, <|self_second|>2)
+    end function
+end struct
+
+on init
+    declare env: Envelope := new Envelope(0)
+    declare amount: int := 1
+    message(audio.fade(<|first|>1, <|second|>2))
+    message(audio.fade(audio.fade(<|nested_first|>1, 2), <|outer_second|>3))
+    message(audio.fade("a, )", <|after_string|>2))
+    message(audio.fade(/* c */ <|after_comment|>1, 2))
+    message(audio.fade(amount, <|named_second|>2))
+    message(env.set(<|method_first|>1, 2))
+    message(SCALE(<|define_first|>3, 4))
+    prepare(<|macro_first|>buffer, 2)
+    message(audio.velocity_scale(<|long_name|>5))
+    audio.reset()
+    message(abs(-1))
+end on

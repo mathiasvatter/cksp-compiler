@@ -2333,5 +2333,80 @@ def _(workspace, server):
     expect(not server.diagnostics(fixture), f"list blocks must analyze: {server.diagnostics(fixture)}")
 
 
+# ==========================================================================
+# Inlay hints — parameter names for user-defined calls only
+# ==========================================================================
+
+def hints_by_position(hints):
+    return {(hint["position"]["line"], hint["position"]["character"]): hint for hint in hints}
+
+
+def expect_hint(hints, fixture, marker, label, parameter_count):
+    position = fixture.at(marker)
+    hint = hints_by_position(hints).get((position.line, position.character))
+    expect(hint is not None, f"{marker}: expected a hint at {position}, got {hints}")
+    expect(hint.get("label") == label,
+           f"{marker}: expected label {label!r}, got {hint.get('label')!r}")
+    expect(hint.get("kind") == 2, f"{marker}: expected a parameter hint, got {hint}")
+    expect((hint.get("data") or {}).get("parameterCount") == parameter_count,
+           f"{marker}: expected parameterCount {parameter_count}, got {hint.get('data')}")
+
+
+@test("inlay hints: functions, methods, defines and macros get parameter names",
+      requires="inlayHintProvider")
+def _(workspace, server):
+    fixture = workspace.open("inlay_hints.cksp")
+    hints = server.inlay_hints(fixture)
+    expect_hint(hints, fixture, "first", "amount:", 2)
+    expect_hint(hints, fixture, "second", "target:", 2)
+    expect_hint(hints, fixture, "nested_first", "amount:", 2)
+    expect_hint(hints, fixture, "outer_second", "target:", 2)
+    expect_hint(hints, fixture, "after_string", "target:", 2)
+    expect_hint(hints, fixture, "after_comment", "amount:", 2)
+    expect_hint(hints, fixture, "method_first", "amount:", 2)
+    expect_hint(hints, fixture, "self_first", "amount:", 2)
+    expect_hint(hints, fixture, "self_second", "target:", 2)
+    expect_hint(hints, fixture, "define_first", "value:", 2)
+    expect_hint(hints, fixture, "macro_first", "#name#:", 2)
+    expect_hint(hints, fixture, "long_name", "velocity_t…:", 1)
+    expect_hint(hints, fixture, "named_second", "target:", 2)
+
+
+@test("inlay hints: no hints for builtins, declarations or arguments naming the parameter",
+      requires="inlayHintProvider")
+def _(workspace, server):
+    fixture = workspace.open("inlay_hints.cksp")
+    hints = server.inlay_hints(fixture)
+    lines = fixture.text.splitlines()
+    for hint in hints:
+        line = lines[hint["position"]["line"]]
+        expect("abs(" not in line, f"builtin call got a hint: {hint}")
+        expect("function " not in line and "define " not in line and "macro " not in line,
+               f"declaration got a hint: {hint}")
+    named = fixture.at("named_second")
+    expect(not any(hint["position"]["line"] == named.line and hint["label"] == "amount:"
+                   for hint in hints),
+           "an argument spelling the parameter name must not get a hint")
+
+
+@test("inlay hints: only calls inside the requested range",
+      requires="inlayHintProvider")
+def _(workspace, server):
+    fixture = workspace.open("inlay_hints.cksp")
+    first = fixture.at("first")
+    hints = server.inlay_hints(fixture, Position(first.line, 0), Position(first.line + 1, 0))
+    expect(len(hints) == 2 and all(hint["position"]["line"] == first.line for hint in hints),
+           f"expected the two hints of one line, got {hints}")
+
+
+@test("inlay hints: a finished analysis asks the client to refresh",
+      requires="inlayHintProvider")
+def _(workspace, server):
+    before = server.server_requests.count("workspace/inlayHint/refresh")
+    workspace.open("inlay_hints.cksp")
+    after = server.server_requests.count("workspace/inlayHint/refresh")
+    expect(after > before, f"expected a refresh request, got {server.server_requests}")
+
+
 if __name__ == "__main__":
     raise SystemExit(run_suite())

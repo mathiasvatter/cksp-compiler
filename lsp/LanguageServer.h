@@ -17,6 +17,7 @@
 #include "EntryPointResolver.h"
 #include "CompletionProvider.h"
 #include "SignatureHelpProvider.h"
+#include "InlayHintProvider.h"
 #include "ReferenceProvider.h"
 #include "RenameProvider.h"
 #include "../cksp/Source/SourceProvider.h"
@@ -33,6 +34,7 @@ class LanguageServer {
 	ReferenceProvider m_references;
 	CompletionProvider m_completion;
 	SignatureHelpProvider m_signature_help;
+	InlayHintProvider m_inlay_hints;
 	RenameProvider m_rename;
 	std::vector<SourceId> m_configured_entry_sources;
 	std::optional<SourceId> m_workspace_root;
@@ -47,6 +49,9 @@ class LanguageServer {
 	uint64_t m_analysis_generation = 0;
 	bool m_stop_analysis_worker = false;
 
+	/// The client accepts workspace/inlayHint/refresh. Hints resolve against the analysis
+	/// snapshots, so a finished analysis can change hints in a buffer nobody edited.
+	bool m_inlay_hint_refresh_support = false;
 	bool m_initialized = false;
 	bool m_shutdown_requested = false;
 	bool m_exit_requested = false;
@@ -70,6 +75,7 @@ public:
 	explicit LanguageServer(JsonRpcConnection& connection)
 		: m_connection(connection), m_diagnostic_publisher(connection), m_sources(m_file_sources),
 		  m_references(m_sources), m_signature_help(m_completion),
+		  m_inlay_hints(m_completion),
 		  m_rename(m_references, m_sources) {
 		m_diagnostic_publisher.set_entry_resolver(&m_entry_points);
 		m_analysis_worker = std::thread(&LanguageServer::analysis_worker_loop, this);
@@ -101,6 +107,7 @@ public:
 	void handle_document_highlight(const JsonRpcMessage& message);
 	void handle_completion(const JsonRpcMessage& message);
 	void handle_signature_help(const JsonRpcMessage& message);
+	void handle_inlay_hint(const JsonRpcMessage& message);
 
 	void handle_did_open(const JsonRpcMessage& message);
 	void handle_did_change(const JsonRpcMessage& message);
