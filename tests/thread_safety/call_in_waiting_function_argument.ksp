@@ -1,0 +1,20 @@
+// A user function call in the argument of a waiting function visits the callee's body before the
+// waiting call is recorded. The call still has to make the callback thread-unsafe (#143).
+
+// EXPECT declare %k[0-9]*\[1000\]
+// EXPECT_NOT \$k[0-9]* := \$EVENT_NOTE
+
+function twice(a: int): int
+	return a * 2
+end function
+
+function f(n: int)
+	wait(1000)
+	message(n)
+end function
+
+on note
+	declare k := EVENT_NOTE
+	f(twice(EVENT_VELOCITY))
+	message(k)
+end on

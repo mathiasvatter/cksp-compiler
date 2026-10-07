@@ -196,9 +196,12 @@ public:
 protected:
 
 	NodeAST *visit(NodeStatement &node) override {
+		// restore instead of clearing: a call in this statement's arguments visits the callee's
+		// body, and the yield that follows the call must still be attributed to this statement
+		NodeStatement* outer_statement = m_current_statement;
 		m_current_statement = &node;
 		node.statement->accept(*this);
-		m_current_statement = nullptr;
+		m_current_statement = outer_statement;
 		return &node;
 	}
 

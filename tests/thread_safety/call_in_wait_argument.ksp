@@ -1,0 +1,15 @@
+// A user function call in the argument of wait() visits the callee's body before the wait is
+// recorded. The wait still has to make the callback thread-unsafe (#143).
+
+// EXPECT declare %k[0-9]*\[1000\]
+// EXPECT_NOT \$k[0-9]* := \$EVENT_NOTE
+
+function mx(a: int, b: int): int
+	return a - ((a - b) .and. sh_right((a - b), 31))
+end function
+
+on note
+	declare k := EVENT_NOTE
+	wait(mx(1, EVENT_VELOCITY))
+	message(k)
+end on
