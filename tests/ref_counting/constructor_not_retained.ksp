@@ -1,0 +1,15 @@
+// A constructor already counts the reference it returns, so neither a declaration from a ternary
+// with a constructor branch nor an assignment of a constructor retains it again (#144).
+// EXPECT_NOT (call Item______incr__|%Item____allocation\[\$[a-z_]+[0-9]*\] := %Item____allocation\[\$[a-z_]+[0-9]*\] \+)
+
+struct Item
+	v: int
+end struct
+
+on note
+	declare a: Item := EVENT_VELOCITY > 0 ? new Item(1) : nil
+	declare b := new Item(2)
+	b := new Item(3)
+	message(a?.v ?? -1)
+	message(b.v)
+end on

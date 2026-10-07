@@ -5,6 +5,7 @@
 #pragma once
 
 #include "ASTVisitor.h"
+#include "../Lowering/LoweringTernaryOperator.h"
 
 /**
  * To implement a form of garbage collection, reference counting should be applied.
@@ -220,6 +221,44 @@ public:
 		return false;
 	}
 
+	/// who owns the reference that an object value hands over
+	enum class Ownership {
+		None,     // nil: nothing to own
+		Owned,    // constructor: __init__ already counted the reference
+		Borrowed, // the reference is held somewhere else and needs a retain
+		Mixed,    // a ternary whose branches disagree
+	};
+
+	static Ownership ownership_of(NodeAST& value) {
+		if (value.is_nil()) return Ownership::None;
+		if (const auto call = value.cast<NodeFunctionCall>()) {
+			if (call->kind == NodeFunctionCall::Kind::Constructor) return Ownership::Owned;
+		}
+		if (const auto ternary = value.cast<NodeTernary>()) {
+			const auto if_branch = ownership_of(*ternary->if_branch);
+			const auto else_branch = ownership_of(*ternary->else_branch);
+			if (if_branch == Ownership::None) return else_branch;
+			if (else_branch == Ownership::None or if_branch == else_branch) return if_branch;
+			return Ownership::Mixed;
+		}
+		return Ownership::Borrowed;
+	}
+
+	/// <target := c ? a : b> -> <if c: target := a else: target := b>, so that every branch is
+	/// counted on its own when its ownership differs from the other one
+	static std::unique_ptr<NodeIf> branch_assignments(NodeTernary& ternary, NodeReference& target) {
+		return LoweringTernaryOperator::to_if(ternary, [&](std::unique_ptr<NodeAST> value) {
+			return std::make_unique<NodeSingleAssignment>(clone_as<NodeReference>(&target), std::move(value), ternary.tok);
+		});
+	}
+
+	static NodeTernary* mixed_ternary(const NodeReference& l_value, NodeAST& r_value) {
+		if (!l_value.ty->get_element_type()->cast<ObjectType>()) return nullptr;
+		const auto ternary = r_value.cast<NodeTernary>();
+		if (!ternary or ownership_of(*ternary) != Ownership::Mixed) return nullptr;
+		return ternary;
+	}
+
 	NodeAST* visit(NodeSingleAssignment &node) override {
 //		if(node.l_value->is_member_ref()) return &node;
 		// move r_value expression to temporary if l_value is also in r_value expression
@@ -244,6 +283,13 @@ public:
 			return node.replace_and_visit(std::move(block), *this);
 		}
 
+		if (const auto ternary = mixed_ternary(*node.l_value, *node.r_value)) {
+			node.remove_references();
+			auto branches = branch_assignments(*ternary, *node.l_value);
+			branches->collect_references();
+			return node.replace_and_visit(std::move(branches), *this);
+		}
+
 		node.l_value->accept(*this);
 		node.r_value->accept(*this);
 
@@ -257,8 +303,8 @@ public:
 			if(auto del = add_delete(*assign)) {
 				new_block->prepend_body(std::move(del));
 			}
-			// nil only releases the old reference, there is nothing to retain
-			if(!assign->r_value->is_nil()) {
+			// nil only releases the old reference and a constructor already counted the new one
+			if(ownership_of(*assign->r_value) == Ownership::Borrowed) {
 				if(auto retain = add_retain(assign->l_value.get(), assign->r_value.get(), false)) {
 					new_block->append_body(std::move(retain));
 				}
@@ -271,6 +317,23 @@ public:
 
 	NodeAST* visit(NodeSingleDeclaration &node) override {
 		if(node.variable->is_member()) return &node;
+
+		if (node.value) {
+			const auto target = node.variable->to_reference();
+			if (const auto ternary = mixed_ternary(*target, *node.value)) {
+				// no remove_references(): on a declaration it would also drop every later use of
+				// the variable, and the moved branches keep their registered addresses
+				auto branches = branch_assignments(*ternary, *target);
+				auto nil = std::make_unique<NodeNil>(node.tok);
+				nil->ty = node.variable->ty;
+				auto block = std::make_unique<NodeBlock>(node.tok);
+				block->add_as_stmt(std::make_unique<NodeSingleDeclaration>(node.variable, std::move(nil), node.tok));
+				block->add_as_stmt(std::move(branches));
+				block->collect_references();
+				return node.replace_and_visit(std::move(block), *this);
+			}
+		}
+
 		node.variable->accept(*this);
 		if(node.value) node.value->accept(*this);
 
@@ -337,17 +400,10 @@ private:
 		}
 
 		if(l_value_type->cast<ObjectType>()) {
-			if(auto func_call = r_value->cast<NodeFunctionCall>()) {
-				// when constructor and declaration -> do not alter ref count
-				if(func_call->kind == NodeFunctionCall::Kind::Constructor and node->cast<NodeSingleDeclaration>()) {
-					return false;
-				}
-			}
-			// nil retains nothing, but an assignment still has to release the old reference
-			if(r_value->is_nil()) {
-				return node->cast<NodeSingleAssignment>() != nullptr;
-			}
-			return true;
+			// an assignment always has to release the old reference, a declaration only retains
+			// a reference that is held somewhere else
+			if(node->cast<NodeSingleAssignment>()) return true;
+			return ownership_of(*r_value) == Ownership::Borrowed;
 		}
 		return false;
 	}
