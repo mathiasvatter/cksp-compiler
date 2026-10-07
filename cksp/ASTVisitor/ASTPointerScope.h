@@ -306,6 +306,23 @@ public:
 
 	NodeAST* visit(NodeSingleAssignment &node) override {
 //		if(node.l_value->is_member_ref()) return &node;
+		// <_ := obj> discards an object: counted as an assignment to <_>, the old value of a
+		// variable that does not exist was released and the new one stored in it (#133). It is
+		// received by a temporary instead, scoped to a block of its own, so that the object is
+		// released right after it was made - the way a discarded int is simply dropped (#99).
+		if (node.l_value->kind == NodeReference::Kind::Throwaway
+			and node.r_value->ty and node.r_value->ty->get_element_type()->cast<ObjectType>()) {
+			auto tmp_var = m_program->get_tmp_ptr(node.r_value->ty);
+			node.l_value->remove_references();
+			auto tmp_decl = std::make_unique<NodeSingleDeclaration>(
+				std::move(tmp_var),
+				std::move(node.r_value),
+				node.tok
+			);
+			auto block = std::make_unique<NodeBlock>(node.tok, true);
+			block->add_as_stmt(std::move(tmp_decl));
+			return node.replace_and_visit(std::move(block), *this);
+		}
 		// move r_value expression to temporary if l_value is also in r_value expression
 		if (is_self_ptr_assignment(node)) {
 			auto tmp_var = m_program->get_tmp_ptr(node.r_value->ty);

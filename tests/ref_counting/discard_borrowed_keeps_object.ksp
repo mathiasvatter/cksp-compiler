@@ -1,0 +1,17 @@
+// Discarding a borrowed object counts it while the temporary holds it and releases that count
+// again; the object stays alive for its owner (#133).
+// EXPECT call Node______incr__
+// EXPECT message\(%Node____value\[\$n[0-9]*\]\)
+
+struct Node
+	value: int
+	function get(self): Node
+		return self
+	end function
+end struct
+
+on note
+	declare n := new Node(EVENT_NOTE)
+	_ := n.get()
+	message(n.value)
+end on

@@ -200,6 +200,11 @@ NodeAST * TypeInference::visit(NodeConst& node) {
 }
 
 NodeAST * TypeInference::visit(NodeVariableRef& node) {
+	// <_> stands for one static dummy declaration shared by every throwaway, outside any AST.
+	// Matched against it, the first <_ := …> fixed the type of all others; turned into a pointer
+	// for an object, replace_datastruct found no parent and crashed (#133). A throwaway takes
+	// its type from the assignment alone, and is not registered for the casts either.
+	if (node.kind == NodeReference::Kind::Throwaway) return &node;
 	const auto decl = node.get_declaration();
 	if(decl) {
 		// manual replacement of node type if declaration is a pointer
@@ -256,6 +261,8 @@ NodeAST * TypeInference::visit(NodeVariable& node) {
 }
 
 NodeAST * TypeInference::visit(NodePointerRef& node) {
+	// see visit(NodeVariableRef): the throwaway's declaration is no node to replace (#133)
+	if (node.kind == NodeReference::Kind::Throwaway) return &node;
 	// replace declaration node with Pointer if it is Variable
 	if(node.get_declaration()->get_node_type() == NodeType::Variable) {
 		auto node_var = static_pointer_cast<NodeVariable>(node.get_declaration());

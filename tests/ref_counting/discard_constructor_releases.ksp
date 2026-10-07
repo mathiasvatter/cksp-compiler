@@ -1,0 +1,12 @@
+// <_ := new Node(…)> discards the object: a temporary receives it and releases it right away,
+// instead of the compiler crashing on a pointer named <_> (#133).
+// EXPECT \$tmp[0-9]+ := \$ret[0-9]+$
+// EXPECT call Node______decr__
+
+struct Node
+	value: int
+end struct
+
+on note
+	_ := new Node(EVENT_NOTE)
+end on
