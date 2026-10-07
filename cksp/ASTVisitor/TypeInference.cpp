@@ -7,6 +7,8 @@
 #include "ASTSemanticAnalysis.h"
 #include "FunctionHandling/BuiltinRestrictionValidator.h"
 
+#include <set>
+
 NodeAST * TypeInference::visit(NodeProgram& node) {
 	m_program = &node;
 	m_program->global_declarations->accept(*this);
@@ -830,6 +832,30 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				if (!definition and i == 1 and resolve_storage_access(node, *func_call)) return &node;
 
 				if (!definition) {
+					// The lookup goes by name and argument count. A method of that name with another
+					// count exists then, and calling it "does not exist" sent one looking for a typo:
+					// name the counts it takes instead, without the receiver nobody writes.
+					std::set<size_t> accepted_counts;
+					for (const auto& method : strct->methods) {
+						if (!method or !method->header or method->header->name != correct_name) continue;
+						const auto params = method->get_num_params();
+						accepted_counts.insert(method->is_static or params == 0 ? params : params - 1);
+					}
+					if (!accepted_counts.empty()) {
+						const auto given = func_call->function->get_num_args();
+						std::string counts;
+						for (const auto count : accepted_counts) {
+							if (!counts.empty()) counts += " or ";
+							counts += std::to_string(count);
+						}
+						const bool plural = accepted_counts.size() > 1 or *accepted_counts.begin() != 1;
+						error.message = "Method <" + func_call->function->name + "> of <" + prev_name + "> takes "
+							+ counts + (plural ? " arguments" : " argument") + ", but " + std::to_string(given)
+							+ (given == 1 ? " was" : " were") + " given.";
+						error.set_expected(counts + (plural ? " arguments" : " argument"));
+						error.actual = std::to_string(given);
+						error.exit();
+					}
 					error.message = "Method <"+func_call->function->name+"> does not exist in <"+prev_name+">.";
 					error.exit();
 				}

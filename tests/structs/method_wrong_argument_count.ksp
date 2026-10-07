@@ -1,0 +1,15 @@
+// A method called with the wrong argument count exists: the error names the count it takes, not
+// counting the receiver, instead of claiming the method does not exist.
+// EXPECT_ERROR Method <set> of <Box> takes 1 argument, but 2 were given
+
+struct Box
+	value: int
+	function set(self, v: int)
+		self.value := v
+	end function
+end struct
+
+on init
+	declare b := new Box(1)
+	b.set(1, 2)
+end on

@@ -1,0 +1,11 @@
+// A name no method has is still reported as missing.
+// EXPECT_ERROR Method <sett> does not exist in <Box>
+
+struct Box
+	value: int
+end struct
+
+on init
+	declare b := new Box(1)
+	b.sett(1)
+end on

@@ -1,0 +1,13 @@
+// A static method takes no receiver, so all of its parameters are counted.
+// EXPECT_ERROR Method <make> of <Box> takes 1 argument, but 2 were given
+
+struct Box
+	value: int
+	static function make(v: int): int
+		return v
+	end function
+end struct
+
+on init
+	message(Box.make(1, 2))
+end on
