@@ -283,6 +283,23 @@ def _(workspace, server):
     )
 
 
+@test("diagnostics: a constructor with the wrong argument count is reported at the call")
+def _(workspace, server):
+    # The constructor binds by struct name alone; the mismatch used to surface as an
+    # InternalError on the <__init__> line, away from the call that is wrong (#135).
+    fixture = workspace.open("diagnostics_constructor_arity.cksp")
+    diagnostics = server.diagnostics(fixture)
+    expect(diagnostics, "expected a diagnostic for the constructor call")
+    expect(
+        any("takes 0 arguments, but 1 was given" in message for message in messages_of(diagnostics)),
+        f"diagnostic should name the argument counts; got {messages_of(diagnostics)}",
+    )
+    start = position_of(diagnostics[0])
+    call = fixture.at("call")
+    expect((start.line, start.character) == (call.line, call.character),
+           f"diagnostic at {start}, expected the call at {call}")
+
+
 @test("diagnostics: an error in a macro body points back at the body line")
 def _(workspace, server):
     # The token was assembled by a <#param#> substitution, so it is reported at the call

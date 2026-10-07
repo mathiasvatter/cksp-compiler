@@ -1,0 +1,15 @@
+// A constructor binds by the struct name alone; too many arguments for <__init__> are reported
+// at the call, not as an InternalError at the definition (#135).
+// EXPECT_ERROR The constructor of <Box> takes 0 arguments, but 1 was given
+
+struct Box
+	value: int
+
+	function __init__(self)
+		self.value := 0
+	end function
+end struct
+
+on init
+	declare b := new Box(4)
+end on

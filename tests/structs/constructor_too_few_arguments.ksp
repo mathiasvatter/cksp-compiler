@@ -1,0 +1,14 @@
+// The same for too few arguments (#135).
+// EXPECT_ERROR The constructor of <Box> takes 2 arguments, but 1 was given
+
+struct Box
+	value: int
+
+	function __init__(self, a: int, b: int)
+		self.value := a + b
+	end function
+end struct
+
+on init
+	declare b := new Box(4)
+end on

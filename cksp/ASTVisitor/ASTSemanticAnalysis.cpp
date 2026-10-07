@@ -278,6 +278,25 @@ NodeAST * ASTSemanticAnalysis::visit(NodeFunctionCall& node) {
 
 	node.bind_definition(m_program);
 	const auto definition = node.get_definition();
+	// A constructor binds by the struct name alone, without looking at the arguments, so a wrong
+	// count went on to index the parameters of <__init__> and ended as an InternalError there.
+	// Reported at the call instead, like a function call no overload accepts (#135).
+	if (definition and node.kind == NodeFunctionCall::Kind::Constructor
+		and node.function->get_num_args() != definition->get_num_params()) {
+		const auto expected = definition->get_num_params();
+		const auto given = node.function->get_num_args();
+		// the call is already named after <__init__>; the struct as written is in the token
+		const auto struct_name = node.function->parameterized_type
+			? node.function->parameterized_type->to_string()
+			: node.function->tok.val;
+		auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.function->tok);
+		error.message = "The constructor of <" + struct_name + "> takes " + std::to_string(expected)
+			+ (expected == 1 ? " argument" : " arguments") + ", but " + std::to_string(given)
+			+ (given == 1 ? " was" : " were") + " given.";
+		error.set_expected(std::to_string(expected) + (expected == 1 ? " argument" : " arguments"));
+		error.actual = std::to_string(given);
+		error.exit();
+	}
 	if (definition and node.kind == NodeFunctionCall::Kind::UserDefined) {
 		record_param_arguments(node, *definition);
 	}
