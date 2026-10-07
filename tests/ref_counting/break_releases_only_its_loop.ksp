@@ -1,0 +1,34 @@
+// A break only releases the pointers of the loop it leaves: not those of an enclosing loop, and
+// not those of the caller's loop when the break sits in a function called from inside it.
+// EXPECT ^        \$[a-z_]+[0-9]* := \$inner[0-9]*$
+// EXPECT ^      \$[a-z_]+[0-9]* := \$probe[0-9]*$
+// EXPECT_NOT ^      (  )?\$[a-z_]+[0-9]* := \$outer[0-9]*$
+
+struct Item
+	v: int
+end struct
+
+function scan(n: int)
+	for k in range(n)
+		declare probe := new Item(k)
+		if k = 1
+			break
+		end if
+		message(probe.v)
+	end for
+end function
+
+on note
+	for i in range(4)
+		declare outer := new Item(i)
+		for j in range(4)
+			declare inner := new Item(j)
+			if j = 2
+				break
+			end if
+			message(inner.v)
+		end for
+		scan(i)
+		message(outer.v)
+	end for
+end on
