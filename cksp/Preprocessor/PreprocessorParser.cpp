@@ -1027,7 +1027,11 @@ bool PreprocessorParser::is_function_call(const Token &tok) const {
 bool PreprocessorParser::is_iterate_macro_call(const Token &tok) const {
     if (tok.type != token::KEYWORD) return false;
     if (m_pos < 2) return false; // iterate macro call cannot be at first position in file
-    return peek_type(-2) == token::ITERATE_MACRO || (peek_type(-2) == token::LITERATE_MACRO && peek_type(-1) == token::OPEN_PARENTH && (peek_type(1) == token::OPEN_PARENTH || peek_type(1) == token::CLOSED_PARENTH));
+    const auto command = peek_type(-2);
+    if (command == token::ITERATE_MACRO || command == token::ITERATE_POST_MACRO) return true;
+    return (command == token::LITERATE_MACRO || command == token::LITERATE_POST_MACRO)
+        && peek_type(-1) == token::OPEN_PARENTH
+        && (peek_type(1) == token::OPEN_PARENTH || peek_type(1) == token::CLOSED_PARENTH);
 }
 
 bool PreprocessorParser::is_define_definition() {
