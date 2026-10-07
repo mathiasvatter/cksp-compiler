@@ -1,0 +1,19 @@
+// Implicit string conversion of an object must call the struct's own __repr__ (#140).
+// EXPECT message\("Note " & %Note____pitch\[\$n\]\)
+// EXPECT message\("x" & 
+// EXPECT_NOT Object: 
+
+struct Note
+	pitch: int
+	velo: int
+	function __repr__(self): string
+		return "Note " & self.pitch
+	end function
+end struct
+
+on init
+	declare n := new Note(1, 2)
+	message(n)
+	message("x" & n)
+	message(n.__repr__())
+end on
