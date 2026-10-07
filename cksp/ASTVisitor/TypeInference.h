@@ -149,8 +149,15 @@ class TypeInference final : public ASTVisitor {
 					for (size_t i = 0; i<def->header->params.size(); i++) {
 						auto const& param = def->header->get_param(i);
 						param->ty = new_header->get_param(i)->ty;
+						for (auto& ref : param->references) {
+							match_reference_declaration(*ref, param);
+						}
 					}
 					def->header->ty = new_header->ty;
+					// the body was inferred against the union parameter types; infer it again with
+					// the concrete ones, as a cloned specialization is, or <a + b> stays a number
+					// and so does the return type
+					def->accept(*this);
 					call->function->name = def->header->name;
 					continue;
 				}

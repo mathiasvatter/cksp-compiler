@@ -2423,6 +2423,8 @@ def _(workspace, server):
         ("values", ": int[]"), ("env", ": Envelope"), ("result", ": int"),
         ("factor", ": int"), ("amount", ": int"), ("knob", ": int"),
         ("twice", ": int"),
+        # Only parameters make up the sum: a number until the single call site types them.
+        ("add", ": int"),
     ]:
         position = fixture.at(marker)
         found = hints.get((position.line, position.character))

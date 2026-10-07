@@ -16,6 +16,10 @@ function twice(x)<|twice|>
     return x * 2
 end function
 
+function add(a, b)<|add|>
+    return a + b
+end function
+
 function named(): string
     return "x"
 end function
@@ -31,5 +35,5 @@ on init
     declare env<|env|> := new Envelope(0)
     declare ui_knob knob<|knob|>(0, 100, 1)
     scale(count, 2)
-    message(env.set(3) & label & knob & twice(2) & named())
+    message(env.set(3) & label & knob & twice(2) & add(1, 2) & named())
 end on
