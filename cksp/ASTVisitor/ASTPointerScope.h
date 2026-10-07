@@ -257,8 +257,11 @@ public:
 			if(auto del = add_delete(*assign)) {
 				new_block->prepend_body(std::move(del));
 			}
-			if(auto retain = add_retain(assign->l_value.get(), assign->r_value.get(), false)) {
-				new_block->append_body(std::move(retain));
+			// nil only releases the old reference, there is nothing to retain
+			if(!assign->r_value->is_nil()) {
+				if(auto retain = add_retain(assign->l_value.get(), assign->r_value.get(), false)) {
+					new_block->append_body(std::move(retain));
+				}
 			}
 			return node.replace_with(std::move(new_block));
 		}
@@ -340,8 +343,9 @@ private:
 					return false;
 				}
 			}
+			// nil retains nothing, but an assignment still has to release the old reference
 			if(r_value->is_nil()) {
-				return false;
+				return node->cast<NodeSingleAssignment>() != nullptr;
 			}
 			return true;
 		}
