@@ -8,123 +8,257 @@
 
 /**
  * @class MemoryExhaustedNesting
- * @brief Optimizes nested blocks in an AST to prevent memory exhaustion errors.
+ * @brief Keeps the generated script within the parser stack limit of Kontakt's KSP parser.
  *
- * This class handles large blocks of code by breaking them into smaller blocks and using nested if-statements.
- * It defines several constants representing token limits for different types of statements.
+ * Kontakt parses KSP with a bison parser whose stack is capped at YYMAXDEPTH = 5000 entries. Exceeding it
+ * aborts loading with "memory exhausted". Statement lists and the list of callbacks and functions are
+ * right-recursive, so every completed statement keeps exactly one stack entry until its enclosing list ends.
+ * The depth while parsing a statement is therefore
+ *   the number of earlier callbacks/functions
+ * + the earlier statements in every enclosing statement list
+ * + a fixed offset for every enclosing if/while/select
+ * + a small peak for the statement itself (deeper for nested expressions).
+ * Token counts do not matter.
+ *
+ * A statement list that would exceed the budget is split into chunks wrapped in `if(1=1)`. A finished `if`
+ * collapses to one stack entry, so a wrapped chunk costs the list it sits in only one slot.
+ *
+ * The constants were measured against the parse tables of Kontakt 7. Kontakt 8 uses the same YYMAXDEPTH.
  */
 class MemoryExhaustedNesting : public ASTOptimizations {
-private:
-    static const int ONE_TOKEN_LIMIT = 4993; ///< Token limit for declarations and functions with no params.
-	static const int TWO_TOKEN_LIMIT = 4991; ///< Token limit for assignments and functions with one param.
-	static const int THREE_TOKEN_LIMIT = 4989; ///< Token limit for functions with two params.
-	static const int FOUR_TOKEN_LIMIT = 4987; ///< Token limit for UI controls.
-	static const int FIVE_TOKEN_LIMIT = 4985; ///< Token limit for if-statements with empty else blocks and while statements.
-	static const int SIX_TOKEN_LIMIT = 4984; ///< Token limit for if-statements with non-empty else blocks.
-	static const int SEVEN_TOKEN_LIMIT = 4981; ///< Token limit for other cases.
-	static const int NKS_TOKEN_LIMIT = 2495; ///< Token limit for NKS2 functions.
-	static inline const std::vector<int> TOKEN_LIMITS = {ONE_TOKEN_LIMIT, TWO_TOKEN_LIMIT, THREE_TOKEN_LIMIT, FOUR_TOKEN_LIMIT, FIVE_TOKEN_LIMIT, SIX_TOKEN_LIMIT, SEVEN_TOKEN_LIMIT, NKS_TOKEN_LIMIT};
+	/// Highest parser stack index Kontakt accepts: the stack of 5000 entries is full at index 4999.
+	static constexpr int KSP_MAX_DEPTH = 4998;
+	/// Headroom for statement shapes the peak estimate does not cover exactly.
+	static constexpr int SAFETY_MARGIN = 32;
+	static constexpr int DEPTH_BUDGET = KSP_MAX_DEPTH - SAFETY_MARGIN;
+	/// Depth of the first statement of a callback or function, on top of the number of earlier ones.
+	static constexpr int CALLBACK_BODY_OFFSET = 2;
+	/// Depth of the first body statement, relative to the depth of the line that opens the construct.
+	static constexpr int IF_BODY_OFFSET = 5;
+	static constexpr int ELSE_BODY_OFFSET = 7;
+	static constexpr int WHILE_BODY_OFFSET = 5;
+	static constexpr int CASE_BODY_OFFSET = 10;
+	/// How far a flat statement pushes the stack above its own slot (measured maximum: 14).
+	static constexpr int STATEMENT_PEAK = 16;
+	/// Additional depth per nested expression operand (measured maximum: 4 for a parenthesised right operand).
+	static constexpr int NESTED_OPERAND_DEPTH = 4;
+	/// Left operands that are themselves parenthesised binary expressions open one paren each.
+	static constexpr int NESTED_LEFT_OPERAND_DEPTH = 1;
 
-	/**
-     * @brief Calculates points based on the token limit.
-     * @param token_limit The token limit.
-     * @return The calculated points.
-     */
-	static double points(int token_limit) {
-		return ONE_TOKEN_LIMIT/static_cast<double>(token_limit);
-	}
+	/// Upper bound for the parser depth an expression adds while it is being parsed.
+	class ExpressionDepth final : public ASTVisitor {
+		int m_depth = 0;
+		int m_max_depth = 0;
 
-	/**
-     * @brief Gets points based on the number of tokens.
-     * @param tokens The number of tokens.
-     * @return The calculated points.
-     */
-	static double get_points(int tokens) {
-		if(tokens < TOKEN_LIMITS.size())
-			return points(TOKEN_LIMITS[tokens]);
-		return points(NKS_TOKEN_LIMIT);
-	}
+		void enter(NodeAST& child, const int depth) {
+			m_depth += depth;
+			m_max_depth = std::max(m_max_depth, m_depth);
+			child.accept(*this);
+			m_depth -= depth;
+		}
 
-	int m_line_limit = 0;
+	public:
+		int get(NodeAST& node) {
+			m_depth = 0;
+			m_max_depth = 0;
+			node.accept(*this);
+			return m_max_depth;
+		}
+
+		NodeAST* visit(NodeBinaryExpr& node) override {
+			// mirrors ASTGenerator: nested binary expressions are parenthesised unless they are strings
+			const bool parenthesised_left = node.left->cast<NodeBinaryExpr>() and node.left->ty != TypeRegistry::String;
+			enter(*node.left, parenthesised_left ? NESTED_LEFT_OPERAND_DEPTH : 0);
+			enter(*node.right, NESTED_OPERAND_DEPTH);
+			return &node;
+		}
+
+		NodeAST* visit(NodeUnaryExpr& node) override {
+			enter(*node.operand, NESTED_OPERAND_DEPTH);
+			return &node;
+		}
+
+		NodeAST* visit(NodeFunctionCall& node) override {
+			enter(*node.function, NESTED_OPERAND_DEPTH);
+			return &node;
+		}
+
+		NodeAST* visit(NodeArrayRef& node) override {
+			if (node.index) enter(*node.index, NESTED_OPERAND_DEPTH);
+			return &node;
+		}
+	};
+
+	ExpressionDepth m_expression_depth;
 
 public:
-	explicit MemoryExhaustedNesting() {
-		m_line_limit = 0;
-	};
-
 	/**
-     * @brief Visits a NodeBlock and optimizes it to prevent memory exhaustion.
-     * @param node The NodeBlock to visit.
-     * @return The optimized NodeAST.
-     */
-	NodeAST* visit(NodeBlock& node) override {
-		std::vector<std::pair<int, int>> idx_ranges;
-		idx_ranges.emplace_back(-1,-1);
-		double block_points = 0;
-		for(int i=0; i<node.statements.size(); i++) {
-			auto& stmt = node.statements[i];
-			stmt->accept(*this);
-			block_points += get_points(stmt->get_bison_tokens());
-			if(check_line_count(&node, block_points)) {
-				idx_ranges.emplace_back(idx_ranges.back().second+1, i-1);
-				block_points = get_points(stmt->get_bison_tokens());
-			}
+	 * @brief Visits the callbacks and functions in the order ASTGenerator prints them.
+	 */
+	NodeAST* visit(NodeProgram& node) override {
+		m_program = &node;
+		int top_level_index = 0;
+		const auto fix_top_level = [&](NodeBlock& body) {
+			fix_block(body, top_level_index++ + CALLBACK_BODY_OFFSET);
+		};
+		if (!node.callbacks.empty()) fix_top_level(*node.callbacks[0]->statements);
+		for (const auto& function : node.function_definitions) {
+			fix_top_level(*function->body);
 		}
-		// add last range if not already added
-		if(idx_ranges.back().second != node.statements.size()-1) {
-			idx_ranges.emplace_back(idx_ranges.back().second+1, node.statements.size()-1);
-		}
-		// remove first element (placeholder)
-		idx_ranges.erase(idx_ranges.begin());
-		if(idx_ranges.size() > 1) {
-			auto blocks = apply_ranges_to_block(node, idx_ranges);
-			auto new_block = node.replace_with(get_block_of_if_stmts(blocks));
-			// check if new block of if-statements is too large -> accept again then
-			if(static_cast<int>(blocks.size() * points(FIVE_TOKEN_LIMIT)) > ONE_TOKEN_LIMIT) {
-				new_block->accept(*this);
-			}
-			return new_block;
+		for (size_t i = 1; i < node.callbacks.size(); i++) {
+			fix_top_level(*node.callbacks[i]->statements);
 		}
 		return &node;
-	};
+	}
 
 private:
 	/**
-     * @brief Checks if the block exceeds the line limit.
-     * @param node The NodeBlock to check.
-     * @param block_points The accumulated points for the block.
-     * @return True if the block exceeds the line limit, false otherwise.
-     */
-	bool check_line_count(NodeBlock* node, double block_points) {
-		if(static_cast<int>(block_points) >= ONE_TOKEN_LIMIT) {
-			auto error = ASTVisitor::make_diagnostic(ErrorType::SyntaxError, *node);
-			error.message = "Fixed possible 'memory exhausted' error by applying nested <if-statements> 'if(1=1)'. Consider using "
-							  "<Arrays> or loading separate *.nka files for static initializations to reduce the number of lines.";
-			error.report(diagnostics());
-			return true;
+	 * @brief Makes sure no statement in @p block exceeds the budget when its first statement sits at @p base.
+	 */
+	void fix_block(NodeBlock& block, const int base) {
+		if (base + demand(block) <= DEPTH_BUDGET) return;
+
+		// the generator prints nested blocks inline anyway; flat statements occupy exactly one slot each
+		block.flatten(true);
+		std::erase_if(block.statements, [](const std::unique_ptr<NodeStatement>& stmt) {
+			return stmt->statement->cast<NodeDeadCode>() != nullptr;
+		});
+
+		const int available = DEPTH_BUDGET - base;
+		const int chunk_limit = (available - IF_BODY_OFFSET) / 2;
+		if (chunk_limit <= STATEMENT_PEAK) {
+			report_unfixable(block);
+			return;
 		}
-		return false;
+		if (static_cast<int>(block.statements.size()) > chunk_limit) {
+			split_into_chunks(block, base, chunk_limit);
+		} else {
+			fix_nested_blocks(block, base);
+		}
+		if (base + demand(block) > DEPTH_BUDGET) {
+			report_unfixable(block);
+		}
 	}
 
 	/**
-     * @brief Applies index ranges to a block, creating new blocks for each range.
-     * @param block The original NodeBlock.
-     * @param idx_ranges The index ranges to apply.
-     * @return A vector of new NodeBlocks.
-     */
-	static std::vector<std::unique_ptr<NodeBlock>> apply_ranges_to_block(NodeBlock& block, const std::vector<std::pair<int, int>>& idx_ranges) {
-		std::vector<std::unique_ptr<NodeBlock>> result_blocks;
-
-		for (const auto& range : idx_ranges) {
-			auto new_block = std::make_unique<NodeBlock>(block.tok);
-			for (int i = range.first; i <= range.second; ++i) {
-				new_block->add_stmt(std::move(block.statements[i]));
+	 * @brief Wraps the statements of @p block into chunks of `if(1=1)` so that each chunk stays within
+	 * @p chunk_limit, then fixes every chunk at the depth it ends up at.
+	 */
+	void split_into_chunks(NodeBlock& block, const int base, const int chunk_limit) {
+		std::vector<std::unique_ptr<NodeBlock>> chunks;
+		int chunk_index = 0;
+		for (auto& stmt : block.statements) {
+			const int need = statement_demand(*stmt->statement);
+			if (chunks.empty() or (chunk_index > 0 and chunk_index + need > chunk_limit)) {
+				chunks.push_back(std::make_unique<NodeBlock>(block.tok));
+				chunk_index = 0;
 			}
-			result_blocks.push_back(std::move(new_block));
+			chunks.back()->add_stmt(std::move(stmt));
+			chunk_index++;
+		}
+		block.statements.clear();
+		// one more level of wrapping would not fit next to full chunks; this needs millions of statements
+		if (static_cast<int>(chunks.size()) > chunk_limit) {
+			for (auto& chunk : chunks) {
+				for (auto& stmt : chunk->statements) block.add_stmt(std::move(stmt));
+			}
+			report_unfixable(block);
+			return;
 		}
 
-		block.statements.clear(); // empty original block
-		return result_blocks;
+		auto error = ASTVisitor::make_diagnostic(ErrorType::SyntaxError, block);
+		error.message = "Fixed possible 'memory exhausted' error by applying nested <if-statements> 'if(1=1)'. Consider using "
+						  "<Arrays> or loading separate *.nka files for static initializations to reduce the number of lines.";
+		error.report(diagnostics());
+
+		auto wrapped = get_block_of_if_stmts(chunks);
+		for (auto& stmt : wrapped->statements) block.add_stmt(std::move(stmt));
+		for (int i = 0; i < static_cast<int>(block.statements.size()); i++) {
+			const auto node_if = block.statements[i]->statement->cast<NodeIf>();
+			fix_block(*node_if->if_body, base + i + IF_BODY_OFFSET);
+		}
+	}
+
+	/**
+	 * @brief Fixes the bodies of the if/while/select statements in @p block at the depth they start at.
+	 */
+	void fix_nested_blocks(NodeBlock& block, const int base) {
+		for (int i = 0; i < static_cast<int>(block.statements.size()); i++) {
+			const int depth = base + i;
+			auto& stmt = *block.statements[i]->statement;
+			if (const auto node_if = stmt.cast<NodeIf>()) {
+				fix_block(*node_if->if_body, depth + IF_BODY_OFFSET);
+				fix_block(*node_if->else_body, depth + ELSE_BODY_OFFSET);
+			} else if (const auto node_while = stmt.cast<NodeWhile>()) {
+				fix_block(*node_while->body, depth + WHILE_BODY_OFFSET);
+			} else if (const auto node_select = stmt.cast<NodeSelect>()) {
+				for (auto& [labels, body] : node_select->cases) {
+					fix_block(*body, depth + CASE_BODY_OFFSET);
+				}
+			}
+		}
+	}
+
+	void report_unfixable(const NodeBlock& block) {
+		auto error = ASTVisitor::make_diagnostic(ErrorType::SyntaxError, block);
+		error.message = "This block is likely to cause a 'memory exhausted' error in Kontakt and could not be fixed by applying "
+						  "nested <if-statements> 'if(1=1)'. Reduce the number of statements or the nesting depth around it.";
+		error.report(diagnostics());
+	}
+
+	/**
+	 * @brief Highest parser depth reached in @p block, relative to the depth of its first statement.
+	 */
+	int demand(NodeBlock& block) {
+		int index = 0;
+		int max_depth = 0;
+		accumulate_demand(block, index, max_depth);
+		return max_depth;
+	}
+
+	void accumulate_demand(NodeBlock& block, int& index, int& max_depth) {
+		for (const auto& stmt : block.statements) {
+			auto& node = *stmt->statement;
+			if (node.cast<NodeDeadCode>()) continue;
+			if (const auto inner = node.cast<NodeBlock>()) {
+				// printed inline by the generator, followed by an empty line that counts as a statement
+				accumulate_demand(*inner, index, max_depth);
+			} else {
+				max_depth = std::max(max_depth, index + statement_demand(node));
+			}
+			index++;
+		}
+	}
+
+	/**
+	 * @brief Highest parser depth reached while parsing @p node, relative to the slot it occupies.
+	 */
+	int statement_demand(NodeAST& node) {
+		if (const auto node_if = node.cast<NodeIf>()) {
+			int need = std::max(expression_demand(*node_if->condition), IF_BODY_OFFSET + demand(*node_if->if_body));
+			if (!node_if->else_body->statements.empty()) {
+				need = std::max(need, ELSE_BODY_OFFSET + demand(*node_if->else_body));
+			}
+			return need;
+		}
+		if (const auto node_while = node.cast<NodeWhile>()) {
+			return std::max(expression_demand(*node_while->condition), WHILE_BODY_OFFSET + demand(*node_while->body));
+		}
+		if (const auto node_select = node.cast<NodeSelect>()) {
+			int need = expression_demand(*node_select->expression);
+			for (auto& [labels, body] : node_select->cases) {
+				need = std::max(need, CASE_BODY_OFFSET + demand(*body));
+			}
+			return need;
+		}
+		if (const auto inner = node.cast<NodeBlock>()) {
+			return demand(*inner) + 1;
+		}
+		return expression_demand(node);
+	}
+
+	int expression_demand(NodeAST& node) {
+		return STATEMENT_PEAK + m_expression_depth.get(node);
 	}
 
 	static std::unique_ptr<NodeBlock> get_block_of_if_stmts(std::vector<std::unique_ptr<NodeBlock>>& blocks) {
@@ -139,12 +273,9 @@ private:
 				std::make_unique<NodeBlock>(tok),
 				tok
 			);
-			new_block->add_stmt(std::make_unique<NodeStatement>(std::move(node_if), tok));
+			new_block->add_as_stmt(std::move(node_if));
 		}
 		return new_block;
 	}
-
-
-
 
 };

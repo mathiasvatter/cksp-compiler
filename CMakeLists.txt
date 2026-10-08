@@ -187,7 +187,6 @@ add_library(cksp_core STATIC
         cksp/Optimization/ConstantPromotion.h
         cksp/Optimization/VarExistsValidator.h
         cksp/Optimization/MemoryExhaustedNesting.h
-        cksp/Optimization/TokenCounter.h
         cksp/Desugaring/DesugarFunctionCall.h
         cksp/ASTVisitor/ASTHandleStringRepresentations.h
         cksp/Desugaring/DesugarDelete.h

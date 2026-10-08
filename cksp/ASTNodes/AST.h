@@ -120,7 +120,6 @@ struct NodeAST {
 	/// once <CompletionIndex.h> started reaching in here.
 	virtual std::unique_ptr<struct NodeAccessChain> to_method_chain();
 	bool is_constant(bool builtins_are_constant = false, bool arrayref_can_be_const = true);
-	int get_bison_tokens();
 	bool is_nil();
 	/// removes node from AST and all references from data_structs
 	NodeAST *remove_node();

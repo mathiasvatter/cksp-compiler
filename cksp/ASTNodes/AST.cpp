@@ -12,7 +12,6 @@
 #include "../ASTVisitor/debug/ASTPrinter.h"
 #include "../Optimization/ConstExprValidator.h"
 #include "../Optimization/VarExistsValidator.h"
-#include "../Optimization/TokenCounter.h"
 #include "../Desugaring/DesugarParamList.h"
 #include "../Desugaring/DesugarBinaryExpr.h"
 #include "../Desugaring/DesugarFormatString.h"
@@ -158,11 +157,6 @@ std::unique_ptr<NodeAccessChain> NodeAST::to_method_chain() { return nullptr; }
 bool NodeAST::is_constant(bool builtins_are_constant, bool arrayref_can_be_const) {
 	static ConstExprValidator const_validator;
 	return const_validator.is_constant(*this, builtins_are_constant, arrayref_can_be_const);
-}
-
-int NodeAST::get_bison_tokens() {
-	static TokenCounter token_counter;
-	return token_counter.get_tokens(*this);
 }
 
 bool NodeAST::is_nil() {
