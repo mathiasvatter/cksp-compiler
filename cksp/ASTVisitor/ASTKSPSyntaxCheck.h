@@ -8,6 +8,7 @@
 #include "../SyntaxChecks/KSPPersistency.h"
 #include "../SyntaxChecks/KSPDeclarations.h"
 #include "../Optimization/MemoryExhaustedNesting.h"
+#include "../Optimization/ConstantFolding.h"
 #include "../Lowering/LoweringFunctionCall.h"
 #include "../SyntaxChecks/KSPConditions.h"
 #include "FunctionHandling/BuiltinRestrictionValidator.h"
@@ -150,7 +151,12 @@ public:
 				error.exit();
 			}
 		}
-		return ASTVisitor::visit(node);
+		ASTVisitor::visit(node);
+		// ConstantFolding drops these too, but it does not run at -O0 (#150)
+		if (ConstantFolding::is_identity_cast(node)) {
+			return node.replace_with(std::move(node.function->get_arg(0)));
+		}
+		return &node;
 	}
 
 	NodeAST* visit(NodeBlock& node) override {
