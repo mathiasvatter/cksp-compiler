@@ -4,6 +4,7 @@
 #include <cctype>
 
 #include "CallSiteScanner.h"
+#include "LineIndex.h"
 
 namespace {
 
@@ -11,31 +12,6 @@ namespace {
 constexpr int TYPE_HINT = 1;
 constexpr int PARAMETER_HINT = 2;
 constexpr size_t MAX_LABEL_LENGTH = 10;
-
-class LineIndex {
-	std::vector<size_t> m_starts{0};
-
-public:
-	explicit LineIndex(const std::string_view text) {
-		for (size_t i = 0; i < text.size(); ++i) {
-			if (text[i] == '\n') m_starts.push_back(i + 1);
-		}
-	}
-
-	[[nodiscard]] std::pair<size_t, size_t> line_and_character(const size_t offset) const {
-		const auto next = std::ranges::upper_bound(m_starts, offset);
-		const auto line = static_cast<size_t>(next - m_starts.begin()) - 1;
-		return {line, offset - m_starts[line]};
-	}
-
-	[[nodiscard]] std::unique_ptr<JSONObject> position_of(const size_t offset) const {
-		const auto [line, character] = line_and_character(offset);
-		auto position = std::make_unique<JSONObject>();
-		position->add("line", std::make_unique<JSONInt>(static_cast<long long>(line)));
-		position->add("character", std::make_unique<JSONInt>(static_cast<long long>(character)));
-		return position;
-	}
-};
 
 std::string lowercase(const std::string_view text) {
 	std::string lowered(text);
@@ -86,11 +62,11 @@ JSONArray InlayHintProvider::hints(
 	const SourceId& source,
 	const std::vector<TypeHint>& type_hints) const {
 	JSONArray hints;
-	const LineIndex lines(text);
+	const lsp::LineIndex lines(text);
 
 	for (const auto& type_hint : type_hints) {
-		const auto offset = lsp::source_text::offset_at(
-			text, type_hint.position.get_lsp_line(), type_hint.position.get_lsp_char());
+		const auto offset = lines.offset_at(
+			type_hint.position.get_lsp_line(), type_hint.position.get_lsp_char());
 		if (!offset || *offset < begin || *offset > end) continue;
 		auto hint = std::make_unique<JSONObject>();
 		hint->add("position", lines.position_of(*offset));

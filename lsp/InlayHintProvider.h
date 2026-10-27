@@ -17,7 +17,7 @@
  * buffer and resolved against the completion snapshots, so parameter hints keep working
  * while the buffer is mid-edit. KSP engine commands are not in those snapshots, which is
  * intended: the cksp-tools extension serves their hints from its own database. Type hints
- * are positions, so the caller passes only those of a snapshot matching the buffer.
+ * are positions, so the caller passes them already moved onto the current buffer.
  *
  * Every parameter hint carries `data.parameterCount`, so a client can apply a minimum
  * parameter count setting without asking the server again.

@@ -2482,5 +2482,23 @@ def _(workspace, server):
     expect(after.items() <= shifted.items(), f"stale type hints: {after}")
 
 
+@test("inlay hints: a declaration being typed keeps the type hints around it",
+      requires="inlayHintProvider")
+def _(workspace, server):
+    fixture = workspace.open("type_hints.cksp")
+    before = type_hints_of(server, fixture)
+    # A half-written line fails the analysis; the hints of the last successful one move
+    # past it instead of vanishing until the line compiles again.
+    lines = fixture.text.splitlines(keepends=True)
+    broken = next(i for i, text in enumerate(lines) if "declare level" in text)
+    edited = server.did_change(fixture, "".join(lines[:broken] + ["    declare \n"] + lines[broken:]))
+    expect(any(d.get("severity") == 1 for d in server.diagnostics(edited)),
+           "expected the half-written declaration to fail the analysis")
+    shifted = {(line + (line >= broken), character): label
+               for (line, character), label in before.items()}
+    after = type_hints_of(server, edited)
+    expect(after == shifted, f"expected {shifted}, got {after}")
+
+
 if __name__ == "__main__":
     raise SystemExit(run_suite())

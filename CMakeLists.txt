@@ -308,8 +308,11 @@ add_executable(cksp
         lsp/SignatureHelpProvider.h
         lsp/InlayHintProvider.cpp
         lsp/InlayHintProvider.h
+        lsp/PositionMap.h
+        lsp/LineIndex.h
         lsp/QualifierScanner.h
         lsp/SourceTextScanner.h
+        lsp/TextChange.h
         lsp/RenameProvider.cpp
         lsp/RenameProvider.h
         lsp/RequestParams.cpp

@@ -242,16 +242,39 @@ std::vector<ReferenceLocation> ReferenceProvider::references_to(
 	return locations;
 }
 
+std::optional<ReferenceProvider::SuccessfulSnapshot> ReferenceProvider::successful_snapshot(
+	const std::vector<SourceId>& preferred_entries,
+	const std::string& normalized_source) {
+	for (const auto& entry : preferred_entries) {
+		const auto state = m_states.find(FileSystemSourceProvider::normalize(entry.value).value);
+		if (state == m_states.end() || !state->second.last_successful) continue;
+		const auto snapshot = state->second.last_successful_sources.find(normalized_source);
+		if (snapshot == state->second.last_successful_sources.end()) continue;
+		auto current = m_sources.load(SourceId(normalized_source));
+		if (current.is_error()) continue;
+		const std::string_view old_text = *snapshot->second;
+		const std::string_view new_text = *current.unwrap().text;
+		if (old_text == new_text) return SuccessfulSnapshot{state->second.last_successful, std::nullopt};
+		return SuccessfulSnapshot{state->second.last_successful, lsp::PositionMap(old_text, new_text)};
+	}
+	return std::nullopt;
+}
+
 std::vector<TypeHint> ReferenceProvider::type_hints(
 	const std::vector<SourceId>& preferred_entries,
 	const SourceId& source) {
 	const auto normalized_source = FileSystemSourceProvider::normalize(source.value).value;
 	std::lock_guard lock(m_mutex);
-	for (const auto& entry : preferred_entries) {
-		const auto state = m_states.find(FileSystemSourceProvider::normalize(entry.value).value);
-		if (state == m_states.end() || !state->second.last_successful) continue;
-		if (!source_matches_snapshot(state->second.last_successful_sources, normalized_source)) continue;
-		return state->second.last_successful->type_hints_in(normalized_source);
-	}
-	return {};
+	const auto snapshot = successful_snapshot(preferred_entries, normalized_source);
+	if (!snapshot) return {};
+	auto hints = snapshot->index->type_hints_in(normalized_source);
+	if (!snapshot->moved) return hints;
+	std::erase_if(hints, [&](TypeHint& hint) {
+		// A hint stands right after its name, so it belongs to the name.
+		const auto position = snapshot->moved->map(hint.position, lsp::TextChange::Bias::Preceding);
+		if (!position) return true;
+		hint.position = *position;
+		return false;
+	});
+	return hints;
 }
