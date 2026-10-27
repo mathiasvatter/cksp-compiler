@@ -381,6 +381,7 @@ void Tokenizer::get_parenth() {
 }
 
 void Tokenizer::get_assignment() {
+	flush_buffer();
 	consume();
     consume();
     add_token(token::ASSIGN, m_buffer);
@@ -388,6 +389,7 @@ void Tokenizer::get_assignment() {
 }
 
 void Tokenizer::get_arrow() {
+	flush_buffer();
 	consume();
     consume();
     add_token(token::ARROW, m_buffer);
