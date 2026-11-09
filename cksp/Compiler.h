@@ -233,6 +233,7 @@ private:
 			m_program->def_provider = &m_definition_provider;
 			m_program->compiler_config = m_final_config.get();
 			if (m_program->compiler_config->lsp) {
+				m_program->reference_index = &m_reference_index;
 				collect_reference_definitions();
 				collect_completion_scopes();
 				TypeHintHarvester untyped(

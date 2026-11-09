@@ -3,6 +3,7 @@
 //
 
 #include "TypeInference.h"
+#include "../Source/ReferenceIndex.h"
 
 #include "ASTSemanticAnalysis.h"
 #include "FunctionHandling/BuiltinRestrictionValidator.h"
@@ -56,6 +57,7 @@ NodeAST* TypeInference::resolve_subscript_get(NodeReference& node) {
 		error.exit();
 	}
 
+	record_subscript_brackets(node);
 	return replace_with_call(node, make_operator_overload_call(op, *method, node.take_subscript_operands(op)));
 }
 
@@ -68,6 +70,7 @@ NodeAST* TypeInference::resolve_subscript_set(NodeSingleAssignment& node) {
 
 	auto op = target->tok;
 	op.type = token::SET_ITEM;
+	record_subscript_brackets(*target);
 	auto operands = target->take_subscript_operands(op);
 	// The value the assignment carries is the setter's last argument, as it is for <__set__>.
 	operands->add_param(std::move(node.r_value));
@@ -111,6 +114,19 @@ std::unique_ptr<NodeFunctionCall> TypeInference::make_operator_overload_call(con
 		),
 		op
 	);
+}
+
+void TypeInference::record_overloaded_operator(const Token& op) const {
+	if (m_program->reference_index) {
+		m_program->reference_index->add_symbol(op, SymbolKind::Operator, SymbolToken::UserDefined);
+	}
+}
+
+void TypeInference::record_subscript_brackets(const NodeReference& subscript) const {
+	if (const auto* composite = dynamic_cast<const NodeCompositeRef*>(&subscript)) {
+		record_overloaded_operator(composite->open_bracket);
+		record_overloaded_operator(composite->close_bracket);
+	}
 }
 
 NodeAST* TypeInference::replace_with_call(NodeAST& node, std::unique_ptr<NodeFunctionCall> call) {
@@ -1224,6 +1240,7 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 		if (auto replacement = resolve_subscript_set(node)) return replacement;
 		reject_rebinding_an_accessor(node);
 		if (const auto method = m_program->find_overloaded_method(node.l_value->ty, set_tok.type, 2)) {
+			record_overloaded_operator(node.assign_token);
 			return replace_with_call(node, make_operator_overload_call(set_tok, *method, std::move(node.l_value), std::move(node.r_value)));
 		}
 	}
@@ -1529,6 +1546,7 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	node.right->accept(*this);
 
 	if (const auto method = m_program->find_overloaded_method(node.left->ty, node.op.type, 2)) {
+		record_overloaded_operator(node.op);
 		return replace_with_call(node, make_operator_overload_call(node.op, *method, std::move(node.left), std::move(node.right)));
 	}
 	const bool is_object = node.left->ty->cast<ObjectType>() != nullptr;
@@ -1613,6 +1631,7 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 
 	bool is_object = false;
 	if (const auto method = m_program->find_overloaded_method(node.operand->ty, node.op.type, 1)) {
+		record_overloaded_operator(node.op);
 		return replace_with_call(node, make_operator_overload_call(node.op, *method, std::move(node.operand)));
 	}
 

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "ASTDesugaring.h"
+#include "../Source/ReferenceIndex.h"
 
 /**
  * Desugaring of Function calls with multiple arguments that are not in assignment/declaration context
@@ -14,8 +15,19 @@ class DesugarFunctionCall : public ASTDesugaring {
 public:
 	explicit DesugarFunctionCall(NodeProgram *program) : ASTDesugaring(program) {};
 
+	/// The builtins CKSP adds to KSP are recognised here by name, and most become nodes of
+	/// their own, so this is also where the editor learns that the name is one.
+	void mark_builtin(NodeFunctionCall& node) const {
+		node.kind = NodeFunctionCall::Kind::Builtin;
+		const auto& name = node.function->tok;
+		if (m_program->reference_index && name.val == node.function->name) {
+			m_program->reference_index->add_symbol(name, SymbolKind::Function, SymbolToken::DefaultLibrary);
+		}
+	}
+
 	inline NodeAST * visit(NodeFunctionCall& node) override {
 		if (node.function->get_num_args() == 3 and node.function->name == "search_by") {
+			mark_builtin(node);
 			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
 			if (node.function->get_num_args() != 3) {
 				error.message = "Function <search_by> expects exactly three arguments: an object array, a member path, and a value.";
@@ -51,7 +63,7 @@ public:
 		}
 
 		if (node.function->get_num_args() > 0 and node.function->name == "num_elements") {
-			node.kind = NodeFunctionCall::Kind::Builtin;
+			mark_builtin(node);
 			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
 			if (node.function->get_num_args() > 2) {
 				error.message = "Too many arguments for function call <num_elements>.";
@@ -84,7 +96,7 @@ public:
 
 		if((node.function->get_num_args() == 2 || node.function->get_num_args() == 4) &&
 			(node.function->name == "search" || node.function->name == "sort")) {
-			node.kind = NodeFunctionCall::Kind::Builtin;
+			mark_builtin(node);
 			// Desugaring runs on the parse tree, so an argument that only becomes a reference
 			// later - <Note.storage(.pitch)> or any call of a function returning an array - is
 			// not one yet. NodeSortSearch only exists for what needs the declaration behind the
@@ -114,19 +126,19 @@ public:
 		}
 
 		if(node.function->get_num_args() == 1 and node.function->name == "use_count") {
-			node.kind = NodeFunctionCall::Kind::Builtin;
+			mark_builtin(node);
 			auto use_count = std::make_unique<NodeUseCount>(unique_ptr_cast<NodeReference>(std::move(node.function->get_arg(0))));
 			return node.replace_with(std::move(use_count));
 		}
 
 		if(node.function->get_num_args() == 1 and node.function->name == "pairs") {
-			node.kind = NodeFunctionCall::Kind::Builtin;
+			mark_builtin(node);
 			auto pairs = std::make_unique<NodePairs>(std::move(node.function->get_arg(0)));
 			return node.replace_with(std::move(pairs));
 		}
 
 		if(node.function->get_num_args() >= 1 and node.function->get_num_args() <= 3 and node.function->name == "range") {
-			node.kind = NodeFunctionCall::Kind::Builtin;
+			mark_builtin(node);
 			std::unique_ptr<NodeAST> start = std::make_unique<NodeInt>(0, node.tok);
 			std::unique_ptr<NodeAST> stop;
 			std::unique_ptr<NodeAST> step = std::make_unique<NodeInt>(1, node.tok);

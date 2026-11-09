@@ -452,6 +452,12 @@ public:
 		const NodeFunctionDefinition& method,
 		std::unique_ptr<NodeParamList> operands);
 
+	/// Marks where the source writes an operator that runs a struct's overload, for the
+	/// editor to colour.
+	void record_overloaded_operator(const Token& op) const;
+	/// The same for the brackets of a subscript.
+	void record_subscript_brackets(const NodeReference& subscript) const;
+
 	/// Puts the call in the node's place and hands it back typed: what every rewrite of an
 	/// expression into the call behind it ends with.
 	NodeAST* replace_with_call(NodeAST& node, std::unique_ptr<NodeFunctionCall> call);

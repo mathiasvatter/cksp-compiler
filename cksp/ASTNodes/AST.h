@@ -25,6 +25,7 @@ struct NodeProgram;
 struct NodeFunctionHeaderRef;
 struct NodeReference;
 class DiagnosticEngine;
+class ReferenceIndex;
 
 struct NodeAST {
 	SourceRange range;
@@ -1253,6 +1254,9 @@ struct NodeProgram final : NodeAST {
 	class DefinitionProvider* def_provider = nullptr;
 	/// Non-owning diagnostic context supplied by Compiler for this AST's lifetime.
 	DiagnosticEngine* diagnostic_engine = nullptr;
+	/// Non-owning, and only set while the language server analyses: passes that learn
+	/// something the editor shows record it here.
+	ReferenceIndex* reference_index = nullptr;
 	NodeCallback* init_callback = nullptr;
 	NodeCallback* current_callback = nullptr;
 	// std::shared_ptr<NodeVariable> global_iterator;
