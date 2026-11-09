@@ -704,7 +704,8 @@ NodeAST *NodeGetControl::accept(ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeGetControl::NodeGetControl(const NodeGetControl& other)
-	: NodeReference(other), ui_id(clone_unique(other.ui_id)), control_param(other.control_param) {
+	: NodeReference(other), ui_id(clone_unique(other.ui_id)), control_param(other.control_param),
+	  arrow_token(other.arrow_token), control_param_token(other.control_param_token) {
 	NodeGetControl::set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeGetControl::clone() const {
@@ -761,7 +762,8 @@ NodeAST *NodeSetControl::accept(ASTVisitor &visitor) {
 }
 NodeSetControl::NodeSetControl(const NodeSetControl& other)
 	: NodeReference(other), ui_id(clone_unique(other.ui_id)),
-	control_param(other.control_param), value(clone_unique(other.value)) {
+	control_param(other.control_param), value(clone_unique(other.value)),
+	arrow_token(other.arrow_token), control_param_token(other.control_param_token) {
 	NodeSetControl::set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeSetControl::clone() const {

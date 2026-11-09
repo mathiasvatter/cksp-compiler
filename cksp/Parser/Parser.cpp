@@ -413,8 +413,9 @@ Result<std::unique_ptr<NodeReference>> Parser::parse_array_ref(NodeAST *parent) 
 	std::unique_ptr<NodeReference> node_array_ref = nullptr;
 	auto indexes = std::make_unique<NodeParamList>(arr_token);;
 	indexes->parent = node_array_ref.get();
+	Token open_bracket, close_bracket;
 	if(peek().type == token::OPEN_BRACKET) {
-		consume(); // consume [
+		open_bracket = consume();
 		// if it is an empty array initialization
 		if (peek().type == token::CLOSED_BRACKET) {
 			error.message += "Empty Array Reference Initialization is not allowed.";
@@ -429,19 +430,21 @@ Result<std::unique_ptr<NodeReference>> Parser::parse_array_ref(NodeAST *parent) 
 			error.expected = "]";
 			return Result<std::unique_ptr<NodeReference>>(error);
 		}
-		consume(); // consume ]
+		close_bracket = consume();
 	} else {
 		error.expected = "[";
 		return Result<std::unique_ptr<NodeReference>>(error);
 	}
 	// if it is multidimensional array reference
+	std::unique_ptr<NodeCompositeRef> node;
 	if(indexes->params.size() > 1) {
-		auto node = std::make_unique<NodeNDArrayRef>(arr_name, std::move(indexes), arr_token);
-		node_array_ref = std::move(node);
+		node = std::make_unique<NodeNDArrayRef>(arr_name, std::move(indexes), arr_token);
 	} else {
-		auto node = std::make_unique<NodeArrayRef>(arr_name, std::move(indexes->params[0]),arr_token);
-		node_array_ref = std::move(node);
+		node = std::make_unique<NodeArrayRef>(arr_name, std::move(indexes->params[0]),arr_token);
 	}
+	node->open_bracket = std::move(open_bracket);
+	node->close_bracket = std::move(close_bracket);
+	node_array_ref = std::move(node);
 	node_array_ref->set_range(arr_token, peek(-1));
 	node_array_ref->parent = parent;
 	node_array_ref->ty = ty;
@@ -1067,6 +1070,7 @@ Result<std::unique_ptr<NodeSingleAssignment>> Parser::parse_single_assign_statem
 	auto tok = ref->tok;
     auto node_single_assign_statement = std::make_unique<NodeSingleAssignment>(
             std::move(ref), std::move(node_assign_statement->r_values->params[0]), tok);
+	node_single_assign_statement->assign_token = node_assign_statement->assign_token;
 	node_single_assign_statement->set_range(
 		*node_single_assign_statement->l_value,
 		*node_single_assign_statement->r_value
@@ -1134,7 +1138,7 @@ Result<std::unique_ptr<NodeAssignment>> Parser::parse_assign_statement(std::vect
         return Result<std::unique_ptr<NodeAssignment>>(Diagnostic(ErrorType::SyntaxError,
                                                                     "Found invalid Assign Statement Syntax.", ":=", peek()));
     }
-    consume(); // consume :=
+    node_assign_statement->assign_token = consume();
 
 	std::unique_ptr<NodeParamList> assignees = nullptr;
     auto assignee =  parse_multiple_values(node_assign_statement.get()); //_parse_assignee();
@@ -3195,7 +3199,7 @@ Result<std::unique_ptr<NodeGetControl>> Parser::parse_get_control_statement(std:
 		return Result<std::unique_ptr<NodeGetControl>>(Diagnostic(ErrorType::SyntaxError,
                                                                     "Wrong control statement syntax.", "->", peek()));
 	}
-	consume(); // consume ->
+	auto arrow_token = consume();
 	if(peek().type == token::DEFAULT) {
 		m_tokens[m_pos].type = token::KEYWORD;
 	}
@@ -3206,6 +3210,8 @@ Result<std::unique_ptr<NodeGetControl>> Parser::parse_get_control_statement(std:
 	auto end_token = consume(); // consume control parameter
 	auto control_param = end_token.val;
 	auto node_get_control_statement = std::make_unique<NodeGetControl>(std::move(ui_id), control_param, start_token);
+	node_get_control_statement->arrow_token = std::move(arrow_token);
+	node_get_control_statement->control_param_token = end_token;
 	node_get_control_statement->set_range(start_token, end_token);
 	node_get_control_statement->set_child_parents();
 	node_get_control_statement->parent = parent;

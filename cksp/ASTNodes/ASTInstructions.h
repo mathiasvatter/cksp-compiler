@@ -525,6 +525,8 @@ struct NodeRetain final : NodeInstruction {
 struct NodeAssignment final : NodeInstruction {
     std::vector<std::unique_ptr<NodeReference>> l_values;
     std::unique_ptr<NodeParamList> r_values;
+    /// The <:=> as written; see NodeSingleAssignment::assign_token.
+    Token assign_token;
     explicit NodeAssignment(Token tok) : NodeInstruction(NodeType::Assignment, std::move(tok)) {}
     NodeAssignment(std::vector<std::unique_ptr<NodeReference>> array_variables, std::unique_ptr<NodeParamList> assignees, Token tok)
             : NodeInstruction(NodeType::Assignment, std::move(tok)), l_values(std::move(array_variables)), r_values(std::move(assignees)) {
@@ -567,6 +569,9 @@ struct NodeSingleAssignment final : NodeInstruction {
 	bool initializes_storage = false;
     std::unique_ptr<NodeReference> l_value;
     std::unique_ptr<NodeAST> r_value;
+	/// The <:=> as written, empty for an assignment the compiler made. Kept for the editor,
+	/// which marks it when the assignment runs a struct's <__set__>.
+	Token assign_token;
     explicit NodeSingleAssignment(Token tok) : NodeInstruction(NodeType::SingleAssignment, std::move(tok)) {}
     NodeSingleAssignment(std::unique_ptr<NodeReference> arrayVariable, std::unique_ptr<NodeAST> assignee, Token tok)
             : NodeInstruction(NodeType::SingleAssignment, std::move(tok)), l_value(std::move(arrayVariable)), r_value(std::move(assignee)) {

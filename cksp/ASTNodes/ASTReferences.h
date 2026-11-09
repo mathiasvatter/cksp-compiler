@@ -42,11 +42,16 @@ struct NodeVariableRef final : NodeReference {
 };
 
 struct NodeCompositeRef : NodeReference {
+	/// The brackets the source writes the subscript with; empty where it has none or the
+	/// reference was not parsed. Kept for the editor, which marks them when the subscript
+	/// runs a struct's <__getitem__> or <__setitem__>.
+	Token open_bracket, close_bracket;
 	// Konstruktor
 	NodeCompositeRef(std::string name, NodeType node_type, Token tok, DataType data_type = DataType::Mutable)
 		: NodeReference(std::move(name), node_type, std::move(tok), data_type) {}
 	// Kopierkonstruktor
-	NodeCompositeRef(const NodeCompositeRef& other) : NodeReference(other) {}
+	NodeCompositeRef(const NodeCompositeRef& other)
+		: NodeReference(other), open_bracket(other.open_bracket), close_bracket(other.close_bracket) {}
 	// Standardmethoden für gemeinsame Funktionalitäten
 	void update_parents(NodeAST* new_parent) override {
 		parent = new_parent;
@@ -502,6 +507,8 @@ struct NodeAccessChain final : NodeReference {
 struct NodeGetControl final : NodeReference {
 	std::unique_ptr<NodeAST> ui_id; //array or variable
 	std::string control_param;
+	/// The <->> and the parameter name as written, for the editor to mark.
+	Token arrow_token, control_param_token;
 	NodeGetControl(std::unique_ptr<NodeAST> ui_id, std::string controlParam, Token tok)
 		: NodeReference(controlParam, NodeType::GetControl, std::move(tok), DataType::Mutable), ui_id(std::move(ui_id)), control_param(std::move(controlParam)) {
 		NodeGetControl::set_child_parents();
@@ -538,6 +545,8 @@ struct NodeSetControl final : NodeReference {
 	std::unique_ptr<NodeAST> ui_id; //array or variable
 	std::string control_param;
 	std::unique_ptr<NodeAST> value;
+	/// See NodeGetControl, whose assignment this was.
+	Token arrow_token, control_param_token;
 	NodeSetControl(std::unique_ptr<NodeAST> ui_id, std::string controlParam, std::unique_ptr<NodeAST> value, Token tok)
 		: NodeReference(controlParam, NodeType::SetControl, std::move(tok), DataType::Mutable),
 		ui_id(std::move(ui_id)), control_param(std::move(controlParam)), value(std::move(value)) {

@@ -131,6 +131,7 @@ public:
         for(auto &arr_var : node.l_values) {
         	auto tok = arr_var->tok;
             auto node_single_assign_stmt = std::make_unique<NodeSingleAssignment>(std::move(arr_var), nullptr, tok);
+            node_single_assign_stmt->assign_token = node.assign_token;
             assign_statements.push_back(std::move(node_single_assign_stmt));
         }
         std::vector<std::unique_ptr<NodeAST>> values;
