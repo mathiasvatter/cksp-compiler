@@ -36,6 +36,76 @@ private:
 	SourceProvider* m_sources = nullptr;
 	mutable std::unordered_map<std::string, std::shared_ptr<const std::string>> m_source_cache;
 
+	struct Symbol {
+		SymbolKind kind;
+		unsigned modifiers = 0;
+	};
+
+	static Symbol symbol_of(const NodePrefix::PrefixKind kind) {
+		return {kind == NodePrefix::PrefixKind::Const ? SymbolKind::Enum : SymbolKind::Namespace};
+	}
+
+	static Symbol symbol_of(NodeFunctionHeader& header) {
+		auto* definition = header.parent ? header.parent->cast<NodeFunctionDefinition>() : nullptr;
+		if (!definition) return {SymbolKind::Function};
+		// Not is_method(): it looks for a parameter named <self>, which the reference pass
+		// meets already renamed. Every function of a struct body is a method.
+		if (!definition->parent || !definition->parent->cast<NodeStruct>()) return {SymbolKind::Function};
+		return {SymbolKind::Method, definition->is_static ? SymbolToken::Static : 0u};
+	}
+
+	/// What a declaration is as a symbol, or nothing for one an editor should not colour.
+	static std::optional<Symbol> symbol_of(NodeAST& target) {
+		if (auto* header = target.cast<NodeFunctionHeader>()) return symbol_of(*header);
+		if (target.cast<NodeStruct>()) return Symbol{SymbolKind::Struct};
+		if (target.cast<NodeNamespace>() || target.cast<NodeFamily>()) return Symbol{SymbolKind::Namespace};
+		if (target.cast<NodeConst>()) return Symbol{SymbolKind::Enum};
+		auto* data = dynamic_cast<NodeDataStructure*>(&target);
+		if (!data || data->kind == NodeDataStructure::Kind::Builtin) return std::nullopt;
+		// <self> is a keyword to the reader, and the one struct desugaring declares carries
+		// the struct name's token.
+		if (data->name == NodeStruct::SELF || data->tok.val == NodeStruct::SELF) return std::nullopt;
+		const unsigned readonly = data->data_type == DataType::Const ? SymbolToken::Readonly : 0u;
+		if (data->is_function_param()) return Symbol{SymbolKind::Parameter, readonly};
+		if (data->is_member()) {
+			return Symbol{SymbolKind::Property, readonly | (data->is_shared_member() ? SymbolToken::Static : 0u)};
+		}
+		return Symbol{SymbolKind::Variable, readonly};
+	}
+
+	/// Whether the source writes a name with this token. A node the compiler makes may
+	/// borrow the token of what it was made for - FunctionShortCircuit gives the temporaries
+	/// of <if not obj.has(x)> the <if> and the <not> - and those are not symbols.
+	static bool is_name(const Token& token) {
+		return token.type == token::KEYWORD;
+	}
+
+	/// Records the name a declaration is written with as a symbol, when the source spells
+	/// it there.
+	void record_declaration(NodeAST& node, const Token& name) const {
+		const auto symbol = symbol_of(node);
+		if (!symbol || name.file().empty() || !is_name(as_written(name))) return;
+		const auto verified = source_verified_token(as_written(name));
+		if (!verified) return;
+		m_index.add_symbol(*verified, symbol->kind, symbol->modifiers | SymbolToken::Declaration);
+	}
+
+	/// Records a name the language provides - a KSP command or engine variable - where the
+	/// source writes it. A builtin has no declaration in a file to link to, so the name is
+	/// checked against the builtin's own instead: a call the compiler makes, like the
+	/// <get_ui_id> around a control, carries the token of its argument.
+	void record_builtin(const Token& reference, const std::string& name, const SymbolKind kind, const unsigned modifiers = 0) const {
+		const auto& written = as_written(reference);
+		if (written.file().empty() || !is_name(written) || written.val != name) return;
+		if (const auto verified = source_verified_token(written)) {
+			m_index.add_symbol(*verified, kind, modifiers | SymbolToken::DefaultLibrary);
+		}
+	}
+
+	void record_declaration(NodeAST& node) const {
+		if (m_pass == Pass::References) record_declaration(node, node.tok);
+	}
+
 	[[nodiscard]] static const NodePrefix* prefixes_of(const NodeAST& target) {
 		const auto* declaration = dynamic_cast<const NodeDataStructure*>(&target);
 		return declaration ? declaration->prefix.get() : nullptr;
@@ -64,7 +134,7 @@ private:
 				const auto& declaration = target_prefixes->prefixes[target_start + i - source_start];
 				if (segments[i] == declaration.token.val) {
 					const auto token = segment_token(reference, offset, segments[i]);
-					m_index.add_link(token, declaration.token);
+					m_index.add_link(token, declaration.token, symbol_of(declaration.kind).kind);
 				}
 			}
 			offset += segments[i].size() + 1;
@@ -121,7 +191,7 @@ private:
 		// Builtins/engine variables and synthesized nodes have no real source file.
 		if (reference.file().empty() || target.tok.file().empty()) return;
 		const auto& written = as_written(reference);
-		if (written.file().empty()) return;
+		if (written.file().empty() || !is_name(written)) return;
 		auto verified_reference = source_verified_token(written);
 		if (!verified_reference) return;
 		const auto def_range = declaration_range(target);
@@ -161,6 +231,8 @@ private:
 			// A macro body spells this reference <#browser#> where the declaration is
 			// <browser>; the text is verified, so equality is the whole test.
 			direct_reference.val == target.tok.val);
+		const auto symbol = symbol_of(target);
+		if (symbol) m_index.add_symbol(direct_reference.file(), ref_range, symbol->kind, symbol->modifiers);
 
 		// A substituted name also stands at the call site, where the argument was written -
 		// the substitution moved the token there. Only the segment the argument supplied
@@ -175,6 +247,9 @@ private:
 						at_call_site->file(), call_site_range,
 						target.tok.file(), def_range,
 						source_range_from_token(target.tok));
+					if (symbol) {
+						m_index.add_symbol(at_call_site->file(), call_site_range, symbol->kind, symbol->modifiers);
+					}
 				}
 			}
 		}
@@ -196,7 +271,11 @@ private:
 
 	void record_variable(const NodeReference& reference) const {
 		if (const auto declaration = reference.get_declaration()) {
-			if (declaration->kind == NodeDataStructure::Kind::Builtin) return;
+			if (declaration->kind == NodeDataStructure::Kind::Builtin) {
+				const unsigned readonly = declaration->data_type == DataType::Const ? SymbolToken::Readonly : 0u;
+				record_builtin(reference.tok, declaration->name, SymbolKind::Variable, readonly);
+				return;
+			}
 			// Struct desugaring injects a synthetic `self` declaration whose token is the
 			// struct name token. Indexing self -> that declaration would make the range-based
 			// symbol identity conflate every `self` use with the struct itself.
@@ -209,6 +288,7 @@ private:
 	NodeAST* record_definition(Node& node, const Token& declaration) {
 		if (m_pass == Pass::Definitions) {
 			add_link(declaration, node);
+			record_declaration(node, declaration);
 		}
 		ASTVisitor::visit(node);
 		return &node;
@@ -219,22 +299,27 @@ public:
 		: m_index(index), m_pass(pass), m_sources(sources) {}
 
 	NodeAST* visit(NodeVariable& node) override {
+		record_declaration(node);
 		record_type_references(node);
 		return ASTVisitor::visit(node);
 	}
 	NodeAST* visit(NodePointer& node) override {
+		record_declaration(node);
 		record_type_references(node);
 		return ASTVisitor::visit(node);
 	}
 	NodeAST* visit(NodeArray& node) override {
+		record_declaration(node);
 		record_type_references(node);
 		return ASTVisitor::visit(node);
 	}
 	NodeAST* visit(NodeNDArray& node) override {
+		record_declaration(node);
 		record_type_references(node);
 		return ASTVisitor::visit(node);
 	}
 	NodeAST* visit(NodeList& node) override {
+		record_declaration(node);
 		record_type_references(node);
 		return ASTVisitor::visit(node);
 	}
@@ -242,7 +327,13 @@ public:
 		if (m_pass == Pass::Definitions) {
 			add_link(node.tok, node);
 		}
+		record_declaration(node);
 		record_type_references(node);
+		return ASTVisitor::visit(node);
+	}
+
+	NodeAST* visit(NodeStruct& node) override {
+		record_declaration(node);
 		return ASTVisitor::visit(node);
 	}
 
@@ -281,7 +372,31 @@ public:
 		return record_definition(node, node.const_prefix);
 	}
 
+	/// <knob -> value>: a builtin accessor of the control parameter it names.
+	void record_control_access(const Token& arrow, const Token& parameter, const std::string& name) const {
+		if (m_pass != Pass::References) return;
+		if (const auto verified = source_verified_token(arrow); verified && !verified->file().empty()) {
+			m_index.add_symbol(*verified, SymbolKind::Operator, SymbolToken::DefaultLibrary);
+		}
+		record_builtin(parameter, name, SymbolKind::Variable, SymbolToken::Readonly);
+	}
+
+	NodeAST* visit(NodeGetControl& node) override {
+		record_control_access(node.arrow_token, node.control_param_token, node.control_param);
+		return ASTVisitor::visit(node);
+	}
+
+	NodeAST* visit(NodeSetControl& node) override {
+		record_control_access(node.arrow_token, node.control_param_token, node.control_param);
+		return ASTVisitor::visit(node);
+	}
+
 	NodeAST* visit(NodeFunctionCall& node) override {
+		// <Property> marks the SublimeKSP shorthands like <set_bounds> the compiler expands.
+		const bool provided = node.kind == NodeFunctionCall::Kind::Builtin || node.kind == NodeFunctionCall::Kind::Property;
+		if (m_pass == Pass::References && node.function && provided) {
+			record_builtin(node.function->tok, node.function->name, SymbolKind::Function);
+		}
 		if (m_pass == Pass::References && node.function and !node.is_builtin_kind()) {
 			if (const auto definition = node.get_definition()) {
 				if (node.kind == NodeFunctionCall::Kind::Constructor) {

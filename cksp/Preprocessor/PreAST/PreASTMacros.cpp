@@ -3,6 +3,7 @@
 //
 
 #include "PreASTMacros.h"
+#include "PreASTDefinitionSymbols.h"
 #include "../../Interpreter/SimpleExprInterpreter.h"
 #include "../../Source/ReferenceIndex.h"
 
@@ -13,6 +14,9 @@ PreNodeAST *PreASTMacros::visit(PreNodeProgram &node) {
     for(auto & def : node.macro_definitions) {
 	m_program->add_to_macro_lookup(def);
 		m_macro_string_lookup.insert({def->header->get_name(), def.get()});
+		if (m_reference_index) {
+			PreASTDefinitionSymbols(*m_reference_index).record(*def->header, *def->body, SymbolKind::Macro);
+		}
     }
 	node.program->accept(*this);
 	return &node;
@@ -56,7 +60,7 @@ PreNodeAST *PreASTMacros::do_substitution(PreNodeLiteral &node) {
 			if (m_reference_index && !m_param_token_stack.empty()) {
 				const auto& params = m_param_token_stack.top();
 				if (const auto it = params.find(node.tok.val); it != params.end()) {
-					m_reference_index->add_link(node.tok, it->second);
+					m_reference_index->add_link(node.tok, it->second, SymbolKind::Parameter);
 				}
 			}
 			mark_as_written(*substitute, node.tok);
@@ -84,7 +88,7 @@ void PreASTMacros::link_parameter_groups(const Token& word) const {
 		if (name.size() < 2 || name.front() != '#' || name.back() != '#') continue;
 		for (size_t at = word.val.find(name); at != std::string::npos;
 			at = word.val.find(name, at + name.size())) {
-			m_reference_index->add_link(segment_token(word, at, name), declaration);
+			m_reference_index->add_link(segment_token(word, at, name), declaration, SymbolKind::Parameter);
 		}
 	}
 }
@@ -179,7 +183,7 @@ PreNodeAST *PreASTMacros::visit(PreNodeMacroCall &node) {
 
 	// go-to-definition: link this macro usage to its definition's name
 	if (m_reference_index) {
-		m_reference_index->add_link(token_name, node.definition->header->name->tok);
+		m_reference_index->add_link(token_name, node.definition->header->name->tok, SymbolKind::Macro);
 	}
 
 	// substitution

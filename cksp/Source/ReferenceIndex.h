@@ -57,6 +57,43 @@ struct TypeHint {
 	std::string type;
 };
 
+/// What a name in the source stands for, as far as an editor colours it.
+enum class SymbolKind {
+	Namespace,
+	Struct,
+	Enum,  ///< a const block
+	Function,
+	Method,
+	Parameter,
+	Variable,
+	Property,  ///< a struct member
+	Define,
+	Macro,
+	/// An operator written on a struct, which runs the struct's overload of it.
+	Operator,
+};
+
+/// One occurrence of a symbol in the source, for semantic highlighting.
+struct SymbolToken {
+	/// What else holds for this occurrence; bits of `modifiers`.
+	enum Modifier : unsigned {
+		Declaration = 1u << 0,
+		Readonly = 1u << 1,
+		Static = 1u << 2,
+		/// Defined in the script rather than by the language; marks an Operator.
+		UserDefined = 1u << 3,
+		/// Provided by the language: a KSP command or engine variable, or a CKSP builtin.
+		DefaultLibrary = 1u << 4,
+		/// A parameter written <#name#>, which is replaced as text, inside other words too.
+		Substitution = 1u << 5,
+	};
+
+	std::string file;
+	SourceRange range;  ///< one-based, on a single line
+	SymbolKind kind;
+	unsigned modifiers = 0;
+};
+
 /**
  * Position -> declaration index built for one analyzed entry.
  *
@@ -73,9 +110,46 @@ class ReferenceIndex {
 	/// Keyed by position. One declaration written in a macro body is expanded once per
 	/// call; when the expansions disagree on the type, no single hint is true.
 	std::unordered_map<std::string, std::optional<TypeHint>> m_type_hints;
+	/// Keyed by range. See add_symbol() for how repeated occurrences merge.
+	std::unordered_map<std::string, SymbolToken> m_symbols;
 	mutable std::unordered_map<std::string, std::string> m_normalized_files;
 
 public:
+	/// Records what the name at `range` stands for. The same range is met more than once -
+	/// once per macro expansion, and a declaration both as itself and as a link target - so
+	/// the kind first recorded stays, and the modifiers of later records join it.
+	void add_symbol(const std::string& file, const SourceRange& range, const SymbolKind kind, const unsigned modifiers = 0) {
+		if (!range.is_valid() || range.start.line != range.end.line || range.start.column >= range.end.column) return;
+		auto normalized = normalized_file(file);
+		auto key = reference_key(normalized, range);
+		const auto [existing, inserted] = m_symbols.try_emplace(
+			std::move(key), SymbolToken{std::move(normalized), range, kind, modifiers});
+		if (!inserted && existing->second.kind == kind) existing->second.modifiers |= modifiers;
+	}
+
+	void add_symbol(const Token& token, const SymbolKind kind, unsigned modifiers = 0) {
+		if (token.file().empty()) return;
+		const auto& name = token.val;
+		if (kind == SymbolKind::Parameter && name.size() > 2 && name.front() == '#' && name.back() == '#') {
+			modifiers |= SymbolToken::Substitution;
+		}
+		add_symbol(token.file(), source_range_from_token(token), kind, modifiers);
+	}
+
+	/// The symbol occurrences in `file`, in source order.
+	[[nodiscard]] std::vector<SymbolToken> symbols_in(const std::string& file) const {
+		std::vector<SymbolToken> symbols;
+		for (const auto& [_, symbol] : m_symbols) {
+			if (symbol.file == file) symbols.push_back(symbol);
+		}
+		std::ranges::sort(symbols, [](const SymbolToken& left, const SymbolToken& right) {
+			return left.range.start.line != right.range.start.line
+				? left.range.start.line < right.range.start.line
+				: left.range.start.column < right.range.start.column;
+		});
+		return symbols;
+	}
+
 	void add_type_hint(const std::string& file, const SourcePosition& position, std::string type) {
 		auto normalized = normalized_file(file);
 		const auto key = normalized + "@" + std::to_string(position.line) + ":" + std::to_string(position.column);
@@ -129,6 +203,13 @@ public:
 		const auto def_range = source_range_from_token(declaration);
 		if (!ref_range.is_valid() || !def_range.is_valid()) return;
 		add(reference.file(), ref_range, declaration.file(), def_range);
+	}
+
+	/// Same as add_link(), and records both ends as symbols of `kind` for highlighting.
+	void add_link(const Token& reference, const Token& declaration, const SymbolKind kind) {
+		add_link(reference, declaration);
+		add_symbol(reference, kind);
+		add_symbol(declaration, kind, SymbolToken::Declaration);
 	}
 
 	/// Records a path token -> file link for go-to-definition and document links.

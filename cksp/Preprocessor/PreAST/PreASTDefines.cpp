@@ -8,6 +8,7 @@
 
 #include "PreASTPragma.h"
 #include "../../Source/ReferenceIndex.h"
+#include "PreASTDefinitionSymbols.h"
 
 PreNodeAST *PreASTDefines::visit(PreNodeProgram &node) {
 	m_program = &node;
@@ -15,6 +16,9 @@ PreNodeAST *PreASTDefines::visit(PreNodeProgram &node) {
 
 	for (const auto& def : node.define_statements) {
 		m_program->add_to_define_lookup(def);
+		if (m_reference_index) {
+			PreASTDefinitionSymbols(*m_reference_index).record(*def->header, *def->body, SymbolKind::Define);
+		}
 	}
 
 	m_builtin_defines = get_builtin_defines();
@@ -33,7 +37,7 @@ PreNodeAST *PreASTDefines::do_substitution(PreNodeLiteral &node) {
 			if (m_reference_index && !m_param_token_stack.empty()) {
 				const auto& params = m_param_token_stack.top();
 				if (const auto it = params.find(node.tok.val); it != params.end()) {
-					m_reference_index->add_link(node.tok, it->second);
+					m_reference_index->add_link(node.tok, it->second, SymbolKind::Parameter);
 				}
 			}
 			mark_as_written(*substitute, node.tok);
@@ -57,7 +61,7 @@ void PreASTDefines::link_parameter_groups(const Token& word) const {
 		if (name.size() < 2 || name.front() != '#' || name.back() != '#') continue;
 		for (size_t at = word.val.find(name); at != std::string::npos;
 			at = word.val.find(name, at + name.size())) {
-			m_reference_index->add_link(segment_token(word, at, name), declaration);
+			m_reference_index->add_link(segment_token(word, at, name), declaration, SymbolKind::Parameter);
 		}
 	}
 }
@@ -160,7 +164,7 @@ PreNodeAST *PreASTDefines::visit(PreNodeDefineCall &node) {
 
 	// go-to-definition: link this define usage to its definition's name
 	if (m_reference_index) {
-		m_reference_index->add_link(token_name, node.definition->header->name->tok);
+		m_reference_index->add_link(token_name, node.definition->header->name->tok, SymbolKind::Define);
 	}
 
 	m_defines_used.insert(token_name.val);
