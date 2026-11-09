@@ -1,0 +1,12 @@
+// EXPECT %events\[\$[a-z_]+[0-9]+\] := -1
+// EXPECT := %Thing____allocation\[\$[a-z_]+[0-9]+\]
+struct Thing
+ value: int
+end struct
+on init
+ declare events[2]: Thing[] := [new Thing(1), new Thing(2)]
+ delete events
+ if events[0] = nil and events[1] = nil
+  message(1)
+ end if
+end on

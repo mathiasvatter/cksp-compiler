@@ -164,15 +164,9 @@ public:
 	}
 
 	NodeAST* visit(NodeSingleDelete &node) override {
-		// delete statement can only be applied to pointers or arrays -> not to array indices
-		if((node.ptr->get_node_type() == NodeType::Array or node.ptr->get_node_type() == NodeType::NDArray)
-			and node.ptr->ty->get_type_kind() != TypeKind::Composite) {
-			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
-			error.message = "Delete statement can only be applied to pointers or arrays, not to array indices.";
-			error.exit();
-		}
 		node.ptr->accept(*this);
-		remove_pointer(*node.ptr);
+		// Explicit delete clears its operand during lowering. Keep normal scope cleanup:
+		// releasing nil is harmless, and later assignments may own a new object.
 		return &node;
 	}
 

@@ -1,0 +1,17 @@
+// EXPECT := %Thing____allocation\[\$[a-z_]+[0-9]+\]
+// EXPECT := 77
+struct Thing
+ value: int
+end struct
+function clean(flag: int)
+ declare ptr := new Thing(42)
+ if flag
+  delete ptr
+ end if
+ ptr := new Thing(77)
+ message(ptr.value)
+end function
+on init
+ clean(0)
+ clean(1)
+end on

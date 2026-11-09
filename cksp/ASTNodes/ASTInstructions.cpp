@@ -589,7 +589,7 @@ NodeAST *NodeSingleDelete::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeSingleDelete::NodeSingleDelete(const NodeSingleDelete& other)
-	: NodeInstruction(other), ptr(clone_unique(other.ptr)), num(clone_unique(other.num)) {
+	: NodeInstruction(other), destroy_instance(other.destroy_instance), ptr(clone_unique(other.ptr)), num(clone_unique(other.num)) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeSingleDelete::clone() const {

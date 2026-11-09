@@ -327,7 +327,8 @@ NodeAST * ASTCollectLowerings::visit(NodeSingleRetain& node) {
 }
 
 NodeAST * ASTCollectLowerings::visit(NodeSingleDelete& node) {
-	//TRACE();
+	// Resolve member access before snapshotting the destination of explicit delete.
+	if (node.destroy_instance) node.ptr->accept(*this);
 	return node.lower(m_program)->accept(*this);
 }
 

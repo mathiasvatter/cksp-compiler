@@ -5,8 +5,8 @@
   - Node: non linear direct recursion (tree)
   - List/Node2: real cycle List -> Node2 -> List
 
-  Freed objects are detected through slot reuse: a deleted pointer keeps its
-  index, so a newly allocated object of the same type has to land on it again. }
+  Freed objects are detected through slot reuse: save non-owning integer IDs before releasing
+  pointers, then check whether new instances reuse those slots. }
 
 struct Zone
     declare value: int
@@ -44,19 +44,21 @@ on init
     declare shared: Zone := new Zone(42)
     declare g_keep: Group := new Group(shared, nil)
     declare inst_keep: Instrument := new Instrument(g_keep, nil)
-    delete inst_keep
+    inst_keep := nil
     message("still referenced zone alive (expect 42): " & shared.value)
 
     declare gg: Group := new Group(nil, nil)
+    declare id_gg: int := gg as int
     declare zz: Zone := new Zone(7)
+    declare id_zz: int := zz as int
     declare inst: Instrument := new Instrument(gg, nil)
     gg.zone := zz
-    delete gg
-    delete zz
-    delete inst
+    gg := nil
+    zz := nil
+    inst := nil
     declare probe_g: Group := new Group(nil, nil)
     declare probe_z: Zone := new Zone(0)
-    if probe_g = gg and probe_z = zz
+    if (probe_g as int) = id_gg and (probe_z as int) = id_zz
         message("indirect: child and grandchild freed: yes")
     else
         message("indirect: child and grandchild freed: NO")
@@ -64,18 +66,22 @@ on init
 
     { --- non linear direct recursion --- }
     declare t_gc: TreeNode := new TreeNode(nil, nil, 9)
+    declare id_t_gc: int := t_gc as int
     declare t_mid: TreeNode := new TreeNode(t_gc, nil, 5)
+    declare id_t_mid: int := t_mid as int
     declare t_rgt: TreeNode := new TreeNode(nil, nil, 2)
+    declare id_t_rgt: int := t_rgt as int
     declare t_root: TreeNode := new TreeNode(t_mid, t_rgt, 3)
-    delete t_gc
-    delete t_mid
-    delete t_rgt
-    delete t_root
+    declare id_t_root: int := t_root as int
+    t_gc := nil
+    t_mid := nil
+    t_rgt := nil
+    t_root := nil
     declare t_p1: TreeNode := new TreeNode(nil, nil, 0)
     declare t_p2: TreeNode := new TreeNode(nil, nil, 0)
     declare t_p3: TreeNode := new TreeNode(nil, nil, 0)
     declare t_p4: TreeNode := new TreeNode(nil, nil, 0)
-    if (t_p1 = t_root or t_p1 = t_mid or t_p1 = t_gc or t_p1 = t_rgt) and (t_p2 = t_root or t_p2 = t_mid or t_p2 = t_gc or t_p2 = t_rgt) and (t_p3 = t_root or t_p3 = t_mid or t_p3 = t_gc or t_p3 = t_rgt) and (t_p4 = t_root or t_p4 = t_mid or t_p4 = t_gc or t_p4 = t_rgt)
+    if ((t_p1 as int) = id_t_root or (t_p1 as int) = id_t_mid or (t_p1 as int) = id_t_gc or (t_p1 as int) = id_t_rgt) and ((t_p2 as int) = id_t_root or (t_p2 as int) = id_t_mid or (t_p2 as int) = id_t_gc or (t_p2 as int) = id_t_rgt) and ((t_p3 as int) = id_t_root or (t_p3 as int) = id_t_mid or (t_p3 as int) = id_t_gc or (t_p3 as int) = id_t_rgt) and ((t_p4 as int) = id_t_root or (t_p4 as int) = id_t_mid or (t_p4 as int) = id_t_gc or (t_p4 as int) = id_t_rgt)
         message("tree: whole tree freed: yes")
     else
         message("tree: whole tree freed: NO")
@@ -83,15 +89,18 @@ on init
 
     { --- cycle between two structs --- }
     declare n2: ListNode := new ListNode(nil, nil, 2)
+    declare id_n2: int := n2 as int
     declare n1: ListNode := new ListNode(nil, n2, 1)
+    declare id_n1: int := n1 as int
     declare ls: List := new List(n1, 2)
-    delete n1
-    delete n2
-    delete ls
+    declare id_ls: int := ls as int
+    n1 := nil
+    n2 := nil
+    ls := nil
     declare l_p1: ListNode := new ListNode(nil, nil, 0)
     declare l_p2: ListNode := new ListNode(nil, nil, 0)
     declare l_pl: List := new List(nil, 0)
-    if (l_p1 = n1 or l_p1 = n2) and (l_p2 = n1 or l_p2 = n2) and l_pl = ls
+    if ((l_p1 as int) = id_n1 or (l_p1 as int) = id_n2) and ((l_p2 as int) = id_n1 or (l_p2 as int) = id_n2) and (l_pl as int) = id_ls
         message("cycle: list and both nodes freed: yes")
     else
         message("cycle: list and both nodes freed: NO")

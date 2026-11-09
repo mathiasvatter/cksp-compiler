@@ -1,0 +1,13 @@
+// EXPECT := %Thing____allocation\[\$[a-z_]+[0-9]+\]
+// EXPECT \$ptr := -1
+struct Thing
+ value: int
+end struct
+on init
+ declare ptr := new Thing(42)
+ declare alias := ptr
+ delete ptr
+ if ptr = nil
+  message(1)
+ end if
+end on

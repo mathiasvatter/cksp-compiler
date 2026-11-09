@@ -142,7 +142,7 @@ public:
 		}
 	}
 
-	std::unique_ptr<NodeFunctionDefinition> create_delete() {
+	std::unique_ptr<NodeFunctionDefinition> create_destructor_function() {
 		auto self = get_self_param();
 		m_self_ref = self->to_reference();
 		m_alloc_ref = get_alloc_ref(m_self_ref);
@@ -325,6 +325,9 @@ public:
 		node_while->body->add_as_stmt(std::move(self_check));
 		// Node::allocation[self] := Node::allocation[self] + num_refs
 		node_while->body->add_as_stmt(dec_alloc_array());
+		// Only the initial instance receives an explicit delete's full count.
+		// Descendants lose the one reference held by each destroyed member.
+		node_while->body->add_as_stmt(reset_decrement());
 		// if(Node::allocation[self] > 0) continue
 		node_while->body->add_as_stmt(alloc_array_check_continue());
 
@@ -441,6 +444,7 @@ public:
 		);
 
 		outer_while->body->add_as_stmt(dec_alloc_array(current_ref->clone()));
+		outer_while->body->add_as_stmt(reset_decrement());
 		auto check_for_deletion = alloc_array_check_continue(current_ref->clone());
 		// current := nil
 		check_for_deletion->if_body->prepend_as_stmt(
@@ -660,6 +664,11 @@ private:
 		auto self_idx = m_alloc_ref->index->is_reference();
 		self_idx->declaration = func_def->header->get_param(0);
 		self_idx->name = func_def->header->get_param(0)->name;
+	}
+
+	std::unique_ptr<NodeSingleAssignment> reset_decrement() const {
+		return std::make_unique<NodeSingleAssignment>(clone_as<NodeReference>(m_num_refs_ref.get()),
+			std::make_unique<NodeInt>(1, tok), tok);
 	}
 
 	///	List::allocation[self] := List::allocation[self] - num_refs

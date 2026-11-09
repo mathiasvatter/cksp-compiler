@@ -397,6 +397,8 @@ struct NodeDelete final : NodeInstruction {
 };
 
 struct NodeSingleDelete final : NodeInstruction {
+	// Source-level delete destroys the instance; compiler-generated releases drop one reference.
+	bool destroy_instance = false;
 	std::unique_ptr<NodeReference> ptr;
 	std::unique_ptr<NodeAST> num;
 	explicit NodeSingleDelete(Token tok) : NodeInstruction(NodeType::SingleDelete, std::move(tok)) {}
