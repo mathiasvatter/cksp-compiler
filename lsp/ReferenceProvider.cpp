@@ -278,3 +278,21 @@ std::vector<TypeHint> ReferenceProvider::type_hints(
 	});
 	return hints;
 }
+
+std::vector<SymbolToken> ReferenceProvider::symbols(
+	const std::vector<SourceId>& preferred_entries,
+	const SourceId& source) {
+	const auto normalized_source = FileSystemSourceProvider::normalize(source.value).value;
+	std::lock_guard lock(m_mutex);
+	const auto snapshot = successful_snapshot(preferred_entries, normalized_source);
+	if (!snapshot) return {};
+	auto symbols = snapshot->index->symbols_in(normalized_source);
+	if (!snapshot->moved) return symbols;
+	std::erase_if(symbols, [&](SymbolToken& symbol) {
+		const auto range = snapshot->moved->map(symbol.range);
+		if (!range) return true;
+		symbol.range = *range;
+		return false;
+	});
+	return symbols;
+}

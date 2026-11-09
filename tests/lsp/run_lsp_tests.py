@@ -2500,5 +2500,146 @@ def _(workspace, server):
     expect(after == shifted, f"expected {shifted}, got {after}")
 
 
+# ---------------------------------------------------------------------------
+# Semantic tokens — what each user-defined name stands for
+# ---------------------------------------------------------------------------
+
+SEMANTIC_TOKENS = [
+    # marker, length, type, modifiers
+    ("define_decl", 5, "macro", {"declaration"}),
+    ("define_use", 5, "macro", set()),
+    ("macro_decl", 4, "function", {"declaration"}),
+    ("macro_use", 4, "function", set()),
+    ("enum_decl", 6, "enum", {"declaration"}),
+    ("enum_use", 6, "enum", set()),
+    ("enum_member_decl", 3, "variable", {"declaration", "readonly"}),
+    ("enum_member_use", 3, "variable", {"readonly"}),
+    ("ns_decl", 5, "namespace", {"declaration"}),
+    ("ns_use", 5, "namespace", set()),
+    ("ns_var_decl", 4, "variable", {"declaration"}),
+    ("ns_var_use", 4, "variable", set()),
+    ("struct_decl", 3, "struct", {"declaration"}),
+    ("struct_use", 3, "struct", set()),
+    ("member_decl", 1, "property", {"declaration"}),
+    ("member_use", 1, "property", set()),
+    ("static_decl", 4, "property", {"declaration", "readonly", "static"}),
+    # An overload is a method like any other, explicit calls included; the operators that
+    # run it are what stands out.
+    ("init_decl", 8, "method", {"declaration"}),
+    ("add_decl", 7, "method", {"declaration"}),
+    ("add_use", 7, "method", set()),
+    ("getitem_decl", 11, "method", {"declaration"}),
+    ("plus_use", 1, "operator", {"userDefined"}),
+    ("invert_use", 5, "operator", {"userDefined"}),
+    ("subscript_open", 1, "operator", {"userDefined"}),
+    ("subscript_close", 1, "operator", {"userDefined"}),
+    ("setitem_open", 1, "operator", {"userDefined"}),
+    ("setitem_close", 1, "operator", {"userDefined"}),
+    ("grid_open", 1, "operator", {"userDefined"}),
+    ("grid_close", 1, "operator", {"userDefined"}),
+    ("set_use", 2, "operator", {"userDefined"}),
+    # A #param# group inside a word is the parameter, the rest of the word what it names.
+    ("macro_group", 6, "parameter", {"substitution"}),
+    ("macro_rest", 6, "variable", {"declaration"}),
+    ("unused_macro_decl", 6, "function", {"declaration"}),
+    ("unused_param_decl", 7, "parameter", {"declaration", "substitution"}),
+    ("unused_plain_decl", 5, "parameter", {"declaration"}),
+    ("unused_group", 7, "parameter", {"substitution"}),
+    ("unused_plain_use", 5, "parameter", set()),
+    # What the language provides: KSP commands and engine variables, the builtins CKSP adds,
+    # and the control parameter accessor.
+    ("message_use", 7, "function", {"defaultLibrary"}),
+    ("property_function_use", 10, "function", {"defaultLibrary"}),
+    ("engine_var", 18, "variable", {"defaultLibrary"}),
+    ("range_use", 5, "function", {"defaultLibrary"}),
+    ("num_elements_use", 12, "function", {"defaultLibrary"}),
+    ("pairs_use", 5, "function", {"defaultLibrary"}),
+    ("sort_use", 4, "function", {"defaultLibrary"}),
+    ("search_use", 6, "function", {"defaultLibrary"}),
+    ("use_count_use", 9, "function", {"defaultLibrary"}),
+    ("knob_decl", 4, "variable", {"declaration"}),
+    ("arrow_set", 2, "operator", {"defaultLibrary"}),
+    ("param_set", 5, "variable", {"defaultLibrary", "readonly"}),
+    ("arrow_get", 2, "operator", {"defaultLibrary"}),
+    ("param_get", 5, "variable", {"defaultLibrary", "readonly"}),
+    ("method_decl", 6, "method", {"declaration"}),
+    ("method_use", 6, "method", set()),
+    ("static_method_decl", 4, "method", {"declaration", "static"}),
+    ("static_method_use", 4, "method", {"static"}),
+    ("function_decl", 5, "function", {"declaration"}),
+    ("function_use", 5, "function", set()),
+    ("param_decl", 1, "parameter", {"declaration"}),
+    ("param_use", 1, "parameter", set()),
+    ("var_decl", 1, "variable", {"declaration"}),
+    ("var_use", 1, "variable", set()),
+    ("const_decl", 1, "variable", {"declaration", "readonly"}),
+]
+
+
+@test("semantic tokens: every kind of name at its declaration and its use",
+      requires="semanticTokensProvider")
+def _(workspace, server):
+    fixture = workspace.open("semantic_tokens.cksp")
+    tokens = server.semantic_tokens(fixture)
+    wrong = []
+    for marker, length, kind, modifiers in SEMANTIC_TOKENS:
+        position = fixture.at(marker)
+        found = tokens.get((position.line, position.character))
+        if found != (length, kind, modifiers):
+            wrong.append(f"{marker}: expected {(length, kind, modifiers)}, got {found}")
+    expect(not wrong, "\n".join(wrong))
+
+
+@test("semantic tokens: self, keywords and plain operators stay with the grammar",
+      requires="semanticTokensProvider")
+def _(workspace, server):
+    fixture = workspace.open("semantic_tokens.cksp")
+    tokens = server.semantic_tokens(fixture)
+    # Every operator token is one of the marked overloads; arithmetic on plain numbers and
+    # the <:=> of plain assignments stay with the grammar.
+    marked = {(fixture.at(marker).line, fixture.at(marker).character)
+              for marker, _, kind, _ in SEMANTIC_TOKENS if kind == "operator"}
+    unmarked = [position for position, token in tokens.items()
+                if token[1] == "operator" and position not in marked]
+    expect(not unmarked, f"operators without an overload got tokens at {unmarked}")
+    for marker in ("if_keyword", "not_keyword"):
+        position = fixture.at(marker)
+        found = tokens.get((position.line, position.character))
+        expect(found is None, f"{marker}: a compiler temporary's borrowed token got {found}")
+    lines = fixture.text.splitlines()
+    for word in ("self",):
+        at = [(line, column) for line, text in enumerate(lines)
+              for column in range(len(text)) if text.startswith(word, column)]
+        colored = [position for position in at if position in tokens]
+        expect(not colored, f"{word} got a token at {colored}")
+
+
+@test("semantic tokens: a half-written line keeps the tokens around it",
+      requires="semanticTokensProvider")
+def _(workspace, server):
+    fixture = workspace.open("semantic_tokens.cksp")
+    before = server.semantic_tokens(fixture)
+    lines = fixture.text.splitlines(keepends=True)
+    broken = next(i for i, text in enumerate(lines) if "declare <|var_decl|>a" in text
+                  or text.lstrip().startswith("declare a :="))
+    edited = server.did_change(fixture, "".join(lines[:broken] + ["    declare \n"] + lines[broken:]))
+    expect(any(d.get("severity") == 1 for d in server.diagnostics(edited)),
+           "expected the half-written declaration to fail the analysis")
+    shifted = {(line + (line >= broken), character): token
+               for (line, character), token in before.items()}
+    after = server.semantic_tokens(edited)
+    expect(after == shifted, f"tokens moved wrongly: missing {set(shifted) - set(after)}, "
+           f"extra {set(after) - set(shifted)}")
+
+
+@test("semantic tokens: a finished analysis asks the client to refresh",
+      requires="semanticTokensProvider")
+def _(workspace, server):
+    before = server.server_requests.count("workspace/semanticTokens/refresh")
+    workspace.open("semantic_tokens.cksp")
+    after = server.server_requests.count("workspace/semanticTokens/refresh")
+    expect(after > before, f"expected a refresh request, got {server.server_requests}")
+
+
 if __name__ == "__main__":
     raise SystemExit(run_suite())

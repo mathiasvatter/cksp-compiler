@@ -56,6 +56,11 @@ public:
 	[[nodiscard]] std::vector<TypeHint> type_hints(
 		const std::vector<SourceId>& preferred_entries,
 		const SourceId& source);
+	/// The symbol occurrences in `source` for semantic highlighting, from the last successful
+	/// snapshot and moved like type_hints(): a half-typed line keeps the colours around it.
+	[[nodiscard]] std::vector<SymbolToken> symbols(
+		const std::vector<SourceId>& preferred_entries,
+		const SourceId& source);
 	[[nodiscard]] std::vector<ReferenceLocation> references_to(
 		const ReferenceLink& target,
 		bool include_declaration);

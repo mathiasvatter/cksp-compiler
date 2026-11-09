@@ -365,7 +365,10 @@ class LanguageServerClient:
                     "completion": {"completionItem": {"snippetSupport": False}},
                     "definition": {"linkSupport": True},
                 },
-                "workspace": {"inlayHint": {"refreshSupport": True}},
+                "workspace": {
+                    "inlayHint": {"refreshSupport": True},
+                    "semanticTokens": {"refreshSupport": True},
+                },
             },
             "initializationOptions": options,
         })
@@ -505,6 +508,23 @@ class LanguageServerClient:
                 "end": (end or Position(line_count, 0)).as_json(),
             },
         }) or []
+
+    def semantic_tokens(self, fixture: Fixture) -> dict:
+        """Decodes the relative token stream into {(line, character): (length, type,
+        modifiers)}, with type and modifiers named through the announced legend."""
+        legend = self.capabilities["semanticTokensProvider"]["legend"]
+        data = (self.request("textDocument/semanticTokens/full", {
+            "textDocument": {"uri": fixture.uri},
+        }) or {}).get("data", [])
+        tokens = {}
+        line = character = 0
+        for i in range(0, len(data), 5):
+            delta_line, delta_start, length, kind, bits = data[i:i + 5]
+            character = character + delta_start if delta_line == 0 else delta_start
+            line += delta_line
+            modifiers = {name for bit, name in enumerate(legend["tokenModifiers"]) if bits >> bit & 1}
+            tokens[(line, character)] = (length, legend["tokenTypes"][kind], modifiers)
+        return tokens
 
     def document_links(self, fixture: Fixture) -> list:
         return self.request(

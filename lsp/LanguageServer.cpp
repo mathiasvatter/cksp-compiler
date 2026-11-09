@@ -75,6 +75,8 @@ void LanguageServer::handle_request(const JsonRpcMessage& message) {
 		handle_signature_help(message);
 	} else if (method->value == "textDocument/inlayHint") {
 		handle_inlay_hint(message);
+	} else if (method->value == "textDocument/semanticTokens/full") {
+		handle_semantic_tokens(message);
 	} else if (method->value == "textDocument/codeAction") {
 		handle_code_action(message);
 	} else if (const auto* id = message.id()) {
@@ -229,10 +231,14 @@ void LanguageServer::analyze_entry(const SourceId& entry_source) {
 
 	m_references.publish(entry, compiler.reference_index(), result.success, std::move(successful_sources));
 	m_completion.publish(entry, compiler.completion_index(), result.success);
-	// Only a successful analysis replaces the snapshot inlay hints resolve against. Sent
-	// before the diagnostics, so a client that waits for those has seen the refresh too.
+	// Only a successful analysis replaces the snapshot inlay hints and semantic tokens
+	// resolve against. Sent before the diagnostics, so a client that waits for those has
+	// seen the refreshes too.
 	if (result.success && m_inlay_hint_refresh_support) {
 		m_connection.send_request("workspace/inlayHint/refresh");
+	}
+	if (result.success && m_semantic_tokens_refresh_support) {
+		m_connection.send_request("workspace/semanticTokens/refresh");
 	}
 	m_diagnostic_publisher.publish(entry_source, diagnostics.diagnostics());
 }
@@ -356,6 +362,12 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 		? inlay_hint_client->get<JSONBool>("refreshSupport")
 		: nullptr;
 	m_inlay_hint_refresh_support = refresh_support && refresh_support->value;
+	const auto* semantic_tokens_client = object_at(
+		object_at(object_at(params, "capabilities"), "workspace"), "semanticTokens");
+	const auto* semantic_tokens_refresh = semantic_tokens_client
+		? semantic_tokens_client->get<JSONBool>("refreshSupport")
+		: nullptr;
+	m_semantic_tokens_refresh_support = semantic_tokens_refresh && semantic_tokens_refresh->value;
 	{
 		std::lock_guard lock(m_state_mutex);
 		m_entry_points.set_workspace_root(m_workspace_root);
@@ -401,6 +413,11 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 	signature_help_options->add(
 		"retriggerCharacters", std::move(signature_retrigger_characters));
 
+	auto semantic_tokens_options = std::make_unique<JSONObject>();
+	semantic_tokens_options->add("legend", SemanticTokenProvider::legend());
+	semantic_tokens_options->add("full", std::make_unique<JSONBool>(true));
+	semantic_tokens_options->add("range", std::make_unique<JSONBool>(false));
+
 	auto code_action_options = std::make_unique<JSONObject>();
 	auto code_action_kinds = std::make_unique<JSONArray>();
 	code_action_kinds->add(std::make_unique<JSONString>("quickfix"));
@@ -430,6 +447,7 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 	capabilities.add("completionProvider", std::move(completion_options));
 	capabilities.add("signatureHelpProvider", std::move(signature_help_options));
 	capabilities.add("inlayHintProvider", std::make_unique<JSONBool>(true));
+	capabilities.add("semanticTokensProvider", std::move(semantic_tokens_options));
 	capabilities.add("codeActionProvider", std::move(code_action_options));
 
 	JSONObject server_info;
@@ -771,6 +789,26 @@ void LanguageServer::handle_inlay_hint(const JsonRpcMessage& message) {
 	const auto type_hints = m_references.type_hints(entries, source);
 	m_connection.send_response(
 		*id, m_inlay_hints.hints(entries, text, begin, end, source, type_hints));
+}
+
+void LanguageServer::handle_semantic_tokens(const JsonRpcMessage& message) {
+	const auto* id = message.id();
+	if (!id) return;
+
+	std::vector<SymbolToken> symbols;
+	const auto* params = message.params() ? message.params()->as<JSONObject>() : nullptr;
+	if (const auto* uri = string_at(object_at(params, "textDocument"), "uri")) {
+		const auto source = source_from_uri(uri->value);
+		std::vector<SourceId> entries;
+		{
+			std::lock_guard lock(m_state_mutex);
+			entries = m_entry_points.affected_entries(source);
+		}
+		symbols = m_references.symbols(entries, source);
+	}
+	JSONObject result;
+	result.add("data", std::make_unique<JSONArray>(SemanticTokenProvider::encode(symbols)));
+	m_connection.send_response(*id, result);
 }
 
 void LanguageServer::handle_did_open(const JsonRpcMessage& message) {

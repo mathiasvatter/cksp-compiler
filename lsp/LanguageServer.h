@@ -18,6 +18,7 @@
 #include "CompletionProvider.h"
 #include "SignatureHelpProvider.h"
 #include "InlayHintProvider.h"
+#include "SemanticTokenProvider.h"
 #include "ReferenceProvider.h"
 #include "RenameProvider.h"
 #include "../cksp/Source/SourceProvider.h"
@@ -52,6 +53,8 @@ class LanguageServer {
 	/// The client accepts workspace/inlayHint/refresh. Hints resolve against the analysis
 	/// snapshots, so a finished analysis can change hints in a buffer nobody edited.
 	bool m_inlay_hint_refresh_support = false;
+	/// The client accepts workspace/semanticTokens/refresh, for the same reason.
+	bool m_semantic_tokens_refresh_support = false;
 	bool m_initialized = false;
 	bool m_shutdown_requested = false;
 	bool m_exit_requested = false;
@@ -108,6 +111,7 @@ public:
 	void handle_completion(const JsonRpcMessage& message);
 	void handle_signature_help(const JsonRpcMessage& message);
 	void handle_inlay_hint(const JsonRpcMessage& message);
+	void handle_semantic_tokens(const JsonRpcMessage& message);
 
 	void handle_did_open(const JsonRpcMessage& message);
 	void handle_did_change(const JsonRpcMessage& message);
