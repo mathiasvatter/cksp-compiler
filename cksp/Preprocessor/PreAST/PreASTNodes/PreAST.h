@@ -92,6 +92,14 @@ std::unique_ptr<T> clone_as(PreNodeAST* node) {
 	return std::unique_ptr<T>(static_cast<T*>(node->clone().release()));
 }
 
+/// The one literal a substitution argument ultimately stands for, or nothing when it
+/// stands for several.
+///
+/// Chunks and statements are pure wrappers that carry the token of what they wrap, so
+/// their `tok` reads like the real word while only the leaf ever reaches the token
+/// stream.
+PreNodeAST* single_literal_of(PreNodeAST* node);
+
 struct PreNodeLiteral : PreNodeAST {
 	PreNodeLiteral(Token tok, PreNodeAST* parent, const PreNodeType type=PreNodeType::DEAD_CODE) : PreNodeAST(std::move(tok), parent, type) {}
 	PreNodeLiteral(const PreNodeLiteral& other) = default;
@@ -637,6 +645,7 @@ struct PreNodeDefineHeader final : PreNodeAST {
     PreNodeAST *accept(PreASTVisitor &visitor) override;
     PreNodeDefineHeader(const PreNodeDefineHeader& other);
     [[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
+    PreNodeAST *replace_child(PreNodeAST *oldChild, std::unique_ptr<PreNodeAST> newChild) override;
 	void set_child_parents() override {
 		name->parent = this;
 		args->parent = this;
@@ -774,6 +783,7 @@ struct PreNodeFunctionHeader final : PreNodeAST {
     PreNodeAST *accept(PreASTVisitor &visitor) override;
     PreNodeFunctionHeader(const PreNodeFunctionHeader& other);
     [[nodiscard]] std::unique_ptr<PreNodeAST> clone() const override;
+    PreNodeAST *replace_child(PreNodeAST *oldChild, std::unique_ptr<PreNodeAST> newChild) override;
 	void set_child_parents() override {
 		name->parent = this;
 		args->parent = this;

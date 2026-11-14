@@ -1,0 +1,9 @@
+// A plain parameter as the whole name, with a space before the parameter list (#155).
+// EXPECT declare ui_knob \$volume \(0, 100, 1\)
+macro make_knob(name)
+    declare ui_knob name (0, 100, 1)
+end macro
+
+on init
+    make_knob(volume)
+end on

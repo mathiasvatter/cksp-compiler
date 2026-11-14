@@ -1,0 +1,13 @@
+// The callee of a call in a macro body is a parameter; it becomes a macro call once substituted.
+// EXPECT message\(1\)
+macro call_it(#fn#)
+    #fn#(1)
+end macro
+
+macro say(x)
+    message(x)
+end macro
+
+on init
+    call_it(say)
+end on

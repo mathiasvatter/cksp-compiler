@@ -1,0 +1,10 @@
+// Only a single word can stand in for a name; anything else is a user error, not an internal one.
+// EXPECT_ERROR PreprocessorError
+// EXPECT_ERROR The argument '5\+1' replaces a name here
+macro make_knob(#name#)
+    declare ui_knob #name#(0, 100, 1)
+end macro
+
+on init
+    make_knob(5 + 1)
+end on

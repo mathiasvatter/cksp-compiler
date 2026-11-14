@@ -58,28 +58,6 @@ protected:
 			&& node->tok.pos > 0 && !node->tok.val.empty()) return &node->tok;
 		return nullptr;
 	}
-	/// The one literal a substitution argument ultimately stands for, or nothing when it
-	/// stands for several.
-	///
-	/// Chunks and statements are pure wrappers that carry the token of what they wrap, so
-	/// their `tok` reads like the real word while only the leaf ever reaches the token
-	/// stream. Marking a wrapper looks right and does nothing.
-	static PreNodeAST* single_literal_of(PreNodeAST* node) {
-		while (node) {
-			if (const auto* chunk = dynamic_cast<const PreNodeChunk*>(node)) {
-				if (chunk->chunk.size() != 1) return nullptr;
-				node = chunk->chunk.front().get();
-				continue;
-			}
-			if (const auto* statement = dynamic_cast<const PreNodeStatement*>(node)) {
-				node = statement->statement.get();
-				continue;
-			}
-			return node;
-		}
-		return nullptr;
-	}
-
 	/// Marks the argument that replaces a whole-word parameter usage as standing where the
 	/// parameter stood, so whatever it resolves to stays reachable from the macro body. The
 	/// clone carries call-site positions; without this the body keeps no trace of the usage.

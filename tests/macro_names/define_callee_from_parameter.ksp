@@ -1,0 +1,7 @@
+// The callee in a define body is one of its arguments.
+// EXPECT message\(3\)
+define SHOW(fn) := message(fn(-3))
+
+on init
+    SHOW(abs)
+end on
