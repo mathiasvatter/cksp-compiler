@@ -275,14 +275,14 @@ def _(workspace, server):
         "static_use": "(static const) Loader.ID: int",
         # Untyped in the source; the hover shows what inference settled on.
         "param_use": "(parameter) a: int",
-        "const_decl": "const MAX: int",
+        "const_decl": "declare const MAX: int",
         "struct_use": "struct Loader",
         "method_use": "(method) Loader.update(times: int)",
         "ns_function_use": "function audio.reset(amount: int): int",
         "enum_use": "(const) Levels.HIGH: int",
-        "inferred_use": "inferred: real",
+        "inferred_use": "declare inferred: real",
         "helper_use": "function helper(a: int, b: real): real",
-        "control_use": "ui_knob knob",
+        "control_use": "declare ui_knob knob",
     }
     for marker, text in expected.items():
         hover = server.request("textDocument/hover", {
@@ -316,9 +316,9 @@ def _(workspace, server):
         # A parameter shows only its own @param from the comment above its header.
         "fade_param": "```cksp\n(parameter) amount: int\n```\n\n---\n\nhow far to move per step",
         # A Doxygen member comment trailing the declaration.
-        "level": "```cksp\nlevel: int\n```\n\n---\n\ncurrent level",
-        "plain": "```cksp\nplain: int\n```\n\n---\n\nplain comment",
-        "no_doc": "```cksp\nno_doc: int\n```",
+        "level": "```cksp\ndeclare level: int\n```\n\n---\n\ncurrent level",
+        "plain": "```cksp\ndeclare plain: int\n```\n\n---\n\nplain comment",
+        "no_doc": "```cksp\ndeclare no_doc: int\n```",
     }
     for marker, value in expected.items():
         hover = server.request("textDocument/hover", {
@@ -363,7 +363,7 @@ def _(workspace, server):
         "textDocument": {"uri": shared.uri},
         "position": {"line": 2, "character": shared.text.splitlines()[2].index("idx")}})
     value = hover["contents"]["value"] if hover else None
-    expect(value == "```cksp\nidx: int\n```", f"got {value!r}")
+    expect(value == "```cksp\ndeclare idx: int\n```", f"got {value!r}")
 
 
 @test("hover: a ui control array shows the control it was declared as")
@@ -379,10 +379,10 @@ def _(workspace, server):
         "textDocument": {"uri": fixture.uri},
         "position": {"line": 2, "character": line.index("buttons")}})
     value = hover["contents"]["value"] if hover else None
-    expect(value == "```cksp\npers ui_button buttons[]\n```", f"got {value!r}")
+    expect(value == "```cksp\ndeclare pers ui_button buttons[]\n```", f"got {value!r}")
 
 
-@test("hover: keeps the persistence and storage keywords, drops <declare>")
+@test("hover: shows valid declarations with their persistence and storage keywords")
 def _(workspace, server):
     fixture = workspace.write("persistence.cksp",
                               "on init\n"
@@ -394,8 +394,8 @@ def _(workspace, server):
                               "end on\n")
     server.did_open(fixture)
     line = fixture.text.splitlines()[5]
-    for name, text in [("mode", "read mode: int"), ("counter", "instpers counter: int"),
-                       ("MAX", "const MAX: int"), ("knob", "read ui_knob knob")]:
+    for name, text in [("mode", "declare read mode: int"), ("counter", "declare instpers counter: int"),
+                       ("MAX", "declare const MAX: int"), ("knob", "declare read ui_knob knob")]:
         hover = server.request("textDocument/hover", {
             "textDocument": {"uri": fixture.uri},
             "position": {"line": 5, "character": line.index(name)}})
@@ -415,9 +415,41 @@ def _(workspace, server):
         "textDocument": {"uri": fixture.uri},
         "position": {"line": 3, "character": line.index("amount")}})
     value = hover["contents"]["value"] if hover else None
-    expect(value == "```cksp\namount: real\n```", f"got {value!r}")
+    expect(value == "```cksp\ndeclare amount: real\n```", f"got {value!r}")
     expect(position_of(hover) == Position(3, line.index("amount")),
            f"hover range not moved onto the edited text: {hover['range'] if hover else None}")
+
+
+@test("definition: targetRange spans the declaring construct for the Cmd+hover preview")
+def _(workspace, server):
+    # VS Code previews a definition as the text of targetRange, as TypeScript's context span:
+    # a function with its body, a variable with its whole declare statement.
+    fixture = workspace.open("hover.cksp")
+    lines = fixture.text.splitlines()
+
+    def preview(marker):
+        links = server.definition(fixture, marker)
+        expect(len(links) == 1, f"{marker}: expected one link, got {links}")
+        start, end = links[0]["targetRange"]["start"], links[0]["targetRange"]["end"]
+        if start["line"] == end["line"]:
+            return lines[start["line"]][start["character"]:end["character"]]
+        text = [lines[start["line"]][start["character"]:]]
+        text += lines[start["line"] + 1:end["line"]]
+        text.append(lines[end["line"]][:end["character"]])
+        return "\n".join(text)
+
+    expected = {
+        "helper_use": "function helper(a, b: real): real\n    return b * real(a)\nend function",
+        "inferred_use": "declare inferred := 2.5",
+        "control_use": "declare ui_knob knob(0, 100, 1)",
+        "enum_use": "HIGH := 2",
+        "static_use": "static const ID: int := 5",
+        # Untyped, so the parameter is its name alone.
+        "param_use": "a",
+    }
+    for marker, text in expected.items():
+        actual = preview(marker)
+        expect(actual == text, f"{marker}: previews {actual!r}, expected {text!r}")
 
 
 @test("hover: nothing where no symbol stands")

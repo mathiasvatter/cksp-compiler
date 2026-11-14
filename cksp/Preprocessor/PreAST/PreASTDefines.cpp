@@ -164,7 +164,8 @@ PreNodeAST *PreASTDefines::visit(PreNodeDefineCall &node) {
 
 	// go-to-definition: link this define usage to its definition's name
 	if (m_reference_index) {
-		m_reference_index->add_link(token_name, node.definition->header->name->tok, SymbolKind::Define);
+		m_reference_index->add_link(token_name, node.definition->header->name->tok, SymbolKind::Define,
+			node.definition->range);
 	}
 
 	m_defines_used.insert(token_name.val);

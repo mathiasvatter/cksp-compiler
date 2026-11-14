@@ -183,7 +183,8 @@ PreNodeAST *PreASTMacros::visit(PreNodeMacroCall &node) {
 
 	// go-to-definition: link this macro usage to its definition's name
 	if (m_reference_index) {
-		m_reference_index->add_link(token_name, node.definition->header->name->tok, SymbolKind::Macro);
+		m_reference_index->add_link(token_name, node.definition->header->name->tok, SymbolKind::Macro,
+			node.definition->range);
 	}
 
 	// substitution

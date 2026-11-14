@@ -54,6 +54,8 @@ public:
 				node.tok,
 				node.parent
 			);
+			// The rebuilt node starts at the <macro> token; keep the span through <end macro>.
+			node_macro_definition->range = node.range;
 			m_program->macro_definitions.push_back(std::move(node_macro_definition));
 		}
 		// replace node with dead code after incrementation

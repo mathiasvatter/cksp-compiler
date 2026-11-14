@@ -86,10 +86,11 @@ private:
 		return qualifier;
 	}
 
-	/// The keywords a declaration was written with that the hover keeps: its persistence
-	/// (<pers>, <instpers>, <read>) and <const> or <polyphonic>. <declare> itself goes.
+	/// <declare> and the keywords the declaration was written with: its persistence
+	/// (<pers>, <instpers>, <read>) and <const> or <polyphonic>. The hover shows valid CKSP so
+	/// the editor's grammar colours it - without <declare> it reads as no statement at all.
 	static std::string modifiers_of(const NodeDataStructure& node) {
-		std::string modifiers;
+		std::string modifiers = "declare ";
 		if (node.persistence && !node.persistence->val.empty()) modifiers += node.persistence->val + " ";
 		if (node.data_type == DataType::Const) modifiers += "const ";
 		if (node.data_type == DataType::Polyphonic) modifiers += "polyphonic ";
@@ -150,6 +151,42 @@ private:
 			return "(const) " + typed(qualified, *data);
 		}
 		return modifiers_of(*data) + typed(qualified, *data);
+	}
+
+	static bool contains(const SourceRange& range, const SourceRange& inner) {
+		const auto before = [](const SourcePosition& a, const SourcePosition& b) {
+			return a.line < b.line || (a.line == b.line && a.column <= b.column);
+		};
+		return range.is_valid() && inner.is_valid() && before(range.start, inner.start) && before(inner.end, range.end);
+	}
+
+	/// The construct a declaration stands in, as TypeScript's context span: a function or a
+	/// block with its body, a variable's declare statement, a parameter with its annotation.
+	/// Invalid when no such construct holds the name where the source writes it - a
+	/// declaration a macro produced, or one the compiler made.
+	static SourceRange context_range_of(NodeAST& target) {
+		const auto name = source_range_from_token(target.tok);
+		const auto holds_name = [&](const NodeAST& node) {
+			return node.tok.file() == target.tok.file() && contains(node.range, name);
+		};
+		if (auto* header = target.cast<NodeFunctionHeader>()) {
+			auto* definition = header->parent ? header->parent->cast<NodeFunctionDefinition>() : nullptr;
+			if (definition && holds_name(*definition)) return definition->range;
+			return holds_name(*header) ? header->range : SourceRange{};
+		}
+		if (target.cast<NodeStruct>() || target.cast<NodeNamespace>() || target.cast<NodeFamily>()
+			|| target.cast<NodeConst>()) {
+			return holds_name(target) ? target.range : SourceRange{};
+		}
+		for (NodeAST* node = target.parent; node; node = node->parent) {
+			if (node->cast<NodeFunctionParam>() || node->cast<NodeSingleDeclaration>()
+				|| node->cast<NodeDeclaration>()) {
+				return holds_name(*node) ? node->range : SourceRange{};
+			}
+			// A declaration is a statement of its own; past a block it is none of these.
+			if (node->cast<NodeBlock>()) break;
+		}
+		return {};
 	}
 
 	/// Renders the hover of a declaration once, keyed by its name token.
@@ -315,13 +352,15 @@ private:
 		if (!ref_range.is_valid()) return;
 		// the name range carries the exact identifier at the declaration, which rename
 		// edits replace; def_range may span the whole header for functions
+		const auto context_range = context_range_of(target);
 		m_index.add(
 			direct_reference.file(), ref_range,
 			target.tok.file(), def_range,
 			source_range_from_token(target.tok),
 			// A macro body spells this reference <#browser#> where the declaration is
 			// <browser>; the text is verified, so equality is the whole test.
-			direct_reference.val == target.tok.val);
+			direct_reference.val == target.tok.val,
+			context_range);
 		const auto symbol = symbol_of(target);
 		if (symbol) m_index.add_symbol(direct_reference.file(), ref_range, symbol->kind, symbol->modifiers);
 		// The definitions pass meets declarations before desugaring and inference.
@@ -339,7 +378,7 @@ private:
 					m_index.add(
 						at_call_site->file(), call_site_range,
 						target.tok.file(), def_range,
-						source_range_from_token(target.tok));
+						source_range_from_token(target.tok), true, context_range);
 					if (symbol) {
 						m_index.add_symbol(at_call_site->file(), call_site_range, symbol->kind, symbol->modifiers);
 					}
@@ -380,6 +419,9 @@ private:
 	template<typename Node>
 	NodeAST* record_definition(Node& node, const Token& declaration) {
 		if (m_pass == Pass::Definitions) {
+			if (node.tok.file() == declaration.file()) {
+				m_index.add_context(declaration.file(), source_range_from_token(declaration), node.range);
+			}
 			add_link(declaration, node);
 			record_declaration(node, declaration);
 			// Desugaring dissolves the block, so this pass is the only one that sees it.
@@ -453,6 +495,23 @@ public:
 	}
 	NodeAST* visit(NodeListRef& node) override {
 		if (m_pass == Pass::References) record_variable(node);
+		return ASTVisitor::visit(node);
+	}
+
+	/// Desugaring rebuilds a declare statement into single declarations that carry only its
+	/// first token, so the statement as written is recorded now, for every name it declares.
+	NodeAST* visit(NodeDeclaration& node) override {
+		if (m_pass == Pass::Definitions) {
+			for (const auto& variable : node.variable) {
+				if (!variable) continue;
+				const auto* control = variable->cast<NodeUIControl>();
+				const auto& name = control && control->control_var ? control->control_var->tok : variable->tok;
+				const auto name_range = source_range_from_token(name);
+				if (name.file() == node.tok.file() && contains(node.range, name_range)) {
+					m_index.add_context(name.file(), name_range, node.range);
+				}
+			}
+		}
 		return ASTVisitor::visit(node);
 	}
 
