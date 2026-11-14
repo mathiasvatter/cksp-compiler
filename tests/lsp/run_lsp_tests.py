@@ -300,6 +300,49 @@ def _(workspace, server):
            f"diagnostic at {start}, expected the call at {call}")
 
 
+@test("diagnostics: an error in a shared import names the entries that report it",
+      entry_points=["entry_global.cksp", "entry_init.cksp", "entry_alone.cksp"])
+def _(workspace, server):
+    # A struct method sees globals but not on-init declarations, so the shared file compiles
+    # from one entry and fails from the other. Without attribution the editor shows an error
+    # that compiling the main file never reproduces (cksp-tools-issues#37).
+    shared = workspace.write("loader.cksp",
+                             "struct Loader\n    declare path: string\n"
+                             "    function update(self)\n        if mode = 1\n"
+                             "            self.path := \"x\"\n        end if\n"
+                             "    end function\nend struct\n")
+    entries = {
+        "entry_global.cksp": "declare mode: int := 1\nimport \"loader.cksp\"\n"
+                             "on init\n    message(mode)\nend on\n",
+        "entry_init.cksp": "import \"loader.cksp\"\n"
+                           "on init\n    declare mode: int := 1\n    message(mode)\nend on\n",
+        # Does not import the shared file, so it must not be listed either way.
+        "entry_alone.cksp": "on init\n    message(\"alone\")\nend on\n",
+    }
+    for name, source in entries.items():
+        server.did_open(workspace.write(name, source))
+    server.did_open(shared)
+
+    def attribution():
+        diagnostics = server.diagnostics(shared)
+        if not diagnostics:
+            return None
+        return sorted((Path(uri_to_path(item["location"]["uri"])).name, item["message"])
+                      for item in diagnostics[0].get("relatedInformation", []))
+
+    expected = [("entry_init.cksp", "entry point")]
+    # Entries finish in any order; each publish may complete the picture.
+    for _ in range(10):
+        if attribution() == expected:
+            break
+        server.wait_for_analysis(shared, after=server.diagnostics_generation(shared))
+    expect(attribution() == expected, f"unexpected attribution: {attribution()}")
+    # The entry file itself carries no attribution; its origin is obvious.
+    init_diagnostics = server.diagnostics(workspace.root / "entry_init.cksp")
+    expect(all("relatedInformation" not in d for d in init_diagnostics),
+           f"entry file got attribution: {init_diagnostics}")
+
+
 @test("diagnostics: an error in a macro body points back at the body line")
 def _(workspace, server):
     # The token was assembled by a <#param#> substitution, so it is reported at the call

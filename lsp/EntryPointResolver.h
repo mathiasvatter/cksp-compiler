@@ -54,6 +54,8 @@ public:
 	/// diagnostics from standalone entries that merely include them.
 	[[nodiscard]] bool is_owned_by_configured_entry(const SourceId& source) const;
 
+	[[nodiscard]] size_t configured_entry_count() const { return m_configured_entries.size(); }
+
 
 
 private:

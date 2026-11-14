@@ -4,6 +4,7 @@
 
 #include "DiagnosticPublisher.h"
 
+#include <algorithm>
 #include <memory>
 #include <utility>
 
@@ -146,7 +147,9 @@ std::unique_ptr<JSONObject> DiagnosticPublisher::make_lsp_fix_data(
 	return data;
 }
 
-std::unique_ptr<JSONObject> DiagnosticPublisher::make_lsp_diagnostic(const Diagnostic& diagnostic) {
+std::unique_ptr<JSONObject> DiagnosticPublisher::make_lsp_diagnostic(
+	const Diagnostic& diagnostic,
+	const std::vector<SourceId>& reported_by) {
 	auto result = std::make_unique<JSONObject>();
 	result->add("range", diagnostic.range.get_lsp_range());
 	result->add("severity", std::make_unique<JSONInt>((int)diagnostic.severity));
@@ -167,20 +170,31 @@ std::unique_ptr<JSONObject> DiagnosticPublisher::make_lsp_diagnostic(const Diagn
 	// Neither is where the user wrote it, so the spelling the source actually holds is
 	// attached as related information; the client renders it as a second, clickable
 	// location under the message.
-	if (diagnostic.expansion && !diagnostic.expansion->file.empty()) {
-		const auto& expansion = *diagnostic.expansion;
+	auto related = std::make_unique<JSONArray>();
+	const auto add_related = [&related](const std::string& file, std::unique_ptr<JSONObject> range,
+		const std::string& text) {
 		auto location = std::make_unique<JSONObject>();
-		location->add("uri", std::make_unique<JSONString>(
-			uri_from_source(SourceId(expansion.file))));
-		location->add("range", expansion.range.get_lsp_range());
-
+		location->add("uri", std::make_unique<JSONString>(uri_from_source(SourceId(file))));
+		location->add("range", std::move(range));
 		auto entry = std::make_unique<JSONObject>();
 		entry->add("location", std::move(location));
-		entry->add("message", std::make_unique<JSONString>(
-			"substituted from <" + expansion.spelling + ">"));
-
-		auto related = std::make_unique<JSONArray>();
+		entry->add("message", std::make_unique<JSONString>(text));
 		related->add(std::move(entry));
+	};
+	if (diagnostic.expansion && !diagnostic.expansion->file.empty()) {
+		const auto& expansion = *diagnostic.expansion;
+		add_related(expansion.file, expansion.range.get_lsp_range(),
+			"substituted from <" + expansion.spelling + ">");
+	}
+
+	// An imported file is analysed once per entry point that reaches it, and the merged
+	// diagnostic alone does not say which of them failed - the file may compile from the
+	// user's main file and fail from another. The client already prints the linked file
+	// name, so the note only needs to say what that file is.
+	for (const auto& entry : reported_by) {
+		add_related(entry.value, SourceRange{}.get_lsp_range(), "entry point");
+	}
+	if (!related->elements.empty()) {
 		result->add("relatedInformation", std::move(related));
 	}
 
@@ -200,7 +214,8 @@ std::unique_ptr<JSONObject> DiagnosticPublisher::make_lsp_diagnostic(const Diagn
 	return result;
 }
 
-std::vector<Diagnostic> DiagnosticPublisher::diagnostics_for(const SourceId& source) const {
+std::vector<DiagnosticPublisher::MergedDiagnostic> DiagnosticPublisher::merged_diagnostics(
+	const SourceId& source) const {
 	const auto normalized_source = FileSystemSourceProvider::normalize(source.value);
 
 	// A file that is owned by a configured entry receives diagnostics only from
@@ -210,7 +225,7 @@ std::vector<Diagnostic> DiagnosticPublisher::diagnostics_for(const SourceId& sou
 	const bool owned_by_configured =
 		m_entries && m_entries->is_owned_by_configured_entry(normalized_source);
 
-	std::vector<Diagnostic> diagnostics;
+	std::vector<MergedDiagnostic> merged;
 	for (const auto& [entry, diagnostics_by_source] : m_diagnostics_by_entry_and_source) {
 		if (owned_by_configured && !(m_entries && m_entries->is_configured_entry(SourceId(entry)))) {
 			continue;
@@ -223,32 +238,51 @@ std::vector<Diagnostic> DiagnosticPublisher::diagnostics_for(const SourceId& sou
 			if (diagnostic_source(diagnostic, normalized_source) != normalized_source) {
 				continue;
 			}
-			bool already_published = false;
-			for (const auto& existing : diagnostics) {
-				if (same_published_diagnostic(existing, diagnostic)) {
-					already_published = true;
-					break;
-				}
-			}
-			if (!already_published) {
-				diagnostics.push_back(diagnostic);
+			const auto existing = std::ranges::find_if(merged, [&](const MergedDiagnostic& item) {
+				return same_published_diagnostic(item.diagnostic, diagnostic);
+			});
+			if (existing == merged.end()) {
+				merged.push_back({diagnostic, {SourceId(entry)}});
+			} else if (existing->reported_by.back().value != entry) {
+				// One entry's diagnostics are visited consecutively, so a repeat is always last.
+				existing->reported_by.emplace_back(entry);
 			}
 		}
+	}
+	// The map is unordered; sort so republishing the same state sends the same notification.
+	for (auto& item : merged) {
+		std::ranges::sort(item.reported_by, {}, &SourceId::value);
+	}
+	return merged;
+}
+
+std::vector<Diagnostic> DiagnosticPublisher::diagnostics_for(const SourceId& source) const {
+	std::vector<Diagnostic> diagnostics;
+	for (auto& item : merged_diagnostics(source)) {
+		diagnostics.push_back(std::move(item.diagnostic));
 	}
 	return diagnostics;
 }
 
 void DiagnosticPublisher::publish_merged_source(const SourceId& source) const {
-	publish_source(source, diagnostics_for(source));
+	publish_source(source, merged_diagnostics(source));
 }
 
-void DiagnosticPublisher::publish_source(const SourceId& source, const std::vector<Diagnostic>& diagnostics) const {
+void DiagnosticPublisher::publish_source(
+	const SourceId& source,
+	const std::vector<MergedDiagnostic>& diagnostics) const {
+	// Naming the entry only says something when there is more than one to choose from, and
+	// never inside an entry file itself.
+	const bool attribute = m_entries
+		&& m_entries->configured_entry_count() > 1
+		&& !m_entries->is_configured_entry(source);
+
 	auto items = std::make_unique<JSONArray>();
-	for (const auto& diagnostic : diagnostics) {
+	for (const auto& [diagnostic, reported_by] : diagnostics) {
 		if (diagnostic_source(diagnostic, source) != source) {
 			continue;
 		}
-		items->add(make_lsp_diagnostic(diagnostic));
+		items->add(make_lsp_diagnostic(diagnostic, attribute ? reported_by : std::vector<SourceId>{}));
 	}
 
 	JSONObject params;

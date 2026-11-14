@@ -60,13 +60,23 @@ public:
 
 private:
 
+	/// One published diagnostic plus the entries whose analysis reported it.
+	struct MergedDiagnostic {
+		Diagnostic diagnostic;
+		std::vector<SourceId> reported_by;
+	};
+
 	[[nodiscard]] static SourceId diagnostic_source(const Diagnostic& diagnostic, const SourceId& entry_source);
 	[[nodiscard]] static bool same_published_diagnostic(
 		const Diagnostic& left,
 		const Diagnostic& right
 	);
-	[[nodiscard]] static std::unique_ptr<JSONObject> make_lsp_diagnostic(const Diagnostic& diagnostic);
+	[[nodiscard]] static std::unique_ptr<JSONObject> make_lsp_diagnostic(
+		const Diagnostic& diagnostic,
+		const std::vector<SourceId>& reported_by = {}
+	);
 	[[nodiscard]] static std::unique_ptr<JSONObject> make_lsp_fix_data(const Diagnostic::DiagnosticFix& fix);
+	[[nodiscard]] std::vector<MergedDiagnostic> merged_diagnostics(const SourceId& source) const;
 	void publish_merged_source(const SourceId& source) const;
-	void publish_source(const SourceId& source, const std::vector<Diagnostic>& diagnostics) const;
+	void publish_source(const SourceId& source, const std::vector<MergedDiagnostic>& diagnostics) const;
 };
