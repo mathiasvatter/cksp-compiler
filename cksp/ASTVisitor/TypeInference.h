@@ -496,7 +496,8 @@ public:
     }
 
 	/// Kontakt's <search> takes integer arrays only, <sort> integer and real arrays - as their
-	/// builtin signatures <int[]> and <number[]> say. Objects count, being integers once lowered.
+	/// builtin signatures <int[]> and <number[]> say. Booleans and objects count, being integers
+	/// once lowered.
 	/// A type still open - unknown, number, or any for a generic parameter before its
 	/// specializations exist - is left to the pass that sees it concrete. Checked by hand because
 	/// <string> is compatible with <int> everywhere else, which let string arrays through (#134).
@@ -506,6 +507,7 @@ public:
 		const auto element = array.ty ? array.ty->get_element_type() : nullptr;
 		if (!element || element == TypeRegistry::Unknown || element == TypeRegistry::Number
 			|| element == TypeRegistry::Any || element == TypeRegistry::Integer
+			|| element == TypeRegistry::Boolean
 			|| (sorts_reals(command) && element == TypeRegistry::Real)
 			|| element->get_type_kind() == TypeKind::Object) {
 			return;
@@ -517,6 +519,16 @@ public:
 		error.actual = array.ty->to_string();
 		error.set_expected(sorts_reals(command) ? "int[] or real[]" : "int[]");
 		error.exit();
+	}
+
+	/// A bool array passed to <search>/<sort>: <bool> is not compatible with the <number[]> of
+	/// <sort>, but a bool array is an integer array once lowered. expect_number_array checks this
+	/// argument instead of the builtin signature.
+	static bool is_sort_search_bool_array(const NodeFunctionCall& node, const int arg_idx) {
+		if (arg_idx != 0 || !node.is_builtin_kind()) return false;
+		if (node.function->name != "search" && node.function->name != "sort") return false;
+		const auto& array = node.function->get_arg(0);
+		return array->ty && array->ty->get_element_type() == TypeRegistry::Boolean;
 	}
 
 	/// check for function that has same param types as return type

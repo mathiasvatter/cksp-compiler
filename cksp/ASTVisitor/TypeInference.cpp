@@ -1297,6 +1297,7 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 				// ignore ui control variables
 				if (reference->data_type == DataType::UIControl) continue;
 			}
+			if (is_sort_search_bool_array(node, i)) continue;
 			auto &param = definition->get_param(i+method_idx);
 			// this is needed for string -> int stuff -> needs better solution
 			if (param->ty->get_element_type() != TypeRegistry::String) {
@@ -1392,6 +1393,7 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 		for (int i = 0; i < node.function->get_num_args(); i++) {
 			auto &func_arg = node.function->get_arg(i);
 			auto &param = definition->get_param(i+method_idx);
+			if (is_sort_search_bool_array(node, i)) continue;
 
 			if (auto reference = func_arg->is_reference()) {
 				// ignore ui control variables
