@@ -1,5 +1,7 @@
 #include "ReferenceProvider.h"
 
+#include "DocComment.h"
+
 #include <algorithm>
 #include <unordered_set>
 
@@ -204,15 +206,29 @@ std::optional<Hover> ReferenceProvider::hover(
 	const auto normalized_source = FileSystemSourceProvider::normalize(source.value);
 	std::lock_guard lock(m_mutex);
 
+	std::optional<Hover> hover;
 	for (const auto& entry : preferred_entries) {
 		const auto state = m_states.find(FileSystemSourceProvider::normalize(entry.value).value);
 		if (state == m_states.end()) continue;
-		if (auto hover = hover_from_state(state->second, normalized_source, line, character)) return hover;
+		if ((hover = hover_from_state(state->second, normalized_source, line, character))) break;
 	}
-	for (const auto& [_, state] : m_states) {
-		if (auto hover = hover_from_state(state, normalized_source, line, character)) return hover;
+	if (!hover) {
+		for (const auto& [_, state] : m_states) {
+			if ((hover = hover_from_state(state, normalized_source, line, character))) break;
+		}
 	}
-	return std::nullopt;
+	if (!hover) return std::nullopt;
+	// Read from the text as it is now, not from the analysis: a comment is not part of
+	// the AST, and one the user just wrote should show.
+	if (auto declaration = m_sources.load(SourceId(hover->declaration_file)); !declaration.is_error()) {
+		hover->documentation = lsp::doc_comment_above(
+			*declaration.unwrap().text, hover->declaration_range.start.get_lsp_line());
+		// A parameter stands on its header's line; of that comment only its own @param is about it.
+		if (!hover->parameter.empty()) {
+			hover->documentation = lsp::parameter_doc(hover->documentation, hover->parameter);
+		}
+	}
+	return hover;
 }
 
 std::vector<ReferenceLink> ReferenceProvider::references_from_state(

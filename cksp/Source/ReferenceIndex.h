@@ -62,6 +62,11 @@ struct Hover {
 	std::string file;
 	SourceRange range;  ///< the hovered name, one-based
 	std::string text;   ///< "declare mode: int", "function fade(amount: int): int", ...
+	std::string declaration_file;
+	SourceRange declaration_range;  ///< the declared name, where a doc comment sits above
+	std::string documentation;      ///< markdown of that comment; filled in on request
+	/// Set for a parameter: its doc is the matching @param of the comment above the header.
+	std::string parameter;
 };
 
 /// What a name in the source stands for, as far as an editor colours it.
@@ -126,11 +131,12 @@ class ReferenceIndex {
 public:
 	/// Records what hovering the declaration named at `name_range`, or any reference to it,
 	/// shows. The first text recorded stays: later passes see the AST lowered further.
-	void add_hover(const std::string& file, const SourceRange& name_range, std::string text) {
+	void add_hover(const std::string& file, const SourceRange& name_range, std::string text, std::string parameter = {}) {
 		if (file.empty() || !name_range.is_valid() || text.empty()) return;
 		auto normalized = normalized_file(file);
 		auto key = reference_key(normalized, name_range);
-		m_hovers.try_emplace(std::move(key), Hover{std::move(normalized), name_range, std::move(text)});
+		m_hovers.try_emplace(std::move(key), Hover{
+			normalized, name_range, std::move(text), normalized, name_range, {}, std::move(parameter)});
 	}
 
 	[[nodiscard]] bool has_hover(const std::string& file, const SourceRange& name_range) const {
@@ -143,7 +149,10 @@ public:
 		for (const auto& link : resolve_all(file, line, character)) {
 			const auto found = m_hovers.find(reference_key(link.def_file, link.def_name_range));
 			if (found != m_hovers.end()) {
-				return Hover{link.ref_file, link.ref_range, found->second.text};
+				auto hover = found->second;
+				hover.file = link.ref_file;
+				hover.range = link.ref_range;
+				return hover;
 			}
 		}
 		for (const auto& [_, hover] : m_hovers) {

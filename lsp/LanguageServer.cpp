@@ -544,7 +544,9 @@ void LanguageServer::handle_hover(const JsonRpcMessage& message) {
 	// A fenced block in the editor's own language, so the client colours it like source.
 	auto contents = std::make_unique<JSONObject>();
 	contents->add("kind", std::make_unique<JSONString>("markdown"));
-	contents->add("value", std::make_unique<JSONString>("```cksp\n" + hover->text + "\n```"));
+	auto value = "```cksp\n" + hover->text + "\n```";
+	if (!hover->documentation.empty()) value += "\n\n---\n\n" + hover->documentation;
+	contents->add("value", std::make_unique<JSONString>(value));
 	JSONObject result;
 	result.add("contents", std::move(contents));
 	result.add("range", hover->range.get_lsp_range());

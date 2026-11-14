@@ -296,6 +296,40 @@ def _(workspace, server):
                f"{marker}: hover range starts at {position_of(hover)}, expected the hovered name")
 
 
+@test("hover: defines, macros and doc comments in the common docstring formats")
+def _(workspace, server):
+    fixture = workspace.open("hover_docs.cksp")
+    expected = {
+        # JSDoc: the type of a parameter is kept, tags set apart like TypeScript does.
+        "fade": "```cksp\nfunction fade(amount: int, target: int): int\n```\n\n---\n\n"
+                "Fades the output towards a target.\n\n"
+                "*@param* `amount` — how far to move per step\n\n"
+                "*@param* `target` `{int}` — the level to reach\n\n"
+                "*@returns* — the new level",
+        # Doxygen with backslash tags and a direction; @brief only marks the summary.
+        "gain": "```cksp\nfunction gain(db: real): real\n```\n\n---\n\n"
+                "Gain in dB.\n\n*@param* `db` — the gain",
+        "define": "```cksp\ndefine NUM_VOICES := 8\n```\n\n---\n\nNumber of voices.",
+        "define_params": "```cksp\ndefine DOUBLE(#x#) := (#x#) * 2\n```",
+        "macro": "```cksp\nmacro log(#value#, prefix)\n```\n\n---\n\nLogs a value",
+        "macro_param": "```cksp\n(macro parameter) #value#\n```",
+        # A parameter shows only its own @param from the comment above its header.
+        "fade_param": "```cksp\n(parameter) amount: int\n```\n\n---\n\nhow far to move per step",
+        # A Doxygen member comment trailing the declaration.
+        "level": "```cksp\ndeclare level: int\n```\n\n---\n\ncurrent level",
+        "plain": "```cksp\ndeclare plain: int\n```\n\n---\n\nplain comment",
+        "no_doc": "```cksp\ndeclare no_doc: int\n```",
+    }
+    for marker, value in expected.items():
+        hover = server.request("textDocument/hover", {
+            "textDocument": {"uri": fixture.uri},
+            "position": fixture.at(marker).as_json(),
+        })
+        expect(hover is not None, f"{marker}: no hover")
+        actual = hover["contents"]["value"]
+        expect(actual == value, f"{marker}: got {actual!r}, expected {value!r}")
+
+
 @test("hover: nothing where no symbol stands")
 def _(workspace, server):
     fixture = workspace.open("hover.cksp")

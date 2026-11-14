@@ -150,7 +150,9 @@ private:
 		if (!m_record_hovers || target.tok.file().empty()) return;
 		const auto name_range = source_range_from_token(target.tok);
 		if (!name_range.is_valid() || m_index.has_hover(target.tok.file(), name_range)) return;
-		m_index.add_hover(target.tok.file(), name_range, hover_of(target));
+		const auto* data = dynamic_cast<const NodeDataStructure*>(&target);
+		m_index.add_hover(target.tok.file(), name_range, hover_of(target),
+			data && data->is_function_param() ? target.tok.val : std::string{});
 	}
 
 	/// Whether the source writes a name with this token. A node the compiler makes may
