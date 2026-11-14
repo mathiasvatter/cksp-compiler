@@ -267,6 +267,45 @@ def _(workspace, server):
 # Diagnostics and document lifecycle
 # ==========================================================================
 
+@test("hover: shows the declaration with its type, like TypeScript's quick info")
+def _(workspace, server):
+    fixture = workspace.open("hover.cksp")
+    expected = {
+        "member_use": "(member) Loader.path: string",
+        "static_use": "(static const) Loader.ID: int",
+        # Untyped in the source; the hover shows what inference settled on.
+        "param_use": "(parameter) a: int",
+        "const_decl": "declare const MAX: int",
+        "struct_use": "struct Loader",
+        "method_use": "(method) Loader.update(times: int)",
+        "ns_function_use": "function audio.reset(amount: int): int",
+        "enum_use": "(const) Levels.HIGH: int",
+        "inferred_use": "declare inferred: real",
+        "helper_use": "function helper(a: int, b: real): real",
+        "control_use": "declare ui_knob knob",
+    }
+    for marker, text in expected.items():
+        hover = server.request("textDocument/hover", {
+            "textDocument": {"uri": fixture.uri},
+            "position": fixture.at(marker).as_json(),
+        })
+        expect(hover is not None, f"{marker}: no hover")
+        value = hover["contents"]["value"]
+        expect(value == f"```cksp\n{text}\n```", f"{marker}: got {value!r}, expected {text!r}")
+        expect(position_of(hover) == fixture.at(marker),
+               f"{marker}: hover range starts at {position_of(hover)}, expected the hovered name")
+
+
+@test("hover: nothing where no symbol stands")
+def _(workspace, server):
+    fixture = workspace.open("hover.cksp")
+    hover = server.request("textDocument/hover", {
+        "textDocument": {"uri": fixture.uri},
+        "position": {"line": 0, "character": 0},
+    })
+    expect(hover is None, f"expected no hover on the <const> keyword, got {hover}")
+
+
 @test("diagnostics: an undeclared variable is reported at its position")
 def _(workspace, server):
     fixture = workspace.open("diagnostics.cksp")

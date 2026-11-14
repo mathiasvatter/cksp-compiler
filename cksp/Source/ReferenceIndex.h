@@ -57,6 +57,13 @@ struct TypeHint {
 	std::string type;
 };
 
+/// What hovering a name shows: the declaration it stands for, rendered like a signature.
+struct Hover {
+	std::string file;
+	SourceRange range;  ///< the hovered name, one-based
+	std::string text;   ///< "declare mode: int", "function fade(amount: int): int", ...
+};
+
 /// What a name in the source stands for, as far as an editor colours it.
 enum class SymbolKind {
 	Namespace,
@@ -113,8 +120,38 @@ class ReferenceIndex {
 	/// Keyed by range. See add_symbol() for how repeated occurrences merge.
 	std::unordered_map<std::string, SymbolToken> m_symbols;
 	mutable std::unordered_map<std::string, std::string> m_normalized_files;
+	/// Hover text per declaration, keyed by the declared name's range.
+	std::unordered_map<std::string, Hover> m_hovers;
 
 public:
+	/// Records what hovering the declaration named at `name_range`, or any reference to it,
+	/// shows. The first text recorded stays: later passes see the AST lowered further.
+	void add_hover(const std::string& file, const SourceRange& name_range, std::string text) {
+		if (file.empty() || !name_range.is_valid() || text.empty()) return;
+		auto normalized = normalized_file(file);
+		auto key = reference_key(normalized, name_range);
+		m_hovers.try_emplace(std::move(key), Hover{std::move(normalized), name_range, std::move(text)});
+	}
+
+	[[nodiscard]] bool has_hover(const std::string& file, const SourceRange& name_range) const {
+		return m_hovers.contains(reference_key(normalized_file(file), name_range));
+	}
+
+	/// The hover for a zero-based (LSP) position: the declaration a reference there leads
+	/// to, or the declaration written there itself. The range is the hovered name.
+	[[nodiscard]] std::optional<Hover> hover_at(const std::string& file, size_t line, size_t character) const {
+		for (const auto& link : resolve_all(file, line, character)) {
+			const auto found = m_hovers.find(reference_key(link.def_file, link.def_name_range));
+			if (found != m_hovers.end()) {
+				return Hover{link.ref_file, link.ref_range, found->second.text};
+			}
+		}
+		for (const auto& [_, hover] : m_hovers) {
+			if (hover.file == file && covers(hover.range, line, character)) return hover;
+		}
+		return std::nullopt;
+	}
+
 	/// Records what the name at `range` stands for. The same range is met more than once -
 	/// once per macro expansion, and a declaration both as itself and as a link target - so
 	/// the kind first recorded stays, and the modifiers of later records join it.

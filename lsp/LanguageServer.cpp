@@ -59,6 +59,8 @@ void LanguageServer::handle_request(const JsonRpcMessage& message) {
 		handle_shutdown(message);
 	} else if (method->value == "textDocument/definition") {
 		handle_definition(message);
+	} else if (method->value == "textDocument/hover") {
+		handle_hover(message);
 	} else if (method->value == "textDocument/documentLink") {
 		handle_document_link(message);
 	} else if (method->value == "textDocument/references") {
@@ -440,6 +442,7 @@ void LanguageServer::handle_initialize(const JsonRpcMessage& message) {
 	capabilities.add("textDocumentSync", std::make_unique<JSONObject>(sync));
 	capabilities.add("experimental", std::move(experimental));
 	capabilities.add("definitionProvider", std::make_unique<JSONBool>(true));
+	capabilities.add("hoverProvider", std::make_unique<JSONBool>(true));
 	capabilities.add("documentLinkProvider", std::make_unique<JSONObject>(document_link_options));
 	capabilities.add("referencesProvider", std::make_unique<JSONBool>(true));
 	capabilities.add("renameProvider", std::make_unique<JSONObject>(rename_options));
@@ -519,6 +522,33 @@ void LanguageServer::handle_definition(const JsonRpcMessage& message) {
 		links.add(std::move(link));
 	}
 	m_connection.send_response(*id, links);
+}
+
+void LanguageServer::handle_hover(const JsonRpcMessage& message) {
+	const auto* id = message.id();
+	if (!id) return;
+	const auto position = position_params(message);
+	std::optional<Hover> hover;
+	if (position) {
+		std::lock_guard lock(m_state_mutex);
+		hover = m_references.hover(
+			m_entry_points.affected_entries(position->source),
+			position->source,
+			position->line,
+			position->character);
+	}
+	if (!hover) {
+		m_connection.send_response(*id, JSONNull{});
+		return;
+	}
+	// A fenced block in the editor's own language, so the client colours it like source.
+	auto contents = std::make_unique<JSONObject>();
+	contents->add("kind", std::make_unique<JSONString>("markdown"));
+	contents->add("value", std::make_unique<JSONString>("```cksp\n" + hover->text + "\n```"));
+	JSONObject result;
+	result.add("contents", std::move(contents));
+	result.add("range", hover->range.get_lsp_range());
+	m_connection.send_response(*id, result);
 }
 
 void LanguageServer::handle_document_link(const JsonRpcMessage& message) {

@@ -10,6 +10,7 @@
 #include "../../cksp/ASTVisitor/ASTVisitor.h"
 #include "../../cksp/ASTNodes/ASTReferences.h"
 #include "../../cksp/Source/CompletionIndex.h"
+#include "DeclarationFormat.h"
 
 /**
  * Harvests qualifier containers and their members into a CompletionIndex.
@@ -68,17 +69,6 @@ private:
 		return node.ty ? node.ty->to_string() : std::string{};
 	}
 
-	/// The declared name minus its qualifier path, i.e. what the user types
-	/// after the dot.
-	static std::string basename_of(const std::string& name) {
-		const auto object_member = name.rfind(OBJ_DELIMITER);
-		if (object_member != std::string::npos) {
-			return name.substr(object_member + OBJ_DELIMITER.size());
-		}
-		const auto dot = name.rfind('.');
-		return dot == std::string::npos ? name : name.substr(dot + 1);
-	}
-
 	static CompletionKind kind_of_segment(const NodePrefix::PrefixKind kind) {
 		switch (kind) {
 			case NodePrefix::PrefixKind::Const: return CompletionKind::Constant;
@@ -127,79 +117,12 @@ private:
 		const auto path = path_of(node);
 		m_index.set_container_kind(
 			CompletionIndex::join(path), kind_of_segment(node.prefix->prefixes.back().kind));
-		m_index.add(path, {basename_of(node.name), {}, detail_of(node), kind});
+		m_index.add(path, {declaration_format::basename_of(node.name), {}, detail_of(node), kind});
 	}
 
 	void record_declaration(NodeDataStructure& node) const {
 		record(node, kind_of_member(node));
 		record_named_declaration(node);
-	}
-
-	/// "(amount: int, target: int)".
-	///
-	/// Parameter names come from the declaration token, never from the name:
-	/// UniqueParameterNamesProvider uniquifies the names right before this harvest runs,
-	/// which would surface <amount0> in the editor. The token keeps the source spelling.
-	///
-	/// Read tok.val rather than get_token_string(): the latter reconstructs a declaration
-	/// from the *name* for composite structures (NodeArray returns "name[size]"), so it
-	/// carries the rename right back in.
-	static std::vector<std::string> parameter_labels_of(
-		const NodeFunctionHeader& header, const bool omit_receiver = false) {
-		std::vector<std::string> labels;
-		size_t first = 0;
-		if (omit_receiver && !header.params.empty() && header.params.front()
-			&& header.params.front()->variable
-			&& header.params.front()->variable->tok.val == NodeStruct::SELF) {
-			first = 1;
-		}
-		labels.reserve(header.params.size() - first);
-		for (size_t i = first; i < header.params.size(); ++i) {
-			const auto& parameter = header.params[i];
-			if (!parameter || !parameter->variable) continue;
-			std::string label = parameter->variable->tok.val;
-			if (const auto* type = parameter->variable->ty; type && !is_unknown(type)) {
-				label += ": " + type->to_string();
-			}
-			labels.push_back(std::move(label));
-		}
-		return labels;
-	}
-
-	static std::string parameters_of(const std::vector<std::string>& labels) {
-		std::string parameters = "(";
-		for (size_t i = 0; i < labels.size(); ++i) {
-			if (i) parameters += ", ";
-			parameters += labels[i];
-		}
-		return parameters + ")";
-	}
-
-	/// "function fade(amount: int, target: int): int".
-	///
-	/// The name comes from the token, which is how it was written: a function in a
-	/// namespace is declared as <reset>, while <function nks.update_labels()> carries the
-	/// dots in its own name and should show them.
-	static std::string signature_of(
-		const NodeFunctionHeader& header,
-		const bool is_static,
-		const bool omit_receiver = false) {
-		std::string signature = is_static ? "static function " : "function ";
-		signature += (header.tok.val.empty() ? basename_of(header.name) : header.tok.val)
-			+ parameters_of(parameter_labels_of(header, omit_receiver));
-		// The header's own type is a FunctionType; its return type is Unknown for a
-		// function that returns nothing, which must not be printed.
-		if (const auto* function_type = header.ty ? header.ty->cast<FunctionType>() : nullptr) {
-			if (const auto* return_type = function_type->get_return_type();
-				return_type && !is_unknown(return_type)) {
-				signature += ": " + return_type->to_string();
-			}
-		}
-		return signature;
-	}
-
-	static bool is_unknown(const Type* type) {
-		return !type || type->to_string() == "unknown";
 	}
 
 	/// Struct a declaration is an instance of. Arrays of structs resolve to their
@@ -228,7 +151,7 @@ private:
 		// A name may equal the token outright when it carries dots of its own
 		// (<declare nks.counter>), or differ from it only by the qualifier the
 		// namespace desugaring prepended.
-		if (name != node.tok.val && basename_of(name) != node.tok.val) {
+		if (name != node.tok.val && declaration_format::basename_of(name) != node.tok.val) {
 			// The compiler renamed this one - a uniquified parameter, or machinery of a
 			// generated method. Only a declaration inside a real function body stays
 			// nameable, and then under the spelling the source actually uses.
@@ -299,13 +222,13 @@ public:
 	}
 
 	NodeAST* visit(NodeFunctionHeader& node) override {
-		const auto parameter_labels = parameter_labels_of(node);
+		const auto parameter_labels = declaration_format::parameter_labels_of(node);
 		if (m_pass == Pass::Members && !node.prefix->prefixes.empty()) {
 			record_nesting(node);
 			m_index.add(path_of(node), {
-				.label = basename_of(node.name),
-				.parameters = parameters_of(parameter_labels),
-				.detail = signature_of(node, false),
+				.label = declaration_format::basename_of(node.name),
+				.parameters = declaration_format::parameters_of(parameter_labels),
+				.detail = declaration_format::signature_of(node, false),
 				.kind = CompletionKind::Function,
 				.parameter_labels = parameter_labels,
 			});
@@ -315,8 +238,8 @@ public:
 		if (m_pass == Pass::Members && !node.tok.file().empty()) {
 			m_index.add_declaration({
 				.name = node.name,
-				.parameters = parameters_of(parameter_labels),
-				.detail = signature_of(node, false),
+				.parameters = declaration_format::parameters_of(parameter_labels),
+				.detail = declaration_format::signature_of(node, false),
 				.kind = CompletionKind::Function,
 				.parameter_labels = parameter_labels,
 			});
@@ -378,7 +301,7 @@ public:
 			if (container.empty()) continue;
 			m_index.add_declaration({
 				.name = container,
-				.detail = "struct " + basename_of(container),
+				.detail = "struct " + declaration_format::basename_of(container),
 				.kind = CompletionKind::Struct,
 			});
 
@@ -387,11 +310,11 @@ public:
 				if (!declaration) continue;
 				// Struct desugaring prepends a synthetic <self> member; it is machinery,
 				// not something the user can complete to.
-				if (declaration->name == NodeStruct::SELF || basename_of(declaration->name) == NodeStruct::SELF) {
+				if (declaration->name == NodeStruct::SELF || declaration_format::basename_of(declaration->name) == NodeStruct::SELF) {
 					continue;
 				}
 				CompletionMember item{
-					.label = basename_of(declaration->name),
+					.label = declaration_format::basename_of(declaration->name),
 					.detail = detail_of(*declaration),
 					.object_type = object_type_of(declaration->ty),
 				};
@@ -408,7 +331,7 @@ public:
 
 			for (const auto& method : definition->methods) {
 				if (!method || !method->header) continue;
-				const auto name = basename_of(method->header->name);
+				const auto name = declaration_format::basename_of(method->header->name);
 				// <self.> inside this method resolves to the struct. Recorded before the
 				// surface filter below: a hand written <__init__> is not offered as a
 				// member, but its body is source the user writes <self.> in like any
@@ -423,11 +346,11 @@ public:
 					continue;
 				}
 				const bool omit_receiver = !method->is_static;
-				const auto parameter_labels = parameter_labels_of(*method->header, omit_receiver);
+				const auto parameter_labels = declaration_format::parameter_labels_of(*method->header, omit_receiver);
 				CompletionMember item{
 					.label = name,
-					.parameters = parameters_of(parameter_labels),
-					.detail = signature_of(*method->header, method->is_static, omit_receiver),
+					.parameters = declaration_format::parameters_of(parameter_labels),
+					.detail = declaration_format::signature_of(*method->header, method->is_static, omit_receiver),
 					.kind = CompletionKind::Method,
 					.category = method->is_static ? "static function" : "method",
 					.parameter_labels = parameter_labels,

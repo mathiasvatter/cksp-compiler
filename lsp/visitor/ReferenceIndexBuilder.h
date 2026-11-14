@@ -15,6 +15,7 @@
 #include "../../cksp/ASTNodes/ASTReferences.h"
 #include "../../cksp/Source/ReferenceIndex.h"
 #include "../../cksp/Source/SourceProvider.h"
+#include "DeclarationFormat.h"
 
 /**
  * Builds the ReferenceIndex in two AST passes.
@@ -34,6 +35,9 @@ private:
 	ReferenceIndex& m_index;
 	Pass m_pass;
 	SourceProvider* m_sources = nullptr;
+	/// Only the first reference harvest renders hovers. The second one runs after
+	/// ASTCollectLowerings, when struct members are mangled arrays and objects plain ints.
+	bool m_record_hovers = true;
 	mutable std::unordered_map<std::string, std::shared_ptr<const std::string>> m_source_cache;
 
 	struct Symbol {
@@ -73,6 +77,82 @@ private:
 		return Symbol{SymbolKind::Variable, readonly};
 	}
 
+	/// The qualifier path a desugared declaration carries, joined: "audio.mixer.".
+	static std::string qualifier_of(const NodeDataStructure& node) {
+		std::string qualifier;
+		for (const auto& segment : node.prefix->prefixes) {
+			qualifier += segment.token.val + ".";
+		}
+		return qualifier;
+	}
+
+	static std::string typed(std::string name, const NodeAST& node) {
+		const auto type = declaration_format::type_of(node);
+		return type.empty() ? name : name + ": " + type;
+	}
+
+	/// "function audio.fade(amount: int): int", "(method) Loader.update()".
+	static std::string hover_of(const NodeFunctionHeader& header) {
+		const auto* definition = header.parent ? header.parent->cast<NodeFunctionDefinition>() : nullptr;
+		const auto* owner = definition && definition->parent ? definition->parent->cast<NodeStruct>() : nullptr;
+		if (owner) {
+			const bool is_static = definition->is_static;
+			return std::string(is_static ? "(static method) " : "(method) ")
+				+ declaration_format::basename_of(owner->name) + "." + header.tok.val
+				+ declaration_format::parameters_of(
+					declaration_format::parameter_labels_of(header, !is_static))
+				+ declaration_format::return_annotation_of(header);
+		}
+		return "function " + qualifier_of(header) + header.tok.val
+			+ declaration_format::parameters_of(declaration_format::parameter_labels_of(header))
+			+ declaration_format::return_annotation_of(header);
+	}
+
+	/// What hovering a declaration shows, written like TypeScript's quick info: the
+	/// construct, the name as it is reached, and the type inference settled on. Empty for
+	/// what has no hover.
+	static std::string hover_of(NodeAST& target) {
+		if (const auto* header = target.cast<NodeFunctionHeader>()) return hover_of(*header);
+		if (const auto* definition = target.cast<NodeStruct>()) {
+			return "struct " + declaration_format::basename_of(definition->name);
+		}
+		if (const auto* block = target.cast<NodeNamespace>()) return "namespace " + block->prefix.val;
+		if (const auto* block = target.cast<NodeFamily>()) return "family " + block->prefix.val;
+		if (const auto* block = target.cast<NodeConst>()) return "const " + block->const_prefix.val;
+
+		const auto* data = dynamic_cast<const NodeDataStructure*>(&target);
+		if (!data || data->kind == NodeDataStructure::Kind::Builtin) return {};
+		if (data->name == NodeStruct::SELF || data->tok.val == NodeStruct::SELF) return {};
+		const auto& name = data->tok.val;
+		if (const auto* control = data->parent ? data->parent->cast<NodeUIControl>() : nullptr) {
+			return "declare " + control->ui_control_type + " " + qualifier_of(*data) + name;
+		}
+		if (data->is_function_param()) return "(parameter) " + typed(name, *data);
+		if (const auto* owner = data->is_member()) {
+			const auto* role = !data->is_shared_member() ? "(member) "
+				: data->data_type == DataType::Const ? "(static const) " : "(static) ";
+			return std::string(role)
+				+ typed(declaration_format::basename_of(owner->name) + "." + name, *data);
+		}
+		const auto qualified = qualifier_of(*data) + name;
+		if (!data->prefix->prefixes.empty()
+			&& data->prefix->prefixes.back().kind == NodePrefix::PrefixKind::Const) {
+			return "(const) " + typed(qualified, *data);
+		}
+		std::string keyword = "declare ";
+		if (data->data_type == DataType::Const) keyword += "const ";
+		if (data->data_type == DataType::Polyphonic) keyword += "polyphonic ";
+		return keyword + typed(qualified, *data);
+	}
+
+	/// Renders the hover of a declaration once, keyed by its name token.
+	void record_hover(NodeAST& target) const {
+		if (!m_record_hovers || target.tok.file().empty()) return;
+		const auto name_range = source_range_from_token(target.tok);
+		if (!name_range.is_valid() || m_index.has_hover(target.tok.file(), name_range)) return;
+		m_index.add_hover(target.tok.file(), name_range, hover_of(target));
+	}
+
 	/// Whether the source writes a name with this token. A node the compiler makes may
 	/// borrow the token of what it was made for - FunctionShortCircuit gives the temporaries
 	/// of <if not obj.has(x)> the <if> and the <not> - and those are not symbols.
@@ -103,7 +183,9 @@ private:
 	}
 
 	void record_declaration(NodeAST& node) const {
-		if (m_pass == Pass::References) record_declaration(node, node.tok);
+		if (m_pass != Pass::References) return;
+		record_declaration(node, node.tok);
+		record_hover(node);
 	}
 
 	[[nodiscard]] static const NodePrefix* prefixes_of(const NodeAST& target) {
@@ -233,6 +315,8 @@ private:
 			direct_reference.val == target.tok.val);
 		const auto symbol = symbol_of(target);
 		if (symbol) m_index.add_symbol(direct_reference.file(), ref_range, symbol->kind, symbol->modifiers);
+		// The definitions pass meets declarations before desugaring and inference.
+		if (m_pass == Pass::References) record_hover(target);
 
 		// A substituted name also stands at the call site, where the argument was written -
 		// the substitution moved the token there. Only the segment the argument supplied
@@ -289,14 +373,17 @@ private:
 		if (m_pass == Pass::Definitions) {
 			add_link(declaration, node);
 			record_declaration(node, declaration);
+			// Desugaring dissolves the block, so this pass is the only one that sees it.
+			record_hover(node);
 		}
 		ASTVisitor::visit(node);
 		return &node;
 	}
 
 public:
-	explicit ReferenceIndexBuilder(ReferenceIndex& index, const Pass pass, SourceProvider* sources = nullptr)
-		: m_index(index), m_pass(pass), m_sources(sources) {}
+	explicit ReferenceIndexBuilder(
+		ReferenceIndex& index, const Pass pass, SourceProvider* sources = nullptr, const bool record_hovers = true)
+		: m_index(index), m_pass(pass), m_sources(sources), m_record_hovers(record_hovers) {}
 
 	NodeAST* visit(NodeVariable& node) override {
 		record_declaration(node);

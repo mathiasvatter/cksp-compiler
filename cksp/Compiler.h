@@ -285,7 +285,7 @@ private:
 		// still alive. ASTCollectLowerings removes them; the later pass layers links
 		// resolved only by the final variable check on top of this snapshot.
 		if (m_program->compiler_config->lsp) {
-			build_reference_index();
+			build_reference_index(true);
 			build_completion_index();
 			TypeHintHarvester inferred(
 				m_untyped_declarations, &m_reference_index, TypeHintHarvester::Pass::Inferred);
@@ -308,7 +308,7 @@ private:
 		// Second pass: pick up references only resolved after the final variable check.
 		// Dedup keeps the first pass's ranges for references seen in both.
 		if (m_program->compiler_config->lsp) {
-			build_reference_index();
+			build_reference_index(false);
 		}
 
 		ASTKSPSyntaxCheck syntax_check(m_program);
@@ -319,9 +319,10 @@ private:
 	/// Appends to the existing index (which already holds the define/macro links recorded by
 	/// the preprocessor passes); the index dedupes by reference range. The reset happens at
 	/// the start of analyse_impl, before preprocessing.
-	void build_reference_index() {
+	/// `record_hovers` is set for the first harvest only: the second one sees the AST lowered.
+	void build_reference_index(const bool record_hovers) {
 		ReferenceIndexBuilder reference_index_builder(
-			m_reference_index, ReferenceIndexBuilder::Pass::References, m_sources);
+			m_reference_index, ReferenceIndexBuilder::Pass::References, m_sources, record_hovers);
 		ast->accept(reference_index_builder);
 	}
 
@@ -751,7 +752,9 @@ public:
 			// already in the index; harvest the partially resolved AST on top if it exists.
 			if (ast) {
 				try {
-					build_reference_index();
+					// Hovers too: an abort before the first harvest leaves the AST unlowered,
+					// and after it the hovers already recorded win.
+					build_reference_index(true);
 					// Same salvage for completion: an analysis that got past desugaring
 					// carries complete prefix paths even though a later pass failed, so a
 					// file with a semantic error still completes. A tokenizer or parser

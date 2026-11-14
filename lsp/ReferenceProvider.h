@@ -61,6 +61,12 @@ public:
 	[[nodiscard]] std::vector<SymbolToken> symbols(
 		const std::vector<SourceId>& preferred_entries,
 		const SourceId& source);
+	/// What hovering the position shows, resolved like go-to-definition.
+	[[nodiscard]] std::optional<Hover> hover(
+		const std::vector<SourceId>& preferred_entries,
+		const SourceId& source,
+		size_t line,
+		size_t character);
 	[[nodiscard]] std::vector<ReferenceLocation> references_to(
 		const ReferenceLink& target,
 		bool include_declaration);
@@ -100,6 +106,11 @@ private:
 		const State& state,
 		const SourceId& source);
 	[[nodiscard]] std::optional<ReferenceLink> resolve_from_state(
+		const State& state,
+		const SourceId& source,
+		size_t line,
+		size_t character);
+	[[nodiscard]] std::optional<Hover> hover_from_state(
 		const State& state,
 		const SourceId& source,
 		size_t line,

@@ -181,6 +181,40 @@ std::optional<ReferenceLink> ReferenceProvider::resolve_target(
 	return std::nullopt;
 }
 
+std::optional<Hover> ReferenceProvider::hover_from_state(
+	const State& state,
+	const SourceId& source,
+	const size_t line,
+	const size_t character) {
+	if (state.current) {
+		if (auto hover = state.current->hover_at(source.value, line, character)) return hover;
+	}
+	if (!state.last_successful || state.last_successful == state.current
+		|| !source_matches_snapshot(state.last_successful_sources, source.value)) {
+		return std::nullopt;
+	}
+	return state.last_successful->hover_at(source.value, line, character);
+}
+
+std::optional<Hover> ReferenceProvider::hover(
+	const std::vector<SourceId>& preferred_entries,
+	const SourceId& source,
+	const size_t line,
+	const size_t character) {
+	const auto normalized_source = FileSystemSourceProvider::normalize(source.value);
+	std::lock_guard lock(m_mutex);
+
+	for (const auto& entry : preferred_entries) {
+		const auto state = m_states.find(FileSystemSourceProvider::normalize(entry.value).value);
+		if (state == m_states.end()) continue;
+		if (auto hover = hover_from_state(state->second, normalized_source, line, character)) return hover;
+	}
+	for (const auto& [_, state] : m_states) {
+		if (auto hover = hover_from_state(state, normalized_source, line, character)) return hover;
+	}
+	return std::nullopt;
+}
+
 std::vector<ReferenceLink> ReferenceProvider::references_from_state(
 	const State& state,
 	const ReferenceLink& target) {

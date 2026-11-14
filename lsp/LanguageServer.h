@@ -102,6 +102,7 @@ public:
 	void handle_initialize(const JsonRpcMessage& message);
 	void handle_shutdown(const JsonRpcMessage& message);
 	void handle_definition(const JsonRpcMessage& message);
+	void handle_hover(const JsonRpcMessage& message);
 	void handle_document_link(const JsonRpcMessage& message);
 	void handle_code_action(const JsonRpcMessage& message) const;
 	void handle_references(const JsonRpcMessage& message);
