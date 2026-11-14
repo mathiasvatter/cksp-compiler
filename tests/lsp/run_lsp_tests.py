@@ -275,14 +275,14 @@ def _(workspace, server):
         "static_use": "(static const) Loader.ID: int",
         # Untyped in the source; the hover shows what inference settled on.
         "param_use": "(parameter) a: int",
-        "const_decl": "declare const MAX: int",
+        "const_decl": "const MAX: int",
         "struct_use": "struct Loader",
         "method_use": "(method) Loader.update(times: int)",
         "ns_function_use": "function audio.reset(amount: int): int",
         "enum_use": "(const) Levels.HIGH: int",
-        "inferred_use": "declare inferred: real",
+        "inferred_use": "inferred: real",
         "helper_use": "function helper(a: int, b: real): real",
-        "control_use": "declare ui_knob knob",
+        "control_use": "ui_knob knob",
     }
     for marker, text in expected.items():
         hover = server.request("textDocument/hover", {
@@ -316,9 +316,9 @@ def _(workspace, server):
         # A parameter shows only its own @param from the comment above its header.
         "fade_param": "```cksp\n(parameter) amount: int\n```\n\n---\n\nhow far to move per step",
         # A Doxygen member comment trailing the declaration.
-        "level": "```cksp\ndeclare level: int\n```\n\n---\n\ncurrent level",
-        "plain": "```cksp\ndeclare plain: int\n```\n\n---\n\nplain comment",
-        "no_doc": "```cksp\ndeclare no_doc: int\n```",
+        "level": "```cksp\nlevel: int\n```\n\n---\n\ncurrent level",
+        "plain": "```cksp\nplain: int\n```\n\n---\n\nplain comment",
+        "no_doc": "```cksp\nno_doc: int\n```",
     }
     for marker, value in expected.items():
         hover = server.request("textDocument/hover", {
@@ -328,6 +328,96 @@ def _(workspace, server):
         expect(hover is not None, f"{marker}: no hover")
         actual = hover["contents"]["value"]
         expect(actual == value, f"{marker}: got {actual!r}, expected {value!r}")
+
+
+@test("hover: a failing entry does not cost a shared file its inferred types",
+      entry_points=["entry_ok.cksp", "entry_broken.cksp"])
+def _(workspace, server):
+    # entry_broken aborts before inference; its partial index knows <idx> but not its type.
+    # The complete analysis of entry_ok has it, and the hover must come from there whichever
+    # entry the server happens to ask first - an unordered set decides that, so on some
+    # standard libraries this passes without the preference too.
+    # A struct method sees globals but not on-init declarations: from entry_broken the
+    # analysis aborts on <mode>, as in cksp-tools-issues#37.
+    shared = workspace.write("shared.cksp",
+                             "function find(id: int): int\n"
+                             "    declare idx := id * 2\n"
+                             "    return idx\n"
+                             "end function\n"
+                             "struct Probe\n"
+                             "    declare level: int\n"
+                             "    function check(self)\n"
+                             "        self.level := mode\n"
+                             "    end function\n"
+                             "end struct\n")
+    for name, source in {
+        "entry_ok.cksp": "declare mode: int := 1\nimport \"shared.cksp\"\n"
+                         "on init\n    message(find(1))\nend on\n",
+        "entry_broken.cksp": "import \"shared.cksp\"\n"
+                             "on init\n    declare mode: int := 1\n    message(find(1))\nend on\n",
+    }.items():
+        server.did_open(workspace.write(name, source))
+    # Both entries are analysed by now; the shared file publishes no diagnostics of its own.
+    server.did_open(shared, wait=False)
+    hover = server.request("textDocument/hover", {
+        "textDocument": {"uri": shared.uri},
+        "position": {"line": 2, "character": shared.text.splitlines()[2].index("idx")}})
+    value = hover["contents"]["value"] if hover else None
+    expect(value == "```cksp\nidx: int\n```", f"got {value!r}")
+
+
+@test("hover: a ui control array shows the control it was declared as")
+def _(workspace, server):
+    fixture = workspace.write("ui_array.cksp",
+                              "on init\n"
+                              "    declare pers ui_button buttons[4]\n"
+                              "    message(search(buttons, 0))\n"
+                              "end on\n")
+    server.did_open(fixture)
+    line = fixture.text.splitlines()[2]
+    hover = server.request("textDocument/hover", {
+        "textDocument": {"uri": fixture.uri},
+        "position": {"line": 2, "character": line.index("buttons")}})
+    value = hover["contents"]["value"] if hover else None
+    expect(value == "```cksp\npers ui_button buttons[]\n```", f"got {value!r}")
+
+
+@test("hover: keeps the persistence and storage keywords, drops <declare>")
+def _(workspace, server):
+    fixture = workspace.write("persistence.cksp",
+                              "on init\n"
+                              "    declare read mode: int := 1\n"
+                              "    declare instpers counter := 2\n"
+                              "    declare const MAX := 10\n"
+                              "    declare read ui_knob knob(0, 100, 1)\n"
+                              "    message(mode & counter & MAX & knob)\n"
+                              "end on\n")
+    server.did_open(fixture)
+    line = fixture.text.splitlines()[5]
+    for name, text in [("mode", "read mode: int"), ("counter", "instpers counter: int"),
+                       ("MAX", "const MAX: int"), ("knob", "read ui_knob knob")]:
+        hover = server.request("textDocument/hover", {
+            "textDocument": {"uri": fixture.uri},
+            "position": {"line": 5, "character": line.index(name)}})
+        value = hover["contents"]["value"] if hover else None
+        expect(value == f"```cksp\n{text}\n```", f"{name}: got {value!r}")
+
+
+@test("hover: an edit since the last analysis moves the hover along, like the inlay hints")
+def _(workspace, server):
+    source = "on init\n    declare amount := 2.5\n    message(amount)\nend on\n"
+    fixture = workspace.write("moved.cksp", source)
+    server.did_open(fixture)
+    # A line above, typed but broken: the analysis fails, the last complete one stays.
+    edited = server.did_change(fixture, "on init\n    message(\n" + source[len("on init\n"):])
+    line = edited.text.splitlines()[3]
+    hover = server.request("textDocument/hover", {
+        "textDocument": {"uri": fixture.uri},
+        "position": {"line": 3, "character": line.index("amount")}})
+    value = hover["contents"]["value"] if hover else None
+    expect(value == "```cksp\namount: real\n```", f"got {value!r}")
+    expect(position_of(hover) == Position(3, line.index("amount")),
+           f"hover range not moved onto the edited text: {hover['range'] if hover else None}")
 
 
 @test("hover: nothing where no symbol stands")

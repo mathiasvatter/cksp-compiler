@@ -5,6 +5,7 @@
 #pragma once
 
 #include <algorithm>
+#include <functional>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -143,20 +144,50 @@ public:
 		return m_hovers.contains(reference_key(normalized_file(file), name_range));
 	}
 
+	/// Carries a range of `file` as this index recorded it onto the text as it is now, or
+	/// nothing when the text there was edited. Empty when the text is unchanged.
+	using RangeMap = std::function<std::optional<SourceRange>(const SourceRange&)>;
+
 	/// The hover for a zero-based (LSP) position: the declaration a reference there leads
-	/// to, or the declaration written there itself. The range is the hovered name.
-	[[nodiscard]] std::optional<Hover> hover_at(const std::string& file, size_t line, size_t character) const {
-		for (const auto& link : resolve_all(file, line, character)) {
-			const auto found = m_hovers.find(reference_key(link.def_file, link.def_name_range));
-			if (found != m_hovers.end()) {
+	/// to, or the declaration written there itself. The range is the hovered name. With
+	/// `moved`, the position is in a newer text of `file` than this index was built from.
+	[[nodiscard]] std::optional<Hover> hover_at(
+		const std::string& file, size_t line, size_t character, const RangeMap& moved = {}) const {
+		const auto now = [&moved](const SourceRange& range) -> std::optional<SourceRange> {
+			return moved ? moved(range) : std::optional(range);
+		};
+
+		const ReferenceLink* narrowest = nullptr;
+		SourceRange narrowest_range;
+		for (const auto& link : m_links) {
+			if (link.ref_file != file) continue;
+			const auto range = now(link.ref_range);
+			if (!range || !covers(*range, line, character)) continue;
+			if (!narrowest || is_narrower(*range, narrowest_range)) {
+				narrowest = &link;
+				narrowest_range = *range;
+			}
+		}
+		// Several links share the narrowest reference when a macro parameter leads both to
+		// the parameter and to the argument; the first with a hover answers.
+		if (narrowest) {
+			for (const auto& link : m_links) {
+				if (link.ref_file != file || !same_range(link.ref_range, narrowest->ref_range)) continue;
+				const auto found = m_hovers.find(reference_key(link.def_file, link.def_name_range));
+				if (found == m_hovers.end()) continue;
 				auto hover = found->second;
 				hover.file = link.ref_file;
-				hover.range = link.ref_range;
+				hover.range = narrowest_range;
 				return hover;
 			}
 		}
 		for (const auto& [_, hover] : m_hovers) {
-			if (hover.file == file && covers(hover.range, line, character)) return hover;
+			if (hover.file != file) continue;
+			const auto range = now(hover.range);
+			if (!range || !covers(*range, line, character)) continue;
+			auto moved_hover = hover;
+			moved_hover.range = *range;
+			return moved_hover;
 		}
 		return std::nullopt;
 	}

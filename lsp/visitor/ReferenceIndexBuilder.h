@@ -86,6 +86,16 @@ private:
 		return qualifier;
 	}
 
+	/// The keywords a declaration was written with that the hover keeps: its persistence
+	/// (<pers>, <instpers>, <read>) and <const> or <polyphonic>. <declare> itself goes.
+	static std::string modifiers_of(const NodeDataStructure& node) {
+		std::string modifiers;
+		if (node.persistence && !node.persistence->val.empty()) modifiers += node.persistence->val + " ";
+		if (node.data_type == DataType::Const) modifiers += "const ";
+		if (node.data_type == DataType::Polyphonic) modifiers += "polyphonic ";
+		return modifiers;
+	}
+
 	static std::string typed(std::string name, const NodeAST& node) {
 		const auto type = declaration_format::type_of(node);
 		return type.empty() ? name : name + ": " + type;
@@ -125,7 +135,7 @@ private:
 		if (data->name == NodeStruct::SELF || data->tok.val == NodeStruct::SELF) return {};
 		const auto& name = data->tok.val;
 		if (const auto* control = data->parent ? data->parent->cast<NodeUIControl>() : nullptr) {
-			return "declare " + control->ui_control_type + " " + qualifier_of(*data) + name;
+			return modifiers_of(*data) + control->ui_control_type + " " + qualifier_of(*data) + name;
 		}
 		if (data->is_function_param()) return "(parameter) " + typed(name, *data);
 		if (const auto* owner = data->is_member()) {
@@ -139,10 +149,7 @@ private:
 			&& data->prefix->prefixes.back().kind == NodePrefix::PrefixKind::Const) {
 			return "(const) " + typed(qualified, *data);
 		}
-		std::string keyword = "declare ";
-		if (data->data_type == DataType::Const) keyword += "const ";
-		if (data->data_type == DataType::Polyphonic) keyword += "polyphonic ";
-		return keyword + typed(qualified, *data);
+		return modifiers_of(*data) + typed(qualified, *data);
 	}
 
 	/// Renders the hover of a declaration once, keyed by its name token.
@@ -446,6 +453,28 @@ public:
 	}
 	NodeAST* visit(NodeListRef& node) override {
 		if (m_pass == Pass::References) record_variable(node);
+		return ASTVisitor::visit(node);
+	}
+
+	/// A control array is split into single controls and an array of their ids before the
+	/// reference pass, which then sees nothing but an <int[]>. The control as declared is
+	/// only visible here, so its hover is taken now; the later pass does not replace it.
+	NodeAST* visit(NodeUIControl& node) override {
+		if (m_pass == Pass::Definitions && m_record_hovers && node.control_var) {
+			const auto& name = node.control_var->tok;
+			std::string dimensions;
+			if (node.control_var->cast<NodeArray>()) {
+				dimensions = "[]";
+			} else if (const auto* nd_array = node.control_var->cast<NodeNDArray>()) {
+				const auto rank = nd_array->sizes ? nd_array->sizes->params.size() : 2;
+				dimensions = "[" + std::string(rank > 0 ? rank - 1 : 0, ',') + "]";
+			}
+			const auto range = source_range_from_token(name);
+			if (!name.file().empty() && range.is_valid() && !m_index.has_hover(name.file(), range)) {
+				m_index.add_hover(name.file(), range,
+					modifiers_of(*node.control_var) + node.ui_control_type + " " + name.val + dimensions);
+			}
+		}
 		return ASTVisitor::visit(node);
 	}
 

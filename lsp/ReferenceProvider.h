@@ -110,11 +110,6 @@ private:
 		const SourceId& source,
 		size_t line,
 		size_t character);
-	[[nodiscard]] std::optional<Hover> hover_from_state(
-		const State& state,
-		const SourceId& source,
-		size_t line,
-		size_t character);
 	[[nodiscard]] std::vector<ReferenceLink> references_from_state(
 		const State& state,
 		const ReferenceLink& target);

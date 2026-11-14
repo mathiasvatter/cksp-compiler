@@ -183,21 +183,6 @@ std::optional<ReferenceLink> ReferenceProvider::resolve_target(
 	return std::nullopt;
 }
 
-std::optional<Hover> ReferenceProvider::hover_from_state(
-	const State& state,
-	const SourceId& source,
-	const size_t line,
-	const size_t character) {
-	if (state.current) {
-		if (auto hover = state.current->hover_at(source.value, line, character)) return hover;
-	}
-	if (!state.last_successful || state.last_successful == state.current
-		|| !source_matches_snapshot(state.last_successful_sources, source.value)) {
-		return std::nullopt;
-	}
-	return state.last_successful->hover_at(source.value, line, character);
-}
-
 std::optional<Hover> ReferenceProvider::hover(
 	const std::vector<SourceId>& preferred_entries,
 	const SourceId& source,
@@ -206,15 +191,27 @@ std::optional<Hover> ReferenceProvider::hover(
 	const auto normalized_source = FileSystemSourceProvider::normalize(source.value);
 	std::lock_guard lock(m_mutex);
 
+	// A hover is only as good as the types behind it, so it reads the same snapshot the
+	// inlay hints do: the last complete analysis, moved onto the current text. An analysis
+	// that failed - here, or in another entry importing the same file - aborts before or
+	// during inference and knows the declaration without its type.
 	std::optional<Hover> hover;
-	for (const auto& entry : preferred_entries) {
-		const auto state = m_states.find(FileSystemSourceProvider::normalize(entry.value).value);
-		if (state == m_states.end()) continue;
-		if ((hover = hover_from_state(state->second, normalized_source, line, character))) break;
+	if (const auto snapshot = successful_snapshot(preferred_entries, normalized_source.value)) {
+		ReferenceIndex::RangeMap moved;
+		if (snapshot->moved) {
+			moved = [&map = *snapshot->moved](const SourceRange& range) { return map.map(range); };
+		}
+		hover = snapshot->index->hover_at(normalized_source.value, line, character, moved);
+		if (hover && moved && hover->declaration_file == normalized_source.value) {
+			if (const auto declaration = moved(hover->declaration_range)) hover->declaration_range = *declaration;
+		}
 	}
+	// Nothing ever analysed completely: a hover without types beats none.
 	if (!hover) {
-		for (const auto& [_, state] : m_states) {
-			if ((hover = hover_from_state(state, normalized_source, line, character))) break;
+		for (const auto& entry : preferred_entries) {
+			const auto state = m_states.find(FileSystemSourceProvider::normalize(entry.value).value);
+			if (state == m_states.end() || !state->second.current) continue;
+			if ((hover = state->second.current->hover_at(normalized_source.value, line, character))) break;
 		}
 	}
 	if (!hover) return std::nullopt;
