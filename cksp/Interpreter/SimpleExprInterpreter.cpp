@@ -150,7 +150,8 @@ Result<std::unique_ptr<PreNodeAST>> SimpleExprInterpreter::_parse_binary_expr_rh
 		if (rhs.is_error()) {
 			return Result<std::unique_ptr<PreNodeAST>>(rhs.get_error());
 		}
-		node_other = dynamic_cast<PreNodeOther*>(peek(nodes));
+		const auto next = peek(nodes);
+		node_other = next ? next->cast<PreNodeOther>() : nullptr;
 		int next_precedence = -1;
 		if(node_other) next_precedence = Parser::get_binop_precedence(node_other->tok.type);
 		if (prec < next_precedence or !node_other) {

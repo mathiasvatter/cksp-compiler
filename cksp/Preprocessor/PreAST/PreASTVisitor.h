@@ -41,15 +41,15 @@ protected:
 		// Wrapper tokens keep the spelling they had before their child was substituted.
 		// Prefer the leaf that will actually reach the token stream; this is what retains
 		// the outer call site's provenance when one macro parameter is forwarded to another.
-		if (const auto* statement = dynamic_cast<const PreNodeStatement*>(node)) {
+		if (const auto* statement = node->cast<PreNodeStatement>()) {
 			if (const auto* token = first_source_token(statement->statement.get())) return token;
 		}
-		if (const auto* chunk = dynamic_cast<const PreNodeChunk*>(node)) {
+		if (const auto* chunk = node->cast<PreNodeChunk>()) {
 			for (const auto& child : chunk->chunk) {
 				if (const auto* token = first_source_token(child.get())) return token;
 			}
 		}
-		if (const auto* list = dynamic_cast<const PreNodeList*>(node)) {
+		if (const auto* list = node->cast<PreNodeList>()) {
 			for (const auto& param : list->params) {
 				if (const auto* token = first_source_token(param.get())) return token;
 			}

@@ -67,6 +67,13 @@ struct PreNodeAST {
 		}
 		return nullptr;
 	}
+	template <typename TargetType>
+	const TargetType* cast() const {
+		if (std::type_index(typeid(*this)) == std::type_index(typeid(TargetType))) {
+			return static_cast<const TargetType*>(this);
+		}
+		return nullptr;
+	}
 	void debug_print(const std::string &path = PRINTER_OUTPUT);
 	// does import passes
 	PreNodeAST* do_import_processing(
