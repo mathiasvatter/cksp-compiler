@@ -319,6 +319,13 @@ def _(workspace, server):
         "level": "```cksp\ndeclare level: int\n```\n\n---\n\ncurrent level",
         "plain": "```cksp\ndeclare plain: int\n```\n\n---\n\nplain comment",
         "no_doc": "```cksp\ndeclare no_doc: int\n```",
+        # KSP comments write types in angle brackets after the name; markdown must not
+        # swallow them as HTML.
+        "ksp_doc": "```cksp\ndefine to_us(frames, rate) := frames * 1000000 / rate\n```\n\n---\n\n"
+                   "Converts audio frames to microseconds, as \\<int>.\n\n"
+                   "*@param* `frames` `<int>` — number of audio frames\n\n"
+                   "*@param* `rate` `<real>/<int>` — the sample rate\n\n"
+                   "*@returns* `<int>` — the microseconds",
     }
     for marker, value in expected.items():
         hover = server.request("textDocument/hover", {

@@ -24,7 +24,11 @@
  *
  * Block tags are recognised in both JSDoc and Doxygen spelling (@param, \param) and shown the
  * way TypeScript's quick info shows them: "*@param* `name` — text". @brief only marks the
- * summary and is dropped.
+ * summary and is dropped. A type is kept as code whether it is written JSDoc's way before the
+ * name ({int} amount) or the KSP way after it (amount <int>, or <real>/<int>).
+ *
+ * KSP comments write types in angle brackets, which markdown would take for HTML tags and
+ * swallow, so a < outside code is escaped.
  */
 namespace lsp {
 
@@ -76,6 +80,9 @@ inline std::string strip_markers(std::string_view line) {
 	return std::string(line);
 }
 
+/// A KSP type in angle brackets: <int>, or alternatives like <real>/<int>.
+#define CKSP_DOC_ANGLE_TYPE R"((<[^<>\s]+>(?:\s*/\s*<[^<>\s]+>)*))"
+
 /// "*@param* `name` — text" for a block tag line, the line itself for prose.
 inline std::string format_tags(std::string line) {
 	static const std::regex tag(R"(^[@\\](\w+)\s*(.*)$)");
@@ -89,23 +96,47 @@ inline std::string format_tags(std::string line) {
 
 	if (name == "param" || name == "tparam" || name == "property" || name == "throws" || name == "exception") {
 		// JSDoc writes the type first ({int} amount), Doxygen a direction ([in] amount).
-		static const std::regex parameter(R"(^(\[[^\]]*\]\s*)?(\{[^}]*\}\s*)?([\w#.$\[\]=]+)\s*[-:]?\s*(.*)$)");
+		// KSP comments write it after the name (amount <int>).
+		static const std::regex parameter(
+			R"(^(\[[^\]]*\]\s*)?(\{[^}]*\}\s*)?([\w#.$\[\]=]+)\s*)" CKSP_DOC_ANGLE_TYPE R"(?\s*[-:]?\s*(.*)$)");
 		std::smatch parts;
 		if (std::regex_match(rest, parts, parameter)) {
 			auto text = "*@" + name + "* `" + parts[3].str() + "`";
 			if (parts[2].matched) text += " `" + std::string(trim(parts[2].str())) + "`";
-			if (parts[4].length() > 0) text += " — " + parts[4].str();
+			if (parts[4].matched) text += " `" + parts[4].str() + "`";
+			if (parts[5].length() > 0) text += " — " + parts[5].str();
 			return text;
 		}
 	}
+	if (name == "returns") {
+		static const std::regex returned(R"(^)" CKSP_DOC_ANGLE_TYPE R"(\s*[-:]?\s*(.*)$)");
+		std::smatch parts;
+		if (std::regex_match(rest, parts, returned)) {
+			return "*@returns* `" + parts[1].str() + "`" + (parts[2].length() > 0 ? " — " + parts[2].str() : "");
+		}
+	}
 	return "*@" + name + "*" + (rest.empty() ? "" : " — " + rest);
+}
+
+#undef CKSP_DOC_ANGLE_TYPE
+
+/// The line with each < outside a code span escaped, so markdown does not read <int> as HTML.
+inline std::string escape_angle_brackets(const std::string& line) {
+	std::string escaped;
+	bool in_code = false;
+	for (const char c : line) {
+		if (c == '`') in_code = !in_code;
+		if (c == '<' && !in_code) escaped += '\\';
+		escaped += c;
+	}
+	return escaped;
 }
 
 inline std::string to_markdown(const std::vector<std::string_view>& comment_lines) {
 	std::vector<std::string> lines;
 	for (const auto& line : comment_lines) {
 		auto stripped = strip_markers(line);
-		if (!stripped.empty()) lines.push_back(format_tags(std::move(stripped)));
+		if (!stripped.empty()) lines.push_back(escape_angle_brackets(format_tags(std::move(stripped))));
 	}
 	// Prose runs on as written; each tag starts a paragraph of its own, as TypeScript sets it.
 	std::string markdown;
@@ -129,8 +160,8 @@ inline std::string_view trailing_member_comment(const std::string_view line) {
 
 }  // namespace doc_comment_detail
 
-/// What the doc comment of a function or macro says about one of its parameters: the text
-/// of its @param, or empty. A macro parameter <#name#> may be documented as <name>.
+/// What the doc comment of a function or macro says about one of its parameters: the type and
+/// text of its @param, or empty. A macro parameter <#name#> may be documented as <name>.
 inline std::string parameter_doc(const std::string& documentation, std::string parameter) {
 	if (parameter.size() > 2 && parameter.front() == '#' && parameter.back() == '#') {
 		parameter = parameter.substr(1, parameter.size() - 2);
@@ -142,8 +173,9 @@ inline std::string parameter_doc(const std::string& documentation, std::string p
 		for (const auto& spelling : {parameter, "#" + parameter + "#"}) {
 			const auto head = "*@param* `" + spelling + "`";
 			if (!doc_comment_detail::starts_with(paragraph, head)) continue;
-			const auto dash = paragraph.find(" — ");
-			return dash == std::string_view::npos ? std::string{} : std::string(paragraph.substr(dash + 5));
+			auto rest = doc_comment_detail::trim(paragraph.substr(head.size()));
+			if (doc_comment_detail::starts_with(rest, "— ")) rest.remove_prefix(4);
+			return std::string(rest);
 		}
 		start = end + 2;
 	}

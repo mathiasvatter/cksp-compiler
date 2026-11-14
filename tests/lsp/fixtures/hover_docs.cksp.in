@@ -26,6 +26,15 @@ macro log(#value#, prefix)
     message(prefix & #<|macro_param|>value#)
 end macro
 
+{doc:-----------------------------------------------
+*	Converts audio frames to microseconds, as <int>.
+*
+*	@param	frames		<int> 	number of audio frames
+*	@param	rate		<real>/<int> the sample rate
+*	@return				<int> the microseconds
+---------------------------------------------------}
+define to_us(frames, rate) := frames * 1000000 / rate
+
 declare level: int := 3 //!< current level
 
 // plain comment
@@ -37,4 +46,5 @@ on init
     message(<|fade|>fade(1, 2) & <|gain|>gain(1.0) & <|define|>NUM_VOICES & <|define_params|>DOUBLE(2))
     message(<|level|>level & <|plain|>plain & <|no_doc|>no_doc)
     <|macro|>log(level, "level: ")
+    message(<|ksp_doc|>to_us(48000, 44100))
 end on
