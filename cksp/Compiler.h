@@ -51,6 +51,7 @@
 #include "ASTVisitor/FunctionHandling/ParameterAssignmentTransformation.h"
 #include "ASTVisitor/GlobalScope/ASTParameterPromotion.h"
 #include "ASTVisitor/GlobalScope/MarkThreadSafe.h"
+#include "ASTVisitor/FunctionHandling/MarkReachableFunctions.h"
 #include "ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 #include "Optimization/ArrayInitializationRaising.h"
 #include "Optimization/ConstantDatabase.h"
@@ -302,6 +303,8 @@ private:
 		ASTCollectLowerings lowering(m_program);
 		ast->accept(lowering);
 
+		MarkReachableFunctions reachable(m_program);
+		reachable.mark(*m_program);
 		ASTVariableChecking variable_checking2(m_program, ASTVariableChecking::Pass::PostLowering);
 		variable_checking2.do_reachable_traversal(*ast);
 

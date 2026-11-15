@@ -485,6 +485,23 @@ def _(workspace, server):
     )
 
 
+@test("diagnostics: an undeclared variable in a called function is reported")
+def _(workspace, server):
+    # The last variable check enters only functions marked as used, and the analysis path
+    # never marked any: the CLI rejected this file while the editor showed nothing.
+    fixture = workspace.write("function_body.cksp",
+                              "function report()\n    message(missing_name)\nend function\n"
+                              "on init\n    report()\nend on\n")
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(
+        any("missing_name" in message for message in messages_of(diagnostics)),
+        f"expected the undeclared name in the function body; got {messages_of(diagnostics)}",
+    )
+    expect(position_of(diagnostics[0]).line == 1,
+           f"diagnostic on line {position_of(diagnostics[0]).line}, expected 1")
+
+
 @test("diagnostics: a constructor with the wrong argument count is reported at the call")
 def _(workspace, server):
     # The constructor binds by struct name alone; the mismatch used to surface as an
