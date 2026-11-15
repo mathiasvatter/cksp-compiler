@@ -532,7 +532,7 @@ def _(workspace, server):
         return sorted((Path(uri_to_path(item["location"]["uri"])).name, item["message"])
                       for item in diagnostics[0].get("relatedInformation", []))
 
-    expected = [("entry_init.cksp", "entry point")]
+    expected = [("entry_init.cksp", "reported from this entry point")]
     # Entries finish in any order; each publish may complete the picture.
     for _ in range(10):
         if attribution() == expected:
@@ -543,6 +543,35 @@ def _(workspace, server):
     init_diagnostics = server.diagnostics(workspace.root / "entry_init.cksp")
     expect(all("relatedInformation" not in d for d in init_diagnostics),
            f"entry file got attribution: {init_diagnostics}")
+
+
+@test("diagnostics: an error every entry reports names no entry",
+      entry_points=["entry_one.cksp", "entry_two.cksp"])
+def _(workspace, server):
+    # The error is true of the shared file whichever entry compiles it. The client always
+    # expands related information, so listing every entry would only fill the problems panel.
+    # The struct method cannot see an on-init declaration, so both entries fail alike.
+    shared = workspace.write("broken.cksp",
+                             "struct Loader\n    declare path: string\n"
+                             "    function update(self)\n        if mode = 1\n"
+                             "            self.path := \"x\"\n        end if\n"
+                             "    end function\nend struct\n")
+    entry = ("import \"broken.cksp\"\n"
+             "on init\n    declare mode: int := 1\n    message(mode)\nend on\n")
+    for name in ("entry_one.cksp", "entry_two.cksp"):
+        server.did_open(workspace.write(name, entry))
+    server.did_open(shared)
+
+    def related():
+        diagnostics = server.diagnostics(shared)
+        return [d.get("relatedInformation") for d in diagnostics] if diagnostics else None
+
+    for _ in range(10):
+        if related() and all(item is None for item in related()):
+            break
+        server.wait_for_analysis(shared, after=server.diagnostics_generation(shared))
+    expect(related(), "expected a diagnostic in the shared file")
+    expect(all(item is None for item in related()), f"unexpected attribution: {related()}")
 
 
 @test("diagnostics: an error in a macro body points back at the body line")

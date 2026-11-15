@@ -32,6 +32,20 @@ void DiagnosticPublisher::publish(const SourceId& entry_source, const std::vecto
 			affected_sources.insert(source_value);
 		}
 	}
+	// Whether a shared file names its entries depends on every entry that reaches it, so an
+	// entry that reports nothing there still changes what the others' diagnostics show.
+	if (m_entries && m_entries->is_configured_entry(entry)) {
+		for (const auto& [other, sources] : m_diagnostics_by_entry_and_source) {
+			if (other == entry.value) continue;
+			for (const auto& [source_value, _] : sources) {
+				if (affected_sources.contains(source_value)) continue;
+				const auto reaching = m_entries->configured_entries_reaching(SourceId(source_value));
+				if (std::ranges::find(reaching, entry) != reaching.end()) {
+					affected_sources.insert(source_value);
+				}
+			}
+		}
+	}
 
 	m_diagnostics_by_entry_and_source[entry.value] = std::move(diagnostics_by_source);
 
@@ -187,12 +201,12 @@ std::unique_ptr<JSONObject> DiagnosticPublisher::make_lsp_diagnostic(
 			"substituted from <" + expansion.spelling + ">");
 	}
 
-	// An imported file is analysed once per entry point that reaches it, and the merged
-	// diagnostic alone does not say which of them failed - the file may compile from the
-	// user's main file and fail from another. The client already prints the linked file
-	// name, so the note only needs to say what that file is.
+	// An imported file is analysed once per entry point that reaches it. The caller passes
+	// the reporting entries only when some reaching entry does not report the diagnostic -
+	// the file compiles from one entry and fails from another. The client already prints
+	// the linked file name, so the note only needs to say what that file is.
 	for (const auto& entry : reported_by) {
-		add_related(entry.value, SourceRange{}.get_lsp_range(), "entry point");
+		add_related(entry.value, SourceRange{}.get_lsp_range(), "reported from this entry point");
 	}
 	if (!related->elements.empty()) {
 		result->add("relatedInformation", std::move(related));
@@ -271,18 +285,27 @@ void DiagnosticPublisher::publish_merged_source(const SourceId& source) const {
 void DiagnosticPublisher::publish_source(
 	const SourceId& source,
 	const std::vector<MergedDiagnostic>& diagnostics) const {
-	// Naming the entry only says something when there is more than one to choose from, and
-	// never inside an entry file itself.
-	const bool attribute = m_entries
-		&& m_entries->configured_entry_count() > 1
-		&& !m_entries->is_configured_entry(source);
+	// Naming the entries only says something when they differ: a diagnostic every reaching
+	// entry reports is simply true of the file, and the client always expands related
+	// information, so listing them all fills the problems panel with noise. Never inside an
+	// entry file itself either.
+	std::vector<SourceId> reaching;
+	if (m_entries && m_entries->configured_entry_count() > 1 && !m_entries->is_configured_entry(source)) {
+		reaching = m_entries->configured_entries_reaching(source);
+	}
+	const auto attribution = [&reaching](const std::vector<SourceId>& reported_by) {
+		const bool partial = std::ranges::any_of(reaching, [&reported_by](const SourceId& entry) {
+			return std::ranges::find(reported_by, entry) == reported_by.end();
+		});
+		return partial ? reported_by : std::vector<SourceId>{};
+	};
 
 	auto items = std::make_unique<JSONArray>();
 	for (const auto& [diagnostic, reported_by] : diagnostics) {
 		if (diagnostic_source(diagnostic, source) != source) {
 			continue;
 		}
-		items->add(make_lsp_diagnostic(diagnostic, attribute ? reported_by : std::vector<SourceId>{}));
+		items->add(make_lsp_diagnostic(diagnostic, attribution(reported_by)));
 	}
 
 	JSONObject params;

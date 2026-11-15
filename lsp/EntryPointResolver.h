@@ -56,6 +56,10 @@ public:
 
 	[[nodiscard]] size_t configured_entry_count() const { return m_configured_entries.size(); }
 
+	/// The configured entries whose last registered import graph reaches the source, sorted.
+	/// An entry not analysed yet has no graph and is not among them.
+	[[nodiscard]] std::vector<SourceId> configured_entries_reaching(const SourceId& source) const;
+
 
 
 private:
