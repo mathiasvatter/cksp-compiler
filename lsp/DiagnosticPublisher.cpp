@@ -32,22 +32,10 @@ void DiagnosticPublisher::publish(const SourceId& entry_source, const std::vecto
 			affected_sources.insert(source_value);
 		}
 	}
-	// Whether a shared file names its entries depends on every entry that reaches it, so an
-	// entry that reports nothing there still changes what the others' diagnostics show.
-	if (m_entries && m_entries->is_configured_entry(entry)) {
-		for (const auto& [other, sources] : m_diagnostics_by_entry_and_source) {
-			if (other == entry.value) continue;
-			for (const auto& [source_value, _] : sources) {
-				if (affected_sources.contains(source_value)) continue;
-				const auto reaching = m_entries->configured_entries_reaching(SourceId(source_value));
-				if (std::ranges::find(reaching, entry) != reaching.end()) {
-					affected_sources.insert(source_value);
-				}
-			}
-		}
-	}
-
 	m_diagnostics_by_entry_and_source[entry.value] = std::move(diagnostics_by_source);
+	// The entry's import graph is registered before this runs, so an entry that reports
+	// nothing in a shared file still changes what the other entries' diagnostics there show.
+	add_stale_attributions(affected_sources);
 
 	for (const auto& source : affected_sources) {
 		publish_merged_source(SourceId(source));
@@ -66,6 +54,7 @@ void DiagnosticPublisher::clear_entry(const SourceId& entry_source) {
 		affected_sources.insert(source);
 	}
 	m_diagnostics_by_entry_and_source.erase(it);
+	add_stale_attributions(affected_sources);
 	for (const auto& source : affected_sources) {
 		publish_merged_source(SourceId(source));
 	}
@@ -82,6 +71,7 @@ void DiagnosticPublisher::discard_entry(const SourceId& entry_source) {
 		affected_sources.insert(source);
 	}
 	m_diagnostics_by_entry_and_source.erase(it);
+	add_stale_attributions(affected_sources);
 	for (const auto& source : affected_sources) {
 		publish_merged_source(SourceId(source));
 	}
@@ -282,16 +272,33 @@ void DiagnosticPublisher::publish_merged_source(const SourceId& source) const {
 	publish_source(source, merged_diagnostics(source));
 }
 
+std::vector<SourceId> DiagnosticPublisher::attribution_entries(const SourceId& source) const {
+	// Naming the entry needs more than one to choose from, and never inside an entry file.
+	if (!m_entries || m_entries->configured_entry_count() <= 1 || m_entries->is_configured_entry(source)) {
+		return {};
+	}
+	return m_entries->configured_entries_reaching(source);
+}
+
+void DiagnosticPublisher::add_stale_attributions(std::unordered_set<std::string>& affected_sources) const {
+	for (const auto& [source, reaching] : m_published_reaching) {
+		if (!affected_sources.contains(source) && attribution_entries(SourceId(source)) != reaching) {
+			affected_sources.insert(source);
+		}
+	}
+}
+
 void DiagnosticPublisher::publish_source(
 	const SourceId& source,
 	const std::vector<MergedDiagnostic>& diagnostics) const {
 	// Naming the entries only says something when they differ: a diagnostic every reaching
 	// entry reports is simply true of the file, and the client always expands related
-	// information, so listing them all fills the problems panel with noise. Never inside an
-	// entry file itself either.
-	std::vector<SourceId> reaching;
-	if (m_entries && m_entries->configured_entry_count() > 1 && !m_entries->is_configured_entry(source)) {
-		reaching = m_entries->configured_entries_reaching(source);
+	// information, so listing them all fills the problems panel with noise.
+	const auto reaching = attribution_entries(source);
+	if (diagnostics.empty()) {
+		m_published_reaching.erase(source.value);
+	} else {
+		m_published_reaching[source.value] = reaching;
 	}
 	const auto attribution = [&reaching](const std::vector<SourceId>& reported_by) {
 		const bool partial = std::ranges::any_of(reaching, [&reported_by](const SourceId& entry) {

@@ -591,6 +591,47 @@ def _(workspace, server):
     expect(all(item is None for item in related()), f"unexpected attribution: {related()}")
 
 
+@test("diagnostics: attribution goes once the other entry drops the import",
+      entry_points=["entry_global.cksp", "entry_init.cksp"])
+def _(workspace, server):
+    # Only entry_init reports the error, so it is named - until entry_global stops importing
+    # the file. entry_global reports nothing there, so its new analysis touches none of the
+    # shared file's diagnostics, yet it is now the only entry left and naming it says nothing.
+    shared = workspace.write("loader.cksp",
+                             "struct Loader\n    declare path: string\n"
+                             "    function update(self)\n        if mode = 1\n"
+                             "            self.path := \"x\"\n        end if\n"
+                             "    end function\nend struct\n")
+    global_entry = workspace.write("entry_global.cksp",
+                                   "declare mode: int := 1\nimport \"loader.cksp\"\n"
+                                   "on init\n    message(mode)\nend on\n")
+    server.did_open(global_entry)
+    server.did_open(workspace.write("entry_init.cksp",
+                                    "import \"loader.cksp\"\n"
+                                    "on init\n    declare mode: int := 1\n    message(mode)\nend on\n"))
+    server.did_open(shared)
+
+    def attribution():
+        diagnostics = server.diagnostics(shared)
+        if not diagnostics:
+            return None
+        return sorted(Path(uri_to_path(item["location"]["uri"])).name
+                      for item in diagnostics[0].get("relatedInformation", []))
+
+    def settle(expected):
+        for _ in range(10):
+            if attribution() == expected:
+                return
+            server.wait_for_analysis(shared, after=server.diagnostics_generation(shared))
+
+    settle(["entry_init.cksp"])
+    expect(attribution() == ["entry_init.cksp"], f"precondition: {attribution()}")
+
+    server.did_change(global_entry, "on init\n    message(1)\nend on\n")
+    settle([])
+    expect(attribution() == [], f"stale attribution: {attribution()}")
+
+
 @test("diagnostics: an error in a macro body points back at the body line")
 def _(workspace, server):
     # The token was assembled by a <#param#> substitution, so it is reported at the call
