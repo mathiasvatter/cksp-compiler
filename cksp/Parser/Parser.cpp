@@ -383,7 +383,7 @@ Result<std::unique_ptr<NodeDataStructure>> Parser::parse_array(NodeAST *parent, 
 		auto node = std::make_unique<NodeNDArray>(
 			std::move(is_persistent),
 			arr_name, ty,
-			std::move(sizes), arr_token
+			std::move(sizes), arr_token, var_type
 		);
 		node->dimensions = (int)node->sizes->size();
 		// provide type dimensions here because eg '!' can be used for nd-arrays but are usually for 1 dimension only

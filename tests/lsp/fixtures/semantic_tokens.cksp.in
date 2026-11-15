@@ -88,6 +88,7 @@ on init
     <|macro_use|>make(foo)
     declare <|var_decl|>a := <|struct_use|>Vec(1)
     declare const <|const_decl|>k := <|define_use|>LIMIT
+    declare const <|const_nd_decl|>cells[2, 2] := (1, 2, 3, 4)
     declare b := a <|plus_use|>+ Vec.<|static_method_use|>zero()
     declare c := <|invert_use|>.not. b
     declare ui_knob <|knob_decl|>knob(0, 100, 1)
@@ -112,5 +113,5 @@ on init
     <|if_keyword|>if <|not_keyword|>not a.is_zero()
         message("nonzero")
     end if
-    message(<|ns_use|>audio.<|ns_var_use|>rate & <|enum_use|>Levels.<|enum_member_use|>LOW & <|var_use|>a.x & k)
+    message(<|ns_use|>audio.<|ns_var_use|>rate & <|enum_use|>Levels.<|enum_member_use|>LOW & <|var_use|>a.x & k & <|const_nd_use|>cells[1, 0])
 end on

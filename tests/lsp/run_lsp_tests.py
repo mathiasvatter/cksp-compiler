@@ -2818,6 +2818,8 @@ SEMANTIC_TOKENS = [
     ("var_decl", 1, "variable", {"declaration"}),
     ("var_use", 1, "variable", set()),
     ("const_decl", 1, "variable", {"declaration", "readonly"}),
+    ("const_nd_decl", 5, "variable", {"declaration", "readonly"}),
+    ("const_nd_use", 5, "variable", {"readonly"}),
 ]
 
 
