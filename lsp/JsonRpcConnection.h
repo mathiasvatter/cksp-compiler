@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include <atomic>
 #include <exception>
 #include <iomanip>
 #include <iostream>
@@ -40,7 +41,12 @@ public:
 	void send_response(const JSONValue& id, const JSONValue& result) const;
 	void send_error_response(const JSONValue& id, int code, const std::string& message) const;
 	void send_notification(const std::string& method, const JSONValue& params) const;
+	/// Fire-and-forget request to the client. Its response carries no method, so
+	/// handle_message drops it.
+	void send_request(const std::string& method) const;
 
+private:
+	mutable std::atomic<long long> m_next_request_id = 0;
 };
 
 inline std::optional<JsonRpcMessage> JsonRpcConnection::read_message() const {
@@ -106,4 +112,13 @@ inline void JsonRpcConnection::send_notification(const std::string& method, cons
 	notification.add("method", std::make_unique<JSONString>(method));
 	notification.add("params", params.clone());
 	write_json(notification);
+}
+
+inline void JsonRpcConnection::send_request(const std::string& method) const {
+	JSONObject request;
+	request.add("jsonrpc", std::make_unique<JSONString>("2.0"));
+	// Server-chosen ids live apart from the client's; strings keep them visibly distinct.
+	request.add("id", std::make_unique<JSONString>("cksp-" + std::to_string(++m_next_request_id)));
+	request.add("method", std::make_unique<JSONString>(method));
+	write_json(request);
 }

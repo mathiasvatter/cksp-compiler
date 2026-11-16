@@ -1,0 +1,14 @@
+{ <const> on a multidimensional declaration was dropped by the parser. Now that it survives, a
+  constant index folds to the element and a runtime index still reads the flattened array. }
+
+// EXPECT message\(4\)
+// EXPECT message\(%[a-zA-Z_0-9.]*ND[a-zA-Z_0-9]*\[
+// EXPECT message\(2\)
+
+on init
+    declare const ND[2, 2] := (1, 2, 3, 4)
+    declare i := 1
+    message(ND[1, 1])
+    message(ND[i, 0])
+    message(num_elements(ND, 1))
+end on

@@ -1,0 +1,50 @@
+/**
+ * Fades the output towards a target.
+ *
+ * @param amount - how far to move per step
+ * @param {int} target the level to reach
+ * @returns the new level
+ */
+function fade(amount: int, target: int): int
+    return <|fade_param|>amount + target
+end function
+
+/*!
+ * \brief Gain in dB.
+ * \param[in] db the gain
+ */
+function gain(db: real): real
+    return db
+end function
+
+/// Number of voices.
+define NUM_VOICES := 8
+define DOUBLE(#x#) := (#x#) * 2
+
+{doc: Logs a value}
+macro log(#value#, prefix)
+    message(prefix & #<|macro_param|>value#)
+end macro
+
+{doc:-----------------------------------------------
+*	Converts audio frames to microseconds, as <int>.
+*
+*	@param	frames		<int> 	number of audio frames
+*	@param	rate		<real>/<int> the sample rate
+*	@return				<int> the microseconds
+---------------------------------------------------}
+define to_us(frames, rate) := frames * 1000000 / rate
+
+declare level: int := 3 //!< current level
+
+// plain comment
+declare plain := 1
+
+declare no_doc := 2
+
+on init
+    message(<|fade|>fade(1, 2) & <|gain|>gain(1.0) & <|define|>NUM_VOICES & <|define_params|>DOUBLE(2))
+    message(<|level|>level & <|plain|>plain & <|no_doc|>no_doc)
+    <|macro|>log(level, "level: ")
+    message(<|ksp_doc|>to_us(48000, 44100))
+end on

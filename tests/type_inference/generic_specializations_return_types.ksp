@@ -1,0 +1,15 @@
+// A generic function called with integers and with reals is cloned per argument type; each
+// specialization returns its own type, so declarations initialised from them are an integer
+// and a real (#148).
+// EXPECT \$i[0-9]* := \$EVENT_NOTE \+ 1
+// EXPECT ~f[0-9]* := int_to_real\(\$EVENT_VELOCITY\) \+ 2\.
+
+function add(a, b)
+    return a + b
+end function
+
+on note
+    declare i := add(EVENT_NOTE, 1)
+    declare f := add(int_to_real(EVENT_VELOCITY), 2.0)
+    message(i & f)
+end on

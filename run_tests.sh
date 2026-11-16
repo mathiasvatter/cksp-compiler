@@ -15,11 +15,15 @@ LSP_ONLY=false           # run only the LSP protocol suite (enable via --lsp)
 RUN_LSP=false            # run the LSP suite alongside the corpus (enable via --with-lsp)
 SUITES_ONLY=false        # run only the expect suites under tests/ (enable via --suites)
 RUN_SUITES=false         # run the expect suites alongside the corpus (enable via --with-suites)
+PARSER_CHECK=true        # check every output against Kontakt's own parser tables (disable via --no-parser-check)
+OPT_LEVEL=""             # optimization level passed to cksp as -O<n> (set via --opt); empty = cksp default
 # KONTAKT_ONLY=false       # kontakt only (enable via --kontakt-only)
 
 # Kontakt executable and Python runner
 KONTAKT_EXEC="/Applications/Native Instruments/Kontakt 7/Kontakt 7.app/Contents/macOS/Kontakt 7"
 KONTAKT_RUNNER="$BASE_DIR/tests/resources/run_ksp_script.py"
+# Emulates Kontakt's KSP parser from the tables of the newest installed Kontakt (or $KONTAKT_BINARY)
+KONTAKT_PARSER="$BASE_DIR/scripts/kontakt_parser/kontakt_parser.py"
 
 # Runner tuning (not exposed via CLI; change here if needed)
 IDLE="0.5"
@@ -85,6 +89,24 @@ while [[ $# -gt 0 ]]; do
       RUN_SUITES=true
       shift
       ;;
+    --no-parser-check)
+      PARSER_CHECK=false
+      shift
+      ;;
+    --opt)
+      if [[ $# -lt 2 || "$2" == --* ]]; then
+        echo "❗️ --opt expects a level: 0-3, O0-O3 or none|simple|standard|aggressive"
+        exit 2
+      fi
+      case "$2" in
+        0|O0|none)       OPT_LEVEL=0 ;;
+        1|O1|simple)     OPT_LEVEL=1 ;;
+        2|O2|standard)   OPT_LEVEL=2 ;;
+        3|O3|aggressive) OPT_LEVEL=3 ;;
+        *) echo "❗️ Unknown optimization level: $2"; exit 2 ;;
+      esac
+      shift 2
+      ;;
     --files)
       USE_CUSTOM_FILES=true
       shift
@@ -103,8 +125,10 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     -h|--help)
-      echo "Usage: $0 [--with-kontakt] [--lsp|--with-lsp] [--suites|--with-suites] [--files <file1> <file2> ...] [--file <file>] [extra-files...]"
+      echo "Usage: $0 [--with-kontakt] [--no-parser-check] [--opt <level>] [--lsp|--with-lsp] [--suites|--with-suites] [--files <file1> <file2> ...] [--file <file>] [extra-files...]"
       echo ""
+      echo "  --no-parser-check  skip checking outputs against Kontakt's parser tables (syntax and 'memory exhausted')"
+      echo "  --opt <level>      compile with -O<level>: 0-3, O0-O3 or none|simple|standard|aggressive (default: cksp default)"
       echo "  --lsp          run only the LSP protocol suite (fast, no project corpus)"
       echo "  --with-lsp     run the LSP suite in addition to the compile corpus"
       echo "  --suites       run only the expect suites under tests/ (fast, no project corpus)"
@@ -116,6 +140,7 @@ while [[ $# -gt 0 ]]; do
       echo "  $0 --lsp"
       echo "  $0 --suites --lsp"
       echo "  $0 --with-kontakt"
+      echo "  $0 --opt O0"
       echo "  $0 --files /tmp/a.ksp /tmp/b.ksp"
       echo "  $0 --file /tmp/a.ksp --file /tmp/b.ksp"
       exit 0
@@ -276,7 +301,7 @@ BUILDS=(
   "release:$RELEASE_EXEC"
 )
 
-echo "🚀 Starting CKSP Tests (Kontakt runner: $([[ "$USE_KONTAKT" == true ]] && echo ON || echo OFF))"
+echo "🚀 Starting CKSP Tests (Kontakt runner: $([[ "$USE_KONTAKT" == true ]] && echo ON || echo OFF), optimization: ${OPT_LEVEL:+-O$OPT_LEVEL}${OPT_LEVEL:-default})"
 echo "================================================================================"
 
 for entry in "${BUILDS[@]}"; do
@@ -316,6 +341,8 @@ for entry in "${BUILDS[@]}"; do
   echo "   ➤ Version: $VERSION"
 
   compile_passed=0; compile_failed=0
+  parser_passed=0; parser_failed=0; parser_skipped=0
+  failed_parser_list=()
   kontakt_passed=0; kontakt_failed=0
   kontakt_skipped=0
   failed_compile_list=()
@@ -326,7 +353,7 @@ for entry in "${BUILDS[@]}"; do
 	filename="${filename%.ksp}"
 	filename="${filename%.cksp}"
 
-	log_dir="$LOG_ROOT/$mode/$VERSION/$filename"
+	log_dir="$LOG_ROOT/$mode${OPT_LEVEL:+-O$OPT_LEVEL}/$VERSION/$filename"
 	rm -rf "$log_dir"
 	mkdir -p "$log_dir"
 
@@ -341,7 +368,7 @@ for entry in "${BUILDS[@]}"; do
 		start_spinner "$label" & ACTIVE_SPINNER_PID=$!
 		start_ms=$(now_ms)
 
-		CKSP_CRASH_LOG="$crash_log" "$executable" -o "$OUTPUT_FILE" "$file" >"$log_dir/.tmp_compile" 2>&1
+		CKSP_CRASH_LOG="$crash_log" "$executable" ${OPT_LEVEL:+-O$OPT_LEVEL} -o "$OUTPUT_FILE" "$file" >"$log_dir/.tmp_compile" 2>&1
 		compile_exit=$?
 
 		stop_spinner
@@ -373,6 +400,25 @@ for entry in "${BUILDS[@]}"; do
 		kontakt_skipped=$((kontakt_skipped + 1))
 	  fi
 	  continue
+	fi
+
+	# ----- Kontakt parser tables -----
+	if [[ "$PARSER_CHECK" == true ]]; then
+	  parser_log="$log_dir/kontakt_parser.log"
+	  python3 "$KONTAKT_PARSER" "$OUTPUT_FILE" >"$parser_log" 2>&1
+	  parser_exit=$?
+	  parser_result=$(sed -E "s|^$OUTPUT_FILE:? ?(ok )?||" "$parser_log" | tail -n 1)
+	  if [[ $parser_exit -eq 0 ]]; then
+		echo -e "   ✅ ${GREEN}Parser OK${RESET} ${parser_result} - $filename"
+		parser_passed=$((parser_passed + 1))
+	  elif [[ $parser_exit -eq 1 ]]; then
+		echo -e "   ❌ ${RED}Parser failed${RESET} ${parser_result} - $filename"
+		parser_failed=$((parser_failed + 1))
+		failed_parser_list+=("$filename")
+	  else
+		echo -e "   ⏭️  ${YELLOW}Parser check skipped${RESET}: ${parser_result}"
+		parser_skipped=$((parser_skipped + 1))
+	  fi
 	fi
 
 	# ----- Kontakt (optional) -----
@@ -412,16 +458,22 @@ for entry in "${BUILDS[@]}"; do
   done
 
   echo "-------------------------------------"
-  echo "📦 [$mode/$VERSION] Summary:"
+  echo "📦 [$mode${OPT_LEVEL:+-O$OPT_LEVEL}/$VERSION] Summary:"
   echo "   🧱 Compile:  ✅ ${compile_passed}   ❌ ${compile_failed}"
+  if [[ "$PARSER_CHECK" == true ]]; then
+	echo "   🧩 Parser:   ✅ ${parser_passed}   ❌ ${parser_failed}   ⏭️ skipped: ${parser_skipped}"
+  fi
   if [[ "$USE_KONTAKT" == true ]]; then
 	echo "   🎹 Kontakt:  ✅ ${kontakt_passed}   ❌ ${kontakt_failed}   ⏭️ skipped: ${kontakt_skipped}"
   else
 	echo "   🎹 Kontakt:  (runner disabled)"
   fi
-  echo "   📁 Logs:     $LOG_ROOT/$mode/$VERSION"
+  echo "   📁 Logs:     $LOG_ROOT/$mode${OPT_LEVEL:+-O$OPT_LEVEL}/$VERSION"
   if (( ${#failed_compile_list[@]} )); then
 	echo -e "   ${YELLOW}Failed (compile):${RESET} ${failed_compile_list[*]}"
+  fi
+  if (( ${#failed_parser_list[@]} )); then
+	echo -e "   ${YELLOW}Failed (parser):${RESET} ${failed_parser_list[*]}"
   fi
   if (( ${#failed_kontakt_list[@]} )); then
 	echo -e "   ${YELLOW}Failed (kontakt):${RESET} ${failed_kontakt_list[*]}"

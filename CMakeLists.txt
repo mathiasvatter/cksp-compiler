@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.23)
 project(CKSP_Compiler VERSION 0.1.0)
-set(PRE_RELEASE_VERSION "-alpha.6")
+set(PRE_RELEASE_VERSION "-alpha.7")
 
 set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
 configure_file(
@@ -187,7 +187,6 @@ add_library(cksp_core STATIC
         cksp/Optimization/ConstantPromotion.h
         cksp/Optimization/VarExistsValidator.h
         cksp/Optimization/MemoryExhaustedNesting.h
-        cksp/Optimization/TokenCounter.h
         cksp/Desugaring/DesugarFunctionCall.h
         cksp/ASTVisitor/ASTHandleStringRepresentations.h
         cksp/Desugaring/DesugarDelete.h
@@ -307,8 +306,16 @@ add_executable(cksp
         lsp/CallSiteScanner.h
         lsp/SignatureHelpProvider.cpp
         lsp/SignatureHelpProvider.h
+        lsp/InlayHintProvider.cpp
+        lsp/InlayHintProvider.h
+        cksp/Preprocessor/PreAST/PreASTDefinitionSymbols.h
+        lsp/SemanticTokenProvider.cpp
+        lsp/SemanticTokenProvider.h
+        lsp/PositionMap.h
+        lsp/LineIndex.h
         lsp/QualifierScanner.h
         lsp/SourceTextScanner.h
+        lsp/TextChange.h
         lsp/RenameProvider.cpp
         lsp/RenameProvider.h
         lsp/RequestParams.cpp

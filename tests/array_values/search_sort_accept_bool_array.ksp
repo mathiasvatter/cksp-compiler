@@ -1,0 +1,18 @@
+{ <search> and <sort> take bool arrays, which lower to integer arrays. Only integers, reals and
+  objects passed the element type check, so bool arrays were rejected. }
+
+// EXPECT search\(%flags, 0\)
+// EXPECT sort\(%flags, 0\)
+// EXPECT sort\(%Item____active, 1\)
+
+struct Item
+    active: bool
+end struct
+
+on init
+    declare flags[4]: bool[] := [true, false, true, false]
+    message(search(flags, false))
+    sort(flags, 0)
+    declare it := new Item(true)
+    sort(Item.storage(.active), 1)
+end on

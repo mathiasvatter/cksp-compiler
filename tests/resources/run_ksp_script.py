@@ -73,7 +73,7 @@ def _stdout_pump(proc: subprocess.Popen, last_activity_ptr: list, error_flag: li
 				except Exception:
 					pass
 			last_activity_ptr[0] = time.time()
-			if "[error]" in line.lower():
+			if "[error]" in line.lower() and not "[ServiceClient.cpp" in line:
 				error_flag[0] = True
 	except Exception:
 		pass

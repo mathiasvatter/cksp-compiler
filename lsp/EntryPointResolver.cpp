@@ -130,6 +130,19 @@ bool EntryPointResolver::is_owned_by_configured_entry(const SourceId& source) co
     return false;
 }
 
+std::vector<SourceId> EntryPointResolver::configured_entries_reaching(const SourceId& source) const {
+    const auto normalized = FileSystemSourceProvider::normalize(source.value);
+    std::vector<SourceId> entries;
+    for (const auto& configured_value : m_configured_entries) {
+        const SourceId configured(configured_value);
+        if (configured != normalized && entry_depends_on(configured, normalized)) {
+            entries.push_back(configured);
+        }
+    }
+    std::ranges::sort(entries, {}, &SourceId::value);
+    return entries;
+}
+
 bool EntryPointResolver::belongs_to_workspace(const SourceId& source) const {
     if (!m_workspace_root) {
         return true;

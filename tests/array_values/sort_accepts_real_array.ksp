@@ -1,0 +1,17 @@
+{ <sort> takes real arrays, as its builtin signature <number[]> says. The reference form was
+  matched against an integer array and rejected them. }
+
+// EXPECT sort\(\?vals, 0\)
+// EXPECT sort\(\?Item____level, 1\)
+
+struct Item
+    level: real
+end struct
+
+on init
+    declare vals[2]: real[] := [2.0, 1.0]
+    sort(vals, 0)
+    message(vals[0])
+    declare it := new Item(0.5)
+    sort(Item.storage(.level), 1)
+end on

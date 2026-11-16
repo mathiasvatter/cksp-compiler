@@ -267,6 +267,208 @@ def _(workspace, server):
 # Diagnostics and document lifecycle
 # ==========================================================================
 
+@test("hover: shows the declaration with its type, like TypeScript's quick info")
+def _(workspace, server):
+    fixture = workspace.open("hover.cksp")
+    expected = {
+        "member_use": "(member) Loader.path: string",
+        "static_use": "(static const) Loader.ID: int",
+        # Untyped in the source; the hover shows what inference settled on.
+        "param_use": "(parameter) a: int",
+        "const_decl": "declare const MAX: int",
+        "struct_use": "struct Loader",
+        "method_use": "(method) Loader.update(times: int)",
+        "ns_function_use": "function audio.reset(amount: int): int",
+        "enum_use": "(const) Levels.HIGH: int",
+        "inferred_use": "declare inferred: real",
+        "helper_use": "function helper(a: int, b: real): real",
+        "control_use": "declare ui_knob knob",
+    }
+    for marker, text in expected.items():
+        hover = server.request("textDocument/hover", {
+            "textDocument": {"uri": fixture.uri},
+            "position": fixture.at(marker).as_json(),
+        })
+        expect(hover is not None, f"{marker}: no hover")
+        value = hover["contents"]["value"]
+        expect(value == f"```cksp\n{text}\n```", f"{marker}: got {value!r}, expected {text!r}")
+        expect(position_of(hover) == fixture.at(marker),
+               f"{marker}: hover range starts at {position_of(hover)}, expected the hovered name")
+
+
+@test("hover: defines, macros and doc comments in the common docstring formats")
+def _(workspace, server):
+    fixture = workspace.open("hover_docs.cksp")
+    expected = {
+        # JSDoc: the type of a parameter is kept, tags set apart like TypeScript does.
+        "fade": "```cksp\nfunction fade(amount: int, target: int): int\n```\n\n---\n\n"
+                "Fades the output towards a target.\n\n"
+                "*@param* `amount` — how far to move per step\n\n"
+                "*@param* `target` `{int}` — the level to reach\n\n"
+                "*@returns* — the new level",
+        # Doxygen with backslash tags and a direction; @brief only marks the summary.
+        "gain": "```cksp\nfunction gain(db: real): real\n```\n\n---\n\n"
+                "Gain in dB.\n\n*@param* `db` — the gain",
+        "define": "```cksp\ndefine NUM_VOICES := 8\n```\n\n---\n\nNumber of voices.",
+        "define_params": "```cksp\ndefine DOUBLE(#x#) := (#x#) * 2\n```",
+        "macro": "```cksp\nmacro log(#value#, prefix)\n```\n\n---\n\nLogs a value",
+        "macro_param": "```cksp\n(macro parameter) #value#\n```",
+        # A parameter shows only its own @param from the comment above its header.
+        "fade_param": "```cksp\n(parameter) amount: int\n```\n\n---\n\nhow far to move per step",
+        # A Doxygen member comment trailing the declaration.
+        "level": "```cksp\ndeclare level: int\n```\n\n---\n\ncurrent level",
+        "plain": "```cksp\ndeclare plain: int\n```\n\n---\n\nplain comment",
+        "no_doc": "```cksp\ndeclare no_doc: int\n```",
+        # KSP comments write types in angle brackets after the name; markdown must not
+        # swallow them as HTML.
+        "ksp_doc": "```cksp\ndefine to_us(frames, rate) := frames * 1000000 / rate\n```\n\n---\n\n"
+                   "Converts audio frames to microseconds, as \\<int>.\n\n"
+                   "*@param* `frames` `<int>` — number of audio frames\n\n"
+                   "*@param* `rate` `<real>/<int>` — the sample rate\n\n"
+                   "*@returns* `<int>` — the microseconds",
+    }
+    for marker, value in expected.items():
+        hover = server.request("textDocument/hover", {
+            "textDocument": {"uri": fixture.uri},
+            "position": fixture.at(marker).as_json(),
+        })
+        expect(hover is not None, f"{marker}: no hover")
+        actual = hover["contents"]["value"]
+        expect(actual == value, f"{marker}: got {actual!r}, expected {value!r}")
+
+
+@test("hover: a failing entry does not cost a shared file its inferred types",
+      entry_points=["entry_ok.cksp", "entry_broken.cksp"])
+def _(workspace, server):
+    # entry_broken aborts before inference; its partial index knows <idx> but not its type.
+    # The complete analysis of entry_ok has it, and the hover must come from there whichever
+    # entry the server happens to ask first - an unordered set decides that, so on some
+    # standard libraries this passes without the preference too.
+    # A struct method sees globals but not on-init declarations: from entry_broken the
+    # analysis aborts on <mode>, as in cksp-tools-issues#37.
+    shared = workspace.write("shared.cksp",
+                             "function find(id: int): int\n"
+                             "    declare idx := id * 2\n"
+                             "    return idx\n"
+                             "end function\n"
+                             "struct Probe\n"
+                             "    declare level: int\n"
+                             "    function check(self)\n"
+                             "        self.level := mode\n"
+                             "    end function\n"
+                             "end struct\n")
+    for name, source in {
+        "entry_ok.cksp": "declare mode: int := 1\nimport \"shared.cksp\"\n"
+                         "on init\n    message(find(1))\nend on\n",
+        "entry_broken.cksp": "import \"shared.cksp\"\n"
+                             "on init\n    declare mode: int := 1\n    message(find(1))\nend on\n",
+    }.items():
+        server.did_open(workspace.write(name, source))
+    # Both entries are analysed by now; the shared file publishes no diagnostics of its own.
+    server.did_open(shared, wait=False)
+    hover = server.request("textDocument/hover", {
+        "textDocument": {"uri": shared.uri},
+        "position": {"line": 2, "character": shared.text.splitlines()[2].index("idx")}})
+    value = hover["contents"]["value"] if hover else None
+    expect(value == "```cksp\ndeclare idx: int\n```", f"got {value!r}")
+
+
+@test("hover: a ui control array shows the control it was declared as")
+def _(workspace, server):
+    fixture = workspace.write("ui_array.cksp",
+                              "on init\n"
+                              "    declare pers ui_button buttons[4]\n"
+                              "    message(search(buttons, 0))\n"
+                              "end on\n")
+    server.did_open(fixture)
+    line = fixture.text.splitlines()[2]
+    hover = server.request("textDocument/hover", {
+        "textDocument": {"uri": fixture.uri},
+        "position": {"line": 2, "character": line.index("buttons")}})
+    value = hover["contents"]["value"] if hover else None
+    expect(value == "```cksp\ndeclare pers ui_button buttons[]\n```", f"got {value!r}")
+
+
+@test("hover: shows valid declarations with their persistence and storage keywords")
+def _(workspace, server):
+    fixture = workspace.write("persistence.cksp",
+                              "on init\n"
+                              "    declare read mode: int := 1\n"
+                              "    declare instpers counter := 2\n"
+                              "    declare const MAX := 10\n"
+                              "    declare read ui_knob knob(0, 100, 1)\n"
+                              "    message(mode & counter & MAX & knob)\n"
+                              "end on\n")
+    server.did_open(fixture)
+    line = fixture.text.splitlines()[5]
+    for name, text in [("mode", "declare read mode: int"), ("counter", "declare instpers counter: int"),
+                       ("MAX", "declare const MAX: int"), ("knob", "declare read ui_knob knob")]:
+        hover = server.request("textDocument/hover", {
+            "textDocument": {"uri": fixture.uri},
+            "position": {"line": 5, "character": line.index(name)}})
+        value = hover["contents"]["value"] if hover else None
+        expect(value == f"```cksp\n{text}\n```", f"{name}: got {value!r}")
+
+
+@test("hover: an edit since the last analysis moves the hover along, like the inlay hints")
+def _(workspace, server):
+    source = "on init\n    declare amount := 2.5\n    message(amount)\nend on\n"
+    fixture = workspace.write("moved.cksp", source)
+    server.did_open(fixture)
+    # A line above, typed but broken: the analysis fails, the last complete one stays.
+    edited = server.did_change(fixture, "on init\n    message(\n" + source[len("on init\n"):])
+    line = edited.text.splitlines()[3]
+    hover = server.request("textDocument/hover", {
+        "textDocument": {"uri": fixture.uri},
+        "position": {"line": 3, "character": line.index("amount")}})
+    value = hover["contents"]["value"] if hover else None
+    expect(value == "```cksp\ndeclare amount: real\n```", f"got {value!r}")
+    expect(position_of(hover) == Position(3, line.index("amount")),
+           f"hover range not moved onto the edited text: {hover['range'] if hover else None}")
+
+
+@test("definition: targetRange spans the declaring construct for the Cmd+hover preview")
+def _(workspace, server):
+    # VS Code previews a definition as the text of targetRange, as TypeScript's context span:
+    # a function with its body, a variable with its whole declare statement.
+    fixture = workspace.open("hover.cksp")
+    lines = fixture.text.splitlines()
+
+    def preview(marker):
+        links = server.definition(fixture, marker)
+        expect(len(links) == 1, f"{marker}: expected one link, got {links}")
+        start, end = links[0]["targetRange"]["start"], links[0]["targetRange"]["end"]
+        if start["line"] == end["line"]:
+            return lines[start["line"]][start["character"]:end["character"]]
+        text = [lines[start["line"]][start["character"]:]]
+        text += lines[start["line"] + 1:end["line"]]
+        text.append(lines[end["line"]][:end["character"]])
+        return "\n".join(text)
+
+    expected = {
+        "helper_use": "function helper(a, b: real): real\n    return b * real(a)\nend function",
+        "inferred_use": "declare inferred := 2.5",
+        "control_use": "declare ui_knob knob(0, 100, 1)",
+        "enum_use": "HIGH := 2",
+        "static_use": "static const ID: int := 5",
+        # Untyped, so the parameter is its name alone.
+        "param_use": "a",
+    }
+    for marker, text in expected.items():
+        actual = preview(marker)
+        expect(actual == text, f"{marker}: previews {actual!r}, expected {text!r}")
+
+
+@test("hover: nothing where no symbol stands")
+def _(workspace, server):
+    fixture = workspace.open("hover.cksp")
+    hover = server.request("textDocument/hover", {
+        "textDocument": {"uri": fixture.uri},
+        "position": {"line": 0, "character": 0},
+    })
+    expect(hover is None, f"expected no hover on the <const> keyword, got {hover}")
+
+
 @test("diagnostics: an undeclared variable is reported at its position")
 def _(workspace, server):
     fixture = workspace.open("diagnostics.cksp")
@@ -281,6 +483,153 @@ def _(workspace, server):
         start.line == fixture.at("undeclared").line,
         f"diagnostic on line {start.line}, expected {fixture.at('undeclared').line}",
     )
+
+
+@test("diagnostics: an undeclared variable in a called function is reported")
+def _(workspace, server):
+    # The last variable check enters only functions marked as used, and the analysis path
+    # never marked any: the CLI rejected this file while the editor showed nothing.
+    fixture = workspace.write("function_body.cksp",
+                              "function report()\n    message(missing_name)\nend function\n"
+                              "on init\n    report()\nend on\n")
+    server.did_open(fixture)
+    diagnostics = server.diagnostics(fixture)
+    expect(
+        any("missing_name" in message for message in messages_of(diagnostics)),
+        f"expected the undeclared name in the function body; got {messages_of(diagnostics)}",
+    )
+    expect(position_of(diagnostics[0]).line == 1,
+           f"diagnostic on line {position_of(diagnostics[0]).line}, expected 1")
+
+
+@test("diagnostics: a constructor with the wrong argument count is reported at the call")
+def _(workspace, server):
+    # The constructor binds by struct name alone; the mismatch used to surface as an
+    # InternalError on the <__init__> line, away from the call that is wrong (#135).
+    fixture = workspace.open("diagnostics_constructor_arity.cksp")
+    diagnostics = server.diagnostics(fixture)
+    expect(diagnostics, "expected a diagnostic for the constructor call")
+    expect(
+        any("takes 0 arguments, but 1 was given" in message for message in messages_of(diagnostics)),
+        f"diagnostic should name the argument counts; got {messages_of(diagnostics)}",
+    )
+    start = position_of(diagnostics[0])
+    call = fixture.at("call")
+    expect((start.line, start.character) == (call.line, call.character),
+           f"diagnostic at {start}, expected the call at {call}")
+
+
+@test("diagnostics: an error in a shared import names the entries that report it",
+      entry_points=["entry_global.cksp", "entry_init.cksp", "entry_alone.cksp"])
+def _(workspace, server):
+    # A struct method sees globals but not on-init declarations, so the shared file compiles
+    # from one entry and fails from the other. Without attribution the editor shows an error
+    # that compiling the main file never reproduces (cksp-tools-issues#37).
+    shared = workspace.write("loader.cksp",
+                             "struct Loader\n    declare path: string\n"
+                             "    function update(self)\n        if mode = 1\n"
+                             "            self.path := \"x\"\n        end if\n"
+                             "    end function\nend struct\n")
+    entries = {
+        "entry_global.cksp": "declare mode: int := 1\nimport \"loader.cksp\"\n"
+                             "on init\n    message(mode)\nend on\n",
+        "entry_init.cksp": "import \"loader.cksp\"\n"
+                           "on init\n    declare mode: int := 1\n    message(mode)\nend on\n",
+        # Does not import the shared file, so it must not be listed either way.
+        "entry_alone.cksp": "on init\n    message(\"alone\")\nend on\n",
+    }
+    for name, source in entries.items():
+        server.did_open(workspace.write(name, source))
+    server.did_open(shared)
+
+    def attribution():
+        diagnostics = server.diagnostics(shared)
+        if not diagnostics:
+            return None
+        return sorted((Path(uri_to_path(item["location"]["uri"])).name, item["message"])
+                      for item in diagnostics[0].get("relatedInformation", []))
+
+    expected = [("entry_init.cksp", "reported from this entry point")]
+    # Entries finish in any order; each publish may complete the picture.
+    for _ in range(10):
+        if attribution() == expected:
+            break
+        server.wait_for_analysis(shared, after=server.diagnostics_generation(shared))
+    expect(attribution() == expected, f"unexpected attribution: {attribution()}")
+    # The entry file itself carries no attribution; its origin is obvious.
+    init_diagnostics = server.diagnostics(workspace.root / "entry_init.cksp")
+    expect(all("relatedInformation" not in d for d in init_diagnostics),
+           f"entry file got attribution: {init_diagnostics}")
+
+
+@test("diagnostics: an error every entry reports names no entry",
+      entry_points=["entry_one.cksp", "entry_two.cksp"])
+def _(workspace, server):
+    # The error is true of the shared file whichever entry compiles it. The client always
+    # expands related information, so listing every entry would only fill the problems panel.
+    # The struct method cannot see an on-init declaration, so both entries fail alike.
+    shared = workspace.write("broken.cksp",
+                             "struct Loader\n    declare path: string\n"
+                             "    function update(self)\n        if mode = 1\n"
+                             "            self.path := \"x\"\n        end if\n"
+                             "    end function\nend struct\n")
+    entry = ("import \"broken.cksp\"\n"
+             "on init\n    declare mode: int := 1\n    message(mode)\nend on\n")
+    for name in ("entry_one.cksp", "entry_two.cksp"):
+        server.did_open(workspace.write(name, entry))
+    server.did_open(shared)
+
+    def related():
+        diagnostics = server.diagnostics(shared)
+        return [d.get("relatedInformation") for d in diagnostics] if diagnostics else None
+
+    for _ in range(10):
+        if related() and all(item is None for item in related()):
+            break
+        server.wait_for_analysis(shared, after=server.diagnostics_generation(shared))
+    expect(related(), "expected a diagnostic in the shared file")
+    expect(all(item is None for item in related()), f"unexpected attribution: {related()}")
+
+
+@test("diagnostics: attribution goes once the other entry drops the import",
+      entry_points=["entry_global.cksp", "entry_init.cksp"])
+def _(workspace, server):
+    # Only entry_init reports the error, so it is named - until entry_global stops importing
+    # the file. entry_global reports nothing there, so its new analysis touches none of the
+    # shared file's diagnostics, yet it is now the only entry left and naming it says nothing.
+    shared = workspace.write("loader.cksp",
+                             "struct Loader\n    declare path: string\n"
+                             "    function update(self)\n        if mode = 1\n"
+                             "            self.path := \"x\"\n        end if\n"
+                             "    end function\nend struct\n")
+    global_entry = workspace.write("entry_global.cksp",
+                                   "declare mode: int := 1\nimport \"loader.cksp\"\n"
+                                   "on init\n    message(mode)\nend on\n")
+    server.did_open(global_entry)
+    server.did_open(workspace.write("entry_init.cksp",
+                                    "import \"loader.cksp\"\n"
+                                    "on init\n    declare mode: int := 1\n    message(mode)\nend on\n"))
+    server.did_open(shared)
+
+    def attribution():
+        diagnostics = server.diagnostics(shared)
+        if not diagnostics:
+            return None
+        return sorted(Path(uri_to_path(item["location"]["uri"])).name
+                      for item in diagnostics[0].get("relatedInformation", []))
+
+    def settle(expected):
+        for _ in range(10):
+            if attribution() == expected:
+                return
+            server.wait_for_analysis(shared, after=server.diagnostics_generation(shared))
+
+    settle(["entry_init.cksp"])
+    expect(attribution() == ["entry_init.cksp"], f"precondition: {attribution()}")
+
+    server.did_change(global_entry, "on init\n    message(1)\nend on\n")
+    settle([])
+    expect(attribution() == [], f"stale attribution: {attribution()}")
 
 
 @test("diagnostics: an error in a macro body points back at the body line")
@@ -2331,6 +2680,299 @@ def _(workspace, server):
     fixture = workspace.write("list_blocks.cksp", source)
     server.did_open(fixture)
     expect(not server.diagnostics(fixture), f"list blocks must analyze: {server.diagnostics(fixture)}")
+
+
+# ==========================================================================
+# Inlay hints — parameter names for user-defined calls only
+# ==========================================================================
+
+def hints_by_position(hints):
+    return {(hint["position"]["line"], hint["position"]["character"]): hint for hint in hints}
+
+
+def expect_hint(hints, fixture, marker, label, parameter_count):
+    position = fixture.at(marker)
+    hint = hints_by_position(hints).get((position.line, position.character))
+    expect(hint is not None, f"{marker}: expected a hint at {position}, got {hints}")
+    expect(hint.get("label") == label,
+           f"{marker}: expected label {label!r}, got {hint.get('label')!r}")
+    expect(hint.get("kind") == 2, f"{marker}: expected a parameter hint, got {hint}")
+    expect((hint.get("data") or {}).get("parameterCount") == parameter_count,
+           f"{marker}: expected parameterCount {parameter_count}, got {hint.get('data')}")
+
+
+@test("inlay hints: functions, methods, defines and macros get parameter names",
+      requires="inlayHintProvider")
+def _(workspace, server):
+    fixture = workspace.open("inlay_hints.cksp")
+    hints = server.inlay_hints(fixture)
+    expect_hint(hints, fixture, "first", "amount:", 2)
+    expect_hint(hints, fixture, "second", "target:", 2)
+    expect_hint(hints, fixture, "nested_first", "amount:", 2)
+    expect_hint(hints, fixture, "outer_second", "target:", 2)
+    expect_hint(hints, fixture, "after_string", "target:", 2)
+    expect_hint(hints, fixture, "after_comment", "amount:", 2)
+    expect_hint(hints, fixture, "method_first", "amount:", 2)
+    expect_hint(hints, fixture, "self_first", "amount:", 2)
+    expect_hint(hints, fixture, "self_second", "target:", 2)
+    expect_hint(hints, fixture, "define_first", "value:", 2)
+    expect_hint(hints, fixture, "macro_first", "#name#:", 2)
+    expect_hint(hints, fixture, "long_name", "velocity_t…:", 1)
+    expect_hint(hints, fixture, "named_second", "target:", 2)
+
+
+@test("inlay hints: no hints for builtins, declarations or arguments naming the parameter",
+      requires="inlayHintProvider")
+def _(workspace, server):
+    fixture = workspace.open("inlay_hints.cksp")
+    hints = server.inlay_hints(fixture)
+    lines = fixture.text.splitlines()
+    for hint in hints:
+        line = lines[hint["position"]["line"]]
+        expect("abs(" not in line, f"builtin call got a hint: {hint}")
+        expect("function " not in line and "define " not in line and "macro " not in line,
+               f"declaration got a hint: {hint}")
+    named = fixture.at("named_second")
+    expect(not any(hint["position"]["line"] == named.line and hint["label"] == "amount:"
+                   for hint in hints),
+           "an argument spelling the parameter name must not get a hint")
+
+
+@test("inlay hints: only calls inside the requested range",
+      requires="inlayHintProvider")
+def _(workspace, server):
+    fixture = workspace.open("inlay_hints.cksp")
+    first = fixture.at("first")
+    hints = server.inlay_hints(fixture, Position(first.line, 0), Position(first.line + 1, 0))
+    expect(len(hints) == 2 and all(hint["position"]["line"] == first.line for hint in hints),
+           f"expected the two hints of one line, got {hints}")
+
+
+@test("inlay hints: a finished analysis asks the client to refresh",
+      requires="inlayHintProvider")
+def _(workspace, server):
+    before = server.server_requests.count("workspace/inlayHint/refresh")
+    workspace.open("inlay_hints.cksp")
+    after = server.server_requests.count("workspace/inlayHint/refresh")
+    expect(after > before, f"expected a refresh request, got {server.server_requests}")
+
+
+def type_hints_of(server, fixture):
+    return {(hint["position"]["line"], hint["position"]["character"]): hint["label"]
+            for hint in server.inlay_hints(fixture) if hint.get("kind") == 1}
+
+
+@test("inlay hints: declarations without a type show the inferred one",
+      requires="inlayHintProvider")
+def _(workspace, server):
+    fixture = workspace.open("type_hints.cksp")
+    hints = type_hints_of(server, fixture)
+    for marker, label in [
+        ("count", ": int"), ("ratio", ": real"), ("label", ": string"),
+        ("values", ": int[]"), ("env", ": Envelope"), ("result", ": int"),
+        ("factor", ": int"), ("amount", ": int"), ("knob", ": int"),
+        ("twice", ": int"),
+        # Only parameters make up the sum: a number until the single call site types them.
+        ("add", ": int"),
+    ]:
+        position = fixture.at(marker)
+        found = hints.get((position.line, position.character))
+        expect(found == label, f"{marker}: expected {label!r}, got {found!r} in {hints}")
+
+
+@test("inlay hints: no type hint where the source already names the type",
+      requires="inlayHintProvider")
+def _(workspace, server):
+    fixture = workspace.open("type_hints.cksp")
+    hints = type_hints_of(server, fixture)
+    lines = fixture.text.splitlines()
+    for declarator in ("level", "$legacy", "typed[2]", "offset"):
+        line = next(i for i, text in enumerate(lines) if declarator + ":" in text
+                    or "declare " + declarator + " " in text)
+        end = lines[line].index(declarator) + len(declarator)
+        expect((line, end) not in hints,
+               f"{declarator}: explicitly typed declaration got {hints.get((line, end))!r}")
+    named = next(i for i, text in enumerate(lines) if "function named()" in text)
+    expect(not any(line == named for line, _ in hints),
+           f"an annotated return type got a hint: {hints}")
+    scale = fixture.at("scale")
+    expect((scale.line, scale.character) not in hints,
+           f"a function without return value got a return type: {hints}")
+
+
+@test("inlay hints: type hints never point into an edited buffer at stale positions",
+      requires="inlayHintProvider")
+def _(workspace, server):
+    fixture = workspace.open("type_hints.cksp")
+    before = type_hints_of(server, fixture)
+    expect(before, "expected type hints after analysis")
+    # One line inserted on top: valid hints are the old ones one line further down. The
+    # request races the re-analysis, so either those or none are correct, never the old ones.
+    edited = server.did_change(fixture, "\n" + fixture.text, wait=False)
+    shifted = {(line + 1, character): label for (line, character), label in before.items()}
+    after = type_hints_of(server, edited)
+    expect(after.items() <= shifted.items(), f"stale type hints: {after}")
+
+
+@test("inlay hints: a declaration being typed keeps the type hints around it",
+      requires="inlayHintProvider")
+def _(workspace, server):
+    fixture = workspace.open("type_hints.cksp")
+    before = type_hints_of(server, fixture)
+    # A half-written line fails the analysis; the hints of the last successful one move
+    # past it instead of vanishing until the line compiles again.
+    lines = fixture.text.splitlines(keepends=True)
+    broken = next(i for i, text in enumerate(lines) if "declare level" in text)
+    edited = server.did_change(fixture, "".join(lines[:broken] + ["    declare \n"] + lines[broken:]))
+    expect(any(d.get("severity") == 1 for d in server.diagnostics(edited)),
+           "expected the half-written declaration to fail the analysis")
+    shifted = {(line + (line >= broken), character): label
+               for (line, character), label in before.items()}
+    after = type_hints_of(server, edited)
+    expect(after == shifted, f"expected {shifted}, got {after}")
+
+
+# ---------------------------------------------------------------------------
+# Semantic tokens — what each user-defined name stands for
+# ---------------------------------------------------------------------------
+
+SEMANTIC_TOKENS = [
+    # marker, length, type, modifiers
+    ("define_decl", 5, "macro", {"declaration"}),
+    ("define_use", 5, "macro", set()),
+    ("macro_decl", 4, "function", {"declaration"}),
+    ("macro_use", 4, "function", set()),
+    ("enum_decl", 6, "enum", {"declaration"}),
+    ("enum_use", 6, "enum", set()),
+    ("enum_member_decl", 3, "variable", {"declaration", "readonly"}),
+    ("enum_member_use", 3, "variable", {"readonly"}),
+    ("ns_decl", 5, "namespace", {"declaration"}),
+    ("ns_use", 5, "namespace", set()),
+    ("ns_var_decl", 4, "variable", {"declaration"}),
+    ("ns_var_use", 4, "variable", set()),
+    ("struct_decl", 3, "struct", {"declaration"}),
+    ("struct_use", 3, "struct", set()),
+    ("member_decl", 1, "property", {"declaration"}),
+    ("member_use", 1, "property", set()),
+    ("static_decl", 4, "property", {"declaration", "readonly", "static"}),
+    # An overload is a method like any other, explicit calls included; the operators that
+    # run it are what stands out.
+    ("init_decl", 8, "method", {"declaration"}),
+    ("add_decl", 7, "method", {"declaration"}),
+    ("add_use", 7, "method", set()),
+    ("getitem_decl", 11, "method", {"declaration"}),
+    ("plus_use", 1, "operator", {"userDefined"}),
+    ("invert_use", 5, "operator", {"userDefined"}),
+    ("subscript_open", 1, "operator", {"userDefined"}),
+    ("subscript_close", 1, "operator", {"userDefined"}),
+    ("setitem_open", 1, "operator", {"userDefined"}),
+    ("setitem_close", 1, "operator", {"userDefined"}),
+    ("grid_open", 1, "operator", {"userDefined"}),
+    ("grid_close", 1, "operator", {"userDefined"}),
+    ("set_use", 2, "operator", {"userDefined"}),
+    # A #param# group inside a word is the parameter, the rest of the word what it names.
+    ("macro_group", 6, "parameter", {"substitution"}),
+    ("macro_rest", 6, "variable", {"declaration"}),
+    ("unused_macro_decl", 6, "function", {"declaration"}),
+    ("unused_param_decl", 7, "parameter", {"declaration", "substitution"}),
+    ("unused_plain_decl", 5, "parameter", {"declaration"}),
+    ("unused_group", 7, "parameter", {"substitution"}),
+    ("unused_plain_use", 5, "parameter", set()),
+    # What the language provides: KSP commands and engine variables, the builtins CKSP adds,
+    # and the control parameter accessor.
+    ("message_use", 7, "function", {"defaultLibrary"}),
+    ("property_function_use", 10, "function", {"defaultLibrary"}),
+    ("engine_var", 18, "variable", {"defaultLibrary"}),
+    ("range_use", 5, "function", {"defaultLibrary"}),
+    ("num_elements_use", 12, "function", {"defaultLibrary"}),
+    ("pairs_use", 5, "function", {"defaultLibrary"}),
+    ("sort_use", 4, "function", {"defaultLibrary"}),
+    ("search_use", 6, "function", {"defaultLibrary"}),
+    ("use_count_use", 9, "function", {"defaultLibrary"}),
+    ("knob_decl", 4, "variable", {"declaration"}),
+    ("arrow_set", 2, "operator", {"defaultLibrary"}),
+    ("param_set", 5, "variable", {"defaultLibrary", "readonly"}),
+    ("arrow_get", 2, "operator", {"defaultLibrary"}),
+    ("param_get", 5, "variable", {"defaultLibrary", "readonly"}),
+    ("method_decl", 6, "method", {"declaration"}),
+    ("method_use", 6, "method", set()),
+    ("static_method_decl", 4, "method", {"declaration", "static"}),
+    ("static_method_use", 4, "method", {"static"}),
+    ("function_decl", 5, "function", {"declaration"}),
+    ("function_use", 5, "function", set()),
+    ("param_decl", 1, "parameter", {"declaration"}),
+    ("param_use", 1, "parameter", set()),
+    ("var_decl", 1, "variable", {"declaration"}),
+    ("var_use", 1, "variable", set()),
+    ("const_decl", 1, "variable", {"declaration", "readonly"}),
+    ("const_nd_decl", 5, "variable", {"declaration", "readonly"}),
+    ("const_nd_use", 5, "variable", {"readonly"}),
+]
+
+
+@test("semantic tokens: every kind of name at its declaration and its use",
+      requires="semanticTokensProvider")
+def _(workspace, server):
+    fixture = workspace.open("semantic_tokens.cksp")
+    tokens = server.semantic_tokens(fixture)
+    wrong = []
+    for marker, length, kind, modifiers in SEMANTIC_TOKENS:
+        position = fixture.at(marker)
+        found = tokens.get((position.line, position.character))
+        if found != (length, kind, modifiers):
+            wrong.append(f"{marker}: expected {(length, kind, modifiers)}, got {found}")
+    expect(not wrong, "\n".join(wrong))
+
+
+@test("semantic tokens: self, keywords and plain operators stay with the grammar",
+      requires="semanticTokensProvider")
+def _(workspace, server):
+    fixture = workspace.open("semantic_tokens.cksp")
+    tokens = server.semantic_tokens(fixture)
+    # Every operator token is one of the marked overloads; arithmetic on plain numbers and
+    # the <:=> of plain assignments stay with the grammar.
+    marked = {(fixture.at(marker).line, fixture.at(marker).character)
+              for marker, _, kind, _ in SEMANTIC_TOKENS if kind == "operator"}
+    unmarked = [position for position, token in tokens.items()
+                if token[1] == "operator" and position not in marked]
+    expect(not unmarked, f"operators without an overload got tokens at {unmarked}")
+    for marker in ("if_keyword", "not_keyword"):
+        position = fixture.at(marker)
+        found = tokens.get((position.line, position.character))
+        expect(found is None, f"{marker}: a compiler temporary's borrowed token got {found}")
+    lines = fixture.text.splitlines()
+    for word in ("self",):
+        at = [(line, column) for line, text in enumerate(lines)
+              for column in range(len(text)) if text.startswith(word, column)]
+        colored = [position for position in at if position in tokens]
+        expect(not colored, f"{word} got a token at {colored}")
+
+
+@test("semantic tokens: a half-written line keeps the tokens around it",
+      requires="semanticTokensProvider")
+def _(workspace, server):
+    fixture = workspace.open("semantic_tokens.cksp")
+    before = server.semantic_tokens(fixture)
+    lines = fixture.text.splitlines(keepends=True)
+    broken = next(i for i, text in enumerate(lines) if "declare <|var_decl|>a" in text
+                  or text.lstrip().startswith("declare a :="))
+    edited = server.did_change(fixture, "".join(lines[:broken] + ["    declare \n"] + lines[broken:]))
+    expect(any(d.get("severity") == 1 for d in server.diagnostics(edited)),
+           "expected the half-written declaration to fail the analysis")
+    shifted = {(line + (line >= broken), character): token
+               for (line, character), token in before.items()}
+    after = server.semantic_tokens(edited)
+    expect(after == shifted, f"tokens moved wrongly: missing {set(shifted) - set(after)}, "
+           f"extra {set(after) - set(shifted)}")
+
+
+@test("semantic tokens: a finished analysis asks the client to refresh",
+      requires="semanticTokensProvider")
+def _(workspace, server):
+    before = server.server_requests.count("workspace/semanticTokens/refresh")
+    workspace.open("semantic_tokens.cksp")
+    after = server.server_requests.count("workspace/semanticTokens/refresh")
+    expect(after > before, f"expected a refresh request, got {server.server_requests}")
 
 
 if __name__ == "__main__":

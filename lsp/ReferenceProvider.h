@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "PositionMap.h"
 #include "../cksp/Source/ReferenceIndex.h"
 #include "../cksp/Source/SourceProvider.h"
 
@@ -49,6 +50,23 @@ public:
 		const SourceId& source,
 		size_t line,
 		size_t character);
+	/// Inferred-type hints for `source` from the last successful snapshot. A hint is a bare
+	/// position, so when the text has changed since, hints are moved past the edited span
+	/// and those inside it dropped rather than left in the wrong place.
+	[[nodiscard]] std::vector<TypeHint> type_hints(
+		const std::vector<SourceId>& preferred_entries,
+		const SourceId& source);
+	/// The symbol occurrences in `source` for semantic highlighting, from the last successful
+	/// snapshot and moved like type_hints(): a half-typed line keeps the colours around it.
+	[[nodiscard]] std::vector<SymbolToken> symbols(
+		const std::vector<SourceId>& preferred_entries,
+		const SourceId& source);
+	/// What hovering the position shows, resolved like go-to-definition.
+	[[nodiscard]] std::optional<Hover> hover(
+		const std::vector<SourceId>& preferred_entries,
+		const SourceId& source,
+		size_t line,
+		size_t character);
 	[[nodiscard]] std::vector<ReferenceLocation> references_to(
 		const ReferenceLink& target,
 		bool include_declaration);
@@ -63,10 +81,21 @@ private:
 		SourceContents last_successful_sources;
 	};
 
+	/// A last successful index, with the map onto the current text of the source it was
+	/// asked for when that text has changed since.
+	struct SuccessfulSnapshot {
+		std::shared_ptr<const ReferenceIndex> index;
+		std::optional<lsp::PositionMap> moved;
+	};
+
 	SourceProvider& m_sources;
 	std::unordered_map<std::string, State> m_states;
 	mutable std::mutex m_mutex;
 
+	/// The last successful snapshot of the first preferred entry that analysed the source.
+	[[nodiscard]] std::optional<SuccessfulSnapshot> successful_snapshot(
+		const std::vector<SourceId>& preferred_entries,
+		const std::string& normalized_source);
 	[[nodiscard]] bool source_matches_snapshot(const SourceContents& snapshot, const std::string& source);
 	[[nodiscard]] std::vector<DefinitionLink> resolve_definition_from_state(
 		const State& state,

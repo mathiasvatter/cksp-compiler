@@ -1,5 +1,7 @@
 #include "ReferenceProvider.h"
 
+#include "DocComment.h"
+
 #include <algorithm>
 #include <unordered_set>
 
@@ -181,6 +183,51 @@ std::optional<ReferenceLink> ReferenceProvider::resolve_target(
 	return std::nullopt;
 }
 
+std::optional<Hover> ReferenceProvider::hover(
+	const std::vector<SourceId>& preferred_entries,
+	const SourceId& source,
+	const size_t line,
+	const size_t character) {
+	const auto normalized_source = FileSystemSourceProvider::normalize(source.value);
+	std::lock_guard lock(m_mutex);
+
+	// A hover is only as good as the types behind it, so it reads the same snapshot the
+	// inlay hints do: the last complete analysis, moved onto the current text. An analysis
+	// that failed - here, or in another entry importing the same file - aborts before or
+	// during inference and knows the declaration without its type.
+	std::optional<Hover> hover;
+	if (const auto snapshot = successful_snapshot(preferred_entries, normalized_source.value)) {
+		ReferenceIndex::RangeMap moved;
+		if (snapshot->moved) {
+			moved = [&map = *snapshot->moved](const SourceRange& range) { return map.map(range); };
+		}
+		hover = snapshot->index->hover_at(normalized_source.value, line, character, moved);
+		if (hover && moved && hover->declaration_file == normalized_source.value) {
+			if (const auto declaration = moved(hover->declaration_range)) hover->declaration_range = *declaration;
+		}
+	}
+	// Nothing ever analysed completely: a hover without types beats none.
+	if (!hover) {
+		for (const auto& entry : preferred_entries) {
+			const auto state = m_states.find(FileSystemSourceProvider::normalize(entry.value).value);
+			if (state == m_states.end() || !state->second.current) continue;
+			if ((hover = state->second.current->hover_at(normalized_source.value, line, character))) break;
+		}
+	}
+	if (!hover) return std::nullopt;
+	// Read from the text as it is now, not from the analysis: a comment is not part of
+	// the AST, and one the user just wrote should show.
+	if (auto declaration = m_sources.load(SourceId(hover->declaration_file)); !declaration.is_error()) {
+		hover->documentation = lsp::doc_comment_above(
+			*declaration.unwrap().text, hover->declaration_range.start.get_lsp_line());
+		// A parameter stands on its header's line; of that comment only its own @param is about it.
+		if (!hover->parameter.empty()) {
+			hover->documentation = lsp::parameter_doc(hover->documentation, hover->parameter);
+		}
+	}
+	return hover;
+}
+
 std::vector<ReferenceLink> ReferenceProvider::references_from_state(
 	const State& state,
 	const ReferenceLink& target) {
@@ -240,4 +287,59 @@ std::vector<ReferenceLocation> ReferenceProvider::references_to(
 		return a.range.end.column < b.range.end.column;
 	});
 	return locations;
+}
+
+std::optional<ReferenceProvider::SuccessfulSnapshot> ReferenceProvider::successful_snapshot(
+	const std::vector<SourceId>& preferred_entries,
+	const std::string& normalized_source) {
+	for (const auto& entry : preferred_entries) {
+		const auto state = m_states.find(FileSystemSourceProvider::normalize(entry.value).value);
+		if (state == m_states.end() || !state->second.last_successful) continue;
+		const auto snapshot = state->second.last_successful_sources.find(normalized_source);
+		if (snapshot == state->second.last_successful_sources.end()) continue;
+		auto current = m_sources.load(SourceId(normalized_source));
+		if (current.is_error()) continue;
+		const std::string_view old_text = *snapshot->second;
+		const std::string_view new_text = *current.unwrap().text;
+		if (old_text == new_text) return SuccessfulSnapshot{state->second.last_successful, std::nullopt};
+		return SuccessfulSnapshot{state->second.last_successful, lsp::PositionMap(old_text, new_text)};
+	}
+	return std::nullopt;
+}
+
+std::vector<TypeHint> ReferenceProvider::type_hints(
+	const std::vector<SourceId>& preferred_entries,
+	const SourceId& source) {
+	const auto normalized_source = FileSystemSourceProvider::normalize(source.value).value;
+	std::lock_guard lock(m_mutex);
+	const auto snapshot = successful_snapshot(preferred_entries, normalized_source);
+	if (!snapshot) return {};
+	auto hints = snapshot->index->type_hints_in(normalized_source);
+	if (!snapshot->moved) return hints;
+	std::erase_if(hints, [&](TypeHint& hint) {
+		// A hint stands right after its name, so it belongs to the name.
+		const auto position = snapshot->moved->map(hint.position, lsp::TextChange::Bias::Preceding);
+		if (!position) return true;
+		hint.position = *position;
+		return false;
+	});
+	return hints;
+}
+
+std::vector<SymbolToken> ReferenceProvider::symbols(
+	const std::vector<SourceId>& preferred_entries,
+	const SourceId& source) {
+	const auto normalized_source = FileSystemSourceProvider::normalize(source.value).value;
+	std::lock_guard lock(m_mutex);
+	const auto snapshot = successful_snapshot(preferred_entries, normalized_source);
+	if (!snapshot) return {};
+	auto symbols = snapshot->index->symbols_in(normalized_source);
+	if (!snapshot->moved) return symbols;
+	std::erase_if(symbols, [&](SymbolToken& symbol) {
+		const auto range = snapshot->moved->map(symbol.range);
+		if (!range) return true;
+		symbol.range = *range;
+		return false;
+	});
+	return symbols;
 }

@@ -1,0 +1,37 @@
+const Levels
+    LOW := 0
+    HIGH := 2
+end const
+
+namespace audio
+    declare rate: int := 44100
+    function reset(amount: int): int
+        rate := 44100 + amount
+        return rate
+    end function
+end namespace
+
+struct Loader
+    static const ID: int := 5
+    declare path: string
+    function __init__(self, path: string)
+        self.path := path
+    end function
+    function update(self, times: int)
+        self.<|member_use|>path := self.path & "x"
+        message(Loader.<|static_use|>ID + times)
+    end function
+end struct
+
+function helper(a, b: real): real
+    return b * real(<|param_use|>a)
+end function
+
+on init
+    declare const <|const_decl|>MAX := 10
+    declare inferred := 2.5
+    declare ui_knob knob(0, 100, 1)
+    declare l: <|struct_use|>Loader := Loader("p")
+    l.<|method_use|>update(MAX)
+    message(audio.<|ns_function_use|>reset(Levels.<|enum_use|>HIGH) & <|inferred_use|>inferred & <|helper_use|>helper(1, 2.0) & <|control_use|>knob)
+end on

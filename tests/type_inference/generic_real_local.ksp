@@ -1,0 +1,13 @@
+// A local inside a generic function takes the type of its specialization, not an integer cast
+// made before the arguments were known.
+// EXPECT ~product[0-9]* := ~a[0-9]* \* ~b[0-9]*
+// EXPECT_NOT \$product
+
+function scale(a, b)
+    declare product := a * b
+    return product
+end function
+
+on note
+    message(scale(int_to_real(EVENT_VELOCITY), 2.0))
+end on

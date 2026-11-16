@@ -32,12 +32,21 @@ class DesugarNamespace final : public ASTDesugaring {
 	std::vector<NodeFunctionDefinition*> m_struct_methods;
 	/// Set while one of them is walked, where a declaration is never the namespace's.
 	bool m_in_struct_body = false;
+	/// Parameters and locals of the namespace function whose body is being walked. They are the
+	/// function's own: prefixed like members, a local <x> became <Ns.x> - the very name of the
+	/// global it shadows - and its basename made every unqualified <x> of the namespace a
+	/// member (#146, #147).
+	std::optional<std::unordered_set<std::string>> m_function_locals;
 
 	void add_namespace_prefix(NodeDataStructure& var) {
 		if (m_namespace_variables.empty()) return;
 		// Nothing a method declares belongs to the namespace: its locals are its own, and its
 		// members are the struct's. Only the references in there are of interest.
 		if (m_in_struct_body) return;
+		if (m_function_locals) {
+			m_function_locals->insert(var.name);
+			return;
+		}
 
 		// Register unqualified name in the current (innermost) scope
 		const std::string base = basename_of(var.name, prefix);
@@ -118,7 +127,8 @@ class DesugarNamespace final : public ASTDesugaring {
 		}
 	}
 
-	void add_namespace_prefix(NodeReference& ref) const {
+	/// `may_be_local` is false for a function name, which no parameter or local can stand for.
+	void add_namespace_prefix(NodeReference& ref, const bool may_be_local = true) const {
 		if (all_prefixed_variables.empty()) return;
 		/// important because we do not want to add namespace prefix to references that are
 		/// already part of an access chain (e.g. "A.x") but only to the first member ("A")
@@ -131,6 +141,11 @@ class DesugarNamespace final : public ASTDesugaring {
 		// full name is still matched first, because a <family> declared inside a
 		// namespace registers a dotted name of its own (<voice.index>).
 		const auto leading_segment = ref.name.substr(0, ref.name.find('.'));
+		// A parameter or a local declared above shadows the namespace member of its name.
+		if (may_be_local && m_function_locals
+			&& (m_function_locals->contains(ref.name) || m_function_locals->contains(leading_segment))) {
+			return;
+		}
 		for (int lvl = static_cast<int>(m_namespace_variables.size()) - 1; lvl >= 0; --lvl) {
 			const auto& scope = m_namespace_variables[lvl];
 			if (!scope.contains(ref.name) && !scope.contains(leading_segment)) continue;
@@ -253,7 +268,45 @@ public:
 
 	NodeAST* visit(NodeFunctionHeaderRef& node) override {
 		ASTVisitor::visit(node);
-		add_namespace_prefix(node);
+		// A method called in an access chain (<Ns.cur?.fade()>) is a member of the receiver, never
+		// of the namespace. The chain holds the call, not this header, so in_access_chain() alone
+		// does not see it (#146).
+		if (const auto call = node.parent ? node.parent->cast<NodeFunctionCall>() : nullptr;
+			call && call->is_in_access_chain()) {
+			return &node;
+		}
+		add_namespace_prefix(node, false);
+		return &node;
+	}
+
+	/// A loop or branch body ends the life of the locals declared in it: after it, the name is
+	/// the namespace member's again. Mirrors NodeBlock::determine_scope without setting it.
+	NodeAST* visit(NodeBlock& node) override {
+		const bool is_scope = node.scope || (node.parent && !node.parent->cast<NodeStatement>()
+			&& !node.parent->cast<NodeNamespace>() && !node.parent->cast<NodeStruct>());
+		if (!m_function_locals || !is_scope) return ASTVisitor::visit(node);
+		const auto outer = *m_function_locals;
+		ASTVisitor::visit(node);
+		m_function_locals = outer;
+		return &node;
+	}
+
+	/// The header is the namespace's - the function is its member - and the body the
+	/// function's own, see m_function_locals.
+	NodeAST* visit(NodeFunctionDefinition& node) override {
+		node.header->accept(*this);
+		if (node.return_variable) node.return_variable.value()->accept(*this);
+		if (m_namespace_variables.empty() || m_in_struct_body) {
+			node.body->accept(*this);
+			return &node;
+		}
+		auto outer = std::move(m_function_locals);
+		m_function_locals.emplace();
+		for (const auto& param : node.header->params) {
+			if (param->variable) m_function_locals->insert(param->variable->name);
+		}
+		node.body->accept(*this);
+		m_function_locals = std::move(outer);
 		return &node;
 	}
 

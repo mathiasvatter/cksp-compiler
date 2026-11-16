@@ -1,0 +1,11 @@
+// A generated constructor takes one argument per member, and a generic struct is named with its
+// type arguments (#135).
+// EXPECT_ERROR The constructor of <Box<int>> takes 1 argument, but 2 were given
+
+struct Box<T>
+	value: T
+end struct
+
+on init
+	declare b := new Box<int>(1, 2)
+end on

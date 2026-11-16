@@ -1,0 +1,10 @@
+{ <const> on a multidimensional declaration was dropped by the parser, so an assignment to an
+  element of a const NDArray compiled. It is rejected like one to a const array. }
+
+// EXPECT_ERROR Cannot reassign value to constant variable <ND>
+
+on init
+    declare const ND[2, 2] := (1, 2, 3, 4)
+    ND[0, 0] := 9
+    message(ND[1, 1])
+end on

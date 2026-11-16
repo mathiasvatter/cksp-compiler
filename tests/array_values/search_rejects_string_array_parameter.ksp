@@ -1,0 +1,12 @@
+{ The same for a <string[]> parameter of a function (#134). }
+
+// EXPECT_ERROR <search> only works on integer arrays
+
+function find_name(names: string[], val: string): int
+    return search(names, val)
+end function
+
+on init
+    declare names[2]: string[] := ["a", "b"]
+    message(find_name(names, "a"))
+end on

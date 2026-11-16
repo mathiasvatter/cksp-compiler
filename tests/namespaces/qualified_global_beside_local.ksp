@@ -1,0 +1,19 @@
+// <Ns.x> is the namespace global even inside a function with a local <x>; the local only
+// shadows the unqualified name (#147).
+// EXPECT \$Ns__x := \$x[0-9]*$
+// EXPECT message\(\$Ns__x\)
+// EXPECT_NOT \$Ns__x[0-9]+
+
+namespace Ns
+	declare x := 0
+	function set(v: int)
+		declare x := v * 2
+		Ns.x := x
+		message(Ns.x)
+	end function
+end namespace
+
+on note
+	Ns.set(EVENT_NOTE)
+	message(Ns.x)
+end on

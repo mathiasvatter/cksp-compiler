@@ -1,0 +1,19 @@
+// A for-each variable in a namespace function is its own binding, even when a nested block of
+// the function declared a local of the same name before (#136).
+// EXPECT while\(\$b[0-9]* < 2\)
+// EXPECT message\(\$b[0-9]*\)
+
+namespace N
+	function f()
+		if 1 = 1
+			declare b := 1
+		end if
+		for b in range(2)
+			message(b)
+		end for
+	end function
+end namespace
+
+on init
+	N.f()
+end on

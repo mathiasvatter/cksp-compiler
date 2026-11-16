@@ -3,9 +3,12 @@
 //
 
 #include "TypeInference.h"
+#include "../Source/ReferenceIndex.h"
 
 #include "ASTSemanticAnalysis.h"
 #include "FunctionHandling/BuiltinRestrictionValidator.h"
+
+#include <set>
 
 NodeAST * TypeInference::visit(NodeProgram& node) {
 	m_program = &node;
@@ -54,6 +57,7 @@ NodeAST* TypeInference::resolve_subscript_get(NodeReference& node) {
 		error.exit();
 	}
 
+	record_subscript_brackets(node);
 	return replace_with_call(node, make_operator_overload_call(op, *method, node.take_subscript_operands(op)));
 }
 
@@ -66,6 +70,7 @@ NodeAST* TypeInference::resolve_subscript_set(NodeSingleAssignment& node) {
 
 	auto op = target->tok;
 	op.type = token::SET_ITEM;
+	record_subscript_brackets(*target);
 	auto operands = target->take_subscript_operands(op);
 	// The value the assignment carries is the setter's last argument, as it is for <__set__>.
 	operands->add_param(std::move(node.r_value));
@@ -111,6 +116,19 @@ std::unique_ptr<NodeFunctionCall> TypeInference::make_operator_overload_call(con
 	);
 }
 
+void TypeInference::record_overloaded_operator(const Token& op) const {
+	if (m_program->reference_index) {
+		m_program->reference_index->add_symbol(op, SymbolKind::Operator, SymbolToken::UserDefined);
+	}
+}
+
+void TypeInference::record_subscript_brackets(const NodeReference& subscript) const {
+	if (const auto* composite = dynamic_cast<const NodeCompositeRef*>(&subscript)) {
+		record_overloaded_operator(composite->open_bracket);
+		record_overloaded_operator(composite->close_bracket);
+	}
+}
+
 NodeAST* TypeInference::replace_with_call(NodeAST& node, std::unique_ptr<NodeFunctionCall> call) {
 	call->range = node.range;
 	auto replacement = node.replace_with(std::move(call));
@@ -118,7 +136,7 @@ NodeAST* TypeInference::replace_with_call(NodeAST& node, std::unique_ptr<NodeFun
 	return replacement->accept(*this);
 }
 
-void TypeInference::cast_data_structure_types(const NodeProgram* program, const bool cast) {
+void TypeInference::cast_data_structure_types(const NodeProgram* program, const bool cast, const bool cast_numbers) {
 	const auto def_provider = program->def_provider;
 	for (auto& ref : def_provider->get_all_references()) {
 		if (auto declaration = ref->get_declaration()) {
@@ -136,7 +154,9 @@ void TypeInference::cast_data_structure_types(const NodeProgram* program, const 
 			match_assignment_types(*decl->variable, *decl->value);
 		}
     	// cast as Integer if still unknown
-    	if (cast) decl->variable->cast_type();
+    	if (cast and (cast_numbers or decl->variable->ty->get_element_type() != TypeRegistry::Number)) {
+    		decl->variable->cast_type();
+    	}
 	}
 
 	for (auto& ref : def_provider->get_all_references()) {
@@ -198,6 +218,11 @@ NodeAST * TypeInference::visit(NodeConst& node) {
 }
 
 NodeAST * TypeInference::visit(NodeVariableRef& node) {
+	// <_> stands for one static dummy declaration shared by every throwaway, outside any AST.
+	// Matched against it, the first <_ := …> fixed the type of all others; turned into a pointer
+	// for an object, replace_datastruct found no parent and crashed (#133). A throwaway takes
+	// its type from the assignment alone, and is not registered for the casts either.
+	if (node.kind == NodeReference::Kind::Throwaway) return &node;
 	const auto decl = node.get_declaration();
 	if(decl) {
 		// manual replacement of node type if declaration is a pointer
@@ -254,6 +279,8 @@ NodeAST * TypeInference::visit(NodeVariable& node) {
 }
 
 NodeAST * TypeInference::visit(NodePointerRef& node) {
+	// see visit(NodeVariableRef): the throwaway's declaration is no node to replace (#133)
+	if (node.kind == NodeReference::Kind::Throwaway) return &node;
 	// replace declaration node with Pointer if it is Variable
 	if(node.get_declaration()->get_node_type() == NodeType::Variable) {
 		auto node_var = static_pointer_cast<NodeVariable>(node.get_declaration());
@@ -543,12 +570,15 @@ NodeAST * TypeInference::visit(NodeUseCount& node) {
 
 NodeAST * TypeInference::visit(NodeSortSearch& node) {
 	node.array->accept(*this);
-	if (node.array->ty->get_element_type()->get_type_kind() != TypeKind::Object) {
-		match_against(*node.array, TypeRegistry::NDArrayOfInt, "<search> can only be used on <Composite> types like <Arrays> or <NDArrays>.");
+	expect_number_array(*node.array, node.name);
+	// a real array is <sort>'s as much as an integer one; the match below would make it one of ints
+	const bool sorted_reals = sorts_reals(node.name) and node.array->ty->get_element_type() == TypeRegistry::Real;
+	if (node.array->ty->get_element_type()->get_type_kind() != TypeKind::Object and !sorted_reals) {
+		match_against(*node.array, TypeRegistry::NDArrayOfInt, "<" + node.name + "> can only be used on <Composite> types like <Arrays> or <NDArrays>.");
 	}
 	if(!node.array->ty->cast<CompositeType>()) {
 		auto error = Diagnostic(ErrorType::TypeError, "", "", node.array->tok);
-		error.message = "<search> can only be used on <Composite> types like <Arrays> or <NDArrays>.";
+		error.message = "<" + node.name + "> can only be used on <Composite> types like <Arrays> or <NDArrays>.";
 		error.exit();
 	}
 	node.value->accept(*this);
@@ -818,6 +848,30 @@ NodeAST * TypeInference::visit(NodeAccessChain& node) {
 				if (!definition and i == 1 and resolve_storage_access(node, *func_call)) return &node;
 
 				if (!definition) {
+					// The lookup goes by name and argument count. A method of that name with another
+					// count exists then, and calling it "does not exist" sent one looking for a typo:
+					// name the counts it takes instead, without the receiver nobody writes.
+					std::set<size_t> accepted_counts;
+					for (const auto& method : strct->methods) {
+						if (!method or !method->header or method->header->name != correct_name) continue;
+						const auto params = method->get_num_params();
+						accepted_counts.insert(method->is_static or params == 0 ? params : params - 1);
+					}
+					if (!accepted_counts.empty()) {
+						const auto given = func_call->function->get_num_args();
+						std::string counts;
+						for (const auto count : accepted_counts) {
+							if (!counts.empty()) counts += " or ";
+							counts += std::to_string(count);
+						}
+						const bool plural = accepted_counts.size() > 1 or *accepted_counts.begin() != 1;
+						error.message = "Method <" + func_call->function->name + "> of <" + prev_name + "> takes "
+							+ counts + (plural ? " arguments" : " argument") + ", but " + std::to_string(given)
+							+ (given == 1 ? " was" : " were") + " given.";
+						error.set_expected(counts + (plural ? " arguments" : " argument"));
+						error.actual = std::to_string(given);
+						error.exit();
+					}
 					error.message = "Method <"+func_call->function->name+"> does not exist in <"+prev_name+">.";
 					error.exit();
 				}
@@ -1186,6 +1240,7 @@ NodeAST * TypeInference::visit(NodeSingleAssignment& node) {
 		if (auto replacement = resolve_subscript_set(node)) return replacement;
 		reject_rebinding_an_accessor(node);
 		if (const auto method = m_program->find_overloaded_method(node.l_value->ty, set_tok.type, 2)) {
+			record_overloaded_operator(node.assign_token);
 			return replace_with_call(node, make_operator_overload_call(set_tok, *method, std::move(node.l_value), std::move(node.r_value)));
 		}
 	}
@@ -1213,6 +1268,12 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 	node.function->accept(*this);
 
 	node.bind_definition(m_program);
+	// <search>/<sort> on an array that is no reference yet (<Item.storage(.name)>, a call returning
+	// one) stays this builtin call; a reference became a NodeSortSearch, checked the same way
+	if (node.is_builtin_kind() and node.function->get_num_args() > 0
+		and (node.function->name == "search" or node.function->name == "sort")) {
+		expect_number_array(*node.function->get_arg(0), node.function->name);
+	}
 	if (node.kind == NodeFunctionCall::Kind::Builtin
 		and node.function->get_num_args() > 0
 		and BuiltinRestrictionValidator::is_persistence_command(node.function->name)) {
@@ -1236,6 +1297,7 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 				// ignore ui control variables
 				if (reference->data_type == DataType::UIControl) continue;
 			}
+			if (is_sort_search_bool_array(node, i)) continue;
 			auto &param = definition->get_param(i+method_idx);
 			// this is needed for string -> int stuff -> needs better solution
 			if (param->ty->get_element_type() != TypeRegistry::String) {
@@ -1331,6 +1393,7 @@ NodeAST * TypeInference::visit(NodeFunctionCall& node) {
 		for (int i = 0; i < node.function->get_num_args(); i++) {
 			auto &func_arg = node.function->get_arg(i);
 			auto &param = definition->get_param(i+method_idx);
+			if (is_sort_search_bool_array(node, i)) continue;
 
 			if (auto reference = func_arg->is_reference()) {
 				// ignore ui control variables
@@ -1485,6 +1548,7 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	node.right->accept(*this);
 
 	if (const auto method = m_program->find_overloaded_method(node.left->ty, node.op.type, 2)) {
+		record_overloaded_operator(node.op);
 		return replace_with_call(node, make_operator_overload_call(node.op, *method, std::move(node.left), std::move(node.right)));
 	}
 	const bool is_object = node.left->ty->cast<ObjectType>() != nullptr;
@@ -1569,6 +1633,7 @@ NodeAST * TypeInference::visit(NodeUnaryExpr& node) {
 
 	bool is_object = false;
 	if (const auto method = m_program->find_overloaded_method(node.operand->ty, node.op.type, 1)) {
+		record_overloaded_operator(node.op);
 		return replace_with_call(node, make_operator_overload_call(node.op, *method, std::move(node.operand)));
 	}
 

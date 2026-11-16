@@ -1,0 +1,20 @@
+// Only the deleted root loses its full count; recursive children lose one reference.
+// EXPECT := %Node____allocation\[\$[a-z_]+[0-9]+\]
+// EXPECT \$num_refs[0-9]+ := 1
+struct Node
+ next: Node
+ value: int
+end struct
+on init
+ declare child := new Node(nil, 77)
+ declare root := new Node(child, 42)
+ declare alias := root
+ delete root
+ message(child.value)
+ declare cycle := new Node(nil, 1)
+ cycle.next := cycle
+ delete cycle
+ if cycle = nil
+  message(1)
+ end if
+end on

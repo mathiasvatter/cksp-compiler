@@ -1,87 +1,43 @@
-# Changelog
-
-## [0.1.0-alpha.6]
+# Changelog v0.1.0-alpha.7
 
 > [!IMPORTANT]
-> This alpha adds **property accessors** and **subscript overloads** to structs, and **signature help** to the language server. Porting from SublimeKSP gets further again: `iterate_post_macro` and `literate_post_macro` are now supported, and several constructs that used to stop a ported script now come with a quick fix.
+> This alpha brings **semantic highlighting**, **hovers** and **inlay hints** for inferred types to the language server, so the editor now shows more of what the compiler knows about a script. On the language side, it is mostly about **correctness**: reference counting, namespaces, generic functions and the nesting limit of Kontakt's parser all got a round of fixes.
 
 ## Language
 
-### Added
-- Added **property accessors** `__get__` and `__set__` to structs. Reading an object where a value is expected calls `__get__`, and assigning to it calls `__set__`:
-  ```cksp
-  struct Value
-      number: int
-      function __get__(self): int
-          return self.number
-      end function
-      function __set__(self, value: int)
-          self.number := value
-      end function
-  end struct
-
-  on init
-      declare v := new Value(5)
-      message(v + 7)   // __get__
-      v := 42          // __set__
-  end on
-  ```
-- Added **subscript overloads** `__getitem__` and `__setitem__`. A subscript on a single object calls them with one parameter per index and, for the setter, the value last:
-  ```cksp
-  struct EnginePar
-      par: int
-      function __getitem__(self, g: int, s: int): int
-          return get_engine_par(self.par, g, s, -1)
-      end function
-      function __setitem__(self, g: int, s: int, value: int)
-          set_engine_par(self.par, value, g, s, -1)
-      end function
-  end struct
-
-  on init
-      declare volume := EnginePar(ENGINE_PAR_VOLUME)
-      volume[0, -1] := 630000 // for group 0, slot -1
-  end on
-  ```
-- Added **member access and assignment through a cast**: `(id as Item).value := 5`, `(id as Item).value += 2` and `(id as Item).bump()` now work.
-- Added **`const` blocks inside namespaces** ([#128](https://github.com/mathiasvatter/cksp-compiler/issues/128)). They are reached as `Namespace.Block.Entry` and still count as constants, so they can size an array.
-- Added 14 missing **Twin Delay engine parameters** (`ENGINE_PAR_TDL_*`) to the builtin constants.
-- Added a warning for **`ctrl -> par` on a UI control par passed by value**. The function received the control's value instead of its ID. It now comes with the same *"Pass by reference"* quick fix as `get_ui_id(param)`.
-
 ### Improved
-- **Operator overload signatures are checked where the method is defined.** A wrong parameter or return count used to show up as a type mismatch where the operator was used, or not at all.
-- Assigning an object to a member whose type has a `__set__` now **explains that the accessor is the reason**, instead of naming the setter's parameter.
-- A `struct` inside a namespace is now **resolved by the name it is written with**, also in type annotations and from sibling structs that come further down.
-- The **non-constant array initializer** message is now a **hint**: it no longer shows up in the Problems panel or in the console. Arrays of `get_ui_id(...)` no longer trigger it at all, since a control's ID never changes.
-- A **missing output folder** is reported as such, with a quick fix that creates it. A `./` output path now means the entry file's folder, just as it does for imports.
+- **Explicit `delete` now destroys the instance** and clears the pointer or array slot it was deleted through, no matter how many references are left. Releasing a reference stays the job of `:= nil`.
+- **Large scripts no longer fail in Kontakt with *"memory exhausted"***. The compiler now keeps nested code within the actual limit of Kontakt's parser instead of estimating it.
+- **Too many constructor arguments** are reported at the call instead of as an internal error at `__init__` ([#135](https://github.com/mathiasvatter/cksp-compiler/issues/135)).
+- **Wrong argument counts on methods** are reported as such instead of as a missing method.
+- A **bare `return` outside a function** is reported as an error instead of crashing the compiler.
+- **Diagnostics in an imported file name the entry points they come from**. A shared import can compile from one entry point and fail from another, and the merged message did not say which one failed ([#156](https://github.com/mathiasvatter/cksp-compiler/issues/156)).
 
 ### Fixed
-- Fixed [#132](https://github.com/mathiasvatter/cksp-compiler/issues/132): **persistent local variables** are now reported as an error instead of being accepted.
-- Fixed [#131](https://github.com/mathiasvatter/cksp-compiler/issues/131): the **parameters of an auto-generated constructor** no longer inherit persistence from the struct members they initialize.
-- Fixed the **obfuscator renaming persistent variables**, which lost their saved values.
-- Fixed **list blocks** with rows of arrays, rows of different lengths, and string or real values. `list.SIZE` can now size an array.
+- Fixed [#140](https://github.com/mathiasvatter/cksp-compiler/issues/140): the **implicit string conversion** of an object ignored a user-defined `__repr__`.
+- Fixed [#141](https://github.com/mathiasvatter/cksp-compiler/issues/141): **assigning `nil` to a pointer field** did not release the old reference.
+- Fixed [#144](https://github.com/mathiasvatter/cksp-compiler/issues/144): a **pointer assigned from a ternary or a constructor** was counted wrong. A constructor no longer retains a reference `__init__` already counted.
+- Fixed **loop-local pointers** not being released before `break` and `continue`.
+- Fixed [#143](https://github.com/mathiasvatter/cksp-compiler/issues/143): **locals lost thread-safety** when a call was nested in `wait()` or in the arguments of a waiting function.
+- Fixed [#146](https://github.com/mathiasvatter/cksp-compiler/issues/146), [#147](https://github.com/mathiasvatter/cksp-compiler/issues/147) and [#136](https://github.com/mathiasvatter/cksp-compiler/issues/136): **locals of namespace functions leaked into the namespace**. `Ns.x` and `obj?.method()` could resolve to a local of the same name, and a for-each variable could be undeclared when a nested block had declared the same name earlier.
+- Fixed [#148](https://github.com/mathiasvatter/cksp-compiler/issues/148): an **untyped declaration from a generic call** failed when the function was specialized for both `int` and `real`. Monomorphized clones now return their specialized types, and `declare r := add(1.0, 2.0)` no longer ends up as an integer.
+- Fixed a **function with a single call site** keeping the `number` type from the first inference pass after its parameters were bound, as in `return a + b`.
+- Fixed [#133](https://github.com/mathiasvatter/cksp-compiler/issues/133): **discarding an object with `_ :=`** crashed the compiler, and the first `_ := …` fixed the type of every other `_`.
+- Fixed [#134](https://github.com/mathiasvatter/cksp-compiler/issues/134): `search` and `sort` accepted **string arrays**, which Kontakt does not support.
+- Fixed [#150](https://github.com/mathiasvatter/cksp-compiler/issues/150): **identity casts** such as `int($x)` reached the `-O0` output, where Kontakt does not parse them. They are now removed at every optimization level.
 
 ## Migrating from SublimeKSP
 
-### Added
-- Added support for **`iterate_post_macro` and `literate_post_macro`**. They expand after every other macro, so their bounds, list and callee can be built from macro parameters.
-- Added the **`else` fallback in `select` statements** as an alternative to `default` ([#119](https://github.com/mathiasvatter/cksp-compiler/issues/119)).
-- Added **`(* ... *)` block comments**.
-- Added **imports relative to the entry file**. SublimeKSP resolves every import against the main script, so a nested module importing a sibling of the entry file no longer fails. The path next to the importing file is still tried first, and the error names both folders.
-- Added a rename for a **parameter named `ref`**, which cksp reads as the pass-by-reference keyword.
-- Added quick fixes for the **SublimeKSP compile toggles** that have a cksp pragma: `optimize_code`, `combine_callbacks` and `compact_variables` become `#pragma optimize`, `combine_callbacks` and `obfuscate`.
-
-### Improved
-- A **`define` inside a macro body** now receives the macro's arguments, so `define MY_#name#` creates one define per expansion.
-- The migration assistant now also fixes pass-by reference warnings. It is only rewritten when every call passes a variable, since `ref` would break a call that passes an expression.
+### Fixed
+- Fixed [#155](https://github.com/mathiasvatter/cksp-compiler/issues/155): a **macro parameter followed by a parameter list**, such as `#name#(x)` in a function header, crashed the preprocessor. The argument is now substituted as a name; anything other than a single word is reported as a preprocessor error.
 
 ## Language Server
 
 ### Added
-- Added **signature help** for user-defined functions and methods.
-
-### Improved
-- **Member completion prefers a typed declaration**: inside `function remove(preset: Preset)`, `preset.` now completes the parameter even when a `const preset` block exists.
+- Added **semantic tokens**. Variables, functions, structs, namespaces, overloaded operators and CKSP builtins are highlighted by what they are, including their modifiers such as `const` or `persistent`.
+- Added **hovers** served by the language server. They show the declaration's signature, persistence, defines, macros and doc comments. Hovering with Cmd/Ctrl previews the declaration.
+- Added **inlay hints for inferred types** on untyped variables, arrays, parameters and function return types.
+- Added **parameter name inlay hints** for user-defined functions and methods. KSP builtins keep the hints from the extension's database.
 
 Please keep reporting regressions, confusing diagnostics, and editor-integration issues on GitHub.
 

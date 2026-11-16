@@ -1,0 +1,20 @@
+// Kontakt's int() only takes a real expression, so identity casts must go even at -O0 (#150).
+// EXPECT \$y := \$x$
+// EXPECT \$z := int\(~r\)$
+// EXPECT ~b := ~r$
+// EXPECT_NOT int\(\$
+// EXPECT_NOT int\(int\(
+// EXPECT_NOT real\(~
+
+#pragma optimize("none")
+
+on init
+    declare $x := 1
+    declare $y := int($x)
+    message($y)
+    declare ~r := 1.5
+    declare $z := int(int(~r))
+    message($z)
+    declare ~b := real(~r)
+    message(~b)
+end on

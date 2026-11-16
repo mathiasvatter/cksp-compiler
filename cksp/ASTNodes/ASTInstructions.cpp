@@ -589,7 +589,7 @@ NodeAST *NodeSingleDelete::accept(struct ASTVisitor &visitor) {
 	return visitor.visit(*this);
 }
 NodeSingleDelete::NodeSingleDelete(const NodeSingleDelete& other)
-	: NodeInstruction(other), ptr(clone_unique(other.ptr)), num(clone_unique(other.num)) {
+	: NodeInstruction(other), destroy_instance(other.destroy_instance), ptr(clone_unique(other.ptr)), num(clone_unique(other.num)) {
 	set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeSingleDelete::clone() const {
@@ -658,7 +658,7 @@ NodeAST *NodeAssignment::accept(struct ASTVisitor &visitor) {
 }
 NodeAssignment::NodeAssignment(const NodeAssignment& other)
         : NodeInstruction(other), l_values(clone_vector(other.l_values)),
-          r_values(clone_unique(other.r_values)) {
+          r_values(clone_unique(other.r_values)), assign_token(other.assign_token) {
     set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeAssignment::clone() const {
@@ -677,7 +677,7 @@ NodeAST *NodeSingleAssignment::accept(ASTVisitor &visitor) {
 }
 NodeSingleAssignment::NodeSingleAssignment(const NodeSingleAssignment& other)
         : NodeInstruction(other), initializes_storage(other.initializes_storage), l_value(clone_unique(other.l_value)),
-          r_value(clone_unique(other.r_value)) {
+          r_value(clone_unique(other.r_value)), assign_token(other.assign_token) {
     set_child_parents();
 }
 std::unique_ptr<NodeAST> NodeSingleAssignment::clone() const {

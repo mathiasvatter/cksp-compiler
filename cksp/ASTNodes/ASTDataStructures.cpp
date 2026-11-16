@@ -588,7 +588,7 @@ std::shared_ptr<NodeFunctionDefinition> NodeStruct::get_overloaded_method(token 
 
 void NodeStruct::generate_ref_count_methods(NodeProgram* program) {
 	NodeStructCreateRefCountFunctions rf_methods(*this, program);
-	auto del = rf_methods.create_delete();
+	auto del = rf_methods.create_destructor_function();
 	auto decr = rf_methods.create_decr_function();
 	auto incr = rf_methods.create_incr_function();
 

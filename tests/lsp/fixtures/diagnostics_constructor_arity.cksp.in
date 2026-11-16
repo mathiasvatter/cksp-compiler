@@ -1,0 +1,11 @@
+struct Box
+    value: int
+
+    function __init__(self)
+        self.value := 0
+    end function
+end struct
+
+on init
+    declare b := new <|call|>Box(4)
+end on

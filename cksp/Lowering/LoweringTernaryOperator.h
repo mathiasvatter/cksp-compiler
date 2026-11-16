@@ -35,26 +35,28 @@ public:
 		m_local_vars.clear();
 	}
 
+	/// <c ? a : b> -> <if c: wrap(a) else: wrap(b)>, moving the condition and both branches out
+	/// of the ternary. <wrap> turns a branch value into the statement that consumes it.
+	template<typename Wrap>
+	static std::unique_ptr<NodeIf> to_if(NodeTernary& node, Wrap&& wrap) {
+		auto if_statement = std::make_unique<NodeIf>(node.tok);
+		if_statement->set_condition(std::move(node.condition));
+		if_statement->if_body->add_as_stmt(wrap(std::move(node.if_branch)));
+		if_statement->else_body->add_as_stmt(wrap(std::move(node.else_branch)));
+		return if_statement;
+	}
+
 private:
 
 	NodeAST *visit(NodeTernary &node) override {
 		m_local_vars.clear();
 		auto type = node.if_branch->ty; // should be the same as else_branch->ty
-		auto if_return = std::make_unique<NodeReturn>(
-			node.tok,
-			std::move(node.if_branch)
-		);
-		const auto if_return_ptr = if_return.get();
-		auto else_return = std::make_unique<NodeReturn>(
-			node.tok,
-			std::move(node.else_branch)
-		);
-		const auto else_return_ptr = else_return.get();
-
-		auto if_statement = std::make_unique<NodeIf>(node.tok);
-		if_statement->set_condition(std::move(node.condition));
-		if_statement->if_body->add_as_stmt(std::move(if_return));
-		if_statement->else_body->add_as_stmt(std::move(else_return));
+		std::vector<NodeReturn*> returns;
+		auto if_statement = to_if(node, [&](std::unique_ptr<NodeAST> value) {
+			auto ret = std::make_unique<NodeReturn>(node.tok, std::move(value));
+			returns.push_back(ret.get());
+			return ret;
+		});
 		if_statement->collect_references();
 		if_statement->accept(*this);
 
@@ -82,8 +84,7 @@ private:
 			),
 			node.tok
 		);
-		if_return_ptr->definition = ternary_def;
-		else_return_ptr->definition = ternary_def;
+		for (const auto ret : returns) ret->definition = ternary_def;
 
 		// add local vars as params to ternary function
 		auto local_vars = std::move(m_local_vars);

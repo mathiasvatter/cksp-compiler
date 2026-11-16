@@ -1,0 +1,9 @@
+// A parameter that is only part of the name already worked before #155; kept as a reference.
+// EXPECT declare ui_knob \$volume_knob \(0, 100, 1\)
+macro make_knob(#name#)
+    declare ui_knob #name#_knob(0, 100, 1)
+end macro
+
+on init
+    make_knob(volume)
+end on

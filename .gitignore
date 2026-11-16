@@ -47,3 +47,6 @@ windows-release/
 macos-release/
 test.txt
 printed.txt
+
+# Kontakt parser emulation (reads Native Instruments tables from the local Kontakt install)
+scripts/kontakt_parser/

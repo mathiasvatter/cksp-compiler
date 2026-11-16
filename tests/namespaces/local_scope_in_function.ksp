@@ -1,0 +1,36 @@
+// Inside a namespace function a parameter or local shadows the global of its name from its
+// declaration on, and a local of a loop body ends with it.
+// EXPECT message\(\$Ns__x\)$
+// EXPECT message\(\$Ns__y\)$
+// EXPECT_NOT \$Ns__x[0-9]
+// EXPECT_NOT \$Ns__y[0-9]
+
+namespace Ns
+	declare x := 1
+	declare y := 2
+	function shadow_param(x)
+		x := x + EVENT_NOTE
+		message(x)
+	end function
+	function before_after()
+		message(x)
+		declare x := EVENT_VELOCITY
+		message(x)
+	end function
+	function in_loop()
+		declare i := 0
+		while i < 2
+			declare y := i * EVENT_NOTE
+			message(y)
+			inc(i)
+		end while
+		message(y)
+	end function
+end namespace
+
+on note
+	Ns.shadow_param(EVENT_NOTE)
+	Ns.before_after()
+	Ns.in_loop()
+	message(Ns.x & Ns.y)
+end on

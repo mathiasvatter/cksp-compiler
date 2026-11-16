@@ -29,6 +29,7 @@
 #include "../lsp/visitor/ReferenceIndexBuilder.h"
 #include "../lsp/visitor/CompletionIndexBuilder.h"
 #include "../lsp/visitor/PreASTCompletionHarvester.h"
+#include "../lsp/visitor/TypeHintHarvester.h"
 #include "ASTVisitor/ASTOptimizations.h"
 #include "ASTVisitor/TypeInference.h"
 #include "ASTVisitor/ASTReturnFunctionRewriting.h"
@@ -50,6 +51,7 @@
 #include "ASTVisitor/FunctionHandling/ParameterAssignmentTransformation.h"
 #include "ASTVisitor/GlobalScope/ASTParameterPromotion.h"
 #include "ASTVisitor/GlobalScope/MarkThreadSafe.h"
+#include "ASTVisitor/FunctionHandling/MarkReachableFunctions.h"
 #include "ASTVisitor/GlobalScope/NormalizeArrayAssign.h"
 #include "Optimization/ArrayInitializationRaising.h"
 #include "Optimization/ConstantDatabase.h"
@@ -87,6 +89,7 @@ class Compiler {
 	ImportGraph m_import_graph;
 	ReferenceIndex m_reference_index;
 	CompletionIndex m_completion_index;
+	TypeHintHarvester::UntypedDeclarations m_untyped_declarations;
 	ConstantDatabase m_constant_db;
 
 //	bool tokenize();
@@ -215,6 +218,7 @@ private:
 		// reset before preprocess: the substitution passes already record define/macro links
 		m_reference_index = ReferenceIndex{};
 		m_completion_index = CompletionIndex{};
+		m_untyped_declarations.clear();
 		SourceParser source_parser(*m_sources, m_definition_provider, m_lines_processed, diagnostic_engine, m_import_graph);
 		preprocess(source_parser);
 		m_final_config = combine_configs(m_cli_config, m_pragma_config);
@@ -230,8 +234,12 @@ private:
 			m_program->def_provider = &m_definition_provider;
 			m_program->compiler_config = m_final_config.get();
 			if (m_program->compiler_config->lsp) {
+				m_program->reference_index = &m_reference_index;
 				collect_reference_definitions();
 				collect_completion_scopes();
+				TypeHintHarvester untyped(
+					m_untyped_declarations, nullptr, TypeHintHarvester::Pass::Untyped);
+				ast->accept(untyped);
 			}
 			m_program->apply_callback_overrides();
 			if (m_pragma_config->combine_callbacks.value_or(false)) {
@@ -278,8 +286,11 @@ private:
 		// still alive. ASTCollectLowerings removes them; the later pass layers links
 		// resolved only by the final variable check on top of this snapshot.
 		if (m_program->compiler_config->lsp) {
-			build_reference_index();
+			build_reference_index(true);
 			build_completion_index();
+			TypeHintHarvester inferred(
+				m_untyped_declarations, &m_reference_index, TypeHintHarvester::Pass::Inferred);
+			ast->accept(inferred);
 		}
 
 		// ASTPointerScope pointer_scope(m_program);
@@ -292,13 +303,15 @@ private:
 		ASTCollectLowerings lowering(m_program);
 		ast->accept(lowering);
 
+		MarkReachableFunctions reachable(m_program);
+		reachable.mark(*m_program);
 		ASTVariableChecking variable_checking2(m_program, ASTVariableChecking::Pass::PostLowering);
 		variable_checking2.do_reachable_traversal(*ast);
 
 		// Second pass: pick up references only resolved after the final variable check.
 		// Dedup keeps the first pass's ranges for references seen in both.
 		if (m_program->compiler_config->lsp) {
-			build_reference_index();
+			build_reference_index(false);
 		}
 
 		ASTKSPSyntaxCheck syntax_check(m_program);
@@ -309,9 +322,10 @@ private:
 	/// Appends to the existing index (which already holds the define/macro links recorded by
 	/// the preprocessor passes); the index dedupes by reference range. The reset happens at
 	/// the start of analyse_impl, before preprocessing.
-	void build_reference_index() {
+	/// `record_hovers` is set for the first harvest only: the second one sees the AST lowered.
+	void build_reference_index(const bool record_hovers) {
 		ReferenceIndexBuilder reference_index_builder(
-			m_reference_index, ReferenceIndexBuilder::Pass::References, m_sources);
+			m_reference_index, ReferenceIndexBuilder::Pass::References, m_sources, record_hovers);
 		ast->accept(reference_index_builder);
 	}
 
@@ -741,7 +755,9 @@ public:
 			// already in the index; harvest the partially resolved AST on top if it exists.
 			if (ast) {
 				try {
-					build_reference_index();
+					// Hovers too: an abort before the first harvest leaves the AST unlowered,
+					// and after it the hovers already recorded win.
+					build_reference_index(true);
 					// Same salvage for completion: an analysis that got past desugaring
 					// carries complete prefix paths even though a later pass failed, so a
 					// file with a semantic error still completes. A tokenizer or parser

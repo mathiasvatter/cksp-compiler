@@ -1,0 +1,13 @@
+{ The storage of a <string> member is no reference, so <search> stays a builtin call there and
+  is checked on that path (#134). }
+
+// EXPECT_ERROR <search> only works on integer arrays
+
+struct Item
+    name: string
+end struct
+
+on init
+    declare it := new Item("x")
+    message(search(Item.storage(.name), "x"))
+end on

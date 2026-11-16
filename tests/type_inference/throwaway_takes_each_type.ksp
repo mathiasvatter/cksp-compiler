@@ -1,0 +1,16 @@
+// Every <_ := …> takes the type of its own value. They all stood for one shared declaration,
+// so the first one fixed the type of the others (#133).
+// EXPECT ~_ret[0-9]+ := int_to_real\(\$EVENT_VELOCITY\)
+
+function f(): real
+	return int_to_real(EVENT_VELOCITY)
+end function
+
+function g(): int
+	return EVENT_NOTE
+end function
+
+on note
+	_ := f()
+	_ := g()
+end on

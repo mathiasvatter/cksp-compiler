@@ -1,0 +1,18 @@
+// EXPECT %Holder____node\[\$[a-z_]+[0-9]+\] := -1
+// EXPECT := %Node____allocation\[\$[a-z_]+[0-9]+\]
+struct Node
+ next: Node
+end struct
+struct Holder
+ node: Node
+end struct
+on init
+ declare grid[2,2]: Node[][]
+ grid[1,1] := new Node(nil)
+ delete grid[1,1]
+ declare h := new Holder(new Node(nil))
+ delete h.node
+ if h.node = nil and grid[1,1] = nil
+  message(1)
+ end if
+end on

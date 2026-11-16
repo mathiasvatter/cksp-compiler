@@ -1,0 +1,117 @@
+{ Semantic tokens: one name of every kind, at its declaration and where it is used, and the
+  operators that run an overload. A marker stands right before what it checks. }
+
+define <|define_decl|>LIMIT := 4
+
+macro <|macro_decl|>make(#name#)
+    declare <|macro_group|>#name#<|macro_rest|>_count := 0
+end macro
+
+{ Never called, so never expanded: its definition is all there is to mark. }
+macro <|unused_macro_decl|>unused(<|unused_param_decl|>#label#, <|unused_plain_decl|>value)
+    declare <|unused_group|>#label#_store := <|unused_plain_use|>value
+end macro
+
+const <|enum_decl|>Levels
+    <|enum_member_decl|>LOW := 0
+end const
+
+namespace <|ns_decl|>audio
+    declare <|ns_var_decl|>rate: int := 44100
+end namespace
+
+struct <|struct_decl|>Vec
+    <|member_decl|>x: int
+    static const <|static_decl|>SIZE: int := 2
+
+    function <|init_decl|>__init__(self, x: int)
+        self.x := x
+    end function
+
+    function <|add_decl|>__add__(self, other: Vec): Vec
+        return Vec(self.x + other.<|member_use|>x)
+    end function
+
+    function <|getitem_decl|>__getitem__(self, i: int): int
+        return self.x * i
+    end function
+
+    function __setitem__(self, i: int, value: int)
+        self.x := value * i
+    end function
+
+    function __invert__(self): Vec
+        return Vec(-self.x)
+    end function
+
+    function <|method_decl|>length(self): int
+        return self.x
+    end function
+
+    function is_zero(self): bool
+        if self.x = 0
+            return true
+        end if
+        return false
+    end function
+
+    static function <|static_method_decl|>zero(): Vec
+        return Vec(0)
+    end function
+end struct
+
+struct Grid
+    cells: int
+
+    function __getitem__(self, row: int, column: int): int
+        return self.cells * row + column
+    end function
+end struct
+
+struct Cell
+    value: int
+
+    function __get__(self): int
+        return self.value
+    end function
+
+    function __set__(self, value: int)
+        self.value := value
+    end function
+end struct
+
+function <|function_decl|>twice(<|param_decl|>n: int): int
+    return <|param_use|>n * 2
+end function
+
+on init
+    <|macro_use|>make(foo)
+    declare <|var_decl|>a := <|struct_use|>Vec(1)
+    declare const <|const_decl|>k := <|define_use|>LIMIT
+    declare const <|const_nd_decl|>cells[2, 2] := (1, 2, 3, 4)
+    declare b := a <|plus_use|>+ Vec.<|static_method_use|>zero()
+    declare c := <|invert_use|>.not. b
+    declare ui_knob <|knob_decl|>knob(0, 100, 1)
+    knob <|arrow_set|>-> <|param_set|>value := 5
+    <|property_function_use|>set_bounds(knob, 0, 0, 40, 40)
+    declare values[3] := (3, 1, 2)
+    for i in <|range_use|>range(<|num_elements_use|>num_elements(values))
+        message(knob <|arrow_get|>-> <|param_get|>value & values[i])
+    end for
+    for key, item in <|pairs_use|>pairs(values)
+        message(key & item)
+    end for
+    <|sort_use|>sort(values, 0)
+    <|message_use|>message(<|search_use|>search(values, 2) & <|use_count_use|>use_count(a) & $<|engine_var|>NI_CONTROL_PAR_IDX)
+    declare grid := Grid(3)
+    declare cell := Cell(0)
+    b<|setitem_open|>[1<|setitem_close|>] := 7
+    cell <|set_use|>:= 5
+    message(grid<|grid_open|>[1, 2<|grid_close|>] & cell)
+    message(<|function_use|>twice(b<|subscript_open|>[2<|subscript_close|>]) & a.<|method_use|>length() & a.<|add_use|>__add__(b).x)
+    { The short circuit of a negated call declares temporaries with the <if> and <not>. }
+    <|if_keyword|>if <|not_keyword|>not a.is_zero()
+        message("nonzero")
+    end if
+    message(<|ns_use|>audio.<|ns_var_use|>rate & <|enum_use|>Levels.<|enum_member_use|>LOW & <|var_use|>a.x & k & <|const_nd_use|>cells[1, 0])
+end on

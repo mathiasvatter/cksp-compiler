@@ -1,0 +1,20 @@
+// Assigning the literal nil to a pointer field must release the old reference, like assigning
+// a variable that holds nil does (#141).
+// EXPECT %Holder____node\[\$[a-z_]+[0-9]+\] := -1
+// EXPECT := %Holder____node\[\$[a-z_]+[0-9]+\]$
+
+struct Node
+	next: Node
+end struct
+
+struct Holder
+	node: Node
+	function reset(self)
+		self.node := nil
+	end function
+end struct
+
+on init
+	declare h := new Holder(new Node(nil))
+	h.reset()
+end on

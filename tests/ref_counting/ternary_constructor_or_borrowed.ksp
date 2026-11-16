@@ -1,0 +1,23 @@
+// A ternary mixing a constructor with a borrowed reference is split into an if/else, so only the
+// borrowed branch is retained (#144).
+// EXPECT ^    call Item______incr__$
+
+struct Item
+	v: int
+end struct
+
+declare items[4]: Item[]
+
+function find(v: int): Item
+	for i in range(4)
+		if items[i] # nil and items[i].v = v
+			return items[i]
+		end if
+	end for
+	return nil
+end function
+
+on note
+	declare it: Item := EVENT_VELOCITY > 0 ? new Item(1) : find(EVENT_NOTE)
+	message(it.v)
+end on

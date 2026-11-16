@@ -41,15 +41,15 @@ protected:
 		// Wrapper tokens keep the spelling they had before their child was substituted.
 		// Prefer the leaf that will actually reach the token stream; this is what retains
 		// the outer call site's provenance when one macro parameter is forwarded to another.
-		if (const auto* statement = dynamic_cast<const PreNodeStatement*>(node)) {
+		if (const auto* statement = node->cast<PreNodeStatement>()) {
 			if (const auto* token = first_source_token(statement->statement.get())) return token;
 		}
-		if (const auto* chunk = dynamic_cast<const PreNodeChunk*>(node)) {
+		if (const auto* chunk = node->cast<PreNodeChunk>()) {
 			for (const auto& child : chunk->chunk) {
 				if (const auto* token = first_source_token(child.get())) return token;
 			}
 		}
-		if (const auto* list = dynamic_cast<const PreNodeList*>(node)) {
+		if (const auto* list = node->cast<PreNodeList>()) {
 			for (const auto& param : list->params) {
 				if (const auto* token = first_source_token(param.get())) return token;
 			}
@@ -58,28 +58,6 @@ protected:
 			&& node->tok.pos > 0 && !node->tok.val.empty()) return &node->tok;
 		return nullptr;
 	}
-	/// The one literal a substitution argument ultimately stands for, or nothing when it
-	/// stands for several.
-	///
-	/// Chunks and statements are pure wrappers that carry the token of what they wrap, so
-	/// their `tok` reads like the real word while only the leaf ever reaches the token
-	/// stream. Marking a wrapper looks right and does nothing.
-	static PreNodeAST* single_literal_of(PreNodeAST* node) {
-		while (node) {
-			if (const auto* chunk = dynamic_cast<const PreNodeChunk*>(node)) {
-				if (chunk->chunk.size() != 1) return nullptr;
-				node = chunk->chunk.front().get();
-				continue;
-			}
-			if (const auto* statement = dynamic_cast<const PreNodeStatement*>(node)) {
-				node = statement->statement.get();
-				continue;
-			}
-			return node;
-		}
-		return nullptr;
-	}
-
 	/// Marks the argument that replaces a whole-word parameter usage as standing where the
 	/// parameter stood, so whatever it resolves to stays reachable from the macro body. The
 	/// clone carries call-site positions; without this the body keeps no trace of the usage.

@@ -15,19 +15,11 @@ public:
 	explicit DesugarDelete(NodeProgram* program) : ASTDesugaring(program) {};
 
 	NodeAST* visit(NodeDelete& node) override {
-		// for(auto &ref : node.ptrs) {
-		// 	if(const auto var_ref = ref->cast<NodeVariableRef>()) {
-		// 		ref->replace_with(var_ref->to_pointer_ref());
-		// 	}
-		// }
 		auto block = std::make_unique<NodeBlock>(node.tok);
 		for(auto &ptr : node.ptrs) {
-			block->add_as_stmt(
-				std::make_unique<NodeSingleDelete>(
-					std::move(ptr),
-					std::make_unique<NodeInt>(1, node.tok),
-					node.tok)
-				);
+			auto del = std::make_unique<NodeSingleDelete>(std::move(ptr), std::make_unique<NodeInt>(1, node.tok), node.tok);
+			del->destroy_instance = true;
+			block->add_as_stmt(std::move(del));
 		}
 		return node.replace_with(std::move(block));
 	}

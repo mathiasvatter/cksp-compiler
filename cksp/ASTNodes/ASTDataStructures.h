@@ -427,7 +427,7 @@ struct NodeStruct final : NodeDataStructure {
 	inline static std::string DESTRUCTOR = "__del__";
 	inline static std::string DECREMENTER = "__decr__";
 	inline static std::string INCREMENTOR = "__incr__";
-	inline static std::string REPRESENTOR = "__rep__";
+	inline static std::string REPRESENTOR = "__repr__";
 	inline static std::string SELF = "self";
 	/// <Note.storage(.pitch)>: the compiler-provided static method that hands out the array a
 	/// member is stored in, see TypeInference::lower_storage_method()

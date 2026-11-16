@@ -149,8 +149,15 @@ class TypeInference final : public ASTVisitor {
 					for (size_t i = 0; i<def->header->params.size(); i++) {
 						auto const& param = def->header->get_param(i);
 						param->ty = new_header->get_param(i)->ty;
+						for (auto& ref : param->references) {
+							match_reference_declaration(*ref, param);
+						}
 					}
 					def->header->ty = new_header->ty;
+					// the body was inferred against the union parameter types; infer it again with
+					// the concrete ones, as a cloned specialization is, or <a + b> stays a number
+					// and so does the return type
+					def->accept(*this);
 					call->function->name = def->header->name;
 					continue;
 				}
@@ -159,7 +166,10 @@ class TypeInference final : public ASTVisitor {
 
 				// ----- Zeitmessung: Kopieren der Funktionsdefinition -----
 				// auto start_copy = std::chrono::high_resolution_clock::now();
-				auto new_func_def = clone_as<NodeFunctionDefinition>(def.get());
+				// shared before it is visited: visit(NodeFunctionDefinition) puts weak_from_this() on the
+				// function stack, and the returns of a unique clone found no definition there, so the
+				// specialization kept the number its generic body returned
+				std::shared_ptr<NodeFunctionDefinition> new_func_def = clone_as<NodeFunctionDefinition>(def.get());
 				new_func_def->set_header(std::shared_ptr(std::move(new_header)));
 				new_func_def->remove_references();
 				// auto end_copy = std::chrono::high_resolution_clock::now();
@@ -199,6 +209,17 @@ class TypeInference final : public ASTVisitor {
 				}
 			}
 		}
+		// Calls take the return type of the specialization they are bound to now, so a declaration
+		// initialised from one gets a real type rather than the number the generic body produced.
+		// Numbers left after that are cast to integers; casting them before monomorphization turned
+		// <declare r := add(1.0, 2.0)> into an integer. Runs before merging, which deletes
+		// definitions whose declarations and calls are still collected here.
+		for (const auto& call : calls) {
+			if (call->kind != NodeFunctionCall::Kind::UserDefined) continue;
+			if (const auto def = call->get_definition()) match_type(*call, *def);
+		}
+		cast_data_structure_types(m_program, true);
+
 		// auto start_merge = std::chrono::high_resolution_clock::now();
 		m_program->merge_function_definitions();
 		m_program->update_function_lookup();
@@ -266,7 +287,8 @@ public:
 		node.accept(*this);
 
 		node.debug_print();
-		cast_data_structure_types(&node, true);
+		// numbers wait for monomorphization: their specialization may still make them reals
+		cast_data_structure_types(&node, true, false);
 		node.debug_print();
 
 		do_monomorphization();
@@ -430,6 +452,12 @@ public:
 		const NodeFunctionDefinition& method,
 		std::unique_ptr<NodeParamList> operands);
 
+	/// Marks where the source writes an operator that runs a struct's overload, for the
+	/// editor to colour.
+	void record_overloaded_operator(const Token& op) const;
+	/// The same for the brackets of a subscript.
+	void record_subscript_brackets(const NodeReference& subscript) const;
+
 	/// Puts the call in the node's place and hands it back typed: what every rewrite of an
 	/// expression into the call behind it ends with.
 	NodeAST* replace_with_call(NodeAST& node, std::unique_ptr<NodeFunctionCall> call);
@@ -439,8 +467,9 @@ public:
 	bool resolve_storage_access(NodeAccessChain& node, NodeFunctionCall& call);
 
     /// iterates through all references and declarations and tries to match the types
-    /// with cast set to true -> will cast types of data structures if no type could be infered
-    static void cast_data_structure_types(const NodeProgram* program, bool cast= false);
+    /// with cast set to true -> will cast types of data structures if no type could be infered;
+    /// cast_numbers set to false leaves declarations of type number for a later pass
+    static void cast_data_structure_types(const NodeProgram* program, bool cast= false, bool cast_numbers = true);
 
     /// error if composite type was not added to the type registry
     static Diagnostic throw_composite_error(NodeReference* node) {
@@ -465,6 +494,42 @@ public:
 	error.add_message(message);
 	return error;
     }
+
+	/// Kontakt's <search> takes integer arrays only, <sort> integer and real arrays - as their
+	/// builtin signatures <int[]> and <number[]> say. Booleans and objects count, being integers
+	/// once lowered.
+	/// A type still open - unknown, number, or any for a generic parameter before its
+	/// specializations exist - is left to the pass that sees it concrete. Checked by hand because
+	/// <string> is compatible with <int> everywhere else, which let string arrays through (#134).
+	static bool sorts_reals(const std::string& command) { return command == "sort"; }
+
+	static void expect_number_array(const NodeAST& array, const std::string& command) {
+		const auto element = array.ty ? array.ty->get_element_type() : nullptr;
+		if (!element || element == TypeRegistry::Unknown || element == TypeRegistry::Number
+			|| element == TypeRegistry::Any || element == TypeRegistry::Integer
+			|| element == TypeRegistry::Boolean
+			|| (sorts_reals(command) && element == TypeRegistry::Real)
+			|| element->get_type_kind() == TypeKind::Object) {
+			return;
+		}
+		auto error = Diagnostic(ErrorType::TypeError, "", "", array.tok);
+		error.message = sorts_reals(command)
+			? "<" + command + "> only works on integer or real arrays."
+			: "<" + command + "> only works on integer arrays.";
+		error.actual = array.ty->to_string();
+		error.set_expected(sorts_reals(command) ? "int[] or real[]" : "int[]");
+		error.exit();
+	}
+
+	/// A bool array passed to <search>/<sort>: <bool> is not compatible with the <number[]> of
+	/// <sort>, but a bool array is an integer array once lowered. expect_number_array checks this
+	/// argument instead of the builtin signature.
+	static bool is_sort_search_bool_array(const NodeFunctionCall& node, const int arg_idx) {
+		if (arg_idx != 0 || !node.is_builtin_kind()) return false;
+		if (node.function->name != "search" && node.function->name != "sort") return false;
+		const auto& array = node.function->get_arg(0);
+		return array->ty && array->ty->get_element_type() == TypeRegistry::Boolean;
+	}
 
 	/// check for function that has same param types as return type
 	static bool is_same_input_same_output_type(const NodeFunctionHeader& header) {

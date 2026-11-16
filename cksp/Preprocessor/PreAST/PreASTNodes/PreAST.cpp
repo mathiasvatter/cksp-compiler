@@ -40,6 +40,20 @@ PreNodeAST * PreNodeAST::do_import_processing(
 }
 
 
+PreNodeAST* single_literal_of(PreNodeAST* node) {
+	while (node) {
+		if (const auto chunk = node->cast<PreNodeChunk>()) {
+			if (chunk->chunk.size() != 1) return nullptr;
+			node = chunk->chunk.front().get();
+		} else if (const auto statement = node->cast<PreNodeStatement>()) {
+			node = statement->statement.get();
+		} else {
+			return node;
+		}
+	}
+	return nullptr;
+}
+
 // ************* PreNodeLiteral *************
 std::unique_ptr<PreNodeAST> PreNodeLiteral::clone() const {
 	return std::make_unique<PreNodeLiteral>(*this);
@@ -358,12 +372,25 @@ std::unique_ptr<PreNodeAST> PreNodeMacroHeader::clone() const {
 	return std::make_unique<PreNodeMacroHeader>(*this);
 }
 
+/// The word a parameter substitute stands for when it replaces the name of a header, as in
+/// <#name#(...)> inside a macro body. The substitute is the argument's chunk; only a single
+/// word can become a name, anything else is a user error.
+static std::unique_ptr<PreNodeKeyword> name_from_substitute(const PreNodeAST& old_name, PreNodeAST* substitute) {
+	const auto literal = single_literal_of(substitute);
+	if (const auto keyword = literal ? literal->cast<PreNodeKeyword>() : nullptr) {
+		return clone_as<PreNodeKeyword>(keyword);
+	}
+	auto error = Diagnostic(ErrorType::PreprocessorError, "", "", old_name.tok);
+	error.set_message("The argument '" + substitute->get_string() + "' replaces a name here, so it must be a single word.");
+	error.exit();
+	return nullptr;
+}
+
 PreNodeAST * PreNodeMacroHeader::replace_child(PreNodeAST *oldChild, std::unique_ptr<PreNodeAST> newChild) {
 	if (name.get() == oldChild) {
-		if(const auto new_name = dynamic_cast<PreNodeKeyword*>(newChild.release())) {
-			name = std::unique_ptr<PreNodeKeyword>(new_name);
-			return name.get();
-		}
+		name = name_from_substitute(*oldChild, newChild.get());
+		name->parent = this;
+		return name.get();
 	}
 	return nullptr;
 }
@@ -381,6 +408,15 @@ args(clone_unique(other.args)) {
 
 std::unique_ptr<PreNodeAST> PreNodeDefineHeader::clone() const {
 	return std::make_unique<PreNodeDefineHeader>(*this);
+}
+
+PreNodeAST * PreNodeDefineHeader::replace_child(PreNodeAST *oldChild, std::unique_ptr<PreNodeAST> newChild) {
+	if (name.get() == oldChild) {
+		name = name_from_substitute(*oldChild, newChild.get());
+		name->parent = this;
+		return name.get();
+	}
+	return nullptr;
 }
 
 // ************* PreNodeMacroDefinition *************
@@ -441,6 +477,15 @@ name(clone_unique(other.name)), args(clone_unique(other.args)), has_parenth(othe
 
 std::unique_ptr<PreNodeAST> PreNodeFunctionHeader::clone() const {
 	return std::make_unique<PreNodeFunctionHeader>(*this);
+}
+
+PreNodeAST * PreNodeFunctionHeader::replace_child(PreNodeAST *oldChild, std::unique_ptr<PreNodeAST> newChild) {
+	if (name.get() == oldChild) {
+		name = name_from_substitute(*oldChild, newChild.get());
+		name->parent = this;
+		return name.get();
+	}
+	return nullptr;
 }
 
 // ************* PreNodeFunctionCall *************

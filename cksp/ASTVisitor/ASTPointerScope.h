@@ -5,6 +5,7 @@
 #pragma once
 
 #include "ASTVisitor.h"
+#include "../Lowering/LoweringTernaryOperator.h"
 
 /**
  * To implement a form of garbage collection, reference counting should be applied.
@@ -42,6 +43,46 @@ class ASTPointerScope final : public ASTVisitor {
 	/// stack of m_pointer_scope_stack depths at function entry; scopes above the top
 	/// boundary belong to the function currently being traversed
 	std::vector<size_t> m_function_scope_boundaries;
+	/// stack of m_pointer_scope_stack depths at loop entry; a break or continue leaves
+	/// every scope above the top boundary
+	std::vector<size_t> m_loop_scope_boundaries;
+
+	/// delete statements for every pointer alive in the scopes from <first_depth> on
+	std::unique_ptr<NodeBlock> deletes_from(const size_t first_depth, const Token& tok,
+	                                        const std::unordered_set<StringTypeKey, StringTypeKeyHash>& kept = {}) const {
+		auto deletes = std::make_unique<NodeBlock>(tok, false);
+		for (size_t depth = first_depth; depth < m_pointer_scope_stack.size(); ++depth) {
+			for (auto& [key, ptr] : m_pointer_scope_stack[depth]) {
+				if (kept.contains(key)) continue;
+				deletes->add_as_single_delete(ptr->to_reference(), std::make_unique<NodeInt>(1, ptr->tok));
+			}
+		}
+		return deletes;
+	}
+
+	/// a break or continue leaves the loop body on this path: place delete statements for every
+	/// pointer alive in the loop's scopes before it, as visit(NodeReturn) does for a return
+	void release_before_loop_jump(NodeAST& jump) {
+		if (m_loop_scope_boundaries.empty()) return;
+		auto deletes = deletes_from(m_loop_scope_boundaries.back(), jump.tok);
+		const auto stmt = jump.get_parent_statement();
+		if (!stmt or deletes->empty()) return;
+		deletes->add_as_stmt(std::move(stmt->statement));
+		stmt->set_statement(std::move(deletes));
+	}
+
+	static bool is_continue(NodeAST& node) {
+		const auto call = node.cast<NodeFunctionCall>();
+		return call and call->is_builtin_kind() and call->function->name == "continue";
+	}
+
+	template<typename Loop>
+	NodeAST* visit_loop(Loop& node) {
+		m_loop_scope_boundaries.push_back(m_pointer_scope_stack.size());
+		ASTVisitor::visit(node);
+		m_loop_scope_boundaries.pop_back();
+		return &node;
+	}
 
 	// which references can be pointers?
 	inline static std::unordered_set<NodeType> pointer_types = {
@@ -105,12 +146,12 @@ public:
 		for(auto & stmt : node.statements) {
 			stmt->accept(*this);
 		}
-		// add delete statements for all local pointers. When the block ends in a return
-		// statement, the deletes were already placed before the return by visit(NodeReturn)
-		// and appending them here would only create dead code behind the return
+		// add delete statements for all local pointers. When the block ends in a return, break
+		// or continue, the deletes were already placed before it and appending them here would
+		// only create dead code behind the jump
 		if(node.scope) {
 			auto local_ptrs = remove_scope();
-			if (!ends_with_return(node)) {
+			if (!ends_with_jump(node)) {
 				for(auto & [key, ptr] : local_ptrs) {
 					auto ref = ptr->to_reference();
 					auto del = std::make_unique<NodeSingleDelete>(std::move(ref), std::make_unique<NodeInt>(1, ptr->tok), ptr->tok);
@@ -123,15 +164,9 @@ public:
 	}
 
 	NodeAST* visit(NodeSingleDelete &node) override {
-		// delete statement can only be applied to pointers or arrays -> not to array indices
-		if((node.ptr->get_node_type() == NodeType::Array or node.ptr->get_node_type() == NodeType::NDArray)
-			and node.ptr->ty->get_type_kind() != TypeKind::Composite) {
-			auto error = Diagnostic(ErrorType::SyntaxError, "", "", node.tok);
-			error.message = "Delete statement can only be applied to pointers or arrays, not to array indices.";
-			error.exit();
-		}
 		node.ptr->accept(*this);
-		remove_pointer(*node.ptr);
+		// Explicit delete clears its operand during lowering. Keep normal scope cleanup:
+		// releasing nil is harmless, and later assignments may own a new object.
 		return &node;
 	}
 
@@ -149,13 +184,7 @@ public:
 		// (RETURN_FLAG/continue or exit) cannot jump over the end-of-scope cleanup.
 		// returned pointers are excluded: their ownership transfers to the caller
 		if (!m_function_scope_boundaries.empty()) {
-			auto deletes = std::make_unique<NodeBlock>(node.tok, false);
-			for (size_t depth = m_function_scope_boundaries.back(); depth < m_pointer_scope_stack.size(); ++depth) {
-				for (auto& [key, ptr] : m_pointer_scope_stack[depth]) {
-					if (returned_ptrs.contains(key)) continue;
-					deletes->add_as_single_delete(ptr->to_reference(), std::make_unique<NodeInt>(1, ptr->tok));
-				}
-			}
+			auto deletes = deletes_from(m_function_scope_boundaries.back(), node.tok, returned_ptrs);
 			const auto stmt = node.get_parent_statement();
 			if (stmt and !deletes->empty()) {
 				// A property getter may still read the objects that the cleanup releases.
@@ -194,13 +223,24 @@ public:
 		return &node;
 	}
 
-	/// true when the block (following trailing sub-blocks) ends in a return statement
-	static bool ends_with_return(const NodeBlock& block) {
+	NodeAST* visit(NodeBreak& node) override {
+		release_before_loop_jump(node);
+		return &node;
+	}
+
+	NodeAST* visit(NodeWhile& node) override { return visit_loop(node); }
+	NodeAST* visit(NodeFor& node) override { return visit_loop(node); }
+	NodeAST* visit(NodeForEach& node) override { return visit_loop(node); }
+
+	/// true when the block (following trailing sub-blocks) ends in a return statement, or in a
+	/// break or continue of a loop that is being traversed
+	bool ends_with_jump(const NodeBlock& block) const {
 		const NodeBlock* current = &block;
 		while (current) {
 			if (current->empty()) return false;
 			const auto last = current->get_last_statement().get();
 			if (last->get_node_type() == NodeType::Return) return true;
+			if (!m_loop_scope_boundaries.empty() and (last->cast<NodeBreak>() or is_continue(*last))) return true;
 			current = cast_node<NodeBlock>(last);
 		}
 		return false;
@@ -220,8 +260,63 @@ public:
 		return false;
 	}
 
+	/// who owns the reference that an object value hands over
+	enum class Ownership {
+		None,     // nil: nothing to own
+		Owned,    // constructor: __init__ already counted the reference
+		Borrowed, // the reference is held somewhere else and needs a retain
+		Mixed,    // a ternary whose branches disagree
+	};
+
+	static Ownership ownership_of(NodeAST& value) {
+		if (value.is_nil()) return Ownership::None;
+		if (const auto call = value.cast<NodeFunctionCall>()) {
+			if (call->kind == NodeFunctionCall::Kind::Constructor) return Ownership::Owned;
+		}
+		if (const auto ternary = value.cast<NodeTernary>()) {
+			const auto if_branch = ownership_of(*ternary->if_branch);
+			const auto else_branch = ownership_of(*ternary->else_branch);
+			if (if_branch == Ownership::None) return else_branch;
+			if (else_branch == Ownership::None or if_branch == else_branch) return if_branch;
+			return Ownership::Mixed;
+		}
+		return Ownership::Borrowed;
+	}
+
+	/// <target := c ? a : b> -> <if c: target := a else: target := b>, so that every branch is
+	/// counted on its own when its ownership differs from the other one
+	static std::unique_ptr<NodeIf> branch_assignments(NodeTernary& ternary, NodeReference& target) {
+		return LoweringTernaryOperator::to_if(ternary, [&](std::unique_ptr<NodeAST> value) {
+			return std::make_unique<NodeSingleAssignment>(clone_as<NodeReference>(&target), std::move(value), ternary.tok);
+		});
+	}
+
+	static NodeTernary* mixed_ternary(const NodeReference& l_value, NodeAST& r_value) {
+		if (!l_value.ty->get_element_type()->cast<ObjectType>()) return nullptr;
+		const auto ternary = r_value.cast<NodeTernary>();
+		if (!ternary or ownership_of(*ternary) != Ownership::Mixed) return nullptr;
+		return ternary;
+	}
+
 	NodeAST* visit(NodeSingleAssignment &node) override {
 //		if(node.l_value->is_member_ref()) return &node;
+		// <_ := obj> discards an object: counted as an assignment to <_>, the old value of a
+		// variable that does not exist was released and the new one stored in it (#133). It is
+		// received by a temporary instead, scoped to a block of its own, so that the object is
+		// released right after it was made - the way a discarded int is simply dropped (#99).
+		if (node.l_value->kind == NodeReference::Kind::Throwaway
+			and node.r_value->ty and node.r_value->ty->get_element_type()->cast<ObjectType>()) {
+			auto tmp_var = m_program->get_tmp_ptr(node.r_value->ty);
+			node.l_value->remove_references();
+			auto tmp_decl = std::make_unique<NodeSingleDeclaration>(
+				std::move(tmp_var),
+				std::move(node.r_value),
+				node.tok
+			);
+			auto block = std::make_unique<NodeBlock>(node.tok, true);
+			block->add_as_stmt(std::move(tmp_decl));
+			return node.replace_and_visit(std::move(block), *this);
+		}
 		// move r_value expression to temporary if l_value is also in r_value expression
 		if (is_self_ptr_assignment(node)) {
 			auto tmp_var = m_program->get_tmp_ptr(node.r_value->ty);
@@ -244,6 +339,13 @@ public:
 			return node.replace_and_visit(std::move(block), *this);
 		}
 
+		if (const auto ternary = mixed_ternary(*node.l_value, *node.r_value)) {
+			node.remove_references();
+			auto branches = branch_assignments(*ternary, *node.l_value);
+			branches->collect_references();
+			return node.replace_and_visit(std::move(branches), *this);
+		}
+
 		node.l_value->accept(*this);
 		node.r_value->accept(*this);
 
@@ -257,8 +359,11 @@ public:
 			if(auto del = add_delete(*assign)) {
 				new_block->prepend_body(std::move(del));
 			}
-			if(auto retain = add_retain(assign->l_value.get(), assign->r_value.get(), false)) {
-				new_block->append_body(std::move(retain));
+			// nil only releases the old reference and a constructor already counted the new one
+			if(ownership_of(*assign->r_value) == Ownership::Borrowed) {
+				if(auto retain = add_retain(assign->l_value.get(), assign->r_value.get(), false)) {
+					new_block->append_body(std::move(retain));
+				}
 			}
 			return node.replace_with(std::move(new_block));
 		}
@@ -268,6 +373,23 @@ public:
 
 	NodeAST* visit(NodeSingleDeclaration &node) override {
 		if(node.variable->is_member()) return &node;
+
+		if (node.value) {
+			const auto target = node.variable->to_reference();
+			if (const auto ternary = mixed_ternary(*target, *node.value)) {
+				// no remove_references(): on a declaration it would also drop every later use of
+				// the variable, and the moved branches keep their registered addresses
+				auto branches = branch_assignments(*ternary, *target);
+				auto nil = std::make_unique<NodeNil>(node.tok);
+				nil->ty = node.variable->ty;
+				auto block = std::make_unique<NodeBlock>(node.tok);
+				block->add_as_stmt(std::make_unique<NodeSingleDeclaration>(node.variable, std::move(nil), node.tok));
+				block->add_as_stmt(std::move(branches));
+				block->collect_references();
+				return node.replace_and_visit(std::move(block), *this);
+			}
+		}
+
 		node.variable->accept(*this);
 		if(node.value) node.value->accept(*this);
 
@@ -300,6 +422,7 @@ public:
 			definition->visited = true;
 		}
 
+		if (is_continue(node)) release_before_loop_jump(node);
 		return &node;
 	}
 
@@ -310,7 +433,11 @@ public:
 		// scopes above this boundary belong to the function: a return statement must
 		// delete exactly the pointers of these scopes, not the ones of the caller
 		m_function_scope_boundaries.push_back(m_pointer_scope_stack.size());
+		// a function is traversed at its first call site, possibly inside a loop of the
+		// caller: a break or continue in the function body never leaves that loop
+		auto caller_loops = std::exchange(m_loop_scope_boundaries, {});
 		node.body->accept(*this);
+		m_loop_scope_boundaries = std::move(caller_loops);
 		m_function_scope_boundaries.pop_back();
 		return &node;
 	}
@@ -334,16 +461,10 @@ private:
 		}
 
 		if(l_value_type->cast<ObjectType>()) {
-			if(auto func_call = r_value->cast<NodeFunctionCall>()) {
-				// when constructor and declaration -> do not alter ref count
-				if(func_call->kind == NodeFunctionCall::Kind::Constructor and node->cast<NodeSingleDeclaration>()) {
-					return false;
-				}
-			}
-			if(r_value->is_nil()) {
-				return false;
-			}
-			return true;
+			// an assignment always has to release the old reference, a declaration only retains
+			// a reference that is held somewhere else
+			if(node->cast<NodeSingleAssignment>()) return true;
+			return ownership_of(*r_value) == Ownership::Borrowed;
 		}
 		return false;
 	}

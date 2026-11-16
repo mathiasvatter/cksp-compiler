@@ -16,6 +16,11 @@ class DiagnosticPublisher {
 	JsonRpcConnection& m_connection;
 	const EntryPointResolver* m_entries = nullptr;
 	std::unordered_map<std::string, std::unordered_map<std::string, std::vector<Diagnostic>>> m_diagnostics_by_entry_and_source;
+	/// For every source last published with diagnostics, the entries its attribution was
+	/// decided against. A change of those - an entry analysed for the first time, one that
+	/// dropped or gained the import, one deleted - changes which diagnostics name their
+	/// entries, even when the source's own diagnostics stay the same.
+	mutable std::unordered_map<std::string, std::vector<SourceId>> m_published_reaching;
 public:
 	explicit DiagnosticPublisher(JsonRpcConnection& connection)
 		: m_connection(connection) {}
@@ -60,13 +65,28 @@ public:
 
 private:
 
+	/// One published diagnostic plus the entries whose analysis reported it.
+	struct MergedDiagnostic {
+		Diagnostic diagnostic;
+		std::vector<SourceId> reported_by;
+	};
+
 	[[nodiscard]] static SourceId diagnostic_source(const Diagnostic& diagnostic, const SourceId& entry_source);
 	[[nodiscard]] static bool same_published_diagnostic(
 		const Diagnostic& left,
 		const Diagnostic& right
 	);
-	[[nodiscard]] static std::unique_ptr<JSONObject> make_lsp_diagnostic(const Diagnostic& diagnostic);
+	[[nodiscard]] static std::unique_ptr<JSONObject> make_lsp_diagnostic(
+		const Diagnostic& diagnostic,
+		const std::vector<SourceId>& reported_by = {}
+	);
 	[[nodiscard]] static std::unique_ptr<JSONObject> make_lsp_fix_data(const Diagnostic::DiagnosticFix& fix);
+	[[nodiscard]] std::vector<MergedDiagnostic> merged_diagnostics(const SourceId& source) const;
 	void publish_merged_source(const SourceId& source) const;
-	void publish_source(const SourceId& source, const std::vector<Diagnostic>& diagnostics) const;
+	/// The configured entries a source's diagnostics are attributed against: empty when
+	/// naming entries cannot say anything for it.
+	[[nodiscard]] std::vector<SourceId> attribution_entries(const SourceId& source) const;
+	/// Adds the published sources whose attribution entries changed since their last publish.
+	void add_stale_attributions(std::unordered_set<std::string>& affected_sources) const;
+	void publish_source(const SourceId& source, const std::vector<MergedDiagnostic>& diagnostics) const;
 };

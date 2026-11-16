@@ -1,0 +1,24 @@
+// The callee may be a bare macro name, as for iterate_macro and literate_macro: the post variant
+// passes #n# or #l# as its argument.
+// EXPECT message\(0\)
+// EXPECT message\(1\)
+// EXPECT declare ui_knob \$knb_volume
+// EXPECT declare ui_knob \$knb_pan
+macro show(#n#)
+    message(#n#)
+end macro
+
+macro declare_knob(#l#)
+    declare ui_knob knb_#l# (0, 100, 1)
+end macro
+
+define PANEL.CONTROLS := volume, pan
+
+macro declare_panel(#panel#)
+    literate_post_macro(declare_knob) on #panel#.CONTROLS
+end macro
+
+on init
+    iterate_post_macro(show) := 0 to 1
+    declare_panel(PANEL)
+end on

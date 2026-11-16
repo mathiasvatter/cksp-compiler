@@ -28,6 +28,8 @@ public:
 			node.tok
 		);
 		set_control->ty = type;
+		set_control->arrow_token = node_get_control->arrow_token;
+		set_control->control_param_token = node_get_control->control_param_token;
 
 		return node.replace_with(std::move(set_control));
 	}

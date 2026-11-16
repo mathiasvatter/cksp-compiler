@@ -1,0 +1,26 @@
+// A local of another function, named like a method, does not turn <obj?.method()> into a
+// namespace member (#146).
+// EXPECT call Ev____fade
+
+struct Ev
+	id: int
+	function fade(self, time: int)
+		fade_out(self.id, time, 1)
+	end function
+end struct
+
+namespace Ns
+	declare cur: Ev := nil
+	function other()
+		declare fade := EVENT_VELOCITY * 2
+		message(fade)
+	end function
+	function stop()
+		Ns.cur?.fade(1000)
+	end function
+end namespace
+
+on note
+	Ns.other()
+	Ns.stop()
+end on

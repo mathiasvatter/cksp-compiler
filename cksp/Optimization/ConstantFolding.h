@@ -41,6 +41,18 @@ class ConstantFolding final : public ASTOptimizations {
 	}
 
 public:
+	/// <int()> of an integer or <real()> of a real. Kontakt's grammar takes only a real
+	/// expression in <int()> (and an integer one in <real()>), so these calls do not parse
+	/// and have to be removed at every optimization level, not only when folding runs.
+	static bool is_identity_cast(const NodeFunctionCall& node) {
+		if (node.kind != NodeFunctionCall::Kind::Builtin or node.function->get_num_args() != 1) return false;
+		const auto& arg = node.function->get_arg(0);
+		if (!arg or !arg->ty) return false;
+		const auto element_type = arg->ty->get_element_type();
+		return (node.function->name == "int" and element_type == TypeRegistry::Integer)
+			or (node.function->name == "real" and element_type == TypeRegistry::Real);
+	}
+
 	explicit ConstantFolding(const ConstantDatabase* database = nullptr)
 		: m_database(database) {}
 
@@ -221,14 +233,8 @@ private:
 					return node.replace_with(std::move(node.function->get_arg(0)));
 				}
 			// check types -> real(~var) -> ~var; int($var) -> $var
-			} else if (node.function->get_arg(0)->ty->get_element_type() == TypeRegistry::Integer) {
-				if (node.function->name == "int") {
-					return node.replace_with(std::move(node.function->get_arg(0)));
-				}
-			} else if (node.function->get_arg(0)->ty->get_element_type() == TypeRegistry::Real) {
-				if (node.function->name == "real") {
-					return node.replace_with(std::move(node.function->get_arg(0)));
-				}
+			} else if (is_identity_cast(node)) {
+				return node.replace_with(std::move(node.function->get_arg(0)));
 			}
 
 		} else if(node.function->get_num_args() == 3) {

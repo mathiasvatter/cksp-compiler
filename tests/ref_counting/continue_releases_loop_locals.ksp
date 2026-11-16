@@ -1,0 +1,17 @@
+// A continue leaves the loop body before the end of its scope, so the pointers declared in the
+// body are released before the continue, as they are before a return.
+// EXPECT ^      call Item______decr__$
+
+struct Item
+	v: int
+end struct
+
+on note
+	for i in range(4)
+		declare it := new Item(i)
+		if i = 2
+			continue
+		end if
+		message(it.v)
+	end for
+end on

@@ -1,0 +1,16 @@
+// EXPECT %events\[\$[a-z_]+[0-9]+\] := -1
+// EXPECT inc\(\$calls\)
+struct Thing
+ value: int
+end struct
+on init
+ declare calls := 0
+ declare events[2]: Thing[]
+ events[0] := new Thing(42)
+ delete events[next_index()]
+ message(calls)
+end on
+function next_index(): int
+ inc(calls)
+ return 0
+end function

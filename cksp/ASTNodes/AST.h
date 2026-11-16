@@ -25,6 +25,7 @@ struct NodeProgram;
 struct NodeFunctionHeaderRef;
 struct NodeReference;
 class DiagnosticEngine;
+class ReferenceIndex;
 
 struct NodeAST {
 	SourceRange range;
@@ -120,7 +121,6 @@ struct NodeAST {
 	/// once <CompletionIndex.h> started reaching in here.
 	virtual std::unique_ptr<struct NodeAccessChain> to_method_chain();
 	bool is_constant(bool builtins_are_constant = false, bool arrayref_can_be_const = true);
-	int get_bison_tokens();
 	bool is_nil();
 	/// removes node from AST and all references from data_structs
 	NodeAST *remove_node();
@@ -1254,6 +1254,9 @@ struct NodeProgram final : NodeAST {
 	class DefinitionProvider* def_provider = nullptr;
 	/// Non-owning diagnostic context supplied by Compiler for this AST's lifetime.
 	DiagnosticEngine* diagnostic_engine = nullptr;
+	/// Non-owning, and only set while the language server analyses: passes that learn
+	/// something the editor shows record it here.
+	ReferenceIndex* reference_index = nullptr;
 	NodeCallback* init_callback = nullptr;
 	NodeCallback* current_callback = nullptr;
 	// std::shared_ptr<NodeVariable> global_iterator;

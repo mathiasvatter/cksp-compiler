@@ -10,8 +10,8 @@
   - a loop that runs too far walks into the block of the next instance, so
     deleting one bag would free the notes of another one
 
-  Freed objects are detected through slot reuse: a deleted pointer keeps its
-  index, so a newly allocated object of the same type has to land on it again. }
+  Freed objects are detected through slot reuse: save non-owning integer IDs before releasing
+  pointers, then check whether new instances reuse those slots. }
 
 struct Note
     declare pitch: int
@@ -23,8 +23,11 @@ end struct
 
 on init
     declare a_first: Note := new Note(1)
+    declare id_a_first: int := a_first as int
     declare a_last: Note := new Note(2)
+    declare id_a_last: int := a_last as int
     declare b_kept: Note := new Note(3)
+    declare id_b_kept: int := b_kept as int
 
     declare bag_a: Bag := new Bag([nil])
     declare bag_b: Bag := new Bag([nil])
@@ -36,22 +39,22 @@ on init
     bag_b.grid[0,0] := b_kept
 
     { the notes stay alive, their owners still hold a reference }
-    delete a_first
-    delete a_last
-    delete b_kept
+    a_first := nil
+    a_last := nil
+    b_kept := nil
 
-    delete bag_a
+    bag_a := nil
 
     declare probe_first: Note := new Note(0)
     declare probe_last: Note := new Note(0)
-    if (probe_first = a_first or probe_first = a_last) and (probe_last = a_first or probe_last = a_last)
+    if ((probe_first as int) = id_a_first or (probe_first as int) = id_a_last) and ((probe_last as int) = id_a_first or (probe_last as int) = id_a_last)
         message("ndarray member: every note of the deleted owner freed: yes")
     else
         message("ndarray member: every note of the deleted owner freed: NO")
     end if
 
     declare probe_kept: Note := new Note(0)
-    if probe_kept # b_kept
+    if (probe_kept as int) # id_b_kept
         message("ndarray member: notes of the other owner untouched: yes")
     else
         message("ndarray member: notes of the other owner untouched: NO")
