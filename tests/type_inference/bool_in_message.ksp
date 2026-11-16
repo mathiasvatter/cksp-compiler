@@ -5,8 +5,11 @@
 // EXPECT message\("x" & "false"\)
 // EXPECT message\(2\)
 // EXPECT_NOT "true" \*
-// Comparisons inside a boolean operator are values of that operator, not text of their own.
+// Comparisons inside a boolean operator are values of that operator, not text of their own,
+// and the condition choosing the text keeps them as comparisons.
 // EXPECT_NOT "true" and
+// EXPECT if\(\$EVENT_NOTE < \$EVENT_VELOCITY\)
+// EXPECT_NOT sh_right
 
 on init
     message(true * 128)
@@ -16,4 +19,11 @@ on init
     declare a := 1
     declare b := 2
     message((a < b) and (b < 3))
+end on
+
+on note
+    declare flag := true
+    declare x := EVENT_NOTE
+    declare y := EVENT_VELOCITY
+    message(flag and (x < y))
 end on
