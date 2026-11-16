@@ -283,8 +283,9 @@ bool NodeAST::is_string_env() const {
 	if (auto binary_expr = parent->cast<NodeBinaryExpr>()) {
 		is_string |= binary_expr->ty == TypeRegistry::String;
 	}
-	// is within message call
-	if (auto header = is_func_arg()) {
+	// is a direct argument of message: inside an expression the expression's type decides, so
+	// <message(true * 128)> stays a number
+	if (auto header = is_direct_func_arg()) {
 		is_string |= header->name == "message";
 	}
 	// is within return statement

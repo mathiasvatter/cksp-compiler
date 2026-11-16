@@ -34,6 +34,9 @@ on init
     declare typed[2]: int[] := (3, 4)
     declare env<|env|> := new Envelope(0)
     declare ui_knob knob<|knob|>(0, 100, 1)
+    declare flag<|flag|> := true
+    declare later<|later|>
+    later := false
     scale(count, 2)
-    message(env.set(3) & label & knob & twice(2) & add(1, 2) & named())
+    message(env.set(3) & label & knob & twice(2) & add(1, 2) & named() & flag & later)
 end on

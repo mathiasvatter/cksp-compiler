@@ -1,0 +1,19 @@
+// A boolean literal prints as text only where message or a concatenation takes it directly;
+// as an operand of arithmetic inside message it is the number it stands for.
+// EXPECT message\(128\)
+// EXPECT message\("true"\)
+// EXPECT message\("x" & "false"\)
+// EXPECT message\(2\)
+// EXPECT_NOT "true" \*
+// Comparisons inside a boolean operator are values of that operator, not text of their own.
+// EXPECT_NOT "true" and
+
+on init
+    message(true * 128)
+    message(true)
+    message("x" & false)
+    message(1 + true)
+    declare a := 1
+    declare b := 2
+    message((a < b) and (b < 3))
+end on

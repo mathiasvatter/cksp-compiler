@@ -191,6 +191,11 @@ NodeAST * TypeInference::visit(NodeReal& node) {
 	return &node;
 }
 
+NodeAST * TypeInference::visit(NodeBoolean& node) {
+	node.ty = TypeRegistry::Boolean;
+	return &node;
+}
+
 NodeAST * TypeInference::visit(NodeNil& node) {
 	node.ty = TypeRegistry::Nil;
 	return &node;
@@ -1559,6 +1564,14 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 		return &node;
 	}
 
+	// KSP stores booleans as 0 and 1, so arithmetic and bitwise operators read a <Boolean> operand
+	// as <Integer> (true * 128 is 128). Only for the check: the operand itself stays <Boolean>.
+	const bool integer_operands = MATH_TOKENS.contains(node.op.type) or BITWISE_TOKENS.contains(node.op.type);
+	const bool left_is_bool = integer_operands and node.left->ty == TypeRegistry::Boolean;
+	const bool right_is_bool = integer_operands and node.right->ty == TypeRegistry::Boolean;
+	if (left_is_bool) node.left->ty = TypeRegistry::Integer;
+	if (right_is_bool) node.right->ty = TypeRegistry::Integer;
+
 	bool is_compatible = true;
 	auto error = throw_type_error(*node.left, node.right->ty);
 
@@ -1621,6 +1634,8 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	if(!is_compatible) {
         error.exit();
 	}
+	if (left_is_bool) node.left->ty = TypeRegistry::Boolean;
+	if (right_is_bool) node.right->ty = TypeRegistry::Boolean;
 	node.left->set_element_type(specialize_type(node.left->ty, node.ty));
 	node.right->set_element_type(specialize_type(node.right->ty, node.ty));
 	return &node;
