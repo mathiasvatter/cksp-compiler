@@ -30,10 +30,22 @@ public:
 		return &node;
 	}
 
+	/// Decided by the operator, not the type: after type lowering a comparison is typed as an integer.
+	/// Arithmetic like <-a> or <a .and. b> is a binary or unary expression too, and still needs <# 0>.
+	static bool is_boolean_expression(NodeAST& condition) {
+		if (const auto bin = condition.cast<NodeBinaryExpr>()) {
+			return COMPARISON_TOKENS.contains(bin->op.type) or BOOL_TOKENS.contains(bin->op.type);
+		}
+		if (const auto unary = condition.cast<NodeUnaryExpr>()) {
+			return BOOL_TOKENS.contains(unary->op.type);
+		}
+		return false;
+	}
+
 	static void sanitize(std::unique_ptr<NodeAST>& condition, NodeAST* parent) {
 		auto tok = condition->tok;
-		if (condition->cast<NodeBinaryExpr>() or condition->cast<NodeUnaryExpr>()) {
-			// condition is already a binary or unary expression -> do nothing
+		if (is_boolean_expression(*condition)) {
+			// condition is already a comparison or boolean expression -> do nothing
 			return;
 		}
 		if (auto call = condition->cast<NodeFunctionCall>()) {

@@ -396,6 +396,9 @@ public:
 	NodeAST * visit(NodeArrayQuery& node) override;
 	NodeAST * visit(NodeForEach& node) override;
 	NodeAST * visit(NodeTernary& node) override;
+	NodeAST * visit(NodeIf& node) override;
+	NodeAST * visit(NodeWhile& node) override;
+	static void check_condition(const NodeAST& condition);
 	NodeAST * visit(NodeNullCoalesce& node) override;
 
 	static bool has_pointer_element_type(const NodeAST& node) {

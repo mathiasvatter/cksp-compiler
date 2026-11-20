@@ -24,10 +24,10 @@ public:
 
 
 	NodeAST* lower_comparison(std::unique_ptr<NodeAST>& condition) {
-		if (condition->cast<NodeBinaryExpr>() or condition->cast<NodeUnaryExpr>()) {
+		if (KSPConditions::is_boolean_expression(*condition)) {
 			condition->accept(*this);
 		} else {
-		// condition is not a binary or unary expression -> must be a single literal or reference or function call
+			// not a comparison or boolean expression (a literal, reference, call or arithmetic like <-a>)
 			KSPConditions::sanitize(condition, condition->parent);
 		}
 		return condition.get();
