@@ -1,0 +1,19 @@
+// A local that reuses the name of a local from an enclosing block takes over the name up to the
+// end of its block, including where the outer loop counter was still meant.
+
+// EXPECT_WARNING <ks> shadows the local <ks> declared in line 11
+
+on init
+    declare counter := 0
+end on
+
+on note
+    for ks in range(3)
+        if ks = 1
+            declare ks: int
+            ks := EVENT_VELOCITY
+            message(ks)
+        end if
+        counter := counter + 1
+    end for
+end on

@@ -71,6 +71,11 @@ public:
 	std::shared_ptr<NodeDataStructure> remove_from_current_scope(const std::string& name);
 	/// copies last scope in current scope
 	bool copy_last_scope();
+	/// number of open scopes, the global one included
+	[[nodiscard]] size_t scope_depth() const { return m_declared_data_structures.size(); }
+	/// The innermost declaration of <name> in the scopes from <first_scope> up to, but not including,
+	/// the current one: what a declaration in the current scope would shadow.
+	[[nodiscard]] std::shared_ptr<NodeDataStructure> get_outer_declaration(const std::string& name, size_t first_scope) const;
 	/// returns the definition of a data structure, if it exists. If datastructure itself is
 	/// definition -> return nullptr. If datastructure is reference -> return declaration. If global_scope is true,
 	/// adds declaration to global scope.

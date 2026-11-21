@@ -183,6 +183,17 @@ std::shared_ptr<NodeDataStructure> DefinitionProvider::get_declared_data_structu
 	return nullptr;
 }
 
+std::shared_ptr<NodeDataStructure> DefinitionProvider::get_outer_declaration(const std::string& name, const size_t first_scope) const {
+	// the current scope is the last one, and a clash there is a redeclaration, not shadowing
+	for (size_t i = m_declared_data_structures.size() - 1; i > first_scope; --i) {
+		const auto& scope = m_declared_data_structures[i - 1];
+		if (const auto it = scope.find(name); it != scope.end()) {
+			return it->second;
+		}
+	}
+	return nullptr;
+}
+
 std::shared_ptr<NodeDataStructure> DefinitionProvider::get_scoped_data_structure(const std::string& data, const bool global_scope) const {
 	const auto& map = global_scope ? m_declared_data_structures.at(0) : m_declared_data_structures.back();
 	if (const auto it = map.find(data); it != map.end()) {

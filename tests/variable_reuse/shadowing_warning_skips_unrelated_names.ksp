@@ -1,0 +1,29 @@
+// Only a local hiding a local of the same callback or function is warned about. A local named
+// like a global, and a function local named like a local of the callback that calls it, hide
+// nothing the code around them could still mean.
+
+// EXPECT_WARNING_NOT shadows
+
+on init
+    declare value := 0
+end on
+
+function helper(x: int): int
+    declare idx := x * 2
+    return idx
+end function
+
+on note
+    declare value := EVENT_NOTE
+    declare idx := EVENT_VELOCITY
+    message(helper(idx) + value)
+end on
+
+on release
+    for i in range(2)
+        message(i)
+    end for
+    for i in range(3)
+        message(i)
+    end for
+end on

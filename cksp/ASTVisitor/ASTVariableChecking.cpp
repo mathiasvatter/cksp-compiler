@@ -139,6 +139,7 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionDefinition &node) {
 	node.visited = true;
 
 	m_program->function_definition_stack.push(node.weak_from_this());
+	const auto outer_shadow_base = std::exchange(m_shadow_scope_base, m_def_provider->scope_depth());
 	m_def_provider->add_scope();
 
 	node.header ->accept(*this);
@@ -147,6 +148,7 @@ NodeAST* ASTVariableChecking::visit(NodeFunctionDefinition &node) {
 	node.body->accept(*this);
 
 	m_def_provider->remove_scope();
+	m_shadow_scope_base = outer_shadow_base;
 	m_program->function_definition_stack.pop();
 	return &node;
 }
@@ -254,6 +256,21 @@ void ASTVariableChecking::check_read_in_own_declaration(NodeSingleDeclaration& n
 	error.exit();
 }
 
+void ASTVariableChecking::warn_if_shadowing(const NodeSingleDeclaration& node) {
+	const auto& variable = node.variable;
+	if (!variable->is_local or variable->kind == NodeDataStructure::Compiler) return;
+	const auto outer = m_def_provider->get_outer_declaration(variable->name, m_shadow_scope_base);
+	if (!outer or !outer->is_local or outer->kind == NodeDataStructure::Compiler or outer->is_member()) return;
+	if (!m_shadow_warnings.insert(variable->tok.get_position()).second) return;
+
+	auto warning = Diagnostic(ErrorType::CompileWarning, "", "", variable->tok);
+	warning.message = "<" + variable->name + "> shadows the local <" + outer->tok.val + "> declared in line "
+		+ std::to_string(outer->tok.line) + ". Up to the end of this block every <" + variable->name
+		+ "> means the new variable, not the outer one. Rename one of them if the outer one is "
+		"still meant there.";
+	warning.report(diagnostics());
+}
+
 NodeAST* ASTVariableChecking::visit(NodeSingleDeclaration& node) {
 	node.variable->determine_locality(m_program, get_current_block());
 
@@ -274,7 +291,10 @@ NodeAST* ASTVariableChecking::visit(NodeSingleDeclaration& node) {
 		error.exit();
 	}
 	// the pass both the compiler and the language server reach before any rewriting
-	if (pass == Pass::PostUIControlLowering) check_read_in_own_declaration(node);
+	if (pass == Pass::PostUIControlLowering) {
+		check_read_in_own_declaration(node);
+		warn_if_shadowing(node);
+	}
     if(node.value) node.value->accept(*this);
     node.variable->accept(*this);
 	m_def_provider->add_to_declarations(&node);
