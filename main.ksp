@@ -2,56 +2,23 @@
 #pragma combine_callbacks(true)
 // #pragma max_callback_depth(420)
 
-namespace pupu
-    
-    const kack
-        fi, fo, fu
-    end const    
-   
-end namespace
-
-struct Volume
-    group_idx: int
-    slot_idx: int
-
-    function __set__(self, volume)
-        set_engine_par($EVENT_PAR_VOLUME, volume, self.group_idx, self.slot_idx, -1)
-    end function    
-
-    function __get__(self)
-        return get_engine_par($EVENT_PAR_VOLUME, self.group_idx, self.slot_idx, -1)
-    end function        
-end struct    
-
-struct List
-    value: string
-    next: List
+struct Box<T>
+	value: T
+	function __init__(self)
+		self.value := nil
+	end function
 end struct
 
-struct List<T>
-    static const pipi := 5
-    value: T
-    next: List<T>
+declare box := new Box<Item>()
+
+struct Item
+	x: int
 end struct
 
-declare sdf := (3+3) as List
+on init
+	message(box.value?.x ?? 0)
 
-declare ENV2.arr[2,3]: int[][]
-declare pers ls := new List<int>(0, nil)
-declare pers l2 := new List("bubu", nil)
-declare pers d : List
-on note
-    search(_ENV2.arr, 5)
-    message((3+3) as List)
-    // test_single($EVENT_ID)
-    // test_dual($EVENT_ID)
-    message(List<int>.pipi)
-    message(arr[0], variable)
-    v := 5
-    message(v)
+	if not 1
+		message("sdflkj")
+	end if		
 end on
-
-declare v := new Volume(1, 0)
-
-declare variable := 2
-declare arr[3] := (0,1,variable)
