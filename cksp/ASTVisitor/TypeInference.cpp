@@ -191,6 +191,11 @@ NodeAST * TypeInference::visit(NodeReal& node) {
 	return &node;
 }
 
+NodeAST * TypeInference::visit(NodeBoolean& node) {
+	node.ty = TypeRegistry::Boolean;
+	return &node;
+}
+
 NodeAST * TypeInference::visit(NodeNil& node) {
 	node.ty = TypeRegistry::Nil;
 	return &node;
@@ -684,8 +689,39 @@ NodeAST * TypeInference::visit(NodeForEach& node) {
 	return &node;
 }
 
+/**
+ * Kontakt takes no string as a condition. <"a: " & x > 0 ? "y" : "n"> is the common way to write
+ * one by accident: <?:> binds weaker than <&>, so the whole concatenation becomes the condition.
+ */
+void TypeInference::check_condition(const NodeAST& condition) {
+	if (condition.ty != TypeRegistry::String) return;
+	auto error = make_diagnostic(ErrorType::TypeError, condition);
+	error.message = "A condition must be a boolean, an integer or a real value, not a string.";
+	if (condition.parent and condition.parent->cast<NodeTernary>()) {
+		error.message += " <?:> binds weaker than <&>, so the whole concatenation in front of <?> is the "
+			"condition. To concatenate the result, wrap it in parentheses: <\"text\" & (cond ? a : b)>.";
+	}
+	error.expected = TypeRegistry::Boolean->to_string();
+	error.actual = condition.ty->to_string();
+	error.exit();
+}
+
 NodeAST * TypeInference::visit(NodeTernary &node) {
-	return ASTVisitor::visit(node);
+	ASTVisitor::visit(node);
+	check_condition(*node.condition);
+	return &node;
+}
+
+NodeAST * TypeInference::visit(NodeIf &node) {
+	ASTVisitor::visit(node);
+	check_condition(*node.condition);
+	return &node;
+}
+
+NodeAST * TypeInference::visit(NodeWhile &node) {
+	ASTVisitor::visit(node);
+	check_condition(*node.condition);
+	return &node;
 }
 
 NodeAST * TypeInference::visit(NodeNullCoalesce &node) {
@@ -1559,6 +1595,14 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 		return &node;
 	}
 
+	// KSP stores booleans as 0 and 1, so arithmetic and bitwise operators read a <Boolean> operand
+	// as <Integer> (true * 128 is 128). Only for the check: the operand itself stays <Boolean>.
+	const bool integer_operands = MATH_TOKENS.contains(node.op.type) or BITWISE_TOKENS.contains(node.op.type);
+	const bool left_is_bool = integer_operands and node.left->ty == TypeRegistry::Boolean;
+	const bool right_is_bool = integer_operands and node.right->ty == TypeRegistry::Boolean;
+	if (left_is_bool) node.left->ty = TypeRegistry::Integer;
+	if (right_is_bool) node.right->ty = TypeRegistry::Integer;
+
 	bool is_compatible = true;
 	auto error = throw_type_error(*node.left, node.right->ty);
 
@@ -1621,6 +1665,8 @@ NodeAST * TypeInference::visit(NodeBinaryExpr& node) {
 	if(!is_compatible) {
         error.exit();
 	}
+	if (left_is_bool) node.left->ty = TypeRegistry::Boolean;
+	if (right_is_bool) node.right->ty = TypeRegistry::Boolean;
 	node.left->set_element_type(specialize_type(node.left->ty, node.ty));
 	node.right->set_element_type(specialize_type(node.right->ty, node.ty));
 	return &node;

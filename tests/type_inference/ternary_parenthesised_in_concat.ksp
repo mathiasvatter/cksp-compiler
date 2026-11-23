@@ -1,0 +1,8 @@
+{ Issue #157, the intended spelling: the parenthesised ternary is concatenated. }
+
+// EXPECT if\(\$EVENT_NOTE > 0\)
+// EXPECT message\("Test: " & @
+
+on note
+    message("Test: " & (EVENT_NOTE > 0 ? "True" : "False"))
+end on

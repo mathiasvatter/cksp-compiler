@@ -1,0 +1,26 @@
+{ A condition that is arithmetic rather than a comparison is not valid KSP on its own and is
+  compared against zero, like a plain variable. Comparisons and boolean operators stay as they are. }
+
+// EXPECT if\(- ?\$EVENT_NOTE # 0\)
+// EXPECT if\(\(\$EVENT_NOTE \.and\. \$EVENT_VELOCITY\) # 0\)
+// EXPECT while\(\(\$n[0-9]* - \$EVENT_VELOCITY\) # 0\)
+// EXPECT if\(not \(\$EVENT_NOTE = \$EVENT_VELOCITY\)\)
+// EXPECT if\(\$EVENT_NOTE > \$EVENT_VELOCITY\)
+// EXPECT_NOT # 0\) # 0
+
+on note
+    declare n := EVENT_NOTE
+    if (-EVENT_NOTE)
+        message(1)
+    end if
+    if (EVENT_NOTE .and. EVENT_VELOCITY)
+        message(2)
+    end if
+    while (n - EVENT_VELOCITY)
+        n := n - 1
+    end while
+    if (not (EVENT_NOTE = EVENT_VELOCITY))
+        message(3)
+    end if
+    message(EVENT_NOTE > EVENT_VELOCITY ? 1 : 0)
+end on

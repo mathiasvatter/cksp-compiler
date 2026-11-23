@@ -327,6 +327,7 @@ private:
 			m_def_provider->set_declaration(node_global_const->variable, false);
 			// add to vector here for later renaming and to avoid it turning into a passive var
 			m_all_local_vars.push_back(node.variable);
+			shadow_local_name(node.variable->name);
 			m_program->global_declarations->add_as_stmt(std::move(node_global_const));
 			return node.remove_node();
 		}
@@ -336,7 +337,7 @@ private:
 			if (auto free_passive_var = get_free_passive_var(*node.variable)) {
 				free_passive_var->num_reuses = free_passive_var->num_reuses + 1 + node.variable->num_reuses;
 				m_used_passive_vars[get_current_block()].push_back(free_passive_var);
-				m_passive_vars_replace.back().insert({node.variable->name, free_passive_var});
+				m_passive_vars_replace.back().insert_or_assign(node.variable->name, free_passive_var);
 				auto replacement = to_assign_statement(node, m_program);
 				// visit replacement (assign statement) to replace local var with passive_var
 				replacement->accept(*this);
@@ -356,6 +357,7 @@ private:
 				);
 				m_def_provider->set_declaration(node_decl->variable, false);
 				m_all_local_vars.push_back(node_decl->variable);
+				shadow_local_name(node_decl->variable->name);
 				replacement->accept(*this);
 				m_program->global_declarations->add_as_stmt(std::move(node_decl));
 				return node.replace_with(std::move(replacement));
@@ -377,6 +379,7 @@ private:
 		// only add var to local scope if it is not replaced by passive_var
 		node.variable->accept(*this);
 		if(node.value) node.value->accept(*this);
+		if (node.variable->is_local) shadow_local_name(node.variable->name);
 		return &node;
 	}
 
@@ -511,12 +514,21 @@ private:
 		vec.pop_back();
 		return free_var;
 	}
-	/// search for new declaration to reference if declaration is replaced by passive_var
+	/// A local that is kept rather than replaced still claims its name in the innermost scope, as a
+	/// null entry that stops <get_new_declaration>. That lookup goes by name, so without it the
+	/// references of a shadowing declaration resolve to the passive var an outer variable of the
+	/// same name was replaced with, and writes to the inner variable land in the outer one.
+	void shadow_local_name(const std::string& name) {
+		if (m_passive_vars_replace.empty()) return;
+		m_passive_vars_replace.back().insert_or_assign(name, nullptr);
+	}
+	/// search for new declaration to reference if declaration is replaced by passive_var;
+	/// nullptr when the name is not replaced or a kept local of that name shadows the replacement
 	std::shared_ptr<NodeDataStructure> get_new_declaration(const std::string& ref_name) {
 		for (auto rit = m_passive_vars_replace.rbegin(); rit != m_passive_vars_replace.rend(); ++rit) {
 			auto it = rit->find(ref_name);
 			if (it != rit->end()) {
-				return it->second;
+				return it->second; // nullptr for a kept local: shadows outer replacements
 			}
 		}
 		return nullptr;

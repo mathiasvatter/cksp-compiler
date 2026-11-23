@@ -24,6 +24,19 @@ class LoweringBooleanExpression final : public ASTLowering {
 public:
 	explicit LoweringBooleanExpression(NodeProgram *program) : ASTLowering(program) {}
 
+	/// <message(a < b)>: the boolean prints as "true" or "false", chosen by a ternary on it.
+	NodeAST* replace_with_text_ternary(NodeAST& node, std::unique_ptr<NodeAST> condition) {
+		auto ternary = std::make_unique<NodeTernary>(
+			std::move(condition),
+			std::make_unique<NodeString>("\"true\"", node.tok),
+			std::make_unique<NodeString>("\"false\"", node.tok),
+			node.tok
+		);
+		ternary->if_branch->do_type_inference(m_program);
+		ternary->else_branch->do_type_inference(m_program);
+		return node.replace_with(std::move(ternary))->do_lowering(m_program);
+	}
+
 	NodeAST * lower_expression(NodeAST& node) {
 		if (!node.parent) return &node;
 		if (node.parent->cast<NodeWhile>() or node.parent->cast<NodeIf>() or node.parent->cast<NodeTernary>()) {
@@ -39,27 +52,18 @@ public:
 	}
 
 	NodeAST* visit(NodeUnaryExpr& node) override {
+		// Checked before the operand is lowered: the operand becomes the condition of the
+		// ternary, where comparisons stay comparisons.
+		if (BOOL_TOKENS.contains(node.op.type) and node.is_string_env()) {
+			auto condition = std::make_unique<NodeUnaryExpr>(node.op, std::move(node.operand), node.tok);
+			return replace_with_text_ternary(node, std::move(condition));
+		}
+
 		node.operand->accept(*this);
 
 		// check if it is a boolean operator
 		if (not BOOL_TOKENS.contains(node.op.type)) {
 			return &node;
-		}
-
-		if (node.is_string_env()) {
-			auto ternary = std::make_unique<NodeTernary>(
-				std::make_unique<NodeUnaryExpr>(
-					node.op,
-					std::move(node.operand),
-					node.tok
-				),
-				std::make_unique<NodeString>("\"true\"", node.tok),
-				std::make_unique<NodeString>("\"false\"", node.tok),
-				node.tok
-			);
-			ternary->if_branch->do_type_inference(m_program);
-			ternary->else_branch->do_type_inference(m_program);
-			return node.replace_with(std::move(ternary))->do_lowering(m_program);
 		}
 
 		// if boolean operator, replace operand with 1-operand
@@ -85,29 +89,23 @@ public:
 	}
 
 	NodeAST* visit(NodeBinaryExpr& node) override {
+		const bool is_boolean = BOOL_TOKENS.contains(node.op.type) || COMPARISON_TOKENS.contains(node.op.type);
+
+		// Checked before the operands are lowered: they become the condition of the ternary,
+		// where <a < b> stays a comparison instead of turning into its integer value.
+		if (is_boolean and node.is_string_env()) {
+			auto condition = std::make_unique<NodeBinaryExpr>(
+				node.op, std::move(node.left), std::move(node.right), node.tok
+			);
+			return replace_with_text_ternary(node, std::move(condition));
+		}
+
 		node.left->accept(*this);
 		node.right->accept(*this);
 
 		// check if it is a boolean operator
-		if (not(BOOL_TOKENS.contains(node.op.type) || COMPARISON_TOKENS.contains(node.op.type))) {
+		if (not is_boolean) {
 			return &node;
-		}
-
-		if (node.is_string_env()) {
-			auto ternary = std::make_unique<NodeTernary>(
-				std::make_unique<NodeBinaryExpr>(
-					node.op,
-					std::move(node.left),
-					std::move(node.right),
-					node.tok
-				),
-				std::make_unique<NodeString>("\"true\"", node.tok),
-				std::make_unique<NodeString>("\"false\"", node.tok),
-				node.tok
-			);
-			ternary->if_branch->do_type_inference(m_program);
-			ternary->else_branch->do_type_inference(m_program);
-			return node.replace_with(std::move(ternary))->do_lowering(m_program);
 		}
 
 		// if boolean operator, replace with bitwise operator

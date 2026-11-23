@@ -2771,7 +2771,7 @@ def _(workspace, server):
         ("count", ": int"), ("ratio", ": real"), ("label", ": string"),
         ("values", ": int[]"), ("env", ": Envelope"), ("result", ": int"),
         ("factor", ": int"), ("amount", ": int"), ("knob", ": int"),
-        ("twice", ": int"),
+        ("twice", ": int"), ("flag", ": bool"), ("later", ": bool"),
         # Only parameters make up the sum: a number until the single call site types them.
         ("add", ": int"),
     ]:

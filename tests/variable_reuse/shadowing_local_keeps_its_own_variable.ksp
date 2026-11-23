@@ -1,0 +1,25 @@
+// References are redirected to a reused variable by name. The loop counter <ks> takes over the
+// variable <first> left behind, and the inner <ks> finds no free int and is kept. Its name was not
+// claimed in its scope, so its references resolved to the outer <ks> and the assignment below
+// overwrote the loop counter, which restarted the loop.
+
+// EXPECT \$ks[0-9]* := \$EVENT_VELOCITY
+// EXPECT_NOT \$first[0-9]* := \$EVENT_VELOCITY
+
+on init
+    declare counter := 0
+end on
+
+on note
+    declare first := EVENT_NOTE
+    message(first)
+    for ks in range(3)
+        if ks = 1
+            declare ks: int
+            ks := EVENT_VELOCITY
+            ks := ks * random(1, 2)
+            message(ks)
+        end if
+        counter := counter + 1
+    end for
+end on

@@ -1,0 +1,9 @@
+{ Issue #157: <?:> binds weaker than <&>, so the whole concatenation is the ternary's condition.
+  Kontakt takes no string as a condition, so this must not compile. }
+
+// EXPECT_ERROR A condition must be a boolean, an integer or a real value, not a string\.
+// EXPECT_ERROR wrap it in parentheses
+
+on init
+    message("Test: " & 3 > 0 ? "True" : "False")
+end on

@@ -1,0 +1,8 @@
+// A boolean counts as an integer, so mixing it with a real still needs a cast.
+// EXPECT_ERROR Type mismatch
+
+on init
+    declare flag := true
+    declare ratio := 1.5
+    message(ratio * flag)
+end on

@@ -1,0 +1,10 @@
+{ A string condition used to compile to <if("x" & $a)>, which Kontakt rejects. }
+
+// EXPECT_ERROR A condition must be a boolean, an integer or a real value, not a string\.
+
+on init
+    declare a := 3
+    if ("x" & a)
+        message(1)
+    end if
+end on

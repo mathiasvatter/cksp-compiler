@@ -1,0 +1,14 @@
+// A boolean is 0 or 1 in KSP: arithmetic and bitwise operators read it as an integer, and an
+// untyped operand next to it becomes an integer, not a boolean.
+// EXPECT message\(\$flag \* 128\)
+// EXPECT message\(\$count \+ \$flag\)
+// EXPECT message\(\$flag \.and\. 3\)
+
+on init
+    declare flag := true
+    declare count
+    count := 2
+    message(flag * 128)
+    message(count + flag)
+    message(flag .and. 3)
+end on

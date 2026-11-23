@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include <unordered_set>
+#include <utility>
+
 #include "ASTVisitor.h"
 
 class ASTVariableChecking final : public ASTVisitor {
@@ -114,6 +117,11 @@ private:
 	std::stack<NodeAccessChain*> m_current_access;
     std::stack<NodeBlock*> m_current_block;
 	DefinitionProvider* m_def_provider = nullptr;
+	/// The first scope <warn_if_shadowing> looks into: the global scope is skipped, and inside a
+	/// function definition everything outside its parameter scope belongs to someone else.
+	size_t m_shadow_scope_base = 1;
+	/// declarations already warned about, by position: function bodies can be visited more than once
+	std::unordered_set<std::string> m_shadow_warnings;
 
 	[[nodiscard]] NodeBlock* get_current_block() const {
 		if (m_current_block.empty()) return nullptr;
@@ -133,6 +141,15 @@ private:
 	/// undeclared. Called from the PostUIControlLowering pass, the last one both pipelines reach
 	/// before any rewriting.
 	void check_read_in_own_declaration(NodeSingleDeclaration& node) const;
+
+	/// A local declaration that reuses the name of a local from an enclosing block of the same
+	/// callback or function: <for ks in ...> and, further in, <declare ks: int>. Every <ks> after
+	/// it up to the end of its block means the inner variable, which is easy to miss when the
+	/// outer one is a loop counter still in use there. Legal, so only a warning. Globals are left
+	/// out - local helpers named like a global are common and intended - and so are struct members,
+	/// which a method reaches through <self>. Called from the PostUIControlLowering pass, so the
+	/// compiler and the language server report it once each.
+	void warn_if_shadowing(const NodeSingleDeclaration& node);
 
 	/// Reject persistence attached to compiler-local storage, whether written as a declaration
 	/// modifier (<declare pers value>) or as a direct engine command
